@@ -238,41 +238,33 @@ const index = () => {
           <div className="p-5 mt-3.5 box">
             <div className="w-full">
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
-                <h1 className="text-lg font-bold">
-                  Top {dashboardDataList?.length || 20} Investors{" "}
-                  <span className="text-base font-bold">
-                    ({dashboardDataList?.total_percent_ownership} of shares outstanding)
-                  </span>
-                </h1>
-                <div className="flex justify-between items-center gap-4 sm:flex-row">
-                  <div className="flex justify-between items-center gap-2">
-                    <img alt="flag-icon" src={flagIcon} />
-                    <h4 className="font-semibold">
-                      History of Schedule 13D Filing
-                    </h4>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Tippy content="Download Excel" options={{ theme: "light" }}>
+                <div className="flex justify-between items-center gap-2">
+                  <img alt="flag-icon" src={flagIcon} />
+                  <h4 className="font-semibold">
+                    History of Schedule 13D Filing
+                  </h4>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Tippy content="Download Excel" options={{ theme: "light" }}>
+                    <div
+                      className="box p-[5px] cursor-pointer"
+                      onClick={convertDivTableToCSV}
+                    >
+                      <img alt="download-icon" src={downloadIcon} />
+                    </div>
+                  </Tippy>
+                  {locationPathName === "/" && (
+                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
-                        className="box p-[5px] cursor-pointer"
-                        onClick={convertDivTableToCSV}
+                        className="box p-2 cursor-pointer"
+                        onClick={() =>
+                          window.open("investor-details", "_blank")
+                        }
                       >
-                        <img alt="download-icon" src={downloadIcon} />
+                        <img alt="tab-icon" src={tabIcon} />
                       </div>
                     </Tippy>
-                    {locationPathName === "/" && (
-                      <Tippy content="Open in New Tab" options={{ theme: "light" }}>
-                        <div
-                          className="box p-2 cursor-pointer"
-                          onClick={() =>
-                            window.open("investor-details", "_blank")
-                          }
-                        >
-                          <img alt="tab-icon" src={tabIcon} />
-                        </div>
-                      </Tippy>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -302,6 +294,16 @@ const index = () => {
                 )}
 
                 <div className="grid gap-6 grid-cols-1">
+                  {/* Top 20 Investors Header */}
+                  <div className="col-span-1">
+                    <h1 className="text-xl font-bold mb-4">
+                      Top {dashboardDataList?.length || 20} Investors{" "}
+                      <span className="text-lg font-bold">
+                        ({dashboardDataList?.total_percent_ownership} of shares outstanding)
+                      </span>
+                    </h1>
+                  </div>
+                  
                   {/* Left Side - Investor Table */}
                   <div className="col-span-1">
                     <TableWrapper isLoading={investorCardLoading}>

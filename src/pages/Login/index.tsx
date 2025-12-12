@@ -173,12 +173,6 @@ const Main: React.FC = () => {
                 {formView === "login" ? "Sign In" :
                   formView === "sendOtp" ? "Reset Password" : "Enter Verification Code"}
               </div>
-              {formView === "login" && <div className="mt-2.5 text-slate-600">
-                Don't have an account?
-                <Link className="ml-2 font-medium text-primary" to="/register">
-                  Sign Up
-                </Link>
-              </div>}
               {formView === "resetPassword" && <div className="mt-2.5 text-slate-600">
                 {/* Verification code sent to your email */}
 

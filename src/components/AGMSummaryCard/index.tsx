@@ -108,7 +108,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       // Use year from query params or default behavior
       const yearParam = yearFromQuery || (isMeetingModal ? "2025" : "");
       const url = createDynamicURL(
-        `${baseURL}/voting_report_8k/`, 
+        `${baseURL}/voting_report_8k/`,
         { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
       );
       dispatch(fetchAGMSummaryDashboard(url));
@@ -119,7 +119,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       const yearParam = yearFromQuery || "";
       setSelectedYear(yearParam);
       const url = createDynamicURL(
-        `${baseURL}/voting_report_8k/`, 
+        `${baseURL}/voting_report_8k/`,
         { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
       );
       dispatch(fetchAGMSummaryDashboard(url));
@@ -208,7 +208,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     //         globeSearch: companyGlobalSearchTicker,
     //       },
     // })
-    
+
     // Format meeting date to YYYY-MM-DD if available
     const formatMeetingDateForURL = (dateString: string) => {
       if (!dateString) return '';
@@ -220,12 +220,12 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         // Parse the date and convert to YYYY-MM-DD format
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return '';
-        
+
         // Use local date to avoid timezone issues
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
-        
+
         return `${year}-${month}-${day}`;
       } catch (error) {
         console.error('Error formatting meeting date for URL:', error);
@@ -293,9 +293,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   // Analytics data processing
   const getAnalyticsChartData = () => {
     if (!analyticsData || !selectedYear) return [];
-    
+
     const processedData = [];
-    
+
     Object.entries(analyticsData).forEach(([key, value]: [string, any]) => {
       const yearData = value[selectedYear];
       if (yearData) {
@@ -310,7 +310,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         });
       }
     });
-    
+
     return processedData;
   };
 
@@ -362,7 +362,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   // Generate available year tabs - only show years that actually have data
   const getAvailableYears = () => {
     if (!agmSummaryDetails?.total_year?.length) return [];
-    
+
     // Return the actual years that have data
     return agmSummaryDetails.total_year.map((year: any) => year.toString());
   };
@@ -427,7 +427,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         </div>
                       </Tippy>
                     )}
-                    </>}
+                  </>}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
                   <div className="flex justify-between items-center gap-2">
@@ -490,8 +490,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   </Tab.Group>
                 </div>
               }
-
-
 
               <div className="mt-5">
                 <TableWrapper isLoading={loading}>
@@ -702,7 +700,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
-                <p className="text-sm text-slate-600 mt-1">Top 20 Investors</p>
+                <p className="text-sm text-slate-600 mt-1">All Investors</p>
               </div>
               <div
                 onClick={() => setChartModalVisible(false)}
@@ -724,45 +722,45 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         const data2024 = electionData ? getYearData(electionData, '2024') : null;
                         const data2025 = electionData ? getYearData(electionData, '2025') : null;
                         const maxValue = Math.max(data2024?.value || 0, data2025?.value || 0);
-                        
+
                         return (
                           <>
                             <div className="text-center mb-6">
                               <h3 className="text-lg font-semibold text-slate-800 mb-2">Election of Directors</h3>
                               <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
                             </div>
-                            
+
                             <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
                               {/* Grid lines */}
                               <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
                                 {[...Array(5)].map((_, i) => (
-                                  <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{marginTop: `${i * 25}%`}}></div>
+                                  <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{ marginTop: `${i * 25}%` }}></div>
                                 ))}
                               </div>
-                              
+
                               {/* Chart bars */}
                               <div className="relative h-full flex items-end justify-center gap-12">
                                 <div className="flex flex-col items-center">
                                   <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
                                     {data2024 ? data2024.percentage : '--'}
                                   </span>
-                                  <div 
+                                  <div
                                     className="bg-primary transition-all duration-700 ease-out"
-                                    style={{ 
+                                    style={{
                                       width: '48px',
                                       height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
                                 </div>
-                                
+
                                 <div className="flex flex-col items-center">
                                   <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
                                     {data2025 ? data2025.percentage : '--'}
                                   </span>
-                                  <div 
+                                  <div
                                     className="bg-slate-400 transition-all duration-700 ease-out"
-                                    style={{ 
+                                    style={{
                                       width: '48px',
                                       height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
@@ -771,7 +769,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                 </div>
                               </div>
                             </div>
-                            
+                            <div className="mt-4 mb-4">
+                              <h3 className="text-sm text-slate-600 mt-1">Top 20 Investors</h3>
+                            </div>
                             <div className="mt-auto">
                               <table className="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
                                 <thead>
@@ -808,45 +808,38 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         const data2024 = sayOnPayData ? getYearData(sayOnPayData, '2024') : null;
                         const data2025 = sayOnPayData ? getYearData(sayOnPayData, '2025') : null;
                         const maxValue = Math.max(data2024?.value || 0, data2025?.value || 0);
-                        
+
                         return (
                           <>
                             <div className="text-center mb-6">
                               <h3 className="text-lg font-semibold text-slate-800 mb-2">Say On Pay</h3>
                               <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
                             </div>
-                            
+
                             <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
-                              {/* Grid lines */}
-                              <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
-                                {[...Array(5)].map((_, i) => (
-                                  <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{marginTop: `${i * 25}%`}}></div>
-                                ))}
-                              </div>
-                              
                               {/* Chart bars */}
                               <div className="relative h-full flex items-end justify-center gap-12">
                                 <div className="flex flex-col items-center">
                                   <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
                                     {data2024 ? data2024.percentage : '--'}
                                   </span>
-                                  <div 
+                                  <div
                                     className="bg-primary transition-all duration-700 ease-out"
-                                    style={{ 
+                                    style={{
                                       width: '48px',
                                       height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
                                 </div>
-                                
+
                                 <div className="flex flex-col items-center">
                                   <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
                                     {data2025 ? data2025.percentage : '--'}
                                   </span>
-                                  <div 
+                                  <div
                                     className="bg-slate-400 transition-all duration-700 ease-out"
-                                    style={{ 
+                                    style={{
                                       width: '48px',
                                       height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
@@ -855,7 +848,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                 </div>
                               </div>
                             </div>
-                            
+                            <div className="mt-4 mb-4">
+                              <h3 className="text-sm text-slate-600 mt-1">Top 20 Investors</h3>
+                            </div>
                             <div className="mt-auto">
                               <table className="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
                                 <thead>
@@ -890,45 +885,45 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         const data2024 = shareholderData ? getYearData(shareholderData, '2024') : null;
                         const data2025 = shareholderData ? getYearData(shareholderData, '2025') : null;
                         const maxValue = Math.max(data2024?.value || 0, data2025?.value || 0);
-                        
+
                         return (
                           <>
                             <div className="text-center mb-6">
                               <h3 className="text-lg font-semibold text-slate-800 mb-2">Shareholder Proposals</h3>
                               <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
                             </div>
-                            
+
                             <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
                               {/* Grid lines */}
                               <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
                                 {[...Array(5)].map((_, i) => (
-                                  <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{marginTop: `${i * 25}%`}}></div>
+                                  <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{ marginTop: `${i * 25}%` }}></div>
                                 ))}
                               </div>
-                              
+
                               {/* Chart bars */}
                               <div className="relative h-full flex items-end justify-center gap-12">
                                 <div className="flex flex-col items-center">
                                   <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
                                     {data2024 ? data2024.percentage : '--'}
                                   </span>
-                                  <div 
+                                  <div
                                     className="bg-primary transition-all duration-700 ease-out"
-                                    style={{ 
+                                    style={{
                                       width: '48px',
                                       height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
                                   <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
                                 </div>
-                                
+
                                 <div className="flex flex-col items-center">
                                   <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
                                     {data2025 ? data2025.percentage : '--'}
                                   </span>
-                                  <div 
+                                  <div
                                     className="bg-slate-400 transition-all duration-700 ease-out"
-                                    style={{ 
+                                    style={{
                                       width: '48px',
                                       height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
@@ -937,7 +932,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                 </div>
                               </div>
                             </div>
-                            
+                            <div className="mt-4 mb-4">
+                              <h3 className="text-sm text-slate-600 mt-1">Top 20 Investors</h3>
+                            </div>
                             <div className="mt-auto">
                               <table className="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
                                 <thead>
