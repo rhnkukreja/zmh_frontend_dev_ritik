@@ -164,6 +164,31 @@ function Main() {
     window.onresize = () => {
       compactLayout();
     };
+
+    // Fix table border issues
+    const fixTableStyles = () => {
+      if (!document.getElementById('table-border-fix')) {
+        const style = document.createElement('style');
+        style.id = 'table-border-fix';
+        style.textContent = `
+          table td, table th {
+            border: none !important;
+            border-bottom: 1px solid #e5e7eb !important;
+          }
+          .cell_2, .cell_3 {
+            border: none !important;
+            border-bottom: 1px solid #e5e7eb !important;
+          }
+          .table_2 td, .table_3 td {
+            border: none !important;
+            border-bottom: 1px solid #e5e7eb !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    };
+
+    fixTableStyles();
   }, [sideMenuStore, location]);
 
   window.onscroll = () => {
@@ -1247,81 +1272,81 @@ function Main() {
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-2">
           <Dialog.Panel className="relative bg-white rounded-lg shadow-xl p-8 w-[90vw] h-[70vh] flex flex-col overflow-hidden">
-          <Dialog.Title className="mb-3 relative">
-            <div>
-              <h2 className="text-lg font-semibold text-left">AI Assistant (Beta)</h2>
-              <p className="text-xs text-gray-500 mt-1">AI Assistant can make mistakes. Verify important info.</p>
-            </div>
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-0 right-0 mt-0 mr-0 cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-colors"
-              aria-label="Close modal"
-            >
-              <Lucide icon="X" className="w-6 h-6 text-slate-400" />
-            </button>
-          </Dialog.Title>
-
-          <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
-            {/* Left Section - AI Assistant (65% width) */}
-            <div className="w-[65%] flex flex-col min-h-0">
-              <div className="w-full flex-1 border border-gray-200 rounded-lg overflow-hidden relative">
-                <SearchWidgetIframe />
+            <Dialog.Title className="mb-3 relative">
+              <div>
+                <h2 className="text-lg font-semibold text-left">AI Assistant (Beta)</h2>
+                <p className="text-xs text-gray-500 mt-1">AI Assistant can make mistakes. Verify important info.</p>
               </div>
-            </div>
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-0 right-0 mt-0 mr-0 cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-colors"
+                aria-label="Close modal"
+              >
+                <Lucide icon="X" className="w-6 h-6 text-slate-400" />
+              </button>
+            </Dialog.Title>
 
-            {/* Right Section - Logo and Recommended Questions (35% width) */}
-            <div className="w-[35%] flex flex-col min-h-0">
-              {/* ZMH Logo */}
-              <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-2 mb-3">
-                <img
-                  src={logo}
-                  alt="ZMH Analytics Logo"
-                  className="w-12 h-12 object-contain"
-                />
-              </div>
-
-              {/* Recommended Questions */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-semibold text-left text-gray-800">Recommended Questions</h3>
-                  {copiedMessage && (
-                    <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded-md transition-all duration-500 ease-in-out transform animate-in fade-in slide-in-from-right-2">
-                      <Lucide icon="Info" className="w-2 h-2 mr-1" />
-                      <span className="text-xs">{copiedMessage}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <button
-                    onClick={() => handleCopyQuestion("What are Blackrock's engagement priorities?")}
-                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
-                  >
-                    <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
-                      What are Blackrock's engagement priorities?
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleCopyQuestion("How does State Street evaluate shareholder proposals on climate?")}
-                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
-                  >
-                    <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
-                      How does State Street evaluate shareholder proposals on climate?
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => handleCopyQuestion("How does Vanguard vote on say on pay proposals?")}
-                    className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
-                  >
-                    <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
-                      How does Vanguard vote on say on pay proposals?
-                    </span>
-                  </button>
+            <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
+              {/* Left Section - AI Assistant (65% width) */}
+              <div className="w-[65%] flex flex-col min-h-0">
+                <div className="w-full flex-1 border border-gray-200 rounded-lg overflow-hidden relative">
+                  <SearchWidgetIframe />
                 </div>
               </div>
+
+              {/* Right Section - Logo and Recommended Questions (35% width) */}
+              <div className="w-[35%] flex flex-col min-h-0">
+                {/* ZMH Logo */}
+                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-2 mb-3">
+                  <img
+                    src={logo}
+                    alt="ZMH Analytics Logo"
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
+
+                {/* Recommended Questions */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-semibold text-left text-gray-800">Recommended Questions</h3>
+                    {copiedMessage && (
+                      <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded-md transition-all duration-500 ease-in-out transform animate-in fade-in slide-in-from-right-2">
+                        <Lucide icon="Info" className="w-2 h-2 mr-1" />
+                        <span className="text-xs">{copiedMessage}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => handleCopyQuestion("What does Vanguard say about overboarding?")}
+                      className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
+                    >
+                      <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
+                        What does Vanguard say about overboarding?
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => handleCopyQuestion("What are Blackrock's engagement priorities?")}
+                      className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
+                    >
+                      <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
+                        What are Blackrock's engagement priorities?
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => handleCopyQuestion("What type of climate proposals does State Street support?")}
+                      className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
+                    >
+                      <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
+                        What type of climate proposals does State Street support?
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
           </Dialog.Panel>
         </div>
       </Dialog>

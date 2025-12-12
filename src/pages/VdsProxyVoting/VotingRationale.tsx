@@ -302,19 +302,19 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                                         : "bg-slate-50"
                                     } dark:bg-darkmode-800 hover:bg-slate-100 dark:hover:bg-darkmode-600 transition-colors duration-200`}
                                   >
-                                    <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 w-[200px] bg-inherit">
+                                    <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 w-[200px] bg-inherit align-top" style={{ verticalAlign: 'top' }}>
                                       <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
                                         {investorName}
                                       </div>
                                     </Table.Td>
 
-                                    <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 min-w-[200px] bg-inherit">
+                                    <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 min-w-[200px] bg-inherit align-top" style={{ verticalAlign: 'top' }}>
                                       <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
                                         {question?.proposal}
                                       </div>
                                     </Table.Td>
 
-                                    <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-inherit">
+                                    <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-inherit align-top" style={{ verticalAlign: 'top' }}>
                                       <div
                                         dangerouslySetInnerHTML={{
                                           __html: question?.voting_rationale,
