@@ -99,7 +99,7 @@ const SearchWidgetIframe = () => {
   return (
     <div className="gen-search-widget-container relative w-full h-full overflow-hidden bg-white">
       <gen-search-widget
-        configid="d0779b69-98b9-4532-a6c9-d1b1f1b8a2d9"
+        configid="44341cf7-c240-43cb-82d5-4c10cf70f647"
         location="us"
         alwaysOpened>
       </gen-search-widget>
