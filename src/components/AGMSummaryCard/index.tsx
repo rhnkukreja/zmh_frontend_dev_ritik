@@ -317,10 +317,17 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   // Get data for a specific year and category
   const getYearData = (categoryData: any, year: string) => {
     if (categoryData.rawData && categoryData.rawData[year]) {
+      const yearData = categoryData.rawData[year];
+      // Get investors based on category type
+      const investors = yearData.vote_against_eod_investors || 
+                       yearData.voted_against_sop_investors || 
+                       yearData.voted_for_sp_investors || 
+                       [];
       return {
-        percentage: categoryData.rawData[year].total_percent,
-        volume: categoryData.rawData[year].volume,
-        value: parseFloat(categoryData.rawData[year].total_percent.replace('%', ''))
+        percentage: yearData.total_percent,
+        volume: yearData.volume,
+        value: parseFloat(yearData.total_percent.replace('%', '')),
+        investors: investors
       };
     }
     return null;
@@ -769,33 +776,40 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                 </div>
                               </div>
                             </div>
-                            <div className="mt-4 mb-4">
-                              <h3 className="text-sm text-slate-600 mt-1">Top 20 Investors</h3>
-                            </div>
                             <div className="mt-auto">
-                              <table className="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
-                                <thead>
-                                  <tr>
-                                    <th className="bg-primary text-white p-3 text-center text-sm font-medium" colSpan={2}>
-                                      Voted Against Election of Directors
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="bg-primary/10 text-primary p-3 text-sm font-medium w-16 border-r border-slate-200">2024</td>
-                                    <td className="bg-primary/10 text-slate-700 p-3 text-sm">
-                                      {data2024 ? 'Morgan Stanley, Norges Bank' : '--'}
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <td className="bg-slate-50 text-slate-600 p-3 text-sm font-medium border-r border-slate-200">2025</td>
-                                    <td className="bg-slate-50 text-slate-700 p-3 text-sm">
-                                      {data2025 ? 'Norges Bank, Northern Trust' : '--'}
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                              <div className="text-center mb-2">
+                                <span className="text-sm font-medium text-slate-700">Voted Against Election of Directors</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium">2024</div>
+                                  <div className="bg-primary/10 p-3 max-h-[180px] overflow-y-auto">
+                                    {data2024?.investors?.length > 0 ? (
+                                      <ul className="space-y-1">
+                                        {data2024.investors.map((investor: string, idx: number) => (
+                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <span className="text-sm text-slate-500">--</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div className="bg-slate-400 text-white p-2 text-center text-sm font-medium">2025</div>
+                                  <div className="bg-slate-50 p-3 max-h-[180px] overflow-y-auto">
+                                    {data2025?.investors?.length > 0 ? (
+                                      <ul className="space-y-1">
+                                        {data2025.investors.map((investor: string, idx: number) => (
+                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <span className="text-sm text-slate-500">--</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </>
                         );
@@ -848,31 +862,40 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                 </div>
                               </div>
                             </div>
-                            <div className="mt-4 mb-4">
-                              <h3 className="text-sm text-slate-600 mt-1">Top 20 Investors</h3>
-                            </div>
                             <div className="mt-auto">
-                              <table className="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
-                                <thead>
-                                  <tr>
-                                    <th className="bg-primary text-white p-3 text-center text-sm font-medium" colSpan={2}>
-                                      Voted Against Say on Pay
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="bg-primary/10 text-primary p-3 text-sm font-medium w-16 border-r border-slate-200">2024</td>
-                                    <td className="bg-primary/10 text-slate-700 p-3 text-sm">--</td>
-                                  </tr>
-                                  <tr>
-                                    <td className="bg-slate-50 text-slate-600 p-3 text-sm font-medium border-r border-slate-200">2025</td>
-                                    <td className="bg-slate-50 text-slate-700 p-3 text-sm">
-                                      J.P. Morgan, Morgan Stanley
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                              <div className="text-center mb-2">
+                                <span className="text-sm font-medium text-slate-700">Voted Against Say on Pay</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium">2024</div>
+                                  <div className="bg-primary/10 p-3 max-h-[180px] overflow-y-auto">
+                                    {data2024?.investors?.length > 0 ? (
+                                      <ul className="space-y-1">
+                                        {data2024.investors.map((investor: string, idx: number) => (
+                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <span className="text-sm text-slate-500">--</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div className="bg-slate-400 text-white p-2 text-center text-sm font-medium">2025</div>
+                                  <div className="bg-slate-50 p-3 max-h-[180px] overflow-y-auto">
+                                    {data2025?.investors?.length > 0 ? (
+                                      <ul className="space-y-1">
+                                        {data2025.investors.map((investor: string, idx: number) => (
+                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <span className="text-sm text-slate-500">--</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </>
                         );
@@ -932,31 +955,40 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                 </div>
                               </div>
                             </div>
-                            <div className="mt-4 mb-4">
-                              <h3 className="text-sm text-slate-600 mt-1">Top 20 Investors</h3>
-                            </div>
                             <div className="mt-auto">
-                              <table className="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden">
-                                <thead>
-                                  <tr>
-                                    <th className="bg-primary text-white p-3 text-center text-sm font-medium" colSpan={2}>
-                                      Voted For Shareholder Proposals
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr>
-                                    <td className="bg-primary/10 text-primary p-3 text-sm font-medium w-16 border-r border-slate-200">2024</td>
-                                    <td className="bg-primary/10 text-slate-700 p-3 text-sm">
-                                      Morgan Stanley, Northern Trust
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <td className="bg-slate-50 text-slate-600 p-3 text-sm font-medium border-r border-slate-200">2025</td>
-                                    <td className="bg-slate-50 text-slate-700 p-3 text-sm">--</td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                              <div className="text-center mb-2">
+                                <span className="text-sm font-medium text-slate-700">Voted For Shareholder Proposals</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium">2024</div>
+                                  <div className="bg-primary/10 p-3 max-h-[180px] overflow-y-auto">
+                                    {data2024?.investors?.length > 0 ? (
+                                      <ul className="space-y-1">
+                                        {data2024.investors.map((investor: string, idx: number) => (
+                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <span className="text-sm text-slate-500">--</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div className="bg-slate-400 text-white p-2 text-center text-sm font-medium">2025</div>
+                                  <div className="bg-slate-50 p-3 max-h-[180px] overflow-y-auto">
+                                    {data2025?.investors?.length > 0 ? (
+                                      <ul className="space-y-1">
+                                        {data2025.investors.map((investor: string, idx: number) => (
+                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <span className="text-sm text-slate-500">--</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </>
                         );
