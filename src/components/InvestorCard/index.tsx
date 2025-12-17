@@ -176,6 +176,11 @@ const index = () => {
 
   const [selectedYear, setSelectedYear] = useState<string>("");
 
+  const activeYear =
+    selectedYear?.toString() !== ""
+      ? selectedYear?.toString()
+      : dashboardDataList?.all_year_data?.[selectedIndex || 0]?.year?.toString();
+
   const handleAGMYearTab = (tab: string, index: number) => {
     setSelectedIndex(index);
     setSelectedYear(tab);
@@ -690,7 +695,8 @@ const index = () => {
                       1
                     </sup>
                     <p id="footnote" className="">
-                      Source: Whalewisdom. Data as of {todayDate}
+                      Source: Whalewisdom. Data as of{" "}
+                      {activeYear === "2024" ? "December 31, 2024" : todayDate}
                     </p>
                   </span>
                   <span className="!pt-3 flex items-center ">

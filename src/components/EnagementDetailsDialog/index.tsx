@@ -220,8 +220,12 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 </table>
                             </div>
                             {/* Footnote for ESG tables */}
-                            <div className="mt-4 text-xs text-gray-500 italic">
-                                *Investor does not disclose engagement details
+                            <div className="mt-4 text-xs text-gray-500 italic space-y-1">
+                                <div>*Investor does not disclose engagement details</div>
+                                <div className="flex items-center gap-1">
+                                    <Lucide icon="Info" className="w-3 h-3" />
+                                    <span>Only shows the latest engagement report</span>
+                                </div>
                             </div>
                         </div>
 

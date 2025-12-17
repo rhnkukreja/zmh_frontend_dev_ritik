@@ -314,20 +314,60 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     return processedData;
   };
 
+  const formatAnalyticsCategoryName = (rawKey: string) => {
+    const lowerWords = new Set(["of", "on", "and", "the", "a", "an", "to", "for"]);
+    const words = rawKey.replace(/_/g, " ").toLowerCase().split(" ").filter(Boolean);
+    return words
+      .map((w: string, idx: number) => {
+        if (idx > 0 && lowerWords.has(w)) return w;
+        return w.charAt(0).toUpperCase() + w.slice(1);
+      })
+      .join(" ");
+  };
+
+  const getAnalyticsCategories = () => {
+    if (!analyticsData) return [];
+
+    return Object.entries(analyticsData)
+      .map(([key, value]: [string, any]) => {
+        const categoryName = formatAnalyticsCategoryName(key);
+
+        return {
+          name: categoryName,
+          fill: ANALYTICS_COLORS[categoryName] || "#1f5582",
+          rawData: value,
+        };
+      })
+      .filter((category: any) => category?.rawData && Object.keys(category.rawData).length > 0);
+  };
+
   // Get data for a specific year and category
   const getYearData = (categoryData: any, year: string) => {
     if (categoryData.rawData && categoryData.rawData[year]) {
       const yearData = categoryData.rawData[year];
-      // Get investors based on category type
-      const investors = yearData.vote_against_eod_investors || 
-                       yearData.voted_against_sop_investors || 
-                       yearData.voted_for_sp_investors || 
-                       [];
+
+      const investors =
+        Object.entries(yearData).find(
+          ([k, v]) => k.endsWith("_investors") && Array.isArray(v)
+        )?.[1] || [];
+
+      const investorsKey =
+        Object.entries(yearData).find(
+          ([k, v]) => k.endsWith("_investors") && Array.isArray(v)
+        )?.[0] || "";
+
+      const actionLabel = investorsKey.includes("voted_for")
+        ? "Voted For"
+        : investorsKey.includes("vote_against") || investorsKey.includes("voted_against")
+          ? "Voted Against"
+          : "Investors";
+
       return {
         percentage: yearData.total_percent,
         volume: yearData.volume,
         value: parseFloat(yearData.total_percent.replace('%', '')),
-        investors: investors
+        investors,
+        actionLabel,
       };
     }
     return null;
@@ -336,8 +376,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const ANALYTICS_COLORS = {
     "Election Of Directors": "#dc2626", // Red-600 to match theme
     "Say On Pay": "#b91c1c", // Red-700 
-    "Shareholder Proposals": "#f87171" // Red-400 for lighter variant
+    "Shareholder Proposals": "#f87171", // Red-400 for lighter variant
+    "Ratification of Auditor": "#fb7185" // Rose-400
   };
+
+  const analyticsCategories = getAnalyticsCategories();
 
   useEffect(() => {
     // getAllInstitutionDropdown();
@@ -719,281 +762,84 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
           </Dialog.Title>
           <Dialog.Description>
             <div className="w-full px-6 py-2">
-              {getAnalyticsChartData().length > 0 ? (
+              {analyticsCategories.length > 0 ? (
                 <>
-                  <div className="flex gap-2 mb-12">
-                    {/* Election of Directors Panel */}
-                    <div className="flex-1 flex flex-col bg-white rounded-lg border border-slate-200 p-6 mx-3">
-                      {(() => {
-                        const electionData = getAnalyticsChartData().find(item => item.name === 'Election Of Directors');
-                        const data2024 = electionData ? getYearData(electionData, '2024') : null;
-                        const data2025 = electionData ? getYearData(electionData, '2025') : null;
-                        const maxValue = Math.max(data2024?.value || 0, data2025?.value || 0);
+                  <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 mb-12">
+                    {analyticsCategories.map((category: any) => {
+                      const years = Object.keys(category.rawData || {}).sort();
+                      const yearDataList = years
+                        .map((y: string) => ({ year: y, data: getYearData(category, y) }))
+                        .filter((item: any) => item.data);
 
-                        return (
-                          <>
-                            <div className="text-center mb-6">
-                              <h3 className="text-lg font-semibold text-slate-800 mb-2">Election of Directors</h3>
-                              <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
+                      if (yearDataList.length === 0) return null;
+
+                      const maxValue = Math.max(...yearDataList.map((item: any) => item.data?.value || 0));
+                      const actionLabel = yearDataList.find((item: any) => item.data?.actionLabel)?.data?.actionLabel;
+
+                      return (
+                        <div key={category.name} className="flex flex-col bg-white rounded-lg border border-slate-200 p-4 min-w-0">
+                          <div className="text-center mb-6">
+                            <h3 className="text-lg font-semibold text-slate-800 mb-2">{category.name}</h3>
+                            <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
+                          </div>
+
+                          <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
+                            <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
+                              {[...Array(5)].map((_, i) => (
+                                <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{ marginTop: `${i * 25}%` }}></div>
+                              ))}
                             </div>
 
-                            <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
-                              {/* Grid lines */}
-                              <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
-                                {[...Array(5)].map((_, i) => (
-                                  <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{ marginTop: `${i * 25}%` }}></div>
-                                ))}
-                              </div>
-
-                              {/* Chart bars */}
-                              <div className="relative h-full flex items-end justify-center gap-12">
-                                <div className="flex flex-col items-center">
+                            <div className="relative h-full flex items-end justify-center gap-12">
+                              {yearDataList.map((item: any, idx: number) => (
+                                <div key={item.year} className="flex flex-col items-center">
                                   <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {data2024 ? data2024.percentage : '--'}
+                                    {item.data ? item.data.percentage : '--'}
                                   </span>
                                   <div
-                                    className="bg-primary transition-all duration-700 ease-out"
+                                    className={idx === 0 ? "bg-primary transition-all duration-700 ease-out" : "bg-slate-400 transition-all duration-700 ease-out"}
                                     style={{
                                       width: '48px',
-                                      height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
+                                      height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                     }}
                                   ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
+                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">{item.year}</span>
                                 </div>
-
-                                <div className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {data2025 ? data2025.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className="bg-slate-400 transition-all duration-700 ease-out"
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2025</span>
-                                </div>
-                              </div>
+                              ))}
                             </div>
-                            <div className="mt-auto">
-                              <div className="text-center mb-2">
-                                <span className="text-sm font-medium text-slate-700">Voted Against Election of Directors</span>
-                              </div>
-                              <div className="flex gap-2">
-                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
-                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium">2024</div>
-                                  <div className="bg-primary/10 p-3 max-h-[180px] overflow-y-auto">
-                                    {data2024?.investors?.length > 0 ? (
-                                      <ul className="space-y-1">
-                                        {data2024.investors.map((investor: string, idx: number) => (
-                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
+                          </div>
+
+                          <div className="mt-auto">
+                            <div className="text-center mb-2">
+                              <span className="text-sm font-medium text-slate-700">{actionLabel} {category.name}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              {yearDataList.map((item: any, idx: number) => (
+                                <div key={item.year} className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div className={idx === 0 ? "bg-primary text-white p-2 text-center text-sm font-medium" : "bg-slate-400 text-white p-2 text-center text-sm font-medium"}>{item.year}</div>
+                                  <div className={idx === 0 ? "bg-primary/10 p-3 h-[180px] overflow-y-auto" : "bg-slate-50 p-3 h-[180px] overflow-y-auto"}>
+                                    {item.data?.investors?.length > 0 ? (
+                                      <div className="space-y-1">
+                                        {item.data.investors.map((investor: string, i: number) => (
+                                          <div key={i} className="flex items-start gap-2 text-xs text-slate-700 leading-4">
+                                            <span className="mt-[6px] h-1 w-1 rounded-full bg-slate-400 shrink-0" />
+                                            <span>{investor}</span>
+                                          </div>
                                         ))}
-                                      </ul>
+                                      </div>
                                     ) : (
-                                      <span className="text-sm text-slate-500">--</span>
+                                      <div className="h-full flex items-center justify-center">
+                                        <span className="text-xs text-slate-500">--</span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
-                                  <div className="bg-slate-400 text-white p-2 text-center text-sm font-medium">2025</div>
-                                  <div className="bg-slate-50 p-3 max-h-[180px] overflow-y-auto">
-                                    {data2025?.investors?.length > 0 ? (
-                                      <ul className="space-y-1">
-                                        {data2025.investors.map((investor: string, idx: number) => (
-                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <span className="text-sm text-slate-500">--</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                              ))}
                             </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                    {/* Say on Pay Panel */}
-                    <div className="flex-1 flex flex-col bg-white rounded-lg border border-slate-200 p-6 mx-3">
-                      {(() => {
-                        const sayOnPayData = getAnalyticsChartData().find(item => item.name === 'Say On Pay');
-                        const data2024 = sayOnPayData ? getYearData(sayOnPayData, '2024') : null;
-                        const data2025 = sayOnPayData ? getYearData(sayOnPayData, '2025') : null;
-                        const maxValue = Math.max(data2024?.value || 0, data2025?.value || 0);
-
-                        return (
-                          <>
-                            <div className="text-center mb-6">
-                              <h3 className="text-lg font-semibold text-slate-800 mb-2">Say On Pay</h3>
-                              <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
-                            </div>
-
-                            <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
-                              {/* Chart bars */}
-                              <div className="relative h-full flex items-end justify-center gap-12">
-                                <div className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {data2024 ? data2024.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className="bg-primary transition-all duration-700 ease-out"
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
-                                </div>
-
-                                <div className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {data2025 ? data2025.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className="bg-slate-400 transition-all duration-700 ease-out"
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2025</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-auto">
-                              <div className="text-center mb-2">
-                                <span className="text-sm font-medium text-slate-700">Voted Against Say on Pay</span>
-                              </div>
-                              <div className="flex gap-2">
-                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
-                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium">2024</div>
-                                  <div className="bg-primary/10 p-3 max-h-[180px] overflow-y-auto">
-                                    {data2024?.investors?.length > 0 ? (
-                                      <ul className="space-y-1">
-                                        {data2024.investors.map((investor: string, idx: number) => (
-                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <span className="text-sm text-slate-500">--</span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
-                                  <div className="bg-slate-400 text-white p-2 text-center text-sm font-medium">2025</div>
-                                  <div className="bg-slate-50 p-3 max-h-[180px] overflow-y-auto">
-                                    {data2025?.investors?.length > 0 ? (
-                                      <ul className="space-y-1">
-                                        {data2025.investors.map((investor: string, idx: number) => (
-                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <span className="text-sm text-slate-500">--</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                    {/* Shareholder Proposals Panel */}
-                    <div className="flex-1 flex flex-col bg-white rounded-lg border border-slate-200 p-6 mx-3">
-                      {(() => {
-                        const shareholderData = getAnalyticsChartData().find(item => item.name === 'Shareholder Proposals');
-                        const data2024 = shareholderData ? getYearData(shareholderData, '2024') : null;
-                        const data2025 = shareholderData ? getYearData(shareholderData, '2025') : null;
-                        const maxValue = Math.max(data2024?.value || 0, data2025?.value || 0);
-
-                        return (
-                          <>
-                            <div className="text-center mb-6">
-                              <h3 className="text-lg font-semibold text-slate-800 mb-2">Shareholder Proposals</h3>
-                              <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
-                            </div>
-
-                            <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
-                              {/* Grid lines */}
-                              <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
-                                {[...Array(5)].map((_, i) => (
-                                  <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{ marginTop: `${i * 25}%` }}></div>
-                                ))}
-                              </div>
-
-                              {/* Chart bars */}
-                              <div className="relative h-full flex items-end justify-center gap-12">
-                                <div className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {data2024 ? data2024.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className="bg-primary transition-all duration-700 ease-out"
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && data2024 ? `${Math.max((data2024.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2024</span>
-                                </div>
-
-                                <div className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {data2025 ? data2025.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className="bg-slate-400 transition-all duration-700 ease-out"
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && data2025 ? `${Math.max((data2025.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">2025</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-auto">
-                              <div className="text-center mb-2">
-                                <span className="text-sm font-medium text-slate-700">Voted For Shareholder Proposals</span>
-                              </div>
-                              <div className="flex gap-2">
-                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
-                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium">2024</div>
-                                  <div className="bg-primary/10 p-3 max-h-[180px] overflow-y-auto">
-                                    {data2024?.investors?.length > 0 ? (
-                                      <ul className="space-y-1">
-                                        {data2024.investors.map((investor: string, idx: number) => (
-                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <span className="text-sm text-slate-500">--</span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
-                                  <div className="bg-slate-400 text-white p-2 text-center text-sm font-medium">2025</div>
-                                  <div className="bg-slate-50 p-3 max-h-[180px] overflow-y-auto">
-                                    {data2025?.investors?.length > 0 ? (
-                                      <ul className="space-y-1">
-                                        {data2025.investors.map((investor: string, idx: number) => (
-                                          <li key={idx} className="text-sm text-slate-700">• {investor}</li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <span className="text-sm text-slate-500">--</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               ) : (
