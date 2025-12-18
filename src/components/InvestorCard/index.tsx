@@ -281,13 +281,13 @@ const index = () => {
               </div>
 
               <div className="mt-5">
-                {/* Year selection tabs - only show when both 2024 and 2025 data are available */}
-                {getAvailableYears().includes('2024') && getAvailableYears().includes('2025') && (
+                {/* Year selection tabs - show when any year data is available */}
+                {getAvailableYears().length > 0 && (
                   <div className="mb-4">
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                       <Tab.List
                         variant="boxed-tabs"
-                        className="w-[200px] border-none bg-transparent"
+                        className="w-fit border-none bg-transparent"
                       >
                         {getAvailableYears().map((tab: string, index: number) => (
                           <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer

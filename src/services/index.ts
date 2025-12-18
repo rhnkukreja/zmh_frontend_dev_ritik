@@ -13,6 +13,7 @@ const multipartFormDataUrls = [
   "/proxy_voting_guidelines/",
   "/institute/",
   "/company/",
+  "/institute_documents/",
   "proxy_voting_guidelines_pdf_summary_data_upload"
 ];
 

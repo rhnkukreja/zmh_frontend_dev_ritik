@@ -31,6 +31,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import FilterChips from "@/components/FilterChips";
+import AddDocumentModal from "./components/AddDocumentModal";
 
 interface InstituteFilter {
   region: string[];
@@ -73,6 +74,10 @@ function Main() {
     useState<Institutions | null>(null);
   const [addEditInstitutionVisible, setAddEditInstitutionVisible] =
     useState<boolean>(false);
+  const [addDocumentModalVisible, setAddDocumentModalVisible] =
+    useState<boolean>(false);
+  const [selectedInstitutionForDoc, setSelectedInstitutionForDoc] =
+    useState<Institutions | null>(null);
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -513,25 +518,42 @@ function Main() {
                                       );
                                     }}
                                     icon="Eye"
-                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                    className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
                                   />
                                 </Tippy>
 
                                 {user?.user_type === "Admin" && (
-                                  <Tippy
-                                    content="Edit"
-                                    options={{
-                                      theme: "light",
-                                    }}
-                                  >
-                                    <Lucide
-                                      onClick={() => {
-                                        onEditClickHandler(institution);
+                                  <>
+                                    <Tippy
+                                      content="Add Document"
+                                      options={{
+                                        theme: "light",
                                       }}
-                                      icon="PenLine"
-                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                    />
-                                  </Tippy>
+                                    >
+                                      <Lucide
+                                        onClick={() => {
+                                          setSelectedInstitutionForDoc(institution);
+                                          setAddDocumentModalVisible(true);
+                                        }}
+                                        icon="Plus"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                      />
+                                    </Tippy>
+                                    <Tippy
+                                      content="Edit"
+                                      options={{
+                                        theme: "light",
+                                      }}
+                                    >
+                                      <Lucide
+                                        onClick={() => {
+                                          onEditClickHandler(institution);
+                                        }}
+                                        icon="PenLine"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                      />
+                                    </Tippy>
+                                  </>
                                 )}
                               </div>
                             </Table.Td>
@@ -573,6 +595,14 @@ function Main() {
             addEditInstitutionVisible={addEditInstitutionVisible}
             setAddEditInstitutionVisible={setAddEditInstitutionVisible}
             selectedInstitution={selectedInstitution}
+          />
+        )}
+
+        {addDocumentModalVisible && selectedInstitutionForDoc && (
+          <AddDocumentModal
+            visible={addDocumentModalVisible}
+            setVisible={setAddDocumentModalVisible}
+            institutionId={selectedInstitutionForDoc?.id}
           />
         )}
       </div>
