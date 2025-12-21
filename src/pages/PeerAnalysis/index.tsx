@@ -1044,10 +1044,10 @@ function PeerAnalysis() {
                     <Table>
                       <Table.Thead>
                         <Table.Tr className="bg-primary text-white">
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-center font-medium border-0 w-[70px]" style={{fontSize: '14px'}}>
                             Year
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[220px]" style={{fontSize: '14px'}}>
                             Institution
                           </Table.Td>
                           {isAllCompanySelected && (
@@ -1055,19 +1055,19 @@ function PeerAnalysis() {
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[80px]" style={{fontSize: '14px'}}>
                             Country
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[90px]" style={{fontSize: '14px'}}>
                             Sector
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
                             Environmental
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[200px]" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
                             Social
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
                             Governance
                           </Table.Td>
                         </Table.Tr>
@@ -1077,36 +1077,36 @@ function PeerAnalysis() {
                         {peerAnalysisData?.length > 0 &&
                           peerAnalysisData?.map((peer: TypesPeerAnalysis, index) => (
                             <Table.Tr key={peer?.id} className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} transition-all hover:bg-primary/5 cursor-pointer`}>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[70px] text-center">
                                 <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                   {peer?.year}
                                 </span>
                               </Table.Td>
-                              <Table.Td className="border-dashed">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[220px] text-wrap">
                                 <p className="font-medium text-wrap">
                                   {peer?.institution_name}
                                 </p>
                               </Table.Td>
 
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium">
                                   {peer?.company_name}
                                 </Table.Td>
                               )}
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[80px] text-wrap font-medium">
                                 {peer?.company_country}
                               </Table.Td>
 
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[90px] text-wrap font-medium">
                                 {peer?.company_sector}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap font-medium">
                                 {peer?.env_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap font-medium">
                                 {peer?.soc_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap font-medium">
                                 {peer?.gov_list}
                               </Table.Td>
                             </Table.Tr>

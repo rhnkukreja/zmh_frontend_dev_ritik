@@ -220,12 +220,13 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       value={selectedOptions}
       onChange={handleChange}
       onInputChange={(newValue, actionMeta) => {
-        // Only update input value for user input, not for other actions
+        // Only update input value for user input actions
         if (actionMeta.action === 'input-change') {
           setInputValue(newValue);
         }
-        // Clear input value when user selects an option
-        if (actionMeta.action === 'set-value') {
+        // Don't clear input on selection - allow user to continue filtering
+        // Only clear when menu closes
+        if (actionMeta.action === 'menu-close') {
           setInputValue('');
         }
       }}

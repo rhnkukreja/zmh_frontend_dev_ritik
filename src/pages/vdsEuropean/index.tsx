@@ -2721,39 +2721,40 @@ const index = () => {
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                               {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <tr
-                                  key={vds.proposal_id || vdsIdx}
-                                  className="hover:bg-primary/10"
-                                  style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
-                                >
-                                  <td className="px-4 py-2 w-[12%] align-middle">
-                                    {vds?.proposal_num}
-                                  </td>
-                                  <td className="px-4 py-2 w-[35%] align-middle">
-                                    {vds?.proposal}
-                                  </td>
-                                  <td className="px-4 py-2 w-[15%] align-middle">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                  <td className="px-4 py-2 w-[15%] align-middle">
-                                    <div className="flex items-center">
+                                <React.Fragment key={vds.proposal_id || vdsIdx}>
+                                  <tr
+                                    className="hover:bg-primary/10"
+                                    style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
+                                  >
+                                    <td className="px-4 py-2 w-[12%] align-middle">
+                                      {vds?.proposal_num}
+                                    </td>
+                                    <td className="px-4 py-2 w-[35%] align-middle">
+                                      {vds?.proposal}
+                                    </td>
+                                    <td className="px-4 py-2 w-[15%] align-middle">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-4 py-2 w-[15%] align-middle">
                                       <span className={clsx([
                                         (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
                                         "text-red-700 font-semibold",
                                       ])}>
                                         {vds?.vote}
                                       </span>
-                                      {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                        <span
-                                          data-tooltip-id="my-tooltip-data-html"
-                                          data-tooltip-html={vds?.notes}
-                                          className="ml-2 inline-flex items-center justify-center rounded-full bg-transparent cursor-pointer"
-                                        >
-                                          <Lucide icon="Info" className="w-4 h-4" />
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-2 w-[23%] align-middle">{vds?.institution_name}</td>
-                                </tr>
+                                    </td>
+                                    <td className="px-4 py-2 w-[23%] align-middle">{vds?.institution_name}</td>
+                                  </tr>
+                                  {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                    <tr className="bg-gray-50">
+                                      <td className="w-[12%]"></td>
+                                      <td colSpan={4} className="px-4 py-2">
+                                        <div className="text-xs text-gray-600">
+                                          <span className="font-semibold text-gray-700">Voting Rationale: </span>
+                                          {vds?.notes}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
                               ))}
                             </tbody>
                           </table>
