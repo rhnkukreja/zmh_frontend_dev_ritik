@@ -188,7 +188,7 @@ const CountryInfoHeader = () => {
         </button>
 
         <button
-          className="relative flex items-center gap-1 pl-3 pr-6 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
+          className="relative flex items-center gap-1 px-3 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
           onClick={() => {
             setIsTableOpen(true);
             // ✅ Always fetch data when opening modal to ensure cache works properly
@@ -217,6 +217,22 @@ const CountryInfoHeader = () => {
         >
           <Lucide icon="Table" className="w-5 h-5 text-pink-400" />
           <span className="text-sm font-medium text-gray-700">Price Perf.</span>
+        </button>
+
+        <button
+          className={
+            finhub?.sec_filing
+              ? "relative flex items-center gap-1 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors"
+              : "relative flex items-center gap-1 px-3 py-1 rounded-full opacity-50 cursor-not-allowed"
+          }
+          disabled={!finhub?.sec_filing}
+          onClick={() => {
+            if (!finhub?.sec_filing) return;
+            window.open(finhub.sec_filing, "_blank", "noopener,noreferrer");
+          }}
+        >
+          <Lucide icon="FileText" className="w-5 h-5 text-pink-400" />
+          <span className="text-sm font-medium text-gray-700">SEC Filings</span>
           <span className="absolute top-0 right-0 -mt-1 mr-1 text-[6px] font-bold text-white bg-orange-500 rounded-full px-0.5 animate-pulse">
             NEW
           </span>

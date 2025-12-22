@@ -30,6 +30,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
     useAppSelector((state) => state.dashboard);
 
+  const { finhub } = useAppSelector((state) => state.authentiction);
+
   const companyDetails = agmSummaryDetails?.company
     ? agmSummaryDetails?.company[0]
     : "";
@@ -247,6 +249,46 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [animateChart, setAnimateChart] = useState<boolean>(false);
+  const [is8kLoading, setIs8kLoading] = useState<boolean>(false);
+
+  const extractCikFromSecFilingUrl = (secUrl?: string) => {
+    if (!secUrl) return null;
+
+    const match = secUrl.match(/CIK=(\d+)/i);
+    if (!match?.[1]) return null;
+    return match[1].padStart(10, "0");
+  };
+
+  const handle8kLink = async () => {
+    const yearToCheck = (selectedYear || agmSummaryDetails?.Year)?.toString();
+    const cik = extractCikFromSecFilingUrl(finhub?.sec_filing);
+
+    if (!yearToCheck || !cik) return;
+
+    try {
+      setIs8kLoading(true);
+      const res = await fetch(
+        `https://temp-8k-fetch-cd130a407e9b.herokuapp.com/api/get_proxy_voting_data_v2/?cik=${cik}`
+      );
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const key = `url_${yearToCheck}`;
+      const url = Array.isArray(data?.all_meeting_data)
+        ? data.all_meeting_data
+            .map((x: any) => x?.[key])
+            .find((u: any) => typeof u === "string" && u.trim() !== "")
+        : null;
+
+      if (!url) return;
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      console.error("Failed to fetch 8-K link:", e);
+    } finally {
+      setIs8kLoading(false);
+    }
+  };
 
   // Analytics API call
   const fetchAnalyticsData = useCallback(async () => {
@@ -477,6 +519,35 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         </div>
                       </Tippy>
                     )}
+                    <Tippy content="Open 8-K" options={{ theme: "light" }}>
+                      <div className="relative">
+                        <button
+                          disabled={
+                            is8kLoading ||
+                            !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                            !(selectedYear || agmSummaryDetails?.Year)
+                          }
+                          onClick={handle8kLink}
+                          className={clsx([
+                            "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border font-semibold text-red-800 border-solid",
+                            is8kLoading ||
+                            !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                            !(selectedYear || agmSummaryDetails?.Year)
+                              ? "opacity-60 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
+                          ])}
+                        >
+                          {is8kLoading ? (
+                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Lucide icon="FileText" className="w-4 h-4" />
+                          )}
+                        </button>
+                        <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                          NEW
+                        </span>
+                      </div>
+                    </Tippy>
                   </>}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
