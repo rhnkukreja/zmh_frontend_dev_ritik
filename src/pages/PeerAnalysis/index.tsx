@@ -364,9 +364,14 @@ function PeerAnalysis() {
       setSelectedInstitution([""]);
       setSearchTerms([]);
       
+      // Get sector from current peerAnalysisData (from global search)
+      const sectorFromData = peerAnalysisData?.[0]?.company_sector;
+      const sectorFilter = sectorFromData ? [sectorFromData] : [];
+      
       // Set default filters for "View All" mode
       setValue("year", [new Date().getFullYear().toString()]);
       setValue("country", ["USA"]);
+      setValue("sector", sectorFilter);
       
       // Clear filter chips and count
       setSelectedChipFilters([]);
@@ -378,7 +383,7 @@ function PeerAnalysis() {
           year: [new Date().getFullYear()],
           country: ["USA"],
           category: [],
-          sector: [],
+          sector: sectorFilter,
           index: undefined,
           institution_name: [],
           global_search: [],
