@@ -2709,14 +2709,15 @@ const index = () => {
                       </div>
                       {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
                         <div className="mt-2 mb-4 bg-gray-50 overflow-x-auto">
-                          <table className="min-w-full table-fixed">
+                          <table className="min-w-[1100px] w-full table-auto">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-semibold w-[12%]">Proposal No.</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[35%]">Proposal</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[15%]">Mgmt Rec</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[15%]">Vote Cast</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[23%]">Institution Name</th>
+                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Proposal No.</th>
+                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
+                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Mgmt Rec</th>
+                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Vote Cast</th>
+                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Institution Name</th>
+                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Fund Name</th>
                               </tr>
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -2726,14 +2727,14 @@ const index = () => {
                                     className="hover:bg-primary/10"
                                     style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
                                   >
-                                    <td className="px-4 py-2 w-[12%] align-middle">
+                                    <td className="px-4 py-2 align-middle whitespace-nowrap">
                                       {vds?.proposal_num}
                                     </td>
-                                    <td className="px-4 py-2 w-[35%] align-middle">
+                                    <td className="px-4 py-2 align-middle">
                                       {vds?.proposal}
                                     </td>
-                                    <td className="px-4 py-2 w-[15%] align-middle">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-4 py-2 w-[15%] align-middle">
+                                    <td className="px-4 py-2 align-middle whitespace-nowrap">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-4 py-2 align-middle whitespace-nowrap">
                                       <span className={clsx([
                                         (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
                                         "text-red-700 font-semibold",
@@ -2741,12 +2742,13 @@ const index = () => {
                                         {vds?.vote}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-2 w-[23%] align-middle">{vds?.institution_name}</td>
+                                    <td className="px-4 py-2 align-middle break-words">{vds?.institution_name}</td>
+                                    <td className="px-4 py-2 align-middle break-words">{vds?.fund_name || "--"}</td>
                                   </tr>
                                   {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
                                     <tr className="bg-gray-50">
-                                      <td className="w-[12%]"></td>
-                                      <td colSpan={4} className="px-4 py-2">
+                                      <td></td>
+                                      <td colSpan={5} className="px-4 py-2">
                                         <div className="text-xs text-gray-600">
                                           <span className="font-semibold text-gray-700">Voting Rationale: </span>
                                           {vds?.notes}

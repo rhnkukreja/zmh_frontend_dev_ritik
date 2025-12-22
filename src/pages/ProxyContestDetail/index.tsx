@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -40,6 +40,7 @@ const ProxyContestDetail = () => {
     const [caseStudiesData, setCaseStudiesData] = useState<any[]>([]);
     const [proxyAdvisoryData, setProxyAdvisoryData] = useState<any[]>([]);
     const [proxyVotingData, setProxyVotingData] = useState<any>(null);
+    const [resolvedYear, setResolvedYear] = useState<string>(company?.year || year || "");
 
     // Modal states
     const [caseProxyModalVisible, setCaseProxyModalVisible] = useState<boolean>(false);
@@ -54,13 +55,15 @@ const ProxyContestDetail = () => {
     };
 
     // Create a custom axios instance without global error interceptor
-    const customAxios = axios.create({
-        baseURL: baseURL,
-        headers: {
-            'Authorization': `JWT ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-        }
-    });
+    const customAxios = useMemo(() => {
+        return axios.create({
+            baseURL: baseURL,
+            headers: {
+                'Authorization': `JWT ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json',
+            }
+        });
+    }, []);
 
     // Fetch all data
     const fetchAllData = async () => {
@@ -72,11 +75,19 @@ const ProxyContestDetail = () => {
         setLoading(true);
 
         const companyName = encodeURIComponent(company.company_name);
+        const yearForActivismTables = resolvedYear || company.year;
+        const encodedYearParam = yearForActivismTables
+            ? encodeURIComponent(JSON.stringify([String(yearForActivismTables)]))
+            : "";
 
         // Create a promise array for all API calls
         const apiCalls = [
             // Fetch Documents (Activism Tables)
-            customAxios.get(`/activism_tables/?company_name=${companyName}`)
+            customAxios.get(
+                `/activism_tables/?company_name=${companyName}${
+                    encodedYearParam ? `&year=${encodedYearParam}` : ""
+                }`
+            )
                 .then(response => {
                     setDocumentsData(response.data);
                     setProxyAdvisoryData(response.data?.Activism_ISS_GL || []);
@@ -129,8 +140,35 @@ const ProxyContestDetail = () => {
     };
 
     useEffect(() => {
+        const fetchYearIfMissing = async () => {
+            if (resolvedYear || !companyId) return;
+
+            try {
+                const pageSize = 200;
+                let url: string | null = `/api/proxy-contest-companies/?page=1&page_size=${pageSize}`;
+                const targetId = Number(companyId);
+
+                while (url) {
+                    const res = await customAxios.get(url);
+                    const results = Array.isArray(res?.data?.results) ? res.data.results : [];
+                    const match = results.find((r: any) => r?.company_id === targetId);
+                    if (match?.year) {
+                        setResolvedYear(String(match.year));
+                        return;
+                    }
+                    url = typeof res?.data?.next === "string" ? res.data.next.replace(baseURL, "") : null;
+                }
+            } catch (e) {
+                console.error("Failed to resolve proxy contest year:", e);
+            }
+        };
+
+        fetchYearIfMissing();
+    }, [companyId, resolvedYear]);
+
+    useEffect(() => {
         fetchAllData();
-    }, [company?.company_name]);
+    }, [company?.company_name, resolvedYear]);
 
     if (!company) {
         return (
