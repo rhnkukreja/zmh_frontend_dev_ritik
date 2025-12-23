@@ -159,7 +159,7 @@ const DetailCaseStudies = () => {
               {singleCaseStudy?.voting_details && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Details</h3>
-                  <p>{singleCaseStudy?.voting_details}</p>
+                  <p className="whitespace-pre-line">{singleCaseStudy?.voting_details}</p>
                 </div>
               )}
             </div>
