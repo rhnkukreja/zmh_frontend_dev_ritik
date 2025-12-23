@@ -165,16 +165,7 @@ const CountryInfoHeader = () => {
     <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
       {/* Company Header */}
       <div className="flex items-center gap-4 mb-2 md:mb-0">
-        {finhub?.logo && (
-          <div className="w-6 h-6 image-fit object-contain">
-            <img
-              alt={finhub?.name}
-              className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)]"
-              src={finhub?.logo}
-            />
-          </div>
-        )}
-        <span className="font-semibold text-lg">
+        <span className="font-semibold text-sm">
           {finhub?.name || companyGlobalSearchName}{" "}
           {symbol ? `(${symbol})` : ""}
         </span>
