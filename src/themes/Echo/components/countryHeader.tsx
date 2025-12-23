@@ -165,7 +165,7 @@ const CountryInfoHeader = () => {
     <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
       {/* Company Header */}
       <div className="flex items-center gap-4 mb-2 md:mb-0">
-        <span className="font-semibold text-sm">
+        <span className="font-semibold text-lg">
           {finhub?.name || companyGlobalSearchName}{" "}
           {symbol ? `(${symbol})` : ""}
         </span>
