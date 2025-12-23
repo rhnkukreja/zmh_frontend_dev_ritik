@@ -22,12 +22,35 @@ const CountryInfoHeader = () => {
   const [sharePriceCache, setSharePriceCache] = useState<Record<string, any>>({});
   const [sharePrice, setSharePrice] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [secFilingsUrl, setSecFilingsUrl] = useState<string>("");
   
   // Filter state
   const [endDate, setEndDate] = useState<string>("");
   const [selectedCompanies, setSelectedCompanies] = useState<any[]>([]);
 
   const symbol = finhub?.ticker || companyGlobalSearchTicker;
+
+  useEffect(() => {
+    const fetchModulesCount = async () => {
+      const searchValue = companyGlobalSearchName || finhub?.name;
+      if (!searchValue) {
+        setSecFilingsUrl("");
+        return;
+      }
+
+      try {
+        const res = await axiosInstance.get(
+          `/get_modules_count/?global_search=${encodeURIComponent(searchValue)}`
+        );
+        setSecFilingsUrl(typeof res?.data?.sec_filings === "string" ? res.data.sec_filings : "");
+      } catch (error) {
+        console.error("Error fetching modules count:", error);
+        setSecFilingsUrl("");
+      }
+    };
+
+    fetchModulesCount();
+  }, [companyGlobalSearchName, finhub?.name]);
 
   const fetchSharePrice = async (symbols?: string, date?: string) => {
     const symbolsToFetch = symbols || symbol;
@@ -221,14 +244,14 @@ const CountryInfoHeader = () => {
 
         <button
           className={
-            finhub?.sec_filing
+            secFilingsUrl
               ? "relative flex items-center gap-1 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors"
               : "relative flex items-center gap-1 px-3 py-1 rounded-full opacity-50 cursor-not-allowed"
           }
-          disabled={!finhub?.sec_filing}
+          disabled={!secFilingsUrl}
           onClick={() => {
-            if (!finhub?.sec_filing) return;
-            window.open(finhub.sec_filing, "_blank", "noopener,noreferrer");
+            if (!secFilingsUrl) return;
+            window.open(secFilingsUrl, "_blank", "noopener,noreferrer");
           }}
         >
           <Lucide icon="FileText" className="w-5 h-5 text-pink-400" />

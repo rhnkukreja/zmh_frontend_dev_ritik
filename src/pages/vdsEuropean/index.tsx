@@ -2743,7 +2743,7 @@ const index = () => {
                                       </span>
                                     </td>
                                     <td className="px-4 py-2 align-middle break-words">{vds?.institution_name}</td>
-                                    <td className="px-4 py-2 align-middle break-words">{vds?.fund_name || "--"}</td>
+                                    <td className="px-4 py-2 align-middle break-words">{vds?.fund_name || ""}</td>
                                   </tr>
                                   {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
                                     <tr className="bg-gray-50">
