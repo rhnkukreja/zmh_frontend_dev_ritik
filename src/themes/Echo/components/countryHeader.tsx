@@ -34,7 +34,7 @@ const CountryInfoHeader = () => {
     const fetchModulesCount = async () => {
       const searchValue = companyGlobalSearchName || finhub?.name;
       if (!searchValue) {
-        setSecFilingsUrl("");
+        setSecFilingsUrl(finhub?.sec_filing || "");
         return;
       }
 
@@ -42,15 +42,19 @@ const CountryInfoHeader = () => {
         const res = await axiosInstance.get(
           `/get_modules_count/?global_search=${encodeURIComponent(searchValue)}`
         );
-        setSecFilingsUrl(typeof res?.data?.sec_filings === "string" ? res.data.sec_filings : "");
+        const urlFromApi =
+          (typeof res?.data?.sec_filing === "string" && res.data.sec_filing) ||
+          (typeof res?.data?.sec_filings === "string" && res.data.sec_filings) ||
+          "";
+        setSecFilingsUrl(urlFromApi || finhub?.sec_filing || "");
       } catch (error) {
         console.error("Error fetching modules count:", error);
-        setSecFilingsUrl("");
+        setSecFilingsUrl(finhub?.sec_filing || "");
       }
     };
 
     fetchModulesCount();
-  }, [companyGlobalSearchName, finhub?.name]);
+  }, [companyGlobalSearchName, finhub?.name, finhub?.sec_filing]);
 
   const fetchSharePrice = async (symbols?: string, date?: string) => {
     const symbolsToFetch = symbols || symbol;
