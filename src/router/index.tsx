@@ -97,6 +97,7 @@ import VdsEuropean from "@/pages/vdsEuropean";
 import RealTimeData from "@/pages/RealTimeData";
 import CustomReports from "../pages/CustomReports";
 import VotingRationalePage from "@/pages/VotingRationalePage";
+import UserManagement from "@/pages/UserManagement";
 
 function Router() {
   const TitleManager = () => {
@@ -506,6 +507,11 @@ function Router() {
           path: "2025-shareholder-meetings",
           element: <RealTimeData />,
           data: { titleName: "2025 Shareholder Meetings - ZMH Analytics" },
+        },
+        {
+          path: "user-management",
+          element: <UserManagement />,
+          data: { titleName: "User Management - ZMH Analytics" },
         },
         
       ],

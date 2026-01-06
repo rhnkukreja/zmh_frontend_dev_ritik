@@ -150,6 +150,12 @@ const initialState: any = {
       isAdmin: true,
     },
     {
+      icon: "Users",
+      pathname: "/user-management",
+      title: "User Management",
+      isAdmin: true,
+    },
+    {
       icon: "Headphones",
       pathname: "#",
       title: "Podcasts",

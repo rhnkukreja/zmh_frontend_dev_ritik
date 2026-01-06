@@ -165,7 +165,7 @@ const CountryInfoHeader = () => {
     <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
       {/* Company Header */}
       <div className="flex items-center gap-4 mb-2 md:mb-0">
-        <span className="font-semibold text-lg">
+        <span className="font-semibold text-base">
           {finhub?.name || companyGlobalSearchName}{" "}
           {symbol ? `(${symbol})` : ""}
         </span>
@@ -181,7 +181,7 @@ const CountryInfoHeader = () => {
           />
         )}
         {finhub?.exchange && (
-          <span className="text-gray-600 text-sm ml-2">{finhub?.exchange}</span>
+          <span className="text-gray-600 text-xs ml-2">{finhub?.exchange}</span>
         )}
       </div>
 
@@ -189,8 +189,8 @@ const CountryInfoHeader = () => {
       {finhub?.finnhub_industry && (
         <div className="flex items-center">
           <div className="flex flex-row items-start gap-2">
-            <p className="text-gray-600 font-medium text-sm">Industry:</p>
-            <p className="text-gray-500 text-sm">{finhub?.finnhub_industry}</p>
+            <p className="text-gray-600 font-medium text-xs">Industry:</p>
+            <p className="text-gray-500 text-xs">{finhub?.finnhub_industry}</p>
           </div>
         </div>
       )}
@@ -202,7 +202,7 @@ const CountryInfoHeader = () => {
           onClick={() => setIsChartOpen(true)}
         >
           <Lucide icon="TrendingUp" className="w-5 h-5 text-pink-400" />
-          <span className="text-sm font-medium text-gray-700">Chart</span>
+          <span className="text-xs font-medium text-gray-700">Chart</span>
         </button>
 
         <button
@@ -234,7 +234,7 @@ const CountryInfoHeader = () => {
           }}
         >
           <Lucide icon="Table" className="w-5 h-5 text-pink-400" />
-          <span className="text-sm font-medium text-gray-700">Price Perf.</span>
+          <span className="text-xs font-medium text-gray-700">Price Perf.</span>
         </button>
 
         <button
@@ -250,7 +250,7 @@ const CountryInfoHeader = () => {
           }}
         >
           <Lucide icon="FileText" className="w-5 h-5 text-pink-400" />
-          <span className="text-sm font-medium text-gray-700">SEC Filings</span>
+          <span className="text-xs font-medium text-gray-700">SEC Filings</span>
           <span className="absolute top-0 right-0 -mt-1 mr-1 text-[6px] font-bold text-white bg-orange-500 rounded-full px-0.5 animate-pulse">
             NEW
           </span>
