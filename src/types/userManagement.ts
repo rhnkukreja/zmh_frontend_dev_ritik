@@ -9,7 +9,10 @@ export interface UserManagement {
   last_login: string | null;
   account_creation: string;
   account_age_days?: number;
+  user_type?: string;
 }
+
+export type UserType = 'developer' | 'analyst' | 'client' | 'admin';
 
 export interface CreateUserDTO {
   username: string;
@@ -18,6 +21,17 @@ export interface CreateUserDTO {
   first_name: string;
   last_name: string;
   is_active: boolean;
+  user_type: UserType;
+}
+
+export interface UpdateUserDTO {
+  username?: string;
+  email?: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+  is_active?: boolean;
+  user_type?: UserType;
 }
 
 export interface UserManagementResponse {
@@ -32,4 +46,8 @@ export interface UserManagementFilters {
   is_active?: boolean;
   page?: number;
   page_size?: number;
+}
+
+export interface UserCountResponse {
+  count: number;
 }

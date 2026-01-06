@@ -1,5 +1,5 @@
 import { axiosInstance } from "../index";
-import { CreateUserDTO, UserManagement, UserManagementFilters, UserManagementResponse } from "@/types/userManagement";
+import { CreateUserDTO, UserManagement, UserManagementFilters, UserManagementResponse, UpdateUserDTO } from "@/types/userManagement";
 
 class UserManagementService {
   /**
@@ -14,7 +14,7 @@ class UserManagementService {
       }
       
       if (filters?.is_active !== undefined) {
-        params.append("is_active", filters.is_active.toString());
+        params.append("active", filters.is_active.toString());
       }
       
       if (filters?.page) {
@@ -48,13 +48,13 @@ class UserManagementService {
   }
 
   /**
-   * Update user status (activate/deactivate)
+   * Update user
    */
-  public async updateUserStatus(userId: number, isActive: boolean): Promise<UserManagement> {
+  public async updateUser(userId: number, userData: UpdateUserDTO): Promise<UserManagement> {
     try {
       const response = await axiosInstance.patch<UserManagement>(
         `/user/register/${userId}/`,
-        { is_active: isActive }
+        userData
       );
       return response.data;
     } catch (error) {

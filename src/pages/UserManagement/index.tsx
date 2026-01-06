@@ -1,108 +1,215 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
-import { FormInput, FormLabel, FormCheck, FormSelect } from "@/components/Base/Form";
+import { FormInput, FormLabel, FormCheck } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
 import StandardizedTable from "@/components/StandardizedTable";
 import Pagination from "@/components/Base/Pagination";
 import { userManagementService } from "@/services/userManagement";
-import { UserManagement, CreateUserDTO } from "@/types/userManagement";
+import { UserManagement, CreateUserDTO, UpdateUserDTO, UserType } from "@/types/userManagement";
 import { toast } from "react-toastify";
 import clsx from "clsx";
-import dayjs from "dayjs";
+
+// Constants
+const PAGE_SIZE = 20;
+const DEBOUNCE_DELAY = 400;
+
+const USER_TYPE_OPTIONS: { value: UserType; label: string }[] = [
+  { value: "client", label: "Client" },
+  { value: "developer", label: "Developer" },
+  { value: "analyst", label: "Analyst" },
+  { value: "admin", label: "Admin" },
+];
 
 function UserManagementPage() {
-  const [users, setUsers] = useState<UserManagement[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserManagement | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterActive, setFilterActive] = useState<string>("all");
+  // ==================== STATE ====================
   
-  // Pagination
+  // User list state
+  const [users, setUsers] = useState<UserManagement[]>([]);
+  const [tableLoading, setTableLoading] = useState(false);
+  
+  // Counts state (from separate API)
+  const [totalCount, setTotalCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
+  const [countsLoading, setCountsLoading] = useState(true);
+  
+  // Filters state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState<boolean | null>(null);
+  
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 10;
-
-  // Form state
-  const [formData, setFormData] = useState<CreateUserDTO>({
+  const [listTotal, setListTotal] = useState(0);
+  
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserManagement | null>(null);
+  
+  // Form state for create
+  const [createFormData, setCreateFormData] = useState<CreateUserDTO>({
     username: "",
     email: "",
     password: "",
     first_name: "",
     last_name: "",
     is_active: true,
+    user_type: "client",
   });
-
+  
+  // Form state for edit
+  const [editFormData, setEditFormData] = useState<UpdateUserDTO>({
+    email: "",
+    first_name: "",
+    last_name: "",
+    is_active: true,
+    user_type: "client",
+  });
+  
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  
+  // Refs for debounce
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const hasFetchedInitial = useRef(false);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [currentPage, searchTerm, filterActive]);
+  // ==================== API CALLS ====================
+  
+  /**
+   * Fetch counts from regular API (count is in response)
+   */
+  const fetchCounts = useCallback(async () => {
+    setCountsLoading(true);
+    try {
+      const [totalRes, activeRes, inactiveRes] = await Promise.all([
+        userManagementService.getUsers({ page: 1, page_size: 1 }),
+        userManagementService.getUsers({ page: 1, page_size: 1, is_active: true }),
+        userManagementService.getUsers({ page: 1, page_size: 1, is_active: false }),
+      ]);
+      setTotalCount(totalRes.count);
+      setActiveCount(activeRes.count);
+      setInactiveCount(inactiveRes.count);
+    } catch (error: any) {
+      console.error("Failed to fetch counts:", error);
+    } finally {
+      setCountsLoading(false);
+    }
+  }, []);
 
-  const fetchUsers = async () => {
-    setLoading(true);
+  /**
+   * Fetch users list with query params
+   */
+  const fetchUsers = useCallback(async (
+    page: number,
+    search: string,
+    active: boolean | null
+  ) => {
+    setTableLoading(true);
     try {
       const filters: any = {
-        page: currentPage,
-        page_size: pageSize,
+        page,
+        page_size: PAGE_SIZE,
       };
 
-      if (searchTerm) {
-        filters.search = searchTerm;
+      if (search.trim()) {
+        filters.search = search.trim();
       }
 
-      if (filterActive !== "all") {
-        filters.is_active = filterActive === "active";
+      if (active !== null) {
+        filters.is_active = active;
       }
 
       const response = await userManagementService.getUsers(filters);
-      
-      // Calculate account age for each user
-      const usersWithAge = response.results.map(user => ({
-        ...user,
-        account_age_days: user.account_creation 
-          ? Math.floor((new Date().getTime() - new Date(user.account_creation).getTime()) / (1000 * 60 * 60 * 24))
-          : 0
-      }));
-      
-      setUsers(usersWithAge);
-      setTotalCount(response.count);
-      setTotalPages(Math.ceil(response.count / pageSize));
+      setUsers(response.results);
+      setListTotal(response.count);
+      setTotalPages(Math.ceil(response.count / PAGE_SIZE));
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to fetch users");
+      setUsers([]);
+      setListTotal(0);
+      setTotalPages(1);
     } finally {
-      setLoading(false);
+      setTableLoading(false);
     }
+  }, []);
+
+  // ==================== EFFECTS ====================
+
+  // Initial load only - runs once on mount
+  useEffect(() => {
+    fetchCounts();
+    fetchUsers(1, "", null);
+    hasFetchedInitial.current = true;
+  }, []);
+
+  // Handle search with debounce - only after initial load
+  useEffect(() => {
+    if (!hasFetchedInitial.current) return;
+
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      fetchUsers(1, searchTerm, activeFilter);
+    }, DEBOUNCE_DELAY);
+
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, [searchTerm]);
+
+  // ==================== HANDLERS ====================
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
-  const validateForm = (): boolean => {
+  const handleFilterClick = (filter: boolean | null) => {
+    if (activeFilter === filter) return;
+    setActiveFilter(filter);
+    setCurrentPage(1);
+    fetchUsers(1, searchTerm, filter);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    setCurrentPage(page);
+    fetchUsers(page, searchTerm, activeFilter);
+  };
+
+  // ==================== CREATE USER ====================
+
+  const validateCreateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!formData.username.trim()) {
-      errors.username = "Username is required";
-    }
-
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Email is invalid";
-    }
-
-    if (!formData.password.trim()) {
-      errors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters";
-    }
-
-    if (!formData.first_name.trim()) {
+    if (!createFormData.first_name.trim()) {
       errors.first_name = "First name is required";
     }
 
-    if (!formData.last_name.trim()) {
+    if (!createFormData.last_name.trim()) {
       errors.last_name = "Last name is required";
+    }
+
+    if (!createFormData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(createFormData.email)) {
+      errors.email = "Email is invalid";
+    }
+
+    if (!createFormData.password.trim()) {
+      errors.password = "Password is required";
+    } else if (createFormData.password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
+    }
+
+    if (!createFormData.user_type) {
+      errors.user_type = "User type is required";
     }
 
     setFormErrors(errors);
@@ -110,33 +217,131 @@ function UserManagementPage() {
   };
 
   const handleCreateUser = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateCreateForm()) return;
 
     try {
-      await userManagementService.createUser(formData);
+      // Send email as username
+      const payload = {
+        ...createFormData,
+        username: createFormData.email,
+      };
+      await userManagementService.createUser(payload);
       toast.success("User created successfully");
       setShowCreateModal(false);
-      resetForm();
-      fetchUsers();
+      resetCreateForm();
+      fetchCounts();
+      fetchUsers(currentPage, searchTerm, activeFilter);
     } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 
-                          error?.response?.data?.email?.[0] || 
-                          error?.response?.data?.username?.[0] || 
-                          "Failed to create user";
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.email?.[0] ||
+        error?.response?.data?.username?.[0] ||
+        "Failed to create user";
       toast.error(errorMessage);
     }
   };
 
-  const handleToggleUserStatus = async (user: UserManagement) => {
+  const resetCreateForm = () => {
+    setCreateFormData({
+      username: "",
+      email: "",
+      password: "",
+      first_name: "",
+      last_name: "",
+      is_active: true,
+      user_type: "client",
+    });
+    setFormErrors({});
+  };
+
+  // ==================== EDIT USER ====================
+
+  const handleEditClick = (user: UserManagement) => {
+    setSelectedUser(user);
+    setEditFormData({
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      is_active: user.is_active,
+      user_type: (user.user_type as UserType) || "client",
+    });
+    setFormErrors({});
+    setShowEditModal(true);
+  };
+
+  const validateEditForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!editFormData.first_name?.trim()) {
+      errors.first_name = "First name is required";
+    }
+
+    if (!editFormData.last_name?.trim()) {
+      errors.last_name = "Last name is required";
+    }
+
+    if (!editFormData.email?.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(editFormData.email)) {
+      errors.email = "Email is invalid";
+    }
+
+    if (!editFormData.user_type) {
+      errors.user_type = "User type is required";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser || !validateEditForm()) return;
+
     try {
-      await userManagementService.updateUserStatus(user.id, !user.is_active);
-      toast.success(`User ${!user.is_active ? "activated" : "deactivated"} successfully`);
-      fetchUsers();
+      // Send email as username
+      const payload = {
+        ...editFormData,
+        username: editFormData.email,
+      };
+      await userManagementService.updateUser(selectedUser.id, payload);
+      toast.success("User updated successfully");
+      setShowEditModal(false);
+      setSelectedUser(null);
+      fetchCounts();
+      fetchUsers(currentPage, searchTerm, activeFilter);
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.email?.[0] ||
+        error?.response?.data?.username?.[0] ||
+        "Failed to update user";
+      toast.error(errorMessage);
+    }
+  };
+
+  // ==================== TOGGLE ACTIVE STATUS ====================
+
+  const handleToggleActive = async (user: UserManagement) => {
+    try {
+      const payload = {
+        is_active: !user.is_active,
+      };
+      await userManagementService.updateUser(user.id, payload);
+      toast.success(
+        user.is_active ? "User deactivated successfully" : "User activated successfully"
+      );
+      fetchCounts();
+      fetchUsers(currentPage, searchTerm, activeFilter);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update user status");
     }
+  };
+
+  // ==================== DELETE USER ====================
+
+  const handleDeleteClick = (user: UserManagement) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
   };
 
   const handleDeleteUser = async () => {
@@ -147,56 +352,58 @@ function UserManagementPage() {
       toast.success("User deleted successfully");
       setShowDeleteModal(false);
       setSelectedUser(null);
-      fetchUsers();
+      fetchCounts();
+      
+      // If last item on page and not first page, go back
+      if (users.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      } else {
+        fetchUsers(currentPage, searchTerm, activeFilter);
+      }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to delete user");
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      username: "",
-      email: "",
-      password: "",
-      first_name: "",
-      last_name: "",
-      is_active: true,
-    });
-    setFormErrors({});
-  };
+  // ==================== RENDER HELPERS ====================
 
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Never";
-    try {
-      return dayjs(dateString).format("MMM DD, YYYY HH:mm");
-    } catch {
-      return "Invalid date";
+  const renderPaginationLinks = () => {
+    const links = [];
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
     }
+
+    for (let i = startPage; i <= endPage; i++) {
+      links.push(
+        <Pagination.Link
+          key={i}
+          active={currentPage === i}
+          onClick={() => handlePageChange(i)}
+          className="cursor-pointer"
+        >
+          {i}
+        </Pagination.Link>
+      );
+    }
+
+    return links;
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilterActive(e.target.value);
-    setCurrentPage(1);
-  };
+  // ==================== RENDER ====================
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
-        {/* Header */}
+        {/* Header with Add Button */}
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="text-base font-medium group-[.mode--light]:text-white">
-            User Management
-          </div>
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
             <Button
               variant="primary"
               onClick={() => setShowCreateModal(true)}
-              className="group-[.mode--light]:!bg-white/[0.12] group-[.mode--light]:!text-slate-200 group-[.mode--light]:!border-transparent"
             >
               <Lucide icon="UserPlus" className="stroke-[1.3] w-4 h-4 mr-2" />
               Add New User
@@ -204,62 +411,87 @@ function UserManagementPage() {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Main Content */}
         <div className="flex flex-col gap-4 mt-3.5">
           <div className="flex flex-col p-5 box box--stacked">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-              <div className="col-span-1 md:col-span-2">
-                <FormLabel htmlFor="search">Search Users</FormLabel>
-                <FormInput
-                  id="search"
-                  type="text"
-                  placeholder="Search by name, email, or username..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
-              </div>
-              <div className="col-span-1">
-                <FormLabel htmlFor="filter-status">Status Filter</FormLabel>
-                <FormSelect
-                  id="filter-status"
-                  value={filterActive}
-                  onChange={handleFilterChange}
-                >
-                  <option value="all">All Users</option>
-                  <option value="active">Active Only</option>
-                  <option value="inactive">Inactive Only</option>
-                </FormSelect>
-              </div>
+            {/* Search */}
+            <div className="mb-5">
+              <FormLabel htmlFor="search">Search Users</FormLabel>
+              <FormInput
+                id="search"
+                type="text"
+                placeholder="Search by name, email, or username..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
             </div>
 
-            {/* Stats */}
+            {/* Stats Cards - Clickable Filters */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-              <div className="p-4 border border-dashed rounded-lg border-slate-300/80">
+              <div
+                className={clsx(
+                  "p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md",
+                  activeFilter === null
+                    ? "border-primary border-2 bg-primary/5"
+                    : "border-slate-200 hover:border-slate-300"
+                )}
+                onClick={() => handleFilterClick(null)}
+              >
                 <div className="text-sm text-slate-500">Total Users</div>
-                <div className="mt-1 text-xl font-medium">{totalCount}</div>
+                <div className="mt-1 text-xl font-medium">
+                  {countsLoading ? (
+                    <span className="inline-block w-8 h-6 bg-slate-200 animate-pulse rounded" />
+                  ) : (
+                    totalCount
+                  )}
+                </div>
               </div>
-              <div className="p-4 border border-dashed rounded-lg border-slate-300/80">
+              <div
+                className={clsx(
+                  "p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md",
+                  activeFilter === true
+                    ? "border-success border-2 bg-success/5"
+                    : "border-slate-200 hover:border-slate-300"
+                )}
+                onClick={() => handleFilterClick(true)}
+              >
                 <div className="text-sm text-slate-500">Active Users</div>
                 <div className="mt-1 text-xl font-medium text-success">
-                  {users.filter((u) => u.is_active).length}
+                  {countsLoading ? (
+                    <span className="inline-block w-8 h-6 bg-slate-200 animate-pulse rounded" />
+                  ) : (
+                    activeCount
+                  )}
                 </div>
               </div>
-              <div className="p-4 border border-dashed rounded-lg border-slate-300/80">
+              <div
+                className={clsx(
+                  "p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md",
+                  activeFilter === false
+                    ? "border-danger border-2 bg-danger/5"
+                    : "border-slate-200 hover:border-slate-300"
+                )}
+                onClick={() => handleFilterClick(false)}
+              >
                 <div className="text-sm text-slate-500">Inactive Users</div>
                 <div className="mt-1 text-xl font-medium text-danger">
-                  {users.filter((u) => !u.is_active).length}
+                  {countsLoading ? (
+                    <span className="inline-block w-8 h-6 bg-slate-200 animate-pulse rounded" />
+                  ) : (
+                    inactiveCount
+                  )}
                 </div>
               </div>
-              <div className="p-4 border border-dashed rounded-lg border-slate-300/80">
-                <div className="text-sm text-slate-500">Current Page</div>
+              <div className="p-4 border rounded-lg border-slate-200">
+                <div className="text-sm text-slate-500">Showing</div>
                 <div className="mt-1 text-xl font-medium">
-                  {currentPage} / {totalPages}
+                  {listTotal} {activeFilter !== null && (activeFilter ? "Active" : "Inactive")}
                 </div>
               </div>
             </div>
 
             {/* Table */}
-            <StandardizedTable isLoading={loading} maxHeight="65vh">
+            <StandardizedTable isLoading={tableLoading} maxHeight="65vh">
               <StandardizedTable.Header>
                 <StandardizedTable.Cell isHeader>First Name</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Last Name</StandardizedTable.Cell>
@@ -271,7 +503,7 @@ function UserManagementPage() {
                 <StandardizedTable.Cell isHeader>Actions</StandardizedTable.Cell>
               </StandardizedTable.Header>
               <tbody>
-                {loading ? (
+                {tableLoading ? (
                   <StandardizedTable.LoadingSkeleton rows={8} cols={8} />
                 ) : users.length === 0 ? (
                   <tr>
@@ -295,13 +527,13 @@ function UserManagementPage() {
                         </div>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        {formatDate(user.last_login)}
+                        {user.last_login || "Never"}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        {formatDate(user.account_creation)}
+                        {user.account_creation || "-"}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        {user.account_age_days || 0}
+                        {user.account_age_days ?? 0}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <div
@@ -318,22 +550,26 @@ function UserManagementPage() {
                       <StandardizedTable.Cell>
                         <div className="flex items-center gap-2">
                           <Button
-                            variant={user.is_active ? "outline-secondary" : "outline-success"}
+                            variant="outline-primary"
                             size="sm"
-                            onClick={() => handleToggleUserStatus(user)}
+                            onClick={() => handleEditClick(user)}
+                            title="Edit User"
                           >
-                            <Lucide
-                              icon={user.is_active ? "Ban" : "CheckCircle"}
-                              className="w-4 h-4"
-                            />
+                            <Lucide icon="Pencil" className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant={user.is_active ? "outline-warning" : "outline-success"}
+                            size="sm"
+                            onClick={() => handleToggleActive(user)}
+                            title={user.is_active ? "Deactivate User" : "Activate User"}
+                          >
+                            <Lucide icon={user.is_active ? "UserX" : "UserCheck"} className="w-4 h-4" />
                           </Button>
                           <Button
                             variant="outline-danger"
                             size="sm"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowDeleteModal(true);
-                            }}
+                            onClick={() => handleDeleteClick(user)}
+                            title="Delete User"
                           >
                             <Lucide icon="Trash2" className="w-4 h-4" />
                           </Button>
@@ -346,43 +582,26 @@ function UserManagementPage() {
             </StandardizedTable>
 
             {/* Pagination */}
-            {!loading && users.length > 0 && (
+            {!tableLoading && users.length > 0 && totalPages > 1 && (
               <div className="flex flex-col-reverse flex-wrap items-center mt-5 gap-y-2 sm:flex-row">
                 <Pagination className="flex-1 w-full mr-auto sm:w-auto">
                   <Pagination.Link
-                    onClick={() => currentPage > 1 && setCurrentPage(Math.max(1, currentPage - 1))}
+                    onClick={() => handlePageChange(currentPage - 1)}
                     className={currentPage === 1 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   >
                     <Lucide icon="ChevronLeft" className="w-4 h-4" />
                   </Pagination.Link>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNumber = i + 1;
-                    return (
-                      <Pagination.Link
-                        key={pageNumber}
-                        active={currentPage === pageNumber}
-                        onClick={() => setCurrentPage(pageNumber)}
-                        className="cursor-pointer"
-                      >
-                        {pageNumber}
-                      </Pagination.Link>
-                    );
-                  })}
-                  {totalPages > 5 && (
-                    <Pagination.Link className="opacity-50 cursor-not-allowed">
-                      ...
-                    </Pagination.Link>
-                  )}
+                  {renderPaginationLinks()}
                   <Pagination.Link
-                    onClick={() => currentPage < totalPages && setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    onClick={() => handlePageChange(currentPage + 1)}
                     className={currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   >
                     <Lucide icon="ChevronRight" className="w-4 h-4" />
                   </Pagination.Link>
                 </Pagination>
                 <div className="text-slate-500">
-                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                  {Math.min(currentPage * pageSize, totalCount)} of {totalCount} users
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1} to{" "}
+                  {Math.min(currentPage * PAGE_SIZE, listTotal)} of {listTotal} users
                 </div>
               </div>
             )}
@@ -395,7 +614,7 @@ function UserManagementPage() {
         open={showCreateModal}
         onClose={() => {
           setShowCreateModal(false);
-          resetForm();
+          resetCreateForm();
         }}
       >
         <Dialog.Panel>
@@ -404,70 +623,16 @@ function UserManagementPage() {
           </Dialog.Title>
           <Dialog.Description className="grid grid-cols-12 gap-4 gap-y-3">
             <div className="col-span-12 sm:col-span-6">
-              <FormLabel htmlFor="username">
-                Username <span className="text-danger">*</span>
-              </FormLabel>
-              <FormInput
-                id="username"
-                type="text"
-                placeholder="Enter username"
-                value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-                className={formErrors.username ? "border-danger" : ""}
-              />
-              {formErrors.username && (
-                <div className="mt-2 text-danger text-xs">{formErrors.username}</div>
-              )}
-            </div>
-            <div className="col-span-12 sm:col-span-6">
-              <FormLabel htmlFor="email">
-                Email <span className="text-danger">*</span>
-              </FormLabel>
-              <FormInput
-                id="email"
-                type="email"
-                placeholder="Enter email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className={formErrors.email ? "border-danger" : ""}
-              />
-              {formErrors.email && (
-                <div className="mt-2 text-danger text-xs">{formErrors.email}</div>
-              )}
-            </div>
-            <div className="col-span-12">
-              <FormLabel htmlFor="password">
-                Password <span className="text-danger">*</span>
-              </FormLabel>
-              <FormInput
-                id="password"
-                type="password"
-                placeholder="Enter password (min 8 characters)"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className={formErrors.password ? "border-danger" : ""}
-              />
-              {formErrors.password && (
-                <div className="mt-2 text-danger text-xs">{formErrors.password}</div>
-              )}
-            </div>
-            <div className="col-span-12 sm:col-span-6">
-              <FormLabel htmlFor="first_name">
+              <FormLabel htmlFor="create-first_name">
                 First Name <span className="text-danger">*</span>
               </FormLabel>
               <FormInput
-                id="first_name"
+                id="create-first_name"
                 type="text"
                 placeholder="Enter first name"
-                value={formData.first_name}
+                value={createFormData.first_name}
                 onChange={(e) =>
-                  setFormData({ ...formData, first_name: e.target.value })
+                  setCreateFormData({ ...createFormData, first_name: e.target.value })
                 }
                 className={formErrors.first_name ? "border-danger" : ""}
               />
@@ -476,16 +641,16 @@ function UserManagementPage() {
               )}
             </div>
             <div className="col-span-12 sm:col-span-6">
-              <FormLabel htmlFor="last_name">
+              <FormLabel htmlFor="create-last_name">
                 Last Name <span className="text-danger">*</span>
               </FormLabel>
               <FormInput
-                id="last_name"
+                id="create-last_name"
                 type="text"
                 placeholder="Enter last name"
-                value={formData.last_name}
+                value={createFormData.last_name}
                 onChange={(e) =>
-                  setFormData({ ...formData, last_name: e.target.value })
+                  setCreateFormData({ ...createFormData, last_name: e.target.value })
                 }
                 className={formErrors.last_name ? "border-danger" : ""}
               />
@@ -493,20 +658,66 @@ function UserManagementPage() {
                 <div className="mt-2 text-danger text-xs">{formErrors.last_name}</div>
               )}
             </div>
-            <div className="col-span-12">
-              <FormCheck>
-                <FormCheck.Input
-                  id="is_active"
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) =>
-                    setFormData({ ...formData, is_active: e.target.checked })
-                  }
-                />
-                <FormCheck.Label htmlFor="is_active">
-                  Active User
-                </FormCheck.Label>
-              </FormCheck>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="create-email">
+                Email <span className="text-danger">*</span>
+              </FormLabel>
+              <FormInput
+                id="create-email"
+                type="email"
+                placeholder="Enter email"
+                value={createFormData.email}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, email: e.target.value })
+                }
+                className={formErrors.email ? "border-danger" : ""}
+              />
+              {formErrors.email && (
+                <div className="mt-2 text-danger text-xs">{formErrors.email}</div>
+              )}
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="create-password">
+                Password <span className="text-danger">*</span>
+              </FormLabel>
+              <FormInput
+                id="create-password"
+                type="password"
+                placeholder="Enter password (min 8 characters)"
+                value={createFormData.password}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, password: e.target.value })
+                }
+                className={formErrors.password ? "border-danger" : ""}
+              />
+              {formErrors.password && (
+                <div className="mt-2 text-danger text-xs">{formErrors.password}</div>
+              )}
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="create-user_type">
+                User Type <span className="text-danger">*</span>
+              </FormLabel>
+              <select
+                id="create-user_type"
+                value={createFormData.user_type}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, user_type: e.target.value as UserType })
+                }
+                className={clsx(
+                  "w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8",
+                  formErrors.user_type ? "border-danger" : ""
+                )}
+              >
+                {USER_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {formErrors.user_type && (
+                <div className="mt-2 text-danger text-xs">{formErrors.user_type}</div>
+              )}
             </div>
           </Dialog.Description>
           <Dialog.Footer>
@@ -515,7 +726,7 @@ function UserManagementPage() {
               variant="outline-secondary"
               onClick={() => {
                 setShowCreateModal(false);
-                resetForm();
+                resetCreateForm();
               }}
               className="w-20 mr-1"
             >
@@ -528,6 +739,125 @@ function UserManagementPage() {
               className="w-20"
             >
               Create
+            </Button>
+          </Dialog.Footer>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* Edit User Modal */}
+      <Dialog
+        open={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedUser(null);
+          setFormErrors({});
+        }}
+      >
+        <Dialog.Panel>
+          <Dialog.Title>
+            <h2 className="mr-auto text-base font-medium">Edit User</h2>
+          </Dialog.Title>
+          <Dialog.Description className="grid grid-cols-12 gap-4 gap-y-3">
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-first_name">
+                First Name <span className="text-danger">*</span>
+              </FormLabel>
+              <FormInput
+                id="edit-first_name"
+                type="text"
+                placeholder="Enter first name"
+                value={editFormData.first_name || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, first_name: e.target.value })
+                }
+                className={formErrors.first_name ? "border-danger" : ""}
+              />
+              {formErrors.first_name && (
+                <div className="mt-2 text-danger text-xs">{formErrors.first_name}</div>
+              )}
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-last_name">
+                Last Name <span className="text-danger">*</span>
+              </FormLabel>
+              <FormInput
+                id="edit-last_name"
+                type="text"
+                placeholder="Enter last name"
+                value={editFormData.last_name || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, last_name: e.target.value })
+                }
+                className={formErrors.last_name ? "border-danger" : ""}
+              />
+              {formErrors.last_name && (
+                <div className="mt-2 text-danger text-xs">{formErrors.last_name}</div>
+              )}
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-email">
+                Email <span className="text-danger">*</span>
+              </FormLabel>
+              <FormInput
+                id="edit-email"
+                type="email"
+                placeholder="Enter email"
+                value={editFormData.email || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, email: e.target.value })
+                }
+                className={formErrors.email ? "border-danger" : ""}
+              />
+              {formErrors.email && (
+                <div className="mt-2 text-danger text-xs">{formErrors.email}</div>
+              )}
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-user_type">
+                User Type <span className="text-danger">*</span>
+              </FormLabel>
+              <select
+                id="edit-user_type"
+                value={editFormData.user_type || "client"}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, user_type: e.target.value as UserType })
+                }
+                className={clsx(
+                  "w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8",
+                  formErrors.user_type ? "border-danger" : ""
+                )}
+              >
+                {USER_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {formErrors.user_type && (
+                <div className="mt-2 text-danger text-xs">{formErrors.user_type}</div>
+              )}
+            </div>
+          </Dialog.Description>
+          <Dialog.Footer>
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={() => {
+                setShowEditModal(false);
+                setSelectedUser(null);
+                setFormErrors({});
+              }}
+              className="w-20 mr-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="button"
+              onClick={handleUpdateUser}
+              className="w-20"
+            >
+              Update
             </Button>
           </Dialog.Footer>
         </Dialog.Panel>

@@ -335,23 +335,53 @@ const getCustomRelativeDate = (dateStr: string): string => {
 
 const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   const userType = localStorage.getItem("userType")?.toLowerCase() || "";
+  const isAdmin = userType === "admin";
+  const isAnalyst = userType === "analyst";
+  
   const filteredMenuItems = menuItems.filter((item, index, arr) => {
-    if (userType !== "admin") {
-      if (typeof item === "string" && item.toLowerCase() === "Additional") {
-        let i = index + 1;
-        while (
-          i < arr.length &&
-          typeof arr[i] === "object" &&
-          (arr[i] as FormattedMenu).isAdmin === true
-        ) {
-          i++;
+    // Handle section headers like "Admin"
+    if (typeof item === "string" && item.toLowerCase() === "admin") {
+      // Check if there are any visible items after this header
+      let i = index + 1;
+      let hasVisibleItems = false;
+      while (i < arr.length && typeof arr[i] === "object") {
+        const menuItem = arr[i] as FormattedMenu;
+        // Admin can see isAdmin items only
+        if (isAdmin && menuItem.isAdmin && !menuItem.isAnalyst) {
+          hasVisibleItems = true;
+          break;
         }
-        return false;
+        // Analyst can see isAnalyst items only
+        if (isAnalyst && menuItem.isAnalyst && !menuItem.isAdmin) {
+          hasVisibleItems = true;
+          break;
+        }
+        // Regular items
+        if (!menuItem.isAdmin && !menuItem.isAnalyst) {
+          hasVisibleItems = true;
+          break;
+        }
+        i++;
       }
-      if (typeof item === "object" && item.isAdmin) {
-        return false;
+      return hasVisibleItems;
+    }
+    
+    // Handle menu items
+    if (typeof item === "object") {
+      // If item is admin-only (has isAdmin but NOT isAnalyst)
+      if (item.isAdmin && !item.isAnalyst) {
+        return isAdmin;
+      }
+      // If item is analyst-only (has isAnalyst but NOT isAdmin)
+      if (item.isAnalyst && !item.isAdmin) {
+        return isAnalyst;
+      }
+      // If item has both flags, it's visible to both
+      if (item.isAdmin && item.isAnalyst) {
+        return isAdmin || isAnalyst;
       }
     }
+    
     return true;
   });
 

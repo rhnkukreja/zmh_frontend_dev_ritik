@@ -10,6 +10,7 @@ export interface Menu {
   subMenu?: Menu[];
   ignore?: boolean;
   isAdmin?: boolean;
+  isAnalyst?: boolean;
   selectPathName?: string;
 }
 
@@ -135,19 +136,19 @@ const initialState: any = {
       icon: "School",
       pathname: "/institution",
       title: "Institutions",
-      isAdmin: true,
+      isAnalyst: true,
     },
     {
       icon: "Building",
       pathname: "/company",
       title: "Company",
-      isAdmin: true,
+      isAnalyst: true,
     },
     {
       icon: "User",
       pathname: "/user-details",
       title: "User Detail",
-      isAdmin: true,
+      isAnalyst: true,
     },
     {
       icon: "Users",
