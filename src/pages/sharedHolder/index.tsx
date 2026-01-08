@@ -970,6 +970,12 @@ function ShareHolderProposal() {
                     }`}
                   onClick={async (e) => {
                     try {
+                      // Set default years (current year and previous year) when switching to View All
+                      const currentYear = new Date().getFullYear();
+                      const defaultYears = [(currentYear - 1).toString(), currentYear.toString()];
+                      setValue("year", defaultYears);
+                      dispatch(setAllFilters({ year: defaultYears }));
+                      
                       dispatch(selectUnSelectAllCompany(true));
                       dispatch(
                         modifyRoute({

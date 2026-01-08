@@ -448,6 +448,11 @@ const index = () => {
         return (new Date().getFullYear() - 1).toString();
       };
 
+      const getDefaultYears = () => {
+        const year = new Date().getFullYear();
+        return [(year - 1).toString(), year.toString()];
+      };
+
       const getDefaultDateRange = () => {
         const now = new Date();
         const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
@@ -461,7 +466,7 @@ const index = () => {
           institution_name: ["BlackRock, Inc."],
           index: ["S&P 500"],
           country: ["USA"],
-          analyticsYear: [getCurrentYear()]
+          analyticsYear: getDefaultYears()
         };
 
         setAllAnalyticsFilter(defaultAnalyticsFilters);
@@ -1242,6 +1247,7 @@ const index = () => {
 
     // Clear all filters except mandatory ones
     const currentYear = (new Date().getFullYear() - 1).toString();
+    const defaultYears = [(new Date().getFullYear() - 1).toString(), new Date().getFullYear().toString()];
     let institutionsToKeep = ["BlackRock, Inc."];
     let countryToKeep = ["USA"];
     let indexToKeep = ["S&P 500"];
@@ -1260,7 +1266,7 @@ const index = () => {
         institution_name: institutionsToKeep,
         index: indexToKeep,
         country: hasQueryParams ? [] : countryToKeep,
-        analyticsYear: hasQueryParams ? [] : [currentYear],
+        analyticsYear: hasQueryParams ? [] : defaultYears,
       };
       
       setAllAnalyticsFilter(mandatoryFilters);
@@ -1270,7 +1276,7 @@ const index = () => {
       setValue("index", indexToKeep);
       if (!hasQueryParams) {
         setValue("country", countryToKeep);
-        setValue("analyticsYear", [currentYear]);
+        setValue("analyticsYear", defaultYears);
         setSelectedCountries(countryToKeep);
       } else {
         setValue("country", []);
@@ -1371,6 +1377,7 @@ const index = () => {
     });
     if (onAnalyticsTab) {
       const currentYear = (new Date().getFullYear() - 1).toString();
+      const defaultYears = [(new Date().getFullYear() - 1).toString(), new Date().getFullYear().toString()];
 
       // If we have query parameters with institutions, preserve them
       let institutionsToUse = ["BlackRock, Inc."];
@@ -1385,13 +1392,13 @@ const index = () => {
         institution_name: institutionsToUse,
         index: ["S&P 500"],
         country: hasQueryParams ? [] : ["USA"],
-        analyticsYear: hasQueryParams ? [] : [currentYear],
+        analyticsYear: hasQueryParams ? [] : defaultYears,
       });
       setValue("institution_name", institutionsToUse);
       setValue("index", ["S&P 500"]);
       if (!hasQueryParams) {
         setValue("country", ["USA"]);
-        setValue("analyticsYear", [currentYear]);
+        setValue("analyticsYear", defaultYears);
         setSelectedCountries(["USA"]);
       }
       localStorage.removeItem("vdsEuropeanAnalyticsFilters");

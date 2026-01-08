@@ -368,8 +368,10 @@ function PeerAnalysis() {
       const sectorFromData = peerAnalysisData?.[0]?.company_sector;
       const sectorFilter = sectorFromData ? [sectorFromData] : [];
       
-      // Set default filters for "View All" mode
-      setValue("year", [new Date().getFullYear().toString()]);
+      // Set default filters for "View All" mode - current year and previous year
+      const currentYear = new Date().getFullYear();
+      const defaultYears = [(currentYear - 1).toString(), currentYear.toString()];
+      setValue("year", defaultYears);
       setValue("country", ["USA"]);
       setValue("sector", sectorFilter);
       
@@ -380,7 +382,7 @@ function PeerAnalysis() {
       // Reset Redux state with only the default filters
       dispatch(
         setAllFilters({
-          year: [new Date().getFullYear()],
+          year: defaultYears,
           country: ["USA"],
           category: [],
           sector: sectorFilter,
