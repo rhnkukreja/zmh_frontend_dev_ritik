@@ -397,6 +397,7 @@ function ShareHolderProposal() {
   }, [isCompanySelected]);
   useEffect(() => {
     const fetchData = async () => {
+      // For company view, need global_search; for all companies view, it's optional
       if (!isAllCompanySelected && filters?.global_search.length === 0) {
         return;
       }
@@ -427,7 +428,7 @@ function ShareHolderProposal() {
         }
       } catch (error) {
         console.error("Error fetching shareholder proposals:", error);
-
+        setProposalsAnalytics(null);
       } finally {
         setLoadingAnalytics(false);
       }
@@ -436,7 +437,7 @@ function ShareHolderProposal() {
     if (isViewAnalysis) {
       fetchData();
     }
-  }, [page, tab, filters, isViewAnalysis]);
+  }, [page, tab, filters, isViewAnalysis, isAllCompanySelected]);
 
 
   useEffect(() => {
@@ -949,6 +950,12 @@ function ShareHolderProposal() {
                     }`}
                   onClick={async (e) => {
                     try {
+                      // Clear year filters and reset form when switching to company view
+                      setValue("year", []);
+                      resetFormValues();
+                      dispatch(resetFilter());
+                      setProposalsAnalytics(null);
+                      
                       dispatch(selectUnSelectAllCompany(false));
                       dispatch(
                         modifyRoute({
@@ -973,7 +980,14 @@ function ShareHolderProposal() {
                       // Set default years (current year and previous year) when switching to View All
                       const currentYear = new Date().getFullYear();
                       const defaultYears = [(currentYear - 1).toString(), currentYear.toString()];
+                      
+                      // Reset analytics state first
+                      setProposalsAnalytics(null);
+                      
+                      // Clear other filters and set default years
+                      resetFormValues();
                       setValue("year", defaultYears);
+                      dispatch(resetFilter());
                       dispatch(setAllFilters({ year: defaultYears }));
                       
                       dispatch(selectUnSelectAllCompany(true));
