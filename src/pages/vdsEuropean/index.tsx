@@ -445,7 +445,7 @@ const index = () => {
 
       // Set defaults if no saved filters or parsing failed
       const getCurrentYear = () => {
-        return new Date().getFullYear().toString();
+        return (new Date().getFullYear() - 1).toString();
       };
 
       const getDefaultDateRange = () => {
@@ -1241,7 +1241,7 @@ const index = () => {
     const hasQueryParams = institutionParam || companyParam || meetingTypeParam;
 
     // Clear all filters except mandatory ones
-    const currentYear = new Date().getFullYear().toString();
+    const currentYear = (new Date().getFullYear() - 1).toString();
     let institutionsToKeep = ["BlackRock, Inc."];
     let countryToKeep = ["USA"];
     let indexToKeep = ["S&P 500"];
@@ -1370,7 +1370,7 @@ const index = () => {
       index: [],
     });
     if (onAnalyticsTab) {
-      const currentYear = new Date().getFullYear().toString();
+      const currentYear = (new Date().getFullYear() - 1).toString();
 
       // If we have query parameters with institutions, preserve them
       let institutionsToUse = ["BlackRock, Inc."];
@@ -1399,7 +1399,7 @@ const index = () => {
       // Fetch vote and year options for the institutions we're using
       getInstitutionDependentOptions(institutionsToUse);
     } else {
-      const currentYear = new Date().getFullYear().toString();
+      const currentYear = (new Date().getFullYear() - 1).toString();
       // setallApplyFilter({ country: ["USA"], year: currentYear });
       dispatch(resetPage());
       dispatch(
