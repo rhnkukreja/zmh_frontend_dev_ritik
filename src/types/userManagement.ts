@@ -10,9 +10,12 @@ export interface UserManagement {
   account_creation: string;
   account_age_days?: number;
   user_type?: string;
+  subscription?: string;
 }
 
-export type UserType = 'developer' | 'analyst' | 'client' | 'admin';
+export type UserType = 'admin' | 'analyst' | 'client' | 'developer' | 'partner' | 'qa' | 'researcher' | 'tester';
+
+export type SubscriptionType = 'trial';
 
 export interface CreateUserDTO {
   username: string;
@@ -22,6 +25,7 @@ export interface CreateUserDTO {
   last_name: string;
   is_active: boolean;
   user_type: UserType;
+  subscription: SubscriptionType;
 }
 
 export interface UpdateUserDTO {
@@ -32,6 +36,7 @@ export interface UpdateUserDTO {
   last_name?: string;
   is_active?: boolean;
   user_type?: UserType;
+  subscription?: SubscriptionType;
 }
 
 export interface UserManagementResponse {
@@ -44,6 +49,8 @@ export interface UserManagementResponse {
 export interface UserManagementFilters {
   search?: string;
   is_active?: boolean;
+  user_type?: string;
+  subscription?: string;
   page?: number;
   page_size?: number;
 }

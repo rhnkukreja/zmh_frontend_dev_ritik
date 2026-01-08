@@ -6,7 +6,7 @@ import { Dialog } from "@/components/Base/Headless";
 import StandardizedTable from "@/components/StandardizedTable";
 import Pagination from "@/components/Base/Pagination";
 import { userManagementService } from "@/services/userManagement";
-import { UserManagement, CreateUserDTO, UpdateUserDTO, UserType } from "@/types/userManagement";
+import { UserManagement, CreateUserDTO, UpdateUserDTO, UserType, SubscriptionType } from "@/types/userManagement";
 import { toast } from "react-toastify";
 import clsx from "clsx";
 
@@ -15,10 +15,18 @@ const PAGE_SIZE = 20;
 const DEBOUNCE_DELAY = 400;
 
 const USER_TYPE_OPTIONS: { value: UserType; label: string }[] = [
+  { value: "admin", label: "Admin" },
+  { value: "analyst", label: "Analyst" },
   { value: "client", label: "Client" },
   { value: "developer", label: "Developer" },
-  { value: "analyst", label: "Analyst" },
-  { value: "admin", label: "Admin" },
+  { value: "partner", label: "Partner" },
+  { value: "qa", label: "QA" },
+  { value: "researcher", label: "Researcher" },
+  { value: "tester", label: "Tester" },
+];
+
+const SUBSCRIPTION_OPTIONS: { value: SubscriptionType; label: string }[] = [
+  { value: "trial", label: "Trial" },
 ];
 
 function UserManagementPage() {
@@ -37,6 +45,8 @@ function UserManagementPage() {
   // Filters state
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<boolean | null>(null);
+  const [userTypeFilter, setUserTypeFilter] = useState<string>("");
+  const [subscriptionFilter, setSubscriptionFilter] = useState<string>("");
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,6 +68,7 @@ function UserManagementPage() {
     last_name: "",
     is_active: true,
     user_type: "client",
+    subscription: "trial",
   });
   
   // Form state for edit
@@ -67,6 +78,7 @@ function UserManagementPage() {
     last_name: "",
     is_active: true,
     user_type: "client",
+    subscription: "trial",
   });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -104,7 +116,9 @@ function UserManagementPage() {
   const fetchUsers = useCallback(async (
     page: number,
     search: string,
-    active: boolean | null
+    active: boolean | null,
+    userType: string = "",
+    subscription: string = ""
   ) => {
     setTableLoading(true);
     try {
@@ -119,6 +133,14 @@ function UserManagementPage() {
 
       if (active !== null) {
         filters.is_active = active;
+      }
+
+      if (userType) {
+        filters.user_type = userType;
+      }
+
+      if (subscription) {
+        filters.subscription = subscription;
       }
 
       const response = await userManagementService.getUsers(filters);
@@ -140,7 +162,7 @@ function UserManagementPage() {
   // Initial load only - runs once on mount
   useEffect(() => {
     fetchCounts();
-    fetchUsers(1, "", null);
+    fetchUsers(1, "", null, "", "");
     hasFetchedInitial.current = true;
   }, []);
 
@@ -154,7 +176,7 @@ function UserManagementPage() {
 
     searchDebounceRef.current = setTimeout(() => {
       setCurrentPage(1);
-      fetchUsers(1, searchTerm, activeFilter);
+      fetchUsers(1, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
     }, DEBOUNCE_DELAY);
 
     return () => {
@@ -170,17 +192,31 @@ function UserManagementPage() {
     setSearchTerm(e.target.value);
   };
 
+  const handleUserTypeFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setUserTypeFilter(value);
+    setCurrentPage(1);
+    fetchUsers(1, searchTerm, activeFilter, value, subscriptionFilter);
+  };
+
+  const handleSubscriptionFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSubscriptionFilter(value);
+    setCurrentPage(1);
+    fetchUsers(1, searchTerm, activeFilter, userTypeFilter, value);
+  };
+
   const handleFilterClick = (filter: boolean | null) => {
     if (activeFilter === filter) return;
     setActiveFilter(filter);
     setCurrentPage(1);
-    fetchUsers(1, searchTerm, filter);
+    fetchUsers(1, searchTerm, filter, userTypeFilter, subscriptionFilter);
   };
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
     setCurrentPage(page);
-    fetchUsers(page, searchTerm, activeFilter);
+    fetchUsers(page, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
   };
 
   // ==================== CREATE USER ====================
@@ -230,7 +266,7 @@ function UserManagementPage() {
       setShowCreateModal(false);
       resetCreateForm();
       fetchCounts();
-      fetchUsers(currentPage, searchTerm, activeFilter);
+      fetchUsers(currentPage, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message ||
@@ -250,6 +286,7 @@ function UserManagementPage() {
       last_name: "",
       is_active: true,
       user_type: "client",
+      subscription: "trial",
     });
     setFormErrors({});
   };
@@ -264,6 +301,7 @@ function UserManagementPage() {
       last_name: user.last_name,
       is_active: user.is_active,
       user_type: (user.user_type as UserType) || "client",
+      subscription: (user.subscription as SubscriptionType) || "trial",
     });
     setFormErrors({});
     setShowEditModal(true);
@@ -308,7 +346,7 @@ function UserManagementPage() {
       setShowEditModal(false);
       setSelectedUser(null);
       fetchCounts();
-      fetchUsers(currentPage, searchTerm, activeFilter);
+      fetchUsers(currentPage, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message ||
@@ -331,7 +369,7 @@ function UserManagementPage() {
         user.is_active ? "User deactivated successfully" : "User activated successfully"
       );
       fetchCounts();
-      fetchUsers(currentPage, searchTerm, activeFilter);
+      fetchUsers(currentPage, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update user status");
     }
@@ -358,7 +396,7 @@ function UserManagementPage() {
       if (users.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       } else {
-        fetchUsers(currentPage, searchTerm, activeFilter);
+        fetchUsers(currentPage, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
       }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to delete user");
@@ -414,16 +452,50 @@ function UserManagementPage() {
         {/* Main Content */}
         <div className="flex flex-col gap-4 mt-3.5">
           <div className="flex flex-col p-5 box box--stacked">
-            {/* Search */}
-            <div className="mb-5">
-              <FormLabel htmlFor="search">Search Users</FormLabel>
-              <FormInput
-                id="search"
-                type="text"
-                placeholder="Search by name, email, or username..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-              />
+            {/* Search and Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+              <div>
+                <FormLabel htmlFor="search">Search Users</FormLabel>
+                <FormInput
+                  id="search"
+                  type="text"
+                  placeholder="Search by name, email, or username..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                />
+              </div>
+              <div>
+                <FormLabel htmlFor="user-type-filter">Filter by User Type</FormLabel>
+                <select
+                  id="user-type-filter"
+                  value={userTypeFilter}
+                  onChange={handleUserTypeFilterChange}
+                  className="w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8"
+                >
+                  <option value="">All User Types</option>
+                  {USER_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <FormLabel htmlFor="subscription-filter">Filter by Subscription</FormLabel>
+                <select
+                  id="subscription-filter"
+                  value={subscriptionFilter}
+                  onChange={handleSubscriptionFilterChange}
+                  className="w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8"
+                >
+                  <option value="">All Subscriptions</option>
+                  {SUBSCRIPTION_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Stats Cards - Clickable Filters */}
@@ -496,6 +568,7 @@ function UserManagementPage() {
                 <StandardizedTable.Cell isHeader>First Name</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Last Name</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Email</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>User Type</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Last Login</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Account Created</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Account Age (Days)</StandardizedTable.Cell>
@@ -504,10 +577,10 @@ function UserManagementPage() {
               </StandardizedTable.Header>
               <tbody>
                 {tableLoading ? (
-                  <StandardizedTable.LoadingSkeleton rows={8} cols={8} />
+                  <StandardizedTable.LoadingSkeleton rows={8} cols={9} />
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-8 text-slate-500">
+                    <td colSpan={9} className="text-center py-8 text-slate-500">
                       No users found
                     </td>
                   </tr>
@@ -525,6 +598,11 @@ function UserManagementPage() {
                           <Lucide icon="Mail" className="w-4 h-4 text-slate-400" />
                           {user.email}
                         </div>
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
+                        <span className="capitalize">
+                          {user.user_type || "-"}
+                        </span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         {user.last_login || "Never"}
@@ -719,6 +797,25 @@ function UserManagementPage() {
                 <div className="mt-2 text-danger text-xs">{formErrors.user_type}</div>
               )}
             </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="create-subscription">
+                Subscription
+              </FormLabel>
+              <select
+                id="create-subscription"
+                value={createFormData.subscription}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, subscription: e.target.value as SubscriptionType })
+                }
+                className="w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8"
+              >
+                {SUBSCRIPTION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </Dialog.Description>
           <Dialog.Footer>
             <Button
@@ -836,6 +933,25 @@ function UserManagementPage() {
               {formErrors.user_type && (
                 <div className="mt-2 text-danger text-xs">{formErrors.user_type}</div>
               )}
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-subscription">
+                Subscription
+              </FormLabel>
+              <select
+                id="edit-subscription"
+                value={editFormData.subscription || "trial"}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, subscription: e.target.value as SubscriptionType })
+                }
+                className="w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8"
+              >
+                {SUBSCRIPTION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </Dialog.Description>
           <Dialog.Footer>

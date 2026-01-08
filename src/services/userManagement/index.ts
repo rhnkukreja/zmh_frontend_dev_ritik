@@ -14,7 +14,16 @@ class UserManagementService {
       }
       
       if (filters?.is_active !== undefined) {
+        // Try 'active' parameter name as backend might expect this
         params.append("active", filters.is_active.toString());
+      }
+      
+      if (filters?.user_type) {
+        params.append("user_type", filters.user_type);
+      }
+      
+      if (filters?.subscription) {
+        params.append("subscription", filters.subscription);
       }
       
       if (filters?.page) {

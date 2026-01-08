@@ -418,7 +418,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const ANALYTICS_COLORS = {
     "Election Of Directors": "#dc2626", // Red-600 to match theme
     "Say On Pay": "#b91c1c", // Red-700 
-    "Shareholder Proposals": "#f87171", // Red-400 for lighter variant
+    "Other Proposals": "#f87171", // Red-400 for lighter variant
     "Ratification of Auditor": "#fb7185" // Rose-400
   };
 
