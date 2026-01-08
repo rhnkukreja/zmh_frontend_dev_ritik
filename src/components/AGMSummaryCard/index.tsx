@@ -359,12 +359,19 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const formatAnalyticsCategoryName = (rawKey: string) => {
     const lowerWords = new Set(["of", "on", "and", "the", "a", "an", "to", "for"]);
     const words = rawKey.replace(/_/g, " ").toLowerCase().split(" ").filter(Boolean);
-    return words
+    const formattedName = words
       .map((w: string, idx: number) => {
         if (idx > 0 && lowerWords.has(w)) return w;
         return w.charAt(0).toUpperCase() + w.slice(1);
       })
       .join(" ");
+    
+    // Map "Shareholder Proposal" or "Shareholder Proposals" to "Other Proposals"
+    if (formattedName === "Shareholder Proposal" || formattedName === "Shareholder Proposals") {
+      return "Other Proposals";
+    }
+    
+    return formattedName;
   };
 
   const getAnalyticsCategories = () => {
