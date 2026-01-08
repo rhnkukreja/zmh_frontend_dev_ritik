@@ -11,11 +11,18 @@ import { FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import ReactSelectAsync from "@/components/ReactSelectAsync";
 import Litepicker from "@/components/Base/Litepicker";
+import { useLocation } from "react-router-dom";
 
 const CountryInfoHeader = () => {
   const { finhub, companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector(
     (state: RootState) => state.authentiction
   );
+  const location = useLocation();
+
+  // Hide on user-management route
+  if (location.pathname === "/user-management") {
+    return null;
+  }
 
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
