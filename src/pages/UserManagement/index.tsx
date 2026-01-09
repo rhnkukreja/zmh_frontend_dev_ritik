@@ -16,16 +16,12 @@ const DEBOUNCE_DELAY = 400;
 
 const USER_TYPE_OPTIONS: { value: UserType; label: string }[] = [
   { value: "admin", label: "Admin" },
-  { value: "analyst", label: "Analyst" },
   { value: "client", label: "Client" },
-  { value: "developer", label: "Developer" },
-  { value: "partner", label: "Partner" },
-  { value: "qa", label: "QA" },
-  { value: "researcher", label: "Researcher" },
-  { value: "tester", label: "Tester" },
+  { value: "zmh_employee", label: "ZMH Employee" },
 ];
 
 const SUBSCRIPTION_OPTIONS: { value: SubscriptionType; label: string }[] = [
+  { value: "client", label: "Client" },
   { value: "trial", label: "Trial" },
 ];
 
@@ -59,6 +55,10 @@ function UserManagementPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserManagement | null>(null);
   
+  // Multi-select state
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(new Set());
+  const [selectionType, setSelectionType] = useState<'active' | 'inactive' | null>(null);
+  
   // Form state for create
   const [createFormData, setCreateFormData] = useState<CreateUserDTO>({
     username: "",
@@ -79,6 +79,7 @@ function UserManagementPage() {
     is_active: true,
     user_type: "client",
     subscription: "trial",
+    password: "",
   });
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -302,6 +303,7 @@ function UserManagementPage() {
       is_active: user.is_active,
       user_type: (user.user_type as UserType) || "client",
       subscription: (user.subscription as SubscriptionType) || "trial",
+      password: "",
     });
     setFormErrors({});
     setShowEditModal(true);
@@ -336,11 +338,17 @@ function UserManagementPage() {
     if (!selectedUser || !validateEditForm()) return;
 
     try {
-      // Send email as username
-      const payload = {
+      // Send email as username, only include password if provided
+      const payload: UpdateUserDTO & { username?: string } = {
         ...editFormData,
         username: editFormData.email,
       };
+      
+      // Remove password from payload if empty
+      if (!payload.password?.trim()) {
+        delete payload.password;
+      }
+      
       await userManagementService.updateUser(selectedUser.id, payload);
       toast.success("User updated successfully");
       setShowEditModal(false);
@@ -372,6 +380,92 @@ function UserManagementPage() {
       fetchUsers(currentPage, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update user status");
+    }
+  };
+
+  // ==================== MULTI-SELECT HANDLERS ====================
+
+  const handleUserSelect = (user: UserManagement) => {
+    const newSelectedIds = new Set(selectedUserIds);
+    
+    if (newSelectedIds.has(user.id)) {
+      newSelectedIds.delete(user.id);
+      // If no more users selected, reset selection type
+      if (newSelectedIds.size === 0) {
+        setSelectionType(null);
+      }
+    } else {
+      newSelectedIds.add(user.id);
+      // Set selection type based on first selected user
+      if (selectionType === null) {
+        setSelectionType(user.is_active ? 'active' : 'inactive');
+      }
+    }
+    
+    setSelectedUserIds(newSelectedIds);
+  };
+
+  const handleSelectAll = () => {
+    // Get users that match current selection type (or all if no type set)
+    const eligibleUsers = users.filter(user => {
+      if (selectionType === null) return true;
+      return selectionType === 'active' ? user.is_active : !user.is_active;
+    });
+    
+    const allEligibleSelected = eligibleUsers.every(user => selectedUserIds.has(user.id));
+    
+    if (allEligibleSelected) {
+      // Deselect all
+      setSelectedUserIds(new Set());
+      setSelectionType(null);
+    } else {
+      // Select all eligible users
+      const newSelectedIds = new Set<number>();
+      let newSelectionType: 'active' | 'inactive' | null = selectionType;
+      
+      eligibleUsers.forEach(user => {
+        if (newSelectionType === null) {
+          newSelectionType = user.is_active ? 'active' : 'inactive';
+        }
+        if ((newSelectionType === 'active' && user.is_active) || 
+            (newSelectionType === 'inactive' && !user.is_active)) {
+          newSelectedIds.add(user.id);
+        }
+      });
+      
+      setSelectedUserIds(newSelectedIds);
+      setSelectionType(newSelectionType);
+    }
+  };
+
+  const isUserDisabled = (user: UserManagement): boolean => {
+    if (selectionType === null) return false;
+    return selectionType === 'active' ? !user.is_active : user.is_active;
+  };
+
+  const clearSelection = () => {
+    setSelectedUserIds(new Set());
+    setSelectionType(null);
+  };
+
+  const handleBulkStatusChange = async (makeActive: boolean) => {
+    if (selectedUserIds.size === 0) return;
+    
+    try {
+      const promises = Array.from(selectedUserIds).map(userId =>
+        userManagementService.updateUser(userId, { is_active: makeActive })
+      );
+      
+      await Promise.all(promises);
+      toast.success(
+        `${selectedUserIds.size} user(s) ${makeActive ? 'activated' : 'deactivated'} successfully`
+      );
+      
+      clearSelection();
+      fetchCounts();
+      fetchUsers(currentPage, searchTerm, activeFilter, userTypeFilter, subscriptionFilter);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to update users");
     }
   };
 
@@ -562,9 +656,60 @@ function UserManagementPage() {
               </div>
             </div>
 
+            {/* Bulk Action Bar */}
+            {selectedUserIds.size > 0 && (
+              <div className="flex items-center justify-between p-3 mb-4 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-primary">
+                    {selectedUserIds.size} user(s) selected
+                  </span>
+                  <span className="text-sm text-slate-500">
+                    ({selectionType === 'active' ? 'Active' : 'Inactive'} users)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectionType === 'active' ? (
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      onClick={() => handleBulkStatusChange(false)}
+                    >
+                      <Lucide icon="UserX" className="w-4 h-4 mr-1" />
+                      Deactivate Selected
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline-success"
+                      size="sm"
+                      onClick={() => handleBulkStatusChange(true)}
+                    >
+                      <Lucide icon="UserCheck" className="w-4 h-4 mr-1" />
+                      Activate Selected
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={clearSelection}
+                  >
+                    Clear Selection
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Table */}
             <StandardizedTable isLoading={tableLoading} maxHeight="65vh">
               <StandardizedTable.Header>
+                <StandardizedTable.Cell isHeader width="40px">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                    checked={users.length > 0 && users.filter(u => !isUserDisabled(u)).every(u => selectedUserIds.has(u.id)) && users.filter(u => !isUserDisabled(u)).length > 0}
+                    onChange={handleSelectAll}
+                    disabled={tableLoading || users.length === 0}
+                  />
+                </StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>First Name</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Last Name</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Email</StandardizedTable.Cell>
@@ -577,16 +722,36 @@ function UserManagementPage() {
               </StandardizedTable.Header>
               <tbody>
                 {tableLoading ? (
-                  <StandardizedTable.LoadingSkeleton rows={8} cols={9} />
+                  <StandardizedTable.LoadingSkeleton rows={8} cols={10} />
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-8 text-slate-500">
+                    <td colSpan={10} className="text-center py-8 text-slate-500">
                       No users found
                     </td>
                   </tr>
                 ) : (
-                  users.map((user, index) => (
-                    <StandardizedTable.Row key={user.id} index={index}>
+                  users.map((user, index) => {
+                    const disabled = isUserDisabled(user);
+                    return (
+                    <StandardizedTable.Row 
+                      key={user.id} 
+                      index={index}
+                      className={clsx(
+                        disabled && "opacity-50 bg-slate-50"
+                      )}
+                    >
+                      <StandardizedTable.Cell>
+                        <input
+                          type="checkbox"
+                          className={clsx(
+                            "w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary",
+                            disabled ? "cursor-not-allowed" : "cursor-pointer"
+                          )}
+                          checked={selectedUserIds.has(user.id)}
+                          onChange={() => handleUserSelect(user)}
+                          disabled={disabled}
+                        />
+                      </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         {user.first_name || "-"}
                       </StandardizedTable.Cell>
@@ -654,7 +819,8 @@ function UserManagementPage() {
                         </div>
                       </StandardizedTable.Cell>
                     </StandardizedTable.Row>
-                  ))
+                  );
+                  })
                 )}
               </tbody>
             </StandardizedTable>
@@ -952,6 +1118,20 @@ function UserManagementPage() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="col-span-12">
+              <FormLabel htmlFor="edit-password">
+                Change Password <span className="text-slate-400 text-xs">(leave blank to keep current)</span>
+              </FormLabel>
+              <FormInput
+                id="edit-password"
+                type="password"
+                placeholder="Enter new password"
+                value={editFormData.password || ""}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, password: e.target.value })
+                }
+              />
             </div>
           </Dialog.Description>
           <Dialog.Footer>

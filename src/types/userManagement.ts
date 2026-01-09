@@ -13,9 +13,9 @@ export interface UserManagement {
   subscription?: string;
 }
 
-export type UserType = 'admin' | 'analyst' | 'client' | 'developer' | 'partner' | 'qa' | 'researcher' | 'tester';
+export type UserType = 'admin' | 'client' | 'zmh_employee';
 
-export type SubscriptionType = 'trial';
+export type SubscriptionType = 'client' | 'trial';
 
 export interface CreateUserDTO {
   username: string;
