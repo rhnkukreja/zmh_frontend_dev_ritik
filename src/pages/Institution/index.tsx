@@ -198,7 +198,7 @@ function Main() {
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
           <div className="font-semibold text-xl ">Institutions</div>
-          {user?.user_type === "Admin" && (
+          {user?.user_type === "Analyst" && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
                 onClick={() => {
@@ -522,7 +522,7 @@ function Main() {
                                   />
                                 </Tippy>
 
-                                {user?.user_type === "Admin" && (
+                                {user?.user_type === "Analyst" && (
                                   <>
                                     <Tippy
                                       content="Add Document"

@@ -199,7 +199,7 @@ function Main() {
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
               <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                {user?.user_type === "Admin" && (
+                {user?.user_type === "Analyst" && (
                   <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                     <Button
                       onClick={() => {

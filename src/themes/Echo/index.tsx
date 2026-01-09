@@ -569,9 +569,9 @@ function Main() {
               {formattedMenu.map((menu, menuKey) =>
                 typeof menu == "string" ? (
                   <li className="side-menu__divider" key={menuKey}>
-                    {user.user_type === "Admin" ? (
+                    {user.user_type === "Analyst" ? (
                       <>{menu}</>
-                    ) : user.user_type !== "Admin" && menu === "Admin" ? (
+                    ) : user.user_type !== "Analyst" && menu === "Admin" ? (
                       <>{ }</>
                     ) : (
                       <>{menu}</>

@@ -345,7 +345,7 @@ function Main() {
               ) : (
                 <div className="font-semibold text-xl">Engagement Questions</div>
               )}
-              {user?.user_type === "Admin" && (
+              {user?.user_type === "Analyst" && (
                 <div className="flex justify-end">
                   <Button
                     onClick={() => {
@@ -744,7 +744,7 @@ function Main() {
                                             />
                                           </Tippy>
 
-                                          {user?.user_type === "Admin" && (
+                                          {user?.user_type === "Analyst" && (
                                             <Tippy
                                               content="Edit"
                                               options={{

@@ -299,7 +299,7 @@ function Main() {
               </div>
             </div>
 
-            {user?.user_type === "Admin" && (
+            {user?.user_type === "Analyst" && (
               <div>
                 <Tippy
                   content="Active"
@@ -343,9 +343,9 @@ function Main() {
               className=
               {clsx(
                 "flex flex-col w-full gap-y-2",
-                params?.type! === "investor" && user?.user_type === "Admin" && "lg:w-[60%] 2xl:w-[54rem]",
-                params?.type! === "investor" && user?.user_type !== "Admin" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]",
-                params?.type! === "investor" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
+                params?.type! === "investor" && user?.user_type === "Analyst" && "lg:w-[60%] 2xl:w-[54rem]",
+                params?.type! === "investor" && user?.user_type !== "Analyst" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]",
+                params?.type! === "investor" && user?.user_type !== "Analyst" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
               )}
             >
 
@@ -356,7 +356,7 @@ function Main() {
                       key as keyof typeof investorProfileEditableSectionsInvestors;
                     const value = singleInvesterProfile?.[typedKey];
                     const shouldRenderSection =
-                      !!value || (!value && user?.user_type === "Admin");
+                      !!value || (!value && user?.user_type === "Analyst");
 
                     if (!shouldRenderSection) {
                       return null;
@@ -434,7 +434,7 @@ function Main() {
                 )}
             </div>
 
-            {params?.type! === "investor" && ((user?.user_type === "Admin") || (user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts?.length > 0)) && (
+            {params?.type! === "investor" && ((user?.user_type === "Analyst") || (user?.user_type !== "Analyst" && singleInvesterProfile?.key_contacts?.length > 0)) && (
               <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
                 {singleInvesterProfile?.contact_email && (
                   <div className="flex flex-col box mb-4 p-4 border border-gray-200 rounded-md">
@@ -478,7 +478,7 @@ function Main() {
                           February 2025
                         </div>
                       </div>
-                      {user?.user_type === "Admin" && (
+                      {user?.user_type === "Analyst" && (
                         <div
                           className="exclude-from-pdf ml-4 cursor-pointer flex items-center justify-center bg-transparent rounded-md text-primary px-4 py-2 transition-colors duration-200 hover:bg-primary hover:text-white"
                           onClick={toggleExpand}
