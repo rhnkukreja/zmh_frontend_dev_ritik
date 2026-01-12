@@ -13,6 +13,7 @@ import {
   setTempSearch,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
+import { axiosInstance } from "@/services";
 import { AppDispatch } from "@/stores/store";
 import LoadingIcon from "../Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
@@ -317,6 +318,27 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       fetchAnalyticsData();
     }
   }, [companyGlobalSearchTicker, fetchAnalyticsData]);
+
+  // Download analytics handler
+  const handleDownloadAnalytics = async () => {
+    try {
+      const response = await axiosInstance.get(
+        `https://api.zmhadvisors.com/voting_report_8k/?ticker=${companyGlobalSearchTicker}&download=true`,
+        { responseType: 'blob' }
+      );
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${companyGlobalSearchName || companyGlobalSearchTicker}_analytics.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading analytics:', error);
+    }
+  };
 
   // Trigger animation when modal opens
   useEffect(() => {
@@ -837,7 +859,17 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
           <Dialog.Title>
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
+                  <Tippy content="Download Analytics" options={{ theme: "light" }}>
+                    <div
+                      className="w-10 h-10 flex items-center justify-center border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
+                      onClick={handleDownloadAnalytics}
+                    >
+                      <Lucide icon="Download" className="w-5 h-5 text-red-500" />
+                    </div>
+                  </Tippy>
+                </div>
                 <p className="text-sm text-slate-600 mt-1">All Investors</p>
               </div>
               <div
