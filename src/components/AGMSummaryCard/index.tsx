@@ -250,6 +250,14 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [animateChart, setAnimateChart] = useState<boolean>(false);
   const [is8kLoading, setIs8kLoading] = useState<boolean>(false);
+  const [expandedYearModal, setExpandedYearModal] = useState<{
+    visible: boolean;
+    year: string;
+    categoryName: string;
+    investors: string[];
+    actionLabel: string;
+    percentage: string;
+  } | null>(null);
 
   const extractCikFromSecFilingUrl = (secUrl?: string) => {
     if (!secUrl) return null;
@@ -820,7 +828,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
       {
       /* Analytics Chart Modal */}
-      <Dialog size="lg" open={chartModalVisible} onClose={() => setChartModalVisible(false)}>
+      <Dialog size="lg" open={chartModalVisible} onClose={() => {
+        if (!expandedYearModal?.visible) {
+          setChartModalVisible(false);
+        }
+      }}>
         <Dialog.Panel className="!max-w-[85vw] !w-[85vw]">
           <Dialog.Title>
             <div className="flex items-center justify-between">
@@ -829,7 +841,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                 <p className="text-sm text-slate-600 mt-1">All Investors</p>
               </div>
               <div
-                onClick={() => setChartModalVisible(false)}
+                onClick={() => {
+                  if (!expandedYearModal?.visible) {
+                    setChartModalVisible(false);
+                  }
+                }}
                 className="cursor-pointer hover:bg-gray-100 p-2 rounded absolute top-4 right-6 z-10"
               >
                 <Lucide icon="X" className="w-6 h-6 text-slate-400" />
@@ -891,8 +907,27 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                             </div>
                             <div className="flex gap-2">
                               {yearDataList.map((item: any, idx: number) => (
-                                <div key={item.year} className="flex-1 border border-slate-200 rounded-lg overflow-hidden">
-                                  <div className={idx === 0 ? "bg-primary text-white p-2 text-center text-sm font-medium" : "bg-slate-400 text-white p-2 text-center text-sm font-medium"}>{item.year}</div>
+                                <div key={item.year} className="flex-1 border border-slate-200 rounded-lg overflow-hidden relative">
+                                  <div className={idx === 0 ? "bg-primary text-white p-2 text-center text-sm font-medium relative" : "bg-slate-400 text-white p-2 text-center text-sm font-medium relative"}>
+                                    {item.year}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedYearModal({
+                                          visible: true,
+                                          year: item.year,
+                                          categoryName: category.name,
+                                          investors: item.data?.investors || [],
+                                          actionLabel: actionLabel || 'Investors',
+                                          percentage: item.data?.percentage || '--'
+                                        });
+                                      }}
+                                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-white/20 rounded transition-colors"
+                                      title="Expand view"
+                                    >
+                                      <Lucide icon="Maximize2" className="w-3 h-3" />
+                                    </button>
+                                  </div>
                                   <div className={idx === 0 ? "bg-primary/10 p-3 h-[180px] overflow-y-auto" : "bg-slate-50 p-3 h-[180px] overflow-y-auto"}>
                                     {item.data?.investors?.length > 0 ? (
                                       <div className="space-y-1">
@@ -923,6 +958,54 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   <p className="text-gray-500 text-lg">No analytics data available for {selectedYear}</p>
                 </div>
               )}
+            </div>
+          </Dialog.Description>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* Expanded Year Modal */}
+      <Dialog 
+        open={expandedYearModal?.visible || false} 
+        onClose={() => {}}
+        staticBackdrop
+      >
+        <Dialog.Panel className="!max-w-[500px] !w-[500px]">
+          <Dialog.Title>
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <h2 className="text-lg font-semibold">{expandedYearModal?.categoryName} - {expandedYearModal?.year}</h2>
+                <p className="text-sm text-slate-600 mt-1">{expandedYearModal?.actionLabel} ({expandedYearModal?.percentage})</p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedYearModal(null);
+                }}
+                className="cursor-pointer hover:bg-gray-100 p-2 rounded ml-auto"
+              >
+                <Lucide icon="X" className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+          </Dialog.Title>
+          <Dialog.Description>
+            <div className="bg-slate-50 rounded-lg p-4 max-h-[60vh] overflow-y-auto">
+              {expandedYearModal?.investors && expandedYearModal.investors.length > 0 ? (
+                <div className="space-y-2">
+                  {expandedYearModal.investors.map((investor: string, i: number) => (
+                    <div key={i} className="flex items-start gap-3 text-sm text-slate-700 p-2 bg-white rounded border border-slate-200">
+                      <span className="mt-[6px] h-2 w-2 rounded-full bg-primary shrink-0" />
+                      <span className="font-medium">{investor}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-32 flex items-center justify-center">
+                  <span className="text-slate-500">No investors data available</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-4 text-center text-sm text-slate-500">
+              Total: {expandedYearModal?.investors?.length || 0} investors
             </div>
           </Dialog.Description>
         </Dialog.Panel>

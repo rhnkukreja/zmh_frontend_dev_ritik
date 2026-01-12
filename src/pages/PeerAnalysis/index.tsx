@@ -595,7 +595,7 @@ function PeerAnalysis() {
                     />
                     <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                   </FormSwitch> */}
-                  {user?.user_type === "Admin" && (
+                  {user?.user_type === "Analyst" && (
                     <Button
                       onClick={() => setAddEngagementDetailsModalVisible(true)}
                       variant="primary"
