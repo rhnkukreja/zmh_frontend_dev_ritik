@@ -14,7 +14,8 @@ const multipartFormDataUrls = [
   "/institute/",
   "/company/",
   "/institute_documents/",
-  "proxy_voting_guidelines_pdf_summary_data_upload"
+  "proxy_voting_guidelines_pdf_summary_data_upload",
+  "/peer_analysis_excel_upload/"
 ];
 
 const isNotMultipartFormDataUrls = [

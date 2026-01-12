@@ -2,33 +2,32 @@ import { useEffect, useRef, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
-import FormInput from "@/components/Base/Form/FormInput";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { bytesToMB } from "@/utils/helper";
 import { axiosInstance } from "@/services";
+import { FormCheck } from "@/components/Base/Form";
+import { baseURL } from "@/constant";
 
-interface DocumentFormData {
-  document_name: string;
-  document_type: string;
-  month: string;
+interface EngagementDetailsFormData {
+  institution_id: string;
   year: string;
+  month: string;
+  delete_previous: boolean;
 }
 
-interface AddDocumentModalProps {
+interface Institution {
+  id: number;
+  institution: string;
+}
+
+interface AddEngagementDetailsModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
-  institutionId: string | number;
   onSuccess?: () => void;
 }
-
-const documentTypes = [
-  "Voting Guidelines",
-  "Stewardship Report",
-  "Engagement Details",
-];
 
 const months = [
   { value: "01", label: "January" },
@@ -46,32 +45,55 @@ const months = [
 ];
 
 const currentYear = new Date().getFullYear();
-const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
 const years = Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
 
-const AddDocumentModal = ({
+const AddEngagementDetailsModal = ({
   visible,
   setVisible,
-  institutionId,
   onSuccess,
-}: AddDocumentModalProps) => {
+}: AddEngagementDetailsModalProps) => {
   const dropzoneRef = useRef<DropzoneElement>(null);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [institutionsLoading, setInstitutionsLoading] = useState(false);
 
   const {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
-  } = useForm<DocumentFormData>({
+  } = useForm<EngagementDetailsFormData>({
     defaultValues: {
-      document_name: "",
-      document_type: "",
-      month: currentMonth,
+      institution_id: "",
       year: currentYear.toString(),
+      month: currentMonth,
+      delete_previous: false,
     },
   });
+
+  const deletePrevious = watch("delete_previous");
+
+  // Fetch institutions on modal open
+  useEffect(() => {
+    if (visible) {
+      fetchInstitutions();
+    }
+  }, [visible]);
+
+  const fetchInstitutions = async () => {
+    try {
+      setInstitutionsLoading(true);
+      const response = await axiosInstance.get(`${baseURL}/institute/?page_size=1000`);
+      setInstitutions(response.data?.results || []);
+    } catch (error) {
+      toast.error("Failed to load institutions");
+    } finally {
+      setInstitutionsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const elDropzoneRef = dropzoneRef.current;
@@ -97,9 +119,9 @@ const AddDocumentModal = ({
     }
   }, [visible]);
 
-  const onSubmit = async (data: DocumentFormData) => {
+  const onSubmit = async (data: EngagementDetailsFormData) => {
     if (!documentFile) {
-      toast.error("Please upload a document");
+      toast.error("Please upload an Excel file");
       return;
     }
 
@@ -107,21 +129,24 @@ const AddDocumentModal = ({
 
     try {
       const formData = new FormData();
-      formData.append("institution_id", String(institutionId));
-      formData.append("document_name", data.document_name);
-      formData.append("document_type", data.document_type);
-      formData.append("month", data.month);
+      formData.append("institution_id", data.institution_id);
       formData.append("year", data.year);
-      formData.append("document", documentFile, documentFile.name);
+      formData.append("month", data.month);
+      formData.append("delete_previous", data.delete_previous ? "true" : "false");
+      formData.append("file", documentFile, documentFile.name);
 
-      await axiosInstance.post("/institute_documents/", formData);
+      await axiosInstance.post("/peer_analysis_excel_upload/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      toast.success("Document uploaded successfully");
+      toast.success("Engagement details uploaded successfully");
       handleClose();
       onSuccess?.();
     } catch (err) {
-      const error = err as { message?: string };
-      toast.error(error?.message || "Failed to upload document");
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error?.response?.data?.message || error?.message || "Failed to upload engagement details");
     } finally {
       setLoading(false);
     }
@@ -140,7 +165,7 @@ const AddDocumentModal = ({
     <Dialog open={visible} onClose={handleClose}>
       <Dialog.Panel>
         <Dialog.Title>
-          <h2 className="mr-auto text-base font-medium">Add Document</h2>
+          <h2 className="mr-auto text-base font-medium">Add Engagement Details</h2>
           <button
             className="absolute top-0 right-0 mt-3 mr-3"
             onClick={handleClose}
@@ -151,51 +176,38 @@ const AddDocumentModal = ({
         <Dialog.Description className="grid grid-cols-12 gap-4 gap-y-3">
           <div className="col-span-12">
             <label className="block mb-1 text-sm font-medium">
-              Document Name <span className="text-red-500">*</span>
+              Institution <span className="text-red-500">*</span>
             </label>
             <Controller
-              name="document_name"
+              name="institution_id"
               control={control}
-              rules={{ required: "Document name is required" }}
-              render={({ field }) => (
-                <FormInput
-                  {...field}
-                  type="text"
-                  placeholder="Enter document name"
-                />
-              )}
-            />
-            {errors.document_name && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.document_name.message}</span>
-            )}
-          </div>
-
-          <div className="col-span-12 sm:col-span-6">
-            <label className="block mb-1 text-sm font-medium">
-              Document Type <span className="text-red-500">*</span>
-            </label>
-            <Controller
-              name="document_type"
-              control={control}
-              rules={{ required: "Document type is required" }}
+              rules={{ required: "Institution is required" }}
               render={({ field }) => (
                 <TomSelect
                   value={field.value}
                   onChange={field.onChange}
-                  options={{ placeholder: "Select document type" }}
+                  options={{ placeholder: "Select Institution" }}
                   className="w-full"
                 >
-                  <option value="">Select Type</option>
-                  {documentTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
+                  <option value="">Select Institution</option>
+                  {institutionsLoading ? (
+                    <option value="" disabled>
+                      Loading...
                     </option>
-                  ))}
+                  ) : (
+                    institutions.map((inst) => (
+                      <option key={inst.id} value={inst.id}>
+                        {inst.institution}
+                      </option>
+                    ))
+                  )}
                 </TomSelect>
               )}
             />
-            {errors.document_type && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.document_type.message}</span>
+            {errors.institution_id && (
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.institution_id.message}
+              </span>
             )}
           </div>
 
@@ -223,7 +235,9 @@ const AddDocumentModal = ({
               )}
             />
             {errors.month && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.month.message}</span>
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.month.message}
+              </span>
             )}
           </div>
 
@@ -251,13 +265,53 @@ const AddDocumentModal = ({
               )}
             />
             {errors.year && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.year.message}</span>
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.year.message}
+              </span>
             )}
           </div>
 
           <div className="col-span-12">
+            <label className="block mb-2 text-sm font-medium">
+              Delete Previous Data <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="delete_previous"
+              control={control}
+              render={({ field }) => (
+                <div className="flex gap-6">
+                  <FormCheck>
+                    <FormCheck.Input
+                      id="delete-previous-yes"
+                      type="radio"
+                      name="delete_previous"
+                      checked={field.value === true}
+                      onChange={() => field.onChange(true)}
+                    />
+                    <FormCheck.Label htmlFor="delete-previous-yes" className="ml-2">
+                      Yes
+                    </FormCheck.Label>
+                  </FormCheck>
+                  <FormCheck>
+                    <FormCheck.Input
+                      id="delete-previous-no"
+                      type="radio"
+                      name="delete_previous"
+                      checked={field.value === false}
+                      onChange={() => field.onChange(false)}
+                    />
+                    <FormCheck.Label htmlFor="delete-previous-no" className="ml-2">
+                      No
+                    </FormCheck.Label>
+                  </FormCheck>
+                </div>
+              )}
+            />
+          </div>
+
+          <div className="col-span-12">
             <label className="block mb-1 text-sm font-medium">
-              Upload Document <span className="text-red-500">*</span>
+              Upload Excel File <span className="text-red-500">*</span>
             </label>
             <Dropzone
               ref={dropzoneRef}
@@ -265,7 +319,7 @@ const AddDocumentModal = ({
                 url: "/",
                 autoProcessQueue: false,
                 maxFiles: 1,
-                acceptedFiles: ".pdf,.doc,.docx,.xls,.xlsx",
+                acceptedFiles: ".xlsx",
                 addRemoveLinks: true,
                 maxFilesize: 10,
               }}
@@ -275,7 +329,7 @@ const AddDocumentModal = ({
                 Drop file here or click to upload.
               </div>
               <div className="text-gray-600">
-                Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
+                Accepted format: XLSX only (Max 10MB)
               </div>
             </Dropzone>
             {documentFile && (
@@ -309,5 +363,5 @@ const AddDocumentModal = ({
   );
 };
 
-export { AddDocumentModal };
-export default AddDocumentModal;
+export { AddEngagementDetailsModal };
+export default AddEngagementDetailsModal;

@@ -46,6 +46,7 @@ import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import AddEngagementDetailsModal from "./components/AddEngagementDetailsModal";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -62,6 +63,8 @@ function PeerAnalysis() {
   const dispatch: AppDispatch = useAppDispatch();
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [addEngagementDetailsModalVisible, setAddEngagementDetailsModalVisible] =
     useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -592,6 +595,16 @@ function PeerAnalysis() {
                     />
                     <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                   </FormSwitch> */}
+                  {user?.user_type === "Admin" && (
+                    <Button
+                      onClick={() => setAddEngagementDetailsModalVisible(true)}
+                      variant="primary"
+                      className="bg-theme-2 border-bg-theme-2"
+                    >
+                      <Lucide icon="Plus" className="stroke-[1.3] w-4 h-4 mr-2" />
+                      Add Engagement Details
+                    </Button>
+                  )}
                   <button
                     onClick={() => {
                       const element = document.querySelector('#data-listing');
@@ -1169,6 +1182,13 @@ function PeerAnalysis() {
             <AddNewInvesterProfile
               addNewInvesterModalVisible={addNewInvesterModalVisible}
               setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
+            />
+          )}
+
+          {addEngagementDetailsModalVisible && (
+            <AddEngagementDetailsModal
+              visible={addEngagementDetailsModalVisible}
+              setVisible={setAddEngagementDetailsModalVisible}
             />
           )}
         </div>
