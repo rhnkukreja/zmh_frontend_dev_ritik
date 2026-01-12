@@ -21,8 +21,9 @@ const USER_TYPE_OPTIONS: { value: UserType; label: string }[] = [
 ];
 
 const SUBSCRIPTION_OPTIONS: { value: SubscriptionType; label: string }[] = [
-  { value: "client", label: "Client" },
-  { value: "trial", label: "Trial" },
+  { value: "Trial", label: "Trial" },
+  { value: "Trial Ended", label: "Trial Ended" },
+  { value: "Paying", label: "Paying" },
 ];
 
 function UserManagementPage() {
@@ -68,7 +69,9 @@ function UserManagementPage() {
     last_name: "",
     is_active: true,
     user_type: "client",
-    subscription: "trial",
+    subscription: "Trial",
+    duration_days: 30,
+    user_company: "ZMH Advisors",
   });
   
   // Form state for edit
@@ -78,7 +81,9 @@ function UserManagementPage() {
     last_name: "",
     is_active: true,
     user_type: "client",
-    subscription: "trial",
+    subscription: "Trial",
+    duration_days: 30,
+    user_company: "ZMH Advisors",
     password: "",
   });
   
@@ -287,7 +292,9 @@ function UserManagementPage() {
       last_name: "",
       is_active: true,
       user_type: "client",
-      subscription: "trial",
+      subscription: "Trial",
+      duration_days: 30,
+      user_company: "ZMH Advisors",
     });
     setFormErrors({});
   };
@@ -302,7 +309,9 @@ function UserManagementPage() {
       last_name: user.last_name,
       is_active: user.is_active,
       user_type: (user.user_type as UserType) || "client",
-      subscription: (user.subscription as SubscriptionType) || "trial",
+      subscription: (user.subscription as SubscriptionType) || "Trial",
+      duration_days: user.duration_days ?? 30,
+      user_company: user.user_company || "ZMH Advisors",
       password: "",
     });
     setFormErrors({});
@@ -982,6 +991,34 @@ function UserManagementPage() {
                 ))}
               </select>
             </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="create-duration_days">
+                Duration Days
+              </FormLabel>
+              <FormInput
+                id="create-duration_days"
+                type="number"
+                placeholder="Enter duration days"
+                value={createFormData.duration_days}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, duration_days: parseInt(e.target.value) || 0 })
+                }
+              />
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="create-user_company">
+                User Company
+              </FormLabel>
+              <FormInput
+                id="create-user_company"
+                type="text"
+                placeholder="Enter user company"
+                value={createFormData.user_company}
+                onChange={(e) =>
+                  setCreateFormData({ ...createFormData, user_company: e.target.value })
+                }
+              />
+            </div>
           </Dialog.Description>
           <Dialog.Footer>
             <Button
@@ -1106,7 +1143,7 @@ function UserManagementPage() {
               </FormLabel>
               <select
                 id="edit-subscription"
-                value={editFormData.subscription || "trial"}
+                value={editFormData.subscription || "Trial"}
                 onChange={(e) =>
                   setEditFormData({ ...editFormData, subscription: e.target.value as SubscriptionType })
                 }
@@ -1118,6 +1155,34 @@ function UserManagementPage() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-duration_days">
+                Duration Days
+              </FormLabel>
+              <FormInput
+                id="edit-duration_days"
+                type="number"
+                placeholder="Enter duration days"
+                value={editFormData.duration_days ?? 30}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, duration_days: parseInt(e.target.value) || 0 })
+                }
+              />
+            </div>
+            <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-user_company">
+                User Company
+              </FormLabel>
+              <FormInput
+                id="edit-user_company"
+                type="text"
+                placeholder="Enter user company"
+                value={editFormData.user_company || "ZMH Advisors"}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, user_company: e.target.value })
+                }
+              />
             </div>
             <div className="col-span-12">
               <FormLabel htmlFor="edit-password">

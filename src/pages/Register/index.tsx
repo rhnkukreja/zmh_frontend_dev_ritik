@@ -22,6 +22,7 @@ interface FormInputs {
   first_name: string;
   last_name: string;
   email: string;
+  company?: string;
   password: string;
   passwordConfirmation: string;
 }
@@ -189,6 +190,19 @@ function Main() {
                     {errors.email && (
                       <span className="text-red-500">
                         {typeof errors.email.message === "string" ? errors.email.message : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-5">
+                    <FormLabel>Company</FormLabel>
+                    <FormInput
+                      type="text"
+                      className="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                      {...register("company")}
+                    />
+                    {errors.company && (
+                      <span className="text-red-500">
+                        {typeof errors.company.message === "string" ? errors.company.message : ""}
                       </span>
                     )}
                   </div>

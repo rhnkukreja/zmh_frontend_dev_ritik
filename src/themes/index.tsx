@@ -54,7 +54,7 @@ function Main() {
         </svg>
       </Transition>
       <ThemeSwitcher />
-      <HelpWidget />
+      {/* <HelpWidget /> */}
     </div>
   );
 }

@@ -11,11 +11,13 @@ export interface UserManagement {
   account_age_days?: number;
   user_type?: string;
   subscription?: string;
+  duration_days?: number;
+  user_company?: string;
 }
 
 export type UserType = 'admin' | 'client' | 'zmh_employee';
 
-export type SubscriptionType = 'client' | 'trial';
+export type SubscriptionType = 'Trial' | 'Trial Ended' | 'Paying';
 
 export interface CreateUserDTO {
   username: string;
@@ -26,6 +28,8 @@ export interface CreateUserDTO {
   is_active: boolean;
   user_type: UserType;
   subscription: SubscriptionType;
+  duration_days: number;
+  user_company: string;
 }
 
 export interface UpdateUserDTO {
@@ -37,6 +41,8 @@ export interface UpdateUserDTO {
   is_active?: boolean;
   user_type?: UserType;
   subscription?: SubscriptionType;
+  duration_days?: number;
+  user_company?: string;
 }
 
 export interface UserManagementResponse {

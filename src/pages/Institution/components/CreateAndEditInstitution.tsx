@@ -29,6 +29,8 @@ interface InstitutionFormData {
   contact?: string;
   email?: string;
   whale_wisdom_filer_id: string;
+  proxy_advisor_influence?: string;
+  unpri_signatory?: boolean;
 }
 
 interface AddEditInstitutionProps {
@@ -63,6 +65,8 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       investor_type: selectedInstitution?.investor_type || "Investor",
       // contact: selectedInstitution?.contact!,
       // email: selectedInstitution?.email!,
+      proxy_advisor_influence: selectedInstitution?.proxy_advisor_influence || "",
+      unpri_signatory: selectedInstitution?.unpri_signatory || false,
     },
   });
 
@@ -345,6 +349,48 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     {errors.whale_wisdom_filer_id.message}
                   </Error>
                 )}
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Proxy Advisory Influence
+                </FormCheck.Label>
+                <Controller
+                  name="proxy_advisor_influence"
+                  control={control}
+                  render={({ field }) => (
+                    <FormInput
+                      placeholder="Enter Proxy Advisory Influence"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  UN PRI Signatory
+                </FormCheck.Label>
+                <Controller
+                  name="unpri_signatory"
+                  control={control}
+                  render={({ field }) => (
+                    <FormCheck className="flex items-center">
+                      <FormCheck.Input
+                        id="unpri_signatory"
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                      <FormCheck.Label
+                        htmlFor="unpri_signatory"
+                        className="ml-2"
+                      >
+                        Yes
+                      </FormCheck.Label>
+                    </FormCheck>
+                  )}
+                />
               </div>
 
               {/* <div className="w-full">
