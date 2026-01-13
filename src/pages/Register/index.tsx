@@ -53,14 +53,14 @@ function Main() {
   }, []);
 
   const onSubmit: SubmitHandler<FormInputs> = async (data) => {
-    const { passwordConfirmation, ...restData } = data;
+    const { passwordConfirmation, company, ...restData } = data;
 
     const signupPayload = {
       ...restData,
       user_type: "Employee",
       username: restData?.email,
       confirm_password: data.passwordConfirmation,
-      company: restData.company ? Number(restData.company) : null,
+      user_company: company || undefined,
     };
 
     try {
@@ -106,6 +106,7 @@ function Main() {
           username: signupData.username,
           user_type: signupData.user_type,
           confirm_password: signupData.confirm_password,
+          user_company: signupData.user_company,
         })
       ).unwrap();
 

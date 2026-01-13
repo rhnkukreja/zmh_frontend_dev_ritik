@@ -16,7 +16,7 @@ export class SignUpRequestDTO {
     public user_type: string,
     public confirm_password: string,
     public phone?: string,
-    public company?: number | null
+    public user_company?: string
   ) { }
 }
 export class VerifySignUpOtpDTO {
@@ -53,6 +53,6 @@ export class ResendSignUpOtpDTO {
     public user_type: string,
     public confirm_password: string,
     public phone?: string,
-    public company?: number | null
+    public user_company?: string
   ) { }
 }
