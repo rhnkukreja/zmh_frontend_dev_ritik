@@ -13,4 +13,6 @@ export type Institutions = {
   date_updated: string;
   uploaded_time_caspio: string;
   whale_wisdom_filer_id: string | number;
+  proxy_advisor_influence?: string;
+  unpri_signatory?: boolean;
 };

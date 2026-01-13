@@ -60,6 +60,7 @@ function Main() {
       user_type: "Employee",
       username: restData?.email,
       confirm_password: data.passwordConfirmation,
+      company: restData.company ? Number(restData.company) : null,
     };
 
     try {
