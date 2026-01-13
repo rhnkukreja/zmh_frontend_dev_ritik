@@ -356,23 +356,23 @@ class DashboardService {
     };
   }
 
-  public async getGraphQLData(searchKeyword: string): Promise<{
-    result: any;
-  }> {
-    const requestBody = {
-      query: `query MyQuery { organizationKeywordSearch(filter: {searchKeyword: "${searchKeyword}"}) { ... on OrganizationPagedResult { __typename items { organizationName organizationType website latestDailyMarketCapital latestAnnualMarketRevenue headOfficeAddress { address city country } rolesBoard { items { person { name age } startDate { displayDate } endDate { displayDate } type title } } rolesEmployment { items { person { name age } type title } } } } ... on GenericError { __typename errorCode errorMessage } ... on ValidationError { __typename errorCode errorMessage } } }`,
-      variables: {}
-    };
+  // public async getGraphQLData(searchKeyword: string): Promise<{
+  //   result: any;
+  // }> {
+  //   const requestBody = {
+  //     query: `query MyQuery { organizationKeywordSearch(filter: {searchKeyword: "${searchKeyword}"}) { ... on OrganizationPagedResult { __typename items { organizationName organizationType website latestDailyMarketCapital latestAnnualMarketRevenue headOfficeAddress { address city country } rolesBoard { items { person { name age } startDate { displayDate } endDate { displayDate } type title } } rolesEmployment { items { person { name age } type title } } } } ... on GenericError { __typename errorCode errorMessage } ... on ValidationError { __typename errorCode errorMessage } } }`,
+  //     variables: {}
+  //   };
 
-    const response = await axiosInstance.post(
-      `${baseURL}/api/get_graphql_data/`,
-      requestBody
-    );
+  //   const response = await axiosInstance.post(
+  //     `${baseURL}/api/get_graphql_data/`,
+  //     requestBody
+  //   );
 
-    return {
-      result: response.data,
-    };
-  }
+  //   return {
+  //     result: response.data,
+  //   };
+  // }
 
   public async getVotingAnalytics(ticker: string): Promise<{
     result: any;
