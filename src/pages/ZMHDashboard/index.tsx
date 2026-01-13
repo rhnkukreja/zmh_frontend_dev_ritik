@@ -6,7 +6,7 @@ import {
   fetchCompanyByName,
   fetchCompanyDashboard,
   getBoardDirectorMembers,
-  getGraphQLBoardData,
+  // getGraphQLBoardData,
   setPage,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -94,16 +94,16 @@ function Main() {
     dispatch(setIsCompanySelected(false));
   }, [isCompanySelected]);
 
-  useEffect(() => {
-    // Use board_name if available, otherwise fallback to company name
-    const searchValue = companyGlobalSearchBoardName || companyGlobalSearchName;
-    if (searchValue) {
-      // Clean the search value by removing "Class A", "Class B", etc.
-      const cleanSearchValue = searchValue.replace(/\s+(Class\s+[A-Z]|Common\s+Stock).*$/i, '').trim();
-      console.log('Making API call with clean search value:', cleanSearchValue);
-      dispatch(getGraphQLBoardData(cleanSearchValue));
-    }
-  }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
+  // useEffect(() => {
+  //   // Use board_name if available, otherwise fallback to company name
+  //   const searchValue = companyGlobalSearchBoardName || companyGlobalSearchName;
+  //   if (searchValue) {
+  //     // Clean the search value by removing "Class A", "Class B", etc.
+  //     const cleanSearchValue = searchValue.replace(/\s+(Class\s+[A-Z]|Common\s+Stock).*$/i, '').trim();
+  //     console.log('Making API call with clean search value:', cleanSearchValue);
+  //     dispatch(getGraphQLBoardData(cleanSearchValue));
+  //   }
+  // }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
 
   // Fetch modules count when company changes
   useEffect(() => {

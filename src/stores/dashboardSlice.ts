@@ -306,13 +306,13 @@ export const getProxyVotingRationaleAllInvestors = createAsyncThunk<
   return { result: response.result };
 });
 
-export const getGraphQLBoardData = createAsyncThunk<
-  { result: any },
-  string
->(`${name}/getGraphQLBoardData`, async (searchKeyword: string) => {
-  const response = await dashboardService.getGraphQLData(searchKeyword);
-  return { result: response.result };
-});
+// export const getGraphQLBoardData = createAsyncThunk<
+//   { result: any },
+//   string
+// >(`${name}/getGraphQLBoardData`, async (searchKeyword: string) => {
+//   const response = await dashboardService.getGraphQLData(searchKeyword);
+//   return { result: response.result };
+// });
 
 export const fetchVotingRationaleBasedOnInstitution = createAsyncThunk<
   { results: any },
@@ -760,20 +760,21 @@ const companySlice = createSlice({
 
       // GraphQL board data
 
-      .addCase(getGraphQLBoardData.pending, (state) => {
-        state.graphQLBoardDataLoading = true;
-        state.error = null;
-      })
-      .addCase(getGraphQLBoardData.fulfilled, (state, action) => {
-        state.graphQLBoardDataLoading = false;
-        state.graphQLBoardData = action.payload.result;
-        state.error = null;
-      })
-      .addCase(getGraphQLBoardData.rejected, (state, action) => {
-        state.graphQLBoardDataLoading = false;
-        state.error =
-          action.error.message || "Failed to fetch GraphQL board data";
-      });
+      // .addCase(getGraphQLBoardData.pending, (state) => {
+      //   state.graphQLBoardDataLoading = true;
+      //   state.error = null;
+      // })
+      // .addCase(getGraphQLBoardData.fulfilled, (state, action) => {
+      //   state.graphQLBoardDataLoading = false;
+      //   state.graphQLBoardData = action.payload.result;
+      //   state.error = null;
+      // })
+      // .addCase(getGraphQLBoardData.rejected, (state, action) => {
+      //   state.graphQLBoardDataLoading = false;
+      //   state.error =
+      //     action.error.message || "Failed to fetch GraphQL board data";
+      // });
+      ;
   },
 });
 
