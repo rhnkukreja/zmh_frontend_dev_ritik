@@ -60,6 +60,10 @@ function UserManagementPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(new Set());
   const [selectionType, setSelectionType] = useState<'active' | 'inactive' | null>(null);
   
+  // Sorting state
+  const [sortField, setSortField] = useState<'first_name' | 'last_name' | 'user_company' | 'email' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
   // Form state for create
   const [createFormData, setCreateFormData] = useState<CreateUserDTO>({
     username: "",
@@ -303,12 +307,18 @@ function UserManagementPage() {
 
   const handleEditClick = (user: UserManagement) => {
     setSelectedUser(user);
+    
+    // Normalize user_type to match select options (case-insensitive match)
+    const normalizedUserType = USER_TYPE_OPTIONS.find(
+      opt => opt.value.toLowerCase() === (user.user_type || '').toLowerCase()
+    )?.value || "Client";
+    
     setEditFormData({
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
       is_active: user.is_active,
-      user_type: (user.user_type as any) || "Client",
+      user_type: normalizedUserType as any,
       subscription: (user.subscription as SubscriptionType) || "Trial",
       duration_days: user.duration_days ?? 30,
       user_company: user.user_company || "ZMH Advisors",
@@ -476,6 +486,43 @@ function UserManagementPage() {
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update users");
     }
+  };
+
+  // ==================== SORTING ====================
+
+  const handleSort = (field: 'first_name' | 'last_name' | 'user_company' | 'email') => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortedUsers = () => {
+    if (!sortField) return users;
+    
+    return [...users].sort((a, b) => {
+      const aValue = (a[sortField] || '').toLowerCase();
+      const bValue = (b[sortField] || '').toLowerCase();
+      
+      if (sortDirection === 'asc') {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    });
+  };
+
+  const sortedUsers = getSortedUsers();
+
+  const renderSortArrow = (field: 'first_name' | 'last_name' | 'user_company' | 'email') => {
+    if (sortField !== field) {
+      return <Lucide icon="ChevronUp" className="w-4 h-4 ml-1 opacity-30" />;
+    }
+    return sortDirection === 'asc' 
+      ? <Lucide icon="ChevronUp" className="w-4 h-4 ml-1" />
+      : <Lucide icon="ChevronDown" className="w-4 h-4 ml-1" />;
   };
 
   // ==================== DELETE USER ====================
@@ -719,14 +766,39 @@ function UserManagementPage() {
                     disabled={tableLoading || users.length === 0}
                   />
                 </StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader>First Name</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader>Last Name</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader>Company</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader>Email</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>
+                  <div 
+                    className="flex items-center cursor-pointer select-none" 
+                    onClick={() => handleSort('first_name')}
+                  >
+                    First Name {renderSortArrow('first_name')}
+                  </div>
+                </StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>
+                  <div 
+                    className="flex items-center cursor-pointer select-none" 
+                    onClick={() => handleSort('last_name')}
+                  >
+                    Last Name {renderSortArrow('last_name')}
+                  </div>
+                </StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>
+                  <div 
+                    className="flex items-center cursor-pointer select-none" 
+                    onClick={() => handleSort('user_company')}
+                  >
+                    Company {renderSortArrow('user_company')}
+                  </div>
+                </StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>
+                  <div 
+                    className="flex items-center cursor-pointer select-none" 
+                    onClick={() => handleSort('email')}
+                  >
+                    Email {renderSortArrow('email')}
+                  </div>
+                </StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>User Type</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader>Last Login</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader>Account Created</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader>Account Age (Days)</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Subscription</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Duration</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Status</StandardizedTable.Cell>
@@ -737,12 +809,12 @@ function UserManagementPage() {
                   <StandardizedTable.LoadingSkeleton rows={8} cols={10} />
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="text-center py-8 text-slate-500">
+                    <td colSpan={10} className="text-center py-8 text-slate-500">
                       No users found
                     </td>
                   </tr>
                 ) : (
-                  users.map((user, index) => {
+                  sortedUsers.map((user, index) => {
                     const disabled = isUserDisabled(user);
                     return (
                     <StandardizedTable.Row 
@@ -783,15 +855,6 @@ function UserManagementPage() {
                         <span className="capitalize">
                           {user.user_type || "-"}
                         </span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {user.last_login || "Never"}
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {user.account_creation || "-"}
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {user.account_age_days ?? 0}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         {user.subscription || "-"}
@@ -885,6 +948,16 @@ function UserManagementPage() {
         <Dialog.Panel>
           <Dialog.Title>
             <h2 className="mr-auto text-base font-medium">Create New User</h2>
+            <button
+              type="button"
+              className="absolute top-0 right-0 mt-3 mr-3 text-slate-400 hover:text-slate-500"
+              onClick={() => {
+                setShowCreateModal(false);
+                resetCreateForm();
+              }}
+            >
+              <Lucide icon="X" className="w-5 h-5" />
+            </button>
           </Dialog.Title>
           <Dialog.Description className="grid grid-cols-12 gap-4 gap-y-3">
             <div className="col-span-12 sm:col-span-6">
@@ -1068,6 +1141,17 @@ function UserManagementPage() {
         <Dialog.Panel>
           <Dialog.Title>
             <h2 className="mr-auto text-base font-medium">Edit User</h2>
+            <button
+              type="button"
+              className="absolute top-0 right-0 mt-3 mr-3 text-slate-400 hover:text-slate-500"
+              onClick={() => {
+                setShowEditModal(false);
+                setSelectedUser(null);
+                setFormErrors({});
+              }}
+            >
+              <Lucide icon="X" className="w-5 h-5" />
+            </button>
           </Dialog.Title>
           <Dialog.Description className="grid grid-cols-12 gap-4 gap-y-3">
             <div className="col-span-12 sm:col-span-6">
