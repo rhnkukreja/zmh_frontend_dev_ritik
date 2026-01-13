@@ -3,6 +3,7 @@ import { axiosInstance } from "../index";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
+import { baseURL } from "@/constant";
 
 class DashboardService {
   public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?: string, currentFilters?: any): Promise<{
@@ -364,7 +365,7 @@ class DashboardService {
     };
 
     const response = await axiosInstance.post(
-      "https://api.zmhadvisors.com/api/get_graphql_data/",
+      `${baseURL}/api/get_graphql_data/`,
       requestBody
     );
 
@@ -377,7 +378,7 @@ class DashboardService {
     result: any;
   }> {
     const response = await axiosInstance.get(
-      `https://api.zmhadvisors.com/voting_report_8k/?ticker=${ticker}`
+      `${baseURL}/voting_report_8k/?ticker=${ticker}`
     );
     return {
       result: response.data,

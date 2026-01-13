@@ -323,7 +323,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const handleDownloadAnalytics = async () => {
     try {
       const response = await axiosInstance.get(
-        `https://api.zmhadvisors.com/voting_report_8k/?ticker=${companyGlobalSearchTicker}&download=true`,
+        `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}&download=true`,
         { responseType: 'blob' }
       );
       
