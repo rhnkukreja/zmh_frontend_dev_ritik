@@ -14,10 +14,10 @@ import clsx from "clsx";
 const PAGE_SIZE = 20;
 const DEBOUNCE_DELAY = 400;
 
-const USER_TYPE_OPTIONS: { value: UserType; label: string }[] = [
-  { value: "admin", label: "Admin" },
-  { value: "client", label: "Client" },
-  { value: "zmh_employee", label: "ZMH Employee" },
+const USER_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "Admin", label: "Admin" },
+  { value: "Client", label: "Client" },
+  { value: "ZMH Employee", label: "ZMH Employee" },
 ];
 
 const SUBSCRIPTION_OPTIONS: { value: SubscriptionType; label: string }[] = [
@@ -68,7 +68,7 @@ function UserManagementPage() {
     first_name: "",
     last_name: "",
     is_active: true,
-    user_type: "client",
+    user_type: "Client" as any,
     subscription: "Trial",
     duration_days: 30,
     user_company: "ZMH Advisors",
@@ -80,7 +80,7 @@ function UserManagementPage() {
     first_name: "",
     last_name: "",
     is_active: true,
-    user_type: "client",
+    user_type: "Client" as any,
     subscription: "Trial",
     duration_days: 30,
     user_company: "ZMH Advisors",
@@ -291,7 +291,7 @@ function UserManagementPage() {
       first_name: "",
       last_name: "",
       is_active: true,
-      user_type: "client",
+      user_type: "Client" as any,
       subscription: "Trial",
       duration_days: 30,
       user_company: "ZMH Advisors",
@@ -308,7 +308,7 @@ function UserManagementPage() {
       first_name: user.first_name,
       last_name: user.last_name,
       is_active: user.is_active,
-      user_type: (user.user_type as UserType) || "client",
+      user_type: (user.user_type as any) || "Client",
       subscription: (user.subscription as SubscriptionType) || "Trial",
       duration_days: user.duration_days ?? 30,
       user_company: user.user_company || "ZMH Advisors",
@@ -562,7 +562,7 @@ function UserManagementPage() {
                 <FormInput
                   id="search"
                   type="text"
-                  placeholder="Search by name, email, or username..."
+                  placeholder="Search by name, email, or company..."
                   value={searchTerm}
                   onChange={handleSearchChange}
                 />
@@ -721,11 +721,14 @@ function UserManagementPage() {
                 </StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>First Name</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Last Name</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>Company</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Email</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>User Type</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Last Login</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Account Created</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Account Age (Days)</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>Subscription</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader>Duration</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Status</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader>Actions</StandardizedTable.Cell>
               </StandardizedTable.Header>
@@ -734,7 +737,7 @@ function UserManagementPage() {
                   <StandardizedTable.LoadingSkeleton rows={8} cols={10} />
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-8 text-slate-500">
+                    <td colSpan={13} className="text-center py-8 text-slate-500">
                       No users found
                     </td>
                   </tr>
@@ -768,6 +771,9 @@ function UserManagementPage() {
                         {user.last_name || "-"}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
+                        {user.user_company || "-"}
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
                         <div className="flex items-center gap-2">
                           <Lucide icon="Mail" className="w-4 h-4 text-slate-400" />
                           {user.email}
@@ -786,6 +792,12 @@ function UserManagementPage() {
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         {user.account_age_days ?? 0}
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
+                        {user.subscription || "-"}
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
+                        {user.duration_days ?? "-"}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <div
@@ -955,7 +967,7 @@ function UserManagementPage() {
                 id="create-user_type"
                 value={createFormData.user_type}
                 onChange={(e) =>
-                  setCreateFormData({ ...createFormData, user_type: e.target.value as UserType })
+                  setCreateFormData({ ...createFormData, user_type: e.target.value as any })
                 }
                 className={clsx(
                   "w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8",
@@ -997,7 +1009,7 @@ function UserManagementPage() {
               </FormLabel>
               <FormInput
                 id="create-duration_days"
-                type="number"
+                type="text"
                 placeholder="Enter duration days"
                 value={createFormData.duration_days}
                 onChange={(e) =>
@@ -1118,9 +1130,9 @@ function UserManagementPage() {
               </FormLabel>
               <select
                 id="edit-user_type"
-                value={editFormData.user_type || "client"}
+                value={editFormData.user_type || "Client"}
                 onChange={(e) =>
-                  setEditFormData({ ...editFormData, user_type: e.target.value as UserType })
+                  setEditFormData({ ...editFormData, user_type: e.target.value as any })
                 }
                 className={clsx(
                   "w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8",
@@ -1162,7 +1174,7 @@ function UserManagementPage() {
               </FormLabel>
               <FormInput
                 id="edit-duration_days"
-                type="number"
+                type="text"
                 placeholder="Enter duration days"
                 value={editFormData.duration_days ?? 30}
                 onChange={(e) =>

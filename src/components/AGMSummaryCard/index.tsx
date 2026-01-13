@@ -327,20 +327,12 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         { responseType: 'blob' }
       );
       
-      // Extract filename from Content-Disposition header if available
-      const contentDisposition = response.headers['content-disposition'];
-      let filename = 'analytics.xlsx'; // default fallback
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1].replace(/['"]/g, '');
-        }
-      }
+      const filename = `Voting Analytics (${companyGlobalSearchTicker}).xlsx`;
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', filename);
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
