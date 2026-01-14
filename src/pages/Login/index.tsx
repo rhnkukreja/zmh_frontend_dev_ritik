@@ -23,6 +23,7 @@ import {
   setFinhub,
 } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
+import { commonService } from "@/services/common";
 
 interface LoginFormInputs {
   email: string;
@@ -86,8 +87,26 @@ const Main: React.FC = () => {
           })
         );
         // toast.success("Logged In Successfully!");
-      }
-      if (response?.finnhub) {
+        
+        // Fetch complete finnhub data including sec_filing via saveSearch API
+        try {
+          const saveSearchResponse = await commonService.saveSearches({
+            module: "Global Search",
+            id: response.company_id,
+            company: response.company_name,
+          });
+          if (saveSearchResponse?.finnhub) {
+            dispatch(setFinhub(saveSearchResponse.finnhub));
+          } else if (response?.finnhub) {
+            dispatch(setFinhub(response.finnhub));
+          }
+        } catch {
+          // Fallback to login response finnhub if saveSearch fails
+          if (response?.finnhub) {
+            dispatch(setFinhub(response.finnhub));
+          }
+        }
+      } else if (response?.finnhub) {
         dispatch(setFinhub(response?.finnhub));
       }
 
