@@ -54,6 +54,7 @@ function UserManagementPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserManagement | null>(null);
   
   // Multi-select state
@@ -532,6 +533,11 @@ function UserManagementPage() {
     setShowDeleteModal(true);
   };
 
+  const handleInfoClick = (user: UserManagement) => {
+    setSelectedUser(user);
+    setShowInfoModal(true);
+  };
+
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
 
@@ -876,6 +882,14 @@ function UserManagementPage() {
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={() => handleInfoClick(user)}
+                            title="View User Info"
+                          >
+                            <Lucide icon="Info" className="w-4 h-4" />
+                          </Button>
                           <Button
                             variant="outline-primary"
                             size="sm"
@@ -1360,6 +1374,164 @@ function UserManagementPage() {
               Delete
             </Button>
           </div>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* User Info Modal */}
+      <Dialog
+        open={showInfoModal}
+        onClose={() => {
+          setShowInfoModal(false);
+          setSelectedUser(null);
+        }}
+      >
+        <Dialog.Panel>
+          <Dialog.Title>
+            <h2 className="mr-auto text-base font-medium">User Information</h2>
+            <button
+              type="button"
+              className="absolute top-0 right-0 mt-3 mr-3 text-slate-400 hover:text-slate-500"
+              onClick={() => {
+                setShowInfoModal(false);
+                setSelectedUser(null);
+              }}
+            >
+              <Lucide icon="X" className="w-5 h-5" />
+            </button>
+          </Dialog.Title>
+          <Dialog.Description className="p-4">
+            {selectedUser && (
+              <div className="space-y-5">
+                {/* Profile Header */}
+                <div className="flex flex-col items-center py-4 bg-gradient-to-b from-primary/5 to-transparent rounded-xl">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 border-4 border-white shadow-lg flex items-center justify-center">
+                    <Lucide icon="User" className="w-10 h-10 text-primary" />
+                  </div>
+                  <h3 className="mt-3 text-xl font-semibold text-slate-800">
+                    {selectedUser.first_name} {selectedUser.last_name}
+                  </h3>
+                  <p className="text-slate-500 text-sm">{selectedUser.email}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span
+                      className={clsx(
+                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium",
+                        selectedUser.is_active
+                          ? "bg-success/15 text-success"
+                          : "bg-danger/15 text-danger"
+                      )}
+                    >
+                      <span className={clsx(
+                        "w-1.5 h-1.5 rounded-full mr-1.5",
+                        selectedUser.is_active ? "bg-success" : "bg-danger"
+                      )}></span>
+                      {selectedUser.is_active ? "Active" : "Inactive"}
+                    </span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                      {selectedUser.user_type || "N/A"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Personal Info */}
+                  <div className="col-span-2 bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center">
+                        <Lucide icon="User" className="w-4 h-4 text-primary" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">Personal Info</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">First Name</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.first_name || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">Last Name</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.last_name || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">Email</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.email || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">Company</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.user_company || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subscription Info */}
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-md bg-warning/10 flex items-center justify-center">
+                        <Lucide icon="CreditCard" className="w-4 h-4 text-warning" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">Subscription</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">Plan</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.subscription || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">Duration</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.duration_days ?? "-"} days</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Account Info */}
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-md bg-success/10 flex items-center justify-center">
+                        <Lucide icon="Shield" className="w-4 h-4 text-success" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">Account</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">Created</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.account_creation || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 mb-0.5">Age</p>
+                        <p className="text-sm font-medium text-slate-700">{selectedUser.account_age_days ?? "-"} days</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Activity Info */}
+                  <div className="col-span-2 bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-md bg-info/10 flex items-center justify-center">
+                        <Lucide icon="Clock" className="w-4 h-4 text-info" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">Last Activity</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">Last Login</p>
+                      <p className="text-sm font-medium text-slate-700">{selectedUser.last_login || "Never logged in"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Dialog.Description>
+          <Dialog.Footer>
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={() => {
+                setShowInfoModal(false);
+                setSelectedUser(null);
+              }}
+              className="w-20"
+            >
+              Close
+            </Button>
+          </Dialog.Footer>
         </Dialog.Panel>
       </Dialog>
     </div>
