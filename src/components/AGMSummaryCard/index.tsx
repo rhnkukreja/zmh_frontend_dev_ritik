@@ -1008,7 +1008,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
             <div className="flex items-center justify-between w-full">
               <div>
                 <h2 className="text-lg font-semibold">{expandedYearModal?.categoryName} - {expandedYearModal?.year}</h2>
-                <p className="text-sm text-slate-600 mt-1">{expandedYearModal?.actionLabel} ({expandedYearModal?.percentage})</p>
+                <p className="text-sm text-slate-600 mt-1">{expandedYearModal?.actionLabel}</p>
               </div>
               <button
                 onClick={(e) => {
