@@ -65,6 +65,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       investor_type: selectedInstitution?.investor_type || "Investor",
       // contact: selectedInstitution?.contact!,
       // email: selectedInstitution?.email!,
+      whale_wisdom_filer_id: selectedInstitution?.whale_wisdom_filer_id?.toString() || "",
       proxy_advisor_influence: selectedInstitution?.proxy_advisor_influence || "",
       unpri_signatory: selectedInstitution?.unpri_signatory || false,
     },

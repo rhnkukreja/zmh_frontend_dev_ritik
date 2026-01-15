@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
@@ -10,6 +10,8 @@ import { bytesToMB } from "@/utils/helper";
 import { axiosInstance } from "@/services";
 import { FormCheck } from "@/components/Base/Form";
 import { baseURL } from "@/constant";
+import AsyncSelect from "react-select/async";
+import _ from "lodash";
 
 interface EngagementDetailsFormData {
   institution_id: string;
@@ -21,6 +23,11 @@ interface EngagementDetailsFormData {
 interface Institution {
   id: number;
   institution: string;
+}
+
+interface InstitutionOption {
+  value: number;
+  label: string;
 }
 
 interface AddEngagementDetailsModalProps {
@@ -56,13 +63,13 @@ const AddEngagementDetailsModal = ({
   const dropzoneRef = useRef<DropzoneElement>(null);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [institutions, setInstitutions] = useState<Institution[]>([]);
-  const [institutionsLoading, setInstitutionsLoading] = useState(false);
+  const [selectedInstitution, setSelectedInstitution] = useState<InstitutionOption | null>(null);
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<EngagementDetailsFormData>({
@@ -76,24 +83,38 @@ const AddEngagementDetailsModal = ({
 
   const deletePrevious = watch("delete_previous");
 
-  // Fetch institutions on modal open
-  useEffect(() => {
-    if (visible) {
-      fetchInstitutions();
-    }
-  }, [visible]);
-
-  const fetchInstitutions = async () => {
+  // Fetch institutions based on search query (same API as Institution page)
+  const fetchInstitutionOptions = async (inputValue: string): Promise<InstitutionOption[]> => {
     try {
-      setInstitutionsLoading(true);
-      const response = await axiosInstance.get(`${baseURL}/institute/?page_size=1000`);
-      setInstitutions(response.data?.results || []);
+      const response = await axiosInstance.get(
+        `${baseURL}/institute/?institution_name=${inputValue}&all=true`
+      );
+      // API returns array directly when all=true, otherwise it's in results
+      const institutions = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data?.results || []);
+      return institutions.map((inst: Institution) => ({
+        value: inst.id,
+        label: inst.institution,
+      }));
     } catch (error) {
-      toast.error("Failed to load institutions");
-    } finally {
-      setInstitutionsLoading(false);
+      console.error("Failed to fetch institutions:", error);
+      return [];
     }
   };
+
+  // Debounced load options for AsyncSelect
+  const loadOptions = useCallback(
+    _.debounce(
+      (inputValue: string, callback: (options: InstitutionOption[]) => void) => {
+        fetchInstitutionOptions(inputValue).then((options) => {
+          callback(options);
+        });
+      },
+      300
+    ),
+    []
+  );
 
   useEffect(() => {
     const elDropzoneRef = dropzoneRef.current;
@@ -155,6 +176,7 @@ const AddEngagementDetailsModal = ({
   const handleClose = () => {
     reset();
     setDocumentFile(null);
+    setSelectedInstitution(null);
     if (dropzoneRef.current?.dropzone) {
       dropzoneRef.current.dropzone.removeAllFiles();
     }
@@ -183,25 +205,35 @@ const AddEngagementDetailsModal = ({
               control={control}
               rules={{ required: "Institution is required" }}
               render={({ field }) => (
-                <TomSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                  options={{ placeholder: "Select Institution" }}
-                  className="w-full"
-                >
-                  <option value="">Select Institution</option>
-                  {institutionsLoading ? (
-                    <option value="" disabled>
-                      Loading...
-                    </option>
-                  ) : (
-                    institutions.map((inst) => (
-                      <option key={inst.id} value={inst.id}>
-                        {inst.institution}
-                      </option>
-                    ))
-                  )}
-                </TomSelect>
+                <AsyncSelect
+                  value={selectedInstitution}
+                  onChange={(option: InstitutionOption | null) => {
+                    setSelectedInstitution(option);
+                    field.onChange(option?.value?.toString() || "");
+                  }}
+                  loadOptions={loadOptions}
+                  placeholder="Search Institution..."
+                  isClearable
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  noOptionsMessage={({ inputValue }) =>
+                    inputValue ? "No institutions found" : "Type to search institutions"
+                  }
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: "38px",
+                      borderColor: "#e2e8f0",
+                      "&:hover": {
+                        borderColor: "#cbd5e1",
+                      },
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      zIndex: 9999,
+                    }),
+                  }}
+                />
               )}
             />
             {errors.institution_id && (

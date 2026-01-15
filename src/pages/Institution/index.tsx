@@ -416,7 +416,10 @@ function Main() {
                           Whale Wisdom Filer
                         </Table.Td>
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Created At
+                          Proxy Advisory Influence
+                        </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          UN PRI Signatory
                         </Table.Td>
                         {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Updated At
@@ -488,13 +491,15 @@ function Main() {
                             <Table.Td className="py-2  bg-white border-slate-200/80">
                               {institution?.whale_wisdom_filer_id}
                             </Table.Td>
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {institution?.proxy_advisor_influence || "-"}
+                            </Table.Td>
                             <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
-                              <p className="text-gray-500">
-                                {institution?.date_created}
-                                {/* {dayjs(institution?.date_created).format(
-                                "MMMM , YYYY"
-                              )} */}
-                              </p>
+                              {institution?.unpri_signatory ? (
+                                <span className="text-green-600 font-medium">Yes</span>
+                              ) : (
+                                <span className="text-gray-500">No</span>
+                              )}
                             </Table.Td>
                             {/* <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
                             <p className="text-gray-500">
