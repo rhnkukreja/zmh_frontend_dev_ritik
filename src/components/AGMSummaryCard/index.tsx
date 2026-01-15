@@ -910,11 +910,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                           </div>
 
                           <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
-                            <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
+                            {/* <div className="absolute inset-x-6 inset-y-6 grid grid-cols-2 gap-8">
                               {[...Array(5)].map((_, i) => (
                                 <div key={i} className="col-span-2 border-t border-slate-200 opacity-50" style={{ marginTop: `${i * 25}%` }}></div>
                               ))}
-                            </div>
+                            </div> */}
 
                             <div className="relative h-full flex items-end justify-center gap-12">
                               {yearDataList.map((item: any, idx: number) => (
@@ -936,7 +936,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                           </div>
 
                           <div className="mt-auto">
-                            <div className="text-center mb-2">
+                            {/* <div className="text-center mb-2">
                               <span className="text-sm font-medium text-slate-700">{actionLabel} {category.name}</span>
                             </div>
                             <div className="flex gap-2">
@@ -980,7 +980,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                   </div>
                                 </div>
                               ))}
-                            </div>
+                            </div> */}
                           </div>
                         </div>
                       );
