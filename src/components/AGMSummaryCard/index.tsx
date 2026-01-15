@@ -863,16 +863,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
               <div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
-                  <Tippy content="Download Analytics" options={{ theme: "light" }}>
-                    <div
-                      className="w-10 h-10 flex items-center justify-center border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
-                      onClick={handleDownloadAnalytics}
-                    >
-                      <Lucide icon="Download" className="w-5 h-5 text-red-500" />
-                    </div>
-                  </Tippy>
                 </div>
-                <p className="text-sm text-slate-600 mt-1">All Investors</p>
               </div>
               <div
                 onClick={() => {
