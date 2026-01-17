@@ -16,3 +16,19 @@ export type Institutions = {
   proxy_advisor_influence?: string;
   unpri_signatory?: boolean;
 };
+
+export type InstitutionDocument = {
+  id: number;
+  name: string;
+  year: number;
+  link: string;
+  document_type: string;
+  tags: string;
+  priority: string;
+  active: boolean;
+  linked_to_summary: boolean;
+  linked_to_engagement_priorities: boolean;
+  linked_to_reporting_expectation: boolean;
+  linked_to_esg_integration: boolean;
+  linked_to_voting_guidelines: boolean;
+};

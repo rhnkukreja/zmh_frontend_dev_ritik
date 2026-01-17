@@ -15,6 +15,8 @@ interface DocumentFormData {
   document_type: string;
   month: string;
   year: string;
+  tags: string;
+  priority: string;
 }
 
 interface AddDocumentModalProps {
@@ -29,6 +31,8 @@ const documentTypes = [
   "Stewardship Report",
   "Engagement Details",
 ];
+
+const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
 
 const months = [
   { value: "01", label: "January" },
@@ -70,6 +74,8 @@ const AddDocumentModal = ({
       document_type: "",
       month: currentMonth,
       year: currentYear.toString(),
+      tags: "",
+      priority: "Medium",
     },
   });
 
@@ -112,6 +118,8 @@ const AddDocumentModal = ({
       formData.append("document_type", data.document_type);
       formData.append("month", data.month);
       formData.append("year", data.year);
+      formData.append("tags", data.tags);
+      formData.append("priority", data.priority);
       formData.append("document", documentFile, documentFile.name);
 
       await axiosInstance.post("/institute_documents/", formData);
@@ -253,6 +261,52 @@ const AddDocumentModal = ({
             {errors.year && (
               <span className="text-red-500 text-sm mt-1 block">{errors.year.message}</span>
             )}
+          </div>
+
+          <div className="col-span-12 sm:col-span-6">
+            <label className="block mb-1 text-sm font-medium">
+              Priority <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="priority"
+              control={control}
+              rules={{ required: "Priority is required" }}
+              render={({ field }) => (
+                <TomSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={{ placeholder: "Select priority" }}
+                  className="w-full"
+                >
+                  {priorityOptions.map((priority) => (
+                    <option key={priority} value={priority}>
+                      {priority}
+                    </option>
+                  ))}
+                </TomSelect>
+              )}
+            />
+            {errors.priority && (
+              <span className="text-red-500 text-sm mt-1 block">{errors.priority.message}</span>
+            )}
+          </div>
+
+          <div className="col-span-12 sm:col-span-6">
+            <label className="block mb-1 text-sm font-medium">
+              Tags
+            </label>
+            <Controller
+              name="tags"
+              control={control}
+              render={({ field }) => (
+                <FormInput
+                  {...field}
+                  type="text"
+                  placeholder="e.g., ESG, Sustainability, Annual"
+                />
+              )}
+            />
+            <span className="text-slate-400 text-xs mt-1 block">Separate multiple tags with commas</span>
           </div>
 
           <div className="col-span-12">

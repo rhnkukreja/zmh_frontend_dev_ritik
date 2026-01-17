@@ -1,5 +1,5 @@
 import { axiosInstance } from "../index";
-import { Institutions } from "@/types/institutions";
+import { Institutions, InstitutionDocument } from "@/types/institutions";
 
 class InstitutionService {
   public async getInstitutions(url: string): Promise<{
@@ -45,6 +45,37 @@ class InstitutionService {
     return {
       results,
     };
+  }
+
+  public async getInstitutionDocuments(institutionId: number): Promise<{
+    count: number;
+    results: InstitutionDocument[];
+  }> {
+    const response = await axiosInstance.get(
+      `/institute_documents/?institution_id=${institutionId}`
+    );
+    const { count, results } = response.data;
+    return {
+      count,
+      results,
+    };
+  }
+
+  public async linkDocumentToProfile(
+    documentId: number,
+    institutionId: number,
+    section: string,
+    action: "link" | "unlink"
+  ): Promise<{ message: string; data: InstitutionDocument }> {
+    const response = await axiosInstance.post(
+      `/institute_documents/${documentId}/link_to_profile/`,
+      {
+        institution_id: institutionId,
+        section,
+        action,
+      }
+    );
+    return response.data;
   }
 }
 

@@ -434,7 +434,14 @@ function Main() {
                         institutions?.map((institution: Institutions) => (
                           <Table.Tr key={institution.id}>
                             <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
-                              <div className="flex items-center">
+                              <div
+                                className="flex items-center cursor-pointer hover:opacity-80"
+                                onClick={() => {
+                                  navigate(
+                                    `/institution/${institution?.id}/documents`
+                                  );
+                                }}
+                              >
                                 {institution?.logo_url ? (
                                   <>
                                     <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
@@ -459,7 +466,7 @@ function Main() {
                                   </div>
                                 )}
                                 <div className="ml-4">
-                                  <p className="font-medium whitespace-nowrap">
+                                  <p className="font-medium whitespace-nowrap hover:underline">
                                     {institution?.institution}
                                   </p>
                                   <div className="text-slate-500 text-xs whitespace-nowrap mt-0.5">

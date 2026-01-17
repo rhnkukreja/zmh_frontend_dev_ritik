@@ -66,6 +66,7 @@ import EngagementQuestion from "../pages/EngagementQuestion";
 import ProxyVotingGuideline from "../pages/ProxyVotingGuideline";
 import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
 import DetailInstitutions from "../pages/Institution/components/InstitutionDetail";
+import InstitutionDocuments from "../pages/Institution/components/InstitutionDocuments";
 import DetailCompany from "../pages/Company/component/CompanyDetail";
 import ZMHDashboard from "../pages/ZMHDashboard";
 import BoardMembers from "../pages/BoardMembers";
@@ -406,6 +407,11 @@ function Router() {
           path: "institution/:id",
           element: <DetailInstitutions />,
           data: { titleName: "institution Detail - ZMH Analytics" },
+        },
+        {
+          path: "institution/:id/documents",
+          element: <InstitutionDocuments />,
+          data: { titleName: "Institution Documents - ZMH Analytics" },
         },
         {
           path: "shareholder-proposal",

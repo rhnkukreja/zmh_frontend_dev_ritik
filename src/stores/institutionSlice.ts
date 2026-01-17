@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { Institutions } from "@/types/institutions";
+import { Institutions, InstitutionDocument } from "@/types/institutions";
 import { institutionService } from "@/services/institution";
 import { getPageNumbers } from "@/utils/helper";
 
@@ -23,6 +23,10 @@ interface InstitutionsState {
     region: string[];
   };
   filters: InstitutionType;
+  institutionDocuments: InstitutionDocument[];
+  documentsLoading: boolean;
+  documentsCount: number;
+  documentsError: string | null;
 }
 
 const initialState: InstitutionsState = {
@@ -41,6 +45,10 @@ const initialState: InstitutionsState = {
     institution_name: [],
     region: [],
   },
+  institutionDocuments: [],
+  documentsLoading: false,
+  documentsCount: 0,
+  documentsError: null,
 };
 
 export const fetchInstitutions = createAsyncThunk<
@@ -71,6 +79,13 @@ export const addEditInstitution = createAsyncThunk<
     results: response.results,
     isEdit: !!id,
   };
+});
+
+export const fetchInstitutionDocuments = createAsyncThunk<
+  { count: number; results: InstitutionDocument[] },
+  number
+>(`${name}/fetchInstitutionDocuments`, async (institutionId: number) => {
+  return await institutionService.getInstitutionDocuments(institutionId);
 });
 
 const institutionsSlice = createSlice({
@@ -166,6 +181,26 @@ const institutionsSlice = createSlice({
       .addCase(addEditInstitution.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to save institution";
+      })
+      .addCase(fetchInstitutionDocuments.pending, (state) => {
+        state.documentsLoading = true;
+        state.documentsError = null;
+      })
+      .addCase(
+        fetchInstitutionDocuments.fulfilled,
+        (
+          state,
+          action: PayloadAction<{ count: number; results: InstitutionDocument[] }>
+        ) => {
+          state.documentsLoading = false;
+          state.institutionDocuments = action.payload.results;
+          state.documentsCount = action.payload.count;
+        }
+      )
+      .addCase(fetchInstitutionDocuments.rejected, (state, action) => {
+        state.documentsLoading = false;
+        state.documentsError =
+          action.error.message || "Failed to fetch institution documents";
       });
   },
 });
