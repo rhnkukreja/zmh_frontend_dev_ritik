@@ -46,7 +46,6 @@ export const investorProfileEditableSectionsInvestors = {
     type: "investor",
   },
   voting_guidelines: { value: "Voting Guidelines", type: "investor" },
-  references: { value: "References", type: "investor" },
 };
 export const investorProfileEditableSectionsEquity = {
   equity_firm_name: { value: "Equity Firm Name", type: "equity" },

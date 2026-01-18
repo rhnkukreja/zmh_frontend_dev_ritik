@@ -8,7 +8,7 @@ import {
 } from "@/stores/institutionSlice";
 import { AppDispatch } from "@/stores/store";
 import Button from "@/components/Base/Button";
-import { ChevronLeft, FileText, ExternalLink, Plus, PenLine, Upload } from "lucide-react";
+import { ChevronLeft, FileText, ExternalLink, Plus, PenLine } from "lucide-react";
 import Table from "@/components/Base/Table";
 import TableWrapper from "@/components/TableWrapper";
 import Tippy from "@/components/Base/Tippy";
@@ -20,7 +20,7 @@ import EditDocumentModal from "./EditDocumentModal";
 import { institutionService } from "@/services/institution";
 import { toast } from "react-toastify";
 
-type ProfileSection = "summary" | "esg_integration" | "voting";
+type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
 
 const InstitutionDocuments = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -135,27 +135,13 @@ const InstitutionDocuments = () => {
         <div className="p-5 border-b border-slate-200/80">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center">
-              {singleInstitution?.logo_url ? (
-                <img
-                  alt={singleInstitution?.institution}
-                  className="w-12 h-12 rounded-full object-contain shadow-md mr-4"
-                  src={singleInstitution?.logo_url}
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                  <FileText className="w-6 h-6 text-primary" />
-                </div>
-              )}
-              <div>
-                <h1 className="text-xl font-semibold text-slate-700">
-                  {loading ? "Loading..." : singleInstitution?.institution}
-                </h1>
-                <p className="text-slate-500 text-sm">Documents</p>
-              </div>
+              <h1 className="text-xl font-semibold text-slate-700">
+                {loading ? "Loading..." : singleInstitution?.institution}
+              </h1>
             </div>
             <div className="flex items-center gap-4 mt-3 md:mt-0">
               {documentsCount > 0 && (
-                <span className="text-sm text-slate-500">
+                <span className="text-base font-semibold text-slate-700">
                   Total Documents: {documentsCount}
                 </span>
               )}
@@ -188,25 +174,17 @@ const InstitutionDocuments = () => {
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
                       Date
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
-                      Edit
-                    </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
-                      Change File
-                    </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center" colSpan={3}>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center" colSpan={5}>
                       Relevant Profile Section
                     </Table.Td>
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
-                      Add to Module
+                      Priority
                     </Table.Td>
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                      Priority
+                      Edit
                     </Table.Td>
                   </Table.Tr>
                   <Table.Tr>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
@@ -214,10 +192,16 @@ const InstitutionDocuments = () => {
                       Summary
                     </Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
+                      Engagement Priorities
+                    </Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
+                      Reporting Expectation
+                    </Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
                       ESG Integration
                     </Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
-                      Voting
+                      Voting Guidelines
                     </Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
@@ -229,7 +213,7 @@ const InstitutionDocuments = () => {
                       <Table.Tr key={document.id}>
                         <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
                           <div className="flex items-center">
-                            <FileText className="w-5 h-5 text-slate-400 mr-2" />
+                            <FileText className="w-4 h-4 min-w-4 min-h-4 text-slate-400 mr-2" />
                             <span className="font-medium">{document.name}</span>
                           </div>
                         </Table.Td>
@@ -239,30 +223,6 @@ const InstitutionDocuments = () => {
                         <Table.Td className="py-2 bg-white border-slate-200/80">
                           {document.year || "-"}
                         </Table.Td>
-                        <Table.Td className="py-2 bg-white border-slate-200/80">
-                          {user?.user_type === "Analyst" && (
-                            <Tippy content="Edit Document" options={{ theme: "light" }}>
-                              <button
-                                onClick={() => handleEditDocument(document)}
-                                className="p-1 hover:bg-slate-100 rounded"
-                              >
-                                <PenLine className="w-4 h-4 text-slate-600" />
-                              </button>
-                            </Tippy>
-                          )}
-                        </Table.Td>
-                        <Table.Td className="py-2 bg-white border-slate-200/80">
-                          {user?.user_type === "Analyst" && (
-                            <Tippy content="Change File" options={{ theme: "light" }}>
-                              <button
-                                onClick={() => handleViewDocument(document.link)}
-                                className="p-1 hover:bg-slate-100 rounded"
-                              >
-                                <Upload className="w-4 h-4 text-slate-600" />
-                              </button>
-                            </Tippy>
-                          )}
-                        </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
@@ -271,6 +231,30 @@ const InstitutionDocuments = () => {
                               disabled={isLinkingInProgress(document.id, "summary") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "summary", document.linked_to_summary)
+                              }
+                            />
+                          </FormCheck>
+                        </Table.Td>
+                        <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
+                          <FormCheck className="flex justify-center">
+                            <FormCheck.Input
+                              type="checkbox"
+                              checked={document.linked_to_engagement_priorities || false}
+                              disabled={isLinkingInProgress(document.id, "engagement_priorities") || user?.user_type !== "Analyst"}
+                              onChange={() =>
+                                handleLinkToProfile(document, "engagement_priorities", document.linked_to_engagement_priorities)
+                              }
+                            />
+                          </FormCheck>
+                        </Table.Td>
+                        <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
+                          <FormCheck className="flex justify-center">
+                            <FormCheck.Input
+                              type="checkbox"
+                              checked={document.linked_to_reporting_expectation || false}
+                              disabled={isLinkingInProgress(document.id, "reporting_expectation") || user?.user_type !== "Analyst"}
+                              onChange={() =>
+                                handleLinkToProfile(document, "reporting_expectation", document.linked_to_reporting_expectation)
                               }
                             />
                           </FormCheck>
@@ -292,15 +276,12 @@ const InstitutionDocuments = () => {
                             <FormCheck.Input
                               type="checkbox"
                               checked={document.linked_to_voting_guidelines || false}
-                              disabled={isLinkingInProgress(document.id, "voting") || user?.user_type !== "Analyst"}
+                              disabled={isLinkingInProgress(document.id, "voting_guidelines") || user?.user_type !== "Analyst"}
                               onChange={() =>
-                                handleLinkToProfile(document, "voting", document.linked_to_voting_guidelines)
+                                handleLinkToProfile(document, "voting_guidelines", document.linked_to_voting_guidelines)
                               }
                             />
                           </FormCheck>
-                        </Table.Td>
-                        <Table.Td className="py-2 bg-white border-slate-200/80">
-                          {document.document_type || "-"}
                         </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80">
                           <span
@@ -308,6 +289,18 @@ const InstitutionDocuments = () => {
                           >
                             {document.priority || "-"}
                           </span>
+                        </Table.Td>
+                        <Table.Td className="py-2 bg-white border-slate-200/80">
+                          {user?.user_type === "Analyst" && (
+                            <Tippy content="Edit Document" options={{ theme: "light" }}>
+                              <button
+                                onClick={() => handleEditDocument(document)}
+                                className="p-1 hover:bg-slate-100 rounded"
+                              >
+                                <PenLine className="w-4 h-4 text-slate-600" />
+                              </button>
+                            </Tippy>
+                          )}
                         </Table.Td>
                       </Table.Tr>
                     ))

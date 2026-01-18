@@ -11,6 +11,10 @@ import { axiosInstance } from "@/services";
 import { InstitutionDocument } from "@/types/institutions";
 
 interface EditDocumentFormData {
+  document_name: string;
+  document_type: string;
+  month: string;
+  year: string;
   tags: string;
   priority: string;
   active: boolean;
@@ -23,7 +27,31 @@ interface EditDocumentModalProps {
   onSuccess?: () => void;
 }
 
+const documentTypes = [
+  "Voting Guidelines",
+  "Stewardship Report",
+  "Engagement Details",
+];
+
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
+
+const months = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
 
 const EditDocumentModal = ({
   visible,
@@ -40,6 +68,10 @@ const EditDocumentModal = ({
     formState: { errors },
   } = useForm<EditDocumentFormData>({
     defaultValues: {
+      document_name: "",
+      document_type: "",
+      month: "",
+      year: "",
       tags: "",
       priority: "Medium",
       active: true,
@@ -49,6 +81,10 @@ const EditDocumentModal = ({
   useEffect(() => {
     if (document && visible) {
       reset({
+        document_name: document.name || "",
+        document_type: document.document_type || "",
+        month: "",
+        year: document.year?.toString() || "",
         tags: document.tags || "",
         priority: document.priority || "Medium",
         active: document.active ?? true,
@@ -63,6 +99,10 @@ const EditDocumentModal = ({
 
     try {
       await axiosInstance.put(`/institute_documents/${document.id}/`, {
+        document_name: data.document_name,
+        document_type: data.document_type,
+        month: data.month,
+        year: data.year,
         tags: data.tags,
         priority: data.priority,
         active: data.active,
@@ -98,10 +138,113 @@ const EditDocumentModal = ({
         </Dialog.Title>
         <Dialog.Description className="grid grid-cols-12 gap-4 gap-y-3">
           <div className="col-span-12">
-            <label className="block mb-1 text-sm font-medium text-slate-500">
-              Document Name
+            <label className="block mb-1 text-sm font-medium">
+              Document Name <span className="text-red-500">*</span>
             </label>
-            <p className="text-slate-700 font-medium">{document?.name}</p>
+            <Controller
+              name="document_name"
+              control={control}
+              rules={{ required: "Document name is required" }}
+              render={({ field }) => (
+                <FormInput
+                  {...field}
+                  type="text"
+                  placeholder="Enter document name"
+                />
+              )}
+            />
+            {errors.document_name && (
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.document_name.message}
+              </span>
+            )}
+          </div>
+
+          <div className="col-span-12 sm:col-span-6">
+            <label className="block mb-1 text-sm font-medium">
+              Document Type <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="document_type"
+              control={control}
+              rules={{ required: "Document type is required" }}
+              render={({ field }) => (
+                <TomSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={{ placeholder: "Select document type" }}
+                  className="w-full"
+                >
+                  <option value="">Select Type</option>
+                  {documentTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </TomSelect>
+              )}
+            />
+            {errors.document_type && (
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.document_type.message}
+              </span>
+            )}
+          </div>
+
+          <div className="col-span-12 sm:col-span-6">
+            <label className="block mb-1 text-sm font-medium">
+              Month
+            </label>
+            <Controller
+              name="month"
+              control={control}
+              render={({ field }) => (
+                <TomSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={{ placeholder: "Select month" }}
+                  className="w-full"
+                >
+                  <option value="">Select Month</option>
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </TomSelect>
+              )}
+            />
+          </div>
+
+          <div className="col-span-12 sm:col-span-6">
+            <label className="block mb-1 text-sm font-medium">
+              Year <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="year"
+              control={control}
+              rules={{ required: "Year is required" }}
+              render={({ field }) => (
+                <TomSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={{ placeholder: "Select year" }}
+                  className="w-full"
+                >
+                  <option value="">Select Year</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </TomSelect>
+              )}
+            />
+            {errors.year && (
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.year.message}
+              </span>
+            )}
           </div>
 
           <div className="col-span-12 sm:col-span-6">
@@ -134,7 +277,7 @@ const EditDocumentModal = ({
             )}
           </div>
 
-          <div className="col-span-12 sm:col-span-6">
+          <div className="col-span-12">
             <label className="block mb-1 text-sm font-medium">Tags</label>
             <Controller
               name="tags"
