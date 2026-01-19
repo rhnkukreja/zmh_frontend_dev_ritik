@@ -48,6 +48,11 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   const dispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.institutions);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [proxyAdvisoryOptions, setProxyAdvisoryOptions] = useState<string[]>(
+    selectedInstitution?.proxy_advisor_influence
+      ? selectedInstitution.proxy_advisor_influence.split(", ").map(s => s.trim())
+      : []
+  );
 
   const {
     control,
@@ -119,6 +124,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       uploaded_time: data.uploaded_time
         ? formatedDate(data.uploaded_time)
         : null,
+      proxy_advisor_influence: proxyAdvisoryOptions.length > 0 ? proxyAdvisoryOptions.join(", ") : "",
     };
 
     // Remove whale_wisdom_filer_id if it's empty or if investor_type is Proponent
@@ -356,16 +362,29 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Proxy Advisory Influence
                 </FormCheck.Label>
-                <Controller
-                  name="proxy_advisor_influence"
-                  control={control}
-                  render={({ field }) => (
-                    <FormInput
-                      placeholder="Enter Proxy Advisory Influence"
-                      {...field}
-                    />
-                  )}
-                />
+                <div className="flex flex-col gap-2">
+                  {["Internal", "ISS", "GL"].map((option) => (
+                    <FormCheck key={option} className="flex items-center">
+                      <FormCheck.Input
+                        id={`proxy_${option}`}
+                        type="checkbox"
+                        checked={proxyAdvisoryOptions.includes(option)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
+                          } else {
+                            setProxyAdvisoryOptions(
+                              proxyAdvisoryOptions.filter((item) => item !== option)
+                            );
+                          }
+                        }}
+                      />
+                      <FormCheck.Label htmlFor={`proxy_${option}`} className="ml-2">
+                        {option}
+                      </FormCheck.Label>
+                    </FormCheck>
+                  ))}
+                </div>
               </div>
 
               <div className="w-full">
