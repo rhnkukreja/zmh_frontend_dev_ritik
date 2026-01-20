@@ -13,6 +13,7 @@ import { InstitutionDocument } from "@/types/institutions";
 interface EditDocumentFormData {
   document_name: string;
   document_type: string;
+  link: string;
   month: string;
   year: string;
   tags: string;
@@ -70,6 +71,7 @@ const EditDocumentModal = ({
     defaultValues: {
       document_name: "",
       document_type: "",
+      link: "",
       month: "",
       year: "",
       tags: "",
@@ -81,8 +83,9 @@ const EditDocumentModal = ({
   useEffect(() => {
     if (document && visible) {
       reset({
-        document_name: document.name || "",
+        document_name: (document as any).document_name || document.name || "",
         document_type: document.document_type || "",
+        link: document.link || "",
         month: "",
         year: document.year?.toString() || "",
         tags: document.tags || "",
@@ -101,6 +104,7 @@ const EditDocumentModal = ({
       await axiosInstance.put(`/institute_documents/${document.id}/`, {
         document_name: data.document_name,
         document_type: data.document_type,
+        link: data.link,
         month: data.month,
         year: data.year,
         tags: data.tags,
@@ -156,6 +160,29 @@ const EditDocumentModal = ({
             {errors.document_name && (
               <span className="text-red-500 text-sm mt-1 block">
                 {errors.document_name.message}
+              </span>
+            )}
+          </div>
+
+          <div className="col-span-12">
+            <label className="block mb-1 text-sm font-medium">
+              Document Link <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="link"
+              control={control}
+              rules={{ required: "Document link is required" }}
+              render={({ field }) => (
+                <FormInput
+                  {...field}
+                  type="url"
+                  placeholder="https://example.com/document.pdf"
+                />
+              )}
+            />
+            {errors.link && (
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.link.message}
               </span>
             )}
           </div>

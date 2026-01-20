@@ -20,6 +20,7 @@ export type Institutions = {
 export type InstitutionDocument = {
   id: number;
   name: string;
+  document_name?: string;
   year: number;
   link: string;
   document_type: string;
