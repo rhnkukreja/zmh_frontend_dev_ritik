@@ -326,6 +326,7 @@ const InstitutionDocuments = () => {
           visible={addDocumentVisible}
           setVisible={setAddDocumentVisible}
           institutionId={params.id}
+          institutionName={singleInstitution?.institution}
           onSuccess={handleDocumentSuccess}
         />
       )}

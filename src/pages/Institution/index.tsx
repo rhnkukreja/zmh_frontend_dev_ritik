@@ -594,6 +594,7 @@ function Main() {
             visible={addDocumentModalVisible}
             setVisible={setAddDocumentModalVisible}
             institutionId={selectedInstitutionForDoc?.id}
+            institutionName={selectedInstitutionForDoc?.institution}
           />
         )}
       </div>

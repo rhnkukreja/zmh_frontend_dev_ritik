@@ -23,6 +23,7 @@ interface AddDocumentModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   institutionId: string | number;
+  institutionName?: string;
   onSuccess?: () => void;
 }
 
@@ -30,6 +31,8 @@ const documentTypes = [
   "Voting Guidelines",
   "Stewardship Report",
   "Engagement Details",
+  "Case Studies",
+  "Others",
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
@@ -57,6 +60,7 @@ const AddDocumentModal = ({
   visible,
   setVisible,
   institutionId,
+  institutionName,
   onSuccess,
 }: AddDocumentModalProps) => {
   const dropzoneRef = useRef<DropzoneElement>(null);
@@ -148,7 +152,9 @@ const AddDocumentModal = ({
     <Dialog open={visible} onClose={handleClose}>
       <Dialog.Panel>
         <Dialog.Title>
-          <h2 className="mr-auto text-base font-medium">Add Document</h2>
+          <h2 className="mr-auto text-base font-medium">
+            Add Document{institutionName ? ` - ${institutionName}` : ""}
+          </h2>
           <button
             className="absolute top-0 right-0 mt-3 mr-3"
             onClick={handleClose}
