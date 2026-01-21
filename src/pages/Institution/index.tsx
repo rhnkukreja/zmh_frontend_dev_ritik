@@ -435,12 +435,7 @@ function Main() {
                           <Table.Tr key={institution.id}>
                             <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
                               <div
-                                className="flex items-center cursor-pointer hover:opacity-80"
-                                onClick={() => {
-                                  navigate(
-                                    `/institution/${institution?.id}/documents`
-                                  );
-                                }}
+                                className="flex items-center"
                               >
                                 {institution?.logo_url ? (
                                   <>
@@ -466,7 +461,7 @@ function Main() {
                                   </div>
                                 )}
                                 <div className="ml-4">
-                                  <p className="font-medium whitespace-nowrap hover:underline">
+                                  <p className="font-medium whitespace-nowrap">
                                     {institution?.institution}
                                   </p>
                                   <div className="text-slate-500 text-xs whitespace-nowrap mt-0.5">
@@ -517,42 +512,26 @@ function Main() {
 
                             <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                               <div className="flex gap-3 ">
-                                <Tippy
-                                  content="See Details"
-                                  options={{
-                                    theme: "light",
-                                  }}
-                                >
-                                  <Lucide
-                                    onClick={() => {
-                                      navigate(
-                                        `/institution/${institution?.id}`
-                                      );
-                                    }}
-                                    icon="Eye"
-                                    className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
-                                  />
-                                </Tippy>
-
                                 {user?.user_type === "Analyst" && (
                                   <>
                                     <Tippy
-                                      content="Add Document"
+                                      content="Add/Edit Document"
                                       options={{
                                         theme: "light",
                                       }}
                                     >
                                       <Lucide
                                         onClick={() => {
-                                          setSelectedInstitutionForDoc(institution);
-                                          setAddDocumentModalVisible(true);
+                                          navigate(
+                                            `/institution/${institution?.id}/documents`
+                                          );
                                         }}
-                                        icon="Plus"
+                                        icon="FileText"
                                         className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
                                       />
                                     </Tippy>
                                     <Tippy
-                                      content="Edit"
+                                      content="Add/Edit Institution"
                                       options={{
                                         theme: "light",
                                       }}

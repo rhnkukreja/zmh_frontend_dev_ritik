@@ -1968,6 +1968,7 @@ const index = () => {
           { label: 'No of proposals', key: 'total_proposals' },
           { label: 'No. of FOR votes', key: 'for_votes', showPercentage: true, percentageKey: 'for_percentage' },
           { label: 'No. of AGAINST/WITHHOLD votes', key: 'against_votes', showPercentage: true, percentageKey: 'against_percentage' },
+          { label: 'No. of Abstain votes', key: 'abstain_votes', showPercentage: true, percentageKey: 'abstain_percentage' },
           { label: 'Alignment with management', key: 'aligned_with_mgmt' },
           { label: 'Alignment percentage', key: 'alignment_percentage', isPercentage: true }
         ];
@@ -2724,7 +2725,6 @@ const index = () => {
                                 <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Mgmt Rec</th>
                                 <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Vote Cast</th>
                                 <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Institution Name</th>
-                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Fund Name</th>
                               </tr>
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -2750,12 +2750,11 @@ const index = () => {
                                       </span>
                                     </td>
                                     <td className="px-4 py-2 align-middle break-words">{vds?.institution_name}</td>
-                                    <td className="px-4 py-2 align-middle break-words">{vds?.fund_name || ""}</td>
                                   </tr>
                                   {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
                                     <tr className="bg-gray-50">
                                       <td></td>
-                                      <td colSpan={5} className="px-4 py-2">
+                                      <td colSpan={4} className="px-4 py-2">
                                         <div className="text-xs text-gray-600">
                                           <span className="font-semibold text-gray-700">Voting Rationale: </span>
                                           {vds?.notes}
@@ -3089,6 +3088,19 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
                   return (
                     <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
                       {yearData ? `${yearData.against_votes.toLocaleString()} (${yearData.against_percentage}%)` : '-'}
+                    </td>
+                  );
+                })
+              ))}
+            </tr>
+            <tr>
+              <td className="px-6 py-3 font-medium">No. of Abstain votes</td>
+              {institutions.map((institution) => (
+                years.map((year: any) => {
+                  const yearData = institution.years[year];
+                  return (
+                    <td key={`${institution.institution_id}-${year}-abstain`} className="px-6 py-3 text-center">
+                      {yearData ? `${(yearData.abstain_votes || 0).toLocaleString()} (${yearData.abstain_percentage || 0}%)` : '-'}
                     </td>
                   );
                 })
