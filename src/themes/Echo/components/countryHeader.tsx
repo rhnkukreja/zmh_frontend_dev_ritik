@@ -19,8 +19,8 @@ const CountryInfoHeader = () => {
   );
   const location = useLocation();
 
-  // Hide on user-management route
-  if (location.pathname === "/user-management") {
+  // Hide on user-management and institution routes
+  if (location.pathname === "/user-management" || location.pathname === "/institution" || location.pathname.startsWith("/institution/")) {
     return null;
   }
 
