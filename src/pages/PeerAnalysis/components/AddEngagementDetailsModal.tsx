@@ -18,6 +18,7 @@ interface EngagementDetailsFormData {
   year: string;
   month: string;
   delete_previous: boolean;
+  document_name: string;
 }
 
 interface Institution {
@@ -61,7 +62,9 @@ const AddEngagementDetailsModal = ({
   onSuccess,
 }: AddEngagementDetailsModalProps) => {
   const dropzoneRef = useRef<DropzoneElement>(null);
+  const documentDropzoneRef = useRef<DropzoneElement>(null);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [uploadedDocument, setUploadedDocument] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<InstitutionOption | null>(null);
 
@@ -78,6 +81,7 @@ const AddEngagementDetailsModal = ({
       year: currentYear.toString(),
       month: currentMonth,
       delete_previous: false,
+      document_name: "",
     },
   });
 
@@ -140,6 +144,31 @@ const AddEngagementDetailsModal = ({
     }
   }, [visible]);
 
+  // Document upload dropzone handlers
+  useEffect(() => {
+    const elDocumentDropzoneRef = documentDropzoneRef.current;
+
+    if (elDocumentDropzoneRef) {
+      const dropzoneInstance = elDocumentDropzoneRef.dropzone;
+
+      const handleAddedFile = (file: File) => {
+        setUploadedDocument(file);
+      };
+
+      const handleRemovedFile = () => {
+        setUploadedDocument(null);
+      };
+
+      dropzoneInstance?.on("addedfile", handleAddedFile);
+      dropzoneInstance?.on("removedfile", handleRemovedFile);
+
+      return () => {
+        dropzoneInstance?.off("addedfile", handleAddedFile);
+        dropzoneInstance?.off("removedfile", handleRemovedFile);
+      };
+    }
+  }, [visible]);
+
   const onSubmit = async (data: EngagementDetailsFormData) => {
     if (!documentFile) {
       toast.error("Please upload an Excel file");
@@ -155,6 +184,14 @@ const AddEngagementDetailsModal = ({
       formData.append("month", data.month);
       formData.append("delete_previous", data.delete_previous ? "true" : "false");
       formData.append("file", documentFile, documentFile.name);
+      
+      // Add document and document_name if provided
+      if (data.document_name) {
+        formData.append("document_name", data.document_name);
+      }
+      if (uploadedDocument) {
+        formData.append("document", uploadedDocument, uploadedDocument.name);
+      }
 
       await axiosInstance.post("/peer_analysis_excel_upload/", formData, {
         headers: {
@@ -176,9 +213,13 @@ const AddEngagementDetailsModal = ({
   const handleClose = () => {
     reset();
     setDocumentFile(null);
+    setUploadedDocument(null);
     setSelectedInstitution(null);
     if (dropzoneRef.current?.dropzone) {
       dropzoneRef.current.dropzone.removeAllFiles();
+    }
+    if (documentDropzoneRef.current?.dropzone) {
+      documentDropzoneRef.current.dropzone.removeAllFiles();
     }
     setVisible(false);
   };
@@ -303,7 +344,7 @@ const AddEngagementDetailsModal = ({
             )}
           </div>
 
-          <div className="col-span-12">
+          <div className="col-span-12 sm:col-span-6">
             <label className="block mb-2 text-sm font-medium">
               Delete Previous Data <span className="text-red-500">*</span>
             </label>
@@ -339,6 +380,54 @@ const AddEngagementDetailsModal = ({
                 </div>
               )}
             />
+          </div>
+
+          <div className="col-span-12 sm:col-span-6">
+            <label className="block mb-1 text-sm font-medium">
+              Document Name
+            </label>
+            <Controller
+              name="document_name"
+              control={control}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="text"
+                  placeholder="Enter document name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              )}
+            />
+          </div>
+
+          <div className="col-span-12">
+            <label className="block mb-1 text-sm font-medium">
+              Upload Document
+            </label>
+            <Dropzone
+              ref={documentDropzoneRef}
+              options={{
+                url: "/",
+                autoProcessQueue: false,
+                maxFiles: 1,
+                acceptedFiles: ".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx",
+                addRemoveLinks: true,
+                maxFilesize: 10,
+              }}
+              className="dropzone"
+            >
+              <div className="text-lg font-medium">
+                Drop document here or click to upload.
+              </div>
+              <div className="text-gray-600">
+                Accepted formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (Max 10MB)
+              </div>
+            </Dropzone>
+            {uploadedDocument && (
+              <div className="mt-2 text-sm text-slate-600">
+                Selected: {uploadedDocument.name} ({bytesToMB(uploadedDocument.size)} MB)
+              </div>
+            )}
           </div>
 
           <div className="col-span-12">

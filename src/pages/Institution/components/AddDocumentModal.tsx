@@ -12,7 +12,7 @@ import { axiosInstance } from "@/services";
 
 interface DocumentFormData {
   document_name: string;
-  document_type: string;
+  category: string;
   month: string;
   year: string;
   tags: string;
@@ -27,12 +27,20 @@ interface AddDocumentModalProps {
   onSuccess?: () => void;
 }
 
-const documentTypes = [
+const categories = [
+  "Climate Related",
+  "Engagement Priorities",
+  "Company Specific Engagement Stats",
+  "Proxy Voting Stats",
+  "Voting Choice",
   "Voting Guidelines",
   "Stewardship Report",
-  "Engagement Details",
-  "Case Studies",
-  "Others",
+  "ESG Integration",
+  "UN PRI Report",
+  "Compensation Related",
+  "Macro Engagement Stats",
+  "Case Study",
+  "Commentary",
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
@@ -75,7 +83,7 @@ const AddDocumentModal = ({
   } = useForm<DocumentFormData>({
     defaultValues: {
       document_name: "",
-      document_type: "",
+      category: "",
       month: currentMonth,
       year: currentYear.toString(),
       tags: "",
@@ -119,7 +127,7 @@ const AddDocumentModal = ({
       const formData = new FormData();
       formData.append("institution_id", String(institutionId));
       formData.append("document_name", data.document_name);
-      formData.append("document_type", data.document_type);
+      formData.append("category", data.category);
       formData.append("month", data.month);
       formData.append("year", data.year);
       formData.append("tags", data.tags);
@@ -186,30 +194,30 @@ const AddDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Document Type <span className="text-red-500">*</span>
+              Category <span className="text-red-500">*</span>
             </label>
             <Controller
-              name="document_type"
+              name="category"
               control={control}
-              rules={{ required: "Document type is required" }}
+              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
                   value={field.value}
                   onChange={field.onChange}
-                  options={{ placeholder: "Select document type" }}
+                  options={{ placeholder: "Select category" }}
                   className="w-full"
                 >
-                  <option value="">Select Type</option>
-                  {documentTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
                     </option>
                   ))}
                 </TomSelect>
               )}
             />
-            {errors.document_type && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.document_type.message}</span>
+            {errors.category && (
+              <span className="text-red-500 text-sm mt-1 block">{errors.category.message}</span>
             )}
           </div>
 
