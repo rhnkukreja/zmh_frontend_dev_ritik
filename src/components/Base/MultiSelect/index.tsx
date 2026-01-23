@@ -224,9 +224,8 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         if (actionMeta.action === 'input-change') {
           setInputValue(newValue);
         }
-        // Don't clear input on selection - allow user to continue filtering
-        // Only clear when menu closes
-        if (actionMeta.action === 'menu-close') {
+        // Clear input on selection or when menu closes
+        if (actionMeta.action === 'set-value' || actionMeta.action === 'menu-close') {
           setInputValue('');
         }
       }}
