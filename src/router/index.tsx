@@ -99,6 +99,7 @@ import RealTimeData from "@/pages/RealTimeData";
 import CustomReports from "../pages/CustomReports";
 import VotingRationalePage from "@/pages/VotingRationalePage";
 import UserManagement from "@/pages/UserManagement";
+import CompanyReportPage from "@/pages/CompanyReport";
 
 function Router() {
   const TitleManager = () => {
@@ -442,6 +443,11 @@ function Router() {
           path: "investor-details",
           element: <InvestorCardDetails />,
           data: { titleName: "Investor Detail - ZMH Analytics" },
+        },
+        {
+          path: "company-report",
+          element: <CompanyReportPage />,
+          data: { titleName: "Company Report - ZMH Analytics" },
         },
         {
           path: "summary-details",

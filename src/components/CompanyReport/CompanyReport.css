@@ -1,0 +1,188 @@
+/* Company Report PDF Styles */
+
+/* Page break utilities */
+.page-break-inside-avoid {
+  page-break-inside: avoid;
+}
+
+.page-break-before {
+  page-break-before: always;
+}
+
+.page-break-after {
+  page-break-after: always;
+}
+
+/* Report content styling */
+.report-content {
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.report-content h1,
+.report-content h2,
+.report-content h3,
+.report-content h4 {
+  font-family: inherit;
+  margin-bottom: 0.5rem;
+}
+
+.report-content .report-header {
+  margin-bottom: 1.5rem;
+}
+
+.report-content .report-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Info card styling */
+.report-content .info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Table styling for report */
+.report-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.report-content table th,
+.report-content table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.report-content table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+.report-content table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.report-content table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Section header */
+.report-content section > h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 2px solid #800000;
+  padding-bottom: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+/* Badge styling */
+.report-content .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.report-content .badge-positive {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.report-content .badge-negative {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.report-content .badge-neutral {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Print-specific styles */
+@media print {
+  .exclude-from-pdf {
+    display: none !important;
+  }
+  
+  .report-content {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .report-content section {
+    page-break-inside: avoid;
+  }
+  
+  .report-content table {
+    page-break-inside: auto;
+  }
+  
+  .report-content tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  .report-content thead {
+    display: table-header-group;
+  }
+  
+  .report-content tfoot {
+    display: table-footer-group;
+  }
+}
+
+/* Progress bar styling */
+.report-content .progress-bar {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: #f3f4f6;
+  overflow: hidden;
+}
+
+.report-content .progress-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Topic badges for ESG */
+.report-content .topic-e {
+  background-color: #05703E;
+  color: white;
+}
+
+.report-content .topic-s {
+  background-color: #F5A623;
+  color: white;
+}
+
+.report-content .topic-g {
+  background-color: #115096;
+  color: white;
+}
+
+/* Vote indicators */
+.report-content .vote-for {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.report-content .vote-against {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.report-content .vote-abstain {
+  background-color: #fef3c7;
+  color: #92400e;
+}
