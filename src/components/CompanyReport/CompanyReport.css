@@ -122,6 +122,7 @@
   
   .report-content section {
     page-break-inside: avoid;
+    break-inside: avoid;
   }
   
   .report-content table {
@@ -140,6 +141,43 @@
   .report-content tfoot {
     display: table-footer-group;
   }
+}
+
+/* PDF Generation - Force sections to stay together */
+.report-content section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Charts container - prevent breaking */
+.report-content .recharts-wrapper,
+.report-content .recharts-responsive-container {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Tables - prevent row breaking */
+.report-content table {
+  break-inside: auto;
+  table-layout: auto;
+}
+
+.report-content table td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.report-content tbody tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Card sections should stay together */
+.report-content .bg-white.border,
+.report-content .bg-gray-50.rounded-xl {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 /* Progress bar styling */

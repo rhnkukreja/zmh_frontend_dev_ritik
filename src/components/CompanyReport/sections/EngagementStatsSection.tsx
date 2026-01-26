@@ -22,19 +22,10 @@ const parseTopicList = (topicStr: string | undefined): string[] => {
   return topicStr.split(',').map(t => t.trim()).filter(Boolean);
 };
 
-// Topic Badge with E/S/G prefix
-const TopicBadge = ({ topic, type }: { topic: string; type: 'E' | 'S' | 'G' }) => {
-  const colors = {
-    E: 'bg-[#05703E]',
-    S: 'bg-[#F5A623]',
-    G: 'bg-[#115096]'
-  };
-
-  return (
-    <span className={`inline-block px-1.5 py-0.5 ${colors[type]} text-white rounded text-[9px] font-medium mr-1 mb-1`}>
-      {topic}
-    </span>
-  );
+// Format topics as simple comma-separated text
+const formatTopics = (topics: string[]): string => {
+  if (topics.length === 0) return '-';
+  return topics.join(', ');
 };
 
 const normalizeToArray = (data: any): EngagementItem[] => {
@@ -91,15 +82,15 @@ const CompanyEngagementTable = ({ title, subtitle, data }: CompanyEngagementTabl
     <div className="mb-4">
       <h3 className="text-sm font-semibold text-gray-800 mb-1">{title}</h3>
       {subtitle && <p className="text-[10px] text-gray-500 mb-2">{subtitle}</p>}
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
+      <div className="overflow-visible">
+        <table className="w-full text-xs border-collapse table-fixed">
           <thead>
             <tr className="bg-primary text-white">
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300 w-16">Year</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300 w-40">Investor</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Environmental</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Social</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Governance</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[50px]">Year</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300">Investor</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[100px]">Environmental</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[80px]">Social</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[100px]">Governance</th>
             </tr>
           </thead>
           <tbody>
@@ -110,41 +101,11 @@ const CompanyEngagementTable = ({ title, subtitle, data }: CompanyEngagementTabl
               
               return (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="py-1.5 px-2 border border-gray-200">{item.year || '-'}</td>
-                  <td className="py-1.5 px-2 border border-gray-200 font-medium">{item.institution__institution || '-'}</td>
-                  <td className="py-1.5 px-2 border border-gray-200">
-                    <div className="flex flex-wrap">
-                      {envTopics.length > 0 ? (
-                        envTopics.map((topic, idx) => (
-                          <TopicBadge key={idx} topic={topic} type="E" />
-                        ))
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-1.5 px-2 border border-gray-200">
-                    <div className="flex flex-wrap">
-                      {socTopics.length > 0 ? (
-                        socTopics.map((topic, idx) => (
-                          <TopicBadge key={idx} topic={topic} type="S" />
-                        ))
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-1.5 px-2 border border-gray-200">
-                    <div className="flex flex-wrap">
-                      {govTopics.length > 0 ? (
-                        govTopics.map((topic, idx) => (
-                          <TopicBadge key={idx} topic={topic} type="G" />
-                        ))
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
+                  <td className="py-2 px-3 border border-gray-200">{item.year || '-'}</td>
+                  <td className="py-2 px-3 border border-gray-200 font-medium whitespace-nowrap">{item.institution__institution || '-'}</td>
+                  <td className="py-2 px-3 border border-gray-200 text-green-700">{formatTopics(envTopics)}</td>
+                  <td className="py-2 px-3 border border-gray-200 text-amber-600">{formatTopics(socTopics)}</td>
+                  <td className="py-2 px-3 border border-gray-200 text-blue-700">{formatTopics(govTopics)}</td>
                 </tr>
               );
             })}
@@ -183,16 +144,16 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
     <div className="mb-4">
       <h3 className="text-sm font-semibold text-gray-800 mb-1">{title}</h3>
       {subtitle && <p className="text-[10px] text-gray-500 mb-2">{subtitle}</p>}
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
+      <div className="overflow-visible">
+        <table className="w-full text-xs border-collapse table-fixed">
           <thead>
             <tr className="bg-primary text-white">
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300 w-14">Year</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300 w-32">Investor</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300 w-32">Company</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Environmental</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Social</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Governance</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[50px]">Year</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[18%]">Investor</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[22%]">Company</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[100px]">Environmental</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[80px]">Social</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300 w-[100px]">Governance</th>
             </tr>
           </thead>
           <tbody>
@@ -203,42 +164,12 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
               
               return (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="py-1.5 px-2 border border-gray-200">{item.year || '-'}</td>
-                  <td className="py-1.5 px-2 border border-gray-200 font-medium truncate max-w-[120px]">{item.institution__institution || '-'}</td>
-                  <td className="py-1.5 px-2 border border-gray-200 truncate max-w-[120px]">{item.company__name || '-'}</td>
-                  <td className="py-1.5 px-2 border border-gray-200">
-                    <div className="flex flex-wrap">
-                      {envTopics.length > 0 ? (
-                        envTopics.map((topic, idx) => (
-                          <TopicBadge key={idx} topic={topic} type="E" />
-                        ))
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-1.5 px-2 border border-gray-200">
-                    <div className="flex flex-wrap">
-                      {socTopics.length > 0 ? (
-                        socTopics.map((topic, idx) => (
-                          <TopicBadge key={idx} topic={topic} type="S" />
-                        ))
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-1.5 px-2 border border-gray-200">
-                    <div className="flex flex-wrap">
-                      {govTopics.length > 0 ? (
-                        govTopics.map((topic, idx) => (
-                          <TopicBadge key={idx} topic={topic} type="G" />
-                        ))
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
+                  <td className="py-2 px-3 border border-gray-200">{item.year || '-'}</td>
+                  <td className="py-2 px-3 border border-gray-200 font-medium whitespace-nowrap">{item.institution__institution || '-'}</td>
+                  <td className="py-2 px-3 border border-gray-200 whitespace-nowrap">{item.company__name || '-'}</td>
+                  <td className="py-2 px-3 border border-gray-200 text-green-700">{formatTopics(envTopics)}</td>
+                  <td className="py-2 px-3 border border-gray-200 text-amber-600">{formatTopics(socTopics)}</td>
+                  <td className="py-2 px-3 border border-gray-200 text-blue-700">{formatTopics(govTopics)}</td>
                 </tr>
               );
             })}
@@ -267,43 +198,30 @@ const EngagementStatsSection = ({ data, exGlobalData, companyName }: EngagementS
   const recentYear = allYears[0] || new Date().getFullYear().toString();
 
   return (
-    <section className="mb-6 page-break-inside-avoid">
-      <div className="flex items-center gap-3 mb-3">
-        <img src={zmhLogo} alt="ZMH Logo" className="h-5 w-auto" />
-        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-1 flex-1">
-          Engagement Statistics
-        </h2>
-      </div>
-
-      {/* Company Engagement History */}
-      <CompanyEngagementTable 
-        title={`${companyName || 'Company'}: Investor disclosed engagement history (${recentYear} only)`}
-        data={companyEngagements}
-      />
-
-      {/* Peer Engagement */}
-      <PeerEngagementTable 
-        title={`Engagement topics for peers`}
-        subtitle="Shows engagement data for all companies in the same peer grouping"
-        data={peerEngagements}
-      />
-
-      {/* Legend */}
-      <div className="flex items-center gap-4 mt-3 text-[10px] text-gray-500">
-        <div className="flex items-center gap-1">
-          <span className="inline-flex items-center justify-center w-4 h-4 bg-[#05703E] text-white rounded text-[8px] font-semibold">E</span>
-          <span>Environmental</span>
+    <>
+      {/* Section for Company Engagement History */}
+      <section className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
+            Engagement Statistics
+          </h2>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="inline-flex items-center justify-center w-4 h-4 bg-[#F5A623] text-white rounded text-[8px] font-semibold">S</span>
-          <span>Social</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="inline-flex items-center justify-center w-4 h-4 bg-[#115096] text-white rounded text-[8px] font-semibold">G</span>
-          <span>Governance</span>
-        </div>
-      </div>
-    </section>
+        <CompanyEngagementTable 
+          title={`${companyName || 'Company'}: Investor disclosed engagement history (${recentYear} only)`}
+          data={companyEngagements}
+        />
+      </section>
+
+      {/* Separate Section for Peer Engagement */}
+      <section className="mb-8">
+        <PeerEngagementTable 
+          title={`Engagement topics for peers`}
+          subtitle="Shows engagement data for all companies in the same peer grouping"
+          data={peerEngagements}
+        />
+      </section>
+    </>
   );
 };
 

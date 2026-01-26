@@ -35,83 +35,105 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         const buttonsToHide = document.querySelectorAll(".exclude-from-pdf");
         buttonsToHide.forEach((el) => el.classList.add("hidden"));
 
-        const canvas = await html2canvas(input, {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          backgroundColor: "#ffffff",
-          windowWidth: input.scrollWidth,
-          windowHeight: input.scrollHeight,
-        });
-
-        const imgData = canvas.toDataURL("image/png");
-        const pdfWidth = 210; // A4 width in mm
-        const margin = 10;
-        const imgWidth = pdfWidth - 2 * margin;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        // Calculate number of pages needed
-        const pageHeight = 297 - 2 * margin; // A4 height minus margins
-        const totalPages = Math.ceil(imgHeight / pageHeight);
-
         const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        const margin = 12;
+        const contentWidth = pdfWidth - 2 * margin;
+        const maxContentHeight = pdfHeight - 2 * margin - 12; // Leave room for footer
+        
+        let currentY = margin;
+        let pageNum = 1;
 
-        for (let page = 0; page < totalPages; page++) {
-          if (page > 0) {
-            pdf.addPage();
-          }
-
-          const sourceY = page * pageHeight * (canvas.width / imgWidth);
-          const sourceHeight = Math.min(
-            pageHeight * (canvas.width / imgWidth),
-            canvas.height - sourceY
-          );
-
-          // Create a temporary canvas for this page section
-          const pageCanvas = document.createElement("canvas");
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = sourceHeight;
-          const ctx = pageCanvas.getContext("2d");
-
-          if (ctx) {
-            ctx.drawImage(
-              canvas,
-              0,
-              sourceY,
-              canvas.width,
-              sourceHeight,
-              0,
-              0,
-              canvas.width,
-              sourceHeight
-            );
-
-            const pageImgData = pageCanvas.toDataURL("image/png");
-            const pageImgHeight = (sourceHeight * imgWidth) / canvas.width;
-
-            pdf.addImage(
-              pageImgData,
-              "PNG",
-              margin,
-              margin,
-              imgWidth,
-              pageImgHeight,
-              undefined,
-              "FAST"
-            );
-          }
-
-          // Add footer with page number
+        // Helper to add footer
+        const addFooter = (pageNumber: number) => {
           pdf.setFontSize(8);
           pdf.setTextColor(128);
           pdf.text(
             `${data.finnhub_data?.company_name || "Company Report"} | Data as of: ${data.data_as_of || new Date().toLocaleDateString()}`,
             margin,
-            290
+            pdfHeight - 7
           );
-          pdf.text(`Page ${page + 1} of ${totalPages}`, pdfWidth - margin - 20, 290);
+          pdf.text(`Page ${pageNumber}`, pdfWidth - margin - 15, pdfHeight - 7);
+        };
+
+        // Get all sections (header, content sections, footer)
+        const allSections = input.querySelectorAll('.report-header, section, .report-footer');
+        
+        for (let i = 0; i < allSections.length; i++) {
+          const section = allSections[i] as HTMLElement;
+          
+          // Render this section to canvas
+          const canvas = await html2canvas(section, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            backgroundColor: "#ffffff",
+          });
+
+          // Calculate dimensions
+          const imgWidth = contentWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          
+          // Check if this section fits on current page
+          if (currentY + imgHeight > maxContentHeight + margin && currentY > margin) {
+            // Add footer to current page
+            addFooter(pageNum);
+            // Start new page
+            pdf.addPage();
+            pageNum++;
+            currentY = margin;
+          }
+
+          // If single section is taller than page, we need to split it
+          if (imgHeight > maxContentHeight) {
+            const scaleFactor = canvas.width / imgWidth;
+            const pageHeightInPixels = maxContentHeight * scaleFactor;
+            const sectionPages = Math.ceil(canvas.height / pageHeightInPixels);
+
+            for (let sp = 0; sp < sectionPages; sp++) {
+              if (sp > 0 || currentY > margin) {
+                if (sp > 0) {
+                  addFooter(pageNum);
+                  pdf.addPage();
+                  pageNum++;
+                  currentY = margin;
+                }
+              }
+
+              const sourceY = sp * pageHeightInPixels;
+              const sourceHeight = Math.min(pageHeightInPixels, canvas.height - sourceY);
+
+              const pageCanvas = document.createElement("canvas");
+              pageCanvas.width = canvas.width;
+              pageCanvas.height = sourceHeight;
+              const ctx = pageCanvas.getContext("2d");
+
+              if (ctx) {
+                ctx.drawImage(
+                  canvas,
+                  0, sourceY, canvas.width, sourceHeight,
+                  0, 0, canvas.width, sourceHeight
+                );
+
+                const pageImgData = pageCanvas.toDataURL("image/png");
+                const destHeight = sourceHeight / scaleFactor;
+
+                pdf.addImage(pageImgData, "PNG", margin, currentY, imgWidth, destHeight, undefined, "FAST");
+                currentY += destHeight + 5;
+              }
+            }
+          } else {
+            // Section fits on page
+            const imgData = canvas.toDataURL("image/png");
+            pdf.addImage(imgData, "PNG", margin, currentY, imgWidth, imgHeight, undefined, "FAST");
+            currentY += imgHeight + 8; // Add spacing between sections
+          }
         }
+
+        // Add footer to last page
+        addFooter(pageNum);
 
         const fileName = `${data.finnhub_data?.company_name || "Company"}_Report_${new Date().toISOString().split("T")[0]}.pdf`;
         pdf.save(fileName);
@@ -190,43 +212,33 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
 
           {/* Section 1: Share Price Performance */}
           {data.share_price_performance_data && (
-            <div className="mb-10">
-              <SharePricePerformanceSection 
-                data={data.share_price_performance_data} 
-                dataAsOf={data.data_as_of}
-                companyName={data.finnhub_data?.company_name}
-              />
-            </div>
+            <SharePricePerformanceSection 
+              data={data.share_price_performance_data} 
+              dataAsOf={data.data_as_of}
+              companyName={data.finnhub_data?.company_name}
+            />
           )}
 
           {/* Section 2: Top 20 Investors with Pie Chart and Proxy Influence */}
-          <div className="mb-10">
-            <Top20InvestorsSection data={data.percent_ownership_data || []} />
-          </div>
+          <Top20InvestorsSection data={data.percent_ownership_data || []} />
 
           {/* Section 3: Investors Voting Against + Trend Charts */}
           {data.charts_data && (
-            <div className="mb-10">
-              <InvestorsVotingAgainstSection 
-                data={data.charts_data}
-                percentOwnershipData={data.percent_ownership_data}
-              />
-            </div>
+            <InvestorsVotingAgainstSection 
+              data={data.charts_data}
+              percentOwnershipData={data.percent_ownership_data}
+            />
           )}
 
           {/* Section 4: Engagement Stats (Company + Peers) */}
-          <div className="mb-10">
-            <EngagementStatsSection
-              data={data.engagement_stats_data}
-              exGlobalData={data.engagement_stats_ex_global_data}
-              companyName={data.finnhub_data?.company_name}
-            />
-          </div>
+          <EngagementStatsSection
+            data={data.engagement_stats_data}
+            exGlobalData={data.engagement_stats_ex_global_data}
+            companyName={data.finnhub_data?.company_name}
+          />
 
           {/* Section 5: Shareholder Proposals */}
-          <div className="mb-10">
-            <ShareholderProposalsSection data={data.sp_data || []} />
-          </div>
+          <ShareholderProposalsSection data={data.sp_data || []} />
 
           {/* Report Footer */}
           <div className="report-footer mt-12 pt-6 border-t-2 border-gray-200">

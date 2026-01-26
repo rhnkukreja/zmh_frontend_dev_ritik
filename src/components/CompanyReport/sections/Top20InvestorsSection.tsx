@@ -23,8 +23,8 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
 
   if (top20.length === 0) {
     return (
-      <section className="mb-8">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">
+      <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">
           Top 20 Investors – Total % ownership
         </h2>
         <div className="bg-gray-50 rounded p-6 text-center">
@@ -53,8 +53,8 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
   ));
 
   return (
-    <section className="mb-8">
-      <h2 className="text-base font-semibold text-gray-900 mb-4">
+    <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+      <h2 className="text-lg font-bold text-gray-900 mb-4">
         Top 20 Investors – Total % ownership
       </h2>
 

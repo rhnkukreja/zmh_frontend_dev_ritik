@@ -63,20 +63,20 @@ const VotingAgainstTable = ({
   }
 
   return (
-    <div className="mb-4 overflow-x-auto">
-      <table className="w-full text-xs border-collapse">
+    <div className="mb-4 overflow-visible">
+      <table className="w-full text-xs border-collapse table-auto">
         <thead>
           <tr className="bg-primary text-white">
-            <th className="text-left py-1.5 px-2 font-medium border border-gray-300" rowSpan={2}>Investor</th>
-            <th className="text-center py-1.5 px-2 font-medium border border-gray-300" colSpan={allDirectors.length > 0 ? allDirectors.length : 1}>
+            <th className="text-left py-2 px-2 font-medium border border-gray-300" rowSpan={2} style={{ width: '150px' }}>Investor</th>
+            <th className="text-center py-2 px-2 font-medium border border-gray-300" colSpan={allDirectors.length > 0 ? allDirectors.length : 1}>
               Voted Against Directors
             </th>
-            <th className="text-center py-1.5 px-2 font-medium border border-gray-300" rowSpan={2}>Voted Against SOP</th>
+            <th className="text-center py-2 px-2 font-medium border border-gray-300" rowSpan={2} style={{ width: '80px' }}>Voted Against SOP</th>
           </tr>
           {allDirectors.length > 0 && (
             <tr className="bg-gray-100">
               {allDirectors.map((director, idx) => (
-                <th key={idx} className="text-center py-1 px-1 font-medium border border-gray-300 text-[9px] max-w-[80px]">
+                <th key={idx} className="text-center py-1 px-1 font-medium border border-gray-300 text-[9px]" style={{ minWidth: '70px' }}>
                   {director}
                 </th>
               ))}
@@ -86,7 +86,7 @@ const VotingAgainstTable = ({
         <tbody>
           {relevantInvestors.map(([investor, votes], idx) => (
             <tr key={investor} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-              <td className="py-1.5 px-2 border border-gray-200 font-medium max-w-[150px] truncate">{investor}</td>
+              <td className="py-2 px-2 border border-gray-200 font-medium break-words align-top">{investor}</td>
               {allDirectors.length > 0 ? (
                 allDirectors.map((director, didx) => (
                   <td key={didx} className="text-center py-1.5 px-1 border border-gray-200">
@@ -223,20 +223,21 @@ const InvestorsVotingAgainstSection = ({ data, percentOwnershipData }: Investors
   }
 
   return (
-    <section className="mb-10 page-break-inside-avoid">
-      <div className="flex items-center gap-3 mb-4">
-        <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
-          Investors that voted Against Election of Director or Say on Pay (from top 20 list)
-        </h2>
-      </div>
+    <>
+      {/* Section for Voting Table */}
+      <section className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
+            Investors that voted Against Election of Director or Say on Pay (from top 20 list)
+          </h2>
+        </div>
+        <VotingAgainstTable percentOwnershipData={safePercentOwnership} />
+      </section>
 
-      {/* Voting Against Table */}
-      <VotingAgainstTable percentOwnershipData={safePercentOwnership} />
-
-      {/* Trend Charts */}
+      {/* Separate Section for Trend Charts */}
       {hasVotingData && (
-        <div className="mt-8 bg-gray-50 rounded-xl p-6">
+        <section className="mb-10 bg-gray-50 rounded-xl p-6">
           <h3 className="text-base font-bold text-gray-800 mb-6">Trend in Investor support</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             <TrendChart title="Election of Directors" data={data.election_of_directors} />
@@ -250,9 +251,9 @@ const InvestorsVotingAgainstSection = ({ data, percentOwnershipData }: Investors
               <span className="text-sm text-gray-600 font-medium">% Support</span>
             </div>
           </div>
-        </div>
+        </section>
       )}
-    </section>
+    </>
   );
 };
 

@@ -43,8 +43,8 @@ const SharePricePerformanceSection = ({ data, dataAsOf }: SharePricePerformanceS
   const displayDataAsOf = (data.data_as_of as string) || dataAsOf || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
-    <section className="mb-8">
-      <h2 className="text-base font-semibold text-gray-900 mb-4">
+    <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+      <h2 className="text-lg font-bold text-gray-900 mb-4">
         Share Price Performance
       </h2>
 

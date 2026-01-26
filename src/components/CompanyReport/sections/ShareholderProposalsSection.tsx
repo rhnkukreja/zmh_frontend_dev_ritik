@@ -6,30 +6,33 @@ interface ShareholderProposalsSectionProps {
   data: SPData[];
 }
 
+// Known fields that are not institution names
+const NON_INSTITUTION_FIELDS = ['proxy_season', 'proponent', 'outcome_percentage', 'proposal_title', 'mgt_rec', 'major_institutions_vote'];
+
 const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps) => {
   const dataArray = Array.isArray(data) ? data : [];
 
   // Get the most recent year
-  const years = [...new Set(dataArray.map(d => d.proxy_season))].sort((a, b) => parseInt(b) - parseInt(a));
+  const years = [...new Set(dataArray.map(d => d.proxy_season))].sort((a, b) => parseInt(String(b)) - parseInt(String(a)));
   const recentYear = years[0] || new Date().getFullYear().toString();
 
-  // Get list of unique institutions for header
-  const allInstitutions = new Set<string>();
-  dataArray.forEach(proposal => {
-    proposal.major_institutions_vote?.forEach(inst => {
-      if (inst.institution_name) {
-        allInstitutions.add(inst.institution_name);
+  // Extract institution names from the first data item (keys that aren't known fields)
+  const institutionNames: string[] = [];
+  if (dataArray.length > 0) {
+    const firstItem = dataArray[0];
+    Object.keys(firstItem).forEach(key => {
+      if (!NON_INSTITUTION_FIELDS.includes(key) && typeof firstItem[key] !== 'object') {
+        institutionNames.push(key);
       }
     });
-  });
-  const institutionsList = Array.from(allInstitutions).slice(0, 5);
+  }
 
   if (dataArray.length === 0) {
     return (
-      <section className="mb-6 page-break-inside-avoid">
-        <div className="flex items-center gap-3 mb-3">
-          <img src={zmhLogo} alt="ZMH Logo" className="h-5 w-auto" />
-          <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-1 flex-1">
+      <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+        <div className="flex items-center gap-3 mb-4">
+          <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
+          <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
             Shareholder Proposals ({recentYear} only)
           </h2>
         </div>
@@ -40,76 +43,74 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
     );
   }
 
+  // Get short names for institutions (first word or abbreviation)
+  const getShortName = (name: string): string => {
+    if (name.includes('BlackRock')) return 'BlackRock';
+    if (name.includes('Vanguard')) return 'Vanguard';
+    if (name.includes('State Street')) return 'SSGA';
+    if (name.includes('Dimensional')) return 'DFA';
+    if (name.includes('T Rowe') || name.includes('T. Rowe')) return 'T. Rowe';
+    return name.split(' ')[0];
+  };
+
   return (
-    <section className="mb-6 page-break-inside-avoid">
-      <div className="flex items-center gap-3 mb-3">
-        <img src={zmhLogo} alt="ZMH Logo" className="h-5 w-auto" />
-        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-1 flex-1">
+    <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+      <div className="flex items-center gap-3 mb-4">
+        <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
+        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
           Shareholder Proposals ({recentYear} only)
         </h2>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
+      <div className="overflow-visible">
+        <table className="w-full text-xs border-collapse table-fixed">
           <thead>
             <tr className="bg-primary text-white">
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Proxy Season</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">The Proponent</th>
-              <th className="text-left py-1.5 px-2 font-medium border border-gray-300">Resolution Title</th>
-              <th className="text-center py-1.5 px-2 font-medium border border-gray-300">Mgt Rec</th>
-              <th className="text-center py-1.5 px-2 font-medium border border-gray-300">Outcome</th>
-              {institutionsList.map((inst, idx) => (
-                <th key={idx} className="text-center py-1.5 px-1 font-medium border border-gray-300 max-w-[60px]">
-                  <span className="truncate block text-[9px]">{inst.split(' ')[0]}</span>
+              <th className="text-left py-2 px-2 font-medium border border-gray-300 w-[60px]">Year</th>
+              <th className="text-left py-2 px-2 font-medium border border-gray-300">Proponent</th>
+              <th className="text-center py-2 px-2 font-medium border border-gray-300 w-[70px]">Outcome</th>
+              {institutionNames.map((inst, idx) => (
+                <th key={idx} className="text-center py-2 px-1 font-medium border border-gray-300 w-[65px]">
+                  <span className="text-[9px]">{getShortName(inst)}</span>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {dataArray.slice(0, 15).map((proposal, index) => {
-              // Build a vote lookup for this proposal
-              const voteLookup: Record<string, string> = {};
-              proposal.major_institutions_vote?.forEach(inst => {
-                if (inst.institution_name) {
-                  voteLookup[inst.institution_name] = inst.vote || '-';
-                }
-              });
+            {dataArray.slice(0, 20).map((proposal, index) => {
+              const outcomeStr = proposal.outcome_percentage || '-';
+              const outcomeNum = parseFloat(outcomeStr.replace('%', ''));
+              const isPercentage = !isNaN(outcomeNum);
 
               return (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="py-1.5 px-2 border border-gray-200 whitespace-nowrap">
+                  <td className="py-2 px-2 border border-gray-200">
                     {proposal.proxy_season}
                   </td>
-                  <td className="py-1.5 px-2 border border-gray-200 max-w-[100px]">
-                    <span className="truncate block">{proposal.proponent}</span>
+                  <td className="py-2 px-2 border border-gray-200">
+                    <span className="text-[11px]">{proposal.proponent}</span>
                   </td>
-                  <td className="py-1.5 px-2 border border-gray-200 max-w-[150px]">
-                    <span className="line-clamp-2 text-[10px]">{proposal.proposal_title}</span>
-                  </td>
-                  <td className="py-1.5 px-2 border border-gray-200 text-center">
-                    <span className="text-red-600 font-medium">Against</span>
-                  </td>
-                  <td className="py-1.5 px-2 border border-gray-200 text-center">
+                  <td className="py-2 px-2 border border-gray-200 text-center">
                     <span className={clsx(
-                      "font-medium",
-                      parseFloat(proposal.outcome_percentage?.replace('%', '') || '0') >= 50 
-                        ? "text-green-600" 
-                        : "text-gray-600"
+                      "font-medium text-[10px]",
+                      isPercentage && outcomeNum >= 50 ? "text-green-600" : "text-gray-700"
                     )}>
-                      {proposal.outcome_percentage}
+                      {outcomeStr}
                     </span>
                   </td>
-                  {institutionsList.map((inst, idx) => {
-                    const vote = voteLookup[inst];
+                  {institutionNames.map((inst, idx) => {
+                    const vote = (proposal as any)[inst];
                     return (
-                      <td key={idx} className="py-1.5 px-1 border border-gray-200 text-center">
+                      <td key={idx} className="py-2 px-1 border border-gray-200 text-center">
                         <span className={clsx(
                           "text-[10px] font-medium",
                           vote === 'For' && "text-green-600",
                           vote === 'Against' && "text-red-600",
-                          (!vote || vote === '-') && "text-gray-400"
+                          vote === 'Abstain' && "text-amber-600",
+                          vote === 'Split Vote' && "text-purple-600",
+                          (!vote || vote === null) && "text-gray-400"
                         )}>
-                          {vote === 'For' ? 'For' : vote === 'Against' ? 'Against' : vote || '-'}
+                          {vote || '-'}
                         </span>
                       </td>
                     );
@@ -119,9 +120,9 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
             })}
           </tbody>
         </table>
-        {dataArray.length > 15 && (
+        {dataArray.length > 20 && (
           <p className="text-[10px] text-gray-500 mt-1 text-center">
-            Showing 15 of {dataArray.length} proposals
+            Showing 20 of {dataArray.length} proposals
           </p>
         )}
       </div>
@@ -136,8 +137,16 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
           <span>= Voted Against</span>
         </div>
         <div className="flex items-center gap-1">
+          <span className="text-amber-600 font-medium">Abstain</span>
+          <span>= Abstained</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-purple-600 font-medium">Split Vote</span>
+          <span>= Split Vote</span>
+        </div>
+        <div className="flex items-center gap-1">
           <span className="text-gray-400">-</span>
-          <span>= No Vote / Abstain</span>
+          <span>= No Vote</span>
         </div>
       </div>
     </section>
