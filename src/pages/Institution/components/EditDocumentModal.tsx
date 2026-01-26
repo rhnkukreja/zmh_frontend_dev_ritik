@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
@@ -9,11 +9,13 @@ import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect";
 import { axiosInstance } from "@/services";
 import { InstitutionDocument } from "@/types/institutions";
+import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
+import { bytesToMB } from "@/utils/helper";
+import Error from "@/components/Error";
 
 interface EditDocumentFormData {
   document_name: string;
   document_type: string;
-  link: string;
   month: string;
   year: string;
   tags: string;
@@ -61,6 +63,9 @@ const EditDocumentModal = ({
   onSuccess,
 }: EditDocumentModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [uploadedDocument, setUploadedDocument] = useState<any>(null);
+  const [showRequiredDocError, setShowRequiredDocError] = useState<boolean>(false);
+  const dropzoneRef = useRef<DropzoneElement>(null);
 
   const {
     control,
@@ -71,7 +76,6 @@ const EditDocumentModal = ({
     defaultValues: {
       document_name: "",
       document_type: "",
-      link: "",
       month: "",
       year: "",
       tags: "",
@@ -85,31 +89,81 @@ const EditDocumentModal = ({
       reset({
         document_name: (document as any).document_name || document.name || "",
         document_type: document.document_type || "",
-        link: document.link || "",
         month: "",
         year: document.year?.toString() || "",
         tags: document.tags || "",
         priority: document.priority || "Medium",
         active: document.active ?? true,
       });
+      if (document.link) {
+        setUploadedDocument({
+          name: document.link.split('/').pop(),
+          url: document.link,
+        });
+      }
     }
   }, [document, visible, reset]);
+
+  useEffect(() => {
+    const elDropzoneRef = dropzoneRef.current;
+
+    if (elDropzoneRef) {
+      const dropzoneInstance = elDropzoneRef.dropzone;
+
+      const handleComplete = (file: any) => {
+        if (file?.status === "added") {
+          const fileType = file?.name?.split(".")?.pop();
+
+          if (fileType && !["application/pdf", "pdf"].includes(fileType)) {
+            toast.error("Only PDF files are allowed!");
+          } else {
+            setUploadedDocument(file);
+          }
+          dropzoneInstance.removeFile(file);
+        }
+        if (file?.status === "error") {
+          toast.error("Something went wrong!");
+        }
+      };
+
+      dropzoneInstance.on("addedfile", handleComplete);
+
+      return () => {
+        dropzoneInstance.off("addedfile", handleComplete);
+      };
+    }
+  }, [dropzoneRef.current, visible, uploadedDocument]);
 
   const onSubmit = async (data: EditDocumentFormData) => {
     if (!document) return;
 
+    if (!uploadedDocument) {
+      setShowRequiredDocError(true);
+      return;
+    } else {
+      setShowRequiredDocError(false);
+    }
+
     setLoading(true);
 
     try {
-      await axiosInstance.put(`/institute_documents/${document.id}/`, {
-        document_name: data.document_name,
-        document_type: data.document_type,
-        link: data.link,
-        month: data.month,
-        year: data.year,
-        tags: data.tags,
-        priority: data.priority,
-        active: data.active,
+      const formData = new FormData();
+      formData.append("document_name", data.document_name);
+      formData.append("document_type", data.document_type);
+      formData.append("month", data.month);
+      formData.append("year", data.year);
+      formData.append("tags", data.tags);
+      formData.append("priority", data.priority);
+      formData.append("active", data.active.toString());
+      
+      if (!uploadedDocument?.url) {
+        formData.append("document", uploadedDocument);
+      }
+
+      await axiosInstance.put(`/institute_documents/${document.id}/`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       toast.success("Document updated successfully");
@@ -125,6 +179,8 @@ const EditDocumentModal = ({
 
   const handleClose = () => {
     reset();
+    setUploadedDocument(null);
+    setShowRequiredDocError(false);
     setVisible(false);
   };
 
@@ -160,29 +216,6 @@ const EditDocumentModal = ({
             {errors.document_name && (
               <span className="text-red-500 text-sm mt-1 block">
                 {errors.document_name.message}
-              </span>
-            )}
-          </div>
-
-          <div className="col-span-12">
-            <label className="block mb-1 text-sm font-medium">
-              Document Link <span className="text-red-500">*</span>
-            </label>
-            <Controller
-              name="link"
-              control={control}
-              rules={{ required: "Document link is required" }}
-              render={({ field }) => (
-                <FormInput
-                  {...field}
-                  type="url"
-                  placeholder="https://example.com/document.pdf"
-                />
-              )}
-            />
-            {errors.link && (
-              <span className="text-red-500 text-sm mt-1 block">
-                {errors.link.message}
               </span>
             )}
           </div>
@@ -343,6 +376,67 @@ const EditDocumentModal = ({
             <span className="text-slate-400 text-xs mt-1 block">
               Inactive documents will not be displayed in reports
             </span>
+          </div>
+
+          <div className="col-span-12">
+            <label className="block mb-1 text-sm font-medium">
+              Document <span className="text-red-500">*</span>
+            </label>
+            <div className="w-full">
+              {uploadedDocument ? (
+                <>
+                  <div className="flex items-center w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 cursor-pointer transition sm:px-5 shadow-sm">
+                    <div className="ml-4">
+                      <Lucide
+                        icon="FileText"
+                        className="w-8 h-8 stroke-[1.7] stroke-slate-400/70"
+                      />
+                    </div>
+                    <div className="flex flex-col w-full ml-3 lg:items-center lg:flex-row gap-y-1">
+                      <p className="block font-medium capitalize truncate md:max-w-[100px] sm:max-w-[80px] lg:max-w-[150px] text-ellipsis overflow-hidden whitespace-nowrap lg:text-center">
+                        {uploadedDocument?.name}
+                      </p>
+                      {uploadedDocument?.size && (
+                        <div className="mr-4 text-xs lg:text-center lg:ml-auto text-slate-500/80">
+                          File size: {bytesToMB(uploadedDocument.size)} MB
+                        </div>
+                      )}
+                    </div>
+                    <Lucide
+                      onClick={() => {
+                        setUploadedDocument(null);
+                      }}
+                      icon="Trash2"
+                      className="w-6 h-6 stroke-[1.7] stroke-slate-400/70"
+                    />
+                  </div>
+                </>
+              ) : (
+                <Dropzone
+                  ref={dropzoneRef}
+                  options={{
+                    url: "/",
+                    autoProcessQueue: false,
+                    clickable: true,
+                    thumbnailWidth: 100,
+                    maxFilesize: 5000,
+                    maxFiles: 1,
+                    acceptedFiles: ".pdf",
+                  }}
+                  className="dropzone w-full flex flex-col justify-center items-center h-full"
+                >
+                  <div className="text-base font-semibold text-gray-800 mb-2">
+                    Drop files here or click to upload.
+                  </div>
+                  Only <span className="font-medium">PDF</span> files are allowed.
+                </Dropzone>
+              )}
+              {!uploadedDocument && showRequiredDocError && (
+                <Error className="max-w-[100%] mt-1">
+                  Document is required
+                </Error>
+              )}
+            </div>
           </div>
         </Dialog.Description>
         <Dialog.Footer>

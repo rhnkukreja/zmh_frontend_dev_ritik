@@ -8,6 +8,7 @@ export type ProxyVotingGuideline = {
   sub_category?: string | null;
   section?: string | null;
   policy_guidelines?: string | null;
+  policy_type?: string | null;
   voting_guidelines_pdf: string | null;
   voting_guidelines_pdf_url: string | null;
   active: boolean;

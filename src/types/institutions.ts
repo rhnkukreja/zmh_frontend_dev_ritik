@@ -32,4 +32,6 @@ export type InstitutionDocument = {
   linked_to_reporting_expectation: boolean;
   linked_to_esg_integration: boolean;
   linked_to_voting_guidelines: boolean;
+  created_by_name?: string;
+  date_created?: string;
 };

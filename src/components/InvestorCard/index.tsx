@@ -263,7 +263,7 @@ const index = () => {
                   <h4 className="font-semibold mr-4">
                     History of Schedule 13D Filing
                   </h4>
-                  <Tippy content="Generate Report" options={{ theme: "light" }}>
+                  {/* <Tippy content="Generate Report" options={{ theme: "light" }}>
                     <button
                       className="box p-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-1.5"
                       onClick={handleGenerateReport}
@@ -273,7 +273,7 @@ const index = () => {
                         Generate Report
                       </span>
                     </button>
-                  </Tippy>
+                  </Tippy> */}
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
                       className="box p-[5px] cursor-pointer"

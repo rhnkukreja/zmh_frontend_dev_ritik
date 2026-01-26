@@ -161,26 +161,32 @@ const InstitutionDocuments = () => {
 
         <div className="p-5">
           <TableWrapper isLoading={documentsLoading}>
-            <div className="overflow-auto max-h-[500px]">
+            <div className="overflow-auto">
               <Table>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] border-header text-[#000000B2]">
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] border-header text-[#000000B2] text-xs w-[180px]">
                       Name
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
-                      Category
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[120px]">
+                      Type
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
-                      Date
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[60px]">
+                      Year
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-center" colSpan={5}>
-                      Relevant Profile Section
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[100px]">
+                      Created By
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]">
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[90px]">
+                      Created
+                    </Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center" colSpan={5}>
+                      Profile Section
+                    </Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[80px]">
                       Priority
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-xs w-[50px]">
                       Edit
                     </Table.Td>
                   </Table.Tr>
@@ -188,20 +194,22 @@ const InstitutionDocuments = () => {
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
-                      Summary
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
+                      Sum
                     </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
-                      Engagement Priorities
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
+                      Eng
                     </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
-                      Reporting Expectation
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
+                      Rep
                     </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
-                      ESG Integration
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
+                      ESG
                     </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center">
-                      Voting Guidelines
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
+                      Vote
                     </Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
@@ -211,17 +219,28 @@ const InstitutionDocuments = () => {
                   {institutionDocuments?.length > 0 ? (
                     institutionDocuments.map((document: InstitutionDocument) => (
                       <Table.Tr key={document.id}>
-                        <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
+                        <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs">
                           <div className="flex items-center">
-                            <FileText className="w-4 h-4 min-w-4 min-h-4 text-slate-400 mr-2" />
-                            <span className="font-medium">{document.name}</span>
+                            <FileText className="w-3.5 h-3.5 min-w-3.5 min-h-3.5 text-slate-400 mr-1.5" />
+                            <button
+                              onClick={() => handleViewDocument(document.link)}
+                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left truncate"
+                            >
+                              {document.name}
+                            </button>
                           </div>
                         </Table.Td>
-                        <Table.Td className="py-2 bg-white border-slate-200/80">
+                        <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">
                           {document.document_type || "-"}
                         </Table.Td>
-                        <Table.Td className="py-2 bg-white border-slate-200/80">
+                        <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">
                           {document.year || "-"}
+                        </Table.Td>
+                        <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs truncate">
+                          {document.created_by_name || "-"}
+                        </Table.Td>
+                        <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">
+                          {document.date_created ? new Date(document.date_created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : "-"}
                         </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
                           <FormCheck className="flex justify-center">
@@ -283,21 +302,21 @@ const InstitutionDocuments = () => {
                             />
                           </FormCheck>
                         </Table.Td>
-                        <Table.Td className="py-2 bg-white border-slate-200/80">
+                        <Table.Td className="py-1.5 bg-white border-slate-200/80">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getPriorityBadgeClass(document.priority)}`}
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${getPriorityBadgeClass(document.priority)}`}
                           >
                             {document.priority || "-"}
                           </span>
                         </Table.Td>
-                        <Table.Td className="py-2 bg-white border-slate-200/80">
+                        <Table.Td className="py-1.5 bg-white border-slate-200/80">
                           {user?.user_type === "Analyst" && (
-                            <Tippy content="Edit Document" options={{ theme: "light" }}>
+                            <Tippy content="Edit" options={{ theme: "light" }}>
                               <button
                                 onClick={() => handleEditDocument(document)}
-                                className="p-1 hover:bg-slate-100 rounded"
+                                className="p-0.5 hover:bg-slate-100 rounded"
                               >
-                                <PenLine className="w-4 h-4 text-slate-600" />
+                                <PenLine className="w-3.5 h-3.5 text-slate-600" />
                               </button>
                             </Tippy>
                           )}
@@ -307,7 +326,7 @@ const InstitutionDocuments = () => {
                   ) : (
                     <Table.Tr>
                       <Table.Td
-                        colSpan={10}
+                        colSpan={12}
                         className="py-10 text-center text-slate-500"
                       >
                         No documents found for this institution.
