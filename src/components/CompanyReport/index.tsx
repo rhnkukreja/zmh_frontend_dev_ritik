@@ -11,7 +11,8 @@ import {
   Top20InvestorsSection,
   InvestorsVotingAgainstSection,
   EngagementStatsSection,
-  ShareholderProposalsSection
+  ShareholderProposalsSection,
+  KeyTakeawaysSection
 } from "./sections";
 
 interface CompanyReportProps {
@@ -210,7 +211,12 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             </div>
           </div>
 
-          {/* Section 1: Share Price Performance */}
+          {/* Section 1: Key Takeaways Table */}
+          {data.key_takeaways && data.key_takeaways.length > 0 && (
+            <KeyTakeawaysSection data={data.key_takeaways} />
+          )}
+
+          {/* Section 2: Share Price Performance */}
           {data.share_price_performance_data && (
             <SharePricePerformanceSection 
               data={data.share_price_performance_data} 
@@ -219,10 +225,10 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             />
           )}
 
-          {/* Section 2: Top 20 Investors with Pie Chart and Proxy Influence */}
+          {/* Section 3: Top 20 Investors with Pie Chart and Proxy Influence */}
           <Top20InvestorsSection data={data.percent_ownership_data || []} />
 
-          {/* Section 3: Investors Voting Against + Trend Charts */}
+          {/* Section 4: Investors Voting Against + Trend Charts */}
           {data.charts_data && (
             <InvestorsVotingAgainstSection 
               data={data.charts_data}
@@ -230,14 +236,14 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             />
           )}
 
-          {/* Section 4: Engagement Stats (Company + Peers) */}
+          {/* Section 5: Engagement Stats (Company + Peers) */}
           <EngagementStatsSection
             data={data.engagement_stats_data}
             exGlobalData={data.engagement_stats_ex_global_data}
             companyName={data.finnhub_data?.company_name}
           />
 
-          {/* Section 5: Shareholder Proposals */}
+          {/* Section 6: Shareholder Proposals */}
           <ShareholderProposalsSection data={data.sp_data || []} />
 
           {/* Report Footer */}

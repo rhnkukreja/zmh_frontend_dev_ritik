@@ -30,10 +30,20 @@ interface EditDocumentModalProps {
   onSuccess?: () => void;
 }
 
-const documentTypes = [
+const categories = [
+  "Climate Related",
+  "Engagement Priorities",
+  "Company Specific Engagement Stats",
+  "Proxy Voting Stats",
+  "Voting Choice",
   "Voting Guidelines",
   "Stewardship Report",
-  "Engagement Details",
+  "ESG Integration",
+  "UN PRI Report",
+  "Compensation Related",
+  "Macro Engagement Stats",
+  "Case Study",
+  "Commentary",
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
@@ -222,23 +232,23 @@ const EditDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Document Type <span className="text-red-500">*</span>
+              Category <span className="text-red-500">*</span>
             </label>
             <Controller
               name="document_type"
               control={control}
-              rules={{ required: "Document type is required" }}
+              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
                   value={field.value}
                   onChange={field.onChange}
-                  options={{ placeholder: "Select document type" }}
+                  options={{ placeholder: "Select category" }}
                   className="w-full"
                 >
-                  <option value="">Select Type</option>
-                  {documentTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
                     </option>
                   ))}
                 </TomSelect>

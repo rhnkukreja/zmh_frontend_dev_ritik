@@ -70,27 +70,27 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
               </tr>
             </thead>
             <tbody>
-              {top20.slice(0, 10).map((item, index) => {
+              {top20.map((item, index) => {
                 const ownership = parseFloat(item.percent_ownership?.replace('%', '') || '0');
                 const barWidth = (ownership / maxOwnership) * 100;
                 
                 return (
                   <tr key={item.filer_id || index} className="border-b border-gray-100">
-                    <td className="py-2 px-2 text-gray-500">{index + 1}</td>
-                    <td className="py-2 px-2">
-                      <a href="#" className="text-blue-600 hover:underline">
+                    <td className="py-1.5 px-2 text-gray-500 text-xs">{index + 1}</td>
+                    <td className="py-1.5 px-2 text-xs">
+                      <span className="text-gray-800">
                         {item.institution_name}
-                      </a>
+                      </span>
                     </td>
-                    <td className="py-2 px-2">
+                    <td className="py-1.5 px-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-sm h-3 overflow-hidden">
+                        <div className="w-12 bg-gray-200 rounded-sm h-2.5 overflow-hidden">
                           <div 
                             className="bg-blue-500 h-full rounded-sm"
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
-                        <span className="text-gray-700 text-xs w-12">
+                        <span className="text-gray-700 text-[10px] w-10">
                           {ownership.toFixed(2)}%
                         </span>
                       </div>

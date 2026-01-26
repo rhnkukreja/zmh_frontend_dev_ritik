@@ -103,6 +103,13 @@ export interface SPData {
     institution_name: string;
     vote: 'For' | 'Against' | null;
   }[];
+  [key: string]: any; // For dynamic institution vote keys
+}
+
+export interface KeyTakeaway {
+  topic: string;
+  key_takeaways: string;
+  activism_governance_lens: string;
 }
 
 export interface CompanyReportData {
@@ -113,5 +120,6 @@ export interface CompanyReportData {
   engagement_stats_data: EngagementStatsData[];
   engagement_stats_ex_global_data: EngagementStatsExGlobalData[];
   sp_data: SPData[];
+  key_takeaways?: KeyTakeaway[];
   data_as_of: string;
 }
