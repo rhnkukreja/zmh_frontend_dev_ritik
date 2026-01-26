@@ -109,7 +109,7 @@ function ProxyVotingSummary() {
   const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
-        key: "institution_name",
+        key: "institution_name_raw",
         value: searchTerms,
       })
     );
