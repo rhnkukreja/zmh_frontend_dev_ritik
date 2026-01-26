@@ -466,6 +466,7 @@ function generateFilterChips(filters: Record<string, any>) {
     company_name: "Company",
     company_names: "Company",
     institution_name: "Institution",
+    institution_name_raw: "Institution",
     fund_name: "Fund",
     year: "Year",
     vote: "Vote",
@@ -492,6 +493,7 @@ function generateFilterChips(filters: Record<string, any>) {
   // Define the order of filters as they appear in the UI
   const filterOrder = [
     'institution_name',    // First row
+    'institution_name_raw',
     'fund_name',
     'vote_category',
     'proposal',            // Second row
@@ -591,7 +593,7 @@ function convertToTitleCase(str: string): string {
   }
   if (str == "global_search" || str == "company_name" || str == "company_names") {
     return "Company"
-  } else if (str == "institution_name") {
+  } else if (str == "institution_name" || str == "institution_name_raw") {
     return "Institution"
   }
   else if (str == "date_range") {

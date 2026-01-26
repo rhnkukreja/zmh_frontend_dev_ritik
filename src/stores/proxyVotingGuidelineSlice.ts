@@ -9,7 +9,7 @@ import { getPageNumbers } from "@/utils/helper";
 const name = "proxyVotingGuideline";
 
 interface ProxyVotingGuidelineFilters {
-  institution_name?: string[];
+  institution_name_raw?: string[];
   year?: string[];
   category?: string[];
   sub_category?: string[];
@@ -59,12 +59,12 @@ const initialState: ProxyVotingGuidelineSlice = {
 
   filters: {
     year: [],
-    institution_name: [],
+    institution_name_raw: [],
     region: [],
   },
   summaryFilters: {
     year: [],
-    institution_name: [],
+    institution_name_raw: [],
     category: [],
     sub_category: [],
     keyword: "",

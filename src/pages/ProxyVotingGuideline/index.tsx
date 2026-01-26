@@ -101,7 +101,7 @@ function ProxyGuideline() {
     );
     dispatch(fetchProxyVotingGuidelines(dynamicURL));
 
-    const { institution_name, ...restFilters } = filters;
+    const { institution_name_raw, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
     setSelectedChipFilters(generateFilterChips(filters));
 
@@ -131,7 +131,7 @@ function ProxyGuideline() {
   const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
-        key: "institution_name",
+        key: "institution_name_raw",
         value: searchTerms,
       })
     );
@@ -199,7 +199,7 @@ function ProxyGuideline() {
 
   const onSubmit = async (ProxyGuideline: ProxyGuidelineFilter) => {
     dispatch(
-      setAllFilters({ ...ProxyGuideline, institution_name: searchTerms })
+      setAllFilters({ ...ProxyGuideline, institution_name_raw: searchTerms })
     );
 
     dispatch(resetPage());
@@ -208,8 +208,8 @@ function ProxyGuideline() {
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
     const updatedFilters = { ...filters };
 
-    // Handle institution_name removal specially
-    if (removeKey === "institution_name") {
+    // Handle institution_name_raw removal specially
+    if (removeKey === "institution_name_raw") {
       const updatedSearchTerms = searchTerms.filter(term => term !== removeValue);
       setSearchTerms(updatedSearchTerms);
       updatedFilters[removeKey] = updatedSearchTerms;
@@ -303,7 +303,7 @@ function ProxyGuideline() {
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/proxy_voting_guidelines/"
-                    getOptionKey="institution_name"
+                    getOptionKey="institution_name_raw"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
                     showPills={false}
