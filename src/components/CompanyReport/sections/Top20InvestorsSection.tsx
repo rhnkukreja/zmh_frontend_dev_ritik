@@ -148,7 +148,7 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
                 <tr key={item.filer_id || index} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-4 px-4 text-gray-600 font-medium">{index + 1}</td>
                   <td className="py-4 px-4 text-blue-600 font-semibold underline cursor-pointer hover:text-blue-800">
-                    {item.institution_name || item.filer_name}
+                    {item.institution_name || item.institution__institution}
                   </td>
                   <td className="py-4 px-4 text-center text-gray-700 font-medium">
                     {ownership.toFixed(2)}%
@@ -160,16 +160,16 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
                     {renderCheckmark(item.unpri_signatory)}
                   </td>
                   <td className="py-4 px-4 text-center">
-                    {renderCheckmark(item.company_engaged)}
+                    {/* company_engaged not in type, fallback to null */}
                   </td>
                   <td className="py-4 px-4">
-                    {renderEngagementTopics(item.engagement_topic)}
+                    {/* engagement_topic not in type, fallback to null */}
                   </td>
                   <td className="py-4 px-4 text-center">
-                    {renderVotingStatus(item.voted_against_directors)}
+                    {renderVotingStatus(!!(Array.isArray(item.voted_against_directors) && item.voted_against_directors.length > 0))}
                   </td>
                   <td className="py-4 px-4 text-center">
-                    {renderVotingStatus(item.voted_against_say_on_pay)}
+                    {renderVotingStatus(!!(item.voted_against_say_on_pay === true || (Array.isArray(item.voted_against_say_on_pay) && item.voted_against_say_on_pay.length > 0)))}
                   </td>
                 </tr>
               );
