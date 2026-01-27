@@ -103,9 +103,9 @@ const CompanyEngagementTable = ({ title, subtitle, data }: CompanyEngagementTabl
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                   <td className="py-2 px-3 border border-gray-200">{item.year || '-'}</td>
                   <td className="py-2 px-3 border border-gray-200 font-medium">{item.institution__institution || '-'}</td>
-                  <td className="py-2 px-3 border border-gray-200 text-green-700">{formatTopics(envTopics)}</td>
-                  <td className="py-2 px-3 border border-gray-200 text-amber-600">{formatTopics(socTopics)}</td>
-                  <td className="py-2 px-3 border border-gray-200 text-blue-700">{formatTopics(govTopics)}</td>
+                  <td className="py-2 px-3 border border-gray-200">{formatTopics(envTopics)}</td>
+                  <td className="py-2 px-3 border border-gray-200">{formatTopics(socTopics)}</td>
+                  <td className="py-2 px-3 border border-gray-200">{formatTopics(govTopics)}</td>
                 </tr>
               );
             })}
@@ -151,10 +151,12 @@ const groupByInvestor = (data: EngagementItem[]): GroupedInvestor[] => {
 };
 
 const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps) => {
-  const [expandedInvestors, setExpandedInvestors] = React.useState<Set<string>>(new Set());
-  const [allExpanded, setAllExpanded] = React.useState(false);
-
   const groupedData = groupByInvestor(data);
+  
+  // Initialize with all investors expanded by default (for PDF rendering)
+  const allInvestorNames = React.useMemo(() => new Set(groupedData.map(g => g.investorName)), [groupedData]);
+  const [expandedInvestors, setExpandedInvestors] = React.useState<Set<string>>(allInvestorNames);
+  const [allExpanded, setAllExpanded] = React.useState(true);
 
   const toggleInvestor = (investorName: string) => {
     const newExpanded = new Set(expandedInvestors);
@@ -164,6 +166,7 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
       newExpanded.add(investorName);
     }
     setExpandedInvestors(newExpanded);
+    setAllExpanded(newExpanded.size === groupedData.length);
   };
 
   const toggleExpandAll = () => {
@@ -171,8 +174,7 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
       setExpandedInvestors(new Set());
       setAllExpanded(false);
     } else {
-      const allInvestorNames = new Set(groupedData.map(g => g.investorName));
-      setExpandedInvestors(allInvestorNames);
+      setExpandedInvestors(new Set(groupedData.map(g => g.investorName)));
       setAllExpanded(true);
     }
   };
@@ -193,8 +195,8 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
 
   return (
     <div className="mb-4">
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-800 mb-1">{title}</h3>
+      <div className="flex items-center justify-end mb-1 no-print">
         <button
           onClick={toggleExpandAll}
           className="text-xs text-primary hover:text-primary/80 font-medium px-2 py-1 border border-primary rounded"
@@ -207,13 +209,12 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="bg-primary text-white">
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '7%' }}>Year</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '17%' }}>Investor</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '17%' }}>Company</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '17%' }}>Environmental</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '17%' }}>Social</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '19%' }}>Governance</th>
-              <th className="text-center py-2 px-2 font-medium border border-gray-300" style={{ width: '6%' }}></th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '8%' }}>Year</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Investor</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Company</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Environmental</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Social</th>
+              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '20%' }}>Governance</th>
             </tr>
           </thead>
           <tbody>
@@ -232,21 +233,23 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
                 return (
                   <tr key={`${group.investorName}-${entryIndex}`} className={currentRowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="py-2 px-3 border border-gray-200">{item.year || '-'}</td>
-                    <td className="py-2 px-3 border border-gray-200 font-medium">{item.institution__institution || '-'}</td>
-                    <td className="py-2 px-3 border border-gray-200">{item.company__name || '-'}</td>
-                    <td className="py-2 px-3 border border-gray-200 text-green-700">{formatTopics(envTopics)}</td>
-                    <td className="py-2 px-3 border border-gray-200 text-amber-600">{formatTopics(socTopics)}</td>
-                    <td className="py-2 px-3 border border-gray-200 text-blue-700">{formatTopics(govTopics)}</td>
-                    <td className="py-2 px-2 border border-gray-200 text-center">
-                      {isFirstEntry && hasMultiple && (
-                        <button
-                          onClick={() => toggleInvestor(group.investorName)}
-                          className="text-primary hover:text-primary/80 text-[10px] font-medium"
-                        >
-                          {isExpanded ? '− Collapse' : `+ (${group.entries.length - 1})`}
-                        </button>
-                      )}
+                    <td className="py-2 px-3 border border-gray-200 font-medium">
+                      <div className="flex items-center justify-between">
+                        <span>{item.institution__institution || '-'}</span>
+                        {isFirstEntry && hasMultiple && (
+                          <button
+                            onClick={() => toggleInvestor(group.investorName)}
+                            className="text-primary hover:text-primary/80 text-[10px] font-medium ml-1 no-print"
+                          >
+                            {isExpanded ? '−' : `+(${group.entries.length - 1})`}
+                          </button>
+                        )}
+                      </div>
                     </td>
+                    <td className="py-2 px-3 border border-gray-200">{item.company__name || '-'}</td>
+                    <td className="py-2 px-3 border border-gray-200">{formatTopics(envTopics)}</td>
+                    <td className="py-2 px-3 border border-gray-200">{formatTopics(socTopics)}</td>
+                    <td className="py-2 px-3 border border-gray-200">{formatTopics(govTopics)}</td>
                   </tr>
                 );
               });
