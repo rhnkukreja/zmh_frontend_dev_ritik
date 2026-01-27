@@ -213,7 +213,7 @@ function Main() {
         <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: "8.3rem" }}>
           <div className="bg-white mb-4 flex flex-col md:flex-row items-center justify-between">
             <div className="border-b border-gray-200 w-full">
-              <nav className="grid grid-cols-3 w-full">
+              <nav className="flex w-full items-center">
                   <button
                     onClick={() => {
                       setActiveTab('ownership');
@@ -223,7 +223,7 @@ function Main() {
                         window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                       }
                     }}
-                    className={`py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
+                    className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
                       ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
                       : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                       }`}
@@ -239,20 +239,24 @@ function Main() {
                         window.scrollTo({ top: offsetTop, behavior: 'smooth' });
                       }
                     }}
-                    className={`py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
+                    className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
                       ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
                       : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                       }`}
                   >
                     Shareholder Meeting Results
                   </button>
-                  <button
-                    className={`py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50`}
-                    onClick={handleGenerateReport}
-                    disabled={!companyGlobalSearchTicker}
-                  >
-                    Generate Report
-                  </button>
+                  {user?.user_type === "Admin" && (
+                    <div className="flex items-center justify-end px-4 py-2">
+                      <button
+                        className="px-6 py-2.5 bg-primary text-white font-medium text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleGenerateReport}
+                        disabled={!companyGlobalSearchTicker}
+                      >
+                        Generate Report
+                      </button>
+                    </div>
+                  )}
                 {/* <button
                   onClick={() => {
                     setActiveTab('board-composition');

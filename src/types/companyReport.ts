@@ -112,6 +112,13 @@ export interface KeyTakeaway {
   activism_governance_lens: string;
 }
 
+export interface VotedAgainstRationale {
+  investor: string;
+  proposal: string;
+  vote: string;
+  rationale: string;
+}
+
 export interface CompanyReportData {
   finnhub_data: FinnhubData;
   share_price_performance_data: SharePricePerformanceData;
@@ -121,5 +128,6 @@ export interface CompanyReportData {
   engagement_stats_ex_global_data: EngagementStatsExGlobalData[];
   sp_data: SPData[];
   key_takeaways?: KeyTakeaway[];
+  voted_against_rationale?: VotedAgainstRationale[];
   data_as_of: string;
 }

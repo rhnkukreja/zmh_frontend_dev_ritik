@@ -156,14 +156,19 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           className="bg-white report-content px-8 py-6"
           style={{ fontFamily: "inherit" }}
         >
-          {/* Report Header - Logo and Download Button */}
+          {/* Report Header - Logo, Title and Download Button */}
           <div className="report-header border-b-2 border-primary pb-4 mb-6">
             <div className="flex items-center justify-between">
-              <img
-                src={zmhLogo}
-                alt="ZMH Logo"
-                className="h-20 w-auto object-contain"
-              />
+              <div className="flex items-center gap-4">
+                <img
+                  src={zmhLogo}
+                  alt="ZMH Logo"
+                  className="h-16 w-auto object-contain"
+                />
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {data.finnhub_data?.company_name || 'Company'} - Top 20 Investors
+                </h1>
+              </div>
               <button
                 onClick={handleExportToPDF}
                 disabled={isGeneratingPDF}
@@ -225,14 +230,14 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             />
           )}
 
-          {/* Section 3: Top 20 Investors with Pie Chart and Proxy Influence */}
+          {/* Section 3: Investors with Pie Chart and Proxy Influence */}
           <Top20InvestorsSection data={data.percent_ownership_data || []} />
 
-          {/* Section 4: Investors Voting Against + Trend Charts */}
+          {/* Section 4: Voting Rationale + Trend Charts */}
           {data.charts_data && (
             <InvestorsVotingAgainstSection 
               data={data.charts_data}
-              percentOwnershipData={data.percent_ownership_data}
+              votedAgainstRationale={data.voted_against_rationale}
             />
           )}
 

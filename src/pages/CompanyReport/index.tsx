@@ -28,6 +28,16 @@ const CompanyReportPage = () => {
     };
   }, [ticker, dispatch]);
 
+  // Update document title when report data is available
+  useEffect(() => {
+    if (reportData?.finnhub_data?.company_name) {
+      document.title = `Company Report - ${reportData.finnhub_data.company_name}`;
+    }
+    return () => {
+      document.title = 'ZMH Analytics';
+    };
+  }, [reportData]);
+
   if (!ticker) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">

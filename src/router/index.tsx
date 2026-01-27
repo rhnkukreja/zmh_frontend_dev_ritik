@@ -447,7 +447,7 @@ function Router() {
         {
           path: "company-report",
           element: <CompanyReportPage />,
-          data: { titleName: "Company Report - ZMH Analytics" },
+          data: { titleName: "Company Report" },
         },
         {
           path: "summary-details",
