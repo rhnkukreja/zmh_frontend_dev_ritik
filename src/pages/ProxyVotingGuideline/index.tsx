@@ -582,17 +582,17 @@ function ProxyGuideline() {
                   Count: {count.toLocaleString()}
                 </h2>
               )}
-              <div className="px-5">
+              <div className="overflow-auto xl:overflow-visible px-5">
 
                 <TableWrapper isLoading={loading}>
-                  <div className="rounded-lg overflow-x-auto">
-                    <Table className="min-w-full">
+                  <div className="overflow-auto max-h-[400px] rounded-lg">
+                    <Table>
                       <Table.Thead>
                         <Table.Tr className="bg-primary text-white">
                           <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Year
                           </Table.Td>
-                          <Table.Td className="py-2 px-3 text-left font-medium max-w-[350px] min-w-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Institution
                           </Table.Td>
                           {user?.user_type === "Analyst" && (
@@ -615,7 +615,11 @@ function ProxyGuideline() {
                               Policy Guideline
                             </Table.Td>
                           )}
-                          <Table.Td className="py-2 px-3 text-left font-medium w-[100px] min-w-[100px]" style={{fontSize: '14px'}}>
+                          {/* <Table.Td className="py-2 font-medium bg-slate-50   text-nowrap first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-slate-200/80 text-slate-500">
+                          Active
+                        </Table.Td> */}
+
+                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Details
                           </Table.Td>
                         </Table.Tr>
@@ -627,21 +631,23 @@ function ProxyGuideline() {
                               <Table.Tr
                                 key={guideline?.id}
                                 className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer"
-                                onClick={() => {
-                                  gotoDetailPage(
-                                    guideline?.voting_guidelines_pdf_url!,
-                                    guideline?.voting_guidelines_pdf_name!
-                                  );
-                                  setPdfVisible(true);
-                                }}
                               >
                                 <Table.Td className="py-2 px-3">
                                   <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                     {guideline?.year}
                                   </span>
                                 </Table.Td>
-                                <Table.Td className="py-2 px-3 max-w-[350px] min-w-0">
-                                  <p className="font-medium truncate whitespace-nowrap overflow-hidden text-ellipsis">
+                                <Table.Td className="py-2 px-3">
+                                  <p 
+                                    className="font-medium cursor-pointer hover:text-primary transition-colors"
+                                    onClick={() => {
+                                      gotoDetailPage(
+                                        guideline?.voting_guidelines_pdf_url!,
+                                        guideline?.voting_guidelines_pdf_name!
+                                      );
+                                      setPdfVisible(true);
+                                    }}
+                                  >
                                     {guideline?.institution_name}
                                   </p>
                                 </Table.Td>
@@ -654,6 +660,7 @@ function ProxyGuideline() {
                                     )}
                                   </Table.Td>
                                 )}
+
                                 {user?.user_type === "Analyst" && (
                                   <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.sub_category && (
@@ -661,6 +668,7 @@ function ProxyGuideline() {
                                     )}
                                   </Table.Td>
                                 )}
+
                                 {user?.user_type === "Analyst" && (
                                   <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.section && (
@@ -668,6 +676,7 @@ function ProxyGuideline() {
                                     )}
                                   </Table.Td>
                                 )}
+
                                 {user?.user_type === "Analyst" && (
                                   <Table.Td className="py-2 px-3" style={{fontSize: '14px'}}>
                                     {guideline?.policy_guidelines && (
@@ -675,27 +684,117 @@ function ProxyGuideline() {
                                     )}
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2 px-3 relative w-[100px] min-w-[100px]" style={{fontSize: '14px'}} onClick={e => e.stopPropagation()}>
-                                  <div className="flex gap-3 items-center min-w-[80px]">
+
+                                <Table.Td className="py-2 px-3 relative w-[150px]" style={{fontSize: '14px'}}>
+                                  <div className="flex gap-3 items-center">
                                     <Tippy
                                       content="See Details"
                                       options={{
                                         theme: "light",
                                       }}
                                     >
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                        onClick={() => {
-                                          gotoDetailPage(
-                                            guideline?.voting_guidelines_pdf_url!,
-                                            guideline?.voting_guidelines_pdf_name!
-                                          );
-                                          setPdfVisible(true);
-                                        }}
-                                      >
-                                        <Lucide icon="Eye" />
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <Lucide
+                                          onClick={() => {
+                                            gotoDetailPage(
+                                              guideline?.voting_guidelines_pdf_url!,
+                                              guideline?.voting_guidelines_pdf_name!
+                                            );
+
+                                            setPdfVisible(true);
+                                          }}
+                                          icon="Eye"
+                                        />
                                       </div>
                                     </Tippy>
-                                    {/* ...existing code for Analyst actions and other icons... */}
+
+                                    {user?.user_type === "Analyst" && (
+                                      <Tippy
+                                        content="Upload"
+                                        options={{
+                                          theme: "light",
+                                        }}
+                                      >
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                          <Lucide
+                                            onClick={() => {
+                                              setUploadFileVisible(true);
+                                              setProxyId(guideline?.id);
+                                            }}
+                                            icon="Upload"
+                                          />
+                                        </div>
+                                      </Tippy>
+
+                                    )}
+
+                                    {user?.user_type === "Analyst" && (
+                                      <Tippy
+                                        content="Edit"
+                                        options={{
+                                          theme: "light",
+                                        }}
+                                      >
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                          <Lucide
+                                            onClick={() => {
+                                              onEditClickHandler(guideline);
+                                            }}
+                                            icon="PenLine"
+                                          />
+                                        </div>
+                                      </Tippy>
+                                    )}
+
+                                    {/* <Tippy
+                                      content="Download"
+                                      options={{
+                                        theme: "light",
+                                      }}
+                                    >
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <a
+                                          href={
+                                            guideline?.voting_guidelines_pdf_url ||
+                                            ""
+                                          }
+                                          download
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                        >
+                                          <Lucide
+                                            icon="Download"
+                                          />
+                                        </a>
+                                      </div>
+                                    </Tippy> */}
+
+                                    {guideline?.is_search ? (
+                                      <Tippy
+                                        content="Searchable"
+                                        options={{
+                                          theme: "light",
+                                        }}
+                                      >
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                          <Lucide
+                                            onClick={() => {
+                                              const data = {
+                                                name: guideline?.institution_name,
+                                                year: guideline?.year,
+                                              };
+                                              navigate(
+                                                `/voting-guidelines/pdf-sumamry/${guideline?.id}`,
+                                                { state: data }
+                                              );
+                                            }}
+                                            icon="Search"
+                                          />
+                                        </div>
+                                      </Tippy>
+                                    ) : (
+                                      <span className="w-4 h-4 mr-1.5 stroke-[1.3]"></span>
+                                    )}
                                   </div>
                                 </Table.Td>
                               </Table.Tr>
