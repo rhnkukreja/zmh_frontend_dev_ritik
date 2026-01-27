@@ -1,6 +1,5 @@
 import { ChartsData, PercentOwnershipData } from "@/types/companyReport";
-import zmhLogo from "@/assets/images/logo/zmh-logo.jpg";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from "recharts";
 
 interface InvestorsVotingAgainstSectionProps {
   data: ChartsData;
@@ -161,7 +160,7 @@ const TrendChart = ({ title, data }: { title: string; data: any }) => {
       <h4 className="text-xs font-semibold text-gray-700 mb-3 text-center">{title}</h4>
       <div className="h-40">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+          <BarChart data={chartData} margin={{ top: 20, right: 10, left: 0, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
             <XAxis 
               dataKey="year" 
@@ -177,23 +176,20 @@ const TrendChart = ({ title, data }: { title: string; data: any }) => {
               tickLine={false}
               width={35}
             />
-            <Tooltip 
-              formatter={(value: number) => [`${value.toFixed(1)}%`, 'Support']}
-              contentStyle={{ 
-                fontSize: '12px', 
-                borderRadius: '6px',
-                border: '1px solid #e5e5e5',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
-              cursor={{ fill: 'rgba(128, 0, 0, 0.1)' }}
-            />
             <Bar 
               dataKey="total_percent" 
               fill="#800000" 
               name="% Support" 
               radius={[4, 4, 0, 0]}
               maxBarSize={60}
-            />
+            >
+              <LabelList 
+                dataKey="total_percent" 
+                position="top" 
+                formatter={(value: number) => `${value.toFixed(0)}%`}
+                style={{ fontSize: 10, fill: '#374151', fontWeight: 600 }}
+              />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -226,12 +222,9 @@ const InvestorsVotingAgainstSection = ({ data, percentOwnershipData }: Investors
     <>
       {/* Section for Voting Table */}
       <section className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-          <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
-            Investors that voted Against Election of Director or Say on Pay (from top 20 list)
-          </h2>
-        </div>
+        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+          Investors that voted Against Election of Director or Say on Pay (from top 20 list)
+        </h2>
         <VotingAgainstTable percentOwnershipData={safePercentOwnership} />
       </section>
 
@@ -244,12 +237,6 @@ const InvestorsVotingAgainstSection = ({ data, percentOwnershipData }: Investors
             <TrendChart title="Say on Pay" data={data.say_on_pay} />
             <TrendChart title="Other Proposals" data={data.shareholder_proposals} />
             <TrendChart title="Ratification of Auditor" data={data.ratification_of_auditor} />
-          </div>
-          <div className="flex justify-center gap-6 mt-6">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-primary rounded"></div>
-              <span className="text-sm text-gray-600 font-medium">% Support</span>
-            </div>
           </div>
         </section>
       )}

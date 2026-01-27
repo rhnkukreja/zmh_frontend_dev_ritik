@@ -1,5 +1,4 @@
 import { FinnhubData } from "@/types/companyReport";
-import zmhLogo from "@/assets/images/logo/zmh-logo.jpg";
 
 interface CompanyOverviewSectionProps {
   data: FinnhubData;
@@ -8,12 +7,9 @@ interface CompanyOverviewSectionProps {
 const CompanyOverviewSection = ({ data }: CompanyOverviewSectionProps) => {
   return (
     <section className="mb-8 page-break-inside-avoid">
-      <div className="flex items-center gap-3 mb-4">
-        <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-1 flex-1">
-          Company Overview
-        </h2>
-      </div>
+      <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+        Company Overview
+      </h2>
 
       <div className="bg-gray-50 rounded-lg p-5">
         <div className="flex items-start gap-6">

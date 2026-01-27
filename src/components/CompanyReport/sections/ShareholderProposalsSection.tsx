@@ -1,5 +1,4 @@
 import { SPData } from "@/types/companyReport";
-import zmhLogo from "@/assets/images/logo/zmh-logo.jpg";
 import clsx from "clsx";
 
 interface ShareholderProposalsSectionProps {
@@ -30,12 +29,9 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
   if (dataArray.length === 0) {
     return (
       <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-        <div className="flex items-center gap-3 mb-4">
-          <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-          <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
-            Shareholder Proposals ({recentYear} only)
-          </h2>
-        </div>
+        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+          Shareholder Proposals ({recentYear} only)
+        </h2>
         <div className="bg-gray-50 rounded p-4 text-center">
           <p className="text-gray-500 text-xs">No shareholder proposals data available</p>
         </div>
@@ -55,12 +51,9 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
 
   return (
     <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-      <div className="flex items-center gap-3 mb-4">
-        <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 flex-1">
-          Shareholder Proposals ({recentYear} only)
-        </h2>
-      </div>
+      <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+        Shareholder Proposals ({recentYear} only)
+      </h2>
 
       <div className="overflow-visible">
         <table className="w-full text-xs border-collapse table-fixed">

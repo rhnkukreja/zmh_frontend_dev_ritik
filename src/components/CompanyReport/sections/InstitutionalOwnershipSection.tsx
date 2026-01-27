@@ -1,5 +1,4 @@
 import { PercentOwnershipData } from "@/types/companyReport";
-import zmhLogo from "@/assets/images/logo/zmh-logo.jpg";
 import investorIcon from "@/assets/images/zmh-images/investor-icon.png";
 import clsx from "clsx";
 
@@ -14,12 +13,9 @@ const InstitutionalOwnershipSection = ({ data }: InstitutionalOwnershipSectionPr
   if (dataArray.length === 0) {
     return (
       <section className="mb-8 page-break-inside-avoid">
-        <div className="flex items-center gap-3 mb-4">
-          <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-          <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-1 flex-1">
-            Institutional Ownership
-          </h2>
-        </div>
+        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+          Institutional Ownership
+        </h2>
         <div className="bg-gray-50 rounded-lg p-6 text-center">
           <p className="text-gray-500 text-sm">No institutional ownership data available</p>
         </div>
@@ -29,12 +25,9 @@ const InstitutionalOwnershipSection = ({ data }: InstitutionalOwnershipSectionPr
 
   return (
     <section className="mb-8 page-break-inside-avoid">
-      <div className="flex items-center gap-3 mb-4">
-        <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-1 flex-1">
-          Institutional Ownership
-        </h2>
-      </div>
+      <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+        Institutional Ownership
+      </h2>
 
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">

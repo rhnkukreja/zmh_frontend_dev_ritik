@@ -1,5 +1,4 @@
 import { ChartsData, ChartDataItem, YearlyVotingData } from "@/types/companyReport";
-import zmhLogo from "@/assets/images/logo/zmh-logo.jpg";
 import clsx from "clsx";
 import { useState } from "react";
 
@@ -143,12 +142,9 @@ const VotingCard = ({ title, items }: VotingCardProps) => {
 const VotingGovernanceSection = ({ data }: VotingGovernanceSectionProps) => {
   return (
     <section className="mb-8">
-      <div className="flex items-center gap-3 mb-4">
-        <img src={zmhLogo} alt="ZMH Logo" className="h-6 w-auto" />
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-1 flex-1">
-          Voting & Governance Insights
-        </h2>
-      </div>
+      <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+        Voting & Governance Insights
+      </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <VotingCard

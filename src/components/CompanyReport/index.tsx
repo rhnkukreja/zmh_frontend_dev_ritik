@@ -211,10 +211,10 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             </div>
           </div>
 
-          {/* Section 1: Key Takeaways Table */}
-          {data.key_takeaways && data.key_takeaways.length > 0 && (
+          {/* Section 1: Key Takeaways Table - Hidden for now */}
+          {/* {data.key_takeaways && data.key_takeaways.length > 0 && (
             <KeyTakeawaysSection data={data.key_takeaways} />
-          )}
+          )} */}
 
           {/* Section 2: Share Price Performance */}
           {data.share_price_performance_data && (
