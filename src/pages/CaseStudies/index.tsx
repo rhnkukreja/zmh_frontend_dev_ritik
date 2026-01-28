@@ -582,7 +582,7 @@ function CaseStudies() {
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked bg-white p-5">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
-                {user?.user_type === "Analyst" && (
+                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                   <div className="flex justify-end">
                     <Button
                       onClick={() => {
@@ -1046,7 +1046,7 @@ function CaseStudies() {
                         />
                       </div>
 
-                      {user?.user_type === "Analyst" && (
+                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                         <div className="mx-2">
                           <div className="w-full">
                             <div className="text-left text-slate-500 ">
@@ -1274,7 +1274,7 @@ function CaseStudies() {
                                   </div>
                                 </Tippy>
 
-                                {user?.user_type === "Analyst" && (
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                   <Tippy
                                     content="Edit"
                                     options={{ theme: "light" }}

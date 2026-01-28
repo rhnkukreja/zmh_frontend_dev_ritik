@@ -137,7 +137,7 @@ const DetailShareHolder = () => {
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
           <h1 className="text-xl font-semibold">{headingTitle}</h1>
 
-          {user?.user_type === "Analyst" && (
+          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
             <Tippy content="Edit" options={{ theme: "light" }}>
               <div className="cursor-pointer box p-2">
                 <Lucide

@@ -1578,7 +1578,7 @@ function ShareHolderProposal() {
                           </div>
                         </div>
                       )}
-                      {user?.user_type === "Analyst" && (
+                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                         <>
                           <div className="w-full">
                             <div className="text-left text-slate-500 flex justify-between mb-1">
@@ -2177,7 +2177,7 @@ function ShareHolderProposal() {
 
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
-                      {user?.user_type === "Analyst" && (
+                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
@@ -2421,7 +2421,7 @@ function ShareHolderProposal() {
 
                                   <StandardizedTable.Cell className="text-center">
                                     <div className="flex gap-3 justify-center">
-                                      {user?.user_type === "Analyst" && (
+                                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                         <Tippy
                                           content="Duplicate"
                                           options={{ theme: "light" }}
@@ -2450,7 +2450,7 @@ function ShareHolderProposal() {
                                         />
                                       </div>
 
-                                      {user?.user_type === "Analyst" && (
+                                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                         <Tippy
                                           content="Edit"
                                           options={{ theme: "light" }}
@@ -2497,7 +2497,7 @@ function ShareHolderProposal() {
 
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
-                      {user?.user_type === "Analyst" && (
+                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
@@ -2668,7 +2668,7 @@ function ShareHolderProposal() {
                                         icon="Eye"
                                       />
                                     </div>
-                                    {user?.user_type === "Analyst" && (
+                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                       <Tippy
                                         content="Edit"
                                         options={{ theme: "light" }}
@@ -2713,7 +2713,7 @@ function ShareHolderProposal() {
 
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
-                      {user?.user_type === "Analyst" && (
+                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                         <div className="flex justify-end my-3">
                           <Button
                             onClick={() => {
@@ -2791,7 +2791,7 @@ function ShareHolderProposal() {
                                         icon="Eye"
                                       />
                                     </div>
-                                    {user?.user_type === "Analyst" && (
+                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                       <Tippy
                                         content="Edit"
                                         options={{ theme: "light" }}

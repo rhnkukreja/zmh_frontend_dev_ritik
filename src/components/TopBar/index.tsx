@@ -1,18 +1,14 @@
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 
 interface ChildProps {
-    logoUrl: string;
     companyName: string;
   }
 
-const index: React.FC<ChildProps> = ({ logoUrl, companyName }) => {
+const index: React.FC<ChildProps> = ({ companyName }) => {
     return (
         <div className="bg-gradient-to-b rounded-2xl to-[#000000CC] from-[#9F1239] background text-white p-3 ">
             <div className='flex items-center justify-between'>
                 <div className="flex items-center flex-row justify-center">
-                    <div className=" w-20 bg-white p-2 rounded-xl">
-                        <img src={logoUrl} />
-                    </div>
                     <div className="ml-5">
                         <h1 className="font-semibold text-3xl">{companyName}</h1>
                     </div>

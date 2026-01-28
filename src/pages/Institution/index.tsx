@@ -198,7 +198,7 @@ function Main() {
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
           <div className="font-semibold text-xl ">Institutions</div>
-          {user?.user_type === "Analyst" && (
+          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
                 onClick={() => {
@@ -434,39 +434,12 @@ function Main() {
                         institutions?.map((institution: Institutions) => (
                           <Table.Tr key={institution.id}>
                             <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
-                              <div
-                                className="flex items-center"
-                              >
-                                {institution?.logo_url ? (
-                                  <>
-                                    <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
-                                      <img
-                                        alt="ZMH Analytics"
-                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                        src={institution?.logo_url}
-                                      />
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                    <img
-                                      alt="ZMH Analytics"
-                                      className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                      src={investorIcon}
-                                    />
-                                    <a
-                                      href=""
-                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
-                                    ></a>
-                                  </div>
-                                )}
-                                <div className="ml-4">
-                                  <p className="font-medium whitespace-nowrap">
-                                    {institution?.institution}
-                                  </p>
-                                  <div className="text-slate-500 text-xs whitespace-nowrap mt-0.5">
-                                    {institution?.email}
-                                  </div>
+                              <div className="ml-4">
+                                <p className="font-medium whitespace-nowrap">
+                                  {institution?.institution}
+                                </p>
+                                <div className="text-slate-500 text-xs whitespace-nowrap mt-0.5">
+                                  {institution?.email}
                                 </div>
                               </div>
                             </Table.Td>
@@ -512,7 +485,7 @@ function Main() {
 
                             <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
                               <div className="flex gap-3 ">
-                                {user?.user_type === "Analyst" && (
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                   <>
                                     <Tippy
                                       content="Add/Edit Document"

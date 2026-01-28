@@ -199,7 +199,7 @@ function Main() {
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
               <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                {user?.user_type === "Analyst" && (
+                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                   <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                     <Button
                       onClick={() => {
@@ -429,35 +429,12 @@ function Main() {
                       return (
                         <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
                           <div className="ml-5 flex items-center">
-                            {profile?.institution_logo_url &&
-                              profile.institution_logo_url !== "null" && profile.institution_logo_url !== "nan" ? (
-                              <>
-                                <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]">
-                                  <img
-                                    alt="ZMH Analytics"
-                                    className="w-8 h-8 image-fit zoom-in object-contain !cursor-default  rounded-full
-                                shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                    src={profile?.institution_logo_url}
-                                  />
-                                </div>
-                              </>
-                            ) : (
-                              <div className="flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                <img
-                                  src={investorIcon}
-                                  alt="Investor Icon"
-                                  className="w-[65%] h-[65%] object-contain"
-                                />
-                              </div>
-                            )}
-
                             <span
                               onClick={() => {
                                 gotoDetailPage(profile.id);
                               }}
                             >
-                              <div className="font-medium text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full ml-4 cursor-pointer">
+                              <div className="font-semibold text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full cursor-pointer hover:text-primary transition-colors">
                                 {profile?.institution_name}
                               </div>
                             </span>

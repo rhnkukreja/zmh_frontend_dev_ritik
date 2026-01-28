@@ -102,7 +102,7 @@ useEffect(() => {
               {title} 
             </h4>
           <div>
-            {user?.user_type === "Analyst" && (
+            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
               <>
                 {isEditing === true ? (
                   <Button

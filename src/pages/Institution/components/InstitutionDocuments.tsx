@@ -19,6 +19,7 @@ import AddDocumentModal from "./AddDocumentModal";
 import EditDocumentModal from "./EditDocumentModal";
 import { institutionService } from "@/services/institution";
 import { toast } from "react-toastify";
+import investorIcon from "../../../assets/images/zmh-images/investor-icon.png";
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
 
@@ -140,16 +141,16 @@ const InstitutionDocuments = () => {
                   <>
                     {singleInstitution?.institution}
                     {(singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id) && (
-                      <span
-                        className="cursor-pointer ml-2"
-                        title="Go to Documents"
+                      <button
+                        className="cursor-pointer ml-2 px-3 py-1 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors text-sm font-medium"
+                        title="Document Tab"
                         onClick={() => {
                           const id = singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id;
                           window.open(`/investor-company-details/${id}`, '_blank');
                         }}
                       >
-                        <FileText className="w-5 h-5 text-primary hover:text-primary/80 transition-colors" />
-                      </span>
+                        Document Tab
+                      </button>
                     )}
                   </>
                 )}
@@ -161,7 +162,7 @@ const InstitutionDocuments = () => {
                   Total Documents: {documentsCount}
                 </span>
               )}
-              {user?.user_type === "Analyst" && (
+              {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                 <Button
                   onClick={() => setAddDocumentVisible(true)}
                   variant="primary"
@@ -327,7 +328,7 @@ const InstitutionDocuments = () => {
                           </span>
                         </Table.Td>
                         <Table.Td className="py-1.5 bg-white border-slate-200/80">
-                          {user?.user_type === "Analyst" && (
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                             <Tippy content="Edit" options={{ theme: "light" }}>
                               <button
                                 onClick={() => handleEditDocument(document)}

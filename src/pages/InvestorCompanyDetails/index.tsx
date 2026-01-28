@@ -63,7 +63,6 @@ const index = () => {
       {!investorProfileLoading && investorProfileDetails?.institution_name && (
         <div>
           <TopBar
-            logoUrl={investorProfileDetails?.institution_logo_url}
             companyName={investorProfileDetails?.institution_name}
           />
 

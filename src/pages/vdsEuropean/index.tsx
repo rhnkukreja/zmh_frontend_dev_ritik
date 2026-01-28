@@ -2040,7 +2040,7 @@ const index = () => {
         const excelData = VdsEuropeans.map((vds: any) => ({
           'Institution': vds.excel_institution_name || '',
           'Meeting Type': vds.meeting_type || '',
-          'Proposal No.': vds.proposal_num || '',
+          'No.': vds.proposal_num || '',
           'Proposal': vds.proposal || '',
           'Management Recommendation': vds.mgt_rec || '',
           'Vote Cast': vds.vote || '',
@@ -2720,7 +2720,7 @@ const index = () => {
                           <table className="min-w-[1100px] w-full table-auto">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
-                                <th className="px-2 py-2 text-center font-semibold w-[8%] max-w-[60px] whitespace-nowrap">Proposal No.</th>
+                                <th className="px-2 py-2 text-center font-semibold w-[8%] max-w-[60px] whitespace-nowrap">No.</th>
                                 <th className="px-4 py-2 text-left font-semibold w-[52%] max-w-[600px]">Proposal</th>
                                 <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Mgmt Rec</th>
                                 <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Vote Cast</th>

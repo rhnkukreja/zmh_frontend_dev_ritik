@@ -227,7 +227,7 @@ function CompanyList() {
               </Tippy>
             </div>
 
-            {user?.user_type === "Analyst" && (
+            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
                   onClick={() => {
