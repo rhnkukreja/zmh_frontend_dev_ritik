@@ -2720,11 +2720,11 @@ const index = () => {
                           <table className="min-w-[1100px] w-full table-auto">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Proposal No.</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Proposal</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Mgmt Rec</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Vote Cast</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Institution Name</th>
+                                <th className="px-2 py-2 text-center font-semibold w-[8%] max-w-[60px] whitespace-nowrap">Proposal No.</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[52%] max-w-[600px]">Proposal</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Mgmt Rec</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Vote Cast</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[14%] max-w-[120px]">Institution Name</th>
                               </tr>
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -2734,14 +2734,14 @@ const index = () => {
                                     className="hover:bg-primary/10"
                                     style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
                                   >
-                                    <td className="px-4 py-2 align-middle whitespace-nowrap w-[20%]">
+                                    <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-[8%] max-w-[60px]">
                                       {vds?.proposal_num}
                                     </td>
-                                    <td className="px-4 py-2 align-middle w-[20%]">
+                                    <td className="px-4 py-2 align-middle w-[52%] max-w-[600px]">
                                       {vds?.proposal}
                                     </td>
-                                    <td className="px-4 py-2 align-middle whitespace-nowrap w-[20%]">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-4 py-2 align-middle whitespace-nowrap w-[20%]">
+                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[13%] max-w-[100px]">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[13%] max-w-[100px]">
                                       <span className={clsx([
                                         (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
                                         "text-red-700 font-semibold",
