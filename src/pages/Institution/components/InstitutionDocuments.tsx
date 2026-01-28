@@ -135,8 +135,24 @@ const InstitutionDocuments = () => {
         <div className="p-5 border-b border-slate-200/80">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-slate-700">
-                {loading ? "Loading..." : singleInstitution?.institution}
+              <h1 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
+                {loading ? "Loading..." : (
+                  <>
+                    {singleInstitution?.institution}
+                    {(singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id) && (
+                      <span
+                        className="cursor-pointer ml-2"
+                        title="Go to Documents"
+                        onClick={() => {
+                          const id = singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id;
+                          window.open(`/investor-company-details/${id}`, '_blank');
+                        }}
+                      >
+                        <FileText className="w-5 h-5 text-primary hover:text-primary/80 transition-colors" />
+                      </span>
+                    )}
+                  </>
+                )}
               </h1>
             </div>
             <div className="flex items-center gap-4 mt-3 md:mt-0">
@@ -161,7 +177,7 @@ const InstitutionDocuments = () => {
 
         <div className="p-5">
           <TableWrapper isLoading={documentsLoading}>
-            <div className="overflow-auto">
+            <div>
               <Table>
                 <Table.Thead>
                   <Table.Tr>
@@ -219,12 +235,13 @@ const InstitutionDocuments = () => {
                   {institutionDocuments?.length > 0 ? (
                     institutionDocuments.map((document: InstitutionDocument) => (
                       <Table.Tr key={document.id}>
-                        <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs">
-                          <div className="flex items-center">
-                            <FileText className="w-3.5 h-3.5 min-w-3.5 min-h-3.5 text-slate-400 mr-1.5" />
+                        <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs w-[220px] max-w-[220px] align-top">
+                          <div className="flex items-start">
+                            <FileText className="w-3.5 h-3.5 min-w-3.5 min-h-3.5 text-slate-400 mr-1.5 mt-0.5" />
                             <button
                               onClick={() => handleViewDocument(document.link)}
-                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left truncate"
+                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left break-words whitespace-pre-line w-full"
+                              style={{ wordBreak: 'break-word', whiteSpace: 'pre-line' }}
                             >
                               {document.name}
                             </button>

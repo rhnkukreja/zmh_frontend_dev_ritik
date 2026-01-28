@@ -137,6 +137,7 @@ const initialState: any = {
       pathname: "/institution",
       title: "Institutions",
       isAnalyst: true,
+      isAdmin: true,
     },
     {
       icon: "Building",

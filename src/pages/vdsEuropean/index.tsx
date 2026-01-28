@@ -2720,11 +2720,11 @@ const index = () => {
                           <table className="min-w-[1100px] w-full table-auto">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
-                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Proposal No.</th>
-                                <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Mgmt Rec</th>
-                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Vote Cast</th>
-                                <th className="px-4 py-2 text-left font-semibold whitespace-nowrap">Institution Name</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Proposal No.</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Proposal</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Mgmt Rec</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Vote Cast</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[20%]">Institution Name</th>
                               </tr>
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -2734,14 +2734,14 @@ const index = () => {
                                     className="hover:bg-primary/10"
                                     style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
                                   >
-                                    <td className="px-4 py-2 align-middle whitespace-nowrap">
+                                    <td className="px-4 py-2 align-middle whitespace-nowrap w-[20%]">
                                       {vds?.proposal_num}
                                     </td>
-                                    <td className="px-4 py-2 align-middle">
+                                    <td className="px-4 py-2 align-middle w-[20%]">
                                       {vds?.proposal}
                                     </td>
-                                    <td className="px-4 py-2 align-middle whitespace-nowrap">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-4 py-2 align-middle whitespace-nowrap">
+                                    <td className="px-4 py-2 align-middle whitespace-nowrap w-[20%]">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-4 py-2 align-middle whitespace-nowrap w-[20%]">
                                       <span className={clsx([
                                         (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
                                         "text-red-700 font-semibold",
@@ -2749,7 +2749,7 @@ const index = () => {
                                         {vds?.vote}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-2 align-middle break-words">{vds?.institution_name}</td>
+                                    <td className="px-4 py-2 align-middle break-words w-[20%]">{vds?.institution_name}</td>
                                   </tr>
                                   {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
                                     <tr className="bg-gray-50">
