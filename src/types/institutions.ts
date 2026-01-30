@@ -34,4 +34,5 @@ export type InstitutionDocument = {
   linked_to_voting_guidelines: boolean;
   created_by_name?: string;
   date_created?: string;
+  is_deleted?: boolean;
 };

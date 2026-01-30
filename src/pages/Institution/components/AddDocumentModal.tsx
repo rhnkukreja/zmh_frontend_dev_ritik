@@ -41,6 +41,10 @@ const categories = [
   "Macro Engagement Stats",
   "Case Study",
   "Commentary",
+  "Stewardship Policy",
+  "Responsible Investment",
+  "Proxy voting records/details",
+  "Others"
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];

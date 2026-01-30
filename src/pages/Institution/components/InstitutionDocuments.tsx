@@ -8,7 +8,7 @@ import {
 } from "@/stores/institutionSlice";
 import { AppDispatch } from "@/stores/store";
 import Button from "@/components/Base/Button";
-import { ChevronLeft, FileText, ExternalLink, Plus, PenLine } from "lucide-react";
+import { ChevronLeft, FileText, ExternalLink, Plus, PenLine, Trash2, RotateCcw } from "lucide-react";
 import Table from "@/components/Base/Table";
 import TableWrapper from "@/components/TableWrapper";
 import Tippy from "@/components/Base/Tippy";
@@ -24,14 +24,27 @@ import investorIcon from "../../../assets/images/zmh-images/investor-icon.png";
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
 
 const InstitutionDocuments = () => {
-  const dispatch: AppDispatch = useAppDispatch();
   const params = useParams();
+  const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const [addDocumentVisible, setAddDocumentVisible] = useState(false);
-  const [editDocumentVisible, setEditDocumentVisible] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<InstitutionDocument | null>(null);
-  const [linkingInProgress, setLinkingInProgress] = useState<{[key: string]: boolean}>({});
+  const [showTrash, setShowTrash] = useState(false);
+  const [trashedDocuments, setTrashedDocuments] = useState<InstitutionDocument[]>([]);
+
+  // Fetch trashed documents when showTrash is true
+  useEffect(() => {
+    const fetchTrash = async () => {
+      if (showTrash && params.id) {
+        try {
+          const response = await institutionService.getTrashedDocuments(Number(params.id));
+          setTrashedDocuments(response.results || []);
+        } catch {
+          toast.error('Failed to fetch trashed documents');
+        }
+      }
+    };
+    fetchTrash();
+  }, [showTrash, params.id]);
 
   const {
     singleInstitution,
@@ -40,6 +53,99 @@ const InstitutionDocuments = () => {
     documentsCount,
     loading,
   } = useAppSelector((state) => state.institutions);
+
+
+
+  const [addDocumentVisible, setAddDocumentVisible] = useState(false);
+  const [editDocumentVisible, setEditDocumentVisible] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<InstitutionDocument | null>(null);
+  const [linkingInProgress, setLinkingInProgress] = useState<{[key: string]: boolean}>({});
+  // Store pending link/unlink operations before API call
+  const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>([]);
+  const [pendingDocumentId, setPendingDocumentId] = useState<number | null>(null); // For UI focus
+  const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: 'delete'|'restore'|'bulk-delete'; document?: InstitutionDocument; ids?: number[] }>({ open: false, type: 'delete' });
+  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // Only show active documents for bulk selection
+  const filteredDocuments = institutionDocuments?.filter((doc) => !doc.is_deleted) || [];
+  const documentsToDisplay = showTrash ? trashedDocuments : institutionDocuments;
+
+  const handleSelectRow = (id: number) => {
+    setSelectedRows((prev) =>
+      prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllRows = () => {
+    if (selectedRows.length === filteredDocuments.length) {
+      setSelectedRows([]);
+    } else {
+      setSelectedRows(filteredDocuments.map((doc) => doc.id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setConfirmModal({ open: true, type: 'bulk-delete', ids: selectedRows });
+  };
+
+  const confirmBulkDelete = async () => {
+    if (!confirmModal.ids || !Array.isArray(confirmModal.ids) || confirmModal.ids.length === 0) {
+      toast.error('No documents selected for bulk delete');
+      return;
+    }
+    console.log('Bulk delete payload:', { document_ids: confirmModal.ids });
+    setBulkActionLoading(true);
+    try {
+      await institutionService.bulkDeleteInstitutionDocuments(confirmModal.ids);
+      toast.success('Selected documents moved to trash');
+      setSelectedRows([]);
+      handleDocumentSuccess();
+    } catch {
+      toast.error('Bulk delete failed');
+    } finally {
+      setBulkActionLoading(false);
+      setConfirmModal({ open: false, type: 'bulk-delete' });
+    }
+  };
+  // Soft delete (move to trash)
+  const handleDeleteDocument = (document: InstitutionDocument) => {
+    setConfirmModal({ open: true, type: 'delete', document });
+  };
+
+  const confirmDeleteDocument = async () => {
+    if (!confirmModal.document) return;
+    try {
+      await institutionService.deleteInstitutionDocument(confirmModal.document.id);
+      toast.success("Document moved to trash successfully");
+      handleDocumentSuccess();
+    } catch {
+      toast.error("Failed to move document to trash");
+    } finally {
+      setConfirmModal({ open: false, type: 'delete' });
+    }
+  };
+
+  // Restore from trash
+  const handleRestoreDocument = (document: InstitutionDocument) => {
+    setConfirmModal({ open: true, type: 'restore', document });
+  };
+
+  const confirmRestoreDocument = async () => {
+    if (!confirmModal.document) return;
+    try {
+      await institutionService.restoreInstitutionDocument(confirmModal.document.id);
+      toast.success("Document restored successfully");
+      // Remove restored document from trash view immediately
+      setTrashedDocuments((prev) => prev.filter(doc => doc.id !== confirmModal.document?.id));
+      handleDocumentSuccess();
+    } catch {
+      toast.error("Failed to restore document");
+    } finally {
+      setConfirmModal({ open: false, type: 'restore' });
+    }
+  };
+
 
   const { user } = useAppSelector((state) => state.authentiction);
 
@@ -74,28 +180,57 @@ const InstitutionDocuments = () => {
     section: ProfileSection,
     isCurrentlyLinked: boolean
   ) => {
-    if (!params.id) return;
-    
-    const linkKey = `${document.id}-${section}`;
-    setLinkingInProgress((prev) => ({ ...prev, [linkKey]: true }));
-
+    // Instead of calling API, store the intended operation
+    setPendingDocumentId(document.id);
+    setPendingLinkOps((prev) => {
+      // Remove any previous op for this doc-section
+      const filtered = prev.filter(op => !(op.document_id === document.id && op.section === section));
+      // Add new op
+      return [
+        ...filtered,
+        {
+          document_id: document.id,
+          section,
+          action: isCurrentlyLinked ? "unlink" : "link"
+        }
+      ];
+    });
+  };
+  // Bulk link/unlink handler
+  const handleBulkLinkToProfile = async () => {
+    if (!params.id || pendingLinkOps.length === 0) return;
+    setLinkingInProgress((prev) => ({ ...prev, bulk: true }));
+    // Group operations by document for API
+    const grouped: { [docId: number]: { sections: ProfileSection[]; action: "link" | "unlink" } } = {};
+    pendingLinkOps.forEach(op => {
+      if (!grouped[op.document_id]) {
+        grouped[op.document_id] = { sections: [], action: op.action };
+      }
+      grouped[op.document_id].sections.push(op.section);
+      grouped[op.document_id].action = op.action; // last op wins
+    });
+    const operations = Object.entries(grouped).map(([document_id, { sections, action }]) => ({
+      document_id: Number(document_id),
+      sections,
+      action
+    }));
     try {
-      await institutionService.linkDocumentToProfile(
-        document.id,
-        Number(params.id),
-        section,
-        isCurrentlyLinked ? "unlink" : "link"
-      );
-      
+      await institutionService.bulkLinkDocumentsToProfile(Number(params.id), operations);
       dispatch(fetchInstitutionDocuments(Number(params.id)));
-      toast.success(
-        `Document ${isCurrentlyLinked ? "unlinked from" : "linked to"} ${section.replace("_", " ")}`
-      );
+      toast.success("Profile link(s) updated");
+      setPendingLinkOps([]);
+      setPendingDocumentId(null);
     } catch (error) {
-      toast.error("Failed to update document link");
+      toast.error("Failed to update document link(s)");
     } finally {
-      setLinkingInProgress((prev) => ({ ...prev, [linkKey]: false }));
+      setLinkingInProgress((prev) => ({ ...prev, bulk: false }));
     }
+  };
+
+  // Cancel pending link ops
+  const handleCancelLinkOps = () => {
+    setPendingLinkOps([]);
+    setPendingDocumentId(null);
   };
 
   const isLinkingInProgress = (documentId: number, section: string) => {
@@ -156,32 +291,65 @@ const InstitutionDocuments = () => {
                 )}
               </h1>
             </div>
-            <div className="flex items-center gap-4 mt-3 md:mt-0">
-              {documentsCount > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-4">
                 <span className="text-base font-semibold text-slate-700">
-                  Total Documents: {documentsCount}
+                  {documentsCount > 0 && `Total Documents: ${documentsCount}`}
                 </span>
-              )}
-              {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                <Button
-                  onClick={() => setAddDocumentVisible(true)}
-                  variant="primary"
-                  className="bg-theme-2 border-bg-theme-2"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Document
-                </Button>
+                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                  <>
+                    <Button
+                      onClick={() => setAddDocumentVisible(true)}
+                      variant="primary"
+                      className="bg-theme-2 border-bg-theme-2"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Document
+                    </Button>
+                    <Button
+                      variant={showTrash ? "secondary" : "outline-secondary"}
+                      onClick={() => setShowTrash((v) => !v)}
+                      className="ml-2"
+                    >
+                      {showTrash ? "View Active" : "View Trash"}
+                    </Button>
+                  </>
+                )}
+              </div>
+              {pendingLinkOps.length > 0 && (
+                <div className="flex justify-end gap-2 mt-2">
+                  <Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={handleBulkLinkToProfile} disabled={linkingInProgress.bulk}>Link to Profile</Button>
+                  <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={handleCancelLinkOps}>Cancel</Button>
+                </div>
               )}
             </div>
           </div>
         </div>
 
         <div className="p-5">
+          {/* Bulk Delete Button */}
+          {selectedRows.length > 0 && (
+            <div className="mb-3 flex justify-end">
+              <Button variant="danger" onClick={handleBulkDelete} disabled={bulkActionLoading}>
+                Move Selected to Trash ({selectedRows.length})
+              </Button>
+            </div>
+          )}
           <TableWrapper isLoading={documentsLoading}>
             <div>
               <Table>
                 <Table.Thead>
                   <Table.Tr>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[40px]">
+                      <FormCheck className="flex justify-center">
+                        <FormCheck.Input
+                          type="checkbox"
+                          checked={selectedRows.length === filteredDocuments.length && filteredDocuments.length > 0}
+                          // indeterminate prop removed, not supported by FormCheck.Input
+                          onChange={handleSelectAllRows}
+                        />
+                      </FormCheck>
+                    </Table.Td>
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] border-header text-[#000000B2] text-xs w-[180px]">
                       Name
                     </Table.Td>
@@ -197,14 +365,16 @@ const InstitutionDocuments = () => {
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[90px]">
                       Created
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center" colSpan={5}>
-                      Profile Section
-                    </Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Sum</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Eng</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Rep</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">ESG</Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Vote</Table.Td>
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[80px]">
                       Priority
                     </Table.Td>
-                    <Table.Td className="py-2 font-semibold h-[50px] bg-header last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-xs w-[50px]">
-                      Edit
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header last:rounded-tr-[0.6rem] border-header text-[#000000B2] text-xs w-[90px]">
+                      Actions
                     </Table.Td>
                   </Table.Tr>
                   <Table.Tr>
@@ -213,29 +383,30 @@ const InstitutionDocuments = () => {
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
-                      Sum
-                    </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
-                      Eng
-                    </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
-                      Rep
-                    </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
-                      ESG
-                    </Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">
-                      Vote
-                    </Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Sum</Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Eng</Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Rep</Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">ESG</Table.Td>
+                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Vote</Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                     <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {institutionDocuments?.length > 0 ? (
-                    institutionDocuments.map((document: InstitutionDocument) => (
+                  {documentsToDisplay?.length > 0 ? (
+                    documentsToDisplay.map((document: InstitutionDocument) => (
                       <Table.Tr key={document.id}>
+                        <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs w-[40px]">
+                          {!showTrash && !document.is_deleted && (
+                            <FormCheck className="flex justify-center">
+                              <FormCheck.Input
+                                type="checkbox"
+                                checked={selectedRows.includes(document.id)}
+                                onChange={() => handleSelectRow(document.id)}
+                              />
+                            </FormCheck>
+                          )}
+                        </Table.Td>
                         <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs w-[220px] max-w-[220px] align-top">
                           <div className="flex items-start">
                             <FileText className="w-3.5 h-3.5 min-w-3.5 min-h-3.5 text-slate-400 mr-1.5 mt-0.5" />
@@ -264,7 +435,7 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_summary || false}
+                              checked={document.linked_to_summary || pendingLinkOps.some(op => op.document_id === document.id && op.section === "summary" && op.action === (document.linked_to_summary ? "unlink" : "link"))}
                               disabled={isLinkingInProgress(document.id, "summary") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "summary", document.linked_to_summary)
@@ -276,7 +447,7 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_engagement_priorities || false}
+                              checked={document.linked_to_engagement_priorities || pendingLinkOps.some(op => op.document_id === document.id && op.section === "engagement_priorities" && op.action === (document.linked_to_engagement_priorities ? "unlink" : "link"))}
                               disabled={isLinkingInProgress(document.id, "engagement_priorities") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "engagement_priorities", document.linked_to_engagement_priorities)
@@ -288,7 +459,7 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_reporting_expectation || false}
+                              checked={document.linked_to_reporting_expectation || pendingLinkOps.some(op => op.document_id === document.id && op.section === "reporting_expectation" && op.action === (document.linked_to_reporting_expectation ? "unlink" : "link"))}
                               disabled={isLinkingInProgress(document.id, "reporting_expectation") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "reporting_expectation", document.linked_to_reporting_expectation)
@@ -300,7 +471,7 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_esg_integration || false}
+                              checked={document.linked_to_esg_integration || pendingLinkOps.some(op => op.document_id === document.id && op.section === "esg_integration" && op.action === (document.linked_to_esg_integration ? "unlink" : "link"))}
                               disabled={isLinkingInProgress(document.id, "esg_integration") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "esg_integration", document.linked_to_esg_integration)
@@ -312,7 +483,7 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_voting_guidelines || false}
+                              checked={document.linked_to_voting_guidelines || pendingLinkOps.some(op => op.document_id === document.id && op.section === "voting_guidelines" && op.action === (document.linked_to_voting_guidelines ? "unlink" : "link"))}
                               disabled={isLinkingInProgress(document.id, "voting_guidelines") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "voting_guidelines", document.linked_to_voting_guidelines)
@@ -327,24 +498,48 @@ const InstitutionDocuments = () => {
                             {document.priority || "-"}
                           </span>
                         </Table.Td>
+                        {/* Actions column */}
                         <Table.Td className="py-1.5 bg-white border-slate-200/80">
-                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                            <Tippy content="Edit" options={{ theme: "light" }}>
-                              <button
-                                onClick={() => handleEditDocument(document)}
-                                className="p-0.5 hover:bg-slate-100 rounded"
-                              >
-                                <PenLine className="w-3.5 h-3.5 text-slate-600" />
-                              </button>
-                            </Tippy>
-                          )}
+                          <div className="flex gap-2 items-center">
+                            {/* Show Edit/Delete for active, Restore for trashed */}
+                            {!showTrash && !document.is_deleted && (user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                              <>
+                                <Tippy content="Edit" options={{ theme: "light" }}>
+                                  <button
+                                    onClick={() => handleEditDocument(document)}
+                                    className="p-0.5 hover:bg-slate-100 rounded"
+                                  >
+                                    <PenLine className="w-3.5 h-3.5 text-slate-600" />
+                                  </button>
+                                </Tippy>
+                                <Tippy content="Move to Trash" options={{ theme: "light" }}>
+                                  <button
+                                    onClick={() => handleDeleteDocument(document)}
+                                    className="p-0.5 hover:bg-red-100 rounded"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                  </button>
+                                </Tippy>
+                              </>
+                            )}
+                            {showTrash && (user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                              <Tippy content="Restore" options={{ theme: "light" }}>
+                                <button
+                                  onClick={() => handleRestoreDocument(document)}
+                                  className="p-0.5 hover:bg-green-100 rounded"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5 text-green-600" />
+                                </button>
+                              </Tippy>
+                            )}
+                          </div>
                         </Table.Td>
                       </Table.Tr>
                     ))
                   ) : (
                     <Table.Tr>
                       <Table.Td
-                        colSpan={12}
+                        colSpan={13}
                         className="py-10 text-center text-slate-500"
                       >
                         No documents found for this institution.
@@ -352,6 +547,30 @@ const InstitutionDocuments = () => {
                     </Table.Tr>
                   )}
                 </Table.Tbody>
+                    {/* Confirm Modals */}
+                    {confirmModal.open && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+                        <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
+                          <div className="mb-4 text-lg font-semibold">
+                            {confirmModal.type === 'delete' && 'Move this document to trash?'}
+                            {confirmModal.type === 'restore' && 'Restore this document?'}
+                            {confirmModal.type === 'bulk-delete' && `Move ${confirmModal.ids?.length || 0} selected documents to trash?`}
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline-secondary" onClick={() => setConfirmModal({ open: false, type: confirmModal.type })}>Cancel</Button>
+                            {confirmModal.type === 'delete' && (
+                              <Button variant="danger" onClick={confirmDeleteDocument}>Move to Trash</Button>
+                            )}
+                            {confirmModal.type === 'restore' && (
+                              <Button variant="success" onClick={confirmRestoreDocument}>Restore</Button>
+                            )}
+                            {confirmModal.type === 'bulk-delete' && (
+                              <Button variant="danger" onClick={confirmBulkDelete} disabled={bulkActionLoading}>Move to Trash</Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
               </Table>
             </div>
           </TableWrapper>
