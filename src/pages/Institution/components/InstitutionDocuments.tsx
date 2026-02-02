@@ -318,7 +318,9 @@ const InstitutionDocuments = () => {
               </div>
               {pendingLinkOps.length > 0 && (
                 <div className="flex justify-end gap-2 mt-2">
-                  <Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={handleBulkLinkToProfile} disabled={linkingInProgress.bulk}>Link to Profile</Button>
+                  <Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={handleBulkLinkToProfile} disabled={linkingInProgress.bulk}>
+                    {pendingLinkOps.some(op => op.action === "unlink") ? "Unlink from Profile" : "Link to Profile"}
+                  </Button>
                   <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={handleCancelLinkOps}>Cancel</Button>
                 </div>
               )}
@@ -435,7 +437,11 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_summary || pendingLinkOps.some(op => op.document_id === document.id && op.section === "summary" && op.action === (document.linked_to_summary ? "unlink" : "link"))}
+                              checked={
+                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "summary")
+                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "summary")?.action === "link"
+                                  : document.linked_to_summary
+                              }
                               disabled={isLinkingInProgress(document.id, "summary") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "summary", document.linked_to_summary)
@@ -447,7 +453,11 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_engagement_priorities || pendingLinkOps.some(op => op.document_id === document.id && op.section === "engagement_priorities" && op.action === (document.linked_to_engagement_priorities ? "unlink" : "link"))}
+                              checked={
+                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "engagement_priorities")
+                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "engagement_priorities")?.action === "link"
+                                  : document.linked_to_engagement_priorities
+                              }
                               disabled={isLinkingInProgress(document.id, "engagement_priorities") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "engagement_priorities", document.linked_to_engagement_priorities)
@@ -459,7 +469,11 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_reporting_expectation || pendingLinkOps.some(op => op.document_id === document.id && op.section === "reporting_expectation" && op.action === (document.linked_to_reporting_expectation ? "unlink" : "link"))}
+                              checked={
+                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "reporting_expectation")
+                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "reporting_expectation")?.action === "link"
+                                  : document.linked_to_reporting_expectation
+                              }
                               disabled={isLinkingInProgress(document.id, "reporting_expectation") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "reporting_expectation", document.linked_to_reporting_expectation)
@@ -471,7 +485,11 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_esg_integration || pendingLinkOps.some(op => op.document_id === document.id && op.section === "esg_integration" && op.action === (document.linked_to_esg_integration ? "unlink" : "link"))}
+                              checked={
+                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "esg_integration")
+                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "esg_integration")?.action === "link"
+                                  : document.linked_to_esg_integration
+                              }
                               disabled={isLinkingInProgress(document.id, "esg_integration") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "esg_integration", document.linked_to_esg_integration)
@@ -483,7 +501,11 @@ const InstitutionDocuments = () => {
                           <FormCheck className="flex justify-center">
                             <FormCheck.Input
                               type="checkbox"
-                              checked={document.linked_to_voting_guidelines || pendingLinkOps.some(op => op.document_id === document.id && op.section === "voting_guidelines" && op.action === (document.linked_to_voting_guidelines ? "unlink" : "link"))}
+                              checked={
+                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "voting_guidelines")
+                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "voting_guidelines")?.action === "link"
+                                  : document.linked_to_voting_guidelines
+                              }
                               disabled={isLinkingInProgress(document.id, "voting_guidelines") || user?.user_type !== "Analyst"}
                               onChange={() =>
                                 handleLinkToProfile(document, "voting_guidelines", document.linked_to_voting_guidelines)
