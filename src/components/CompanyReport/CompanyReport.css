@@ -59,12 +59,20 @@
 
 .report-content table th {
   background-color: #f9fafb;
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: #6b7280;
+  text-transform: none !important;
+  letter-spacing: normal !important;
 }
+
+ .report-content .tippy-box[data-theme~='light'] {
+   background-color: #ffffff;
+   color: #111827;
+   border: 1px solid #e5e7eb;
+ }
+
+ .report-content .tippy-arrow {
+   color: #ffffff;
+ }
 
 .report-content table tbody tr {
   border-bottom: 1px solid #f3f4f6;
@@ -111,6 +119,11 @@
 
 /* Print-specific styles */
 @media print {
+  @page {
+    size: A4;
+    margin: 15mm 10mm;
+  }
+
   .exclude-from-pdf {
     display: none !important;
   }
@@ -118,20 +131,42 @@
   .report-content {
     padding: 0;
     margin: 0;
+    max-width: 100%;
   }
   
+  /* Section headings should never break from their content */
+  .report-content h2,
+  .report-content h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Keep sections together when possible */
   .report-content section {
     page-break-inside: avoid;
     break-inside: avoid;
   }
   
+  /* Table handling */
   .report-content table {
     page-break-inside: auto;
+    break-inside: auto;
   }
   
+  /* Never break table rows */
   .report-content tr {
-    page-break-inside: avoid;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     page-break-after: auto;
+  }
+  
+  /* Never break table cells */
+  .report-content td,
+  .report-content th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   
   .report-content thead {
@@ -140,6 +175,14 @@
   
   .report-content tfoot {
     display: table-footer-group;
+  }
+
+  /* Ensure charts and images don't break */
+  .report-content img,
+  .report-content svg,
+  .recharts-wrapper {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 
@@ -155,6 +198,12 @@
   break-inside: avoid;
   page-break-inside: avoid;
 }
+
+ .report-content .recharts-wrapper,
+ .report-content .recharts-responsive-container,
+ .report-content .recharts-surface {
+   overflow: visible !important;
+ }
 
 /* Tables - prevent row breaking */
 .report-content table {
@@ -223,4 +272,20 @@
 .report-content .vote-abstain {
   background-color: #fef3c7;
   color: #92400e;
+}
+
+.report-content table tbody tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-content table td {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-content h2,
+.report-content h3 {
+  break-after: avoid;
+  page-break-after: avoid;
 }

@@ -97,6 +97,7 @@ export interface EngagementStatsExGlobalData {
 export interface SPData {
   proxy_season: string;
   proponent: string;
+  proposal_name?: string;
   proposal_title: string;
   outcome_percentage: string;
   major_institutions_vote: {
@@ -113,16 +114,24 @@ export interface KeyTakeaway {
 }
 
 export interface VotedAgainstRationale {
-  investor: string;
-  proposal: string;
-  vote: string;
-  rationale: string;
+  investor?: string;
+  institution__institution?: string;
+  proposal?: string;
+  vote?: string;
+  split_vote_counts?: {
+    for?: number;
+    against?: number;
+  };
+  rationale?: string;
+  notes?: string;
 }
 
 export interface CompanyReportData {
   finnhub_data: FinnhubData;
   share_price_performance_data: SharePricePerformanceData;
   percent_ownership_data: PercentOwnershipData[];
+  total_percent_ownership?: string;
+  meeting_details_data?: Record<string, any>;
   charts_data: ChartsData;
   engagement_stats_data: EngagementStatsData[];
   engagement_stats_ex_global_data: EngagementStatsExGlobalData[];

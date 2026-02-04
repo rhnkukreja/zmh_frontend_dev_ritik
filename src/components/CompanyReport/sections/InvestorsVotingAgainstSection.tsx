@@ -6,6 +6,32 @@ interface InvestorsVotingAgainstSectionProps {
   votedAgainstRationale?: VotedAgainstRationale[];
 }
 
+const parseSplitVoteCounts = (value: unknown): { for?: number; against?: number } | null => {
+  if (!value) return null;
+  if (typeof value === "object") return value as { for?: number; against?: number };
+
+  if (typeof value === "string") {
+    // API sometimes returns Python-dict-like strings, e.g. "{'for': 3}".
+    // Convert to valid JSON in a conservative way and parse.
+    try {
+      const normalized = value
+        .trim()
+        .replace(/'/g, '"')
+        .replace(/\bNone\b/g, "null")
+        .replace(/\bTrue\b/g, "true")
+        .replace(/\bFalse\b/g, "false");
+      const parsed = JSON.parse(normalized);
+      if (parsed && typeof parsed === "object") {
+        return parsed as { for?: number; against?: number };
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+};
+
 // Table for Voting Rationale
 const VotingRationaleTable = ({ 
   rationaleData 
@@ -22,34 +48,50 @@ const VotingRationaleTable = ({
 
   return (
     <div className="mb-4 overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full text-xs border-collapse">
         <thead>
           <tr className="bg-gray-50 border-b-2 border-gray-200">
-            <th className="text-left py-4 px-4 font-semibold text-gray-600 w-[200px]">Investor</th>
-            <th className="text-left py-4 px-4 font-semibold text-gray-600 w-[200px]">Proposal</th>
-            <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[100px]">Vote</th>
-            <th className="text-left py-4 px-4 font-semibold text-gray-600">Rationale</th>
+            <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-[200px]">Investor</th>
+            <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-[200px]">Proposal</th>
+            <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[100px]">Vote</th>
+            <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[165px]">Vote Counts</th>
+            <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs">Rationale</th>
           </tr>
         </thead>
         <tbody>
-          {rationaleData.map((item, idx) => (
-            <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-4 px-4 text-blue-600 font-semibold">{item.investor}</td>
-              <td className="py-4 px-4 text-gray-700">{item.proposal}</td>
-              <td className="py-4 px-4 text-center">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  item.vote?.toLowerCase() === 'against' 
-                    ? 'bg-red-100 text-red-700' 
-                    : item.vote?.toLowerCase() === 'for'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {item.vote}
-                </span>
-              </td>
-              <td className="py-4 px-4 text-gray-600">{item.rationale}</td>
-            </tr>
-          ))}
+          {rationaleData.map((item, idx) => {
+            const investorName = item.institution__institution || item.investor || '';
+            const rationale = item.notes || item.rationale || '';
+            const vote = item.vote || '';
+            const isAgainstOrWithhold = vote?.toLowerCase() === 'against' || vote?.toLowerCase() === 'withhold';
+
+            const voteCounts = parseSplitVoteCounts(item.split_vote_counts);
+            const forCount = voteCounts?.for;
+            const againstCount = voteCounts?.against;
+            
+            return (
+              <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="py-4 px-4 text-gray-700 font-semibold">{investorName}</td>
+                <td className="py-4 px-4 text-gray-700">{item.proposal || ''}</td>
+                <td className={`py-4 px-4 text-center ${isAgainstOrWithhold ? 'text-red-700 font-semibold' : 'text-gray-700'}`}>
+                  {vote}
+                </td>
+                <td className="py-4 px-4 text-center text-gray-700">
+                  {voteCounts ? (
+                    <div className="inline-grid grid-cols-[auto_1fr] gap-x-2 gap-y-0 leading-tight text-xs text-gray-600 min-w-[80px]">
+                      <span className="font-semibold text-gray-800 text-left">For:</span>
+                      <span className="tabular-nums text-right text-gray-700">{forCount ?? 0}</span>
+                      <span className="font-semibold text-gray-800 text-left">Against:</span>
+                      <span className="tabular-nums text-right text-gray-700">{againstCount ?? 0}</span>
+                    </div>
+                  ) : (
+                    ""
+                  )}
+                </td>
+                <td className="py-4 px-4 text-gray-700">{rationale}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -148,7 +190,7 @@ const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: Investor
     <>
       {/* Section for Voting Rationale Table */}
       <section className="mb-10">
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-6">
+        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
           Voting Rationale
         </h2>
         <VotingRationaleTable rationaleData={safeRationaleData} />
@@ -156,8 +198,8 @@ const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: Investor
 
       {/* Separate Section for Trend Charts */}
       {hasVotingData && (
-        <section className="mb-10">
-          <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-6">
+        <section id="trend-investor-support" className="mb-10">
+          <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
             Trend in Investor Support
           </h2>
           

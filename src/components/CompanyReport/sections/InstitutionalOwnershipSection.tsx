@@ -33,22 +33,22 @@ const InstitutionalOwnershipSection = ({ data }: InstitutionalOwnershipSectionPr
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200 w-10">
+              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 border-b border-gray-200 w-10">
                 #
               </th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 border-b border-gray-200">
                 Institution
               </th>
-              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 border-b border-gray-200">
                 Ownership %
               </th>
-              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 border-b border-gray-200">
                 Proxy Influence
               </th>
-              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 border-b border-gray-200">
                 ESG
               </th>
-              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wide border-b border-gray-200">
+              <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 border-b border-gray-200">
                 UN PRI
               </th>
             </tr>

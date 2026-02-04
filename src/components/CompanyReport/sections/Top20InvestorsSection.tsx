@@ -3,9 +3,12 @@ import { PercentOwnershipData } from "@/types/companyReport";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
+import { MegaphoneOff } from "lucide-react";
+import Tippy from "@/components/Base/Tippy";
 
 interface Top20InvestorsSectionProps {
   data: PercentOwnershipData[];
+  totalPercentOwnership?: string;
 }
 
 // Colors for the pie chart segments
@@ -20,23 +23,32 @@ const PIE_COLORS = {
   'Other': '#64748b'
 };
 
-// Engagement Topic Colors
-const TOPIC_COLORS: Record<string, { bg: string; text: string }> = {
-  'E': { bg: '#16a34a', text: 'white' },
-  'S': { bg: '#f59e0b', text: 'white' },
-  'G': { bg: '#0ea5e9', text: 'white' },
-};
 
-const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
+const Top20InvestorsSection = ({ data, totalPercentOwnership }: Top20InvestorsSectionProps) => {
   const [chartModalVisible, setChartModalVisible] = useState(false);
   const dataArray = Array.isArray(data) ? data : [];
   const top20 = dataArray.slice(0, 20);
 
+  const formatCalloutName = (name: string) => {
+    const trimmed = (name || '').trim();
+    if (trimmed.length <= 18) return [trimmed];
+    if (trimmed.includes(',')) {
+      const parts = trimmed.split(',').map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        return [`${parts[0]},`, parts.slice(1).join(', ')];
+      }
+    }
+    const mid = Math.floor(trimmed.length / 2);
+    const splitAt = trimmed.lastIndexOf(' ', mid);
+    if (splitAt > 0) return [trimmed.slice(0, splitAt), trimmed.slice(splitAt + 1)];
+    return [trimmed];
+  };
+
   if (top20.length === 0) {
     return (
       <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-        <h2 className="text-lg font-bold text-gray-900 mb-4">
-          Total % ownership
+        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+          Top 20 Ownership {totalPercentOwnership && <span className="text-base font-bold text-gray-500">({totalPercentOwnership.replace('%', '')}% of Shares Outstanding)</span>}
         </h2>
         <div className="bg-gray-50 rounded p-6 text-center">
           <p className="text-gray-500 text-sm">No ownership data available</p>
@@ -63,47 +75,72 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
     parseFloat(item.percent_ownership?.replace('%', '') || '0')
   ));
 
-  // Render engagement topic badges
-  const renderEngagementTopics = (topic: string | undefined) => {
-    if (!topic) return null;
-    
-    const topics = topic.split(',').map(t => t.trim()).filter(Boolean);
-    if (topics.length === 0) return null;
 
-    return (
-      <div className="flex gap-1.5 flex-wrap justify-center">
-        {topics.map((t, idx) => {
-          const color = TOPIC_COLORS[t] || { bg: '#6b7280', text: 'white' };
-          return (
-            <span
-              key={idx}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shadow-sm"
-              style={{ backgroundColor: color.bg, color: color.text }}
-            >
-              {t}
-            </span>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Render voting status - maroon crossed icon style
-  const renderVotingStatus = (votedAgainst: string | boolean | undefined) => {
-    return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="mx-auto">
-        <path d="M18 6L6 18M6 6l12 12" stroke="#800000" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    );
-  };
-
-  // Render checkmark for boolean fields
-  const renderCheckmark = (value: boolean | string | undefined) => {
-    if (value === true || value === 'true' || value === 'Yes') {
+  // Render voting status - red tick for True, EyeOff icon for None/null/undefined/ND/NSD, blank for false
+  const renderVotingStatus = (
+    value: any,
+    message?: string
+  ) => {
+    // Check if value is not disclosed - show EyeOff icon
+    const normalizedString = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    const notDisclosedValues = new Set(['none', 'nd', 'nse', 'nsd', 'n/d', 'not disclosed', 'not disclosed in npx']);
+    if (value === null || value === undefined || value === '' || notDisclosedValues.has(normalizedString)) {
+      const tooltipText = message || (normalizedString === 'nse' ? 'Not disclosed in NPX' : 'No Data');
       return (
-        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mx-auto">
+        <div className="flex items-center justify-center">
+          <Tippy content={tooltipText} options={{ theme: "light" }}>
+            <span className="inline-flex items-center justify-center">
+              <MegaphoneOff className="w-5 h-5 text-rose-700" strokeWidth={1.5} />
+            </span>
+          </Tippy>
+        </div>
+      );
+    }
+
+    // Normalize booleans coming back as strings/numbers/arrays
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        return (
+          <div className="mx-auto w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12l5 5L20 7" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        );
+      }
+      return null;
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+    const truthy = new Set(['true', 'yes', 'y', '1', 't']);
+    const falsy = new Set(['false', 'no', 'n', '0', 'f']);
+
+    if (value === true || truthy.has(normalized) || (typeof value === 'number' && value > 0)) {
+      return (
+        <div className="mx-auto w-5 h-5 rounded-full bg-rose-600 flex items-center justify-center">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12l5 5L20 7" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5 12l5 5L20 7" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      );
+    }
+
+    if (value === false || falsy.has(normalized) || (typeof value === 'number' && value === 0)) return null;
+
+    // Unknown non-empty values -> leave blank
+    return null;
+  };
+
+  // Render checkmark for boolean fields - green for UNPRI, blank for false
+  const renderCheckmark = (value: boolean | string | undefined) => {
+    const normalized = value === undefined || value === null ? '' : String(value).trim().toLowerCase();
+    const truthy = new Set(['true', 'yes', 'y', '1', 't']);
+    const isTruthy = value === true || truthy.has(normalized) || (typeof value === 'number' && value > 0);
+    if (isTruthy) {
+      return (
+        <div className="mx-auto w-5 h-5 rounded-full bg-green-600 flex items-center justify-center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12l5 5L20 7" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
       );
@@ -113,31 +150,24 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
 
   return (
     <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-      <h2 className="text-lg font-bold text-gray-900 mb-4">
-        Total % ownership
+      <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+        Top 20 Ownership {totalPercentOwnership && <span className="text-base font-bold text-gray-900">({totalPercentOwnership.replace('%', '')}% of Shares Outstanding)</span>}
       </h2>
 
+      {/* Layout: Table on left, Chart on right */}
+      <div className="flex gap-6 items-start">
       {/* Main Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+      <div className="flex-1 overflow-x-auto">
+        <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b-2 border-gray-200">
-              <th className="text-left py-4 px-4 font-semibold text-gray-600 w-12">No.</th>
-              <th className="text-left py-4 px-4 font-semibold text-gray-600 min-w-[200px]">Shareholder</th>
-              <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[120px]">Ownership<sup>1</sup></th>
-              <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[150px]">
-                Proxy Advisory Influence
-                <Lucide 
-                  icon="BarChart3"
-                  className="w-[18px] h-[18px] text-primary cursor-pointer hover:text-primary/70 no-print inline-block align-middle ml-0.5"
-                  onClick={() => setChartModalVisible(true)}
-                />
-              </th>
-              <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[100px]">UN PRI Signatory</th>
-              <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[100px]">Engaged with Company<sup>2</sup></th>
-              <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[130px]">Engagement Topic</th>
-              <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[100px]">Voted Against Directors</th>
-              <th className="text-center py-4 px-4 font-semibold text-gray-600 w-[100px]">Voted Against Say on Pay</th>
+              <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-12">No.</th>
+              <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs min-w-[200px]">Shareholder</th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[120px]">Ownership<sup>1</sup></th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[150px]">Proxy Advisory Influence</th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[100px]">UN PRI Signatory</th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[100px]">Voted Against Directors</th>
+              <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[100px]">Voted Against Say on Pay</th>
             </tr>
           </thead>
           <tbody>
@@ -147,39 +177,113 @@ const Top20InvestorsSection = ({ data }: Top20InvestorsSectionProps) => {
               return (
                 <tr key={item.filer_id || index} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-4 px-4 text-gray-600 font-medium">{index + 1}</td>
-                  <td className="py-4 px-4 text-blue-600 font-semibold underline cursor-pointer hover:text-blue-800">
+                  <td className="py-4 px-4 text-gray-700 font-semibold">
                     {item.institution_name || item.institution__institution}
                   </td>
-                  <td className="py-4 px-4 text-center text-gray-700 font-medium">
+                  <td className="py-4 px-4 text-center text-gray-700">
                     {ownership.toFixed(2)}%
                   </td>
                   <td className="py-4 px-4 text-center text-gray-600">
-                    {item.proxy_advisor_influence || '-'}
+                    {item.proxy_advisor_influence || ''}
                   </td>
                   <td className="py-4 px-4 text-center">
                     {renderCheckmark(item.unpri_signatory)}
                   </td>
                   <td className="py-4 px-4 text-center">
-                    {/* company_engaged not in type, fallback to null */}
-                  </td>
-                  <td className="py-4 px-4">
-                    {/* engagement_topic not in type, fallback to null */}
+                    {renderVotingStatus((item as any).voted_against_directors, (item as any).voted_against_directors_message)}
                   </td>
                   <td className="py-4 px-4 text-center">
-                    {renderVotingStatus(!!(Array.isArray(item.voted_against_directors) && item.voted_against_directors.length > 0))}
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    {renderVotingStatus(!!(item.voted_against_say_on_pay === true || (Array.isArray(item.voted_against_say_on_pay) && item.voted_against_say_on_pay.length > 0)))}
+                    {renderVotingStatus((item as any).voted_against_say_on_pay, (item as any).voted_against_say_on_pay_message)}
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div className="flex justify-between mt-3 text-xs text-gray-500">
+        <div className="flex justify-between mt-3 pb-2 text-xs text-gray-500">
           <span><sup>1</sup>Source: Whalewisdom. Data as of January 27, 2026.</span>
           <span>*Not in ZMH coverage universe</span>
         </div>
+      </div>
+
+      {/* Pie Chart on right side */}
+      <div className="w-[380px] flex-shrink-0">
+        <div className="bg-white border border-gray-200 rounded-lg p-3 self-start page-break-inside-avoid overflow-visible">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2 text-center">Proxy Advisor Influence</h3>
+          <div className="h-[260px] overflow-visible">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart margin={{ top: 8, right: 60, bottom: 8, left: 40 }}>
+                <Pie
+                  data={pieData}
+                  cx="45%"
+                  cy="50%"
+                  outerRadius={60}
+                  innerRadius={30}
+                  startAngle={90}
+                  endAngle={-270}
+                  fill="#8884d8"
+                  dataKey="value"
+                  strokeWidth={2}
+                  stroke="#ffffff"
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, name }) => {
+                    const RADIAN = Math.PI / 180;
+
+                    const lineRadius = outerRadius + 10;
+                    const lineX = cx + lineRadius * Math.cos(-midAngle * RADIAN);
+                    const lineY = cy + lineRadius * Math.sin(-midAngle * RADIAN);
+
+                    const extendedX = lineX + (lineX > cx ? 18 : -18);
+                    const pct = pieData.find(d => d.name === name)?.percentage;
+                    const lines = formatCalloutName(String(name || ''));
+                    return (
+                      <g>
+                        <polyline
+                          points={`${cx + outerRadius * Math.cos(-midAngle * RADIAN)},${cy + outerRadius * Math.sin(-midAngle * RADIAN)} ${lineX},${lineY} ${extendedX},${lineY}`}
+                          fill="none"
+                          stroke="#374151"
+                          strokeWidth={1}
+                        />
+                        <text
+                          x={extendedX}
+                          y={lineY - (lines.length > 1 ? 10 : 6)}
+                          fill="#111827"
+                          textAnchor={extendedX > cx ? "start" : "end"}
+                          dominantBaseline="central"
+                          fontSize={10}
+                          fontWeight="500"
+                        >
+                          {lines.map((l, i) => (
+                            <tspan key={i} x={extendedX} dy={i === 0 ? 0 : 12}>{l}</tspan>
+                          ))}
+                        </text>
+                        <text
+                          x={extendedX}
+                          y={lineY + (lines.length > 1 ? 14 : 8)}
+                          fill="#6b7280"
+                          textAnchor={extendedX > cx ? "start" : "end"}
+                          dominantBaseline="central"
+                          fontSize={10}
+                          fontWeight="600"
+                        >
+                          {pct}%
+                        </text>
+                      </g>
+                    );
+                  }}
+                  labelLine={false}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={PIE_COLORS[entry.name as keyof typeof PIE_COLORS] || PIE_COLORS['Other']} 
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
       </div>
 
       {/* Chart Modal */}

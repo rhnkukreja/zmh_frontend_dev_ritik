@@ -7,3 +7,4 @@ export { default as ShareholderProposalsSection } from './ShareholderProposalsSe
 export { default as KeyTakeawaysSection } from './KeyTakeawaysSection';
 export { default as Top20InvestorsSection } from './Top20InvestorsSection';
 export { default as InvestorsVotingAgainstSection } from './InvestorsVotingAgainstSection';
+export { default as MeetingDetailsSection } from './MeetingDetailsSection';

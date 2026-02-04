@@ -31,23 +31,9 @@ interface EditDocumentModalProps {
 }
 
 const categories = [
-  "Climate Related",
-  "Engagement Priorities",
-  "Company Specific Engagement Stats",
-  "Proxy Voting Stats",
-  "Voting Choice",
-  "Voting Guidelines",
-  "Stewardship Report",
-  "ESG Integration",
-  "UN PRI Report",
-  "Compensation Related",
-  "Macro Engagement Stats",
-  "Case Study",
-  "Commentary",
   "Stewardship Policy",
   "Responsible Investment",
   "Proxy voting records/details",
-  "Others"
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
@@ -163,7 +149,9 @@ const EditDocumentModal = ({
     try {
       const formData = new FormData();
       formData.append("document_name", data.document_name);
-      formData.append("document_type", data.document_type);
+      if (data.document_type) {
+        formData.append("document_type", data.document_type);
+      }
       formData.append("month", data.month);
       formData.append("year", data.year);
       formData.append("tags", data.tags);
@@ -236,20 +224,19 @@ const EditDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Category <span className="text-red-500">*</span>
+              Category
             </label>
             <Controller
               name="document_type"
               control={control}
-              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
-                  value={field.value}
+                  value={field.value || ""}
                   onChange={field.onChange}
-                  options={{ placeholder: "Select category" }}
+                  options={{ placeholder: "" }}
                   className="w-full"
                 >
-                  <option value="">Select Category</option>
+                  <option value="" hidden></option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}

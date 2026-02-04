@@ -34,57 +34,66 @@ const SharePricePerformanceSection = ({ data, dataAsOf }: SharePricePerformanceS
     return entityData[period]?.pct_return ?? null;
   };
 
+  const getReturnClassName = (value: number | null) => {
+    if (value === null || value === undefined || isNaN(value)) return "text-gray-700";
+    if (value < 0) return "text-red-700 font-semibold";
+    return "text-gray-700";
+  };
+
   const formatReturn = (value: number | null) => {
     if (value === null || value === undefined || isNaN(value)) return "-";
     return `${value.toFixed(1)}%`;
   };
 
-  // Check if company underperforms both NASDAQ and S&P500 for any period
-  const isUnderperforming = (period: '1yr' | '3yr' | '5yr'): boolean => {
-    const companyReturn = getReturn(companyKey, period);
-    const nasdaqReturn = getReturn(nasdaqKey, period);
-    const sp500Return = getReturn(sp500Key, period);
-
-    if (companyReturn === null) return false;
-
-    const underNasdaq = nasdaqReturn !== null && companyReturn < nasdaqReturn;
-    const underSP500 = sp500Return !== null && companyReturn < sp500Return;
-
-    return underNasdaq && underSP500;
-  };
-
-  // Check if company underperforms in any period
-  const hasRedFlag = isUnderperforming('1yr') || isUnderperforming('3yr') || isUnderperforming('5yr');
 
   // Get the data_as_of from the data object or use the prop
   const displayDataAsOf = (data.data_as_of as string) || dataAsOf || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
+  const companyReturns = companyKey
+    ? {
+        r1: getReturn(companyKey, '1yr'),
+        r3: getReturn(companyKey, '3yr'),
+        r5: getReturn(companyKey, '5yr')
+      }
+    : null;
+
+  const nasdaqReturns = nasdaqKey
+    ? {
+        r1: getReturn(nasdaqKey, '1yr'),
+        r3: getReturn(nasdaqKey, '3yr'),
+        r5: getReturn(nasdaqKey, '5yr')
+      }
+    : null;
+
+  const sp500Returns = sp500Key
+    ? {
+        r1: getReturn(sp500Key, '1yr'),
+        r3: getReturn(sp500Key, '3yr'),
+        r5: getReturn(sp500Key, '5yr')
+      }
+    : null;
+
   return (
     <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-      <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-lg font-bold text-gray-900">
-          Share Price Performance
-        </h2>
-        {hasRedFlag && (
-          <span className="inline-block w-3 h-3 rounded-full bg-red-500"></span>
-        )}
-      </div>
+      <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+        Share Price Performance
+      </h2>
 
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-sm">
+        <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-gray-300">
-              <th className="text-left py-2 px-3 font-medium text-gray-700 w-1/3">
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs w-1/3">
                 Name
               </th>
-              <th className="text-center py-2 px-3 font-medium text-gray-700">
-                1-year
+              <th className="text-center py-2 px-3 font-semibold text-gray-600 text-xs">
+                1-Year
               </th>
-              <th className="text-center py-2 px-3 font-medium text-gray-700">
-                3-year
+              <th className="text-center py-2 px-3 font-semibold text-gray-600 text-xs">
+                3-Year
               </th>
-              <th className="text-center py-2 px-3 font-medium text-gray-700">
-                5-year
+              <th className="text-center py-2 px-3 font-semibold text-gray-600 text-xs">
+                5-Year
               </th>
             </tr>
           </thead>
@@ -95,14 +104,14 @@ const SharePricePerformanceSection = ({ data, dataAsOf }: SharePricePerformanceS
                 <td className="py-2 px-3 text-gray-900 font-medium">
                   {companyKey}
                 </td>
-                <td className={`text-center py-2 px-3 ${isUnderperforming('1yr') ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
-                  {formatReturn(getReturn(companyKey, '1yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(companyReturns?.r1 ?? null)}`}>
+                  {formatReturn(companyReturns?.r1 ?? null)}
                 </td>
-                <td className={`text-center py-2 px-3 ${isUnderperforming('3yr') ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
-                  {formatReturn(getReturn(companyKey, '3yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(companyReturns?.r3 ?? null)}`}>
+                  {formatReturn(companyReturns?.r3 ?? null)}
                 </td>
-                <td className={`text-center py-2 px-3 ${isUnderperforming('5yr') ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
-                  {formatReturn(getReturn(companyKey, '5yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(companyReturns?.r5 ?? null)}`}>
+                  {formatReturn(companyReturns?.r5 ?? null)}
                 </td>
               </tr>
             )}
@@ -112,14 +121,14 @@ const SharePricePerformanceSection = ({ data, dataAsOf }: SharePricePerformanceS
                 <td className="py-2 px-3 text-gray-900">
                   {nasdaqKey}
                 </td>
-                <td className="text-center py-2 px-3 text-gray-700">
-                  {formatReturn(getReturn(nasdaqKey, '1yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(nasdaqReturns?.r1 ?? null)}`}>
+                  {formatReturn(nasdaqReturns?.r1 ?? null)}
                 </td>
-                <td className="text-center py-2 px-3 text-gray-700">
-                  {formatReturn(getReturn(nasdaqKey, '3yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(nasdaqReturns?.r3 ?? null)}`}>
+                  {formatReturn(nasdaqReturns?.r3 ?? null)}
                 </td>
-                <td className="text-center py-2 px-3 text-gray-700">
-                  {formatReturn(getReturn(nasdaqKey, '5yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(nasdaqReturns?.r5 ?? null)}`}>
+                  {formatReturn(nasdaqReturns?.r5 ?? null)}
                 </td>
               </tr>
             )}
@@ -129,14 +138,14 @@ const SharePricePerformanceSection = ({ data, dataAsOf }: SharePricePerformanceS
                 <td className="py-2 px-3 text-gray-900">
                   {sp500Key}
                 </td>
-                <td className="text-center py-2 px-3 text-gray-700">
-                  {formatReturn(getReturn(sp500Key, '1yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(sp500Returns?.r1 ?? null)}`}>
+                  {formatReturn(sp500Returns?.r1 ?? null)}
                 </td>
-                <td className="text-center py-2 px-3 text-gray-700">
-                  {formatReturn(getReturn(sp500Key, '3yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(sp500Returns?.r3 ?? null)}`}>
+                  {formatReturn(sp500Returns?.r3 ?? null)}
                 </td>
-                <td className="text-center py-2 px-3 text-gray-700">
-                  {formatReturn(getReturn(sp500Key, '5yr'))}
+                <td className={`text-center py-2 px-3 ${getReturnClassName(sp500Returns?.r5 ?? null)}`}>
+                  {formatReturn(sp500Returns?.r5 ?? null)}
                 </td>
               </tr>
             )}

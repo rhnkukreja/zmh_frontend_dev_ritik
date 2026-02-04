@@ -14,6 +14,7 @@ interface EngagementStatsSectionProps {
   data: EngagementItem[] | Record<string, any> | null | undefined;
   exGlobalData?: EngagementItem[] | Record<string, any> | null | undefined;
   companyName?: string;
+  isGeneratingPDF?: boolean;
 }
 
 // Parse topic list string into array
@@ -24,7 +25,7 @@ const parseTopicList = (topicStr: string | undefined): string[] => {
 
 // Format topics as simple comma-separated text
 const formatTopics = (topics: string[]): string => {
-  if (topics.length === 0) return '-';
+  if (topics.length === 0) return '';
   return topics.join(', ');
 };
 
@@ -85,12 +86,12 @@ const CompanyEngagementTable = ({ title, subtitle, data }: CompanyEngagementTabl
       <div className="overflow-visible">
         <table className="w-full text-xs border-collapse">
           <thead>
-            <tr className="bg-primary text-white">
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '10%' }}>Year</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '22%' }}>Investor</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '22%' }}>Environmental</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '22%' }}>Social</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '24%' }}>Governance</th>
+            <tr className="bg-gray-50 border-b-2 border-gray-200">
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '10%' }}>Year</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '22%' }}>Investor</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '22%' }}>Environmental</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '22%' }}>Social</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '24%' }}>Governance</th>
             </tr>
           </thead>
           <tbody>
@@ -101,8 +102,8 @@ const CompanyEngagementTable = ({ title, subtitle, data }: CompanyEngagementTabl
               
               return (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="py-2 px-3 border border-gray-200">{item.year || '-'}</td>
-                  <td className="py-2 px-3 border border-gray-200 font-medium">{item.institution__institution || '-'}</td>
+                  <td className="py-2 px-3 border border-gray-200">{item.year || ''}</td>
+                  <td className="py-2 px-3 border border-gray-200 font-semibold">{item.institution__institution || ''}</td>
                   <td className="py-2 px-3 border border-gray-200">{formatTopics(envTopics)}</td>
                   <td className="py-2 px-3 border border-gray-200">{formatTopics(socTopics)}</td>
                   <td className="py-2 px-3 border border-gray-200">{formatTopics(govTopics)}</td>
@@ -150,13 +151,25 @@ const groupByInvestor = (data: EngagementItem[]): GroupedInvestor[] => {
   }));
 };
 
-const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps) => {
+interface PeerEngagementTablePropsExtended extends PeerEngagementTableProps {
+  isGeneratingPDF?: boolean;
+}
+
+const PeerEngagementTable = ({ title, subtitle, data, isGeneratingPDF }: PeerEngagementTablePropsExtended) => {
   const groupedData = groupByInvestor(data);
   
-  // Initialize with all investors expanded by default (for PDF rendering)
+  // Initialize with all investors collapsed by default, but expand for PDF
   const allInvestorNames = React.useMemo(() => new Set(groupedData.map(g => g.investorName)), [groupedData]);
-  const [expandedInvestors, setExpandedInvestors] = React.useState<Set<string>>(allInvestorNames);
-  const [allExpanded, setAllExpanded] = React.useState(true);
+  const [expandedInvestors, setExpandedInvestors] = React.useState<Set<string>>(new Set());
+  const [allExpanded, setAllExpanded] = React.useState(false);
+
+  // When generating PDF, expand all
+  React.useEffect(() => {
+    if (isGeneratingPDF) {
+      setExpandedInvestors(allInvestorNames);
+      setAllExpanded(true);
+    }
+  }, [isGeneratingPDF, allInvestorNames]);
 
   const toggleInvestor = (investorName: string) => {
     const newExpanded = new Set(expandedInvestors);
@@ -182,7 +195,7 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
   if (data.length === 0) {
     return (
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-gray-800 mb-1">{title}</h3>
+        {title && <h3 className="text-sm font-semibold text-gray-800 mb-1">{title}</h3>}
         {subtitle && <p className="text-[10px] text-gray-500 mb-2">{subtitle}</p>}
         <div className="bg-gray-50 rounded p-4 text-center">
           <p className="text-gray-500 text-xs">No peer engagement data available</p>
@@ -195,7 +208,7 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
 
   return (
     <div className="mb-4">
-      <h3 className="text-sm font-semibold text-gray-800 mb-1">{title}</h3>
+      {title && <h3 className="text-sm font-semibold text-gray-800 mb-1">{title}</h3>}
       <div className="flex items-center justify-end mb-1 no-print">
         <button
           onClick={toggleExpandAll}
@@ -208,13 +221,13 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
       <div className="overflow-visible">
         <table className="w-full text-xs border-collapse">
           <thead>
-            <tr className="bg-primary text-white">
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '8%' }}>Year</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Investor</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Company</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Environmental</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '18%' }}>Social</th>
-              <th className="text-left py-2 px-3 font-medium border border-gray-300" style={{ width: '20%' }}>Governance</th>
+            <tr className="bg-gray-50 border-b-2 border-gray-200">
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '8%' }}>Year</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '18%' }}>Investor</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '18%' }}>Company</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '18%' }}>Environmental</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '18%' }}>Social</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-600 text-xs" style={{ width: '20%' }}>Governance</th>
             </tr>
           </thead>
           <tbody>
@@ -232,10 +245,10 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
 
                 return (
                   <tr key={`${group.investorName}-${entryIndex}`} className={currentRowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="py-2 px-3 border border-gray-200">{item.year || '-'}</td>
-                    <td className="py-2 px-3 border border-gray-200 font-medium">
+                    <td className="py-2 px-3 border border-gray-200">{item.year || ''}</td>
+                    <td className="py-2 px-3 border border-gray-200">
                       <div className="flex items-center justify-between">
-                        <span>{item.institution__institution || '-'}</span>
+                        <span className="font-semibold">{item.institution__institution || ''}</span>
                         {isFirstEntry && hasMultiple && (
                           <button
                             onClick={() => toggleInvestor(group.investorName)}
@@ -246,7 +259,7 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
                         )}
                       </div>
                     </td>
-                    <td className="py-2 px-3 border border-gray-200">{item.company__name || '-'}</td>
+                    <td className="py-2 px-3 border border-gray-200">{item.company__name || ''}</td>
                     <td className="py-2 px-3 border border-gray-200">{formatTopics(envTopics)}</td>
                     <td className="py-2 px-3 border border-gray-200">{formatTopics(socTopics)}</td>
                     <td className="py-2 px-3 border border-gray-200">{formatTopics(govTopics)}</td>
@@ -261,7 +274,7 @@ const PeerEngagementTable = ({ title, subtitle, data }: PeerEngagementTableProps
   );
 };
 
-const EngagementStatsSection = ({ data, exGlobalData, companyName }: EngagementStatsSectionProps) => {
+const EngagementStatsSection = ({ data, exGlobalData, companyName, isGeneratingPDF }: EngagementStatsSectionProps) => {
   const companyEngagements = normalizeToArray(data);
   const peerEngagements = normalizeToArray(exGlobalData);
 
@@ -277,8 +290,8 @@ const EngagementStatsSection = ({ data, exGlobalData, companyName }: EngagementS
     <>
       {/* Section for Company Engagement History */}
       <section className="mb-8">
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
-          Investor disclosed engagement history
+        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+          Investor Disclosed Engagement History
         </h2>
         <CompanyEngagementTable 
           data={companyEngagements}
@@ -287,10 +300,15 @@ const EngagementStatsSection = ({ data, exGlobalData, companyName }: EngagementS
 
       {/* Separate Section for Peer Engagement */}
       <section className="mb-8">
+        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+          Engagement Topics for Peers
+        </h2>
+        <p className="text-sm text-gray-600 mb-3">Shows engagement data for all companies in the same peer grouping</p>
         <PeerEngagementTable 
-          title={`Engagement topics for peers`}
-          subtitle="Shows engagement data for all companies in the same peer grouping"
+          title=""
+          subtitle=""
           data={peerEngagements}
+          isGeneratingPDF={isGeneratingPDF}
         />
       </section>
     </>

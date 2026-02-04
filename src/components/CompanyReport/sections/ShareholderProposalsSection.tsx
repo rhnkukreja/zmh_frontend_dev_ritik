@@ -5,8 +5,8 @@ interface ShareholderProposalsSectionProps {
   data: SPData[];
 }
 
-// Known fields that are not institution names
-const NON_INSTITUTION_FIELDS = ['proxy_season', 'proponent', 'outcome_percentage', 'proposal_title', 'mgt_rec', 'major_institutions_vote'];
+// Known fields that are not institution names (exclude these from dynamic columns)
+const NON_INSTITUTION_FIELDS = ['proxy_season', 'proponent', 'proposal_name', 'proposal_num', 'outcome_percentage', 'proposal_title', 'mgt_rec', 'major_institutions_vote', 'company', 'year', 'id', 'ticker'];
 
 const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps) => {
   const dataArray = Array.isArray(data) ? data : [];
@@ -29,7 +29,7 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
   if (dataArray.length === 0) {
     return (
       <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-        <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
           Shareholder Proposals ({recentYear} only)
         </h2>
         <div className="bg-gray-50 rounded p-4 text-center">
@@ -39,32 +39,32 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
     );
   }
 
-  // Get short names for institutions (first word or abbreviation)
+  // Get short names for institutions
   const getShortName = (name: string): string => {
     if (name.includes('BlackRock')) return 'BlackRock';
     if (name.includes('Vanguard')) return 'Vanguard';
     if (name.includes('State Street')) return 'SSGA';
-    if (name.includes('Dimensional')) return 'DFA';
-    if (name.includes('T Rowe') || name.includes('T. Rowe')) return 'T. Rowe';
+    if (name.includes('Dimensional')) return 'Dimensional';
+    if (name.includes('T Rowe') || name.includes('T. Rowe')) return 'T.Rowe';
     return name.split(' ')[0];
   };
 
   return (
     <section className="mb-10" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-      <h2 className="text-lg font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+      <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
         Shareholder Proposals ({recentYear} only)
       </h2>
 
       <div className="overflow-visible">
         <table className="w-full text-xs border-collapse table-fixed">
           <thead>
-            <tr className="bg-primary text-white">
-              <th className="text-left py-2 px-2 font-medium border border-gray-300 w-[60px]">Year</th>
-              <th className="text-left py-2 px-2 font-medium border border-gray-300">Proponent</th>
-              <th className="text-center py-2 px-2 font-medium border border-gray-300 w-[70px]">Outcome</th>
+            <tr className="bg-gray-50 border-b-2 border-gray-200">
+              <th className="text-left py-2 px-2 font-semibold text-gray-600 text-xs w-[120px]">Proponent</th>
+              <th className="text-left py-2 px-2 font-semibold text-gray-600 text-xs">Proposal</th>
+              <th className="text-center py-2 px-2 font-semibold text-gray-600 text-xs w-[70px]">Outcome</th>
               {institutionNames.map((inst, idx) => (
-                <th key={idx} className="text-center py-2 px-1 font-medium border border-gray-300 w-[65px]">
-                  <span className="text-[9px]">{getShortName(inst)}</span>
+                <th key={idx} className="text-center py-2 px-1 font-semibold text-gray-600 text-xs w-[75px]">
+                  {getShortName(inst)}
                 </th>
               ))}
             </tr>
@@ -77,33 +77,24 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
 
               return (
                 <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="py-2 px-2 border border-gray-200">
-                    {proposal.proxy_season}
+                  <td className="py-2 px-2 border border-gray-200 font-semibold">
+                    {proposal.proponent}
                   </td>
                   <td className="py-2 px-2 border border-gray-200">
-                    <span className="text-[11px]">{proposal.proponent}</span>
+                    {proposal.proposal_name || proposal.proposal_title || ''}
                   </td>
                   <td className="py-2 px-2 border border-gray-200 text-center">
-                    <span className={clsx(
-                      "font-medium text-[10px]",
-                      isPercentage && outcomeNum >= 50 ? "text-green-600" : "text-gray-700"
-                    )}>
-                      {outcomeStr}
-                    </span>
+                    {outcomeStr}
                   </td>
                   {institutionNames.map((inst, idx) => {
                     const vote = (proposal as any)[inst];
+                    const isAgainstOrWithhold = vote === 'Against' || vote === 'Withhold';
                     return (
                       <td key={idx} className="py-2 px-1 border border-gray-200 text-center">
                         <span className={clsx(
-                          "text-[10px] font-medium",
-                          vote === 'For' && "text-green-600",
-                          vote === 'Against' && "text-red-600",
-                          vote === 'Abstain' && "text-amber-600",
-                          vote === 'Split Vote' && "text-purple-600",
-                          (!vote || vote === null) && "text-gray-400"
+                          isAgainstOrWithhold ? "text-red-700 font-semibold" : "text-gray-700"
                         )}>
-                          {vote || '-'}
+                          {vote || ''}
                         </span>
                       </td>
                     );
@@ -120,28 +111,6 @@ const ShareholderProposalsSection = ({ data }: ShareholderProposalsSectionProps)
         )}
       </div>
 
-      <div className="flex items-center gap-4 mt-2 text-[10px] text-gray-500">
-        <div className="flex items-center gap-1">
-          <span className="text-green-600 font-medium">For</span>
-          <span>= Voted For</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-red-600 font-medium">Against</span>
-          <span>= Voted Against</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-amber-600 font-medium">Abstain</span>
-          <span>= Abstained</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-purple-600 font-medium">Split Vote</span>
-          <span>= Split Vote</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-gray-400">-</span>
-          <span>= No Vote</span>
-        </div>
-      </div>
     </section>
   );
 };

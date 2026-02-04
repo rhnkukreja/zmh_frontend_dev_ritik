@@ -907,8 +907,19 @@ function ShareHolderProposal() {
         break;
     }
 
+    // Convert year to proxy_season for proposal/no-action tabs, keep year for withdrawn
+    const downloadFilters = tab === "withdrawn"
+      ? {
+        ...filters,
+        ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season, proxy_season: [] })
+      }
+      : {
+        ...filters,
+        ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
+      };
+
     downloadFileFromAPI({
-      url: createDynamicURL(`${baseURL}${tabURL}`, filters, undefined, page),
+      url: createDynamicURL(`${baseURL}${tabURL}`, downloadFilters, undefined, page),
       fileName,
       setLoading: setLoadingDownload,
       serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
