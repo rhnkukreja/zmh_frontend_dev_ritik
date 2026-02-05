@@ -304,49 +304,105 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
               <a 
                 href="#share-price-performance" 
                 className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => { e.preventDefault(); document.getElementById('share-price-performance')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  const el = document.getElementById('share-price-performance');
+                  if (el) {
+                    const yOffset = -20;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }}
               >
                 1. Share Price Performance
               </a>
               <a 
                 href="#meeting-details" 
                 className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => { e.preventDefault(); document.getElementById('meeting-details')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  const el = document.getElementById('meeting-details');
+                  if (el) {
+                    const yOffset = -20;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }}
               >
                 2. Shareholder Meeting Summary
               </a>
               <a 
                 href="#total-ownership" 
                 className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => { e.preventDefault(); document.getElementById('total-ownership')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  const el = document.getElementById('total-ownership');
+                  if (el) {
+                    const yOffset = -20;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }}
               >
                 3. Top 20 Ownership
               </a>
               <a 
                 href="#voting-rationale" 
                 className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => { e.preventDefault(); document.getElementById('voting-rationale')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  const el = document.getElementById('voting-rationale');
+                  if (el) {
+                    const yOffset = -20;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }}
               >
                 4. Voting Rationale
               </a>
               <a 
                 href="#trend-investor-support" 
                 className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => { e.preventDefault(); document.getElementById('trend-investor-support')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  const el = document.getElementById('trend-investor-support');
+                  if (el) {
+                    const yOffset = -20;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }}
               >
                 5. Trend in Investor Support
               </a>
               <a 
                 href="#engagement-history" 
                 className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => { e.preventDefault(); document.getElementById('engagement-history')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  const el = document.getElementById('engagement-history');
+                  if (el) {
+                    const yOffset = -20;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }}
               >
                 6. Engagement History
               </a>
               <a 
                 href="#shareholder-proposals" 
                 className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => { e.preventDefault(); document.getElementById('shareholder-proposals')?.scrollIntoView({ behavior: 'smooth' }); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  const el = document.getElementById('shareholder-proposals');
+                  if (el) {
+                    const yOffset = -20;
+                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }}
               >
                 7. Shareholder Proposals
               </a>

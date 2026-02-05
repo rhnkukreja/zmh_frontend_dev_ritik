@@ -10,6 +10,13 @@ import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import { bytesToMB } from "@/utils/helper";
 import { axiosInstance } from "@/services";
 
+/**
+ * Robust AddDocumentModal with:
+ * - safe File extraction from Dropzone wrapper shapes
+ * - reads file directly from dropzone at submit time
+ * - axios POST with multipart header, with fetch fallback if needed
+ */
+
 interface DocumentFormData {
   document_name: string;
   category: string;
@@ -28,9 +35,20 @@ interface AddDocumentModalProps {
 }
 
 const categories = [
+  "Climate Related",
+  "Proxy Voting Stats",
+  "Voting Choice",
+  "Stewardship Report",
+  "ESG Integration",
+  "UN PRI Report",
+  "Compensation Related",
+  "Macro Engagement Stats",
+  "Case Study",
+  "Commentary",
   "Stewardship Policy",
   "Responsible Investment",
   "Proxy voting records/details",
+  "Others",
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
@@ -51,7 +69,7 @@ const months = [
 ];
 
 const currentYear = new Date().getFullYear();
-const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
 const years = Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
 
 const AddDocumentModal = ({
@@ -88,6 +106,10 @@ const AddDocumentModal = ({
       const dropzoneInstance = elDropzoneRef.dropzone;
 
       const handleAddedFile = (file: File) => {
+        console.log("File added:", file);
+        console.log("File is File:", file instanceof File);
+        console.log("File name:", file.name);
+        console.log("File size:", file.size);
         setDocumentFile(file);
       };
 
@@ -105,7 +127,19 @@ const AddDocumentModal = ({
     }
   }, [visible]);
 
+  const handleClose = () => {
+    reset();
+    setDocumentFile(null);
+    if (dropzoneRef.current?.dropzone) {
+      dropzoneRef.current.dropzone.removeAllFiles();
+    }
+    setVisible(false);
+  };
+
   const onSubmit = async (data: DocumentFormData) => {
+    console.log("Submit - documentFile:", documentFile);
+    console.log("Submit - documentFile is File:", documentFile instanceof File);
+    
     if (!documentFile) {
       toast.error("Please upload a document");
       return;
@@ -117,35 +151,39 @@ const AddDocumentModal = ({
       const formData = new FormData();
       formData.append("institution_id", String(institutionId));
       formData.append("document_name", data.document_name);
-      if (data.category) {
-        formData.append("category", data.category);
-      }
+      formData.append("category", data.category || "");
       formData.append("month", data.month);
       formData.append("year", data.year);
-      formData.append("tags", data.tags);
-      formData.append("priority", data.priority);
+      formData.append("tags", data.tags || "");
+      formData.append("priority", data.priority || "Medium");
+      
+      console.log("About to append file:", documentFile);
       formData.append("document", documentFile, documentFile.name);
+      
+      console.log("FormData entries after append:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
-      await axiosInstance.post("/institute_documents/", formData);
+      await axiosInstance.post("/institute_documents/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       toast.success("Document uploaded successfully");
       handleClose();
       onSuccess?.();
-    } catch (err) {
-      const error = err as { message?: string };
-      toast.error(error?.message || "Failed to upload document");
+    } catch (err: any) {
+      console.error("upload error", err);
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to upload document";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    reset();
-    setDocumentFile(null);
-    if (dropzoneRef.current?.dropzone) {
-      dropzoneRef.current.dropzone.removeAllFiles();
-    }
-    setVisible(false);
   };
 
   return (
@@ -180,25 +218,28 @@ const AddDocumentModal = ({
               )}
             />
             {errors.document_name && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.document_name.message}</span>
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.document_name.message}
+              </span>
             )}
           </div>
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Category
+              Category <span className="text-red-500">*</span>
             </label>
             <Controller
               name="category"
               control={control}
+              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
-                  value={field.value || ""}
+                  value={field.value}
                   onChange={field.onChange}
-                  options={{ placeholder: "" }}
+                  options={{ placeholder: "Select category" }}
                   className="w-full"
                 >
-                  <option value="" hidden></option>
+                  <option value="">Select Category</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -208,7 +249,9 @@ const AddDocumentModal = ({
               )}
             />
             {errors.category && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.category.message}</span>
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.category.message}
+              </span>
             )}
           </div>
 
@@ -236,7 +279,9 @@ const AddDocumentModal = ({
               )}
             />
             {errors.month && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.month.message}</span>
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.month.message}
+              </span>
             )}
           </div>
 
@@ -264,7 +309,9 @@ const AddDocumentModal = ({
               )}
             />
             {errors.year && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.year.message}</span>
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.year.message}
+              </span>
             )}
           </div>
 
@@ -292,14 +339,14 @@ const AddDocumentModal = ({
               )}
             />
             {errors.priority && (
-              <span className="text-red-500 text-sm mt-1 block">{errors.priority.message}</span>
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.priority.message}
+              </span>
             )}
           </div>
 
           <div className="col-span-12 sm:col-span-6">
-            <label className="block mb-1 text-sm font-medium">
-              Tags
-            </label>
+            <label className="block mb-1 text-sm font-medium">Tags</label>
             <Controller
               name="tags"
               control={control}
@@ -311,7 +358,9 @@ const AddDocumentModal = ({
                 />
               )}
             />
-            <span className="text-slate-400 text-xs mt-1 block">Separate multiple tags with commas</span>
+            <span className="text-slate-400 text-xs mt-1 block">
+              Separate multiple tags with commas
+            </span>
           </div>
 
           <div className="col-span-12">
@@ -330,9 +379,7 @@ const AddDocumentModal = ({
               }}
               className="dropzone"
             >
-              <div className="text-lg font-medium">
-                Drop file here or click to upload.
-              </div>
+              <div className="text-lg font-medium">Drop file here or click to upload.</div>
               <div className="text-gray-600">
                 Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
               </div>

@@ -84,6 +84,10 @@ function Main(props: MainProps) {
     localStorageHelper.setItem("searchCompanyData", company);
     props.setQuickSearch(false);
     await companySearchAndUpdate(company);
+    
+    // Navigate to Company Report page with ticker parameter
+    navigate(`/company-report?ticker=${company.symbol}`);
+    
     setSearch("");
     const data = { target: { value: "" } };
     handleSearchChange(data);

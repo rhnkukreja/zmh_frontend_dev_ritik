@@ -31,9 +31,20 @@ interface EditDocumentModalProps {
 }
 
 const categories = [
+  "Climate Related",
+  "Proxy Voting Stats",
+  "Voting Choice",
+  "Stewardship Report",
+  "ESG Integration",
+  "UN PRI Report",
+  "Compensation Related",
+  "Macro Engagement Stats",
+  "Case Study",
+  "Commentary",
   "Stewardship Policy",
   "Responsible Investment",
   "Proxy voting records/details",
+  "Others"
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
@@ -149,9 +160,7 @@ const EditDocumentModal = ({
     try {
       const formData = new FormData();
       formData.append("document_name", data.document_name);
-      if (data.document_type) {
-        formData.append("document_type", data.document_type);
-      }
+      formData.append("document_type", data.document_type);
       formData.append("month", data.month);
       formData.append("year", data.year);
       formData.append("tags", data.tags);
@@ -224,19 +233,20 @@ const EditDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Category
+              Category <span className="text-red-500">*</span>
             </label>
             <Controller
               name="document_type"
               control={control}
+              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
-                  value={field.value || ""}
+                  value={field.value}
                   onChange={field.onChange}
-                  options={{ placeholder: "" }}
+                  options={{ placeholder: "Select category" }}
                   className="w-full"
                 >
-                  <option value="" hidden></option>
+                  <option value="">Select Category</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}

@@ -19,6 +19,8 @@ const CompanyReportPage = () => {
 
   useEffect(() => {
     if (ticker) {
+      // Clear previous report data before fetching new one
+      dispatch(clearReportData());
       dispatch(generateCompanyReport(ticker));
     }
 
