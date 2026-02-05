@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
@@ -6,9 +6,8 @@ import FormInput from "@/components/Base/Form/FormInput";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect";
-import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
-import { bytesToMB } from "@/utils/helper";
-import { axiosInstance } from "@/services";
+import axios from "axios";
+import { baseURL } from "@/constant";
 
 /**
  * Robust AddDocumentModal with:
@@ -79,7 +78,6 @@ const AddDocumentModal = ({
   institutionName,
   onSuccess,
 }: AddDocumentModalProps) => {
-  const dropzoneRef = useRef<DropzoneElement>(null);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -99,47 +97,13 @@ const AddDocumentModal = ({
     },
   });
 
-  useEffect(() => {
-    const elDropzoneRef = dropzoneRef.current;
-
-    if (elDropzoneRef) {
-      const dropzoneInstance = elDropzoneRef.dropzone;
-
-      const handleAddedFile = (file: File) => {
-        console.log("File added:", file);
-        console.log("File is File:", file instanceof File);
-        console.log("File name:", file.name);
-        console.log("File size:", file.size);
-        setDocumentFile(file);
-      };
-
-      const handleRemovedFile = () => {
-        setDocumentFile(null);
-      };
-
-      dropzoneInstance?.on("addedfile", handleAddedFile);
-      dropzoneInstance?.on("removedfile", handleRemovedFile);
-
-      return () => {
-        dropzoneInstance?.off("addedfile", handleAddedFile);
-        dropzoneInstance?.off("removedfile", handleRemovedFile);
-      };
-    }
-  }, [visible]);
-
   const handleClose = () => {
     reset();
     setDocumentFile(null);
-    if (dropzoneRef.current?.dropzone) {
-      dropzoneRef.current.dropzone.removeAllFiles();
-    }
     setVisible(false);
   };
 
   const onSubmit = async (data: DocumentFormData) => {
-    console.log("Submit - documentFile:", documentFile);
-    console.log("Submit - documentFile is File:", documentFile instanceof File);
-    
     if (!documentFile) {
       toast.error("Please upload a document");
       return;
@@ -150,24 +114,17 @@ const AddDocumentModal = ({
     try {
       const formData = new FormData();
       formData.append("institution_id", String(institutionId));
-      formData.append("document_name", data.document_name);
-      formData.append("category", data.category || "");
-      formData.append("month", data.month);
       formData.append("year", data.year);
-      formData.append("tags", data.tags || "");
-      formData.append("priority", data.priority || "Medium");
-      
-      console.log("About to append file:", documentFile);
-      formData.append("document", documentFile, documentFile.name);
-      
-      console.log("FormData entries after append:");
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
+      formData.append("document_name", data.document_name);
+      formData.append("document_type", data.category);
+      formData.append("tags", data.tags);
+      formData.append("priority", data.priority);
+      formData.append("active", "true");
+      formData.append("document", documentFile);
 
-      await axiosInstance.post("/institute_documents/", formData, {
+      await axios.post(`${baseURL}/institute_documents/`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          Authorization: `JWT ${localStorage.getItem("token")}`,
         },
       });
 
@@ -175,12 +132,7 @@ const AddDocumentModal = ({
       handleClose();
       onSuccess?.();
     } catch (err: any) {
-      console.error("upload error", err);
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to upload document";
-      toast.error(message);
+      toast.error(err?.response?.data?.message || "Failed to upload document");
     } finally {
       setLoading(false);
     }
@@ -367,28 +319,15 @@ const AddDocumentModal = ({
             <label className="block mb-1 text-sm font-medium">
               Upload Document <span className="text-red-500">*</span>
             </label>
-            <Dropzone
-              ref={dropzoneRef}
-              options={{
-                url: "/",
-                autoProcessQueue: false,
-                maxFiles: 1,
-                acceptedFiles: ".pdf,.doc,.docx,.xls,.xlsx",
-                addRemoveLinks: true,
-                maxFilesize: 10,
-              }}
-              className="dropzone"
-            >
-              <div className="text-lg font-medium">Drop file here or click to upload.</div>
-              <div className="text-gray-600">
-                Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
-              </div>
-            </Dropzone>
-            {documentFile && (
-              <div className="mt-2 text-sm text-slate-600">
-                Selected: {documentFile.name} ({bytesToMB(documentFile.size)} MB)
-              </div>
-            )}
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx"
+              onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            <span className="text-slate-400 text-xs mt-1 block">
+              Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
+            </span>
           </div>
         </Dialog.Description>
         <Dialog.Footer>
