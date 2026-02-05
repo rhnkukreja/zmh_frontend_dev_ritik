@@ -44,7 +44,9 @@ const categories = [
   "Stewardship Policy",
   "Responsible Investment",
   "Proxy voting records/details",
-  "Others"
+  "Others - Environmental",
+  "Others - Social",
+  "Others - Governance",
 ];
 
 const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
