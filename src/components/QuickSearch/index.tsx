@@ -85,8 +85,8 @@ function Main(props: MainProps) {
     props.setQuickSearch(false);
     await companySearchAndUpdate(company);
     
-    // Navigate to Company Report page with ticker parameter
-    navigate(`/company-report?ticker=${company.symbol}`);
+    // Stay on current page instead of redirecting
+    // navigate(`/company-report?ticker=${company.symbol}`);
     
     setSearch("");
     const data = { target: { value: "" } };
