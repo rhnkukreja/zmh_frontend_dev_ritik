@@ -920,21 +920,19 @@ function Main() {
                   </div>
                 )}
 
-                {/* BEGIN: AI Assistant - Navigate to /ai-chatbot */}
+                {/* BEGIN: AI Assistant - Open /ai-chatbot in new tab */}
                 <a
                   href="/ai-chatbot"
+                  target="_blank"
+                  rel="noreferrer"
                   className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex cursor-pointer"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    navigate("/ai-chatbot");
-                  }}
                 >
                   <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
                   <span className="ml-2 text-sm font-medium hidden xl:flex">
                     AI Assistant
                   </span>
                 </a>
-                {/* END: AI Assistant - Navigate to /ai-chatbot */}
+                {/* END: AI Assistant - Open /ai-chatbot in new tab */}
               </>
 
               <QuickSearch
