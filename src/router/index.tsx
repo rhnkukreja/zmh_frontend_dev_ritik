@@ -100,6 +100,7 @@ import CustomReports from "../pages/CustomReports";
 import VotingRationalePage from "@/pages/VotingRationalePage";
 import UserManagement from "@/pages/UserManagement";
 import CompanyReportPage from "@/pages/CompanyReport";
+import AiChatbot from "../pages/AiChatbot";
 
 function Router() {
   const TitleManager = () => {
@@ -524,6 +525,11 @@ function Router() {
           path: "user-management",
           element: <UserManagement />,
           data: { titleName: "User Management - ZMH Analytics" },
+        },
+        {
+          path: "ai-chatbot",
+          element: <AiChatbot />,
+          data: { titleName: "AI Assistant - ZMH Analytics" },
         },
         
       ],
