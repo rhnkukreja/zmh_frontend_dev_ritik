@@ -1,8 +1,9 @@
 import { forwardRef, useRef, useState } from "react";
 import { CompanyReportData } from "@/types/companyReport";
 import zmhLogo from "@/assets/images/logo/zmh-logo.jpg";
-import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 import "./CompanyReport.css";
 
 // Section Components
@@ -15,6 +16,15 @@ import {
   KeyTakeawaysSection,
   MeetingDetailsSection
 } from "./sections";
+
+(pdfMake as { vfs: Record<string, string> }).vfs =
+  (pdfFonts as { pdfMake?: { vfs?: Record<string, string> }; vfs?: Record<string, string> }).pdfMake?.vfs ||
+  (pdfFonts as { vfs?: Record<string, string> }).vfs ||
+  {};
+
+type Content = any;
+type TableCell = any;
+type TDocumentDefinitions = any;
 
 interface CompanyReportProps {
   data: CompanyReportData;
@@ -37,192 +47,580 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
       }).format(dt);
     };
 
-    const handleExportToPDF = async () => {
-      const input = reportRef.current;
-      if (!input) {
-        console.error("Report ref not found");
-        return;
+    const formatValue = (value: unknown) => {
+      if (value === null || value === undefined) return "";
+      if (Array.isArray(value)) return value.map(v => formatValue(v)).join(", ");
+      if (typeof value === "object") return JSON.stringify(value);
+      return String(value);
+    };
+
+    const formatPercent = (value: unknown, digits = 1) => {
+      if (value === null || value === undefined || value === "") return "";
+      const num = typeof value === "number" ? value : parseFloat(String(value).replace("%", ""));
+      if (Number.isNaN(num)) return String(value);
+      return `${num.toFixed(digits)}%`;
+    };
+
+    const normalizeToArray = (value: any) => {
+      if (!value) return [] as any[];
+      if (Array.isArray(value)) return value;
+      if (typeof value === "object") {
+        const possibleArrayKeys = ["data", "results", "items", "engagements", "records"];
+        for (const key of possibleArrayKeys) {
+          if (Array.isArray(value[key])) return value[key];
+        }
+        const keys = Object.keys(value);
+        if (keys.length > 0 && keys.every(k => /^\d{4}$/.test(k))) {
+          const flattened: any[] = [];
+          keys.forEach(year => {
+            const items = Array.isArray(value[year]) ? value[year] : [];
+            items.forEach((item: any) => flattened.push({ ...item, year: item.year || year }));
+          });
+          return flattened;
+        }
+        return [value];
       }
+      return [] as any[];
+    };
 
-      setIsGeneratingPDF(true);
+    const parseSplitVoteCounts = (value: unknown): { for?: number; against?: number } | null => {
+      if (!value) return null;
+      if (typeof value === "object") return value as { for?: number; against?: number };
+      if (typeof value === "string") {
+        try {
+          const normalized = value
+            .trim()
+            .replace(/'/g, '"')
+            .replace(/\bNone\b/g, "null")
+            .replace(/\bTrue\b/g, "true")
+            .replace(/\bFalse\b/g, "false");
+          const parsed = JSON.parse(normalized);
+          if (parsed && typeof parsed === "object") return parsed as { for?: number; against?: number };
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    };
 
-      // Longer delay to allow state to update and UI to re-render (for expanding collapsed sections)
-      await new Promise(resolve => setTimeout(resolve, 800));
+    const buildTable = (
+      headerRow: TableCell[],
+      bodyRows: TableCell[][],
+      widths?: Array<string | number>,
+      layout?: any
+    ) => ({
+      table: {
+        headerRows: 1,
+        widths: widths || headerRow.map(() => "*"),
+        body: [headerRow, ...bodyRows]
+      },
+      layout: layout || "lightHorizontalLines"
+    });
 
-      let prevPaddingBottom = "";
-      try {
-        prevPaddingBottom = (input as HTMLElement).style.paddingBottom;
-        (input as HTMLElement).style.paddingBottom = "64px";
+    const getCssValue = (cssVar: string, fallback = "") => {
+      if (typeof window === "undefined") return fallback;
+      const themeRoot =
+        (document.querySelector(
+          ".theme-1,.theme-2,.theme-3,.theme-4,.theme-5,.theme-6"
+        ) as HTMLElement | null) || document.documentElement;
+      const raw = getComputedStyle(themeRoot).getPropertyValue(cssVar).trim();
+      return raw || fallback;
+    };
 
-        const pdfWidth = 210;
-        const pdfHeight = 297;
-        const margin = 8;
-        const contentWidth = pdfWidth - 2 * margin;
-        
-        // Render the entire report as one canvas
-        const canvas = await html2canvas(input, {
+    const getComputedColorFromClass = (className: string, fallback: string) => {
+      if (typeof window === "undefined") return fallback;
+      const el = document.createElement("div");
+      el.className = className;
+      el.style.position = "absolute";
+      el.style.left = "-9999px";
+      el.style.top = "-9999px";
+      el.style.borderTopWidth = "2px";
+      el.style.borderTopStyle = "solid";
+      document.body.appendChild(el);
+      const color = getComputedStyle(el).borderTopColor || fallback;
+      document.body.removeChild(el);
+      return color;
+    };
+
+    const resolveColor = (value: string, fallback: string) => {
+      const raw = value?.trim();
+      if (!raw) return fallback;
+      if (raw.startsWith("#") || raw.startsWith("rgb(")) return raw;
+      const parts = raw.split(/[\s,/]+/).filter(Boolean);
+      if (parts.length >= 3) return `rgb(${parts[0]}, ${parts[1]}, ${parts[2]})`;
+      return fallback;
+    };
+
+    const captureChartImages = async (container: HTMLElement) => {
+      const chartNodes = Array.from(container.querySelectorAll("[data-pdf-chart]")) as HTMLElement[];
+      const images: { title?: string; dataUrl: string }[] = [];
+
+      for (const node of chartNodes) {
+        const title = node.getAttribute("data-title") || undefined;
+        const canvas = await html2canvas(node, {
           scale: 2,
           useCORS: true,
           allowTaint: true,
-          logging: true,
-          backgroundColor: "#ffffff",
-          windowWidth: input.scrollWidth,
-          windowHeight: input.scrollHeight,
-          ignoreElements: (el) => {
-            const element = el as HTMLElement;
-            return (
-              element.classList?.contains('exclude-from-pdf') ||
-              element.classList?.contains('no-print')
-            );
-          },
+          backgroundColor: "#ffffff"
         });
+        images.push({ title, dataUrl: canvas.toDataURL("image/png") });
+      }
 
-        // Debug: Check if canvas rendered properly
-        console.log('[CompanyReport PDF] Canvas dimensions:', canvas.width, 'x', canvas.height);
-        console.log('[CompanyReport PDF] Input dimensions:', input.scrollWidth, 'x', input.scrollHeight);
-        
-        if (canvas.width === 0 || canvas.height === 0) {
-          throw new Error('Canvas rendered with zero dimensions');
-        }
+      return images;
+    };
 
-        const imgWidthMm = contentWidth;
-        const pxPerMm = canvas.width / imgWidthMm;
-        const footerHeightMm = 12;
-        const guardBandMm = 6;
-        const pageContentHeightMm = pdfHeight - 2 * margin - footerHeightMm - guardBandMm;
-        const pageContentHeightPx = Math.floor(pageContentHeightMm * pxPerMm);
-        const overlapPx = 0; // no overlap: prevents repeated rows/content between pages
-        let pageNum = 1;
+    const handleExportToPDF = async () => {
+      setIsGeneratingPDF(true);
+      try {
+        const companyName = data.finnhub_data?.company_name || "Company";
+        const asOf = formatUSDate(data.data_as_of) || formatUSDate(new Date().toISOString());
 
-        const sourceCtx = canvas.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D | null;
+        const input = reportRef.current;
+        const chartImages = input ? await captureChartImages(input) : [];
+        const chartImageMap = new Map(
+          chartImages
+            .filter(img => img.title)
+            .map(img => [img.title as string, img.dataUrl])
+        );
 
-        // Build avoid ranges for headings + table rows so cuts never split them
-        const domToCanvasScaleY = input.scrollHeight > 0 ? (canvas.height / input.scrollHeight) : 1;
-        const avoidPadPx = Math.floor(6 * domToCanvasScaleY);
+        const primaryColor = "#b91c1c";
+        const successColor = resolveColor(getCssValue("--color-success"), "#16a34a");
+        const dangerColor = resolveColor(getCssValue("--color-danger"), "#b91c1c");
+        const gray50 = "#f9fafb";
+        const gray200 = "#e5e7eb";
+        const gray600 = "#4b5563";
+        const gray700 = "#374151";
+        const gray900 = "#111827";
 
-        const getTopWithinInputPx = (el: HTMLElement, container: HTMLElement) => {
-          let top = 0;
-          let node: HTMLElement | null = el;
-          let safety = 0;
-          while (node && node !== container && safety < 1000) {
-            top += node.offsetTop || 0;
-            node = (node.offsetParent as HTMLElement | null) || null;
-            safety++;
+        const iconCheck = (color: string) =>
+          `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="${color}" />
+            <path d="M7 12l3 3 7-7" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>`;
+
+        const iconNoData = (color: string) =>
+          `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
+            <polygon points="4,9 12,5 12,19 4,15" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" />
+            <rect x="12" y="9" width="3" height="6" fill="none" stroke="${color}" stroke-width="2" />
+            <line x1="3" y1="5" x2="17" y2="19" stroke="${color}" stroke-width="2" stroke-linecap="round" />
+          </svg>`;
+
+        const getStatusIcon = (value: any, positiveColor: string, showNoData: boolean) => {
+          const normalizedString = typeof value === "string" ? value.trim().toLowerCase() : "";
+          const notDisclosedValues = new Set(["none", "nd", "nse", "nsd", "n/d", "not disclosed", "not disclosed in npx"]);
+
+          if (value === null || value === undefined || value === "" || notDisclosedValues.has(normalizedString)) {
+            if (!showNoData) return "";
+            return { svg: iconNoData(dangerColor), width: 12, height: 12, alignment: "center" };
           }
-          if (node === container) return Math.max(0, top);
-          const elRect = el.getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          return Math.max(0, elRect.top - containerRect.top);
+
+          if (Array.isArray(value)) {
+            return value.length > 0
+                    ? { svg: iconCheck(positiveColor), width: 12, height: 12, alignment: "center" }
+              : "";
+          }
+
+          const normalized = String(value).trim().toLowerCase();
+          const truthy = new Set(["true", "yes", "y", "1", "t"]);
+          const falsy = new Set(["false", "no", "n", "0", "f"]);
+
+          if (value === true || truthy.has(normalized) || (typeof value === "number" && value > 0)) {
+            return { svg: iconCheck(positiveColor), width: 12, height: 12, alignment: "center" };
+          }
+
+          if (value === false || falsy.has(normalized) || (typeof value === "number" && value === 0)) return "";
+          return "";
         };
 
-        const avoidRangesPx = Array.from(
-          input.querySelectorAll('h2, h3, table thead tr, table tbody tr')
-        )
-          .map((node) => {
-            const el = node as HTMLElement;
-            const top = getTopWithinInputPx(el, input);
-            const height = el.offsetHeight;
-            return {
-              startPx: Math.max(0, Math.floor(top * domToCanvasScaleY) - avoidPadPx),
-              endPx: Math.min(canvas.height, Math.floor((top + height) * domToCanvasScaleY) + avoidPadPx)
-            };
-          })
-          .filter(r => r.endPx > r.startPx)
-          .sort((a, b) => a.startPx - b.startPx);
+        const tableLayout = {
+          hLineWidth: (i: number) => {
+            if (i <= 1) return 0;
+            return 0.5;
+          },
+          vLineWidth: () => 0,
+          hLineColor: () => gray200,
+          paddingLeft: () => 6,
+          paddingRight: () => 6,
+          paddingTop: () => 4,
+          paddingBottom: () => 4
+        };
+        const addSectionTitle = (title: string) => {
+          content.push({ text: title, style: "sectionTitle" });
+          content.push({
+            canvas: [
+              { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: primaryColor }
+            ],
+            margin: [0, 2, 0, 6]
+          });
+        };
+        const content: Content[] = [
+          { text: `${companyName} - Company Report`, style: "title" },
+          { text: `Data as of: ${asOf}`, style: "subtitle" },
+          { text: " ", margin: [0, 6] }
+        ];
 
-        const adjustForAvoidRanges = (startY: number, desiredHeight: number) => {
-          const endY = startY + desiredHeight;
-          for (const range of avoidRangesPx) {
-            if (endY > range.startPx && endY < range.endPx) {
-              const adjusted = range.startPx - startY;
-              return adjusted > 0 ? adjusted : desiredHeight;
+        if (data.key_takeaways && data.key_takeaways.length > 0) {
+          addSectionTitle("Key Takeaways");
+          const headerRow: TableCell[] = [
+            { text: "Topic", style: "tableHeader" },
+            { text: "Key Takeaways", style: "tableHeader" },
+            { text: "Activism/Governance Lens", style: "tableHeader" }
+          ];
+          const bodyRows = data.key_takeaways.map(item => [
+            item.topic || "",
+            item.key_takeaways || "",
+            item.activism_governance_lens || ""
+          ]);
+          content.push(buildTable(headerRow, bodyRows, ["22%", "39%", "39%"], tableLayout));
+          content.push({ text: " ", margin: [0, 6] });
+        }
+
+        if (data.share_price_performance_data) {
+          const perfData = data.share_price_performance_data;
+          const entities = Object.keys(perfData).filter(key => key !== "data_as_of");
+          const companyKey = entities.find(key =>
+            !key.toLowerCase().includes("nasdaq") &&
+            !key.toLowerCase().includes("s&p") &&
+            !key.toLowerCase().includes("sp500")
+          );
+          const nasdaqKey = entities.find(key => key.toLowerCase().includes("nasdaq"));
+          const sp500Key = entities.find(key => key.toLowerCase().includes("s&p") || key.toLowerCase().includes("sp500"));
+
+          const getReturn = (entityKey: string | undefined, period: "1yr" | "3yr" | "5yr" | "10yr") => {
+            if (!entityKey) return null;
+            const entityData = perfData[entityKey] as { [k: string]: any } | string | undefined;
+            if (!entityData || typeof entityData === "string") return null;
+            return entityData[period]?.pct_return ?? null;
+          };
+
+          addSectionTitle("Share Price Performance");
+          const headerRow: TableCell[] = [
+            { text: "Name", style: "tableHeader" },
+            { text: "1-Year", style: "tableHeader", alignment: "center" },
+            { text: "3-Year", style: "tableHeader", alignment: "center" },
+            { text: "5-Year", style: "tableHeader", alignment: "center" }
+          ];
+          const rows: TableCell[][] = [];
+          const addRow = (name?: string, r1?: number | null, r3?: number | null, r5?: number | null) => {
+            if (!name) return;
+            const r1Color = r1 !== null && r1 !== undefined && r1 < 0 ? dangerColor : gray700;
+            const r3Color = r3 !== null && r3 !== undefined && r3 < 0 ? dangerColor : gray700;
+            const r5Color = r5 !== null && r5 !== undefined && r5 < 0 ? dangerColor : gray700;
+            rows.push([
+              name,
+              { text: formatPercent(r1, 1), alignment: "center", color: r1Color },
+              { text: formatPercent(r3, 1), alignment: "center", color: r3Color },
+              { text: formatPercent(r5, 1), alignment: "center", color: r5Color }
+            ]);
+          };
+          addRow(companyKey, getReturn(companyKey, "1yr"), getReturn(companyKey, "3yr"), getReturn(companyKey, "5yr"));
+          addRow(nasdaqKey, getReturn(nasdaqKey, "1yr"), getReturn(nasdaqKey, "3yr"), getReturn(nasdaqKey, "5yr"));
+          addRow(sp500Key, getReturn(sp500Key, "1yr"), getReturn(sp500Key, "3yr"), getReturn(sp500Key, "5yr"));
+          content.push(buildTable(headerRow, rows, ["40%", "20%", "20%", "20%"], tableLayout));
+          const sourceAsOf = (perfData.data_as_of as string) || data.data_as_of || new Date().toISOString();
+          content.push({ text: `Source: Marketstack. Data as of ${formatUSDate(sourceAsOf)}`, style: "caption" });
+          content.push({ text: " ", margin: [0, 6] });
+        }
+
+        if (data.meeting_details_data && typeof data.meeting_details_data === "object") {
+          const details = data.meeting_details_data as Record<string, any>;
+          const nominees = Array.isArray(details.nominees) ? details.nominees : [];
+          const nomineesHeaders = Array.isArray(details.nominees_headers) ? details.nominees_headers : [];
+          const proposals = Array.isArray(details.proposals) ? details.proposals : [];
+          const proposalsHeaders = Array.isArray(details.proposals_headers) ? details.proposals_headers : [];
+
+          let meetingDate = "";
+          if (details.company && Array.isArray(details.company) && details.company.length > 0) {
+            const companyObj = details.company[0];
+            const companyKey = Object.keys(companyObj)[0];
+            const meetingInfo = companyObj[companyKey];
+            if (typeof meetingInfo === "string" && meetingInfo.includes(" - ")) {
+              meetingDate = meetingInfo.split(" - ").pop() || "";
             }
           }
-          return desiredHeight;
-        };
 
-        // Build slices first so we never skip content and so we know totalPages
-        const slices: { imgData: string; sliceHeightMm: number }[] = [];
-        let yOffsetPx = 0;
-        while (yOffsetPx < canvas.height) {
-          const remainingPx = canvas.height - yOffsetPx;
-          const baseSliceHeightPx = Math.min(pageContentHeightPx, remainingPx);
+          if (nominees.length > 0 || proposals.length > 0) {
+            addSectionTitle("Shareholder Meeting Summary");
+            if (meetingDate) content.push({ text: `Meeting Date: ${meetingDate}`, style: "caption" });
 
-          // For last page or if remaining fits, use all of it
-          // Otherwise, adjust so we never cut through headings or table rows
-          const sliceHeightPx = remainingPx <= pageContentHeightPx
-            ? baseSliceHeightPx
-            : adjustForAvoidRanges(yOffsetPx, baseSliceHeightPx);
+            if (nominees.length > 0 && nomineesHeaders.length > 0) {
+              const headerRow = nomineesHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
+              const bodyRows = nominees.map((row: Record<string, any>) =>
+                nomineesHeaders.map((h: any) => formatValue(row[h.field]))
+              );
+              content.push(buildTable(headerRow, bodyRows, undefined, tableLayout));
+              content.push({ text: " ", margin: [0, 6] });
+            }
 
-          const pageCanvas = document.createElement('canvas');
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = sliceHeightPx;
-
-          const ctx = pageCanvas.getContext('2d');
-          if (!ctx) break;
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-          ctx.drawImage(
-            canvas,
-            0,
-            yOffsetPx,
-            canvas.width,
-            sliceHeightPx,
-            0,
-            0,
-            canvas.width,
-            sliceHeightPx
-          );
-
-          const sliceHeightMm = sliceHeightPx / pxPerMm;
-          const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
-          slices.push({ imgData, sliceHeightMm });
-
-          if (import.meta.env.DEV) {
-            console.log('[CompanyReport PDF] slice', {
-              yOffsetPx,
-              sliceHeightPx,
-              remainingPx,
-              sliceHeightMm
-            });
+            if (proposals.length > 0 && proposalsHeaders.length > 0) {
+              const headerRow = proposalsHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
+              const bodyRows = proposals.map((row: Record<string, any>) =>
+                proposalsHeaders.map((h: any) => formatValue(row[h.field]))
+              );
+              content.push(buildTable(headerRow, bodyRows, undefined, tableLayout));
+              content.push({ text: " ", margin: [0, 6] });
+            }
           }
-
-          if (remainingPx <= pageContentHeightPx) break;
-          yOffsetPx += Math.max(1, sliceHeightPx - overlapPx);
         }
 
-        const pdf = new jsPDF("p", "mm", "a4");
-        const totalPages = Math.max(1, slices.length);
-
-        // Helper to add footer
-        const addFooter = (pageNumber: number) => {
-          const asOf = formatUSDate(data.data_as_of) || formatUSDate(new Date().toISOString());
-          pdf.setFontSize(7);
-          pdf.setTextColor(128);
-          pdf.text(
-            `${data.finnhub_data?.company_name || "Company Report"} | Data as of: ${asOf}`,
-            margin,
-            pdfHeight - 4
+        if (Array.isArray(data.percent_ownership_data) && data.percent_ownership_data.length > 0) {
+          const top20 = data.percent_ownership_data.slice(0, 20);
+          addSectionTitle(
+            `Top 20 Ownership${data.total_percent_ownership ? ` (${data.total_percent_ownership.replace("%", "")}% of Shares Outstanding)` : ""}`
           );
-          pdf.text(`Page ${pageNumber} of ${totalPages}`, pdfWidth - margin - 18, pdfHeight - 4);
+
+          const headerRow: TableCell[] = [
+            { text: "No.", style: "tableHeader", alignment: "center" },
+            { text: "Shareholder", style: "tableHeader" },
+            { text: "Ownership", style: "tableHeader", alignment: "center" },
+            { text: "Proxy Advisory Influence", style: "tableHeader" },
+            { text: "UN PRI Signatory", style: "tableHeader", alignment: "center" },
+            { text: "Voted Against Directors", style: "tableHeader", alignment: "center" },
+            { text: "Voted Against Say on Pay", style: "tableHeader", alignment: "center" }
+          ];
+
+          const bodyRows = top20.map((item, index) => {
+            const ownership = parseFloat(item.percent_ownership?.replace("%", "") || "0");
+            const shareholder = item.institution_name || item.institution__institution || "";
+            return [
+              { text: String(index + 1), alignment: "center" },
+              shareholder,
+              { text: `${ownership.toFixed(2)}%`, alignment: "center" },
+              item.proxy_advisor_influence || "",
+              getStatusIcon(item.unpri_signatory, successColor, true),
+              getStatusIcon((item as any).voted_against_directors, dangerColor, true),
+              getStatusIcon((item as any).voted_against_say_on_pay, dangerColor, true)
+            ];
+          });
+
+          const ownershipTable = {
+            ...buildTable(
+              headerRow,
+              bodyRows,
+              ["6%", "26%", "10%", "18%", "10%", "15%", "15%"],
+              tableLayout
+            ),
+            style: "tableSmall"
+          };
+
+          const proxyChart = chartImageMap.get("Proxy Advisor Influence");
+
+          if (proxyChart) {
+            content.push({ ...ownershipTable, pageOrientation: "landscape" });
+            content.push({
+              stack: [
+                { text: "Proxy Advisor Influence", style: "subSectionTitle", alignment: "center" },
+                { image: proxyChart, width: 260, alignment: "center", margin: [0, 6, 0, 0] }
+              ],
+              margin: [0, 6, 0, 10],
+              pageOrientation: "landscape"
+            });
+          } else {
+            content.push({ ...ownershipTable, pageOrientation: "landscape" });
+          }
+          content.push({ text: "Source: Whalewisdom. Data as of latest filings.", style: "caption" });
+          content.push({ text: " ", margin: [0, 6] });
+        }
+
+        if (Array.isArray(data.voted_against_rationale)) {
+          addSectionTitle("Voting Rationale");
+          if (data.voted_against_rationale.length === 0) {
+            content.push({ text: "No investors voted against directors or Say on Pay.", style: "caption" });
+          } else {
+            const headerRow: TableCell[] = [
+              { text: "Investor", style: "tableHeader" },
+              { text: "Proposal", style: "tableHeader" },
+              { text: "Vote", style: "tableHeader", alignment: "center" },
+              { text: "Vote Counts", style: "tableHeader" },
+              { text: "Rationale", style: "tableHeader" }
+            ];
+            const bodyRows = data.voted_against_rationale.map(item => {
+              const investorName = item.institution__institution || item.investor || "";
+              const voteCounts = parseSplitVoteCounts(item.split_vote_counts);
+              const voteCountsText = voteCounts
+                ? `For: ${voteCounts.for ?? 0} | Against: ${voteCounts.against ?? 0}`
+                : "";
+              const voteText = item.vote || "";
+              const isAgainst = voteText.toLowerCase() === "against" || voteText.toLowerCase() === "withhold";
+              return [
+                investorName,
+                item.proposal || "",
+                { text: voteText, alignment: "center", color: isAgainst ? "#b91c1c" : gray700 },
+                voteCountsText,
+                item.notes || item.rationale || ""
+              ];
+            });
+            content.push(buildTable(headerRow, bodyRows, ["18%", "20%", "8%", "16%", "38%"], tableLayout));
+          }
+          content.push({ text: " ", margin: [0, 6] });
+        }
+
+        if (data.charts_data) {
+          addSectionTitle("Trend in Investor Support");
+          const trendTitles = [
+            "Election of Directors",
+            "Say on Pay",
+            "Other Proposals",
+            "Ratification of Auditor"
+          ];
+          const trendCards = trendTitles.map(title => {
+            const img = chartImageMap.get(title);
+            return img
+              ? {
+                  stack: [
+                    { text: title, style: "subSectionTitle", alignment: "center" },
+                    { image: img, width: 220, alignment: "center", margin: [0, 6, 0, 0] }
+                  ],
+                  margin: [6, 6, 6, 6]
+                }
+              : { text: `${title}: No chart available`, style: "caption" };
+          });
+
+          content.push({
+            table: {
+              widths: ["*", "*"],
+              body: [
+                [trendCards[0], trendCards[1]],
+                [trendCards[2], trendCards[3]]
+              ]
+            },
+            layout: {
+              hLineWidth: () => 0.8,
+              vLineWidth: () => 0.8,
+              hLineColor: () => gray200,
+              vLineColor: () => gray200,
+              paddingLeft: () => 6,
+              paddingRight: () => 6,
+              paddingTop: () => 6,
+              paddingBottom: () => 6
+            },
+            margin: [0, 2, 0, 6]
+          });
+        }
+
+        const companyEngagements = normalizeToArray(data.engagement_stats_data);
+        const peerEngagements = normalizeToArray(data.engagement_stats_ex_global_data);
+
+        if (companyEngagements.length > 0) {
+          addSectionTitle("Investor Disclosed Engagement History");
+          const headerRow: TableCell[] = [
+            { text: "Year", style: "tableHeader" },
+            { text: "Investor", style: "tableHeader" },
+            { text: "Environmental", style: "tableHeader" },
+            { text: "Social", style: "tableHeader" },
+            { text: "Governance", style: "tableHeader" }
+          ];
+          const bodyRows = companyEngagements.map(item => [
+            item.year || "",
+            item.institution__institution || "",
+            formatValue(item.env_list || ""),
+            formatValue(item.soc_list || ""),
+            formatValue(item.gov_list || "")
+          ]);
+          content.push(buildTable(headerRow, bodyRows, ["10%", "22%", "22%", "22%", "24%"], tableLayout));
+          content.push({ text: " ", margin: [0, 6] });
+        }
+
+        if (peerEngagements.length > 0) {
+          addSectionTitle("Engagement Topics for Peers");
+          const headerRow: TableCell[] = [
+            { text: "Year", style: "tableHeader" },
+            { text: "Investor", style: "tableHeader" },
+            { text: "Company", style: "tableHeader" },
+            { text: "Environmental", style: "tableHeader" },
+            { text: "Social", style: "tableHeader" },
+            { text: "Governance", style: "tableHeader" }
+          ];
+          const bodyRows = peerEngagements.map(item => [
+            item.year || "",
+            item.institution__institution || "",
+            item.company__name || "",
+            formatValue(item.env_list || ""),
+            formatValue(item.soc_list || ""),
+            formatValue(item.gov_list || "")
+          ]);
+          content.push(buildTable(headerRow, bodyRows, ["8%", "18%", "18%", "18%", "18%", "20%"], tableLayout));
+          content.push({ text: " ", margin: [0, 6] });
+        }
+
+        if (Array.isArray(data.sp_data) && data.sp_data.length > 0) {
+          const NON_INSTITUTION_FIELDS = [
+            "proxy_season",
+            "proponent",
+            "proposal_name",
+            "proposal_num",
+            "outcome_percentage",
+            "proposal_title",
+            "mgt_rec",
+            "major_institutions_vote",
+            "company",
+            "year",
+            "id",
+            "ticker"
+          ];
+
+          const firstItem = data.sp_data[0];
+          const institutionNames = Object.keys(firstItem).filter(key =>
+            !NON_INSTITUTION_FIELDS.includes(key) && typeof (firstItem as any)[key] !== "object"
+          );
+
+          const headerRow: TableCell[] = [
+            { text: "Proponent", style: "tableHeader" },
+            { text: "Proposal", style: "tableHeader" },
+            { text: "Outcome", style: "tableHeader", alignment: "center" },
+            ...institutionNames.map(name => ({ text: name, style: "tableHeader", alignment: "center" }))
+          ];
+
+          const bodyRows = data.sp_data.map(item => [
+            item.proponent || "",
+            item.proposal_name || item.proposal_title || "",
+            { text: item.outcome_percentage || "", alignment: "center" },
+            ...institutionNames.map(name => {
+              const vote = String((item as any)[name] || "");
+              const lower = vote.toLowerCase();
+              const isAgainst = lower === "against" || lower === "withhold";
+              return { text: vote, alignment: "center", color: isAgainst ? dangerColor : gray700 };
+            })
+          ]);
+
+          addSectionTitle("Shareholder Proposals");
+          content[content.length - 1] = {
+            ...content[content.length - 1],
+            pageBreak: "before",
+            pageOrientation: "landscape"
+          };
+          content.push(buildTable(headerRow, bodyRows, undefined, tableLayout));
+        }
+
+        const docDefinition: TDocumentDefinitions = {
+          pageSize: "A4",
+          pageMargins: [32, 40, 32, 40],
+          defaultStyle: { fontSize: 9 },
+          footer: (currentPage, pageCount) => ({
+            columns: [
+              { text: `${companyName} | Data as of: ${asOf}`, alignment: "left", fontSize: 7, color: "#888" },
+              { text: `Page ${currentPage} of ${pageCount}`, alignment: "right", fontSize: 7, color: "#888" }
+            ],
+            margin: [32, 0, 32, 12]
+          }),
+          styles: {
+            title: { fontSize: 16, bold: true, color: gray900 },
+            subtitle: { fontSize: 9, color: gray600 },
+            sectionTitle: { fontSize: 11, bold: true, color: primaryColor, margin: [0, 10, 0, 6] },
+            subSectionTitle: { fontSize: 9, bold: true, color: gray700, margin: [0, 6, 0, 4] },
+            tableHeader: { fontSize: 9, bold: true, fillColor: gray50, color: gray700 },
+            tableSmall: { fontSize: 8 },
+            caption: { fontSize: 7, color: gray600, italics: true, margin: [0, 4, 0, 8] }
+          },
+          content
         };
 
-        slices.forEach((slice, index) => {
-          if (index > 0) pdf.addPage();
-          pdf.addImage(slice.imgData, 'JPEG', margin, margin, imgWidthMm, slice.sliceHeightMm);
-          addFooter(index + 1);
-          pageNum++;
-        });
-
-        const fileName = `${data.finnhub_data?.company_name || "Company"}_Report_${new Date().toISOString().split("T")[0]}.pdf`;
-        pdf.save(fileName);
+        const fileName = `${companyName}_Report_${new Date().toISOString().split("T")[0]}.pdf`;
+        pdfMake.createPdf(docDefinition).download(fileName);
       } catch (error) {
         console.error("Error generating PDF:", error);
         alert("Error generating PDF. Please check console for details.");
       } finally {
-        if (reportRef.current) {
-          (reportRef.current as HTMLElement).style.paddingBottom = prevPaddingBottom;
-        }
         setIsGeneratingPDF(false);
       }
     };
