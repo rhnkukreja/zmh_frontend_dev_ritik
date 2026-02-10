@@ -134,7 +134,11 @@ const TrendChart = ({ title, data }: { title: string; data: any }) => {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <div
+      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+      data-pdf-chart
+      data-title={title}
+    >
       <h4 className="text-sm font-semibold text-gray-700 mb-3 text-center">{title}</h4>
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">

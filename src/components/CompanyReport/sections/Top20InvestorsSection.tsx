@@ -208,7 +208,11 @@ const Top20InvestorsSection = ({ data, totalPercentOwnership }: Top20InvestorsSe
 
       {/* Pie Chart on right side */}
       <div className="w-[380px] flex-shrink-0">
-        <div className="bg-white border border-gray-200 rounded-lg p-3 self-start page-break-inside-avoid overflow-visible">
+        <div
+          className="bg-white border border-gray-200 rounded-lg p-3 self-start page-break-inside-avoid overflow-visible"
+          data-pdf-chart
+          data-title="Proxy Advisor Influence"
+        >
           <h3 className="text-sm font-semibold text-gray-700 mb-2 text-center">Proxy Advisor Influence</h3>
           <div className="h-[260px] overflow-visible">
             <ResponsiveContainer width="100%" height="100%">
