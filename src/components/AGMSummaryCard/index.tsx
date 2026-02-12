@@ -21,7 +21,7 @@ import { Tab } from "@/components/Base/Headless";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 
-const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false }) => {
+const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -30,6 +30,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const dispatch: AppDispatch = useAppDispatch();
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
     useAppSelector((state) => state.dashboard);
+
+  const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
+  const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
 
   const { finhub } = useAppSelector((state) => state.authentiction);
 
@@ -129,6 +132,24 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
   }, [companyGlobalSearchTicker, yearFromQuery]);
+
+  useEffect(() => {
+    setHasLoadingStarted(false);
+    setHasNotifiedLoaded(false);
+  }, [companyGlobalSearchTicker, yearFromQuery]);
+
+  useEffect(() => {
+    if (loading) {
+      setHasLoadingStarted(true);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (onLoaded && hasLoadingStarted && !loading && !hasNotifiedLoaded) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, hasLoadingStarted, loading, hasNotifiedLoaded]);
 
   // Handle year query parameter changes
   useEffect(() => {

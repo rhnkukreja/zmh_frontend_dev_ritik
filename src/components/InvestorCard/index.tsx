@@ -40,7 +40,11 @@ import EngagementQuestionsDialog from "../EngagementQuestionsDialog";
 import AddNoteModal from "@/pages/Notes/AddNotesModal";
 import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
 
-const index = () => {
+interface InvestorCardProps {
+  onLoaded?: () => void;
+}
+
+const index = ({ onLoaded }: InvestorCardProps) => {
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
@@ -67,6 +71,8 @@ const index = () => {
 
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
+  const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
 
   // Check if Say on Pay column should be shown based on selected year
   const showSayOnPayColumn = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.say_on_pay_column_check === true;
@@ -105,8 +111,23 @@ const index = () => {
   }
 
   useEffect(() => {
-    fetchData()
+    fetchData();
+    setHasLoadingStarted(false);
+    setHasNotifiedLoaded(false);
   }, [companyGlobalSearchTicker, searchTicker]);
+
+  useEffect(() => {
+    if (investorCardLoading) {
+      setHasLoadingStarted(true);
+    }
+  }, [investorCardLoading]);
+
+  useEffect(() => {
+    if (onLoaded && hasLoadingStarted && !investorCardLoading && !hasNotifiedLoaded) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, hasLoadingStarted, investorCardLoading, hasNotifiedLoaded]);
 
   // useEffect(() => {
   //   const validateImages = async () => {
