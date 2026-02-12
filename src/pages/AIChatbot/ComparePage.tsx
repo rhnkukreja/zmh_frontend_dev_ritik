@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-    import { 
-    Send, Bot, User, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, 
+    import {
+    Send, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, 
+
     AlertCircle, GitCompare, Sparkles, ListFilter, Grid, Settings, Eye, EyeOff, Info, Trash2
     } from "lucide-react";
     import { AI_CHATBOT_API_BASE, fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api"; 
@@ -14,7 +15,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
     pdf_id: string;
     pdf_name: string;
     investor_name?: string; 
-    file_url?: string;
+    file_url?: string;sssss
     pages_used: (number | string)[];
     best_page?: number | string; 
     answer: string;
@@ -23,6 +24,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
     type Message = {
     id: string; 
     role: "user" | "assistant";
+    
     content?: string;
     answers?: AnswerData[];
     comparison?: string;
@@ -75,10 +77,11 @@ import { useState, useEffect, useRef, useMemo } from "react";
     const [includeEmea, setIncludeEmea] = useState(false);
     
     // LLM Settings
-    const [llmStrength, setLlmStrength] = useState(5);
-    const [detailLevel, setDetailLevel] = useState(1); 
+    const [llmStrength, setLlmStrength] = useState(0);
+    const [detailLevel, setDetailLevel] = useState(0); 
 
     const [manualSelectedPdfIds, setManualSelectedPdfIds] = useState<string[]>([]);
+    const [selectionError, setSelectionError] = useState<string>("");
     
     // ─────────────────────────────────────────────────────────
     // STATE: Chat & Interaction
@@ -96,10 +99,24 @@ import { useState, useEffect, useRef, useMemo } from "react";
     const [isDocsCollapsed, setIsDocsCollapsed] = useState(false);
     const [showFilters, setShowFilters] = useState(true);
 
+    // Investor Search State
+    const [investor1Search, setInvestor1Search] = useState("");
+    const [investor2Search, setInvestor2Search] = useState("");
+    const [isInvestor1DropdownOpen, setIsInvestor1DropdownOpen] = useState(false);
+    const [isInvestor2DropdownOpen, setIsInvestor2DropdownOpen] = useState(false);
+
+    // Document Dropdown State
+    const [isDoc1DropdownOpen, setIsDoc1DropdownOpen] = useState(false);
+    const [isDoc2DropdownOpen, setIsDoc2DropdownOpen] = useState(false);
+
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const categoryDropdownRef = useRef<HTMLDivElement>(null);
     const yearDropdownRef = useRef<HTMLDivElement>(null);
+    const investor1DropdownRef = useRef<HTMLDivElement>(null);
+    const investor2DropdownRef = useRef<HTMLDivElement>(null);
+    const doc1DropdownRef = useRef<HTMLDivElement>(null);
+    const doc2DropdownRef = useRef<HTMLDivElement>(null);
 
     // ─────────────────────────────────────────────────────────
     // 1. INITIAL INVESTOR LOAD
@@ -205,13 +222,40 @@ import { useState, useEffect, useRef, useMemo } from "react";
         }
 
         const years = Array.from(new Set(docs.map(d => String(d.year || "")).filter(Boolean))).sort().reverse();
-        const cats = new Set<string>();
-        docs.forEach(d => {
-            if (d.category) {
-                d.category.split(',').forEach(c => cats.add(c.trim()));
-            }
-        });
-        const categories = Array.from(cats).sort();
+        
+        // Get categories based on selected investors
+        let categories: string[];
+        if (investor1 && investor2) {
+            // Both investors selected - show only common categories
+            const inv1Docs = docs.filter(d => d.investor_id === investor1);
+            const inv2Docs = docs.filter(d => d.investor_id === investor2);
+            
+            const inv1Cats = new Set<string>();
+            inv1Docs.forEach(d => {
+                if (d.category) {
+                    d.category.split(',').forEach(c => inv1Cats.add(c.trim()));
+                }
+            });
+            
+            const inv2Cats = new Set<string>();
+            inv2Docs.forEach(d => {
+                if (d.category) {
+                    d.category.split(',').forEach(c => inv2Cats.add(c.trim()));
+                }
+            });
+            
+            // Only keep categories that exist in both investors' documents
+            categories = Array.from(inv1Cats).filter(cat => inv2Cats.has(cat)).sort();
+        } else {
+            // One or no investor selected - show all categories
+            const cats = new Set<string>();
+            docs.forEach(d => {
+                if (d.category) {
+                    d.category.split(',').forEach(c => cats.add(c.trim()));
+                }
+            });
+            categories = Array.from(cats).sort();
+        }
 
         let processedDocs = docs;
 
@@ -229,7 +273,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
         const docsFoundForInv1 = investor1 ? processedDocs.some(d => d.investor_id === investor1) : false;
         const docsFoundForInv2 = investor2 ? processedDocs.some(d => d.investor_id === investor2) : false;
 
-        const gridDocs = processedDocs.filter(d => [investor1, investor2].includes(d.investor_id));
+        const gridDocs = processedDocs
+            .filter(d => [investor1, investor2].includes(d.investor_id))
+            // Sort by year (most recent first)
+            .sort((a, b) => {
+                const yearA = Number(a.year) || 0;
+                const yearB = Number(b.year) || 0;
+                return yearB - yearA; // Descending order (newest first)
+            });
 
         return { 
             availableYears: years, 
@@ -240,6 +291,33 @@ import { useState, useEffect, useRef, useMemo } from "react";
         };
     }, [allDocs, investor1, investor2, includeEmea, selectedYears, selectedCategories]);
 
+    // Filtered investors for search
+    const filteredInvestors1 = useMemo(() => {
+        if (!investor1Search.trim()) return allInvestors;
+        return allInvestors.filter(inv => 
+            inv.name.toLowerCase().includes(investor1Search.toLowerCase())
+        );
+    }, [allInvestors, investor1Search]);
+
+    const filteredInvestors2 = useMemo(() => {
+        if (!investor2Search.trim()) return allInvestors;
+        return allInvestors.filter(inv => 
+            inv.name.toLowerCase().includes(investor2Search.toLowerCase())
+        );
+    }, [allInvestors, investor2Search]);
+
+    // Clear selected categories that are no longer available when investors change
+    useEffect(() => {
+        if (selectedCategories.length > 0) {
+            const validCategories = selectedCategories.filter(cat => 
+                availableCategories.includes(cat)
+            );
+            if (validCategories.length !== selectedCategories.length) {
+                setSelectedCategories(validCategories);
+            }
+        }
+    }, [availableCategories]);
+
     // CLICK OUTSIDE HANDLERS
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -248,6 +326,18 @@ import { useState, useEffect, useRef, useMemo } from "react";
         }
         if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
             setIsCategoryDropdownOpen(false);
+        }
+        if (investor1DropdownRef.current && !investor1DropdownRef.current.contains(event.target as Node)) {
+            setIsInvestor1DropdownOpen(false);
+        }
+        if (investor2DropdownRef.current && !investor2DropdownRef.current.contains(event.target as Node)) {
+            setIsInvestor2DropdownOpen(false);
+        }
+        if (doc1DropdownRef.current && !doc1DropdownRef.current.contains(event.target as Node)) {
+            setIsDoc1DropdownOpen(false);
+        }
+        if (doc2DropdownRef.current && !doc2DropdownRef.current.contains(event.target as Node)) {
+            setIsDoc2DropdownOpen(false);
         }
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -297,31 +387,38 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
     const togglePdf = (id: string) => {
         setManualSelectedPdfIds(prev => {
-            if (prev.includes(id)) return prev.filter(x => x !== id);
-            
-            // Allow up to 2 documents, one from each investor
-            if (prev.length >= 2) return prev;
-            
-            // Check if we already have a document from this investor
-            const clickedDoc = allDocs.find(d => d.pdf_id === id);
-            if (!clickedDoc) return prev;
-            
-            const alreadySelectedFromSameInvestor = prev.some(pdfId => {
-                const doc = allDocs.find(d => d.pdf_id === pdfId);
-                return doc && doc.investor_id === clickedDoc.investor_id;
-            });
-            
-            if (alreadySelectedFromSameInvestor) {
-                // Replace the existing selection from this investor
-                return prev.map(pdfId => {
-                    const doc = allDocs.find(d => d.pdf_id === pdfId);
-                    if (doc && doc.investor_id === clickedDoc.investor_id) {
-                        return id;
-                    }
-                    return pdfId;
-                });
+            if (prev.includes(id)) {
+                // Deselecting - always allowed, clear any error
+                setSelectionError("");
+                return prev.filter(x => x !== id);
             }
             
+            // Selecting - check limits
+            
+            // Check total document limit (max 3)
+            if (prev.length >= 3) {
+                setSelectionError("Only 3 documents can be selected");
+                setTimeout(() => setSelectionError(""), 3000); // Clear after 3 seconds
+                return prev;
+            }
+            
+            // Check per-investor limit (max 2 from same investor)
+            const selectedDoc = allDocs.find(doc => doc.pdf_id === id);
+            if (selectedDoc) {
+                const sameInvestorCount = prev.filter(pdfId => {
+                    const doc = allDocs.find(d => d.pdf_id === pdfId);
+                    return doc && doc.investor_id === selectedDoc.investor_id;
+                }).length;
+                
+                if (sameInvestorCount >= 2) {
+                    setSelectionError(`Only 2 documents allowed per investor (${selectedDoc.investor_name || 'this investor'})`);
+                    setTimeout(() => setSelectionError(""), 3000); // Clear after 3 seconds
+                    return prev;
+                }
+            }
+            
+            // Clear error on successful selection
+            setSelectionError("");
             return [...prev, id];
         });
     };
@@ -432,14 +529,17 @@ import { useState, useEffect, useRef, useMemo } from "react";
             if (!investor1 || !investor2) return alert("Please select both investors.");
             if (!docsFoundForInv1 || !docsFoundForInv2) return alert("Adjust filters - documents missing for selected scope.");
         } else {
-            if (manualSelectedPdfIds.length !== 2) return alert("Please select exactly 2 documents.");
+            // Specific mode: Allow 2-3 documents
+            if (manualSelectedPdfIds.length < 2 || manualSelectedPdfIds.length > 3) {
+                return alert("Please select 2-3 documents.");
+            }
             
-            // Validate one document from each investor
+            // Validate documents are from at least 2 different investors
             const selectedDocs = allDocs.filter(doc => manualSelectedPdfIds.includes(doc.pdf_id));
             const investorIds = new Set(selectedDocs.map(doc => doc.investor_id));
             
-            if (investorIds.size !== 2) {
-                return alert("Please select one document from each investor.");
+            if (investorIds.size < 2) {
+                return alert("Please select documents from at least 2 different investors.");
             }
         }
 
@@ -475,13 +575,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
     const isReady = useMemo(() => {
         if (loading) return false;
         if (mode === "specific") {
-            if (manualSelectedPdfIds.length !== 2) return false;
+            // Need 2-3 documents
+            if (manualSelectedPdfIds.length < 2 || manualSelectedPdfIds.length > 3) return false;
             
-            // Check that we have one document from each investor
+            // Check that we have documents from at least 2 different investors
             const selectedDocs = allDocs.filter(doc => manualSelectedPdfIds.includes(doc.pdf_id));
             const investorIds = new Set(selectedDocs.map(doc => doc.investor_id));
             
-            return investorIds.size === 2;
+            return investorIds.size >= 2;
         }
         return investor1 && investor2 && docsFoundForInv1 && docsFoundForInv2;
     }, [loading, mode, manualSelectedPdfIds, investor1, investor2, docsFoundForInv1, docsFoundForInv2, allDocs]);
@@ -541,16 +642,30 @@ import { useState, useEffect, useRef, useMemo } from "react";
                     
                     <div className="px-6 py-4 border-b border-[#931638]/50 flex justify-between items-start bg-gray-50">
                         <div className="flex flex-col gap-1.5">
-                            <a 
-                                href={getPdfLink(selectedAnswer.file_url, selectedAnswer.best_page || 1, selectedAnswer.pdf_name)} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="text-lg font-semibold text-[#931638] hover:text-[#931638]/70 hover:underline flex items-center gap-2 transition-colors"
-                                title="Open Original PDF"
-                            >
-                                {selectedAnswer.pdf_name}
-                                <Maximize2 size={14} className="opacity-50" />
-                            </a>
+                            <div className="flex items-center gap-2">
+                                <a 
+                                    href={selectedAnswer.file_url}
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="text-lg font-semibold text-[#931638] hover:text-[#931638]/80 hover:underline transition-colors"
+                                    title="Open PDF"
+                                >
+                                    {selectedAnswer.pdf_name}
+                                </a>
+                                {selectedAnswer.file_url && (
+                                    <a
+                                        href={selectedAnswer.file_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex items-center gap-1 bg-[#931638] text-white px-2 py-1 rounded text-[10px] font-medium hover:bg-[#931638]/90 transition-colors"
+                                        title="Open PDF"
+                                    >
+                                        <FileSearch size={12} />
+                                        PDF
+                                    </a>
+                                )}
+                            </div>
                             <div className="flex items-center gap-3 text-xs text-gray-500">
                                 <span className="text-[#931638] font-medium">{selectedAnswer.investor_name}</span>
                             </div>
@@ -591,7 +706,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 flex-1">
                     {/* Eye/EyeOff Toggle */}
-                    <button
+                    {/* <button
                         onClick={() => setShowFilters(!showFilters)}
                         className="p-2 bg-white border-2 border-[#931638]/50 rounded-lg hover:bg-gray-50 transition-all shrink-0"
                         title={showFilters ? "Hide filter controls" : "Show filter controls"}
@@ -601,7 +716,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                         ) : (
                             <EyeOff size={16} className="text-gray-400" />
                         )}
-                    </button>
+                    </button> */}
 
                     {showFilters && (
                     <>
@@ -621,34 +736,101 @@ import { useState, useEffect, useRef, useMemo } from "react";
                         </button>
                     </div>
 
-                    {/* Investor Selection */}
-                    <select 
-                        value={investor1} 
-                        onChange={(e) => setInvestor1(e.target.value)} 
-                        className="h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg px-2 text-xs text-black cursor-pointer focus:border-[#931638] focus:outline-none w-[250px]"
-                    >
-                        <option value="">Investor 1</option>
-                        {allInvestors.map(inv => (
-                            <option key={inv.id} value={inv.id} disabled={inv.id === investor2}>
-                                {inv.name}
-                            </option>
-                        ))}
-                    </select>
+                    {/* Investor 1 Selection with Search */}
+                    <div className="relative" ref={investor1DropdownRef}>
+                        <input
+                            type="text"
+                            value={investor1Search}
+                            onChange={(e) => {
+                                setInvestor1Search(e.target.value);
+                                setIsInvestor1DropdownOpen(true);
+                            }}
+                            onFocus={() => setIsInvestor1DropdownOpen(true)}
+                            placeholder={allInvestors.find(inv => inv.id === investor1)?.name || "Investor 1"}
+                            className="w-[250px] h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg px-3 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+                        />
+                        
+                        {isInvestor1DropdownOpen && (
+                            <div className="absolute top-full left-0 mt-2 w-full max-h-60 overflow-y-auto bg-white border-2 border-[#931638] rounded-lg shadow-2xl z-50 animate-in fade-in zoom-in-95">
+                                {filteredInvestors1.length === 0 ? (
+                                    <div className="p-3 text-xs text-gray-500 italic">No investors found</div>
+                                ) : (
+                                    filteredInvestors1.map((inv) => {
+                                        const isSelected = inv.id === investor1;
+                                        const isDisabled = inv.id === investor2;
+                                        return (
+                                            <div
+                                                key={inv.id}
+                                                onClick={() => {
+                                                    if (!isDisabled) {
+                                                        setInvestor1(inv.id);
+                                                        setInvestor1Search("");
+                                                        setIsInvestor1DropdownOpen(false);
+                                                    }
+                                                }}
+                                                className={`px-3 py-2 text-xs cursor-pointer transition-colors ${
+                                                    isDisabled ? 'opacity-50 cursor-not-allowed bg-gray-100' :
+                                                    isSelected ? 'bg-[#931638]/10 text-[#931638] font-medium' : 
+                                                    'hover:bg-gray-100 text-gray-700'
+                                                }`}
+                                            >
+                                                {inv.name}
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     <span className="text-gray-400 text-xs font-bold">VS</span>
 
-                    <select 
-                        value={investor2} 
-                        onChange={(e) => setInvestor2(e.target.value)} 
-                        className="h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg px-2 text-xs text-black cursor-pointer focus:border-[#931638] focus:outline-none w-[250px]"
-                    >
-                        <option value="">Investor 2</option>
-                        {allInvestors.map(inv => (
-                            <option key={inv.id} value={inv.id} disabled={inv.id === investor1}>
-                                {inv.name}
-                            </option>
-                        ))}
-                    </select>
+                    {/* Investor 2 Selection with Search */}
+                    <div className="relative" ref={investor2DropdownRef}>
+                        <input
+                            type="text"
+                            value={investor2Search}
+                            onChange={(e) => {
+                                setInvestor2Search(e.target.value);
+                                setIsInvestor2DropdownOpen(true);
+                            }}
+                            onFocus={() => setIsInvestor2DropdownOpen(true)}
+                            placeholder={allInvestors.find(inv => inv.id === investor2)?.name || "Investor 2"}
+                            className="w-[250px] h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg px-3 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+                        />
+                        
+                        {isInvestor2DropdownOpen && (
+                            <div className="absolute top-full left-0 mt-2 w-full max-h-60 overflow-y-auto bg-white border-2 border-[#931638] rounded-lg shadow-2xl z-50 animate-in fade-in zoom-in-95">
+                                {filteredInvestors2.length === 0 ? (
+                                    <div className="p-3 text-xs text-gray-500 italic">No investors found</div>
+                                ) : (
+                                    filteredInvestors2.map((inv) => {
+                                        const isSelected = inv.id === investor2;
+                                        const isDisabled = inv.id === investor1;
+                                        return (
+                                            <div
+                                                key={inv.id}
+                                                onClick={() => {
+                                                    if (!isDisabled) {
+                                                        setInvestor2(inv.id);
+                                                        setInvestor2Search("");
+                                                        setIsInvestor2DropdownOpen(false);
+                                                    }
+                                                }}
+                                                className={`px-3 py-2 text-xs cursor-pointer transition-colors ${
+                                                    isDisabled ? 'opacity-50 cursor-not-allowed bg-gray-100' :
+                                                    isSelected ? 'bg-[#931638]/10 text-[#931638] font-medium' : 
+                                                    'hover:bg-gray-100 text-gray-700'
+                                                }`}
+                                            >
+                                                {inv.name}
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Category Multi-Select Dropdown */}
                     <div className="relative" ref={categoryDropdownRef}>
@@ -748,9 +930,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                 className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
                             />
                             <button 
-                                onClick={() => setQuestion("")} 
+                                onClick={() => {
+                                    setQuestion("");
+                                    setHistory([]);
+                                }} 
                                 className="text-gray-400 hover:text-[#931638] p-2 rounded-lg hover:bg-gray-100 transition-colors mr-1"
-                                title="Clear question"
+                                title="Clear chat"
                             >
                                 <Trash2 size={16}/>
                             </button>
@@ -859,26 +1044,10 @@ import { useState, useEffect, useRef, useMemo } from "react";
                 </div>
             )}
 
-            {/* Manual Document Selection Grid */}
+            {/* Manual Document Selection - Compact Dropdowns */}
             {showFilters && mode === "specific" && (
                 <div className="animate-in slide-in-from-top-2 duration-300 bg-gray-50 p-3 rounded-lg border-2 border-[#931638]">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest flex items-center gap-2">
-                            <Grid size={14} /> Available Docs ({filteredDocs.length})
-                        </h3>
-                        <button 
-                            onClick={() => setIsDocsCollapsed(!isDocsCollapsed)}
-                            className="text-[#931638] hover:bg-[#931638]/10 p-1.5 rounded-lg transition-colors"
-                            title={isDocsCollapsed ? "Expand" : "Collapse"}
-                        >
-                            <ChevronDown 
-                                size={16} 
-                                className={`transition-transform duration-200 ${isDocsCollapsed ? '-rotate-90' : ''}`}
-                            />
-                        </button>
-                    </div>
-                    {!isDocsCollapsed && (
-                        <div className="flex gap-3 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                    <div className="flex items-center gap-4">
                         {(() => {
                             // Group documents by investor
                             const grouped: { [investorId: string]: { name: string; docs: typeof filteredDocs } } = {};
@@ -889,39 +1058,98 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                 grouped[doc.investor_id].docs.push(doc);
                             });
                             
-                            return Object.entries(grouped).map(([investorId, group], idx) => (
-                                <div key={investorId} className="flex gap-3">
-                                    <div className="flex-1">
-                                        <div className="text-xs font-bold text-[#931638] mb-2">{group.name}</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {group.docs.map(doc => {
-                                                const isSelected = manualSelectedPdfIds.includes(doc.pdf_id);
-                                                return (
-                                                    <div 
-                                                        key={doc.pdf_id} 
-                                                        onClick={() => togglePdf(doc.pdf_id)} 
-                                                        className={`group p-3 rounded-lg border cursor-pointer transition-all flex flex-col gap-1 ${isSelected ? 'bg-[#931638]/10 border-[#931638]' : 'bg-white border-gray-300 hover:bg-gray-100'}`}
-                                                    >
-                                                        <div className="flex justify-between items-start gap-2">
-                                                            <span className={`text-xs font-medium line-clamp-2 ${isSelected ? 'text-[#931638]' : 'text-gray-700'}`}>
-                                                                {doc.name}
-                                                            </span>
-                                                            <div className={`w-4 h-4 rounded-full border shrink-0 flex items-center justify-center ${isSelected ? 'bg-[#931638] border-[#931638]' : 'border-gray-400'}`}>
-                                                                {isSelected && <Check size={10} className="text-white" />}
-                                                            </div>
-                                                        </div>
+                            return Object.entries(grouped).map(([investorId, group], idx) => {
+                                const isFirstInvestor = idx === 0;
+                                const dropdownRef = isFirstInvestor ? doc1DropdownRef : doc2DropdownRef;
+                                const isOpen = isFirstInvestor ? isDoc1DropdownOpen : isDoc2DropdownOpen;
+                                const setIsOpen = isFirstInvestor ? setIsDoc1DropdownOpen : setIsDoc2DropdownOpen;
+                                
+                                // Find selected document for this investor
+                                const selectedDoc = group.docs.find(doc => manualSelectedPdfIds.includes(doc.pdf_id));
+                                
+                                return (
+                                    <div key={investorId} className="flex-1">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs text-gray-700 font-medium whitespace-nowrap">
+                                                {group.name} ({group.docs.filter(d => manualSelectedPdfIds.includes(d.pdf_id)).length}):
+                                            </span>
+                                            <div className="relative flex-1" ref={dropdownRef}>
+                                                <button 
+                                                    onClick={() => setIsOpen(!isOpen)} 
+                                                    className="flex items-center justify-between gap-2 bg-white border border-[#931638]/50 rounded px-3 py-1.5 text-xs text-black hover:bg-gray-50 hover:border-[#931638] w-full"
+                                                >
+                                                    <span className="truncate">
+                                                        {(() => {
+                                                            const selectedCount = group.docs.filter(d => manualSelectedPdfIds.includes(d.pdf_id)).length;
+                                                            if (selectedCount === 0) return "+ Add Document";
+                                                            if (selectedCount === 1) {
+                                                                const doc = group.docs.find(d => manualSelectedPdfIds.includes(d.pdf_id));
+                                                                return doc?.name || "+ Add Document";
+                                                            }
+                                                            return `${selectedCount} Selected`;
+                                                        })()}
+                                                    </span>
+                                                    <ChevronDown 
+                                                        size={14} 
+                                                        className={`transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+                                                    />
+                                                </button>
+                                                {isOpen && (
+                                                    <div className="absolute top-full left-0 mt-2 w-full max-h-60 overflow-y-auto bg-white border-2 border-[#931638] rounded-lg shadow-2xl z-50 animate-in fade-in zoom-in-95">
+                                                        {group.docs.length === 0 ? (
+                                                            <div className="p-3 text-xs text-gray-500 italic">No documents available</div>
+                                                        ) : (
+                                                            group.docs.map((doc) => {
+                                                                const isSelected = manualSelectedPdfIds.includes(doc.pdf_id);
+                                                                return (
+                                                                    <div 
+                                                                        key={doc.pdf_id} 
+                                                                        onClick={() => {
+                                                                            togglePdf(doc.pdf_id);
+                                                                            // Don't close dropdown - allow multi-select
+                                                                        }} 
+                                                                        className={`flex items-start gap-3 px-3 py-2.5 cursor-pointer transition-colors border-b border-gray-200 last:border-b-0 ${isSelected ? 'bg-[#931638]/10 hover:bg-[#931638]/20' : 'hover:bg-gray-100'}`}
+                                                                    >
+                                                                        <div className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? 'bg-[#931638] border-[#931638]' : 'border-gray-400'}`}>
+                                                                            {isSelected && <Check size={10} className="text-white" />}
+                                                                        </div>
+                                                                        <span className={`text-xs leading-normal break-words whitespace-normal ${isSelected ? 'text-[#931638] font-medium' : 'text-gray-700'}`}>
+                                                                            {doc.name}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        )}
                                                     </div>
-                                                );
-                                            })}
+                                                )}
+                                            </div>
                                         </div>
+                                        {/* Show selected document tag below */}
+                                        {selectedDoc && (
+                                            <div className="mt-2 flex gap-1.5">
+                                                <div className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/60 px-2 py-1 rounded text-xs animate-in fade-in zoom-in-95">
+                                                    <span className="truncate max-w-[300px]">{selectedDoc.name}</span>
+                                                    <button 
+                                                        onClick={() => togglePdf(selectedDoc.pdf_id)} 
+                                                        className="hover:text-[#931638] shrink-0"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    {idx < Object.keys(grouped).length - 1 && (
-                                        <div className="w-px bg-[#931638]"></div>
-                                    )}
-                                </div>
-                            ));
+                                );
+                            });
                         })()}
                     </div>
+                    
+                    {/* Subtle Error Message */}
+                    {selectionError && (
+                        <div className="mt-3 flex items-center gap-2 text-xs text-[#931638] bg-[#931638]/5 border border-[#931638]/20 rounded-lg px-3 py-2 animate-in fade-in slide-in-from-top-1">
+                            <AlertCircle size={14} className="shrink-0" />
+                            <span>{selectionError}</span>
+                        </div>
                     )}
                 </div>
             )}
@@ -938,9 +1166,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
                 className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
             />
             <button 
-                onClick={() => setQuestion("")} 
+                onClick={() => {
+                    setQuestion("");
+                    setHistory([]);
+                }} 
                 className="text-gray-400 hover:text-[#931638] p-2 rounded-lg hover:bg-gray-100 transition-colors mr-1"
-                title="Clear question"
+                title="Clear chat"
             >
                 <Trash2 size={16}/>
             </button>
@@ -959,7 +1190,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
         <div className="flex-1 overflow-y-auto space-y-6 pr-4 pb-4 custom-scrollbar">
             {history.length === 0 && !loading && (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
-                    <Bot size={48} strokeWidth={1} />
                     <p className="text-sm font-light">Select two investors and ask a question to compare.</p>
                 </div>
             )}
@@ -981,10 +1211,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                 <div key={pair.question.id} className="space-y-3">
                     
                     {/* QUESTION */}
-                    <div className="flex gap-4 flex-row-reverse animate-in slide-in-from-right-2">
-                        <div className="w-8 h-8 rounded-full bg-[#931638] flex items-center justify-center shrink-0">
-                            <User size={14} className="text-white" />
-                        </div>
+                    <div className="flex justify-end animate-in slide-in-from-right-2">
                         <div className="bg-[#931638] text-white p-3 rounded-2xl rounded-tr-sm text-sm max-w-[90%] shadow-lg">
                             {pair.question.content}
                         </div>
@@ -992,21 +1219,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
                     
                     {/* LOADING INDICATOR - Show only for the newest question without an answer */}
                     {!pair.answer && pairIdx === 0 && loading && !isVerifying && (
-                        <div className="flex gap-4 items-center ml-1">
-                            <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse flex items-center justify-center shrink-0">
-                                <Bot size={14} className="text-gray-400" />
-                            </div>
+                        <div className="flex items-center ml-1">
                             <div className="text-xs text-gray-500 animate-pulse">Analyzing and Comparing...</div>
                         </div>
                     )}
                     
                     {/* ANSWER */}
                     {pair.answer && (
-                        <div className="flex gap-4 animate-in slide-in-from-left-2">
-                            <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center shrink-0">
-                                <Bot size={14} className="text-white" />
-                            </div>
-
+                        <div className="animate-in slide-in-from-left-2">
                             <div className="flex flex-col gap-3 max-w-[90%] w-full">
                                 {pair.answer.error && (
                                     <div className="text-[#931638]/80 text-sm flex items-center gap-2 bg-[#931638]/10 p-3 rounded-lg border border-[#931638]/20">
@@ -1015,10 +1235,10 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                     </div>
                                 )}
 
-                                {!pair.answer.error && pair.answer.answers && (
+                                {!pair.answer.error && pair.answer.answers && pair.answer.answers.length > 0 && (
                                     <>
-                                        {/* Answer Cards in Grid */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {/* Answer Cards in Grid - 3 columns for 3 answers, 2 columns otherwise */}
+                                        <div className={`grid gap-3 ${pair.answer.answers.length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
                                             {pair.answer.answers.map((ans, idx) => (
                                                 <div
                                                     key={idx}
@@ -1031,7 +1251,21 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                                                 <span className="text-xs font-bold text-[#931638]">#{ans.rank}</span>
                                                                 <h4 className="text-sm font-semibold text-black">{ans.investor_name}</h4>
                                                             </div>
+                                                            {ans.file_url && (
+                                                                <a
+                                                                    href={ans.file_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="flex items-center gap-1 bg-[#931638] text-white px-2 py-1 rounded text-[10px] font-medium hover:bg-[#931638]/90 transition-colors"
+                                                                    title="Open PDF"
+                                                                >
+                                                                    <FileSearch size={12} />
+                                                                    PDF
+                                                                </a>
+                                                            )}
                                                         </div>
+
                                                         <p className="text-[11px] text-gray-500 mb-2 truncate">{ans.pdf_name}</p>
                                                         <div className="text-xs text-gray-700 line-clamp-4 prose prose-sm">
                                                             <ReactMarkdown>{ans.answer}</ReactMarkdown>
@@ -1068,6 +1302,13 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                             </div>
                                         )}
                                     </>
+                                )}
+
+                                {/* No Results Message */}
+                                {!pair.answer.error && pair.answer.answers && pair.answer.answers.length === 0 && (
+                                    <div className="text-gray-600 text-sm italic p-4 bg-gray-50 rounded-lg border border-gray-300">
+                                        No relevant documents found for this comparison.
+                                    </div>
                                 )}
                             </div>
                         </div>

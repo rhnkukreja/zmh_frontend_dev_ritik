@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Send, Bot, User, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, AlertCircle, Trash2, Eye, EyeOff, Info} from "lucide-react";
+import { Send, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, AlertCircle, Trash2, Eye, EyeOff, Info} from "lucide-react";
 import { AI_CHATBOT_API_BASE, fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api";
 import ReactMarkdown from "react-markdown";
 
@@ -83,7 +83,7 @@ export default function QAPage() {
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   
-  const [llmStrength, setLlmStrength] = useState(5);
+  const [llmStrength, setLlmStrength] = useState(0);
   
   // --- Modal State ---
   const [selectedAnswer, setSelectedAnswer] = useState<AnswerData | null>(null);
@@ -98,6 +98,10 @@ export default function QAPage() {
 
   // NEW: Show/Hide Filters State
   const [showFilters, setShowFilters] = useState(true);
+
+  // NEW: Investor Search State
+  const [investorSearch, setInvestorSearch] = useState("");
+  const [isInvestorDropdownOpen, setIsInvestorDropdownOpen] = useState(false);
 
   // --- Sample Questions for specific investors ---
   const SAMPLE_QUESTIONS: Record<string, Array<{question: string, category: string, year?: number, scope?: "specific" | "all"}>> = {
@@ -119,6 +123,7 @@ export default function QAPage() {
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const investorDropdownRef = useRef<HTMLDivElement>(null);
   const docDropdownRef = useRef<HTMLDivElement>(null);
   const yearDropdownRef = useRef<HTMLDivElement>(null); 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
@@ -278,6 +283,9 @@ export default function QAPage() {
     function handleClickOutside(event: MouseEvent) {
       if (docDropdownRef.current && !docDropdownRef.current.contains(event.target as Node)) {
         setIsDocDropdownOpen(false);
+      }
+      if (investorDropdownRef.current && !investorDropdownRef.current.contains(event.target as Node)) {
+        setIsInvestorDropdownOpen(false);
       }
       if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target as Node)) {
         setIsYearDropdownOpen(false);
@@ -500,6 +508,15 @@ export default function QAPage() {
     return matchInv && matchEmea && matchYear && matchCat;
     }).sort((a, b) => Number(b.year) - Number(a.year)); // Keeps newest at the top
 
+  // NEW: Filtered investor list based on search
+  const filteredInvestors = investorList.filter(inv => {
+    // Don't filter out the separator
+    if (inv.disabled) return true;
+    // Filter by search term - match from the START of the name
+    if (!investorSearch.trim()) return true;
+    return inv.name.toLowerCase().startsWith(investorSearch.toLowerCase());
+  });
+
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] relative">
@@ -557,21 +574,29 @@ export default function QAPage() {
             <div className="bg-white border-2 border-[#931638] rounded-2xl w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 
                 <div className="px-6 py-4 border-b-2 border-[#931638] flex justify-between items-start bg-gray-50">
-                <div className="flex flex-col gap-1.5">
-                        <a 
-                            href={getPdfLink(selectedAnswer.file_url, selectedAnswer.best_page || 8, selectedAnswer.pdf_name)}
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={selectedAnswer.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-lg font-semibold text-[#931638] hover:text-[#931638]/80 hover:underline flex items-center gap-2 transition-colors"
-                            title="Open Original PDF"
+                            className="text-lg font-semibold text-[#931638] hover:text-[#931638]/80 hover:underline transition-colors"
+                            title="Open PDF"
                         >
                             {selectedAnswer.pdf_name}
-                            <Maximize2 size={14} className="opacity-50" />
                         </a>
-                        <div className="flex items-center gap-3 text-xs text-gray-600">
-                            {selectedAnswer.year && <span className="flex items-center gap-1"><Calendar size={12} />{selectedAnswer.year}</span>}
-                            {selectedAnswer.quarter && <span>Q{selectedAnswer.quarter}</span>}
-                        </div>
+                        {selectedAnswer.file_url && (
+                            <a
+                                href={selectedAnswer.file_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-1 bg-[#931638] text-white px-2 py-1 rounded text-[10px] font-medium hover:bg-[#931638]/90 transition-colors"
+                                title="Open PDF"
+                            >
+                                <FileSearch size={12} />
+                                PDF
+                            </a>
+                        )}
                     </div>
                     <button onClick={() => setSelectedAnswer(null)} className="text-gray-500 hover:text-black p-2 hover:bg-gray-100 rounded-lg transition-colors"><X size={20} /></button>
                 </div>
@@ -600,7 +625,7 @@ export default function QAPage() {
     <div className="flex items-center gap-3 flex-1">
       
       {/* NEW: Eye/EyeOff Toggle */}
-      <button
+      {/* <button
         onClick={() => setShowFilters(!showFilters)}
         className="p-2 bg-white border-2 border-[#931638]/50 rounded-lg hover:bg-gray-50 transition-all shrink-0"
         title={showFilters ? "Hide filter controls" : "Show filter controls"}
@@ -610,24 +635,70 @@ export default function QAPage() {
         ) : (
           <EyeOff size={16} className="text-gray-400" />
         )}
-      </button>
+      </button> */}
 
       {showFilters && (
       <>
-      {/* 1. Investor Selection */}
-      <select 
-        value={investorId} 
-        onChange={(e) => setInvestorId(e.target.value)} 
-        className="h-[38px] bg-gray-100 border border-[#931638]/50 rounded-lg px-3 text-xs text-black cursor-pointer focus:border-[#931638] focus:outline-none"
-      >
-        <option value="">Select Investor</option>
-        {investorList.map(inv => (
-          <option key={inv.id} value={inv.id} disabled={inv.disabled}>
-            {inv.name}
-          </option>
-        ))}
-      </select>
+{/* 1. Investor Selection with Google-style Search */}
+<div className="relative flex-1 max-w-[250px]" ref={investorDropdownRef}>
+<input
+  type="text"
+  value={investorSearch}
+  onChange={(e) => {
+    setInvestorSearch(e.target.value);
+    setIsInvestorDropdownOpen(true);
+  }}
+  onFocus={() => setIsInvestorDropdownOpen(true)}
+  placeholder={
+    investorList.find(inv => inv.id === investorId)?.name || "Search"
+  }
+  className="w-full h-[38px] bg-white border border-[#931638]/50 rounded-lg px-3 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+/>
+  {/* Dropdown Results */}
+  {isInvestorDropdownOpen && (
+    <div className="absolute top-full left-0 mt-2 w-full max-h-60 overflow-y-auto bg-white border-2 border-[#931638] rounded-lg shadow-2xl z-50 animate-in fade-in zoom-in-95">
+      {filteredInvestors.length === 0 ? (
+        <div className="p-3 text-xs text-gray-500 italic">
+          No investors found
+        </div>
+      ) : (
+        filteredInvestors.map((inv) => {
+          const isSelected = investorId === inv.id;
+          const isSeparator = inv.disabled;
 
+          if (isSeparator) {
+            return (
+              <div
+                key={inv.id}
+                className="px-3 py-1 text-gray-400 text-xs border-t border-gray-300"
+              >
+                {inv.name}
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={inv.id}
+              onClick={() => {
+                setInvestorId(inv.id);
+                setInvestorSearch("");
+                setIsInvestorDropdownOpen(false);
+              }}
+              className={`px-3 py-2.5 cursor-pointer transition-colors text-xs ${
+                isSelected
+                  ? "bg-[#931638]/10 text-[#931638] font-medium"
+                  : "hover:bg-gray-100 text-gray-800"
+              }`}
+            >
+              {inv.name}
+            </div>
+          );
+        })
+      )}
+    </div>
+  )}
+</div>
       {/* 2. Year Multi-Select (Default 2025) */}
       <div className="relative" ref={yearDropdownRef}>
         <button 
@@ -812,39 +883,6 @@ export default function QAPage() {
         )}
 </div>
 
-      {/* SAMPLE QUESTIONS - Only for BlackRock, Vanguard, and State Street */}
-      {showFilters && SAMPLE_QUESTIONS[investorId] && history.length === 0 && (
-        <div className="bg-gradient-to-br from-[#931638]/5 to-white border-2 border-[#931638]/50 rounded-xl p-4 mb-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="bg-[#931638] p-1.5 rounded-lg">
-              <FileSearch size={16} className="text-white" />
-            </div>
-            <h3 className="text-sm font-semibold text-gray-800">Sample Questions</h3>
-          </div>
-          <div className="space-y-2">
-            {SAMPLE_QUESTIONS[investorId].map((sample, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSampleQuestionClick(sample.question, sample.category, sample.year?? 2025, sample.scope|| "all")}
-                className="w-full text-left bg-white hover:bg-[#931638]/5 border border-[#931638]/30 hover:border-[#931638]/60 rounded-lg p-3 transition-all group"
-              >
-                <div className="flex items-start gap-2">
-                  <span className="text-[#931638] font-bold text-xs mt-0.5 shrink-0">{idx + 1}.</span>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-800 group-hover:text-[#931638] font-medium leading-relaxed">
-                      {sample.question}
-                    </p>
-                    <span className="inline-block mt-1.5 text-[10px] bg-[#931638]/10 text-[#931638] px-2 py-0.5 rounded-full">
-                      {sample.category}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* INPUT BOX AND SELECT DOCUMENTS - Only show when filters visible */}
       {showFilters && (
       <div className={`flex gap-3 mb-3 transition-all duration-300 ${scope === "all" ? "flex-col" : "flex-row"}`}>
@@ -855,9 +893,12 @@ export default function QAPage() {
           <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAsk()} placeholder="Type a question..." className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
           {question && (
             <button 
-              onClick={() => setQuestion("")} 
+              onClick={() => {
+                setQuestion("");
+                setHistory([]);
+              }} 
               className="text-gray-400 hover:text-[#931638] p-2 rounded-lg transition-colors mr-1"
-              title="Clear question"
+              title="Clear chat"
             >
               <Trash2 size={16}/>
             </button>
@@ -867,8 +908,8 @@ export default function QAPage() {
 
         {/* Select Documents - Only shows in Specific mode, positioned to the right */}
         {scope === "specific" && (
-          <div className="w-1/2 animate-in slide-in-from-right duration-300 bg-gray-50 p-2 rounded-lg border-2 border-[#931638]">
-            <div className="flex items-center gap-3 mb-2">
+          <div className="w-1/2 animate-in slide-in-from-right duration-300 bg-gray-50 px-3 py-3 rounded-lg border-2 border-[#931638]">
+            <div className="flex items-center gap-3">
               <span className="text-xs text-gray-700 font-medium">Select Documents ({selectedPdfIds.length}/3):</span>
               <div className="relative" ref={docDropdownRef}>
                 <button onClick={() => setIsDocDropdownOpen(!isDocDropdownOpen)} className="flex items-center justify-between gap-2 bg-white border border-[#931638]/50 rounded px-3 py-1.5 text-xs text-black hover:bg-gray-50 hover:border-[#931638] min-w-[200px]">
@@ -902,85 +943,121 @@ export default function QAPage() {
                 )}
               </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
-              {selectedPdfIds.map(id => {
-                const doc = allDocs.find(d => d.pdf_id === id);
-                return (
-                  <div key={id} className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/60 px-2 py-1 rounded text-xs animate-in fade-in zoom-in-95 shrink-0">
-                    <span className="whitespace-nowrap">{doc?.name}</span>
-                    <button onClick={() => removePdf(id)} className="hover:text-[#931638]"><X size={12} /></button>
-                  </div>
-                )
-              })}
-            </div>
+            {selectedPdfIds.length > 0 && (
+              <div className="flex gap-1.5 overflow-x-auto mt-2" style={{ scrollbarWidth: 'thin' }}>
+                {selectedPdfIds.map(id => {
+                  const doc = allDocs.find(d => d.pdf_id === id);
+                  return (
+                    <div key={id} className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/60 px-2 py-1 rounded text-xs animate-in fade-in zoom-in-95 shrink-0">
+                      <span className="whitespace-nowrap">{doc?.name}</span>
+                      <button onClick={() => removePdf(id)} className="hover:text-[#931638]"><X size={12} /></button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
       )}
 
+      {/* SAMPLE QUESTIONS - Only for BlackRock, Vanguard, and State Street */}
+      {showFilters && SAMPLE_QUESTIONS[investorId] && history.length === 0 && (
+        
+          <div className="space-y-1.5">
+            {SAMPLE_QUESTIONS[investorId].map((sample, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSampleQuestionClick(sample.question, sample.category, sample.year?? 2025, sample.scope|| "all")}
+                className="w-full text-left bg-white hover:bg-[#931638]/5 border border-[#931638]/30 hover:border-[#931638]/60 rounded-lg p-2 transition-all group"
+              >
+                <div className="flex items-start gap-2">
+                  <span className="text-[#931638] font-bold text-xs mt-0.5 shrink-0">{idx + 1}.</span>
+                  <p className="text-xs text-gray-800 group-hover:text-[#931638] font-medium leading-relaxed">
+                    {sample.question}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+      )}
+
       <div className="flex-1 overflow-y-auto space-y-4 pr-4 pb-4">
       <div ref={messagesEndRef} />
-        {history.length === 0 && <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4"><Bot size={48} strokeWidth={1} /><p className="text-sm font-light">Ask a question to start.</p></div>}
+        {history.length === 0 && <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4"><p className="text-sm font-light">Ask a question to start.</p></div>}
 {history.map((qa) => (
   <div key={qa.id} className="space-y-3">
     
     {/* QUESTION */}
-    <div className="flex gap-4 flex-row-reverse">
-      <div className="w-8 h-8 rounded-full bg-[#931638] flex items-center justify-center">
-        <User size={14} className="text-white" />
-      </div>
+    <div className="flex justify-end">
       <div className="bg-[#931638] text-white p-3 rounded-2xl rounded-tr-sm text-sm max-w-[90%]">
         {qa.question}
       </div>
     </div>
 
     {/* ANSWER */}
-    <div className="flex gap-4">
-      <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center">
-        <Bot size={14} className="text-white" />
-      </div>
+    <div className="flex flex-col gap-3 max-w-[90%]">
+      {qa.loading && (
+        <div className="text-xs text-gray-500 animate-pulse">
+          Analyzing...
+        </div>
+      )}
 
-      <div className="flex flex-col gap-3 max-w-[90%]">
-        {qa.loading && (
-          <div className="text-xs text-gray-500 animate-pulse">
-            Analyzing...
-          </div>
-        )}
-
-        {qa.answers?.map((ans, idx) => (
-          <div
-            key={idx}
-            onClick={() => setSelectedAnswer(ans)}
-            className="group bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl overflow-hidden cursor-pointer transition-all"
-          >
-            <div className="p-4">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-semibold text-black">{ans.pdf_name}</h4>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-gray-600">
-                  {ans.year && <span>{ans.year}</span>}
-                  </div>
+      {qa.answers?.map((ans, idx) => (
+        <div
+          key={idx}
+          className="group bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl overflow-hidden transition-all"
+        >
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-black">{ans.pdf_name}</h4>
+                {ans.file_url && (
+                  <a
+                    href={ans.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 bg-[#931638] text-white px-2 py-1 rounded text-[10px] font-medium hover:bg-[#931638]/90 transition-colors"
+                    title="Open PDF"
+                  >
+                    <FileSearch size={12} />
+                    PDF
+                  </a>
+                )}
               </div>
-              <p className="text-xs text-gray-700 line-clamp-3">{ans.answer}</p>
-              {ans.pages_used && ans.pages_used.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {ans.pages_used.slice(0, 3).map((pg, i) => (
-                    <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[10px]">p.{pg}</span>
-                  ))}
-                  {ans.pages_used.length > 3 && <span className="text-[10px] text-gray-500">+{ans.pages_used.length - 3} more</span>}
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                {ans.year && <span>{ans.year}</span>}
+              </div>
             </div>
+            <p 
+              className="text-xs text-gray-700 line-clamp-3 cursor-pointer"
+              onClick={() => setSelectedAnswer(ans)}
+            >
+              {ans.answer}
+            </p>
+            {ans.pages_used && ans.pages_used.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {ans.pages_used.map((pg, i) => (
+                  <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[10px]">p.{pg}</span>
+                ))}
+              </div>
+            )}
           </div>
-        ))}
+        </div>
+      ))}
 
-        {qa.error && (
-          <div className="text-[#931638] text-sm">
-            Something went wrong.
-          </div>
-        )}
-      </div>
+      {qa.answers?.length === 0 && !qa.loading && !qa.error && (
+        <div className="text-gray-600 text-sm italic p-4 bg-gray-50 rounded-lg border border-gray-300">
+          Error Fetching: Please try again or contact support
+        </div>
+      )}
+
+      {qa.error && (
+        <div className="text-[#931638] text-sm">
+          Something went wrong.
+        </div>
+      )}
     </div>
   </div>
 ))}
