@@ -1967,6 +1967,7 @@ const index = () => {
           { label: 'No. of unique companies', key: 'unique_companies' },
           { label: 'No of proposals', key: 'total_proposals' },
           { label: 'No. of FOR votes', key: 'for_votes', showPercentage: true, percentageKey: 'for_percentage' },
+          { label: 'No. of SPLIT votes', key: 'split_votes', showPercentage: true, percentageKey: 'split_percentage' },
           { label: 'No. of AGAINST/WITHHOLD votes', key: 'against_votes', showPercentage: true, percentageKey: 'against_percentage' },
           { label: 'No. of Abstain votes', key: 'abstain_votes', showPercentage: true, percentageKey: 'abstain_percentage' },
           { label: 'Alignment with management', key: 'aligned_with_mgmt' },
@@ -3081,6 +3082,19 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
+              <td className="px-6 py-3 font-medium">No. of SPLIT votes</td>
+              {institutions.map((institution) => (
+                years.map((year: any) => {
+                  const yearData = institution.years[year];
+                  return (
+                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                      {yearData ? `${yearData.split_votes.toLocaleString()} (${yearData.split_percentage}%)` : '-'}
+                    </td>
+                  );
+                })
+              ))}
+            </tr>
+            <tr>
               <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
@@ -3107,7 +3121,7 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">Alignment with management</td>
+              <td className="px-6 py-3 font-medium">Alignment with management (Votes Cast/Management Recommendation)</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
                   const yearData = institution.years[year];

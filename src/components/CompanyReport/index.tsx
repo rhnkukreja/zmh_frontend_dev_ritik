@@ -110,11 +110,13 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
       layout?: any
     ) => ({
       table: {
-        headerRows: 1,
+        headerRows: 0,
+        dontBreakRows: true,
         widths: widths || headerRow.map(() => "*"),
         body: [headerRow, ...bodyRows]
       },
-      layout: layout || "lightHorizontalLines"
+      layout: layout || "lightHorizontalLines",
+      unbreakable: false
     });
 
     const getCssValue = (cssVar: string, fallback = "") => {
@@ -247,10 +249,18 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         const addSectionTitle = (title: string) => {
           content.push({ text: title, style: "sectionTitle" });
           content.push({
-            canvas: [
-              { type: "line", x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: primaryColor }
-            ],
-            margin: [0, 2, 0, 6]
+            table: {
+              widths: ["*"],
+              body: [[{ text: "", margin: [0, 0, 0, 0] }]]
+            },
+            layout: {
+              hLineWidth: (i: number) => (i === 1 ? 1 : 0),
+              vLineWidth: () => 0,
+              hLineColor: () => primaryColor,
+              paddingTop: () => 0,
+              paddingBottom: () => 0
+            },
+            margin: [0, 0, 0, 0]
           });
         };
         const content: Content[] = [
@@ -303,14 +313,14 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           const rows: TableCell[][] = [];
           const addRow = (name?: string, r1?: number | null, r3?: number | null, r5?: number | null) => {
             if (!name) return;
-            const r1Color = r1 !== null && r1 !== undefined && r1 < 0 ? dangerColor : gray700;
-            const r3Color = r3 !== null && r3 !== undefined && r3 < 0 ? dangerColor : gray700;
-            const r5Color = r5 !== null && r5 !== undefined && r5 < 0 ? dangerColor : gray700;
+            const r1IsBad = r1 !== null && r1 !== undefined && r1 < 0;
+            const r3IsBad = r3 !== null && r3 !== undefined && r3 < 0;
+            const r5IsBad = r5 !== null && r5 !== undefined && r5 < 0;
             rows.push([
               name,
-              { text: formatPercent(r1, 1), alignment: "center", color: r1Color },
-              { text: formatPercent(r3, 1), alignment: "center", color: r3Color },
-              { text: formatPercent(r5, 1), alignment: "center", color: r5Color }
+              { text: formatPercent(r1, 1), alignment: "center", bold: r1IsBad, color: r1IsBad ? "#b91c1c" : gray700 },
+              { text: formatPercent(r3, 1), alignment: "center", bold: r3IsBad, color: r3IsBad ? "#b91c1c" : gray700 },
+              { text: formatPercent(r5, 1), alignment: "center", bold: r5IsBad, color: r5IsBad ? "#b91c1c" : gray700 }
             ]);
           };
           addRow(companyKey, getReturn(companyKey, "1yr"), getReturn(companyKey, "3yr"), getReturn(companyKey, "5yr"));
@@ -346,18 +356,38 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             if (nominees.length > 0 && nomineesHeaders.length > 0) {
               const headerRow = nomineesHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
               const bodyRows = nominees.map((row: Record<string, any>) =>
-                nomineesHeaders.map((h: any) => formatValue(row[h.field]))
+                nomineesHeaders.map((h: any, colIdx: number) => {
+                  const cellValue = formatValue(row[h.field]);
+                  const isLastCol = colIdx === nomineesHeaders.length - 1;
+                  const numericValue = parseFloat(String(cellValue));
+                  const isLowPercentage = isLastCol && !isNaN(numericValue) && numericValue < 85;
+                  return isLowPercentage 
+                    ? { text: cellValue, color: "#b91c1c", bold: true }
+                    : cellValue;
+                })
               );
-              content.push(buildTable(headerRow, bodyRows, undefined, tableLayout));
+              // First column 35%, rest share 65% equally
+              const colWidths = ["35%", ...Array(nomineesHeaders.length - 1).fill(`${65 / (nomineesHeaders.length - 1)}%`)];
+              content.push(buildTable(headerRow, bodyRows, colWidths, tableLayout));
               content.push({ text: " ", margin: [0, 6] });
             }
 
             if (proposals.length > 0 && proposalsHeaders.length > 0) {
               const headerRow = proposalsHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
               const bodyRows = proposals.map((row: Record<string, any>) =>
-                proposalsHeaders.map((h: any) => formatValue(row[h.field]))
+                proposalsHeaders.map((h: any, colIdx: number) => {
+                  const cellValue = formatValue(row[h.field]);
+                  const isLastCol = colIdx === proposalsHeaders.length - 1;
+                  const numericValue = parseFloat(String(cellValue));
+                  const isLowPercentage = isLastCol && !isNaN(numericValue) && numericValue < 85;
+                  return isLowPercentage 
+                    ? { text: cellValue, color: "#b91c1c", bold: true }
+                    : cellValue;
+                })
               );
-              content.push(buildTable(headerRow, bodyRows, undefined, tableLayout));
+              // First column 35%, rest share 65% equally
+              const colWidths = ["35%", ...Array(proposalsHeaders.length - 1).fill(`${65 / (proposalsHeaders.length - 1)}%`)];
+              content.push(buildTable(headerRow, bodyRows, colWidths, tableLayout));
               content.push({ text: " ", margin: [0, 6] });
             }
           }
@@ -408,10 +438,9 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           if (proxyChart) {
             content.push({ ...ownershipTable, pageOrientation: "landscape" });
             content.push({
-              stack: [
-                { text: "Proxy Advisor Influence", style: "subSectionTitle", alignment: "center" },
-                { image: proxyChart, width: 260, alignment: "center", margin: [0, 6, 0, 0] }
-              ],
+              image: proxyChart, 
+              width: 260, 
+              alignment: "center", 
               margin: [0, 6, 0, 10],
               pageOrientation: "landscape"
             });
@@ -445,7 +474,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
               return [
                 investorName,
                 item.proposal || "",
-                { text: voteText, alignment: "center", color: isAgainst ? "#b91c1c" : gray700 },
+                { text: voteText, alignment: "center", bold: isAgainst, color: isAgainst ? "#b91c1c" : gray700 }, 
                 voteCountsText,
                 item.notes || item.rationale || ""
               ];
@@ -456,7 +485,6 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         }
 
         if (data.charts_data) {
-          addSectionTitle("Trend in Investor Support");
           const trendTitles = [
             "Election of Directors",
             "Say on Pay",
@@ -476,25 +504,46 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
               : { text: `${title}: No chart available`, style: "caption" };
           });
 
+          // Wrap heading + charts together as unbreakable unit
           content.push({
-            table: {
-              widths: ["*", "*"],
-              body: [
-                [trendCards[0], trendCards[1]],
-                [trendCards[2], trendCards[3]]
-              ]
-            },
-            layout: {
-              hLineWidth: () => 0.8,
-              vLineWidth: () => 0.8,
-              hLineColor: () => gray200,
-              vLineColor: () => gray200,
-              paddingLeft: () => 6,
-              paddingRight: () => 6,
-              paddingTop: () => 6,
-              paddingBottom: () => 6
-            },
-            margin: [0, 2, 0, 6]
+            stack: [
+              { text: "Trend in Investor Support", style: "sectionTitle" },
+              {
+                table: {
+                  widths: ["*"],
+                  body: [[{ text: "", margin: [0, 0, 0, 0] }]]
+                },
+                layout: {
+                  hLineWidth: (i: number) => (i === 1 ? 1 : 0),
+                  vLineWidth: () => 0,
+                  hLineColor: () => primaryColor,
+                  paddingTop: () => 0,
+                  paddingBottom: () => 0
+                },
+                margin: [0, 0, 0, 0]
+              },
+              {
+                table: {
+                  widths: ["*", "*"],
+                  body: [
+                    [trendCards[0], trendCards[1]],
+                    [trendCards[2], trendCards[3]]
+                  ]
+                },
+                layout: {
+                  hLineWidth: () => 0.8,
+                  vLineWidth: () => 0.8,
+                  hLineColor: () => gray200,
+                  vLineColor: () => gray200,
+                  paddingLeft: () => 6,
+                  paddingRight: () => 6,
+                  paddingTop: () => 6,
+                  paddingBottom: () => 6
+                },
+                margin: [0, 2, 0, 6]
+              }
+            ],
+            unbreakable: true
           });
         }
 
@@ -576,10 +625,20 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             item.proposal_name || item.proposal_title || "",
             { text: item.outcome_percentage || "", alignment: "center" },
             ...institutionNames.map(name => {
-              const vote = String((item as any)[name] || "");
+              const cellValue = (item as any)[name] || "";
+              const vote = String(cellValue);
               const lower = vote.toLowerCase();
               const isAgainst = lower === "against" || lower === "withhold";
-              return { text: vote, alignment: "center", color: isAgainst ? dangerColor : gray700 };
+              const isPercentage = vote.includes("%");
+              
+              // Color red for: Against, Withhold votes OR percentage values
+              const shouldBeRed = isAgainst || isPercentage;
+              return { 
+                text: vote, 
+                alignment: "center", 
+                bold: shouldBeRed,
+                color: shouldBeRed ? "#b91c1c" : gray700 
+              };
             })
           ]);
 
@@ -594,7 +653,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
 
         const docDefinition: TDocumentDefinitions = {
           pageSize: "A4",
-          pageMargins: [32, 40, 32, 40],
+          pageMargins: [16, 30, 16, 30],
           defaultStyle: { fontSize: 9 },
           footer: (currentPage, pageCount) => ({
             columns: [
@@ -606,7 +665,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           styles: {
             title: { fontSize: 16, bold: true, color: gray900 },
             subtitle: { fontSize: 9, color: gray600 },
-            sectionTitle: { fontSize: 11, bold: true, color: primaryColor, margin: [0, 10, 0, 6] },
+            sectionTitle: { fontSize: 11, bold: true, color: primaryColor, margin: [0, 20, 0, 2] },
             subSectionTitle: { fontSize: 9, bold: true, color: gray700, margin: [0, 6, 0, 4] },
             tableHeader: { fontSize: 9, bold: true, fillColor: gray50, color: gray700 },
             tableSmall: { fontSize: 8 },
@@ -637,13 +696,11 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           <div className="report-header border-b-2 border-primary pb-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {isGeneratingPDF && (
-                  <img
-                    src={zmhLogo}
-                    alt="ZMH Logo"
-                    className="h-16 w-auto object-contain"
-                  />
-                )}
+                <img
+                  src={zmhLogo}
+                  alt="ZMH Logo"
+                  className="h-16 w-auto object-contain"
+                />
                 <h1 className="text-2xl font-bold text-gray-900">
                   {data.finnhub_data?.company_name || 'Company'} - Company Report
                 </h1>

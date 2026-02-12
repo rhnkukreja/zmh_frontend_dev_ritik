@@ -39,6 +39,13 @@ function Main() {
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
 
+  // Loading states for both components
+  const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
+  const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
+
+  // Button sirf tab dikhega jab dono load ho jayein
+  const bothLoaded = isOwnershipLoaded && isMeetingLoaded;
+
   // Handle generate report
   const handleGenerateReport = () => {
     if (companyGlobalSearchTicker) {
@@ -214,49 +221,49 @@ function Main() {
           <div className="bg-white mb-4 flex flex-col md:flex-row items-center justify-between">
             <div className="border-b border-gray-200 w-full">
               <nav className="flex w-full items-center">
-                  <button
-                    onClick={() => {
-                      setActiveTab('ownership');
-                      const element = document.getElementById('ownership');
-                      if (element) {
-                        const offsetTop = element.offsetTop - 200;
-                        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                      }
-                    }}
-                    className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
-                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                    Ownership
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveTab('shareholder-meeting-results');
-                      const element = document.getElementById('shareholder-meeting-results');
-                      if (element) {
-                        const offsetTop = element.offsetTop - 200;
-                        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                      }
-                    }}
-                    className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
-                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                    Shareholder Meeting Results
-                  </button>
-                  {user?.user_type === "Admin" && (
-                    <div className="flex items-center justify-end px-4 py-2">
-                      <button
-                        className="px-6 py-2.5 bg-primary text-white font-medium text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={handleGenerateReport}
-                        disabled={!companyGlobalSearchTicker}
-                      >
-                        Generate Report
-                      </button>
-                    </div>
-                  )}
+                <button
+                  onClick={() => {
+                    setActiveTab('ownership');
+                    const element = document.getElementById('ownership');
+                    if (element) {
+                      const offsetTop = element.offsetTop - 200;
+                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
+                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                  Ownership
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('shareholder-meeting-results');
+                    const element = document.getElementById('shareholder-meeting-results');
+                    if (element) {
+                      const offsetTop = element.offsetTop - 200;
+                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
+                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                >
+                  Shareholder Meeting Results
+                </button>
+                {user?.user_type === "Admin" && bothLoaded && (
+                  <div className="flex items-center justify-end px-4 py-2">
+                    <button
+                      className="px-6 py-2.5 bg-primary text-white font-medium text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleGenerateReport}
+                      disabled={!companyGlobalSearchTicker}
+                    >
+                      Generate Report
+                    </button>
+                  </div>
+                )}
                 {/* <button
                   onClick={() => {
                     setActiveTab('board-composition');
@@ -280,7 +287,7 @@ function Main() {
 
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
           <div id="ownership" className="col-span-12 xl:col-span-12">
-            <InvestorCard />
+            <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
           </div>
 
           {/* <BoardDirectorMembers /> */}
@@ -293,6 +300,7 @@ function Main() {
               proxyContest={modulesCount?.proxy_contest || false}
               proxyContest2024={modulesCount?.proxy_contest_2024 || false}
               proxyContest2025={modulesCount?.proxy_contest_2025 || false}
+              onLoaded={() => setIsMeetingLoaded(true)}
             />
           </div>
 
