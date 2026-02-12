@@ -313,66 +313,82 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
 
         content.push({ text: " ", margin: [0, 6] });
 
-        // Add Table of Contents
-        const tocItems = [
-          { title: "Share Price Performance", id: "share-price-perf" },
-          { title: "Shareholder Meeting Summary", id: "meeting-summary" },
-          { title: "Top 20 Ownership", id: "top-20-ownership" },
-          { title: "Voting Rationale", id: "voting-rationale" },
-          { title: "Trend in Investor Support", id: "trend-investor-support" },
-          { title: "Engagement History", id: "engagement-history" },
-          { title: "Shareholder Proposals", id: "shareholder-proposals" }
-        ];
-
+        // Table of Contents with internal links
         content.push({
           stack: [
-            { text: "Table of Contents", style: "sectionTitle" },
+            { text: "Table of Contents", style: "sectionTitle", margin: [0, 0, 0, 10] },
             {
-              table: {
-                widths: ["*"],
-                body: [[{ text: "", margin: [0, 0, 0, 0] }]]
-              },
-              layout: {
-                hLineWidth: (i: number) => (i === 1 ? 1 : 0),
-                vLineWidth: () => 0,
-                hLineColor: () => "#b91c1c",
-                paddingTop: () => 0,
-                paddingBottom: () => 0
-              },
-              margin: [0, 0, 0, 8]
-            },
-            {
-              columns: [
-                {
-                  width: "50%",
-                  stack: tocItems.slice(0, 4).map((item, idx) => ({
-                    text: `${idx + 1}. ${item.title}`,
-                    style: "tocItem",
-                    link: item.id,
-                    color: "#b91c1c",
-                    decoration: "underline",
-                    fontSize: 9,
-                    margin: [0, 3, 0, 3]
-                  }))
-                },
-                {
-                  width: "50%",
-                  stack: tocItems.slice(4).map((item, idx) => ({
-                    text: `${idx + 5}. ${item.title}`,
-                    style: "tocItem",
-                    link: item.id,
-                    color: "#b91c1c",
-                    decoration: "underline",
-                    fontSize: 9,
-                    margin: [0, 3, 0, 3]
-                  }))
+              // TOC in a clean table layout matching your screenshot
+              stack: (() => {
+                const tocItems = [
+                  { number: "1.", title: "Share Price Performance", link: "share-price-section" },
+                  { number: "2.", title: "Shareholder Meeting Summary", link: "meeting-details-section" },
+                  { number: "3.", title: "Top 20 Ownership", link: "ownership-section" },
+                  { number: "4.", title: "Voting Rationale", link: "voting-rationale-section" },
+                  { number: "5.", title: "Trend in Investor Support", link: "trend-support-section" },
+                  { number: "6.", title: "Engagement History", link: "engagement-section" },
+                  { number: "7.", title: "Shareholder Proposals", link: "proposals-section" }
+                ];
+
+                // Filter out sections that don't have data
+                const availableTocItems = tocItems.filter(item => {
+                  if (item.link === "share-price-section" && !data.share_price_performance_data) return false;
+                  if (item.link === "meeting-details-section" && !data.meeting_details_data) return false;
+                  if (item.link === "ownership-section" && (!data.percent_ownership_data || data.percent_ownership_data.length === 0)) return false;
+                  if (item.link === "voting-rationale-section" && !data.voted_against_rationale) return false;
+                  if (item.link === "trend-support-section" && !data.charts_data) return false;
+                  if (item.link === "engagement-section" && !data.engagement_stats_data) return false;
+                  if (item.link === "proposals-section" && (!data.sp_data || data.sp_data.length === 0)) return false;
+                  return true;
+                });
+
+                // Create 3-column layout like your screenshot
+                const tocRows: any[][] = [];
+                for (let i = 0; i < availableTocItems.length; i += 3) {
+                  const row = [];
+                  for (let j = 0; j < 3; j++) {
+                    if (i + j < availableTocItems.length) {
+                      const item = availableTocItems[i + j];
+                      row.push({
+                        text: `${item.number} ${item.title}`,
+                        link: item.link,
+                        color: primaryColor,
+                        fontSize: 9,
+                        margin: [0, 2, 0, 2]
+                      });
+                    } else {
+                      row.push({ text: "" }); // Empty cell for alignment
+                    }
+                  }
+                  tocRows.push(row);
                 }
-              ]
+
+                return [
+                  {
+                    table: {
+                      widths: ["*", "*", "*"],
+                      body: tocRows
+                    },
+                    layout: {
+                      hLineWidth: () => 0,
+                      vLineWidth: () => 0,
+                      paddingLeft: () => 8,
+                      paddingRight: () => 8,
+                      paddingTop: () => 3,
+                      paddingBottom: () => 3
+                    }
+                  }
+                ];
+              })()
             }
           ],
-          margin: [0, 0, 0, 16]
+          border: [1, 1, 1, 1],
+          borderColor: gray200,
+          borderRadius: 4,
+          fillColor: gray50,
+          padding: [12, 12, 12, 12],
+          margin: [0, 0, 0, 20]
         });
-        // ];
 
         if (data.key_takeaways && data.key_takeaways.length > 0) {
           addSectionTitle("Key Takeaways");
@@ -408,7 +424,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             return entityData[period]?.pct_return ?? null;
           };
 
-          addSectionTitle("Share Price Performance", "share-price-perf");
+          addSectionTitle("Share Price Performance", "share-price-section");
           const headerRow: TableCell[] = [
             { text: "Name", style: "tableHeader" },
             { text: "1-Year", style: "tableHeader", alignment: "center" },
@@ -455,7 +471,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           }
 
           if (nominees.length > 0 || proposals.length > 0) {
-            addSectionTitle("Shareholder Meeting Summary", "meeting-summary");
+            addSectionTitle("Shareholder Meeting Summary", "meeting-details-section");
             if (meetingDate) content.push({ text: `Meeting Date: ${meetingDate}`, style: "caption" });
 
             if (nominees.length > 0 && nomineesHeaders.length > 0) {
@@ -502,7 +518,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           const top20 = data.percent_ownership_data.slice(0, 20);
           addSectionTitle(
             `Top 20 Ownership${data.total_percent_ownership ? ` (${data.total_percent_ownership.replace("%", "")}% of Shares Outstanding)` : ""}`,
-            "top-20-ownership"
+            "ownership-section"
           );
 
           const headerRow: TableCell[] = [
@@ -558,7 +574,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         }
 
         if (Array.isArray(data.voted_against_rationale)) {
-          addSectionTitle("Voting Rationale", "voting-rationale");
+          addSectionTitle("Voting Rationale", "voting-rationale-section");
           if (data.voted_against_rationale.length === 0) {
             content.push({ text: "No investors voted against directors or Say on Pay.", style: "caption" });
           } else {
@@ -603,9 +619,9 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
               ? {
                 stack: [
                   { text: title, style: "subSectionTitle", alignment: "center" },
-                  { image: img, width: 220, alignment: "center", margin: [0, 6, 0, 0] }
+                  { image: img, width: 200, alignment: "center", margin: [0, 4, 0, 0] }
                 ],
-                margin: [6, 6, 6, 6]
+                margin: [4, 4, 4, 4]
               }
               : { text: `${title}: No chart available`, style: "caption" };
           });
@@ -613,7 +629,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           // Wrap heading + charts together as unbreakable unit
           content.push({
             stack: [
-              { text: "Trend in Investor Support", style: "sectionTitle", id: "trend-investor-support" },
+              { text: "Trend in Investor Support", style: "sectionTitle", id: "trend-support-section" },
               {
                 table: {
                   widths: ["*"],
@@ -648,8 +664,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
                 },
                 margin: [0, 2, 0, 6]
               }
-            ],
-            unbreakable: true
+            ]
           });
         }
 
@@ -657,7 +672,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         const peerEngagements = normalizeToArray(data.engagement_stats_ex_global_data);
 
         if (companyEngagements.length > 0) {
-          addSectionTitle("Investor Disclosed Engagement History", "engagement-history");
+          addSectionTitle("Investor Disclosed Engagement History", "engagement-section");
           const headerRow: TableCell[] = [
             { text: "Year", style: "tableHeader" },
             { text: "Investor", style: "tableHeader" },
@@ -725,26 +740,26 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             {
               text: "Proponent",
               style: "tableHeader",
-              fontSize: 8,
+              fontSize: 9,
               alignment: "left"
             },
             {
               text: "Proposal",
               style: "tableHeader",
-              fontSize: 8,
+              fontSize: 9,
               alignment: "left"
             },
             {
               text: "Outcome",
               style: "tableHeader",
               alignment: "center",
-              fontSize: 8
+              fontSize: 9
             },
             ...institutionNames.map(name => ({
               text: name,
               style: "tableHeader",
               alignment: "center",
-              fontSize: 8
+              fontSize: 9
             }))
           ];
 
@@ -752,18 +767,18 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           const bodyRows = data.sp_data.map(item => [
             {
               text: item.proponent || "",
-              fontSize: 7,
+              fontSize: 9,
               alignment: "left"
             },
             {
               text: item.proposal_name || item.proposal_title || "",
-              fontSize: 7,
+              fontSize: 9,
               alignment: "left"
             },
             {
               text: item.outcome_percentage || "",
               alignment: "center",
-              fontSize: 7
+              fontSize: 9
             },
             ...institutionNames.map(name => {
               const cellValue = (item as any)[name] || "";
@@ -778,7 +793,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
                 alignment: "center",
                 bold: shouldBeRed,
                 color: shouldBeRed ? "#b91c1c" : gray700,
-                fontSize: 7
+                fontSize: 9
               };
             })
           ]);
@@ -786,17 +801,19 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           // Column widths optimized for text wrapping
           // First 3 columns get adequate space, institutions share remaining width
           const totalInstitutions = institutionNames.length;
-          const institutionPercentage = Math.floor(62 / totalInstitutions); // 62% shared among institutions
+          const institutionPercentage = (62 / totalInstitutions).toFixed(2) + "%"; // 62% shared among institutions
 
           const columnWidths = [
             "12%",  // Proponent - adequate for names with wrapping
-            "20%",  // Proposal - enough space for long text to wrap
-            "6%",   // Outcome - just percentages
-            ...institutionNames.map(() => `${institutionPercentage}%`)  // Equal distribution
+            "18%",  // Proposal - enough space for long text to wrap
+            "8%",   // Outcome - just percentages
+            ...institutionNames.map((_, idx) => 
+              idx === institutionNames.length - 1 ? "*" : institutionPercentage
+            )  // Equal distribution, last column fills remaining space
           ];
 
           // Add section title
-          addSectionTitle("Shareholder Proposals", "shareholder-proposals");
+          addSectionTitle("Shareholder Proposals", "proposals-section");
 
           const titleIndex = content.length - 2;
           const lineIndex = content.length - 1;
@@ -857,7 +874,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           styles: {
             title: { fontSize: 16, bold: true, color: gray900 },
             subtitle: { fontSize: 9, color: gray600 },
-            sectionTitle: { fontSize: 11, bold: true, color: primaryColor, margin: [0, 20, 0, 2] },
+            sectionTitle: { fontSize: 11, bold: true, color: primaryColor, margin: [0, 12, 0, 2] },
             subSectionTitle: { fontSize: 9, bold: true, color: gray700, margin: [0, 6, 0, 4] },
             tableHeader: { fontSize: 9, bold: true, fillColor: gray50, color: gray700 },
             tableSmall: { fontSize: 8 },
