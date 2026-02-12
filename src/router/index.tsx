@@ -100,7 +100,12 @@ import CustomReports from "../pages/CustomReports";
 import VotingRationalePage from "@/pages/VotingRationalePage";
 import UserManagement from "@/pages/UserManagement";
 import CompanyReportPage from "@/pages/CompanyReport";
-import AiChatbot from "../pages/AiChatbot";
+
+
+import AiChatbot from "../pages/AIChatbot/AiChatbot";
+import QAPage from "../pages/AIChatbot/QAPage";
+import ComparePage from "../pages/AIChatbot/ComparePage";
+
 
 function Router() {
   const TitleManager = () => {
@@ -525,13 +530,7 @@ function Router() {
           path: "user-management",
           element: <UserManagement />,
           data: { titleName: "User Management - ZMH Analytics" },
-        },
-        {
-          path: "ai-chatbot",
-          element: <AiChatbot />,
-          data: { titleName: "AI Assistant - ZMH Analytics" },
-        },
-        
+        }        
       ],
     },
     {
@@ -550,6 +549,21 @@ function Router() {
       path: "register",
       element: <Register />,
     },
+    {
+      path: "ai-chatbot",
+      element: React.createElement(AiChatbot),
+      children: [
+    {
+      path: "qa",
+      element: <QAPage />,
+      data: { titleName: "AI Assistant - ZMH Analytics" },
+    },
+    {
+      path: "compare",
+      element: <ComparePage />,
+      data: { titleName: "AI Assistant - ZMH Analytics" },
+    }]
+    }
   ];
 
   return useRoutes(routes);
