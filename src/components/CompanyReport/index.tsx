@@ -314,81 +314,81 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         content.push({ text: " ", margin: [0, 6] });
 
         // Table of Contents with internal links
-        content.push({
-          stack: [
-            { text: "Table of Contents", style: "sectionTitle", margin: [0, 0, 0, 10] },
-            {
-              // TOC in a clean table layout matching your screenshot
-              stack: (() => {
-                const tocItems = [
-                  { number: "1.", title: "Share Price Performance", link: "share-price-section" },
-                  { number: "2.", title: "Shareholder Meeting Summary", link: "meeting-details-section" },
-                  { number: "3.", title: "Top 20 Ownership", link: "ownership-section" },
-                  { number: "4.", title: "Voting Rationale", link: "voting-rationale-section" },
-                  { number: "5.", title: "Trend in Investor Support", link: "trend-support-section" },
-                  { number: "6.", title: "Engagement History", link: "engagement-section" },
-                  { number: "7.", title: "Shareholder Proposals", link: "proposals-section" }
-                ];
+        // content.push({
+        //   stack: [
+        //     { text: "Table of Contents", style: "sectionTitle", margin: [0, 0, 0, 10] },
+        //     {
+        //       // TOC in a clean table layout matching your screenshot
+        //       stack: (() => {
+        //         const tocItems = [
+        //           { number: "1.", title: "Share Price Performance", link: "share-price-section" },
+        //           { number: "2.", title: "Shareholder Meeting Summary", link: "meeting-details-section" },
+        //           { number: "3.", title: "Top 20 Ownership", link: "ownership-section" },
+        //           { number: "4.", title: "Voting Rationale", link: "voting-rationale-section" },
+        //           { number: "5.", title: "Trend in Investor Support", link: "trend-support-section" },
+        //           { number: "6.", title: "Engagement History", link: "engagement-section" },
+        //           { number: "7.", title: "Shareholder Proposals", link: "proposals-section" }
+        //         ];
 
-                // Filter out sections that don't have data
-                const availableTocItems = tocItems.filter(item => {
-                  if (item.link === "share-price-section" && !data.share_price_performance_data) return false;
-                  if (item.link === "meeting-details-section" && !data.meeting_details_data) return false;
-                  if (item.link === "ownership-section" && (!data.percent_ownership_data || data.percent_ownership_data.length === 0)) return false;
-                  if (item.link === "voting-rationale-section" && !data.voted_against_rationale) return false;
-                  if (item.link === "trend-support-section" && !data.charts_data) return false;
-                  if (item.link === "engagement-section" && !data.engagement_stats_data) return false;
-                  if (item.link === "proposals-section" && (!data.sp_data || data.sp_data.length === 0)) return false;
-                  return true;
-                });
+        //         // Filter out sections that don't have data
+        //         const availableTocItems = tocItems.filter(item => {
+        //           if (item.link === "share-price-section" && !data.share_price_performance_data) return false;
+        //           if (item.link === "meeting-details-section" && !data.meeting_details_data) return false;
+        //           if (item.link === "ownership-section" && (!data.percent_ownership_data || data.percent_ownership_data.length === 0)) return false;
+        //           if (item.link === "voting-rationale-section" && !data.voted_against_rationale) return false;
+        //           if (item.link === "trend-support-section" && !data.charts_data) return false;
+        //           if (item.link === "engagement-section" && !data.engagement_stats_data) return false;
+        //           if (item.link === "proposals-section" && (!data.sp_data || data.sp_data.length === 0)) return false;
+        //           return true;
+        //         });
 
-                // Create 3-column layout like your screenshot
-                const tocRows: any[][] = [];
-                for (let i = 0; i < availableTocItems.length; i += 3) {
-                  const row = [];
-                  for (let j = 0; j < 3; j++) {
-                    if (i + j < availableTocItems.length) {
-                      const item = availableTocItems[i + j];
-                      row.push({
-                        text: `${item.number} ${item.title}`,
-                        link: item.link,
-                        color: primaryColor,
-                        fontSize: 9,
-                        margin: [0, 2, 0, 2]
-                      });
-                    } else {
-                      row.push({ text: "" }); // Empty cell for alignment
-                    }
-                  }
-                  tocRows.push(row);
-                }
+        //         // Create 3-column layout like your screenshot
+        //         const tocRows: any[][] = [];
+        //         for (let i = 0; i < availableTocItems.length; i += 3) {
+        //           const row = [];
+        //           for (let j = 0; j < 3; j++) {
+        //             if (i + j < availableTocItems.length) {
+        //               const item = availableTocItems[i + j];
+        //               row.push({
+        //                 text: `${item.number} ${item.title}`,
+        //                 link: item.link,
+        //                 color: primaryColor,
+        //                 fontSize: 9,
+        //                 margin: [0, 2, 0, 2]
+        //               });
+        //             } else {
+        //               row.push({ text: "" }); // Empty cell for alignment
+        //             }
+        //           }
+        //           tocRows.push(row);
+        //         }
 
-                return [
-                  {
-                    table: {
-                      widths: ["*", "*", "*"],
-                      body: tocRows
-                    },
-                    layout: {
-                      hLineWidth: () => 0,
-                      vLineWidth: () => 0,
-                      paddingLeft: () => 8,
-                      paddingRight: () => 8,
-                      paddingTop: () => 3,
-                      paddingBottom: () => 3
-                    }
-                  }
-                ];
-              })()
-            }
-          ],
-          border: [1, 1, 1, 1],
-          borderColor: gray200,
-          borderRadius: 4,
-          fillColor: gray50,
-          padding: [12, 12, 12, 12],
-          margin: [0, 0, 0, 20]
-        });
+        //         return [
+        //           {
+        //             table: {
+        //               widths: ["*", "*", "*"],
+        //               body: tocRows
+        //             },
+        //             layout: {
+        //               hLineWidth: () => 0,
+        //               vLineWidth: () => 0,
+        //               paddingLeft: () => 8,
+        //               paddingRight: () => 8,
+        //               paddingTop: () => 3,
+        //               paddingBottom: () => 3
+        //             }
+        //           }
+        //         ];
+        //       })()
+        //     }
+        //   ],
+        //   border: [1, 1, 1, 1],
+        //   borderColor: gray200,
+        //   borderRadius: 4,
+        //   fillColor: gray50,
+        //   padding: [12, 12, 12, 12],
+        //   margin: [0, 0, 0, 20]
+        // });
 
         if (data.key_takeaways && data.key_takeaways.length > 0) {
           addSectionTitle("Key Takeaways");
