@@ -27,6 +27,7 @@ import CompanySelect from "@/components/ReactSelectAsync";
 import Litepicker from "@/components/Base/Litepicker";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 import { caseStudiesService } from "@/services/caseStudies";
+import { InstitutionDocumentSelector } from "@/components/InstitutionDocumentSelector";
 interface AddNewCaseStudiesProps {
   addNewCaseStudyModalVisible: boolean;
   setAddNewCaseStudyModalVisible: (visible: boolean) => void;
@@ -81,8 +82,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       year: selectedCaseStudies?.year?.toString(),
       meeting_date: getDateWithoutTime(selectedCaseStudies?.meeting_date) || "",
       primary_source: selectedCaseStudies?.primary_source,
-      primary_source_link: selectedCaseStudies?.primary_source_link,
-      page_reference: selectedCaseStudies?.page_reference,
+      primary_source_link: Array.isArray(selectedCaseStudies?.primary_source_link)
+        ? selectedCaseStudies?.primary_source_link
+        : selectedCaseStudies?.primary_source_link
+        ? [selectedCaseStudies?.primary_source_link]
+        : [],
       approval_status: selectedCaseStudies?.approval_status,
       investment_type:
         selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
@@ -107,6 +111,8 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   const esgTheme = watch("esg_themes");
   const watchCompany = watch("company");
   const watchCaspioCompanyName = watch("caspio_company_name");
+  const watchInstitution = watch("institution");
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchDropdownValues = async (params: { themes: string[] }) => {
@@ -133,6 +139,15 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     }
   }, [esgTheme]);
 
+  useEffect(() => {
+    if (watchInstitution) {
+      setSelectedInstitutionId(Number(watchInstitution));
+      return;
+    }
+
+    setSelectedInstitutionId(null);
+  }, [watchInstitution]);
+
   const onSubmit = async (data: any) => {
     console.log('🔍 ESG Themes Debug:', {
       isProxyContestContext,
@@ -146,6 +161,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
       company: data?.company?.value ?? selectedCaseStudies?.company,
+      primary_source_link: Array.isArray(data?.primary_source_link)
+        ? data.primary_source_link
+        : data?.primary_source_link
+        ? [data.primary_source_link]
+        : [],
 
       esg_themes:
         Array.isArray(data.esg_themes) && data.esg_themes.length > 0
@@ -703,9 +723,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <>
-                        <FormInput
-                          placeholder="Enter Primary Source Link"
-                          {...field}
+                        <InstitutionDocumentSelector
+                          institutionId={selectedInstitutionId}
+                          onChange={(links) => field.onChange(links)}
+                          selectedDocuments={field.value || []}
+                          placeholder="Select Primary Source Documents"
                         />
                         {error && (
                           <Error className="text-red-600 mt-2">
@@ -716,33 +738,10 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     )}
                   />
                 </div>
-
-                <div className="w-full flex-1">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Page Reference
-                  </FormCheck.Label>
-                  <Controller
-                    name="page_reference"
-                    control={control}
-                    rules={{ required: "Page Reference is required" }}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <FormInput
-                          placeholder="Enter Page Reference"
-                          {...field}
-                        />
-                        {error && (
-                          <Error className="text-red-600 mt-2">
-                            {error.message}
-                          </Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
+                <div className="hidden sm:block w-full flex-1" />
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+              <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     URL def14
