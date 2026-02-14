@@ -151,6 +151,19 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [onLoaded, hasLoadingStarted, loading, hasNotifiedLoaded]);
 
+  useEffect(() => {
+    const hasData = Boolean(
+      agmSummaryDetails?.company ||
+      agmSummaryDetails?.Year ||
+      agmSummaryDetails?.total_year?.length
+    );
+
+    if (onLoaded && !loading && !hasNotifiedLoaded && hasData) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, loading, hasNotifiedLoaded, agmSummaryDetails]);
+
   // Handle year query parameter changes
   useEffect(() => {
     if (yearFromQuery && yearFromQuery !== selectedYear) {
