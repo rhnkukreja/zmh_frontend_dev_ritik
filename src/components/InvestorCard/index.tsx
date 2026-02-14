@@ -129,6 +129,19 @@ const index = ({ onLoaded }: InvestorCardProps) => {
     }
   }, [onLoaded, hasLoadingStarted, investorCardLoading, hasNotifiedLoaded]);
 
+  useEffect(() => {
+    const hasData = Boolean(
+      dashboardDataList?.all_year_data?.length ||
+      dashboardDataList?.total_year?.length ||
+      dashboardDataList?.length
+    );
+
+    if (onLoaded && !investorCardLoading && !hasNotifiedLoaded && hasData) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, investorCardLoading, hasNotifiedLoaded, dashboardDataList]);
+
   // useEffect(() => {
   //   const validateImages = async () => {
   //     const tempValidImages: { [key: string]: string } = {};
