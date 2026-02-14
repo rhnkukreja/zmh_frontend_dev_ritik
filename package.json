@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node scripts/fix-tom-select.cjs"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-balloon": "^40.2.0",
