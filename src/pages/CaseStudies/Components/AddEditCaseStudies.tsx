@@ -11,6 +11,7 @@ import {
   getDateWithoutTime,
 } from "@/utils/helper";
 import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { baseURL } from "@/constant";
@@ -149,6 +150,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   }, [watchInstitution]);
 
   const onSubmit = async (data: any) => {
+    console.log('🔍 Form Data Debug:', {
+      primary_source_link_raw: data.primary_source_link,
+      primary_source_link_is_array: Array.isArray(data.primary_source_link),
+      primary_source_link_length: data.primary_source_link?.length,
+      meeting_date_raw: data.meeting_date,
+    });
+    
     console.log('🔍 ESG Themes Debug:', {
       isProxyContestContext,
       pathname: location.pathname,
@@ -162,7 +170,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       institution: data.institution ? Number(data.institution) : 0,
       company: data?.company?.value ?? selectedCaseStudies?.company,
       primary_source_link: Array.isArray(data?.primary_source_link)
-        ? data.primary_source_link
+        ? data.primary_source_link.filter(link => link && link.trim() !== '')
         : data?.primary_source_link
         ? [data.primary_source_link]
         : [],
@@ -179,8 +187,13 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       vote: data?.vote === "  " ? null : data?.vote,
       investment_type:
         data?.investment_type === "  " ? null : data?.investment_type,
-      meeting_date: formatedDate(data?.meeting_date),
+      meeting_date: data?.meeting_date ? dayjs(data.meeting_date).format('YYYY-MM-DD') : null,
     };
+
+    console.log('📤 Transformed Data:', {
+      primary_source_link: transformedData.primary_source_link,
+      meeting_date: transformedData.meeting_date,
+    });
 
     try {
       let response;
