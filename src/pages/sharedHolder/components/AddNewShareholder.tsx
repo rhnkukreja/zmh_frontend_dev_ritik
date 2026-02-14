@@ -82,6 +82,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         percentage_support: selectedShareholderProposal?.percentage_support,
         no_shareholder_proposal:
           selectedShareholderProposal?.no_shareholder_proposal ? true : false,
+        approved: selectedShareholderProposal?.approved ?? true,
       };
 
   const {
@@ -225,6 +226,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         data?.matched_id_no_action === "  " ? null : parseInt(data?.matched_id_no_action),
 
       nl_exist: data?.matched_id_no_action ? true : false,
+      approved: data?.approved ? true : false,
     };
     try {
       let response;
@@ -723,7 +725,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+              {/* Hide both for now (Percentage Support,  PassFail) */}
+              {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Percentage Support
@@ -784,7 +787,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     />
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
@@ -860,7 +863,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </div>
                 </div>
 
-                <div className="flex-1 w-full">
+                {/* <div className="flex-1 w-full">
                   <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
                     Ready for Review
                   </FormCheck.Label>
@@ -889,18 +892,19 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             </FormCheck.Label>
                           </FormCheck>
 
-                          {/* <div>
+                        // Comment this error div after uncommenting this section
+                          <div>
                             {errors.status && (
                               <Error className="max-w-[100%] mt-6">
                                 {errors.status?.message}
                               </Error>
                             )}
-                          </div> */}
+                          </div>
                         </>
                       )}
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
 
               {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
@@ -1007,6 +1011,34 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">
+                  <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                    Approved
+                  </FormCheck.Label>
+
+                  <div className="mt-2 flex flex-col">
+                    <Controller
+                      name="approved"
+                      control={control}
+                      render={({ field }) => (
+                        <FormCheck className="flex items-center mr-2">
+                          <FormCheck.Input
+                            id="checkbox-approved"
+                            type="checkbox"
+                            checked={field.value === true}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                          />
+                          <FormCheck.Label htmlFor="checkbox-approved" className="ml-2 text-left">
+                            Yes
+                          </FormCheck.Label>
+                        </FormCheck>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="flex-1 w-full">
                   <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
                     Status on the Dashboard
                   </FormCheck.Label>
@@ -1036,14 +1068,14 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             </FormCheck>
                           </div>
 
-                          {/* <div>
-
+                          // Comment this error div after uncommenting this section
+                          <div>
                           {errors.status && (
                             <Error className="max-w-[100%] mt-6">
                               {errors.status?.message}
                             </Error>
                           )}
-                          </div> */}
+                          </div>
                         </>
                       )}
                     />
@@ -1080,19 +1112,20 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                             </FormCheck.Label>
                           </FormCheck>
 
-                          {/* <div>
+                        // Comment this error div after uncommenting this section 
+                          <div>
                             {errors.status && (
                               <Error className="max-w-[100%] mt-6">
                                 {errors.status?.message}
                               </Error>
                             )}
-                          </div> */}
+                          </div>
                         </>
                       )}
                     />
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
           </Dialog.Description>
 

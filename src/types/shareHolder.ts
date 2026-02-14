@@ -34,6 +34,7 @@ export type ShareHolderData = {
 
 
 export type AddShareholderType = {
+  approved: any;
   id: string;
   category: string;
   sub_category: string;
