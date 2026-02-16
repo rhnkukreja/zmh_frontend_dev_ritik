@@ -104,23 +104,24 @@ export default function QAPage() {
   const [isInvestorDropdownOpen, setIsInvestorDropdownOpen] = useState(false);
 
   // --- Sample Questions for specific investors ---
-  const SAMPLE_QUESTIONS: Record<string, Array<{question: string, category: string, year?: number, scope?: "specific" | "all"}>> = {
-    "c4a5a2c7-c493-414b-854f-1c99c9aef7ed": [ // BlackRock
-      { question: "What is overboarding policy?", category: "Voting Guidelines", year: 2025, scope: "all" },
-      { question: "What are Blackrocks engagement priorities?", category: "Engagement Priorities", year: 2025, scope: "all" },
-      { question: "What types of disclosures help investors assess whether a company's strategy aligns with a 1.5° scenario?", category: "Climate Related", year: 2025, scope: "all" }
-    ],
-    "347446c8-649d-4b5a-be03-9c178c82ff2a": [ // Vanguard
-      { question: "What does Vanguard say about overboarding?", category: "Voting Guidelines", year: 2025, scope: "all" },
-      { question: "How do changes to company bylaws affect shareholder governance rights?", category: "Voting Choice", year: 2025, scope: "all" },
-      { question: "How does Vanguard evaluate nominees in a short slate?", category: "Voting Guidelines", year: 2025, scope: "all" }
-    ],
-    "2b622a0e-1a72-43fd-add2-d4b863f0731c": [ // State Street Global Advisors
-      { question: "What indicators suggest misalignment between executive pay and performance in SOP votes?", category: "Compensation Related", year: 2025, scope: "all" },
-      { question: "What climate-related risks are associated with flaring in the oil and gas value chain?", category: "Climate Related", year: 2025, scope: "all" },
-      { question: "What conditions and disclosures are expected from companies that have made a NZ2050 under the Sustainability Policy?", category: "ESG Integration", year: 2024, scope: "all" }
-    ]
-  };
+
+
+  const SAMPLE_QUESTIONS_FOR_ALL = [
+    { question: "What is the overboarding policy?", category: "Voting Guidelines", year: 2025, scope: "all" as const },
+    { question: "What is the policy on shareholder proposals?", category: "Voting Guidelines", year: 2025, scope: "all" as const },
+    { question: "What is the policy on executive compensation?", category: "Voting Guidelines", year: 2025, scope: "all" as const }
+  ];
+
+  const SAMPLE_QUESTIONS: Record<string, Array<{question: string, category: string, year?: number, scope?: "specific" | "all"}>> = 
+    investorList.reduce((acc, investor) => {
+      // Skip the separator
+      if (investor.id !== "separator") {
+        acc[investor.id] = SAMPLE_QUESTIONS_FOR_ALL;
+      }
+      return acc;
+    }, {} as Record<string, Array<{question: string, category: string, year?: number, scope?: "specific" | "all"}>>);
+
+
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const investorDropdownRef = useRef<HTMLDivElement>(null);

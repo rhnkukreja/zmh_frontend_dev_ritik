@@ -9,6 +9,7 @@ export default function DashboardLayout() {
   const navItems = [
     { icon: MessageSquare, label: "AI Assistant", path: "/ai-chatbot/qa" },
     { icon: GitCompare, label: "Compare", path: "/ai-chatbot/compare" },
+    { icon: GitCompare, label: "Voting Guidelines", path: "/ai-chatbot/voting-guidelines" },
   ];
 
   return (

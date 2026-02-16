@@ -105,6 +105,7 @@ import CompanyReportPage from "@/pages/CompanyReport";
 import AiChatbot from "../pages/AIChatbot/AiChatbot";
 import QAPage from "../pages/AIChatbot/QAPage";
 import ComparePage from "../pages/AIChatbot/ComparePage";
+import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
 
 
 function Router() {
@@ -562,8 +563,13 @@ function Router() {
       path: "compare",
       element: <ComparePage />,
       data: { titleName: "AI Assistant - ZMH Analytics" },
+    },
+    {
+      path: "voting-guidelines",
+      element: <VotingGuidelinesPage />,
+      data: { titleName: "AI Assistant - ZMH Analytics" },
     }]
-    }
+  }
   ];
 
   return useRoutes(routes);
