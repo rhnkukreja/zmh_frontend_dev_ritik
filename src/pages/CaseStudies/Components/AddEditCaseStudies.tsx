@@ -61,7 +61,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         label: selectedCaseStudies?.company_name,
       }: null,
       // company: null,
-      institution: selectedCaseStudies?.institution,
+      institution: selectedCaseStudies?.institution ? String(selectedCaseStudies.institution) : "",
       caspio_company_name: selectedCaseStudies?.caspio_company_name,
       caspio_company_ticker: selectedCaseStudies?.caspio_company_ticker,
       region: selectedCaseStudies?.region,
@@ -184,7 +184,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
     try {
       let response;
-      if (selectedCaseStudies) {
+      if (selectedCaseStudies?.id) {
         response = await dispatch(
           addEditNewCaseStudies({
             id: selectedCaseStudies?.id!,
@@ -199,7 +199,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
       if (response.results?.id) {
         toast.success(
-          selectedCaseStudies
+          selectedCaseStudies?.id
             ? "CaseStudies Proposal Updated"
             : "New Case Studies Proposal Added"
         );
@@ -232,7 +232,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         <form onSubmit={handleSubmit(onSubmit)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
-              {selectedCaseStudies
+              {selectedCaseStudies?.id
                 ? "Edit Case Studies"
                 : "Add New Case Studies"}
             </h2>

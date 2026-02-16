@@ -116,6 +116,7 @@ function Main() {
   const sideMenu = () => nestedMenu(sideMenuStore, location);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
+  const isCompanyReportPage = location.pathname.startsWith("/company-report");
 
   const [topBarActive, setTopBarActive] = useState(false);
 
@@ -475,7 +476,11 @@ function Main() {
   };
 
 
-  return (
+  return isCompanyReportPage ? (
+    <div>
+      <Outlet />
+    </div>
+  ) : (
     <div
       className={clsx([
         "echo group  h-full",

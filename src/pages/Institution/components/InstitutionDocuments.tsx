@@ -379,20 +379,6 @@ const InstitutionDocuments = () => {
                       Actions
                     </Table.Td>
                   </Table.Tr>
-                  <Table.Tr>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Sum</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Eng</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Rep</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">ESG</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Vote</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                  </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {documentsToDisplay?.length > 0 ? (
