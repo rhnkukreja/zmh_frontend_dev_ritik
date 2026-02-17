@@ -942,21 +942,26 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                             </div> */}
 
                             <div className="relative h-full flex items-end justify-center gap-12">
-                              {yearDataList.map((item: any, idx: number) => (
-                                <div key={item.year} className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {item.data ? item.data.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className={idx === 0 ? "bg-primary transition-all duration-700 ease-out" : "bg-slate-400 transition-all duration-700 ease-out"}
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">{item.year}</span>
-                                </div>
-                              ))}
+                              {yearDataList.map((item: any, idx: number) => {
+                                const isNoProposal = item.data?.value === 0 || item.data?.value === 0.0;
+                                return (
+                                  <div key={item.year} className="flex flex-col items-center">
+                                    <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
+                                      {isNoProposal ? "No proposal" : (item.data ? item.data.percentage : '--')}
+                                    </span>
+                                    {!isNoProposal && (
+                                      <div
+                                        className="bg-primary transition-all duration-700 ease-out"
+                                        style={{
+                                          width: '48px',
+                                          height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
+                                        }}
+                                      ></div>
+                                    )}
+                                    <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">{item.year}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
 
@@ -967,7 +972,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                             <div className="flex gap-2">
                               {yearDataList.map((item: any, idx: number) => (
                                 <div key={item.year} className="flex-1 border border-slate-200 rounded-lg overflow-hidden relative">
-                                  <div className={idx === 0 ? "bg-primary text-white p-2 text-center text-sm font-medium relative" : "bg-slate-400 text-white p-2 text-center text-sm font-medium relative"}>
+                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium relative">
                                     {item.year}
                                     <button
                                       onClick={(e) => {

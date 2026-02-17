@@ -232,14 +232,16 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           const normalizedString = typeof value === "string" ? value.trim().toLowerCase() : "";
           const notDisclosedValues = new Set(["none", "nd", "nse", "nsd", "n/d", "not disclosed", "not disclosed in npx"]);
 
-          if (value === null || value === undefined || value === "" || notDisclosedValues.has(normalizedString)) {
+          if (value === null || value === undefined || value === "") return "";
+
+          if (notDisclosedValues.has(normalizedString)) {
             if (!showNoData) return "";
-            return { svg: iconNoData(dangerColor), width: 12, height: 12, alignment: "center" };
+            return { text: "ND", color: "#dc2626", alignment: "center", bold: true };
           }
 
           if (Array.isArray(value)) {
             return value.length > 0
-              ? { svg: iconCheck(positiveColor), width: 12, height: 12, alignment: "center" }
+              ? { text: "Yes", color: positiveColor, alignment: "center" }
               : "";
           }
 
@@ -248,7 +250,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           const falsy = new Set(["false", "no", "n", "0", "f"]);
 
           if (value === true || truthy.has(normalized) || (typeof value === "number" && value > 0)) {
-            return { svg: iconCheck(positiveColor), width: 12, height: 12, alignment: "center" };
+            return { text: "Yes", color: "#16a34a", alignment: "center", bold: true };
           }
 
           if (value === false || falsy.has(normalized) || (typeof value === "number" && value === 0)) return "";
