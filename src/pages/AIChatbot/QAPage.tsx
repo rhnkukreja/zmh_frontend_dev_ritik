@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Send, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, AlertCircle, Trash2, Eye, EyeOff, Info} from "lucide-react";
-import { AI_CHATBOT_API_BASE, fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api";
+import { AI_CHATBOT_API_BASE , fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api";
 import ReactMarkdown from "react-markdown";
 
 // --- Types ---
@@ -21,7 +21,7 @@ type AnswerData = {
   pages_used: (number | string)[];
   best_page?: number | string; 
   source_text?: string;
-  answer: string;
+  answer_segments: { page: number | null; text: string; page_url: string }[];
 };
 
 type Message = {
@@ -30,6 +30,8 @@ type Message = {
   answers?: AnswerData[];
   error?: boolean;
   mode?: "specific" | "all";
+  message?: string;
+  status?: string;
 };
 
 type DocItem = {
@@ -47,6 +49,8 @@ type QAItem = {
     answers?: AnswerData[];
     loading?: boolean;
     error?: boolean;
+    message?: string;
+    status?: string;
 };
   
 
@@ -69,7 +73,7 @@ export default function QAPage() {
   const [investorId, setInvestorId] = useState<string>("");
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedYears, setSelectedYears] = useState<string[]>(["2025"]);
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
   const [includeEmea, setIncludeEmea] = useState(false);
   
   // Data Lists
@@ -103,15 +107,14 @@ export default function QAPage() {
   const [investorSearch, setInvestorSearch] = useState("");
   const [isInvestorDropdownOpen, setIsInvestorDropdownOpen] = useState(false);
 
-  // --- Sample Questions for specific investors ---
-
-
+  // --- Sample Questions for all investors ---
   const SAMPLE_QUESTIONS_FOR_ALL = [
-    { question: "What is the overboarding policy?", category: "Voting Guidelines", year: 2025, scope: "all" as const },
-    { question: "What is the policy on shareholder proposals?", category: "Voting Guidelines", year: 2025, scope: "all" as const },
-    { question: "What is the policy on executive compensation?", category: "Voting Guidelines", year: 2025, scope: "all" as const }
+    { question: "What is the overboarding policy?", category: "Voting Guidelines", scope: "all" as const },
+    { question: "What is the policy on shareholder proposals?", category: "Voting Guidelines", scope: "all" as const },
+    { question: "What is the policy on executive compensation?", category: "Voting Guidelines", scope: "all" as const }
   ];
-
+  
+  // Create SAMPLE_QUESTIONS object with the same questions for all investors
   const SAMPLE_QUESTIONS: Record<string, Array<{question: string, category: string, year?: number, scope?: "specific" | "all"}>> = 
     investorList.reduce((acc, investor) => {
       // Skip the separator
@@ -120,8 +123,6 @@ export default function QAPage() {
       }
       return acc;
     }, {} as Record<string, Array<{question: string, category: string, year?: number, scope?: "specific" | "all"}>>);
-
-
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const investorDropdownRef = useRef<HTMLDivElement>(null);
@@ -169,8 +170,8 @@ export default function QAPage() {
                 setYearList(years);
 
                 if (years.length > 0) {
-                    const latest = Math.max(...years.map(Number)).toString();
-                    setSelectedYears([latest]);
+                    const latest = Math.max(...years.map(Number));
+                    setSelectedYears([latest.toString()]);
                 }
                 
                 // Extra safety: Fallback to empty array for docs
@@ -215,8 +216,8 @@ export default function QAPage() {
                 
                 // Auto-select latest year when investor changes
                 if (years.length > 0) {
-                  const latest = Math.max(...years.map(Number)).toString();
-                  setSelectedYears([latest]);
+                  const latest = Math.max(...years.map(Number));
+                  setSelectedYears([latest.toString()]);
                 } else {
                   setSelectedYears([]); 
                 }
@@ -333,17 +334,13 @@ export default function QAPage() {
   };
 
   // Handler for sample question clicks
-  const handleSampleQuestionClick = async (sampleQuestion: string, sampleCategory: string, sampleYear: number, sampleScope: "specific" | "all") => {
+  const handleSampleQuestionClick = async (sampleQuestion: string, sampleCategory: string, sampleScope: "specific" | "all") => {
     // Set the question in the input field
     setQuestion(sampleQuestion);
     
     // Set the category
     setSelectedCategories([sampleCategory]);
     
-    // Set the year
-    if (sampleYear) {
-      setSelectedYears([sampleYear.toString()]);
-    }
     // Set the scope
     setScope(sampleScope);
     
@@ -390,7 +387,7 @@ export default function QAPage() {
         const currentScope = overrideScope !== undefined ? overrideScope : scope;
         
         // REMOVED: Compare mode logic - only one API call now
-        const response = await fetch(`${AI_CHATBOT_API_BASE}/ask-pdf`, {
+        const response = await fetch(`${AI_CHATBOT_API_BASE }/ask-pdf`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -406,12 +403,38 @@ export default function QAPage() {
         });
 
         const data = await response.json();
+        
+        // Check if response has an error status
+        if (!response.ok) {
+          // This is a system error from backend
+          setHistory(prev =>
+            prev.map(item =>
+              item.id === qaId
+                ? { 
+                    ...item, 
+                    error: true, 
+                    loading: false,
+                    message: data.detail || "Error in backend. Please contact support."
+                  }
+                : item
+            )
+          );
+          return;
+        }
+        
         const standardizedAnswers = data.answers || [];
         
         setHistory(prev =>
             prev.map(item =>
               item.id === qaId
-                ? { ...item, answers: standardizedAnswers, loading: false }
+                ? { 
+                    ...item, 
+                    answers: standardizedAnswers, 
+                    loading: false,
+                    message: data.message,
+                    status: data.status,
+                    error: data.error || false
+                  }
                 : item
             )
           );
@@ -419,10 +442,16 @@ export default function QAPage() {
         setSelectedCategories([]);
 
     } catch (err) {
+        console.error("API call failed:", err);
         setHistory(prev =>
             prev.map(item =>
               item.id === qaId
-                ? { ...item, error: true, loading: false }
+                ? { 
+                    ...item, 
+                    error: true, 
+                    loading: false,
+                    message: "Unable to connect to server. Please try again."
+                  }
                 : item
             )
           );
@@ -451,7 +480,7 @@ export default function QAPage() {
 
     setLoading(true); 
     try {
-        const res = await fetch(`${AI_CHATBOT_API_BASE}/predict-category`, {
+        const res = await fetch(`${AI_CHATBOT_API_BASE }/predict-category`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -603,18 +632,52 @@ export default function QAPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <div className="prose prose-sm max-w-none text-black">
-                        <ReactMarkdown>{selectedAnswer.answer}</ReactMarkdown>
-                    </div>
+                    <div className="prose prose-sm max-w-none text-black space-y-4">
+                        {(() => {
+                            const segments = selectedAnswer.answer_segments ?? [];
+                            const uniquePages = new Set(segments.map(s => s.page));
+                            const isMultiPage = uniquePages.size > 1;
 
-                    {selectedAnswer.pages_used && selectedAnswer.pages_used.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            <span className="text-xs text-gray-600 font-medium">Pages Referenced:</span>
-                            {selectedAnswer.pages_used.map((pg, i) => (
-                                <a key={i} href={getPdfLink(selectedAnswer.file_url, pg, selectedAnswer.pdf_name)} target="_blank" rel="noopener noreferrer" className="bg-[#931638] hover:bg-[#931638]/90 px-2 py-1 rounded text-xs text-white transition-colors">{pg}</a>
-                            ))}
-                        </div>
-                    )}
+                            if (!isMultiPage) {
+                                // Single page — combine all segments into one block
+                                const combinedText = segments.map(s => s.text).join("\n\n");
+                                const singlePage = segments[0]?.page;
+                                const singlePageUrl = segments[0]?.page_url;
+                                return (
+                                    <div>
+                                        <ReactMarkdown>{combinedText}</ReactMarkdown>
+                                        {singlePage !== null && singlePage !== undefined && (
+                                            <a
+                                                href={singlePageUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-block mt-2 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                            >
+                                                p.{singlePage}
+                                            </a>
+                                        )}
+                                    </div>
+                                );
+                            }
+
+                            // Multiple pages — one paragraph per segment with its own page link
+                            return segments.map((seg, i) => (
+                                <div key={i}>
+                                    <ReactMarkdown>{seg.text}</ReactMarkdown>
+                                    {seg.page !== null && (
+                                        <a
+                                            href={seg.page_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-block mt-1 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                        >
+                                            p.{seg.page}
+                                        </a>
+                                    )}
+                                </div>
+                            ));
+                        })()}
+                    </div>
                 </div>
             </div>
         </div>
@@ -700,7 +763,7 @@ export default function QAPage() {
     </div>
   )}
 </div>
-      {/* 2. Year Multi-Select (Default 2025) */}
+      {/* 2. Year Multi-Select (Defaults to Latest Year) */}
       <div className="relative" ref={yearDropdownRef}>
         <button 
           onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)} 
@@ -894,12 +957,9 @@ export default function QAPage() {
           <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAsk()} placeholder="Type a question..." className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
           {question && (
             <button 
-              onClick={() => {
-                setQuestion("");
-                setHistory([]);
-              }} 
+              onClick={() => setQuestion("")} 
               className="text-gray-400 hover:text-[#931638] p-2 rounded-lg transition-colors mr-1"
-              title="Clear chat"
+              title="Clear question"
             >
               <Trash2 size={16}/>
             </button>
@@ -962,14 +1022,14 @@ export default function QAPage() {
       </div>
       )}
 
-      {/* SAMPLE QUESTIONS - Only for BlackRock, Vanguard, and State Street */}
+      {/* SAMPLE QUESTIONS - Shows for all investors */}
       {showFilters && SAMPLE_QUESTIONS[investorId] && history.length === 0 && (
         
           <div className="space-y-1.5">
             {SAMPLE_QUESTIONS[investorId].map((sample, idx) => (
               <button
                 key={idx}
-                onClick={() => handleSampleQuestionClick(sample.question, sample.category, sample.year?? 2025, sample.scope|| "all")}
+                onClick={() => handleSampleQuestionClick(sample.question, sample.category, sample.scope|| "all")}
                 className="w-full text-left bg-white hover:bg-[#931638]/5 border border-[#931638]/30 hover:border-[#931638]/60 rounded-lg p-2 transition-all group"
               >
                 <div className="flex items-start gap-2">
@@ -986,6 +1046,21 @@ export default function QAPage() {
       <div className="flex-1 overflow-y-auto space-y-4 pr-4 pb-4">
       <div ref={messagesEndRef} />
         {history.length === 0 && <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4"><p className="text-sm font-light">Ask a question to start.</p></div>}
+        
+        {/* Clear Chat Button - Shows only when there are messages */}
+        {history.length > 0 && (
+          <div className="flex justify-start">
+            <button
+              onClick={() => setHistory([])}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-[#931638]/10 border border-gray-300 hover:border-[#931638] text-gray-600 hover:text-[#931638] px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              title="Clear all messages"
+            >
+              <Trash2 size={14} />
+              Clear Chat
+            </button>
+          </div>
+        )}
+
 {history.map((qa) => (
   <div key={qa.id} className="space-y-3">
     
@@ -1035,12 +1110,14 @@ export default function QAPage() {
               className="text-xs text-gray-700 line-clamp-3 cursor-pointer"
               onClick={() => setSelectedAnswer(ans)}
             >
-              {ans.answer}
+              {ans.answer_segments?.[0]?.text ?? ""}
             </p>
-            {ans.pages_used && ans.pages_used.length > 0 && (
+            {ans.answer_segments && ans.answer_segments.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {ans.pages_used.map((pg, i) => (
-                  <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[10px]">p.{pg}</span>
+                {ans.answer_segments.map((seg, i) => (
+                  seg.page !== null && (
+                    <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[10px]">p.{seg.page}</span>
+                  )
                 ))}
               </div>
             )}
@@ -1049,14 +1126,26 @@ export default function QAPage() {
       ))}
 
       {qa.answers?.length === 0 && !qa.loading && !qa.error && (
-        <div className="text-gray-600 text-sm italic p-4 bg-gray-50 rounded-lg border border-gray-300">
-          Error Fetching: Please try again or contact support
+        <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border-2 border-amber-200">
+          <AlertCircle size={20} className="text-amber-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-amber-900 mb-1">No Results Found</p>
+            <p className="text-xs text-amber-700">
+              {qa.message || "No relevant information found for your question."}
+            </p>
+          </div>
         </div>
       )}
 
       {qa.error && (
-        <div className="text-[#931638] text-sm">
-          Something went wrong.
+        <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border-2 border-red-200">
+          <AlertCircle size={20} className="text-red-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-900 mb-1">Error</p>
+            <p className="text-xs text-red-700">
+              {qa.message || "Something went wrong. Please try again."}
+            </p>
+          </div>
         </div>
       )}
     </div>

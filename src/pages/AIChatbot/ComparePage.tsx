@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-    import {
+    import { 
     Send, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, 
-
     AlertCircle, GitCompare, Sparkles, ListFilter, Grid, Settings, Eye, EyeOff, Info, Trash2
     } from "lucide-react";
-    import { AI_CHATBOT_API_BASE, fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api"; 
+    import { AI_CHATBOT_API_BASE , fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api"; 
     import ReactMarkdown from "react-markdown";
 
     // ─────────────────────────────────────────────────────────
@@ -15,16 +14,15 @@ import { useState, useEffect, useRef, useMemo } from "react";
     pdf_id: string;
     pdf_name: string;
     investor_name?: string; 
-    file_url?: string;sssss
+    file_url?: string;
     pages_used: (number | string)[];
     best_page?: number | string; 
-    answer: string;
+    answer_segments: { page: number | null; text: string; page_url: string }[];
     };
 
     type Message = {
     id: string; 
     role: "user" | "assistant";
-    
     content?: string;
     answers?: AnswerData[];
     comparison?: string;
@@ -176,7 +174,15 @@ import { useState, useEffect, useRef, useMemo } from "react";
             setYearList(years);
     
             setSelectedCategories([]);
-            setSelectedYears([]);
+            
+            // Auto-select the latest year
+            if (years.length > 0) {
+                const latestYear = Math.max(...years.map(Number));
+                setSelectedYears([latestYear.toString()]);
+            } else {
+                setSelectedYears([]);
+            }
+            
             setManualSelectedPdfIds([]);
         } catch (e) {
             console.error("Failed to refresh investor documents", e);
@@ -469,7 +475,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
         }
 
         try {
-            const response = await fetch(`${AI_CHATBOT_API_BASE}/compare-pdfs`, {
+            const response = await fetch(`${AI_CHATBOT_API_BASE }/compare-pdfs`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -495,7 +501,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                     file_url: item.file_url,
                     best_page: item.best_page,
                     pages_used: item.best_page ? [item.best_page] : (item.pages_used || []),
-                    answer: item.answer,
+                    answer_segments: item.answer_segments || [],
                 };
             });
 
@@ -550,7 +556,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
         setLoading(true);
         try {
-            const res = await fetch(`${AI_CHATBOT_API_BASE}/predict-category`, {
+            const res = await fetch(`${AI_CHATBOT_API_BASE }/predict-category`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ question: q, investor_id: investor1 }),
@@ -676,26 +682,52 @@ import { useState, useEffect, useRef, useMemo } from "react";
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
-                        <div className="prose prose-sm max-w-none">
-                            <ReactMarkdown>{selectedAnswer.answer}</ReactMarkdown>
-                        </div>
+                        <div className="prose prose-sm max-w-none space-y-4">
+                            {(() => {
+                                const segments = selectedAnswer.answer_segments ?? [];
+                                const uniquePages = new Set(segments.map(s => s.page));
+                                const isMultiPage = uniquePages.size > 1;
 
-                        {selectedAnswer.pages_used && selectedAnswer.pages_used.length > 0 && (
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                <span className="text-xs text-gray-500 font-medium">Pages Referenced:</span>
-                                {selectedAnswer.pages_used.map((pg, i) => (
-                                    <a 
-                                        key={i} 
-                                        href={getPdfLink(selectedAnswer.file_url, pg, selectedAnswer.pdf_name)} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-xs text-gray-700 hover:text-black transition-colors"
-                                    >
-                                        {pg}
-                                    </a>
-                                ))}
-                            </div>
-                        )}
+                                if (!isMultiPage) {
+                                    // Single page — combine all segments into one block
+                                    const combinedText = segments.map(s => s.text).join("\n\n");
+                                    const singlePage = segments[0]?.page;
+                                    const singlePageUrl = segments[0]?.page_url;
+                                    return (
+                                        <div>
+                                            <ReactMarkdown>{combinedText}</ReactMarkdown>
+                                            {singlePage !== null && singlePage !== undefined && (
+                                                <a
+                                                    href={singlePageUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-block mt-2 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                                >
+                                                    p.{singlePage}
+                                                </a>
+                                            )}
+                                        </div>
+                                    );
+                                }
+
+                                // Multiple pages — one paragraph per segment with its own page link
+                                return segments.map((seg, i) => (
+                                    <div key={i}>
+                                        <ReactMarkdown>{seg.text}</ReactMarkdown>
+                                        {seg.page !== null && (
+                                            <a
+                                                href={seg.page_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-block mt-1 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                            >
+                                                p.{seg.page}
+                                            </a>
+                                        )}
+                                    </div>
+                                ));
+                            })()}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -930,12 +962,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                 className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
                             />
                             <button 
-                                onClick={() => {
-                                    setQuestion("");
-                                    setHistory([]);
-                                }} 
+                                onClick={() => setQuestion("")} 
                                 className="text-gray-400 hover:text-[#931638] p-2 rounded-lg hover:bg-gray-100 transition-colors mr-1"
-                                title="Clear chat"
+                                title="Clear question"
                             >
                                 <Trash2 size={16}/>
                             </button>
@@ -1166,12 +1195,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
                 className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
             />
             <button 
-                onClick={() => {
-                    setQuestion("");
-                    setHistory([]);
-                }} 
+                onClick={() => setQuestion("")} 
                 className="text-gray-400 hover:text-[#931638] p-2 rounded-lg hover:bg-gray-100 transition-colors mr-1"
-                title="Clear chat"
+                title="Clear question"
             >
                 <Trash2 size={16}/>
             </button>
@@ -1191,6 +1217,20 @@ import { useState, useEffect, useRef, useMemo } from "react";
             {history.length === 0 && !loading && (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
                     <p className="text-sm font-light">Select two investors and ask a question to compare.</p>
+                </div>
+            )}
+
+            {/* Clear Chat Button - Shows only when there are messages */}
+            {history.length > 0 && (
+                <div className="flex justify-start">
+                    <button
+                        onClick={() => setHistory([])}
+                        className="flex items-center gap-2 bg-gray-100 hover:bg-[#931638]/10 border border-gray-300 hover:border-[#931638] text-gray-600 hover:text-[#931638] px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                        title="Clear all messages"
+                    >
+                        <Trash2 size={14} />
+                        Clear Chat
+                    </button>
                 </div>
             )}
 
@@ -1268,14 +1308,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
                                                         <p className="text-[11px] text-gray-500 mb-2 truncate">{ans.pdf_name}</p>
                                                         <div className="text-xs text-gray-700 line-clamp-4 prose prose-sm">
-                                                            <ReactMarkdown>{ans.answer}</ReactMarkdown>
+                                                            <ReactMarkdown>{ans.answer_segments?.[0]?.text ?? ""}</ReactMarkdown>
                                                         </div>
-                                                        {ans.pages_used && ans.pages_used.length > 0 && (
+                                                        {ans.answer_segments && ans.answer_segments.length > 0 && (
                                                             <div className="mt-2 flex flex-wrap gap-1">
-                                                                {ans.pages_used.slice(0, 3).map((pg, i) => (
-                                                                    <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[10px]">
-                                                                        p.{pg}
-                                                                    </span>
+                                                                {ans.answer_segments.map((seg, i) => (
+                                                                    seg.page !== null && (
+                                                                        <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[10px]">
+                                                                            p.{seg.page}
+                                                                        </span>
+                                                                    )
                                                                 ))}
                                                             </div>
                                                         )}

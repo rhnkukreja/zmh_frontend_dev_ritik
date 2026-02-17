@@ -22,7 +22,7 @@ export default function DashboardLayout() {
 
         {/* Header Area */}
         {/* FIXED: Set fixed height h-24 (96px) so the border line never jumps up/down */}
-        <div className={`h-24 flex-none border-b border-[#931638] flex items-center transition-all duration-300 ${
+        <div className={`h-24 flex-none flex items-center transition-all duration-300 ${
           isCollapsed ? "px-2 justify-start" : "px-6 justify-between"
         }`}>
           {/* Logo */}
@@ -89,7 +89,7 @@ export default function DashboardLayout() {
 
         {/* Expand button */}
         {isCollapsed && (
-          <div className="p-4 border-t border-[#931638] animate-in fade-in zoom-in duration-300">
+          <div className="p-4 animate-in fade-in zoom-in duration-300">
             <button
               onClick={() => setIsCollapsed(false)}
               className="w-full flex items-center justify-center p-2 rounded-lg text-gray-700 hover:text-black hover:bg-gray-200 transition-all duration-200"
@@ -103,9 +103,11 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 border-b border-[#931638] flex items-center px-6 bg-white/90 backdrop-blur-md">
+        <header className="h-14 flex items-center px-6 bg-white/90 backdrop-blur-md">
           <h2 className="font-semibold text-lg text-black">
-            {navItems.find(i => i.path === location.pathname)?.label || "Dashboard"}
+            {location.pathname === "/guidelines"
+              ? <>Voting Guidelines <span className="text-sm font-normal text-gray-500">— based on latest available document</span></>
+              : navItems.find(i => i.path === location.pathname)?.label || "Dashboard"}
           </h2>
         </header>
 

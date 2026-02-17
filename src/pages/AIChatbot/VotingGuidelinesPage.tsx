@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { 
-    Send, Bot, Users, FileText, X, Tag, ChevronDown, Check, Calendar, 
+    Send, Bot, Users, FileText, X, ChevronDown, Check,
     Eye, EyeOff, Search, Trash2, User, Maximize2, ArrowRight, FileSearch 
 } from "lucide-react";
 import { fetchInvestors, AI_CHATBOT_API_BASE } from "./api"; 
@@ -19,6 +19,7 @@ type GuidelineResult = {
     investor_id: string;
     pdf_name: string;
     summary: string;
+    answer_segments?: { page: number | null; text: string; page_url: string }[];
     pages: (string | number)[];
     year: number | null;
     quarter: string | null;
@@ -199,7 +200,7 @@ export default function VotingGuidelinesPage() {
                     investor_ids: selectedInvestors,
                     question: finalQuestion,
                     category: ["Voting Guidelines"], 
-                    years: selectedYears.length > 0 ? selectedYears.map(Number) : [],
+                    years: [],
                     include_emea: includeEmea,
                     llm_strength: llmStrength
                 }),
@@ -260,17 +261,54 @@ export default function VotingGuidelinesPage() {
                             </button>
                         </div>
                         <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar bg-white">
-                            <div className="prose prose-sm max-w-none text-gray-800 text-sm leading-relaxed">
-                                <ReactMarkdown>{selectedResult.summary}</ReactMarkdown>
+                            <div className="prose prose-sm max-w-none text-gray-800 text-sm leading-relaxed space-y-4">
+                                {(() => {
+                                    const segments = selectedResult.answer_segments ?? [];
+                                    const uniquePages = new Set(segments.map(s => s.page));
+                                    const isMultiPage = uniquePages.size > 1;
+
+                                    if (!isMultiPage) {
+                                        // Single page — render as one combined block
+                                        const combinedText = segments.length > 0
+                                            ? segments.map(s => s.text).join("\n\n")
+                                            : selectedResult.summary;
+                                        const singlePage = segments[0]?.page;
+                                        const singlePageUrl = segments[0]?.page_url;
+                                        return (
+                                            <div>
+                                                <ReactMarkdown>{combinedText}</ReactMarkdown>
+                                                {singlePage !== null && singlePage !== undefined && (
+                                                    <a
+                                                        href={singlePageUrl ?? (selectedResult.file_url ? `${selectedResult.file_url}#page=${singlePage}` : "#")}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-block mt-2 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                                    >
+                                                        p.{singlePage}
+                                                    </a>
+                                                )}
+                                            </div>
+                                        );
+                                    }
+
+                                    // Multiple pages — one paragraph per segment with its own page link
+                                    return segments.map((seg, i) => (
+                                        <div key={i}>
+                                            <ReactMarkdown>{seg.text}</ReactMarkdown>
+                                            {seg.page !== null && (
+                                                <a
+                                                    href={seg.page_url ?? (selectedResult.file_url ? `${selectedResult.file_url}#page=${seg.page}` : "#")}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-block mt-1 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                                >
+                                                    p.{seg.page}
+                                                </a>
+                                            )}
+                                        </div>
+                                    ));
+                                })()}
                             </div>
-                            {selectedResult.pages && selectedResult.pages.length > 0 && (
-                                <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-2 items-center">
-                                    <span className="text-xs text-gray-500 font-medium">Pages Referenced:</span>
-                                    {selectedResult.pages.map((pg, i) => (
-                                        <span key={i} className="bg-[#931638] text-white px-2 py-1 rounded text-xs font-bold">p.{pg}</span>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -291,10 +329,6 @@ export default function VotingGuidelinesPage() {
 
                         {showFilters && (
                         <>
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#931638]/10 border border-[#931638]/30 text-[#931638] rounded-lg text-xs font-semibold select-none">
-                                <Tag size={12} /> Voting Guidelines
-                            </div>
-
                             <div className="relative w-[280px]" ref={investorDropdownRef}>
                                 <button
                                     onClick={() => setIsInvestorDropdownOpen(!isInvestorDropdownOpen)}
@@ -346,26 +380,6 @@ export default function VotingGuidelinesPage() {
                                 )}
                             </div>
 
-                            <div className="relative" ref={yearDropdownRef}>
-                                <button onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)} className="relative flex items-center justify-between h-[34px] pl-7 pr-2 bg-gray-50 border border-[#931638]/50 rounded-lg text-xs hover:border-[#931638] transition-all w-[90px]">
-                                    <span className="truncate max-w-[70px] text-black">{selectedYears.length === 0 ? "Year" : `${selectedYears.length} Selected`}</span>
-                                    <ChevronDown size={10} className={`ml-1 transition-transform duration-200 ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                <Calendar size={10} className="absolute left-2 top-3 text-gray-500" />
-                                {isYearDropdownOpen && (
-                                    <div className="absolute top-full left-0 mt-2 w-40 max-h-60 overflow-y-auto custom-scrollbar bg-white border border-[#931638]/50 rounded-lg shadow-2xl z-50 animate-in fade-in zoom-in-95">
-                                        {availableYears.map((y) => (
-                                            <div key={y} onClick={() => toggleYearSelection(y)} className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${selectedYears.includes(y) ? 'bg-[#931638]/10 hover:bg-[#931638]/20' : 'hover:bg-gray-100'}`}>
-                                                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedYears.includes(y) ? 'bg-[#931638] border-[#931638]' : 'border-gray-400'}`}>
-                                                    {selectedYears.includes(y) && <Check size={10} className="text-white" />}
-                                                </div>
-                                                <span className={`text-xs ${selectedYears.includes(y) ? 'text-[#931638] font-medium' : 'text-gray-700'}`}>{y}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
                             <button onClick={() => setIncludeEmea(!includeEmea)} className="flex items-center gap-1.5 h-[34px] px-2 bg-gray-100 border border-[#931638]/50 rounded-lg cursor-pointer group hover:border-[#931638] transition-all">
                                 <div className={`w-7 h-3.5 rounded-full p-0.5 transition-colors duration-200 flex items-center ${includeEmea ? "bg-[#931638]" : "bg-gray-400"}`}>
                                     <div className={`w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-transform duration-200 ${includeEmea ? "translate-x-3.5" : "translate-x-0"}`} />
@@ -395,12 +409,6 @@ export default function VotingGuidelinesPage() {
                                 <div key={id} className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/60 px-2 py-0.5 rounded text-[10px] animate-in fade-in">
                                     <span>{allInvestors.find(i => i.id === id)?.name || id}</span>
                                     <button onClick={() => toggleInvestor(id)} className="hover:text-[#931638]"><X size={10} /></button>
-                                </div>
-                            ))}
-                            {selectedYears.map(y => (
-                                <div key={y} className="flex items-center gap-1 bg-gray-200 text-gray-700 border border-gray-400 px-2 py-0.5 rounded text-[10px] animate-in fade-in">
-                                    <span>{y}</span>
-                                    <button onClick={() => toggleYearSelection(y)} className="hover:text-black"><X size={10} /></button>
                                 </div>
                             ))}
                         </div>
@@ -527,8 +535,8 @@ export default function VotingGuidelinesPage() {
                                                         </div>
 
                                                         {/* Answer Preview - 2 lines only */}
-                                                        <div className="prose prose-sm max-w-none text-gray-700 text-[10px] leading-relaxed line-clamp-2">
-                                                            <ReactMarkdown>{res.summary}</ReactMarkdown>
+                                                        <div className="line-clamp-2 text-gray-700 text-[10px] leading-relaxed">
+                                                            {res.answer_segments?.[0]?.text ?? res.summary}
                                                         </div>
 
                                                         {/* View Full Link - No Pages in Preview */}
