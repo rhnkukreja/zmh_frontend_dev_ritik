@@ -489,10 +489,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   const ANALYTICS_COLORS = {
-    "Election Of Directors": "#dc2626", // Red-600 to match theme
-    "Say On Pay": "#b91c1c", // Red-700 
-    "Other Proposals": "#f87171", // Red-400 for lighter variant
-    "Ratification of Auditor": "#fb7185" // Rose-400
+    "Election of Directors": "#991b1b", // Maroon (bg-primary/red-800) - Most critical voting item
+    "Say on Pay": "#ea580c", // Orange - Executive compensation
+    "Other Proposals": "#2563eb", // Blue - Shareholder proposals
+    "Ratification of Auditor": "#16a34a" // Green - Standard procedure
   };
 
   const analyticsCategories = getAnalyticsCategories();
@@ -931,7 +931,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         <div key={category.name} className="flex flex-col bg-white rounded-lg border border-slate-200 p-4 min-w-0">
                           <div className="text-center mb-6">
                             <h3 className="text-lg font-semibold text-slate-800 mb-2">{category.name}</h3>
-                            <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
+                            <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: category.fill }}></div>
                           </div>
 
                           <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
@@ -951,8 +951,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                     </span>
                                     {!isNoProposal && (
                                       <div
-                                        className="bg-primary transition-all duration-700 ease-out"
+                                        className="transition-all duration-700 ease-out"
                                         style={{
+                                          backgroundColor: category.fill,
                                           width: '48px',
                                           height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
                                         }}
