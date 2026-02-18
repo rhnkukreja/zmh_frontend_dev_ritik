@@ -275,7 +275,8 @@ const InstitutionDocuments = () => {
                 {loading ? "Loading..." : (
                   <>
                     {singleInstitution?.institution}
-                    {(singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id) && (
+                    {/* Document Tab btn is disabled for now */}
+                    {/* {(singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id) && (
                       <button
                         className="cursor-pointer ml-2 px-3 py-1 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors text-sm font-medium"
                         title="Document Tab"
@@ -286,7 +287,7 @@ const InstitutionDocuments = () => {
                       >
                         Document Tab
                       </button>
-                    )}
+                    )} */}
                   </>
                 )}
               </h1>

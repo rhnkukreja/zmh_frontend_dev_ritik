@@ -178,6 +178,7 @@ const Top20InvestorsSection = ({ data, totalPercentOwnership }: Top20InvestorsSe
                 <tr key={item.filer_id || index} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-4 px-4 text-gray-600 font-medium">{index + 1}</td>
                   <td className="py-4 px-4 text-gray-700 font-semibold">
+                    {!item.investor_profile_id && <sup style={{ fontSize: '1em', fontWeight: 'bold' }}>*</sup>}
                     {item.institution_name || item.institution__institution}
                   </td>
                   <td className="py-4 px-4 text-center text-gray-700">
@@ -200,9 +201,14 @@ const Top20InvestorsSection = ({ data, totalPercentOwnership }: Top20InvestorsSe
             })}
           </tbody>
         </table>
-        <div className="flex justify-between mt-3 pb-2 text-xs text-gray-500">
-          <span><sup>1</sup>Source: Whalewisdom. Data as of January 27, 2026.</span>
-          <span>*Not in ZMH coverage universe</span>
+        <div className="mt-3 pb-2 text-xs text-gray-500 space-y-1">
+          <div className="flex justify-between">
+            <span><sup>1</sup>Source: Whalewisdom. Data as of January 27, 2026.</span>
+            <span>*Not in ZMH coverage universe</span>
+          </div>
+          <div>
+            <span><span style={{ fontSize: '1em', fontWeight: 'bold' }}>*</span>No detailed investor profile available</span>
+          </div>
         </div>
       </div>
 

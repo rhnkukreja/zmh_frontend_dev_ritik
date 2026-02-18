@@ -34,6 +34,7 @@ import FilterChips from "@/components/FilterChips";
 import AddDocumentModal from "./components/AddDocumentModal";
 import AddNewCaseStudies from "@/pages/CaseStudies/Components/AddEditCaseStudies";
 import AddEngagementDetailsModal from "@/pages/PeerAnalysis/components/AddEngagementDetailsModal";
+import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
 
 interface InstituteFilter {
   region: string[];
@@ -88,6 +89,10 @@ function Main() {
   const [addEngagementModalVisible, setAddEngagementModalVisible] =
     useState<boolean>(false);
   const [selectedInstitutionForEngagement, setSelectedInstitutionForEngagement] =
+    useState<Institutions | null>(null);
+  const [addProxyVotingGuidelineModalVisible, setAddProxyVotingGuidelineModalVisible] =
+    useState<boolean>(false);
+  const [selectedInstitutionForProxyGuideline, setSelectedInstitutionForProxyGuideline] =
     useState<Institutions | null>(null);
 
   useEffect(() => {
@@ -208,7 +213,7 @@ function Main() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="font-semibold text-xl ">Institutions</div>
+          <div className="font-semibold text-xl ">Admin Panel</div>
           {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
@@ -264,10 +269,10 @@ function Main() {
                   </Button>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+              <div className="flex flex-wrap items-start gap-2 sm:ml-auto">
                 {user?.saved_search?.["Institution"] !== undefined && (
                   <div className="hover:bg-slate-50 ">
-                    <Button onClick={getSavedSearches}>Previous Search</Button>
+                    <Button className="h-10 whitespace-nowrap" onClick={getSavedSearches}>Previous Search</Button>
                   </div>
                 )}
 
@@ -277,7 +282,7 @@ function Main() {
                   onClick={() => {
                     onFilterClear();
                   }}
-                  className="w-full sm:w-auto flex items-center gap-2"
+                  className="h-10 px-4 whitespace-nowrap"
                 >
                   Clear
                 </Button>
@@ -285,18 +290,18 @@ function Main() {
                 <Button
                   variant="primary"
                   onClick={handleSubmit(onSubmit)}
-                  className="w-full sm:w-auto flex items-center gap-2"
+                  className="h-10 px-4 whitespace-nowrap"
                 >
                   Apply
                 </Button>
 
-                <Popover className="inline-block">
+                <Popover className="relative inline-block">
                   {({ close }) => (
                     <>
                       <Popover.Button
                         as={Button}
                         variant="outline-secondary"
-                        className="w-full sm:w-auto"
+                        className="h-10 px-4 whitespace-nowrap"
                       >
                         <Lucide
                           icon="ArrowDownWideNarrow"
@@ -307,47 +312,44 @@ function Main() {
                           {filtersLength}
                         </div>
                       </Popover.Button>
-                      <Popover.Panel placement="bottom-end">
+                      <Popover.Panel placement="bottom-end" className="min-w-[280px]">
                         <form onSubmit={handleSubmit(onSubmit)}>
-                          <div className="p-2">
+                          <div className="p-3 space-y-3">
                             {/* Filter Content */}
-                            <div className="mb-4">
+                            <div>
                               <h4 className="text-base font-semibold text-slate-700">Filters</h4>
                             </div>
 
                             <div>
-                              <div className="w-full  my-2">
-                                <div className="text-left text-slate-500 flex justify-between mb-1">
-                                <span className="font-semibold">Region</span>
+                              <div className="w-full">
+                                <div className="text-left text-slate-500 flex justify-between items-center mb-2">
+                                  <span className="text-sm font-semibold text-slate-700">Region</span>
                                   {institutionFilterOptions?.region?.length >
                                     0 && (
-                                    <div>
-                                      <FormCheck className="mr-2">
-                                        <FormCheck.Label>
-                                          Select All
-                                        </FormCheck.Label>
-                                        <FormCheck.Input
-                                          className="ml-1"
-                                          id={`region`}
-                                          checked={
-                                            institutionFilterOptions.region
-                                              .length ===
-                                            watch("region")?.length
+                                    <FormCheck className="flex items-center gap-1 text-xs">
+                                      <FormCheck.Input
+                                        id={`region`}
+                                        checked={
+                                          institutionFilterOptions.region
+                                            .length ===
+                                          watch("region")?.length
+                                        }
+                                        type="checkbox"
+                                        onChange={(e) => {
+                                          if (e.target.checked === true) {
+                                            setValue(
+                                              "region",
+                                              institutionFilterOptions.region
+                                            );
+                                          } else {
+                                            setValue("region", []);
                                           }
-                                          type="checkbox"
-                                          onChange={(e) => {
-                                            if (e.target.checked === true) {
-                                              setValue(
-                                                "region",
-                                                institutionFilterOptions.region
-                                              );
-                                            } else {
-                                              setValue("region", []);
-                                            }
-                                          }}
-                                        />
-                                      </FormCheck>
-                                    </div>
+                                        }}
+                                      />
+                                      <FormCheck.Label className="text-xs mb-0">
+                                        Select All
+                                      </FormCheck.Label>
+                                    </FormCheck>
                                   )}
                                 </div>
                                 <Controller
@@ -362,7 +364,7 @@ function Main() {
                                       options={{
                                         placeholder: "Select Region",
                                       }}
-                                      className="w-full"
+                                      className="w-full text-sm"
                                       multiple
                                     >
                                       <>
@@ -435,6 +437,9 @@ function Main() {
                         {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Proxy Advisory Influence
                         </Table.Td> */}
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Add New Proxy Voting Guideline
+                        </Table.Td>
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Add Documents
                         </Table.Td>
@@ -553,6 +558,24 @@ function Main() {
                               {institution?.proxy_advisor_influence || "-"}
                             </Table.Td> */}
                             <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {(user?.user_type === "Analyst" ||
+                                user?.user_type === "Admin") && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedInstitutionForProxyGuideline(institution);
+                                    setAddProxyVotingGuidelineModalVisible(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                                >
+                                  Add Guideline
+                                </button>
+                              )}
+                              {user?.user_type !== "Analyst" &&
+                                user?.user_type !== "Admin" && (
+                                  <span className="text-slate-400 text-sm">-</span>
+                                )}
+                            </Table.Td>
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
                               <div className="flex justify-center items-center">
                                 {(user?.user_type === "Analyst" ||
                                   user?.user_type === "Admin") && (
@@ -659,7 +682,7 @@ function Main() {
                       ) : (
                         <Table.Tr>
                           <Table.Td
-                            colSpan={7}
+                            colSpan={8}
                             className="py-10 text-center text-slate-500"
                           >
                             No institutions found.
@@ -725,6 +748,15 @@ function Main() {
             onSuccess={() => {
               setAddEngagementModalVisible(false);
             }}
+          />
+        )}
+        {addProxyVotingGuidelineModalVisible && selectedInstitutionForProxyGuideline && (
+          <AddEditPolicyGuideline
+            addNewProxyVotingGuidelineVisible={addProxyVotingGuidelineModalVisible}
+            setAddNewProxyVotingGuidelineVisible={setAddProxyVotingGuidelineModalVisible}
+            selectedProxyVotingGuideline={{
+              institution: selectedInstitutionForProxyGuideline.id,
+            } as any}
           />
         )}
       </div>
