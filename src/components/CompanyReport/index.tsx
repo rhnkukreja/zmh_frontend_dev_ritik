@@ -330,21 +330,21 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
               stack: (() => {
                 const tocItems = [
                   { number: "1.", title: "Share Price Performance", link: "share-price-section" },
-                  { number: "2.", title: "Shareholder Meeting Summary", link: "meeting-details-section" },
+                  { number: "2.", title: "Trend in Investor Support", link: "trend-support-section" },
                   { number: "3.", title: "Top 20 Ownership", link: "ownership-section" },
-                  { number: "4.", title: "Voting Rationale", link: "voting-rationale-section" },
-                  { number: "5.", title: "Trend in Investor Support", link: "trend-support-section" },
+                  { number: "4.", title: "Shareholder Meeting Summary", link: "meeting-details-section" },
+                  { number: "5.", title: "Voting Rationale", link: "voting-rationale-section" },
                   { number: "6.", title: "Engagement History", link: "engagement-section" },
-                  { number: "7.", title: "Shareholder Proposals", link: "proposals-section" }
+                  { number: "7.", title: "Shareholder Proposals (Latest)", link: "proposals-section" }
                 ];
 
                 const availableTocItems = tocItems.filter(item => {
                   if (item.link === "share-price-section" && !data.share_price_performance_data) return false;
-                  if (item.link === "meeting-details-section" && !data.meeting_details_data) return false;
-                  if (item.link === "ownership-section" && (!data.percent_ownership_data || data.percent_ownership_data.length === 0)) return false;
-                  if (item.link === "voting-rationale-section" && !data.voted_against_rationale) return false;
                   if (item.link === "trend-support-section" && !data.charts_data) return false;
-                  if (item.link === "engagement-section" && !data.engagement_stats_data) return false;
+                  if (item.link === "ownership-section" && (!data.percent_ownership_data || data.percent_ownership_data.length === 0)) return false;
+                  if (item.link === "meeting-details-section" && !data.meeting_details_data) return false;
+                  if (item.link === "voting-rationale-section" && (!data.voted_against_rationale || data.voted_against_rationale.length === 0)) return false;
+                  if (item.link === "engagement-section" && (!data.engagement_stats_data || (Array.isArray(data.engagement_stats_data) && data.engagement_stats_data.length === 0))) return false;
                   if (item.link === "proposals-section" && (!data.sp_data || data.sp_data.length === 0)) return false;
                   return true;
                 });
@@ -413,7 +413,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           content.push({ text: " ", margin: [0, 6] });
         }
 
-        // Share Price Performance
+        // 1) Share Price Performance
         if (data.share_price_performance_data) {
           const perfData = data.share_price_performance_data;
           const entities = Object.keys(perfData).filter(key => key !== "data_as_of");
@@ -461,67 +461,51 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           content.push({ text: " ", margin: [0, 6] });
         }
 
-        // Meeting Details
-        if (data.meeting_details_data && typeof data.meeting_details_data === "object") {
-          const details = data.meeting_details_data as Record<string, any>;
-          const nominees = Array.isArray(details.nominees) ? details.nominees : [];
-          const nomineesHeaders = Array.isArray(details.nominees_headers) ? details.nominees_headers : [];
-          const proposals = Array.isArray(details.proposals) ? details.proposals : [];
-          const proposalsHeaders = Array.isArray(details.proposals_headers) ? details.proposals_headers : [];
+        // 2) Trend in Investor Support
+        if (data.charts_data) {
+          const trendTitles = [
+            "Election of Directors",
+            "Say on Pay",
+            "Other Proposals",
+            "Ratification of Auditor"
+          ];
+          const trendCards = trendTitles.map(title => {
+            const img = chartImageMap.get(title);
+            return img
+              ? {
+                stack: [
+                  { text: title, style: "subSectionTitle", alignment: "center" },
+                  { image: img, width: 200, alignment: "center", margin: [0, 4, 0, 0] }
+                ],
+                margin: [4, 4, 4, 4]
+              }
+              : { text: `${title}: No chart available`, style: "caption" };
+          });
 
-          let meetingDate = "";
-          if (details.company && Array.isArray(details.company) && details.company.length > 0) {
-            const companyObj = details.company[0];
-            const companyKey = Object.keys(companyObj)[0];
-            const meetingInfo = companyObj[companyKey];
-            if (typeof meetingInfo === "string" && meetingInfo.includes(" - ")) {
-              meetingDate = meetingInfo.split(" - ").pop() || "";
-            }
-          }
-
-          if (nominees.length > 0 || proposals.length > 0) {
-            addSectionTitle("Shareholder Meeting Summary", "meeting-details-section");
-            if (meetingDate) content.push({ text: `Meeting Date: ${meetingDate}`, style: "caption" });
-
-            if (nominees.length > 0 && nomineesHeaders.length > 0) {
-              const headerRow = nomineesHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
-              const bodyRows = nominees.map((row: Record<string, any>) =>
-                nomineesHeaders.map((h: any, colIdx: number) => {
-                  const cellValue = formatValue(row[h.field]);
-                  const isLastCol = colIdx === nomineesHeaders.length - 1;
-                  const numericValue = parseFloat(String(cellValue));
-                  const isLowPercentage = isLastCol && !isNaN(numericValue) && numericValue < 85;
-                  return isLowPercentage
-                    ? { text: cellValue, color: "#b91c1c", bold: true }
-                    : cellValue;
-                })
-              );
-              const colWidths = ["35%", ...Array(nomineesHeaders.length - 1).fill(`${65 / (nomineesHeaders.length - 1)}%`)];
-              content.push(buildTable(headerRow, bodyRows, colWidths, tableLayout));
-              content.push({ text: " ", margin: [0, 6] });
-            }
-
-            if (proposals.length > 0 && proposalsHeaders.length > 0) {
-              const headerRow = proposalsHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
-              const bodyRows = proposals.map((row: Record<string, any>) =>
-                proposalsHeaders.map((h: any, colIdx: number) => {
-                  const cellValue = formatValue(row[h.field]);
-                  const isLastCol = colIdx === proposalsHeaders.length - 1;
-                  const numericValue = parseFloat(String(cellValue));
-                  const isLowPercentage = isLastCol && !isNaN(numericValue) && numericValue < 85;
-                  return isLowPercentage
-                    ? { text: cellValue, color: "#b91c1c", bold: true }
-                    : cellValue;
-                })
-              );
-              const colWidths = ["35%", ...Array(proposalsHeaders.length - 1).fill(`${65 / (proposalsHeaders.length - 1)}%`)];
-              content.push(buildTable(headerRow, bodyRows, colWidths, tableLayout));
-              content.push({ text: " ", margin: [0, 6] });
-            }
-          }
+          addSectionTitle("Trend in Investor Support", "trend-support-section");
+          content.push({
+            table: {
+              widths: ["*", "*"],
+              body: [
+                [trendCards[0], trendCards[1]],
+                [trendCards[2], trendCards[3]]
+              ]
+            },
+            layout: {
+              hLineWidth: () => 0.8,
+              vLineWidth: () => 0.8,
+              hLineColor: () => gray200,
+              vLineColor: () => gray200,
+              paddingLeft: () => 6,
+              paddingRight: () => 6,
+              paddingTop: () => 6,
+              paddingBottom: () => 6
+            },
+            margin: [0, 2, 0, 6]
+          });
         }
 
-        // Top 20 Ownership
+        // 3) Top 20 Ownership
         if (Array.isArray(data.percent_ownership_data) && data.percent_ownership_data.length > 0) {
           const top20 = data.percent_ownership_data.slice(0, 20);
           addSectionTitle(
@@ -581,90 +565,102 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           content.push({ text: " ", margin: [0, 6] });
         }
 
-        // Voting Rationale
-        if (Array.isArray(data.voted_against_rationale)) {
-          addSectionTitle("Voting Rationale", "voting-rationale-section");
-          if (data.voted_against_rationale.length === 0) {
-            content.push({ text: "No investors voted against directors or Say on Pay.", style: "caption" });
-          } else {
-            const headerRow: TableCell[] = [
-              { text: "Investor", style: "tableHeader" },
-              { text: "Proposal", style: "tableHeader" },
-              { text: "Vote", style: "tableHeader", alignment: "center" },
-              { text: "Vote Counts", style: "tableHeader" },
-              { text: "Rationale", style: "tableHeader" }
-            ];
-            const bodyRows = data.voted_against_rationale.map(item => {
-              const investorName = item.institution__institution || item.investor || "";
-              const voteCounts = parseSplitVoteCounts(item.split_vote_counts);
-              const voteCountsText = voteCounts
-                ? `For: ${voteCounts.for ?? 0} | Against: ${voteCounts.against ?? 0}`
-                : "";
-              const voteText = item.vote || "";
-              const isAgainst = voteText.toLowerCase() === "against" || voteText.toLowerCase() === "withhold";
-              return [
-                investorName,
-                item.proposal || "",
-                { text: voteText, alignment: "center", bold: isAgainst, color: isAgainst ? "#b91c1c" : gray700 },
-                voteCountsText,
-                item.notes || item.rationale || ""
-              ];
-            });
-            content.push(buildTable(headerRow, bodyRows, ["18%", "20%", "8%", "16%", "38%"], tableLayout));
+        // 4) Shareholder Meeting Summary
+        if (data.meeting_details_data && typeof data.meeting_details_data === "object") {
+          const details = data.meeting_details_data as Record<string, any>;
+          const nominees = Array.isArray(details.nominees) ? details.nominees : [];
+          const nomineesHeaders = Array.isArray(details.nominees_headers) ? details.nominees_headers : [];
+          const proposals = Array.isArray(details.proposals) ? details.proposals : [];
+          const proposalsHeaders = Array.isArray(details.proposals_headers) ? details.proposals_headers : [];
+
+          let meetingDate = "";
+          if (details.company && Array.isArray(details.company) && details.company.length > 0) {
+            const companyObj = details.company[0];
+            const companyKey = Object.keys(companyObj)[0];
+            const meetingInfo = companyObj[companyKey];
+            if (typeof meetingInfo === "string" && meetingInfo.includes(" - ")) {
+              meetingDate = meetingInfo.split(" - ").pop() || "";
+            }
           }
+
+          if (nominees.length > 0 || proposals.length > 0) {
+            addSectionTitle("Shareholder Meeting Summary", "meeting-details-section");
+            if (meetingDate) content.push({ text: `Meeting Date: ${meetingDate}`, style: "caption" });
+
+            if (nominees.length > 0 && nomineesHeaders.length > 0) {
+              const headerRow = nomineesHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
+              const bodyRows = nominees.map((row: Record<string, any>) =>
+                nomineesHeaders.map((h: any, colIdx: number) => {
+                  const cellValue = formatValue(row[h.field]);
+                  const isLastCol = colIdx === nomineesHeaders.length - 1;
+                  const numericValue = parseFloat(String(cellValue));
+                  const isLowPercentage = isLastCol && !isNaN(numericValue) && numericValue < 85;
+                  return isLowPercentage
+                    ? { text: cellValue, color: "#b91c1c", bold: true }
+                    : cellValue;
+                })
+              );
+              const colWidths = ["35%", ...Array(nomineesHeaders.length - 1).fill(`${65 / (nomineesHeaders.length - 1)}%`)];
+              content.push(buildTable(headerRow, bodyRows, colWidths, tableLayout));
+              content.push({ text: " ", margin: [0, 6] });
+            }
+
+            if (proposals.length > 0 && proposalsHeaders.length > 0) {
+              const headerRow = proposalsHeaders.map((h: any) => ({ text: h.header, style: "tableHeader" }));
+              const bodyRows = proposals.map((row: Record<string, any>) =>
+                proposalsHeaders.map((h: any, colIdx: number) => {
+                  const cellValue = formatValue(row[h.field]);
+                  const isLastCol = colIdx === proposalsHeaders.length - 1;
+                  const numericValue = parseFloat(String(cellValue));
+                  const isLowPercentage = isLastCol && !isNaN(numericValue) && numericValue < 85;
+                  return isLowPercentage
+                    ? { text: cellValue, color: "#b91c1c", bold: true }
+                    : cellValue;
+                })
+              );
+              const colWidths = ["35%", ...Array(proposalsHeaders.length - 1).fill(`${65 / (proposalsHeaders.length - 1)}%`)];
+              content.push(buildTable(headerRow, bodyRows, colWidths, tableLayout));
+              content.push({ text: " ", margin: [0, 6] });
+            }
+          }
+        }
+
+        // 5) Voting Rationale
+        if (Array.isArray(data.voted_against_rationale) && data.voted_against_rationale.length > 0) {
+          addSectionTitle("Voting Rationale", "voting-rationale-section");
+          const headerRow: TableCell[] = [
+            { text: "Investor", style: "tableHeader" },
+            { text: "Proposal", style: "tableHeader" },
+            { text: "Vote", style: "tableHeader", alignment: "center" },
+            { text: "Vote Counts", style: "tableHeader" },
+            { text: "Rationale", style: "tableHeader" }
+          ];
+          const bodyRows = data.voted_against_rationale.map(item => {
+            const investorName = item.institution__institution || item.investor || "";
+            const voteCounts = parseSplitVoteCounts(item.split_vote_counts);
+            const voteCountsText = voteCounts
+              ? `For: ${voteCounts.for ?? 0} | Against: ${voteCounts.against ?? 0}`
+              : "";
+            const voteText = item.vote || "";
+            const isAgainst = voteText.toLowerCase() === "against" || voteText.toLowerCase() === "withhold";
+            return [
+              investorName,
+              item.proposal || "",
+              { text: voteText, alignment: "center", bold: isAgainst, color: isAgainst ? "#b91c1c" : gray700 },
+              voteCountsText,
+              item.notes || item.rationale || ""
+            ];
+          });
+          content.push(buildTable(headerRow, bodyRows, ["18%", "20%", "8%", "16%", "38%"], tableLayout));
           content.push({ text: " ", margin: [0, 6] });
         }
 
-        // Trend in Investor Support
-        if (data.charts_data) {
-          const trendTitles = [
-            "Election of Directors",
-            "Say on Pay",
-            "Other Proposals",
-            "Ratification of Auditor"
-          ];
-          const trendCards = trendTitles.map(title => {
-            const img = chartImageMap.get(title);
-            return img
-              ? {
-                stack: [
-                  { text: title, style: "subSectionTitle", alignment: "center" },
-                  { image: img, width: 200, alignment: "center", margin: [0, 4, 0, 0] }
-                ],
-                margin: [4, 4, 4, 4]
-              }
-              : { text: `${title}: No chart available`, style: "caption" };
-          });
-
-          addSectionTitle("Trend in Investor Support", "trend-support-section");
-          content.push({
-            table: {
-              widths: ["*", "*"],
-              body: [
-                [trendCards[0], trendCards[1]],
-                [trendCards[2], trendCards[3]]
-              ]
-            },
-            layout: {
-              hLineWidth: () => 0.8,
-              vLineWidth: () => 0.8,
-              hLineColor: () => gray200,
-              vLineColor: () => gray200,
-              paddingLeft: () => 6,
-              paddingRight: () => 6,
-              paddingTop: () => 6,
-              paddingBottom: () => 6
-            },
-            margin: [0, 2, 0, 6]
-          });
-        }
-
-        // Engagement Stats
+        // 6) Engagement History
         const companyEngagements = normalizeToArray(data.engagement_stats_data);
         const peerEngagements = normalizeToArray(data.engagement_stats_ex_global_data);
 
         if (companyEngagements.length > 0) {
-          addSectionTitle("Investor Disclosed Engagement History", "engagement-section");
+          addSectionTitle("Engagement History", "engagement-section");
           const headerRow: TableCell[] = [
             { text: "Year", style: "tableHeader" },
             { text: "Investor", style: "tableHeader" },
@@ -793,7 +789,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           // Remove landscape orientation completely
           content.push({
             stack: [
-              { text: "Shareholder Proposals", style: "sectionTitle", id: "proposals-section" },
+              { text: "Shareholder Proposals (Latest)", style: "sectionTitle", id: "proposals-section" },
               {
                 table: {
                   headerRows: 1,
@@ -930,111 +926,125 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           <section className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200 exclude-from-pdf">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Table of Contents</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-              <a
-                href="#share-price-performance"
-                className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById('share-price-performance');
-                  if (el) {
-                    const yOffset = -20;
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }}
-              >
-                1. Share Price Performance
-              </a>
-              <a
-                href="#meeting-details"
-                className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById('meeting-details');
-                  if (el) {
-                    const yOffset = -20;
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }}
-              >
-                2. Shareholder Meeting Summary
-              </a>
-              <a
-                href="#total-ownership"
-                className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById('total-ownership');
-                  if (el) {
-                    const yOffset = -20;
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }}
-              >
-                3. Top 20 Ownership
-              </a>
-              <a
-                href="#voting-rationale"
-                className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById('voting-rationale');
-                  if (el) {
-                    const yOffset = -20;
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }}
-              >
-                4. Voting Rationale
-              </a>
-              <a
-                href="#trend-investor-support"
-                className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById('trend-investor-support');
-                  if (el) {
-                    const yOffset = -20;
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }}
-              >
-                5. Trend in Investor Support
-              </a>
-              <a
-                href="#engagement-history"
-                className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById('engagement-history');
-                  if (el) {
-                    const yOffset = -20;
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }}
-              >
-                6. Engagement History
-              </a>
-              <a
-                href="#shareholder-proposals"
-                className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const el = document.getElementById('shareholder-proposals');
-                  if (el) {
-                    const yOffset = -20;
-                    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    window.scrollTo({ top: y, behavior: 'smooth' });
-                  }
-                }}
-              >
-                7. Shareholder Proposals
-              </a>
+              {data.share_price_performance_data && (
+                <a
+                  href="#share-price-performance"
+                  className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('share-price-performance');
+                    if (el) {
+                      const yOffset = -20;
+                      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  1. Share Price Performance
+                </a>
+              )}
+              {data.charts_data && (
+                <a
+                  href="#trend-investor-support"
+                  className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('trend-investor-support');
+                    if (el) {
+                      const yOffset = -20;
+                      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  2. Trend in Investor Support
+                </a>
+              )}
+              {data.percent_ownership_data && data.percent_ownership_data.length > 0 && (
+                <a
+                  href="#total-ownership"
+                  className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('total-ownership');
+                    if (el) {
+                      const yOffset = -20;
+                      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  3. Top 20 Ownership
+                </a>
+              )}
+              {data.meeting_details_data && (
+                <a
+                  href="#meeting-details"
+                  className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('meeting-details');
+                    if (el) {
+                      const yOffset = -20;
+                      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  4. Shareholder Meeting Summary
+                </a>
+              )}
+              {data.voted_against_rationale && data.voted_against_rationale.length > 0 && (
+                <a
+                  href="#voting-rationale"
+                  className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('voting-rationale');
+                    if (el) {
+                      const yOffset = -20;
+                      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  5. Voting Rationale
+                </a>
+              )}
+              {(data.engagement_stats_data && (Array.isArray(data.engagement_stats_data) ? data.engagement_stats_data.length > 0 : true)) && (
+                <a
+                  href="#engagement-history"
+                  className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('engagement-history');
+                    if (el) {
+                      const yOffset = -20;
+                      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  6. Engagement History
+                </a>
+              )}
+              {data.sp_data && data.sp_data.length > 0 && (
+                <a
+                  href="#shareholder-proposals"
+                  className="text-primary hover:text-primary/80 hover:underline cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('shareholder-proposals');
+                    if (el) {
+                      const yOffset = -20;
+                      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                      window.scrollTo({ top: y, behavior: 'smooth' });
+                    }
+                  }}
+                >
+                  7. Shareholder Proposals (Latest)
+                </a>
+              )}
             </div>
           </section>
 
@@ -1044,53 +1054,69 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           )} */}
 
           {/* Section 1: Share Price Performance */}
-          <div id="share-price-performance">
-            {data.share_price_performance_data && (
+          {data.share_price_performance_data && (
+            <div id="share-price-performance">
               <SharePricePerformanceSection
                 data={data.share_price_performance_data}
                 dataAsOf={data.data_as_of}
                 companyName={data.finnhub_data?.company_name}
               />
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Section 2: Meeting Details */}
-          <div id="meeting-details">
-            <MeetingDetailsSection data={data.meeting_details_data} />
-          </div>
-
-          {/* Section 3: Investors with Pie Chart and Proxy Influence */}
-          <div id="total-ownership">
-            <Top20InvestorsSection
-              data={data.percent_ownership_data || []}
-              totalPercentOwnership={data.total_percent_ownership}
+          {/* Section 2: Trend in Investor Support */}
+          {data.charts_data && (
+            <InvestorsVotingAgainstSection
+              data={data.charts_data}
+              votedAgainstRationale={data.voted_against_rationale}
+              showOnlyTrend={true}
             />
-          </div>
+          )}
 
-          {/* Section 4: Voting Rationale + Trend Charts */}
-          <div id="voting-rationale">
-            {data.charts_data && (
-              <InvestorsVotingAgainstSection
-                data={data.charts_data}
-                votedAgainstRationale={data.voted_against_rationale}
+          {/* Section 3: Top 20 Ownership */}
+          {data.percent_ownership_data && data.percent_ownership_data.length > 0 && (
+            <div id="total-ownership">
+              <Top20InvestorsSection
+                data={data.percent_ownership_data || []}
+                totalPercentOwnership={data.total_percent_ownership}
               />
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Section 5: Engagement Stats (Company + Peers) */}
-          <div id="engagement-history">
-            <EngagementStatsSection
-              data={data.engagement_stats_data}
-              exGlobalData={data.engagement_stats_ex_global_data}
-              companyName={data.finnhub_data?.company_name}
-              isGeneratingPDF={isGeneratingPDF}
+          {/* Section 4: Shareholder Meeting Summary */}
+          {data.meeting_details_data && (
+            <div id="meeting-details">
+              <MeetingDetailsSection data={data.meeting_details_data} />
+            </div>
+          )}
+
+          {/* Section 5: Voting Rationale */}
+          {data.voted_against_rationale && data.voted_against_rationale.length > 0 && (
+            <InvestorsVotingAgainstSection
+              data={data.charts_data}
+              votedAgainstRationale={data.voted_against_rationale}
+              showOnlyVotingRationale={true}
             />
-          </div>
+          )}
 
-          {/* Section 7: Shareholder Proposals */}
-          <div id="shareholder-proposals">
-            <ShareholderProposalsSection data={data.sp_data || []} />
-          </div>
+          {/* Section 6: Engagement History */}
+          {(data.engagement_stats_data && (Array.isArray(data.engagement_stats_data) ? data.engagement_stats_data.length > 0 : true)) && (
+            <div id="engagement-history">
+              <EngagementStatsSection
+                data={data.engagement_stats_data}
+                exGlobalData={data.engagement_stats_ex_global_data}
+                companyName={data.finnhub_data?.company_name}
+                isGeneratingPDF={isGeneratingPDF}
+              />
+            </div>
+          )}
+
+          {/* Section 7: Shareholder Proposals (Latest) */}
+          {data.sp_data && data.sp_data.length > 0 && (
+            <div id="shareholder-proposals">
+              <ShareholderProposalsSection data={data.sp_data || []} />
+            </div>
+          )}
 
           {/* Report Footer */}
           <div className="report-footer mt-12 pt-6 border-t-2 border-gray-200">

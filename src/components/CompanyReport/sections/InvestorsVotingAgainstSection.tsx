@@ -4,6 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelL
 interface InvestorsVotingAgainstSectionProps {
   data: ChartsData;
   votedAgainstRationale?: VotedAgainstRationale[];
+  showOnlyTrend?: boolean;
+  showOnlyVotingRationale?: boolean;
 }
 
 const parseSplitVoteCounts = (value: unknown): { for?: number; against?: number } | null => {
@@ -179,7 +181,7 @@ const TrendChart = ({ title, data }: { title: string; data: any }) => {
   );
 };
 
-const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: InvestorsVotingAgainstSectionProps) => {
+const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale, showOnlyTrend, showOnlyVotingRationale }: InvestorsVotingAgainstSectionProps) => {
   const safeRationaleData = Array.isArray(votedAgainstRationale) ? votedAgainstRationale : [];
   
   // Check if we have any meaningful data
@@ -190,17 +192,51 @@ const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: Investor
     data.ratification_of_auditor
   );
 
+  // If showOnlyTrend is true, only render Trend section
+  if (showOnlyTrend) {
+    return (
+      <>
+        {hasVotingData && (
+          <section id="trend-investor-support" className="mb-10">
+            <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+              Trend in Investor Support
+            </h2>
+            
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              <TrendChart title="Election of Directors" data={data.election_of_directors} />
+              <TrendChart title="Say on Pay" data={data.say_on_pay} />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <TrendChart title="Other Proposals" data={data.shareholder_proposals} />
+              <TrendChart title="Ratification of Auditor" data={data.ratification_of_auditor} />
+            </div>
+          </section>
+        )}
+      </>
+    );
+  }
+
+  // If showOnlyVotingRationale is true, only render Voting Rationale section
+  if (showOnlyVotingRationale) {
+    return (
+      <>
+        {safeRationaleData.length > 0 && (
+          <section id="voting-rationale" className="mb-10">
+            <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+              Voting Rationale
+            </h2>
+            <VotingRationaleTable rationaleData={safeRationaleData} />
+          </section>
+        )}
+      </>
+    );
+  }
+
+  // Default: render both sections (for backward compatibility)
   return (
     <>
-      {/* Section for Voting Rationale Table */}
-      <section className="mb-10">
-        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
-          Voting Rationale
-        </h2>
-        <VotingRationaleTable rationaleData={safeRationaleData} />
-      </section>
-
-      {/* Separate Section for Trend Charts */}
+      {/* Section 2: Trend in Investor Support (charts first) */}
       {hasVotingData && (
         <section id="trend-investor-support" className="mb-10">
           <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
@@ -218,6 +254,16 @@ const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: Investor
             <TrendChart title="Other Proposals" data={data.shareholder_proposals} />
             <TrendChart title="Ratification of Auditor" data={data.ratification_of_auditor} />
           </div>
+        </section>
+      )}
+
+      {/* Section 5: Voting Rationale Table (after other sections) */}
+      {safeRationaleData.length > 0 && (
+        <section id="voting-rationale" className="mb-10">
+          <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+            Voting Rationale
+          </h2>
+          <VotingRationaleTable rationaleData={safeRationaleData} />
         </section>
       )}
     </>
