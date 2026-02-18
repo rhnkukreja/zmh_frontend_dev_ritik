@@ -54,6 +54,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     handleSubmit,
     control,
     watch,
+    reset,
     formState: { errors },
   } = useForm<any>({
     defaultValues: {
@@ -149,6 +150,89 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     setSelectedInstitutionId(null);
   }, [watchInstitution]);
 
+  // Reset form when editing (when modal opens with selectedCaseStudies data)
+  useEffect(() => {
+    if (selectedCaseStudies && addNewCaseStudyModalVisible) {
+      console.log('🔄 Resetting form with selectedCaseStudies:', {
+        primary_source: selectedCaseStudies?.primary_source,
+        approval_status: selectedCaseStudies?.approval_status,
+        esg_category: selectedCaseStudies?.esg_category,
+      });
+      
+      const formValues = {
+        company: selectedCaseStudies?.company ? {
+          value: selectedCaseStudies?.company,
+          label: selectedCaseStudies?.company_name,
+        } : null,
+        institution: selectedCaseStudies?.institution ? String(selectedCaseStudies.institution) : "",
+        caspio_company_name: selectedCaseStudies?.caspio_company_name || "",
+        caspio_company_ticker: selectedCaseStudies?.caspio_company_ticker || "",
+        region: selectedCaseStudies?.region || "",
+        market: selectedCaseStudies?.market || "",
+        industry: selectedCaseStudies?.industry || "",
+        esg_themes: selectedCaseStudies?.esg_themes
+          ? selectedCaseStudies?.esg_themes?.split(",")
+          : isProxyContestContext ? ["Proxy Contest/M&A"] : [],
+        engagement_details: selectedCaseStudies?.engagement_details || "",
+        proposal_type: selectedCaseStudies?.proposal_type || "",
+        resolution_engagement_topic: selectedCaseStudies?.resolution_engagement_topic || "",
+        vote: selectedCaseStudies?.vote || "  ",
+        voting_rationale: selectedCaseStudies?.voting_rationale || "",
+        voting_details: selectedCaseStudies?.voting_details || "",
+        urls_def14: selectedCaseStudies?.urls_def14 || "",
+        urls_8k: selectedCaseStudies?.urls_8k || "",
+        year: selectedCaseStudies?.year?.toString() || "",
+        meeting_date: getDateWithoutTime(selectedCaseStudies?.meeting_date) || "",
+        primary_source: selectedCaseStudies?.primary_source || "",
+        primary_source_link: Array.isArray(selectedCaseStudies?.primary_source_link)
+          ? selectedCaseStudies?.primary_source_link
+          : selectedCaseStudies?.primary_source_link
+          ? [selectedCaseStudies?.primary_source_link]
+          : [],
+        approval_status: selectedCaseStudies?.approval_status || "",
+        investment_type: selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
+        esg_category: selectedCaseStudies?.esg_category
+          ? selectedCaseStudies?.esg_category?.split(",")
+          : [],
+      };
+      
+      console.log('📝 Form values being set:', {
+        primary_source: formValues.primary_source,
+        approval_status: formValues.approval_status,
+        esg_category: formValues.esg_category,
+      });
+      
+      reset(formValues);
+    } else if (!selectedCaseStudies && addNewCaseStudyModalVisible) {
+      // Reset to empty form when adding new case study
+      reset({
+        company: null,
+        institution: "",
+        caspio_company_name: "",
+        caspio_company_ticker: "",
+        region: "",
+        market: "",
+        industry: "",
+        esg_themes: isProxyContestContext ? ["Proxy Contest/M&A"] : [],
+        engagement_details: "",
+        proposal_type: "",
+        resolution_engagement_topic: "",
+        vote: "  ",
+        voting_rationale: "",
+        voting_details: "",
+        urls_def14: "",
+        urls_8k: "",
+        year: "",
+        meeting_date: "",
+        primary_source: "",
+        primary_source_link: [],
+        approval_status: "",
+        investment_type: holdingTypesDropdown[0] || "",
+        esg_category: [],
+      });
+    }
+  }, [selectedCaseStudies, addNewCaseStudyModalVisible, reset, isProxyContestContext]);
+
   const onSubmit = async (data: any) => {
     console.log('🔍 Form Data Debug:', {
       primary_source_link_raw: data.primary_source_link,
@@ -187,7 +271,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       vote: data?.vote === "  " ? null : data?.vote,
       investment_type:
         data?.investment_type === "  " ? null : data?.investment_type,
-      meeting_date: data?.meeting_date ? dayjs(data.meeting_date).format('YYYY-MM-DD') : null,
+      meeting_date: data?.meeting_date 
+        ? (selectedCaseStudies?.id 
+            ? dayjs(data.meeting_date).format('YYYY-MM-DDTHH:mm:ss') 
+            : dayjs(data.meeting_date).format('YYYY-MM-DD'))
+        : null,
     };
 
     console.log('📤 Transformed Data:', {
