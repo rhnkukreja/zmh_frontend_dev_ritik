@@ -35,6 +35,10 @@ interface AddEngagementDetailsModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   onSuccess?: () => void;
+  preselectedInstitution?: {
+    id: number;
+    name: string;
+  };
 }
 
 const months = [
@@ -60,6 +64,7 @@ const AddEngagementDetailsModal = ({
   visible,
   setVisible,
   onSuccess,
+  preselectedInstitution,
 }: AddEngagementDetailsModalProps) => {
   const dropzoneRef = useRef<DropzoneElement>(null);
   const documentDropzoneRef = useRef<DropzoneElement>(null);
@@ -86,6 +91,18 @@ const AddEngagementDetailsModal = ({
   });
 
   const deletePrevious = watch("delete_previous");
+
+  // Set preselected institution on mount
+  useEffect(() => {
+    if (preselectedInstitution && visible) {
+      const institutionOption = {
+        value: preselectedInstitution.id,
+        label: preselectedInstitution.name,
+      };
+      setSelectedInstitution(institutionOption);
+      setValue("institution_id", String(preselectedInstitution.id));
+    }
+  }, [preselectedInstitution, visible, setValue]);
 
   // Fetch institutions based on search query (same API as Institution page)
   const fetchInstitutionOptions = async (inputValue: string): Promise<InstitutionOption[]> => {

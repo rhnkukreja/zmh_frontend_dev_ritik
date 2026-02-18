@@ -16,6 +16,7 @@ export type Institutions = {
   proxy_advisor_influence?: string;
   unpri_signatory?: boolean;
   documents?: InstitutionDocument[];
+  investor_profile_id?: number;
 };
 
 export type InstitutionDocument = {

@@ -489,10 +489,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   const ANALYTICS_COLORS = {
-    "Election Of Directors": "#dc2626", // Red-600 to match theme
-    "Say On Pay": "#b91c1c", // Red-700 
-    "Other Proposals": "#f87171", // Red-400 for lighter variant
-    "Ratification of Auditor": "#fb7185" // Rose-400
+    "Election of Directors": "#991b1b", // Maroon (bg-primary/red-800) - Most critical voting item
+    "Say on Pay": "#ea580c", // Orange - Executive compensation
+    "Other Proposals": "#2563eb", // Blue - Shareholder proposals
+    "Ratification of Auditor": "#16a34a" // Green - Standard procedure
   };
 
   const analyticsCategories = getAnalyticsCategories();
@@ -931,7 +931,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         <div key={category.name} className="flex flex-col bg-white rounded-lg border border-slate-200 p-4 min-w-0">
                           <div className="text-center mb-6">
                             <h3 className="text-lg font-semibold text-slate-800 mb-2">{category.name}</h3>
-                            <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
+                            <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: category.fill }}></div>
                           </div>
 
                           <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
@@ -942,21 +942,27 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                             </div> */}
 
                             <div className="relative h-full flex items-end justify-center gap-12">
-                              {yearDataList.map((item: any, idx: number) => (
-                                <div key={item.year} className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {item.data ? item.data.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className={idx === 0 ? "bg-primary transition-all duration-700 ease-out" : "bg-slate-400 transition-all duration-700 ease-out"}
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">{item.year}</span>
-                                </div>
-                              ))}
+                              {yearDataList.map((item: any, idx: number) => {
+                                const isNoProposal = item.data?.value === 0 || item.data?.value === 0.0;
+                                return (
+                                  <div key={item.year} className="flex flex-col items-center">
+                                    <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
+                                      {isNoProposal ? "No proposal" : (item.data ? item.data.percentage : '--')}
+                                    </span>
+                                    {!isNoProposal && (
+                                      <div
+                                        className="transition-all duration-700 ease-out"
+                                        style={{
+                                          backgroundColor: category.fill,
+                                          width: '48px',
+                                          height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
+                                        }}
+                                      ></div>
+                                    )}
+                                    <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">{item.year}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
 
@@ -967,7 +973,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                             <div className="flex gap-2">
                               {yearDataList.map((item: any, idx: number) => (
                                 <div key={item.year} className="flex-1 border border-slate-200 rounded-lg overflow-hidden relative">
-                                  <div className={idx === 0 ? "bg-primary text-white p-2 text-center text-sm font-medium relative" : "bg-slate-400 text-white p-2 text-center text-sm font-medium relative"}>
+                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium relative">
                                     {item.year}
                                     <button
                                       onClick={(e) => {
