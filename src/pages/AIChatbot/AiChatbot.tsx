@@ -8,8 +8,8 @@ export default function DashboardLayout() {
   
   const navItems = [
     { icon: MessageSquare, label: "AI Assistant", path: "/ai-chatbot/qa" },
-    { icon: GitCompare, label: "Compare", path: "/ai-chatbot/compare" },
     { icon: GitCompare, label: "Voting Guidelines", path: "/ai-chatbot/voting-guidelines" },
+    { icon: GitCompare, label: "Compare Documents", path: "/ai-chatbot/compare" },
   ];
 
   return (
@@ -105,8 +105,8 @@ export default function DashboardLayout() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <header className="h-14 flex items-center px-6 bg-white/90 backdrop-blur-md">
           <h2 className="font-semibold text-lg text-black">
-            {location.pathname === "/guidelines"
-              ? <>Voting Guidelines <span className="text-sm font-normal text-gray-500">— based on latest available document</span></>
+            {location.pathname === "/ai-chatbot/voting-guidelines"
+              ? <>Voting Guidelines<span className="text-sm font-normal text-gray-500"> — based on latest available document</span></>
               : navItems.find(i => i.path === location.pathname)?.label || "Dashboard"}
           </h2>
         </header>

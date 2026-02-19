@@ -90,12 +90,15 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
     const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
     const [pendingCategory, setPendingCategory] = useState<string | null>(null);
+    const [loadingQuestion, setLoadingQuestion] = useState<string | null>(null);
+    const [activeLoadingCategory, setActiveLoadingCategory] = useState<string | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
-    const [countdown, setCountdown] = useState(3);
+    const [countdown, setCountdown] = useState(5);
 
     const [selectedAnswer, setSelectedAnswer] = useState<AnswerData | null>(null);
     const [isDocsCollapsed, setIsDocsCollapsed] = useState(false);
     const [showFilters, setShowFilters] = useState(true);
+    const [isDocPanelCollapsed, setIsDocPanelCollapsed] = useState(false);
 
     // Investor Search State
     const [investor1Search, setInvestor1Search] = useState("");
@@ -175,13 +178,13 @@ import { useState, useEffect, useRef, useMemo } from "react";
     
             setSelectedCategories([]);
             
-            // Auto-select the latest year
-            if (years.length > 0) {
-                const latestYear = Math.max(...years.map(Number));
-                setSelectedYears([latestYear.toString()]);
-            } else {
-                setSelectedYears([]);
-            }
+            // Auto-select the latest year — DISABLED
+            // if (years.length > 0) {
+            //     const latestYear = Math.max(...years.map(Number));
+            //     setSelectedYears([latestYear.toString()]);
+            // } else {
+            //     setSelectedYears([]);
+            // }
             
             setManualSelectedPdfIds([]);
         } catch (e) {
@@ -446,17 +449,18 @@ import { useState, useEffect, useRef, useMemo } from "react";
     // ─────────────────────────────────────────────────────────
     const executeCompare = async (q: string, cats: string[] | null) => {
         setIsVerifying(false);
-        setCountdown(3); 
+        setCountdown(5); 
         setPendingQuestion(null);
         setPendingCategory(null);
         
         const activeCategories = cats || selectedCategories;
+        const catUsed = (activeCategories && activeCategories.length > 0) ? activeCategories[0] : null;
+        setActiveLoadingCategory(catUsed);
 
         setLoading(true);
         
-        // Add user question to history (bottom)
+        // Add user question to history when request actually fires
         setHistory(prev => [...prev, { id: crypto.randomUUID(), role: "user", content: q }]);
-        // Question stays in input box - user can manually clear with Trash button
 
         const payload: any = {
             question: q,
@@ -520,6 +524,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
             setHistory(prev => [...prev, { id: crypto.randomUUID(), role: "assistant", error: true }]);
         } finally {
             setLoading(false);
+            setLoadingQuestion(null);
+            setActiveLoadingCategory(null);
             setSelectedCategories([]); 
         }
     };
@@ -550,10 +556,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
         }
 
         if (selectedCategories.length > 0) {
+            setIsDocPanelCollapsed(true);
+            setLoadingQuestion(q);
             executeCompare(q, selectedCategories);
             return;
         }
 
+        setIsDocPanelCollapsed(true);
+        setLoadingQuestion(q);
         setLoading(true);
         try {
             const res = await fetch(`${AI_CHATBOT_API_BASE }/predict-category`, {
@@ -567,7 +577,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
             if (data.detected_category) {
                 setPendingQuestion(q);
                 setPendingCategory(data.detected_category);
-                setCountdown(3);
+                setCountdown(5);
                 setIsVerifying(true);
             } else {
                 executeCompare(q, null);
@@ -596,50 +606,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
     return (
         <div className="flex flex-col h-[calc(100vh-140px)] relative">
         
-        {/* 1. CATEGORY VERIFICATION MODAL */}
-        {isVerifying && pendingCategory && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[420px] animate-in zoom-in-95 fade-in duration-200">
-                <div className="bg-white border border-[#931638]/50 shadow-2xl rounded-2xl p-6 relative overflow-hidden flex flex-col">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#931638]/10 blur-3xl rounded-full pointer-events-none" />
-                    <div className="flex items-start gap-4">
-                        <div className="bg-[#931638]/20 p-3 rounded-full shrink-0 border border-[#931638]/20">
-                            <Tag className="text-[#931638]" size={24} />
-                        </div>
-                        <div>
-                            <h3 className="text-black font-semibold text-lg">Category Detected</h3>
-                            <p className="text-gray-600 text-sm mt-2 leading-relaxed">
-                                It looks like your question is about <span className="text-[#931638] font-bold bg-[#931638]/30 px-1.5 py-0.5 rounded">{pendingCategory}</span>.<br/>
-                                Filter results by this category?
-                            </p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3 mt-6 justify-end">
-                        <button 
-                            onClick={() => { setIsVerifying(false); setCountdown(3); setIsCategoryDropdownOpen(true); }}
-                            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-200 transition-colors"
-                        >
-                            No, let me pick
-                        </button>
-                        <button 
-                            onClick={() => {
-                                if (pendingQuestion && pendingCategory) {
-                                    executeCompare(pendingQuestion, [pendingCategory]);
-                                }
-                            }}
-                            className="relative px-4 py-2 rounded-lg text-sm font-medium bg-[#931638] hover:bg-[#931638]/90 text-black shadow-lg transition-all flex items-center gap-2 overflow-hidden"
-                        >
-                            <div 
-                            className="absolute bottom-0 left-0 h-1 bg-white/30 transition-all duration-1000 ease-linear"
-                            style={{ width: `${(countdown / 3) * 100}%` }}
-                            />
-                            <Check size={16} /> 
-                            <span>Yes, Compare ({countdown}s)</span>
-                        </button>
-                    </div>
-                </div>
-                <div className="fixed inset-0 bg-white/60 backdrop-blur-sm -z-10" onClick={() => { setIsVerifying(false); setCountdown(3); }}/>
-            </div>
-        )}
+        {/* 1. CATEGORY VERIFICATION MODAL — removed, now shown inline */}
 
         {/* 2. ANSWER DETAIL MODAL */}
         {selectedAnswer && (
@@ -779,7 +746,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
                             }}
                             onFocus={() => setIsInvestor1DropdownOpen(true)}
                             placeholder={allInvestors.find(inv => inv.id === investor1)?.name || "Investor 1"}
-                            className="w-[250px] h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg px-3 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+                            className="w-[250px] h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg pl-3 pr-7 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+                        />
+                        <ChevronDown
+                            size={14}
+                            onClick={() => setIsInvestor1DropdownOpen(!isInvestor1DropdownOpen)}
+                            className={`absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer transition-transform duration-200 ${isInvestor1DropdownOpen ? 'rotate-180' : ''}`}
                         />
                         
                         {isInvestor1DropdownOpen && (
@@ -828,7 +800,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
                             }}
                             onFocus={() => setIsInvestor2DropdownOpen(true)}
                             placeholder={allInvestors.find(inv => inv.id === investor2)?.name || "Investor 2"}
-                            className="w-[250px] h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg px-3 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+                            className="w-[250px] h-[34px] bg-gray-50 border border-[#931638]/50 rounded-lg pl-3 pr-7 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+                        />
+                        <ChevronDown
+                            size={14}
+                            onClick={() => setIsInvestor2DropdownOpen(!isInvestor2DropdownOpen)}
+                            className={`absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer transition-transform duration-200 ${isInvestor2DropdownOpen ? 'rotate-180' : ''}`}
                         />
                         
                         {isInvestor2DropdownOpen && (
@@ -946,7 +923,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                         <div className={`w-7 h-3.5 rounded-full p-0.5 transition-colors duration-200 flex items-center ${includeEmea ? "bg-[#931638]" : "bg-gray-400"}`}>
                             <div className={`w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-transform duration-200 ${includeEmea ? "translate-x-3.5" : "translate-x-0"}`} />
                         </div>
-                        <span className={`text-[10px] font-medium transition-colors ${includeEmea ? "text-[#931638]" : "text-gray-600"}`}>EMEA</span>
+                        <span className={`text-[10px] font-medium transition-colors ${includeEmea ? "text-[#931638]" : "text-gray-600"}`}>Add EMEA</span>
                     </button>
                     </>
                     )}
@@ -983,7 +960,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
             </div>
             {/* Compare + Answer row */}
-            {showFilters && (
+            {showFilters && !(mode === "specific" && isDocPanelCollapsed) && (
   <div className="flex items-center justify-between w-full pt-1">
 
     {/* LEFT — Compare type */}
@@ -1075,7 +1052,28 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
             {/* Manual Document Selection - Compact Dropdowns */}
             {showFilters && mode === "specific" && (
-                <div className="animate-in slide-in-from-top-2 duration-300 bg-gray-50 p-3 rounded-lg border-2 border-[#931638]">
+                <div className="animate-in slide-in-from-top-2 duration-300 bg-gray-50 rounded-lg border-2 border-[#931638]">
+                    {/* Collapsible header row */}
+                    <div
+                        className="flex items-center justify-between px-3 py-2 cursor-pointer select-none"
+                        onClick={() => setIsDocPanelCollapsed(!isDocPanelCollapsed)}
+                    >
+                        <span className="text-xs font-semibold text-[#931638] uppercase tracking-wide">
+                            Document Selection
+                            {isDocPanelCollapsed && manualSelectedPdfIds.length > 0 && (
+                                <span className="ml-2 font-normal text-gray-500 normal-case tracking-normal">
+                                    — {allDocs.filter(d => manualSelectedPdfIds.includes(d.pdf_id)).map(d => d.name).join(", ")}
+                                </span>
+                            )}
+                        </span>
+                        <ChevronDown
+                            size={16}
+                            className={`text-[#931638] transition-transform duration-200 ${isDocPanelCollapsed ? '-rotate-90' : ''}`}
+                        />
+                    </div>
+                    {/* Collapsible body */}
+                    {!isDocPanelCollapsed && (
+                    <div className="px-3 pb-3">
                     <div className="flex items-center gap-4">
                         {(() => {
                             // Group documents by investor
@@ -1087,7 +1085,15 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                 grouped[doc.investor_id].docs.push(doc);
                             });
                             
-                            return Object.entries(grouped).map(([investorId, group], idx) => {
+                            // Always show investor1 first (left) and investor2 second (right)
+                            const orderedEntries = [
+                                ...(investor1 && grouped[investor1] ? [[investor1, grouped[investor1]] as [string, typeof grouped[string]]] : []),
+                                ...(investor2 && grouped[investor2] ? [[investor2, grouped[investor2]] as [string, typeof grouped[string]]] : []),
+                                // Any other investors not in inv1/inv2 (edge case)
+                                ...Object.entries(grouped).filter(([id]) => id !== investor1 && id !== investor2),
+                            ];
+                            
+                            return orderedEntries.map(([investorId, group], idx) => {
                                 const isFirstInvestor = idx === 0;
                                 const dropdownRef = isFirstInvestor ? doc1DropdownRef : doc2DropdownRef;
                                 const isOpen = isFirstInvestor ? isDoc1DropdownOpen : isDoc2DropdownOpen;
@@ -1181,6 +1187,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
                         </div>
                     )}
                 </div>
+                    )}
+                </div>
             )}
         </div>
 
@@ -1214,7 +1222,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
         {/* 5. RESULTS HISTORY - LATEST Q&A PAIR ON TOP (Q3-A3, Q2-A2, Q1-A1) */}
         <div className="flex-1 overflow-y-auto space-y-6 pr-4 pb-4 custom-scrollbar">
-            {history.length === 0 && !loading && (
+            {history.length === 0 && !loading && !isVerifying && (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
                     <p className="text-sm font-light">Select two investors and ask a question to compare.</p>
                 </div>
@@ -1234,6 +1242,61 @@ import { useState, useEffect, useRef, useMemo } from "react";
                 </div>
             )}
 
+            {/* STANDALONE LOADING / VERIFYING INDICATOR */}
+            {(loading || isVerifying) && (
+                <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                    {/* Question bubble ABOVE the analyzing row */}
+                    {loadingQuestion && (
+                        <div className="flex justify-end">
+                            <div className="bg-[#931638] text-white p-3 rounded-2xl rounded-tr-sm text-sm max-w-[90%] shadow-lg">
+                                {loadingQuestion}
+                            </div>
+                        </div>
+                    )}
+                    {/* Analyzing row — dots + text + category chip (all inline) */}
+                    <div className="flex items-center gap-2 ml-1 flex-wrap">
+                        <div className="flex gap-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </div>
+                        <span className="text-xs text-gray-400">Analyzing and comparing...</span>
+                        {/* Category chip — shown during verifying (pendingCategory) and during loading (activeLoadingCategory) */}
+                        {(isVerifying ? pendingCategory : activeLoadingCategory) && (
+                            <>
+                                <span className="text-[11px] text-gray-400">Filtering by</span>
+                                <div className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/25 px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
+                                    <Tag size={9} />
+                                    {isVerifying ? pendingCategory : activeLoadingCategory}
+                                </div>
+                                {/* Change button — only during verifying countdown */}
+                                {isVerifying && countdown > 0 && (
+                                    <button
+                                        onClick={() => {
+                                            setIsVerifying(false);
+                                            setCountdown(3);
+                                            setLoading(false);
+                                            setLoadingQuestion(null);
+                                            setIsCategoryDropdownOpen(true);
+                                        }}
+                                        className="group relative flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium text-gray-400 border border-gray-200 bg-white hover:text-[#931638] hover:border-[#931638]/40 hover:bg-[#931638]/5 transition-all overflow-hidden"
+
+                                    >
+                                        <div
+                                            className="absolute inset-0 bg-white origin-left transition-all duration-1000 ease-linear"
+                                            style={{ transform: `scaleX(${countdown / 3})` }}
+                                        />
+
+                                        <span className="relative text-black">Change</span>
+                                        <span className="relative tabular-nums text-[10px] text-black">{countdown}s</span>
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {(() => {
             // Group messages into Q&A pairs
             const pairs: Array<{question: Message, answer?: Message}> = [];
@@ -1246,8 +1309,13 @@ import { useState, useEffect, useRef, useMemo } from "react";
                 }
             }
             
+            // While loading/verifying, hide the latest unanswered pair — loading block above already shows it
+            const visiblePairs = (loading || isVerifying)
+                ? pairs.filter(p => p.answer !== undefined)
+                : pairs;
+
             // Reverse to show newest first (Q3-A3, Q2-A2, Q1-A1)
-            return pairs.reverse().map((pair, pairIdx) => (
+            return visiblePairs.reverse().map((pair, pairIdx) => (
                 <div key={pair.question.id} className="space-y-3">
                     
                     {/* QUESTION */}
@@ -1256,13 +1324,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
                             {pair.question.content}
                         </div>
                     </div>
-                    
-                    {/* LOADING INDICATOR - Show only for the newest question without an answer */}
-                    {!pair.answer && pairIdx === 0 && loading && !isVerifying && (
-                        <div className="flex items-center ml-1">
-                            <div className="text-xs text-gray-500 animate-pulse">Analyzing and Comparing...</div>
-                        </div>
-                    )}
                     
                     {/* ANSWER */}
                     {pair.answer && (
@@ -1279,7 +1340,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                     <>
                                         {/* Answer Cards in Grid - 3 columns for 3 answers, 2 columns otherwise */}
                                         <div className={`grid gap-3 ${pair.answer.answers.length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
-                                            {pair.answer.answers.map((ans, idx) => (
+                                            {[...pair.answer.answers].sort((a, b) => {
+                                                // investor1's answer always goes first (left), investor2's second (right)
+                                                const inv1Name = allInvestors.find(i => i.id === investor1)?.name;
+                                                const inv2Name = allInvestors.find(i => i.id === investor2)?.name;
+                                                const aIsInv1 = a.investor_name === inv1Name;
+                                                const bIsInv1 = b.investor_name === inv1Name;
+                                                if (aIsInv1 && !bIsInv1) return -1;
+                                                if (!aIsInv1 && bIsInv1) return 1;
+                                                return 0;
+                                            }).map((ans, idx) => (
                                                 <div
                                                     key={idx}
                                                     onClick={() => setSelectedAnswer(ans)}
