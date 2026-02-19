@@ -21,7 +21,7 @@ import { Tab } from "@/components/Base/Headless";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 
-const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, institutionId, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded = undefined }) => {
+const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, institutionId = undefined, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded = undefined }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
