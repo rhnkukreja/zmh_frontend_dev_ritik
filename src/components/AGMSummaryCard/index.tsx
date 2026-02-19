@@ -21,7 +21,7 @@ import { Tab } from "@/components/Base/Headless";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 
-const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, institutionId, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded = undefined }) => {
+const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, institutionId = undefined, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded = undefined }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -389,7 +389,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     try {
       setIsNpxLoading(true);
       const response = await axiosInstance.get(
-        `${baseURL}/top20_investor_fund_level/?company_id=${idToUse}`,
+        `${baseURL}/api/top20_investor_fund_level/?company_id=${idToUse}`,
         { responseType: 'blob' }
       );
       
@@ -610,70 +610,65 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    <div className="relative">
-                      <button
-                        disabled={
-                          is8kLoading ||
-                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                          !(selectedYear || agmSummaryDetails?.Year)
-                        }
-                        onClick={handle8kLink}
-                        className={clsx([
-                          "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border font-semibold text-red-800 border-solid",
-                          is8kLoading ||
-                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                          !(selectedYear || agmSummaryDetails?.Year)
-                            ? "opacity-60 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
-                        ])}
-                      >
-                        {is8kLoading ? (
-                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "8-K"
-                        )}
-                      </button>
-                      <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                        NEW
-                      </span>
-                    </div>
+                    <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
+                      <div className="relative">
+                        <button
+                          onClick={handleDownloadNPXData}
+                          disabled={isNpxLoading}
+                          className={clsx([
+                            "p-2 bg-white rounded-md w-auto flex items-center gap-2 justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                            isNpxLoading
+                              ? "opacity-60 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
+                          ])}
+                        >
+                          {isNpxLoading ? (
+                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Lucide icon="Download" className="w-4 h-4" />
+                              <span>N-PX</span>
+                            </>
+                          )}
+                        </button>
+                        <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                          NEW
+                        </span>
+                      </div>
+                    </Tippy>
+                    <button
+                      disabled={
+                        is8kLoading ||
+                        !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                        !(selectedYear || agmSummaryDetails?.Year)
+                      }
+                      onClick={handle8kLink}
+                      className={clsx([
+                        "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                        is8kLoading ||
+                        !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                        !(selectedYear || agmSummaryDetails?.Year)
+                          ? "opacity-60 cursor-not-allowed"
+                          : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
+                      ])}
+                    >
+                      {is8kLoading ? (
+                        <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "8-K"
+                      )}
+                    </button>
                     {analyticsData && (
                       <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
-                        <div className="relative">
-                          <button
-                            onClick={() => setChartModalVisible(true)}
-                            className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border
-                                       font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                          >
-                            <Lucide icon="BarChart3" className="w-4 h-4" />
-                          </button>
-                          <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                            NEW
-                          </span>
-                        </div>
+                        <button
+                          onClick={() => setChartModalVisible(true)}
+                          className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2
+                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                        >
+                          <Lucide icon="BarChart3" className="w-4 h-4" />
+                        </button>
                       </Tippy>
                     )}
-                    {/* <Tippy content="Download NPX Data" options={{ theme: "light" }}>
-                      <button
-                        onClick={handleDownloadNPXData}
-                        disabled={isNpxLoading}
-                        className={clsx([
-                          "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
-                          isNpxLoading
-                            ? "opacity-60 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
-                        ])}
-                      >
-                        {isNpxLoading ? (
-                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Lucide icon="FileDown" className="w-4 h-4 mr-2" />
-                            NPX data
-                          </>
-                        )}
-                      </button>
-                    </Tippy> */}
                   </>}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
