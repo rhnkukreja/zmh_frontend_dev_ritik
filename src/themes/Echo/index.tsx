@@ -618,7 +618,10 @@ function Main() {
                             <span className="relative">
                               <Lucide
                                 icon={menu?.icon}
-                                className="side-menu__link__icon side-menu__link--active"
+                                className={clsx(
+                                  "side-menu__link__icon side-menu__link--active",
+                                  menu.title === "Admin Panel" && "w-6 h-6"
+                                )}
                               />
                               {menu.title === "Proxy Contest" &&
                                 modulesData?.proxy_contest && (

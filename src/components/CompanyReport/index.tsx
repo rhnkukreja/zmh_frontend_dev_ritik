@@ -271,8 +271,8 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         };
 
         // FIXED: Add unbreakable flag to prevent orphaned headings
-        const addSectionTitle = (title: string, refId?: string) => {
-          content.push({
+        const addSectionTitle = (title: string, refId?: string, pageBreak?: boolean) => {
+          const titleObject: any = {
             stack: [
               { text: title, style: "sectionTitle", id: refId },
               {
@@ -291,7 +291,13 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
               }
             ],
             unbreakable: true  // Keep heading with content
-          });
+          };
+
+          if (pageBreak) {
+            titleObject.pageBreak = "before";
+          }
+
+          content.push(titleObject);
         };
 
         // Get logo as base64
@@ -510,7 +516,8 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           const top20 = data.percent_ownership_data.slice(0, 20);
           addSectionTitle(
             `Top 20 Ownership${data.total_percent_ownership ? ` (${data.total_percent_ownership.replace("%", "")}% of Shares Outstanding)` : ""}`,
-            "ownership-section"
+            "ownership-section",
+            true  // PAGE BREAK BEFORE
           );
 
           const headerRow: TableCell[] = [
@@ -525,7 +532,8 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
 
           const bodyRows = top20.map((item, index) => {
             const ownership = parseFloat(item.percent_ownership?.replace("%", "") || "0");
-            const shareholder = item.institution_name || item.institution__institution || "";
+            const shareholderName = item.institution_name || item.institution__institution || "";
+            const shareholder = !item.investor_profile_id ? `*${shareholderName}` : shareholderName;
             return [
               { text: String(index + 1), alignment: "center" },
               shareholder,
@@ -551,6 +559,11 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
 
           if (proxyChart) {
             content.push({ ...ownershipTable, pageOrientation: "landscape" });
+            content.push({
+              text: "* No detailed investor profile available",
+              style: "footnote",
+              margin: [0, 5, 0, 10]
+            });
             content.push({
               image: proxyChart,
               width: 260,
@@ -584,7 +597,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           }
 
           if (nominees.length > 0 || proposals.length > 0) {
-            addSectionTitle("Shareholder Meeting Summary", "meeting-details-section");
+            addSectionTitle("Shareholder Meeting Summary", "meeting-details-section", true);  // PAGE BREAK BEFORE
             if (meetingDate) content.push({ text: `Meeting Date: ${meetingDate}`, style: "caption" });
 
             if (nominees.length > 0 && nomineesHeaders.length > 0) {
@@ -627,7 +640,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
 
         // 5) Voting Rationale
         if (Array.isArray(data.voted_against_rationale) && data.voted_against_rationale.length > 0) {
-          addSectionTitle("Voting Rationale", "voting-rationale-section");
+          addSectionTitle("Voting Rationale", "voting-rationale-section", true);  // PAGE BREAK BEFORE
           const headerRow: TableCell[] = [
             { text: "Investor", style: "tableHeader" },
             { text: "Proposal", style: "tableHeader" },
@@ -660,7 +673,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         const peerEngagements = normalizeToArray(data.engagement_stats_ex_global_data);
 
         if (companyEngagements.length > 0) {
-          addSectionTitle("Engagement History", "engagement-section");
+          addSectionTitle("Engagement History", "engagement-section", true);  // PAGE BREAK BEFORE
           const headerRow: TableCell[] = [
             { text: "Year", style: "tableHeader" },
             { text: "Investor", style: "tableHeader" },
@@ -680,7 +693,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         }
 
         if (peerEngagements.length > 0) {
-          addSectionTitle("Engagement Topics for Peers");
+          addSectionTitle("Engagement Topics for Peers", undefined, true);  // PAGE BREAK BEFORE
           const headerRow: TableCell[] = [
             { text: "Year", style: "tableHeader" },
             { text: "Investor", style: "tableHeader" },

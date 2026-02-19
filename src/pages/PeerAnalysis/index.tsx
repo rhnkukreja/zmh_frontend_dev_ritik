@@ -595,7 +595,8 @@ function PeerAnalysis() {
                     />
                     <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                   </FormSwitch> */}
-                  {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                  {/* Add Engagement Details btn is disabled for now */}
+                  {/* {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                     <Button
                       onClick={() => setAddEngagementDetailsModalVisible(true)}
                       variant="primary"
@@ -604,7 +605,7 @@ function PeerAnalysis() {
                       <Lucide icon="Plus" className="stroke-[1.3] w-4 h-4 mr-2" />
                       Add Engagement Details
                     </Button>
-                  )}
+                  )} */}
                   <button
                     onClick={() => {
                       const element = document.querySelector('#data-listing');

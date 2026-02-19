@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "./store";
-import { icons } from "@/components/Base/Lucide";
+import { AppIconName } from "@/components/Base/Lucide";
 
 export interface Menu {
-  icon: keyof typeof icons;
+  icon: AppIconName;
   title: string;
   badge?: number;
   pathname?: string;
@@ -133,9 +133,9 @@ const initialState: any = {
     // "Additional",
     "Admin",
     {
-      icon: "School",
+      icon: "ShieldUser",
       pathname: "/institution",
-      title: "Institutions",
+      title: "Admin Panel",
       isAnalyst: true,
       isAdmin: true,
     },

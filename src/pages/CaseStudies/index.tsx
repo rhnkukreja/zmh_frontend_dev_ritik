@@ -581,7 +581,8 @@ function CaseStudies() {
           {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked bg-white p-5">
-              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+              {/* Hidden Add New Case Studies btn until needed */}
+              {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
                 {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                   <div className="flex justify-end">
                     <Button
@@ -600,7 +601,7 @@ function CaseStudies() {
                     </Button>
                   </div>
                 )}
-              </div>
+              </div> */}
               <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
                 <div className="flex">
                   <MultiSearchBar

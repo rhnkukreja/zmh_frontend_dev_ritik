@@ -21,7 +21,7 @@ import { Tab } from "@/components/Base/Headless";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 
-const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded = undefined }) => {
+const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, institutionId, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded = undefined }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -34,7 +34,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
 
-  const { finhub } = useAppSelector((state) => state.authentiction);
+  const { finhub, companyGlobalSearchId } = useAppSelector((state) => state.authentiction);
 
   const companyDetails = agmSummaryDetails?.company
     ? agmSummaryDetails?.company[0]
@@ -285,6 +285,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [animateChart, setAnimateChart] = useState<boolean>(false);
   const [is8kLoading, setIs8kLoading] = useState<boolean>(false);
+  const [isNpxLoading, setIsNpxLoading] = useState<boolean>(false);
   const [expandedYearModal, setExpandedYearModal] = useState<{
     visible: boolean;
     year: string;
@@ -373,6 +374,39 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading analytics:', error);
+    }
+  };
+
+  // Download NPX data handler
+  const handleDownloadNPXData = async () => {
+    const idToUse = institutionId || companyGlobalSearchId;
+    
+    if (!idToUse) {
+      console.error('Institution or Company ID not available');
+      return;
+    }
+
+    try {
+      setIsNpxLoading(true);
+      const response = await axiosInstance.get(
+        `${baseURL}/top20_investor_fund_level/?company_id=${idToUse}`,
+        { responseType: 'blob' }
+      );
+      
+      const filename = `NPX-Data-${companyGlobalSearchTicker}-${new Date().getTime()}.xlsx`;
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading NPX data:', error);
+    } finally {
+      setIsNpxLoading(false);
     }
   };
 
@@ -619,6 +653,27 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         </div>
                       </Tippy>
                     )}
+                    {/* <Tippy content="Download NPX Data" options={{ theme: "light" }}>
+                      <button
+                        onClick={handleDownloadNPXData}
+                        disabled={isNpxLoading}
+                        className={clsx([
+                          "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                          isNpxLoading
+                            ? "opacity-60 cursor-not-allowed"
+                            : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
+                        ])}
+                      >
+                        {isNpxLoading ? (
+                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Lucide icon="FileDown" className="w-4 h-4 mr-2" />
+                            NPX data
+                          </>
+                        )}
+                      </button>
+                    </Tippy> */}
                   </>}
                 </div>
                 <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
