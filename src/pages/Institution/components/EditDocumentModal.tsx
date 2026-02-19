@@ -41,15 +41,17 @@ const categories = [
   "Macro Engagement Stats",
   "Case Study",
   "Commentary",
+  "Voting guidelines",
+  "Company Specific Engagement Stats",
   "Stewardship Policy",
   "Responsible Investment",
   "Proxy voting records/details",
   "Others - Environmental",
   "Others - Social",
   "Others - Governance",
-];
+].sort();
 
-const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
+const priorityOptions = ["Extremely High", "High", "Medium", "Low"];
 
 const months = [
   { value: "01", label: "January" },
@@ -102,7 +104,7 @@ const EditDocumentModal = ({
       reset({
         document_name: (document as any).document_name || document.name || "",
         document_type: document.document_type || "",
-        month: "",
+        month: document.month || "",
         year: document.year?.toString() || "",
         tags: document.tags || "",
         priority: document.priority || "Medium",
@@ -235,12 +237,11 @@ const EditDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Category <span className="text-red-500">*</span>
+              Category
             </label>
             <Controller
               name="document_type"
               control={control}
-              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
                   value={field.value}
@@ -257,11 +258,6 @@ const EditDocumentModal = ({
                 </TomSelect>
               )}
             />
-            {errors.document_type && (
-              <span className="text-red-500 text-sm mt-1 block">
-                {errors.document_type.message}
-              </span>
-            )}
           </div>
 
           <div className="col-span-12 sm:col-span-6">

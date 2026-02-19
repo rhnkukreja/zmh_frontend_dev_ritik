@@ -560,11 +560,6 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           if (proxyChart) {
             content.push({ ...ownershipTable, pageOrientation: "landscape" });
             content.push({
-              text: "* No detailed investor profile available",
-              style: "footnote",
-              margin: [0, 5, 0, 10]
-            });
-            content.push({
               image: proxyChart,
               width: 260,
               alignment: "center",
