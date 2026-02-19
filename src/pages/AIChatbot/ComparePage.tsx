@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
     } from "lucide-react";
     import { AI_CHATBOT_API_BASE , fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api"; 
     import ReactMarkdown from "react-markdown";
-
+  
     // ─────────────────────────────────────────────────────────
     // TYPES
     // ─────────────────────────────────────────────────────────
@@ -649,7 +649,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
-                        <div className="prose prose-sm max-w-none space-y-4">
+                        <div className="prose prose-sm max-w-none space-y-4 [&_p]:mb-4 [&_p]:leading-relaxed">
                             {(() => {
                                 const segments = selectedAnswer.answer_segments ?? [];
                                 const uniquePages = new Set(segments.map(s => s.page));
@@ -657,7 +657,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
                                 if (!isMultiPage) {
                                     // Single page — combine all segments into one block
-                                    const combinedText = segments.map(s => s.text).join("\n\n");
+                                    const rawText = segments.map(s => s.text).join("\n\n");
+                                    const combinedText = rawText
+                                        .split(/\n/)
+                                        .map(line => line.trim())
+                                        .filter(line => line.length > 0)
+                                        .join("\n\n");
                                     const singlePage = segments[0]?.page;
                                     const singlePageUrl = segments[0]?.page_url;
                                     return (
@@ -1113,13 +1118,16 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                                     onClick={() => setIsOpen(!isOpen)} 
                                                     className="flex items-center justify-between gap-2 bg-white border border-[#931638]/50 rounded px-3 py-1.5 text-xs text-black hover:bg-gray-50 hover:border-[#931638] w-full"
                                                 >
-                                                    <span className="truncate">
+                                                    <span className="truncate max-w-[220px]">
                                                         {(() => {
                                                             const selectedCount = group.docs.filter(d => manualSelectedPdfIds.includes(d.pdf_id)).length;
                                                             if (selectedCount === 0) return "+ Add Document";
                                                             if (selectedCount === 1) {
                                                                 const doc = group.docs.find(d => manualSelectedPdfIds.includes(d.pdf_id));
-                                                                return doc?.name || "+ Add Document";
+                                                                const name = doc?.name || "+ Add Document";
+                                                                return name.replace(/\.pdf$/i, "").length > 40
+                                                                    ? name.replace(/\.pdf$/i, "").slice(0, 40) + "…"
+                                                                    : name;
                                                             }
                                                             return `${selectedCount} Selected`;
                                                         })()}
@@ -1163,7 +1171,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                         {selectedDoc && (
                                             <div className="mt-2 flex gap-1.5">
                                                 <div className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/60 px-2 py-1 rounded text-xs animate-in fade-in zoom-in-95">
-                                                    <span className="truncate max-w-[300px]">{selectedDoc.name}</span>
+                                                    <span className="truncate max-w-[180px]">{selectedDoc.name.replace(/\.pdf$/i, "").length > 35 ? selectedDoc.name.replace(/\.pdf$/i, "").slice(0, 35) + "…" : selectedDoc.name}</span>
                                                     <button 
                                                         onClick={() => togglePdf(selectedDoc.pdf_id)} 
                                                         className="hover:text-[#931638] shrink-0"

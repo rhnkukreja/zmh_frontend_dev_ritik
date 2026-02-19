@@ -594,7 +594,7 @@ export default function QAPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <div className="prose prose-sm max-w-none text-black space-y-4">
+                    <div className="prose prose-sm max-w-none text-black space-y-4 [&_p]:mb-4 [&_p]:leading-relaxed">
                         {(() => {
                             const segments = selectedAnswer.answer_segments ?? [];
                             const uniquePages = new Set(segments.map(s => s.page));
@@ -602,7 +602,13 @@ export default function QAPage() {
 
                             if (!isMultiPage) {
                                 // Single page — combine all segments into one block
-                                const combinedText = segments.map(s => s.text).join("\n\n");
+                                // Ensure paragraph breaks are preserved: split on lines and re-join with double newlines
+                                const rawText = segments.map(s => s.text).join("\n\n");
+                                const combinedText = rawText
+                                    .split(/\n/)
+                                    .map(line => line.trim())
+                                    .filter(line => line.length > 0)
+                                    .join("\n\n");
                                 const singlePage = segments[0]?.page;
                                 const singlePageUrl = segments[0]?.page_url;
                                 return (
