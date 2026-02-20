@@ -20,6 +20,7 @@ export type Institutions = {
 };
 
 export type InstitutionDocument = {
+  month: string;
   id: number;
   name: string;
   document_name?: string;

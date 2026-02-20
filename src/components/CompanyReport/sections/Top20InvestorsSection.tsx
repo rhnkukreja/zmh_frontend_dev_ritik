@@ -206,9 +206,6 @@ const Top20InvestorsSection = ({ data, totalPercentOwnership }: Top20InvestorsSe
             <span><sup>1</sup>Source: Whalewisdom. Data as of January 27, 2026.</span>
             <span>*Not in ZMH coverage universe</span>
           </div>
-          <div>
-            <span><span style={{ fontSize: '1em', fontWeight: 'bold' }}>*</span>No detailed investor profile available</span>
-          </div>
         </div>
       </div>
 
