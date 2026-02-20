@@ -99,6 +99,8 @@ export default function QAPage() {
   const [countdown, setCountdown] = useState(3);
   
   const [showCategoryTooltip, setShowCategoryTooltip] = useState(false);
+  const [loadingQuestion, setLoadingQuestion] = useState<string | null>(null);
+  const [activeLoadingCategory, setActiveLoadingCategory] = useState<string | null>(null);
 
   // NEW: Show/Hide Filters State
   const [showFilters, setShowFilters] = useState(true);
@@ -351,6 +353,7 @@ export default function QAPage() {
   const handleUserRejection = () => {
     setIsVerifying(false);
     setCountdown(3);
+    setLoadingQuestion(null);
     if (pendingQuestion) setQuestion(pendingQuestion);
     
     setShowCategoryTooltip(true);
@@ -369,6 +372,9 @@ export default function QAPage() {
       setPendingCategory(null);
       setShowCategoryTooltip(false); 
       
+      const catUsed = (cats && cats.length > 0) ? cats[0] : null;
+      setActiveLoadingCategory(catUsed);
+      setLoadingQuestion(q);
       setLoading(true);
       
       const qaId = crypto.randomUUID();
@@ -457,6 +463,8 @@ export default function QAPage() {
           );
     } finally {
         setLoading(false);
+        setLoadingQuestion(null);
+        setActiveLoadingCategory(null);
     }
   };
 
@@ -478,7 +486,8 @@ export default function QAPage() {
 
     // REMOVED: Compare mode check
 
-    setLoading(true); 
+    setLoading(true);
+    setLoadingQuestion(currentQ);
     try {
         const res = await fetch(`${AI_CHATBOT_API_BASE }/predict-category`, {
             method: "POST",
@@ -551,53 +560,6 @@ export default function QAPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] relative">
       
-      {/* 1. VERIFICATION MODAL WITH AUTO-SELECT TIMER */}
-      {isVerifying && pendingCategory && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[420px] animate-in zoom-in-95 fade-in duration-200">
-            <div className="bg-white border-2 border-[#931638] shadow-2xl rounded-2xl p-6 relative overflow-hidden flex flex-col">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#931638]/10 blur-3xl rounded-full pointer-events-none" />
-                <div className="flex items-start gap-4">
-                    <div className="bg-[#931638]/10 p-3 rounded-full shrink-0 border border-[#931638]/50">
-                        <Tag className="text-[#931638]" size={24} />
-                    </div>
-                    <div>
-                        <h3 className="text-black font-semibold text-lg">Category Detected</h3>
-                        <p className="text-gray-700 text-sm mt-2 leading-relaxed">
-                            It looks like your question is about <span className="text-[#931638] font-bold bg-[#931638]/10 px-1.5 py-0.5 rounded">{pendingCategory}</span>.
-                            <br/>Filter results by this category?
-                        </p>
-                    </div>
-                </div>
-                <div className="flex gap-3 mt-6 justify-end">
-                    <button 
-                        onClick={handleUserRejection}
-                        className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-black hover:bg-gray-100 transition-colors"
-                    >
-                        No, let me pick
-                    </button>
-                    
-                    <button 
-                        onClick={() => {
-                            if (pendingQuestion && pendingCategory) {
-                                fetchAnswers(pendingQuestion, [pendingCategory]);
-                            }
-                        }}
-                        className="relative px-4 py-2 rounded-lg text-sm font-medium bg-[#931638] hover:bg-[#931638]/90 text-white shadow-lg shadow-[#931638]/20 transition-all flex items-center gap-2 overflow-hidden group"
-                    >
-                        <div 
-                          className="absolute bottom-0 left-0 h-1 bg-white/30 transition-all duration-1000 ease-linear"
-                          style={{ width: `${(countdown / 3) * 100}%` }}
-                        />
-                        
-                        <Check size={16} /> 
-                        <span>Yes, search {pendingCategory} ({countdown}s)</span>
-                    </button>
-                </div>
-            </div>
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm -z-10" onClick={() => { setIsVerifying(false); setCountdown(3); }}/>
-        </div>
-      )}
-
       {/* Answer Detail Modal */}
       {selectedAnswer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -632,7 +594,7 @@ export default function QAPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-4">
-                    <div className="prose prose-sm max-w-none text-black space-y-4">
+                    <div className="prose prose-sm max-w-none text-black space-y-4 [&_p]:mb-4 [&_p]:leading-relaxed">
                         {(() => {
                             const segments = selectedAnswer.answer_segments ?? [];
                             const uniquePages = new Set(segments.map(s => s.page));
@@ -640,7 +602,13 @@ export default function QAPage() {
 
                             if (!isMultiPage) {
                                 // Single page — combine all segments into one block
-                                const combinedText = segments.map(s => s.text).join("\n\n");
+                                // Ensure paragraph breaks are preserved: split on lines and re-join with double newlines
+                                const rawText = segments.map(s => s.text).join("\n\n");
+                                const combinedText = rawText
+                                    .split(/\n/)
+                                    .map(line => line.trim())
+                                    .filter(line => line.length > 0)
+                                    .join("\n\n");
                                 const singlePage = segments[0]?.page;
                                 const singlePageUrl = segments[0]?.page_url;
                                 return (
@@ -705,19 +673,22 @@ export default function QAPage() {
       <>
 {/* 1. Investor Selection with Google-style Search */}
 <div className="relative flex-1 max-w-[250px]" ref={investorDropdownRef}>
-<input
-  type="text"
-  value={investorSearch}
-  onChange={(e) => {
-    setInvestorSearch(e.target.value);
-    setIsInvestorDropdownOpen(true);
-  }}
-  onFocus={() => setIsInvestorDropdownOpen(true)}
-  placeholder={
-    investorList.find(inv => inv.id === investorId)?.name || "Search"
-  }
-  className="w-full h-[38px] bg-white border border-[#931638]/50 rounded-lg px-3 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
-/>
+<div className="relative flex items-center">
+  <input
+    type="text"
+    value={investorSearch}
+    onChange={(e) => {
+      setInvestorSearch(e.target.value);
+      setIsInvestorDropdownOpen(true);
+    }}
+    onFocus={() => setIsInvestorDropdownOpen(true)}
+    placeholder={
+      investorList.find(inv => inv.id === investorId)?.name || "Search"
+    }
+    className="w-full h-[38px] bg-white border border-[#931638]/50 rounded-lg pl-3 pr-7 text-xs text-black placeholder:text-black focus:border-[#931638] focus:outline-none"
+  />
+  <ChevronDown size={14} className={`absolute right-2 text-gray-400 pointer-events-none transition-transform duration-200 ${isInvestorDropdownOpen ? 'rotate-180' : ''}`} />
+</div>
   {/* Dropdown Results */}
   {isInvestorDropdownOpen && (
     <div className="absolute top-full left-0 mt-2 w-full max-h-60 overflow-y-auto bg-white border-2 border-[#931638] rounded-lg shadow-2xl z-50 animate-in fade-in zoom-in-95">
@@ -887,6 +858,7 @@ export default function QAPage() {
       {showFilters && (
   <div className="flex items-center gap-3">
     {/* Label */}
+    <span className="text-xs text-gray-500 font-medium">Answer type:</span>
     <span className="text-[10px] uppercase font-bold text-gray-600 w-16 text-center transition-all">
       {getStrengthLabel(llmStrength)}
     </span>
@@ -1045,7 +1017,7 @@ export default function QAPage() {
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-4 pb-4">
       <div ref={messagesEndRef} />
-        {history.length === 0 && <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4"><p className="text-sm font-light">Ask a question to start.</p></div>}
+        {history.length === 0 && !loadingQuestion && <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4"><p className="text-sm font-light">Ask a question to start.</p></div>}
         
         {/* Clear Chat Button - Shows only when there are messages */}
         {history.length > 0 && (
@@ -1061,6 +1033,50 @@ export default function QAPage() {
           </div>
         )}
 
+        {/* STANDALONE VERIFYING INDICATOR — shown during predict-category call AND isVerifying phase */}
+        {loadingQuestion && !history.some(qa => qa.loading) && (
+            <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-left-2 duration-300">
+                {/* Question bubble */}
+                <div className="flex justify-end">
+                    <div className="bg-[#931638] text-white p-3 rounded-2xl rounded-tr-sm text-sm max-w-[90%] shadow-lg">
+                        {loadingQuestion}
+                    </div>
+                </div>
+                {/* Analyzing row */}
+                <div className="flex items-center gap-2 ml-1 flex-wrap">
+                    <div className="flex gap-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                    <span className="text-xs text-gray-400">...Analyzing and comparing...</span>
+                    {/* Category chip + Change button — only shown once category is detected */}
+                    {pendingCategory && (
+                        <>
+                            <span className="text-[11px] text-gray-400">Filtering by</span>
+                            <div className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/25 px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
+                                <Tag size={9} />
+                                {pendingCategory}
+                            </div>
+                            {isVerifying && countdown > 0 && (
+                                <button
+                                    onClick={handleUserRejection}
+                                    className="group relative flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium text-gray-400 border border-gray-200 bg-white hover:text-[#931638] hover:border-[#931638]/40 hover:bg-[#931638]/5 transition-all overflow-hidden"
+                                >
+                                    <div
+                                        className="absolute inset-0 bg-white origin-left transition-all duration-1000 ease-linear"
+                                        style={{ transform: `scaleX(${countdown / 3})` }}
+                                    />
+                                    <span className="relative text-black">Change</span>
+                                    <span className="relative tabular-nums text-[10px] text-black">{countdown}s</span>
+                                </button>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        )}
+
 {history.map((qa) => (
   <div key={qa.id} className="space-y-3">
     
@@ -1074,8 +1090,22 @@ export default function QAPage() {
     {/* ANSWER */}
     <div className="flex flex-col gap-3 max-w-[90%]">
       {qa.loading && (
-        <div className="text-xs text-gray-500 animate-pulse">
-          Analyzing...
+        <div className="flex items-center gap-2 ml-1 flex-wrap">
+          <div className="flex gap-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#931638]/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
+          <span className="text-xs text-gray-400">...Analyzing and comparing...</span>
+          {activeLoadingCategory && (
+            <>
+              <span className="text-[11px] text-gray-400">Filtering by</span>
+              <div className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/25 px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
+                <Tag size={9} />
+                {activeLoadingCategory}
+              </div>
+            </>
+          )}
         </div>
       )}
 
