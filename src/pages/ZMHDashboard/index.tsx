@@ -17,6 +17,7 @@ import { baseURL } from "@/constant";
 import InvestorCard from "@/components/InvestorCard";
 import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
+import CompanyOverview from "@/components/CompanyOverview";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -34,7 +35,7 @@ function Main() {
   const dispatch: AppDispatch = useAppDispatch();
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState('ownership');
+  const [activeTab, setActiveTab] = useState('company-overview');
 
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
@@ -97,7 +98,7 @@ function Main() {
   );
   const [searchParams] = useSearchParams();
 
-  const { companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, user } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, companyGlobalSearchId, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -143,6 +144,7 @@ function Main() {
   useEffect(() => {
     const handleScroll = () => {
       const sections = [
+        { id: 'company-overview', tab: 'company-overview' },
         { id: 'ownership', tab: 'ownership' },
         { id: 'shareholder-meeting-results', tab: 'shareholder-meeting-results' },
       ];
@@ -217,75 +219,78 @@ function Main() {
     <>
       <section >
         {/* Tabs - Top Level Navigation */}
-        <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: "8.3rem" }}>
-          <div className="bg-white mb-4 flex flex-col md:flex-row items-center justify-between">
-            <div className="border-b border-gray-200 w-full">
-              <nav className="flex w-full items-center">
-                <button
-                  onClick={() => {
-                    setActiveTab('ownership');
-                    const element = document.getElementById('ownership');
-                    if (element) {
-                      const offsetTop = element.offsetTop - 200;
-                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
-                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                >
-                  Ownership
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('shareholder-meeting-results');
-                    const element = document.getElementById('shareholder-meeting-results');
-                    if (element) {
-                      const offsetTop = element.offsetTop - 200;
-                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
-                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                >
-                  Shareholder Meeting Results
-                </button>
-                {user?.user_type === "Admin" && bothLoaded && (
-                  <div className="flex items-center justify-end px-4 py-2">
-                    <button
-                      className="px-6 py-2.5 bg-primary text-white font-medium text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={handleGenerateReport}
-                      disabled={!companyGlobalSearchTicker}
-                    >
-                      Generate Report
-                    </button>
-                  </div>
-                )}
-                {/* <button
-                  onClick={() => {
-                    setActiveTab('board-composition');
-                    const element = document.getElementById('board-composition');
-                    if (element) {
-                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
-                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'board-composition'
-                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                >
-                  Board Composition (Beta)
-                </button> */}
-              </nav>
+        <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white shadow-sm" style={{ top: "8.3rem" }}>
+          <div className="bg-white mb-4 flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <div className="bg-gray-100 rounded-xl p-1 flex items-center gap-1">
+              <button
+                onClick={() => {
+                  setActiveTab('company-overview');
+                  const element = document.getElementById('company-overview');
+                  if (element) {
+                    const offsetTop = element.offsetTop - 220;
+                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                  }
+                }}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeTab === 'company-overview'
+                    ? 'bg-white shadow text-primary font-semibold'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Company Overview
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('ownership');
+                  const element = document.getElementById('ownership');
+                  if (element) {
+                    const offsetTop = element.offsetTop - 220;
+                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                  }
+                }}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeTab === 'ownership'
+                    ? 'bg-white shadow text-primary font-semibold'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Ownership
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('shareholder-meeting-results');
+                  const element = document.getElementById('shareholder-meeting-results');
+                  if (element) {
+                    const offsetTop = element.offsetTop - 220;
+                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                  }
+                }}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  activeTab === 'shareholder-meeting-results'
+                    ? 'bg-white shadow text-primary font-semibold'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Shareholder Meeting Results
+              </button>
             </div>
+            {user?.user_type === "Admin" && bothLoaded && (
+              <button
+                className="px-6 py-2.5 bg-primary text-white font-medium text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                onClick={handleGenerateReport}
+                disabled={!companyGlobalSearchTicker}
+              >
+                Generate Report
+              </button>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
+          <div id="company-overview" className="col-span-12 xl:col-span-12">
+            <CompanyOverview />
+          </div>
+
           <div id="ownership" className="col-span-12 xl:col-span-12">
             <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
           </div>
