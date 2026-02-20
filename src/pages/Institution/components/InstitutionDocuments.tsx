@@ -103,7 +103,7 @@ const InstitutionDocuments = () => {
       setSelectedRows([]);
       handleDocumentSuccess();
     } catch {
-      toast.error('Bulk delete failed');
+      // Error toast is already handled by axios interceptor
     } finally {
       setBulkActionLoading(false);
       setConfirmModal({ open: false, type: 'bulk-delete' });
@@ -121,7 +121,7 @@ const InstitutionDocuments = () => {
       toast.success("Document moved to trash successfully");
       handleDocumentSuccess();
     } catch {
-      toast.error("Failed to move document to trash");
+      // Error toast is already handled by axios interceptor
     } finally {
       setConfirmModal({ open: false, type: 'delete' });
     }
@@ -141,7 +141,7 @@ const InstitutionDocuments = () => {
       setTrashedDocuments((prev) => prev.filter(doc => doc.id !== confirmModal.document?.id));
       handleDocumentSuccess();
     } catch {
-      toast.error("Failed to restore document");
+      // Error toast is already handled by axios interceptor
     } finally {
       setConfirmModal({ open: false, type: 'restore' });
     }

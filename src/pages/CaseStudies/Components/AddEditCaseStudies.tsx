@@ -89,6 +89,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         : selectedCaseStudies?.primary_source_link
         ? [selectedCaseStudies?.primary_source_link]
         : [],
+      page_reference: selectedCaseStudies?.page_reference || "",
       approval_status: selectedCaseStudies?.approval_status,
       investment_type:
         selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
@@ -189,6 +190,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
           : selectedCaseStudies?.primary_source_link
           ? [selectedCaseStudies?.primary_source_link]
           : [],
+        page_reference: selectedCaseStudies?.page_reference || "",
         approval_status: selectedCaseStudies?.approval_status || "",
         investment_type: selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
         esg_category: selectedCaseStudies?.esg_category
@@ -226,6 +228,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         meeting_date: "",
         primary_source: "",
         primary_source_link: [],
+        page_reference: "",
         approval_status: "",
         investment_type: holdingTypesDropdown[0] || "",
         esg_category: [],
@@ -839,7 +842,29 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     )}
                   />
                 </div>
-                <div className="hidden sm:block w-full flex-1" />
+                <div className="w-full flex-1">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Page Reference
+                  </FormCheck.Label>
+                  <Controller
+                    name="page_reference"
+                    control={control}
+                    rules={{ required: "Page Reference is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Page Reference"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 mt-2">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-8 sm:gap-16">
