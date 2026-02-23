@@ -169,51 +169,53 @@ const CountryInfoHeader = () => {
   };
 
   return (
-    <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
+    <div className="bg-gradient-to-r from-white via-gray-50 to-white shadow-md rounded-xl p-5 mb-5 flex flex-col md:flex-row items-center justify-between border border-gray-200">
       {/* Company Header */}
-      <div className="flex items-center gap-4 mb-2 md:mb-0">
-        <span className="font-semibold text-base">
+      <div className="flex items-center gap-4 mb-3 md:mb-0">
+        <span className="font-bold text-lg text-gray-900">
           {finhub?.name || companyGlobalSearchName}{" "}
-          {symbol ? `(${symbol})` : ""}
+          {symbol && (
+            <span className="font-semibold text-primary">({symbol})</span>
+          )}
         </span>
       </div>
 
       {/* Country + Exchange */}
-      <div className="flex items-center justify-center mb-2 md:mb-0">
+      <div className="flex items-center justify-center gap-3 mb-3 md:mb-0 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
         {finhub?.country && (
           <ReactCountryFlag
             countryCode={finhub?.country}
             svg
-            style={{ fontSize: "1.5em", lineHeight: "1.5em" }}
+            style={{ fontSize: "1.8em", lineHeight: "1.8em" }}
           />
         )}
         {finhub?.exchange && (
-          <span className="text-gray-600 text-xs ml-2">{finhub?.exchange}</span>
+          <span className="text-gray-700 text-sm font-semibold">{finhub?.exchange}</span>
         )}
       </div>
 
       {/* Industry */}
       {finhub?.finnhub_industry && (
-        <div className="flex items-center">
-          <div className="flex flex-row items-start gap-2">
-            <p className="text-gray-600 font-medium text-xs">Industry:</p>
-            <p className="text-gray-500 text-xs">{finhub?.finnhub_industry}</p>
+        <div className="flex items-center mb-3 md:mb-0 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex flex-row items-center gap-2">
+            <p className="text-gray-600 font-semibold text-sm">Industry:</p>
+            <p className="text-gray-800 text-sm font-medium">{finhub?.finnhub_industry}</p>
           </div>
         </div>
       )}
 
       {/* Buttons */}
-      <div className="flex items-center gap-2 border border-gray-200 rounded-full p-1">
+      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm">
         <button
-          className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-200 group"
           onClick={() => setIsChartOpen(true)}
         >
-          <Lucide icon="TrendingUp" className="w-5 h-5 text-pink-400" />
-          <span className="text-xs font-medium text-gray-700">Chart</span>
+          <Lucide icon="TrendingUp" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">Chart</span>
         </button>
 
         <button
-          className="relative flex items-center gap-1 px-3 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-200 group"
           onClick={() => {
             setIsTableOpen(true);
             // ✅ Always fetch data when opening modal to ensure cache works properly
@@ -240,15 +242,15 @@ const CountryInfoHeader = () => {
             }
           }}
         >
-          <Lucide icon="Table" className="w-5 h-5 text-pink-400" />
-          <span className="text-xs font-medium text-gray-700">Price Perf.</span>
+          <Lucide icon="Table" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">Price Perf.</span>
         </button>
 
         <button
           className={
             secFilingsUrl
-              ? "relative flex items-center gap-1 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors"
-              : "relative flex items-center gap-1 px-3 py-1 rounded-full opacity-50 cursor-not-allowed"
+              ? "flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-200 group"
+              : "flex items-center gap-2 px-4 py-2 rounded-lg opacity-50 cursor-not-allowed"
           }
           disabled={!secFilingsUrl}
           onClick={() => {
@@ -256,11 +258,8 @@ const CountryInfoHeader = () => {
             window.open(secFilingsUrl, "_blank", "noopener,noreferrer");
           }}
         >
-          <Lucide icon="FileText" className="w-5 h-5 text-pink-400" />
-          <span className="text-xs font-medium text-gray-700">SEC Filings</span>
-          <span className="absolute top-0 right-0 -mt-1 mr-1 text-[6px] font-bold text-white bg-orange-500 rounded-full px-0.5 animate-pulse">
-            NEW
-          </span>
+          <Lucide icon="FileText" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">SEC Filings</span>
         </button>
       </div>
 

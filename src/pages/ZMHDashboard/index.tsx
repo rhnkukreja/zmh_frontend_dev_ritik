@@ -32,6 +32,7 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
+import { FileText, Building2, Users, Vote } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -45,9 +46,6 @@ function Main() {
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
-
-  // Button sirf tab dikhega jab dono load ho jayein
-  const bothLoaded = isOwnershipLoaded && isMeetingLoaded;
 
   // Handle generate report
   const handleGenerateReport = () => {
@@ -220,49 +218,52 @@ function Main() {
 
   return (
     <>
-      <section >
+      <section>
         {/* Tabs - Top Level Navigation */}
-        <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white shadow-sm" style={{ top: "8.3rem" }}>
-          <div className="bg-white mb-4 flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <div className="bg-gray-100 rounded-xl p-1 flex items-center gap-1">
+        <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: "8.3rem" }}>
+          <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
               <button
                 onClick={() => setActiveTab('company-overview')}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'company-overview'
-                    ? 'bg-white shadow text-primary font-semibold'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
+                <Building2 className="w-4 h-4" />
                 Company Overview
               </button>
               <button
                 onClick={() => setActiveTab('ownership')}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'ownership'
-                    ? 'bg-white shadow text-primary font-semibold'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
+                <Users className="w-4 h-4" />
                 Ownership
               </button>
               <button
                 onClick={() => setActiveTab('shareholder-meeting-results')}
-                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'shareholder-meeting-results'
-                    ? 'bg-white shadow text-primary font-semibold'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
+                <Vote className="w-4 h-4" />
                 Shareholder Meeting Results
               </button>
             </div>
-            {user?.user_type === "Admin" && bothLoaded && (
+            {companyGlobalSearchTicker && (
               <button
-                className="px-6 py-2.5 bg-primary text-white font-medium text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
                 onClick={handleGenerateReport}
-                disabled={!companyGlobalSearchTicker}
               >
-                Generate Report
+                <FileText className="w-4 h-4" />
+                Company Report
               </button>
             )}
           </div>
