@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
-import { axiosInstance } from "@/services";
-import { baseURL } from "@/constant";
 
 interface Institution {
   institution: string;
@@ -54,37 +52,13 @@ const SkeletonSection = () => (
 );
 
 const CompanyOverview = () => {
-  const { companyGlobalSearchId, companyGlobalSearchName } = useAppSelector(
+  const { companyGlobalSearchId } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
-  const [data, setData] = useState<CompanyOverviewData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!companyGlobalSearchId) {
-      setData(null);
-      return;
-    }
-
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await axiosInstance.get(
-          `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
-        );
-        setData(response.data);
-      } catch (err) {
-        setError("Failed to load company overview. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [companyGlobalSearchId]);
+  const { companyOverviewData, companyOverviewLoading } = useAppSelector(
+    (state) => state.dashboard
+  );
 
   if (!companyGlobalSearchId) {
     return (
@@ -99,7 +73,7 @@ const CompanyOverview = () => {
     );
   }
 
-  if (loading) {
+  if (companyOverviewLoading) {
     return (
       <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
         <div className="animate-pulse mb-10">
@@ -114,20 +88,9 @@ const CompanyOverview = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <p className="text-red-500 text-base font-medium">{error}</p>
-      </div>
-    );
-  }
+  if (!companyOverviewData) return null;
 
-  if (!data) return null;
+  const data = companyOverviewData;
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -143,19 +106,27 @@ const CompanyOverview = () => {
 
       {/* Sections */}
       <div className="px-8 py-6 divide-y divide-gray-100">
-        {data.sections.map((section) => (
+        {data.sections?.map((section: Section) => (
           <div key={section.id} className="py-8 first:pt-2">
             {/* Section Title */}
             <h2 className="text-base font-bold text-gray-900 mb-3">{section.title}</h2>
 
-            {/* Paragraphs */}
+            {/* Paragraphs or Bullet Points */}
             {section.paragraphs.length > 0 && (
               <div className="space-y-2">
-                {section.paragraphs.map((p, i) => (
-                  <p key={i} className="text-sm text-gray-700 leading-relaxed">
-                    {p}
+                {section.paragraphs.length === 1 ? (
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {section.paragraphs[0]}
                   </p>
-                ))}
+                ) : (
+                  <ul className="list-disc list-outside ml-5 space-y-1.5">
+                    {section.paragraphs.map((p, i) => (
+                      <li key={i} className="text-sm text-gray-700 leading-relaxed">
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

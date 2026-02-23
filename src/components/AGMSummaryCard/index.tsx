@@ -110,28 +110,17 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   useEffect(() => {
-    if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
-      // Use year from query params or default behavior
-      const yearParam = yearFromQuery || (isMeetingModal ? "2025" : "");
-      const url = createDynamicURL(
-        `${baseURL}/voting_report_8k/`,
-        { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
-      );
-      dispatch(fetchAGMSummaryDashboard(url));
-      // dispatch(setTempSearch(companyGlobalSearchTicker));
-    }
-    else if (companyGlobalSearchTicker !== tempSearch) {
-      // Use year from query params or reset to empty
-      const yearParam = yearFromQuery || "";
+    // Only handle year changes, not initial fetch (dashboard handles that)
+    if (yearFromQuery && agmSummaryDetails) {
+      const yearParam = yearFromQuery;
       setSelectedYear(yearParam);
       const url = createDynamicURL(
         `${baseURL}/voting_report_8k/`,
         { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
       );
       dispatch(fetchAGMSummaryDashboard(url));
-      // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }, [companyGlobalSearchTicker, yearFromQuery]);
+  }, [yearFromQuery]);
 
   useEffect(() => {
     setHasLoadingStarted(false);

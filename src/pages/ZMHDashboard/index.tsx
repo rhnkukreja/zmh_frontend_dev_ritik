@@ -5,9 +5,11 @@ import {
   CompanyDashboard,
   fetchCompanyByName,
   fetchCompanyDashboard,
+  fetchCompanyOverview,
+  fetchAGMSummaryDashboard,
   getBoardDirectorMembers,
-  // getGraphQLBoardData,
   setPage,
+  setTempSearch,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -140,43 +142,44 @@ function Main() {
     fetchModulesCount();
   }, [companyGlobalSearchName]);
 
-  // Scroll-based tab update
+  // Fetch all three tab data on initial load
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = [
-        { id: 'company-overview', tab: 'company-overview' },
-        { id: 'ownership', tab: 'ownership' },
-        { id: 'shareholder-meeting-results', tab: 'shareholder-meeting-results' },
-      ];
+    if (companyGlobalSearchTicker && companyGlobalSearchId) {
+      // Only fetch if data doesn't exist (first load or company changed)
+      if (companyGlobalSearchTicker !== tempSearch) {
+        // 1. Fetch Ownership data
+        dispatch(
+          fetchCompanyDashboard(
+            createDynamicURL(
+              `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+            )
+          )
+        );
 
-      const scrollPosition = window.scrollY + 250; // Increased offset for sticky header
+        // 2. Fetch Company Overview data
+        dispatch(
+          fetchCompanyOverview(
+            `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
+          )
+        );
 
-      // Check from bottom to top to get the most visible section
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const section = document.getElementById(sections[i].id);
-        if (section) {
-          const sectionTop = section.offsetTop;
-          const sectionBottom = sectionTop + section.offsetHeight;
+        // 3. Fetch Shareholder Meeting Results data
+        dispatch(
+          fetchAGMSummaryDashboard(
+            createDynamicURL(
+              `${baseURL}/voting_report_8k/`,
+              { ticker: companyGlobalSearchTicker }
+            )
+          )
+        );
 
-          // If scroll position is within this section
-          if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
-            setActiveTab(sections[i].tab);
-            break;
-          }
-          // If we're past all sections, activate the last one
-          else if (i === sections.length - 1 && scrollPosition >= sectionTop) {
-            setActiveTab(sections[i].tab);
-            break;
-          }
-        }
+        // Set tempSearch to mark data as loaded for this company
+        dispatch(setTempSearch(companyGlobalSearchTicker));
       }
-    };
+    }
+  }, [companyGlobalSearchTicker, companyGlobalSearchId, tempSearch, dispatch]);
 
-    window.addEventListener('scroll', handleScroll);
-    // Initial check on mount
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // No scroll-based tab update - tabs now show/hide content instead
 
 
   if (window.clarity && user?.user_id) {
@@ -223,14 +226,7 @@ function Main() {
           <div className="bg-white mb-4 flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <div className="bg-gray-100 rounded-xl p-1 flex items-center gap-1">
               <button
-                onClick={() => {
-                  setActiveTab('company-overview');
-                  const element = document.getElementById('company-overview');
-                  if (element) {
-                    const offsetTop = element.offsetTop - 220;
-                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                  }
-                }}
+                onClick={() => setActiveTab('company-overview')}
                 className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                   activeTab === 'company-overview'
                     ? 'bg-white shadow text-primary font-semibold'
@@ -240,14 +236,7 @@ function Main() {
                 Company Overview
               </button>
               <button
-                onClick={() => {
-                  setActiveTab('ownership');
-                  const element = document.getElementById('ownership');
-                  if (element) {
-                    const offsetTop = element.offsetTop - 220;
-                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                  }
-                }}
+                onClick={() => setActiveTab('ownership')}
                 className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                   activeTab === 'ownership'
                     ? 'bg-white shadow text-primary font-semibold'
@@ -257,14 +246,7 @@ function Main() {
                 Ownership
               </button>
               <button
-                onClick={() => {
-                  setActiveTab('shareholder-meeting-results');
-                  const element = document.getElementById('shareholder-meeting-results');
-                  if (element) {
-                    const offsetTop = element.offsetTop - 220;
-                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                  }
-                }}
+                onClick={() => setActiveTab('shareholder-meeting-results')}
                 className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                   activeTab === 'shareholder-meeting-results'
                     ? 'bg-white shadow text-primary font-semibold'
@@ -287,27 +269,31 @@ function Main() {
         </div>
 
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          <div id="company-overview" className="col-span-12 xl:col-span-12">
-            <CompanyOverview />
-          </div>
+          {activeTab === 'company-overview' && (
+            <div id="company-overview" className="col-span-12 xl:col-span-12">
+              <CompanyOverview />
+            </div>
+          )}
 
-          <div id="ownership" className="col-span-12 xl:col-span-12">
-            <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
-          </div>
+          {activeTab === 'ownership' && (
+            <div id="ownership" className="col-span-12 xl:col-span-12">
+              <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
+            </div>
+          )}
 
-          {/* <BoardDirectorMembers /> */}
-
-          <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
-            <AGMSummaryCard
-              companyGlobalSearchTicker={companyGlobalSearchTicker}
-              companyGlobalSearchName={companyGlobalSearchName}
-              isMeetingModal={false}
-              proxyContest={modulesCount?.proxy_contest || false}
-              proxyContest2024={modulesCount?.proxy_contest_2024 || false}
-              proxyContest2025={modulesCount?.proxy_contest_2025 || false}
-              onLoaded={() => setIsMeetingLoaded(true)}
-            />
-          </div>
+          {activeTab === 'shareholder-meeting-results' && (
+            <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
+              <AGMSummaryCard
+                companyGlobalSearchTicker={companyGlobalSearchTicker}
+                companyGlobalSearchName={companyGlobalSearchName}
+                isMeetingModal={false}
+                proxyContest={modulesCount?.proxy_contest || false}
+                proxyContest2024={modulesCount?.proxy_contest_2024 || false}
+                proxyContest2025={modulesCount?.proxy_contest_2025 || false}
+                onLoaded={() => setIsMeetingLoaded(true)}
+              />
+            </div>
+          )}
 
           {/* <div id="board-composition" className="col-span-12 xl:col-span-12">
             <div className="p-5 mt-3.5 box">
