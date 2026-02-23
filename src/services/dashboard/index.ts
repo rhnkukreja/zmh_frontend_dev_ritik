@@ -11,6 +11,37 @@ class DashboardService {
   }> {
     let results = [];
     let url = "";
+
+    const appendCurrentFilters = (params: URLSearchParams, filters?: any) => {
+      if (!filters) return;
+
+      const appendArray = (key: string, value: any) => {
+        if (Array.isArray(value) && value.length > 0) {
+          params.append(key, JSON.stringify(value));
+        }
+      };
+
+      appendArray('year', filters?.year);
+      appendArray('sector', filters?.sector);
+      appendArray('themes', filters?.themes);
+      appendArray('proposal_type', filters?.proposal_type);
+      appendArray('vote', filters?.vote);
+      appendArray('index', filters?.index);
+      appendArray('institution_name', filters?.institution_name);
+
+      if (Array.isArray(filters?.market) && filters.market.length > 0) {
+        params.append('country', JSON.stringify(filters.market));
+      }
+
+      if (filters?.approval_status) {
+        params.append('approval_status', filters.approval_status);
+      }
+
+      if (filters?.caspio_company_name) {
+        params.append('caspio_company_name', filters.caspio_company_name);
+      }
+    };
+
     if (companyName !== "") {
       if (exactUrl) {
         // Handle VDS European dropdown case
@@ -45,13 +76,21 @@ class DashboardService {
           params.append('company_name', companyName);
         }
 
-        // For default load (when companyName is "a"), add index parameter
-        if (companyName === "a") {
+        // For default load (when companyName is "a"), add fallback index parameter if no index filter is selected
+        if (companyName === "a" && !(Array.isArray(currentFilters?.index) && currentFilters.index.length > 0)) {
           params.append('index', JSON.stringify(["100"]));
         }
 
         params.append('all', 'true');
-        params.append('country', JSON.stringify(['USA', 'Canada']));
+
+        // Add selected filter context so company suggestions are relevant to current filter panel state
+        appendCurrentFilters(params, currentFilters);
+
+        // Fallback country for initial broad load only
+        if (!(Array.isArray(currentFilters?.market) && currentFilters.market.length > 0)) {
+          params.append('country', JSON.stringify(['USA', 'Canada']));
+        }
+
         url = `/company/?${params.toString()}`;
       }
       const response = await axiosInstance.get(url);
