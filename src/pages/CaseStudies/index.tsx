@@ -833,6 +833,18 @@ function CaseStudies() {
                                       field.onChange(value);
                                     }}
                                     isMulti={true}
+                                    currentFilters={{
+                                      year: watch("year") || [],
+                                      market: watch("market") || [],
+                                      sector: watch("sector") || [],
+                                      themes: watch("themes") || [],
+                                      proposal_type: watch("proposal_type") || [],
+                                      vote: watch("vote") || [],
+                                      approval_status: watch("approval_status") || "",
+                                      caspio_company_name: watch("caspio_company_name") || "",
+                                      index: watch("index") || [],
+                                      // institution_name: searchTerms || [],
+                                    }}
                                   />
                                 )}
                               />
