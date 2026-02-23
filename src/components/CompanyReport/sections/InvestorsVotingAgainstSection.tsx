@@ -56,7 +56,7 @@ const VotingRationaleTable = ({
             <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-[200px]">Investor</th>
             <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-[200px]">Proposal</th>
             <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[100px]">Vote</th>
-            <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[165px]">Vote Counts</th>
+            <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[165px]"># of Funds</th>
             <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs">Rationale</th>
           </tr>
         </thead>

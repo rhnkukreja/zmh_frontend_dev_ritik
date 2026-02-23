@@ -214,10 +214,13 @@ function CaseStudies() {
       return;
     }
 
-    // Create filters without global_search for "View For All Companies"
-    const apiFilters = isAllCompanySelected 
-      ? { ...filters, global_search: undefined }
-      : filters;
+    // For "View For All Companies", keep global_search only when companies are selected
+    const hasSelectedCompanies =
+      Array.isArray(filters?.global_search) && filters.global_search.length > 0;
+    const apiFilters =
+      isAllCompanySelected && !hasSelectedCompanies
+        ? { ...filters, global_search: undefined }
+        : filters;
 
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
@@ -236,10 +239,13 @@ function CaseStudies() {
       )
     );
 
-    // Include institution_name in filter chips with proper formatting
+    // Include institution/company filters in chips with proper formatting
     const filtersWithInstitution = {
       ...restFilters,
-      ...(institution_name && institution_name.length > 0 && { institution_name })
+      ...(institution_name && institution_name.length > 0 && { institution_name }),
+      ...(isAllCompanySelected && global_search && global_search.length > 0 && {
+        global_search,
+      }),
     };
     
     setSelectedChipFilters(generateFilterChips(filtersWithInstitution));
@@ -516,10 +522,13 @@ function CaseStudies() {
     return field.onChange(event);
   }
   const handleDownload = async () => {
-    // Create filters without global_search for "View For All Companies"
-    const apiFilters = isAllCompanySelected 
-      ? { ...filters, global_search: undefined }
-      : filters;
+    // For "View For All Companies", keep global_search only when companies are selected
+    const hasSelectedCompanies =
+      Array.isArray(filters?.global_search) && filters.global_search.length > 0;
+    const apiFilters =
+      isAllCompanySelected && !hasSelectedCompanies
+        ? { ...filters, global_search: undefined }
+        : filters;
 
     downloadFileFromAPI({
       url: createDynamicURL(

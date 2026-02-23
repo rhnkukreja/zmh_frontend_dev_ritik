@@ -640,7 +640,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
             { text: "Investor", style: "tableHeader" },
             { text: "Proposal", style: "tableHeader" },
             { text: "Vote", style: "tableHeader", alignment: "center" },
-            { text: "Vote Counts", style: "tableHeader" },
+            { text: "# of Funds", style: "tableHeader" },
             { text: "Rationale", style: "tableHeader" }
           ];
           const bodyRows = data.voted_against_rationale.map(item => {
