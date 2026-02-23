@@ -87,34 +87,14 @@ const index = ({ onLoaded }: InvestorCardProps) => {
     setTodayDate(formattedDate);
   }, []);
 
-  const fetchData = async () => {
-    if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
-      dispatch(
-        fetchCompanyDashboard(
-          createDynamicURL(
-            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
-          )
-        )
-      );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (companyGlobalSearchTicker !== tempSearch) {
-      setSelectedYear("");
-      dispatch(
-        fetchCompanyDashboard(
-          createDynamicURL(
-            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
-          )
-        )
-      );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
-    }
-  }
-
   useEffect(() => {
-    fetchData();
+    // Reset year when company changes
+    if (companyGlobalSearchTicker !== tempSearch) {
+      setSelectedYear("");
+    }
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
-  }, [companyGlobalSearchTicker, searchTicker]);
+  }, [companyGlobalSearchTicker, searchTicker, tempSearch]);
 
   useEffect(() => {
     if (investorCardLoading) {
@@ -796,7 +776,7 @@ const index = ({ onLoaded }: InvestorCardProps) => {
           setAddNoteModalVisible={setAddNoteModalVisible}
           title="Create New Note"
           data={data}
-          fetchData={fetchData}
+          fetchData={async () => {}}
           noteModule={false}
         />
       )}

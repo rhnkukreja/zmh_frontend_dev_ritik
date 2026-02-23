@@ -194,6 +194,11 @@ class DashboardService {
     return { results };
   }
 
+  public async getCompanyOverview(url: string): Promise<any> {
+    const response = await axiosInstance.get(url);
+    return response.data;
+  }
+
   public async fetchCaseStudiesTopProxyContext(url: string): Promise<{
     count: number;
     results: any[];
