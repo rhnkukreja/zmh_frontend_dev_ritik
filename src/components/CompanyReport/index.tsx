@@ -557,8 +557,16 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
 
           const proxyChart = chartImageMap.get("Proxy Advisor Influence");
 
+          content.push({ ...ownershipTable, pageOrientation: "landscape" });
+          content.push({
+            columns: [
+              { text: "Source: Whalewisdom. Data as of latest filings.", style: "caption", alignment: "left" },
+              { text: "ND = Not disclosed", style: "caption", alignment: "center" },
+              { text: "*Not in ZMH coverage universe", style: "caption", alignment: "right" }
+            ],
+            pageOrientation: "landscape"
+          });
           if (proxyChart) {
-            content.push({ ...ownershipTable, pageOrientation: "landscape" });
             content.push({
               image: proxyChart,
               width: 260,
@@ -566,10 +574,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
               margin: [0, 6, 0, 10],
               pageOrientation: "landscape"
             });
-          } else {
-            content.push({ ...ownershipTable, pageOrientation: "landscape" });
           }
-          content.push({ text: "Source: Whalewisdom. Data as of latest filings.", style: "caption" });
           content.push({ text: " ", margin: [0, 6] });
         }
 
@@ -859,7 +864,7 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
         setIsGeneratingPDF(false);
       }
     };
-    
+
     return (
       <div className="w-full max-w-[1200px] mx-auto">
         {/* Report Content */}
@@ -872,13 +877,11 @@ const CompanyReport = forwardRef<HTMLDivElement, CompanyReportProps>(
           <div className="report-header border-b-2 border-primary pb-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                {isGeneratingPDF && (
-                  <img
-                    src={zmhLogo}
-                    alt="ZMH Logo"
-                    className="h-16 w-auto object-contain"
-                  />
-                )}
+                <img
+                  src={zmhLogo}
+                  alt="ZMH Logo"
+                  className="h-16 w-auto object-contain"
+                />
                 <h1 className="text-2xl font-bold text-gray-900">
                   {data.finnhub_data?.company_name || 'Company'} - Company Report
                 </h1>

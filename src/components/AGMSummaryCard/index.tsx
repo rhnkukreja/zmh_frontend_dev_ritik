@@ -369,6 +369,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   // Download NPX data handler
   const handleDownloadNPXData = async () => {
     const idToUse = institutionId || companyGlobalSearchId;
+    const dynamicYear = (selectedYear || agmSummaryDetails?.Year || new Date().getFullYear()).toString();
     
     if (!idToUse) {
       console.error('Institution or Company ID not available');
@@ -378,7 +379,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     try {
       setIsNpxLoading(true);
       const response = await axiosInstance.get(
-        `${baseURL}/api/top20_investor_fund_level/?company_id=${idToUse}`,
+        `${baseURL}/api/top20_investor_fund_level/?company_id=${idToUse}&year=${encodeURIComponent(dynamicYear)}`,
         { responseType: 'blob' }
       );
       
@@ -561,6 +562,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     return tabIndex >= 0 ? tabIndex : 0;
   };
 
+  const showNpxActions = Boolean(agmSummaryDetails?.npx_check);
+
   return (
     <>
       {agmSummaryDetails?.Year && (
@@ -589,7 +592,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         Voting Data
                       </button>
                     )}
-                    {dashboardDataList?.total_year?.length > 0 && agmSummaryDetails?.npx_check && (
+                    {showNpxActions && (
                       <button
                         onClick={(event: any) => handleViewNPX(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -599,32 +602,34 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
-                      <div className="relative">
-                        <button
-                          onClick={handleDownloadNPXData}
-                          disabled={isNpxLoading}
-                          className={clsx([
-                            "p-2 bg-white rounded-md w-auto flex items-center gap-2 justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
-                            isNpxLoading
-                              ? "opacity-60 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
-                          ])}
-                        >
-                          {isNpxLoading ? (
-                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Lucide icon="Download" className="w-4 h-4" />
-                              <span>N-PX</span>
-                            </>
-                          )}
-                        </button>
-                        <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                          NEW
-                        </span>
-                      </div>
-                    </Tippy>
+                    {showNpxActions && (
+                      <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
+                        <div className="relative">
+                          <button
+                            onClick={handleDownloadNPXData}
+                            disabled={isNpxLoading}
+                            className={clsx([
+                              "p-2 bg-white rounded-md w-auto flex items-center gap-2 justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                              isNpxLoading
+                                ? "opacity-60 cursor-not-allowed"
+                                : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
+                            ])}
+                          >
+                            {isNpxLoading ? (
+                              <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Lucide icon="Download" className="w-4 h-4" />
+                                <span>N-PX</span>
+                              </>
+                            )}
+                          </button>
+                          <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                            NEW
+                          </span>
+                        </div>
+                      </Tippy>
+                    )}
                     <button
                       disabled={
                         is8kLoading ||

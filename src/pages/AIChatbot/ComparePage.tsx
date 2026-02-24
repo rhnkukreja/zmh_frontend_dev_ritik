@@ -604,7 +604,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
     }, [loading, mode, manualSelectedPdfIds, investor1, investor2, docsFoundForInv1, docsFoundForInv2, allDocs]);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] relative">
+        <div className="flex flex-col h-[calc(100vh-140px)] relative border rounded-md bg-white p-8">
         
         {/* 1. CATEGORY VERIFICATION MODAL — removed, now shown inline */}
 
@@ -935,7 +935,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
                     {/* INPUT AREA - Shows next to Eye button when filters are hidden */}
                     {!showFilters && (
-                        <div className="flex-1 bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-xl">
+                        <div className="flex-1 bg-white border-2 border-[#931638] rounded-xl flex items-center p-2">
                             <input 
                                 value={question} 
                                 onChange={(e) => setQuestion(e.target.value)} 
@@ -1202,7 +1202,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
         {/* 4. INPUT AREA - Shows below controls when filters are visible */}
         {showFilters && (
-        <div className="bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-xl mb-6 z-10 relative">
+        <div className="bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-lg mb-6 z-10 relative">
             <input 
                 value={question} 
                 onChange={(e) => setQuestion(e.target.value)} 
