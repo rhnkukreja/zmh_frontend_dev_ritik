@@ -103,15 +103,17 @@ export default function DashboardLayout() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 flex items-center px-6 bg-white/90 backdrop-blur-md">
-          <h2 className="font-semibold text-lg text-black">
-            {location.pathname === "/ai-chatbot/voting-guidelines"
-              ? <>Voting Guidelines<span className="text-sm font-normal text-gray-500"> — based on latest available document</span></>
-              : navItems.find(i => i.path === location.pathname)?.label || "Dashboard"}
-          </h2>
+        <header className="h-16 flex items-center bg-white/90 backdrop-blur-md">
+          <div className="w-full max-w-6xl mx-auto px-4">
+            <h2 className="font-semibold text-xl text-black">
+              {location.pathname === "/ai-chatbot/voting-guidelines"
+                ? <>Voting Guidelines<span className="text-sm font-normal text-gray-500"> — based on latest available document</span></>
+                : navItems.find(i => i.path === location.pathname)?.label || "Dashboard"}
+            </h2>
+          </div>
         </header>
 
-        <div className="flex-1 overflow-auto py-4 bg-white">
+        <div className="flex-1 overflow-auto py-4 bg-slate-50">
           <div className="max-w-6xl mx-auto animate-in fade-in duration-500 px-4">
             <Outlet /> 
           </div>

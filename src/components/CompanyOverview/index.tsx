@@ -1,200 +1,927 @@
-import React from "react";
-import { useAppSelector } from "@/stores/hooks";
-import { RootState } from "@/stores/store";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+  BarChart3,
+  Users,
+  Vote,
+  FileCheck2,
+  FileText,
+  Leaf,
+  Download,
+} from "lucide-react";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 
-interface Institution {
-  institution: string;
-  environmental: string | null;
-  social: string | null;
-  governance: string | null;
-}
+const cx = (...classes: Array<string | undefined | false>) =>
+  classes.filter(Boolean).join(" ");
 
-interface LowestSupport {
-  proposal_num: string;
-  nominee: string;
-  support_pct: number;
-}
+type BasicProps = {
+  className?: string;
+  children?: React.ReactNode;
+};
 
-interface Section {
-  id: string;
-  title: string;
-  paragraphs: string[];
-  institutions?: Institution[];
-  lowest_support?: LowestSupport[];
-  selected_support_levels?: any[];
-}
-
-interface CompanyOverviewData {
-  sections: Section[];
-  report_metadata: {
-    data_as_of: string;
-    ticker: string;
-    generated_at: string;
-  };
-  company: {
-    name: string;
-    ticker: string;
-    exchange: string;
-    industry: string;
-  };
-}
-
-const SkeletonSection = () => (
-  <div className="mb-10 animate-pulse">
-    <div className="h-5 bg-gray-200 rounded w-1/4 mb-4"></div>
-    <div className="h-px bg-gray-100 mb-4"></div>
-    <div className="space-y-2.5">
-      <div className="h-4 bg-gray-100 rounded w-full"></div>
-      <div className="h-4 bg-gray-100 rounded w-11/12"></div>
-      <div className="h-4 bg-gray-100 rounded w-4/5"></div>
-    </div>
-  </div>
+const Card = ({ className, children }: BasicProps) => (
+  <div className={cx("rounded-xl border border-slate-200 bg-white", className)}>{children}</div>
 );
 
-const CompanyOverview = () => {
-  const { companyGlobalSearchId } = useAppSelector(
-    (state: RootState) => state.authentiction
-  );
+const CardHeader = ({ className, children }: BasicProps) => (
+  <div className={cx("px-5 pt-5", className)}>{children}</div>
+);
 
-  const { companyOverviewData, companyOverviewLoading } = useAppSelector(
-    (state) => state.dashboard
-  );
+const CardContent = ({ className, children }: BasicProps) => (
+  <div className={cx("px-5 pb-5", className)}>{children}</div>
+);
 
-  if (!companyGlobalSearchId) {
-    return (
-      <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-          </svg>
-        </div>
-        <p className="text-gray-500 text-base font-medium">Search for a company to view its overview</p>
-      </div>
-    );
-  }
+const CardTitle = ({ className, children }: BasicProps) => (
+  <h3 className={cx("text-base font-semibold", className)}>{children}</h3>
+);
 
-  if (companyOverviewLoading) {
-    return (
-      <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div className="animate-pulse mb-10">
-          <div className="h-7 bg-gray-200 rounded w-2/3 mb-3"></div>
-          <div className="h-4 bg-gray-100 rounded w-1/4 mb-6"></div>
-          <div className="h-px bg-gray-200 mt-2"></div>
-        </div>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <SkeletonSection key={i} />
-        ))}
-      </div>
-    );
-  }
+type BadgeProps = BasicProps & { variant?: "secondary" | "outline" | "destructive" };
 
-  if (!companyOverviewData) return null;
-
-  const data = companyOverviewData;
+const Badge = ({ className, children, variant = "secondary" }: BadgeProps) => {
+  const variantClass =
+    variant === "destructive"
+      ? "border border-red-200 bg-red-50 text-red-700"
+      : variant === "outline"
+        ? "border border-slate-300 bg-white text-slate-700"
+        : "border border-slate-200 bg-slate-100 text-slate-700";
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-8 pt-8 pb-6 border-b border-gray-100">
-        <h1 className="text-xl font-bold text-gray-900">
-          {data.company.name} – Key Governance & Investor Summary
-        </h1>
-        <p className="text-sm font-medium text-gray-500 mt-1.5">
-          As of {data.report_metadata.data_as_of}
-        </p>
-      </div>
-
-      {/* Sections */}
-      <div className="px-8 py-6 divide-y divide-gray-100">
-        {data.sections?.map((section: Section) => (
-          <div key={section.id} className="py-8 first:pt-2">
-            {/* Section Title */}
-            <h2 className="text-base font-bold text-gray-900 mb-3">{section.title}</h2>
-
-            {/* Paragraphs or Bullet Points */}
-            {section.paragraphs.length > 0 && (
-              <div className="space-y-2">
-                {section.paragraphs.length === 1 ? (
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {section.paragraphs[0]}
-                  </p>
-                ) : (
-                  <ul className="list-disc list-outside ml-5 space-y-1.5">
-                    {section.paragraphs.map((p, i) => (
-                      <li key={i} className="text-sm text-gray-700 leading-relaxed">
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-
-            {/* Engagement Institutions Table */}
-            {section.institutions && section.institutions.length > 0 && (
-              <div className="mt-5 overflow-x-auto rounded-lg border border-gray-200">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 w-1/4">Institution</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 w-1/4">Environmental</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 w-1/4">Social</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 w-1/4">Governance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {section.institutions.map((inst, i) => (
-                      <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                        <td className="py-3 px-4 font-medium text-gray-900">{inst.institution}</td>
-                        <td className="py-3 px-4 text-gray-600">{inst.environmental || <span className="text-gray-300">—</span>}</td>
-                        <td className="py-3 px-4 text-gray-600">{inst.social || <span className="text-gray-300">—</span>}</td>
-                        <td className="py-3 px-4 text-gray-600">{inst.governance || <span className="text-gray-300">—</span>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Lowest Support Table */}
-            {section.lowest_support && section.lowest_support.length > 0 && (
-              <div className="mt-5">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Lowest Support Levels</p>
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700 w-24">Proposal</th>
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Nominee</th>
-                        <th className="text-right py-3 px-4 font-semibold text-gray-700 w-28">Support %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {section.lowest_support.map((item, i) => (
-                        <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                          <td className="py-3 px-4 text-gray-500 font-mono text-xs">{item.proposal_num}</td>
-                          <td className="py-3 px-4 font-medium text-gray-900">{item.nominee}</td>
-                          <td className="py-3 px-4 text-right">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                              item.support_pct < 95
-                                ? "bg-orange-50 text-orange-700"
-                                : "bg-green-50 text-green-700"
-                            }`}>
-                              {item.support_pct}%
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
+    <span className={cx("inline-flex items-center px-2 py-0.5 text-xs font-medium", variantClass, className)}>
+      {children}
+    </span>
   );
 };
 
-export default CompanyOverview;
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "default" | "outline" | "ghost";
+  size?: "default" | "sm";
+};
+
+const Button = ({ className, children, variant = "default", size = "default", ...rest }: ButtonProps) => {
+  const variantClass =
+    variant === "outline"
+      ? "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+      : variant === "ghost"
+        ? "border-none bg-transparent text-slate-700 hover:bg-slate-100"
+        : "border border-primary bg-primary text-white hover:opacity-90";
+
+  const sizeClass = size === "sm" ? "h-8 px-3 text-xs" : "h-10 px-4 text-sm";
+
+  return (
+    <button
+      type="button"
+      className={cx(
+        "inline-flex items-center justify-center rounded-md font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
+        variantClass,
+        sizeClass,
+        className
+      )}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+};
+
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
+
+const Input = ({ className, ...rest }: InputProps) => (
+  <input
+    className={cx(
+      "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none",
+      className
+    )}
+    {...rest}
+  />
+);
+
+const Separator = ({ className }: { className?: string }) => (
+  <div className={cx("h-px w-full bg-slate-200", className)} />
+);
+
+type TabsContextValue = {
+  value: string;
+  setValue: (value: string) => void;
+};
+
+const TabsContext = createContext<TabsContextValue | null>(null);
+
+const Tabs = ({ defaultValue, className, children }: BasicProps & { defaultValue: string }) => {
+  const [value, setValue] = useState(defaultValue);
+
+  useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
+
+  return (
+    <TabsContext.Provider value={{ value, setValue }}>
+      <div className={className}>{children}</div>
+    </TabsContext.Provider>
+  );
+};
+
+const TabsContent = ({ value, className, children }: BasicProps & { value: string }) => {
+  const context = useContext(TabsContext);
+  if (!context || context.value !== value) return null;
+  return <div className={className}>{children}</div>;
+};
+
+/**
+ * Final Company Overview UI
+ * - Drop in your saved company report content as structured data (see `sampleCompany`).
+ * - Supports: sections, sub-sections, bullets, and rationale items.
+ */
+
+const iconForSection = (key: string) => {
+  switch (key) {
+    case "sharePrice":
+      return <BarChart3 className="h-4 w-4" />;
+    case "esg":
+      return <Leaf className="h-4 w-4" />;
+    case "proxy":
+      return <ShieldCheck className="h-4 w-4" />;
+    case "board":
+      return <Users className="h-4 w-4" />;
+    case "sop":
+      return <Vote className="h-4 w-4" />;
+    case "auditor":
+      return <FileCheck2 className="h-4 w-4" />;
+    case "sp":
+      return <FileText className="h-4 w-4" />;
+    default:
+      return <FileCheck2 className="h-4 w-4" />;
+  }
+};
+
+type Rationale = {
+  investor: string;
+  vote: string;
+  proposal: string;
+  notes?: string;
+};
+
+type ProxySplit = {
+  summary: string;
+  buckets: { label: string; pct: number }[];
+};
+
+type ESGInvestor = {
+  name: string;
+  env?: string[];
+  soc?: string[];
+  gov?: string[];
+  noteIfNoTopics?: boolean;
+};
+
+type CompanyReport = {
+  company: string;
+  ticker: string;
+  asOf: string;
+  sharePriceTakeaway: string;
+  esg?: {
+    themeSummary?: string;
+    investors: ESGInvestor[];
+  };
+  proxy?: ProxySplit;
+  board?: {
+    headlineBullets: string[];
+    lowestSupport?: string[];
+  };
+  sop?: {
+    headlineBullets: string[];
+    rationaleSummary?: string;
+    rationales?: Rationale[];
+  };
+  auditor?: {
+    headlineBullets: string[];
+  };
+  shareholderProposals?: {
+    headlineBullets: string[];
+    selected?: string[];
+  };
+};
+
+// Replace this with your saved report(s)
+const sampleCompany: CompanyReport = {
+
+  company: "Apple Inc.",
+
+  ticker: "AAPL",
+
+  asOf: "February 17, 2026",
+
+  sharePriceTakeaway:
+
+    "Apple underperformed both the S&P 500 and Nasdaq over the 1-year period, while outperforming both indices over the 3-year and 5-year periods. The short-term relative underperformance could trigger pay-for-performance discussions or potential activist screening.",
+
+  esg: {
+
+    themeSummary:
+
+      "Most frequently cited engagement themes included climate risk management, talent and culture, executive succession planning, technology governance, climate change, biodiversity, diversity and inclusion, and human rights.",
+
+    investors: [
+
+      {
+
+        name: "BlackRock, Inc.",
+
+        env: ["Climate Risk Management"],
+
+        soc: ["Talent and Culture"],
+
+        gov: [
+
+          "Business Oversight/Risk Management",
+
+          "Executive Management and Succession Planning",
+
+          "Technology Deployment and Governance/Disclosure",
+
+        ],
+
+      },
+
+      {
+
+        name: "Schroder Investment Management Ltd",
+
+        env: ["Climate Change", "Natural Capital and Biodiversity"],
+
+        soc: ["Diversity and Inclusion", "Human Rights"],
+
+      },
+
+      {
+
+        name: "Dimensional Fund Advisors",
+
+        noteIfNoTopics: true,
+
+      },
+
+      {
+
+        name: "State Street Global Advisors",
+
+        noteIfNoTopics: true,
+
+      },
+
+    ],
+
+  },
+
+  proxy: {
+
+    summary:
+
+      "A substantial portion of Top 20 ownership subscribes to ISS and/or Glass Lewis alongside internal voting frameworks, indicating meaningful potential alignment with proxy advisory recommendations.",
+
+    buckets: [
+
+      { label: "Internal Only Guidelines", pct: 4.09 },
+
+      { label: "ISS & Glass Lewis (GL) Subscribers", pct: 24.07 },
+
+    ],
+
+  },
+
+  board: {
+
+    headlineBullets: [
+
+      "8 directors elected with support ranging from 92.8% to 99.2%",
+
+      "Overall director approval (2025): 96.29%",
+
+      "2024 director approval: 97.12%",
+
+    ],
+
+    lowestSupport: ["Art Levinson – 92.8%", "Andrea Jung – 93.5%"],
+
+  },
+
+  sop: {
+
+    headlineBullets: ["2025 Support: 91.9%", "2024 Support: 91.8%"],
+
+    rationaleSummary:
+
+      "Voting rationales cited concerns related to CEO pay magnitude, alignment of pay structure with best practices, and board refreshment.",
+
+    rationales: [
+
+      {
+
+        investor: "Morgan Stanley Investment Management",
+
+        vote: "Split Vote",
+
+        proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
+
+        notes:
+
+          "Certain aspects of pay program not aligned with best practice, though pay and performance considered reasonably aligned.",
+
+      },
+
+      {
+
+        investor: "T Rowe Price Associates",
+
+        vote: "Split Vote",
+
+        proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
+
+        notes:
+
+          "CEO pay deemed excessive after considering long-term performance.",
+
+      },
+
+      {
+
+        investor: "UBS Asset Management AG",
+
+        vote: "Against",
+
+        proposal: "Elect Director Sue Wagner",
+
+        notes: "Lack of board refreshment and presence of long-tenured directors.",
+
+      },
+
+    ],
+
+  },
+
+  auditor: {
+
+    headlineBullets: [
+
+      "Ernst & Young LLP ratified with 97.8% support (2025)",
+
+      "2024 support: 98.4%",
+
+    ],
+
+  },
+
+  shareholderProposals: {
+
+    headlineBullets: [
+
+      "China Entanglement Audit – Meeting not held or results not available.",
+
+    ],
+
+  },
+
+};
+
+function pctPill(pct: number) {
+  if (pct >= 25) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (pct >= 10) return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-slate-50 text-slate-700 border-slate-200";
+}
+
+function SectionHeader({
+  title,
+  icon,
+  right,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+          {icon ? React.cloneElement(icon as React.ReactElement, { className: "h-4 w-4 text-primary" }) : null}
+        </div>
+        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function BulletList({ items }: { items?: string[] }) {
+  if (!items?.length) return null;
+  return (
+    <ul className="mt-3 space-y-2 text-sm text-slate-700">
+      {items.map((t, i) => (
+        <li key={i} className="flex gap-2">
+          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-400" />
+          <span>{t}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function CollapsibleCard({
+  title,
+  iconKey,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  iconKey: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Card className="rounded-2xl shadow-sm">
+      <CardHeader className="pb-3">
+        <SectionHeader
+          title={title}
+          icon={iconForSection(iconKey)}
+          right={
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setOpen((v) => !v)}
+              className="gap-1"
+            >
+              {open ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  <span className="text-xs">Hide</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  <span className="text-xs">Show</span>
+                </>
+              )}
+            </Button>
+          }
+        />
+      </CardHeader>
+      {open ? <CardContent className="pt-0">{children}</CardContent> : null}
+    </Card>
+  );
+}
+
+function RationaleList({ items }: { items?: Rationale[] }) {
+  if (!items?.length) return null;
+  return (
+    <div className="mt-4 space-y-3">
+      {items.map((r, idx) => (
+        <div key={idx} className="rounded-xl border bg-white p-3 shadow-sm">
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+
+            <div className="text-sm font-semibold text-slate-900">
+
+              {r.investor}
+
+            </div>
+
+            <Badge variant="secondary" className="rounded-full">
+
+              {r.vote}
+
+            </Badge>
+
+          </div>
+
+          <div className="mt-1 text-sm text-slate-700">
+
+            <span className="font-medium">Proposal:</span> {r.proposal}
+
+          </div>
+
+          {r.notes ? (
+
+            <div className="mt-2 text-sm text-slate-700">{r.notes}</div>
+
+          ) : null}
+
+        </div>
+
+      ))}
+
+    </div>
+
+  );
+
+}
+
+function ESGInvestorBlock({ inv }: { inv: ESGInvestor }) {
+
+  const hasTopics =
+
+    (inv.env && inv.env.length) || (inv.soc && inv.soc.length) || (inv.gov && inv.gov.length);
+
+
+
+  return (
+
+    <div className="rounded-xl border bg-white p-3 shadow-sm">
+
+      <div className="flex items-center justify-between gap-2">
+
+        <div className="text-sm font-semibold text-slate-900">{inv.name}</div>
+
+      </div>
+
+
+
+      {hasTopics ? (
+
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+
+          <div>
+
+            <div className="text-xs font-semibold text-slate-500">Environmental</div>
+
+            <BulletList items={inv.env} />
+
+          </div>
+
+          <div>
+
+            <div className="text-xs font-semibold text-slate-500">Social</div>
+
+            <BulletList items={inv.soc} />
+
+          </div>
+
+          <div>
+
+            <div className="text-xs font-semibold text-slate-500">Governance</div>
+
+            <BulletList items={inv.gov} />
+
+          </div>
+
+        </div>
+
+      ) : inv.noteIfNoTopics ? (
+
+        <div className="mt-2 text-sm text-slate-700">
+
+          Engagement reported (specific topics not detailed)
+
+        </div>
+
+      ) : null}
+
+    </div>
+
+  );
+
+}
+
+function copyText(text: string) {
+
+  try {
+
+    navigator.clipboard.writeText(text);
+
+  } catch {
+
+    // no-op
+
+  }
+
+}
+
+function buildPlainText(report: CompanyReport) {
+
+  const lines: string[] = [];
+
+  lines.push(`${report.company} (${report.ticker}) – Key Governance & Investor Summary`);
+
+  lines.push(`As of ${report.asOf}`);
+
+  lines.push("");
+
+  lines.push("Share Price Performance");
+
+  lines.push(`- ${report.sharePriceTakeaway}`);
+
+  if (report.esg) {
+
+    lines.push("");
+
+    lines.push("ESG & Engagement (2025)");
+
+    if (report.esg.themeSummary) lines.push(`- ${report.esg.themeSummary}`);
+
+    report.esg.investors.forEach((i) => {
+
+      lines.push(`- ${i.name}`);
+
+      if (i.env?.length) lines.push(`  - Environmental: ${i.env.join("; ")}`);
+
+      if (i.soc?.length) lines.push(`  - Social: ${i.soc.join("; ")}`);
+
+      if (i.gov?.length) lines.push(`  - Governance: ${i.gov.join("; ")}`);
+
+      if (!i.env?.length && !i.soc?.length && !i.gov?.length && i.noteIfNoTopics) {
+
+        lines.push(`  - Engagement reported (specific topics not detailed)`);
+
+      }
+
+    });
+
+  }
+
+  if (report.proxy) {
+
+    lines.push("");
+
+    lines.push("Proxy Advisor Influence (Top 20 Ownership)");
+
+    lines.push(`- ${report.proxy.summary}`);
+
+    report.proxy.buckets.forEach((b) => lines.push(`- ${b.label}: ${b.pct.toFixed(2)}%`));
+
+  }
+
+  if (report.board) {
+
+    lines.push("");
+
+    lines.push("Board of Directors");
+
+    report.board.headlineBullets.forEach((b) => lines.push(`- ${b}`));
+
+    report.board.lowestSupport?.forEach((b) => lines.push(`- ${b}`));
+
+  }
+
+  if (report.sop) {
+
+    lines.push("");
+
+    lines.push("Executive Compensation (Say-on-Pay)");
+
+    report.sop.headlineBullets.forEach((b) => lines.push(`- ${b}`));
+
+    if (report.sop.rationaleSummary) lines.push(`- ${report.sop.rationaleSummary}`);
+
+    report.sop.rationales?.forEach((r) => {
+
+      lines.push(`- ${r.investor} – ${r.vote}`);
+
+      lines.push(`  - Proposal: ${r.proposal}`);
+
+      if (r.notes) lines.push(`  - Notes: ${r.notes}`);
+
+    });
+
+  }
+
+  if (report.auditor) {
+
+    lines.push("");
+
+    lines.push("Auditor Ratification");
+
+    report.auditor.headlineBullets.forEach((b) => lines.push(`- ${b}`));
+
+  }
+
+  if (report.shareholderProposals) {
+
+    lines.push("");
+
+    lines.push("Shareholder Proposals");
+
+    report.shareholderProposals.headlineBullets.forEach((b) => lines.push(`- ${b}`));
+
+    report.shareholderProposals.selected?.forEach((b) => lines.push(`- ${b}`));
+
+  }
+
+  return lines.join("\n");
+
+}
+
+export default function CompanyOverview() {
+  // Add more companies here and they will appear as tabs
+  const reports: CompanyReport[] = [sampleCompany];
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+
+
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return reports.filter((r) => {
+      const blob = buildPlainText(r).toLowerCase();
+      return !q || blob.includes(q);
+    });
+  }, [reports, query]);
+
+
+
+  return (
+    <>
+      {loading ? (
+        <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
+        </div>
+      ) : (
+        <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
+          <div className="mx-auto space-y-6">
+            <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h1 className="mt-2 text-xl font-bold tracking-tight">
+                  Key Governance & Investor Summary
+                </h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </Button>
+              </div>
+            </header>
+
+
+
+            {filtered.length === 0 ? (
+
+              <Card className="rounded-2xl">
+
+                <CardContent className="py-10 text-center text-sm text-slate-600">
+                  No matches. Try a different search term.
+                </CardContent>
+
+              </Card>
+
+            ) : (
+
+              <Tabs defaultValue={filtered[0].ticker} className="w-full">
+                {filtered.map((r) => (
+                  <TabsContent key={r.ticker} value={r.ticker} className="mt-4">
+                    <div className="grid gap-6 md:grid-cols-12">
+                      {/* Left column: headline */}
+                      <Card className="rounded-2xl shadow-sm md:col-span-4">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base text-slate-900">
+                            {r.company}
+                          </CardTitle>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge className="rounded-full" variant="outline">
+                              As of {r.asOf}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+
+                        <CardContent className="space-y-4">
+                          <div className="rounded-xl border bg-white p-3">
+                            <SectionHeader
+                              title="Share Price Takeaway"
+                              icon={<BarChart3 className="h-4 w-4" />}
+                            />
+                            <p className="mt-3 text-sm text-slate-700">
+                              {r.sharePriceTakeaway}
+                            </p>
+                          </div>
+
+                          {r.proxy ? (
+                            <div className="rounded-xl border bg-white p-3">
+                              <SectionHeader
+                                title="Proxy Advisor Influence"
+                                icon={<ShieldCheck className="h-4 w-4" />}
+                              />
+                              <p className="mt-3 text-sm text-slate-700">{r.proxy.summary}</p>
+                              <div className="mt-3 space-y-2">
+                                {r.proxy.buckets
+                                  .filter((b) => b.pct > 0)
+                                  .map((b, i) => (
+                                    <div
+                                      key={i}
+                                      className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                                    >
+                                      <div className="text-sm text-slate-700">{b.label}</div>
+                                      <span
+                                        className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${pctPill(
+                                          b.pct
+                                        )}`}
+                                      >
+                                        {b.pct.toFixed(2)}%
+                                      </span>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </CardContent>
+                      </Card>
+
+                      {/* Right column: sections */}
+                      <div className="space-y-6 md:col-span-8">
+                        {r.board ? (
+                          <CollapsibleCard title="Board of Directors" iconKey="board">
+                            <BulletList items={r.board.headlineBullets} />
+                            {r.board.lowestSupport?.length ? (
+                              <>
+                                <Separator className="my-4" />
+                                <div className="text-xs font-semibold text-slate-500">
+                                  Lowest support
+                                </div>
+                                <BulletList items={r.board.lowestSupport} />
+                              </>
+                            ) : null}
+                          </CollapsibleCard>
+                        ) : null}
+
+                        {r.sop ? (
+                          <CollapsibleCard
+                            title="Executive Compensation (Say-on-Pay)"
+                            iconKey="sop"
+                          >
+                            <BulletList items={r.sop.headlineBullets} />
+                            {r.sop.rationaleSummary ? (
+                              <p className="mt-3 text-sm text-slate-700">
+                                {r.sop.rationaleSummary}
+                              </p>
+                            ) : null}
+                            <RationaleList items={r.sop.rationales} />
+                          </CollapsibleCard>
+                        ) : null}
+
+                        {r.auditor ? (
+                          <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
+                            <BulletList items={r.auditor.headlineBullets} />
+                          </CollapsibleCard>
+                        ) : null}
+
+                        {r.shareholderProposals ? (
+                          <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
+                            <BulletList items={r.shareholderProposals.headlineBullets} />
+                            {r.shareholderProposals.selected?.length ? (
+                              <>
+                                <Separator className="my-4" />
+                                <div className="text-xs font-semibold text-slate-500">
+                                  Selected proposal results
+                                </div>
+                                <BulletList items={r.shareholderProposals.selected} />
+                              </>
+                            ) : null}
+                          </CollapsibleCard>
+                        ) : null}
+
+                        {r.esg ? (
+                          <CollapsibleCard title="ESG & Engagement (2025)" iconKey="esg">
+                            {r.esg.themeSummary ? (
+                              <p className="text-sm text-slate-700">
+                                {r.esg.themeSummary}
+                              </p>
+                            ) : null}
+                            <div className="mt-4 grid gap-3">
+                              {r.esg.investors.map((inv, idx) => (
+                                <ESGInvestorBlock key={idx} inv={inv} />
+                              ))}
+                            </div>
+                          </CollapsibleCard>
+                        ) : null}
+                      </div>
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            )}
+
+            {/* <footer className="pt-2 text-xs text-slate-500">
+              Tip: Replace <span className="font-mono">sampleCompany</span> with your saved reports (AAPL, AMZN, MSFT, etc.) to generate a multi-company dashboard.
+            </footer> */}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+

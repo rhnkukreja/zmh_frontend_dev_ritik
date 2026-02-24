@@ -628,8 +628,8 @@ function CaseStudies() {
                     showPills={false}
                   />
 
-                  <div className="hover:bg-slate-50">
-
+                  {/* Hiding clear filter for now */}
+                  {/* <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
                       <Tippy
                         content="Clear Filters"
@@ -641,11 +641,12 @@ function CaseStudies() {
                           className="text-slate-500 cursor-pointer	"
                         />
                       </Tippy>
-                      {/* <span className="text-slate-500">Clear Filters</span> */}
+                      <span className="text-slate-500">Clear Filters</span>
                     </Button>
-                  </div>
+                  </div> */}
 
-                  <div className="hover:bg-slate-50 ml-2">
+                  {/* Hiding save searches filter for now */}
+                  {/* <div className="hover:bg-slate-50 ml-2">
                     <Button onClick={saveSearch}>
                       <Tippy
                         content="Save Searches"
@@ -658,7 +659,7 @@ function CaseStudies() {
                         />
                       </Tippy>
                     </Button>
-                  </div>
+                  </div> */}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
                   {user?.saved_search?.["Case Studies"] !== undefined && (
