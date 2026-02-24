@@ -87,25 +87,13 @@ const Button = ({ className, children, variant = "default", size = "default", ..
   );
 };
 
-type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
-
-const Input = ({ className, ...rest }: InputProps) => (
-  <input
-    className={cx(
-      "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none",
-      className
-    )}
-    {...rest}
-  />
-);
-
 const Separator = ({ className }: { className?: string }) => (
   <div className={cx("h-px w-full bg-slate-200", className)} />
 );
 
 type TabsContextValue = {
   value: string;
-  setValue: (value: string) => void;
+  setValue: (v: string) => void;
 };
 
 const TabsContext = createContext<TabsContextValue | null>(null);
@@ -130,12 +118,6 @@ const TabsContent = ({ value, className, children }: BasicProps & { value: strin
   return <div className={className}>{children}</div>;
 };
 
-/**
- * Final Company Overview UI
- * - Drop in your saved company report content as structured data (see `sampleCompany`).
- * - Supports: sections, sub-sections, bullets, and rationale items.
- */
-
 const iconForSection = (key: string) => {
   switch (key) {
     case "sharePrice":
@@ -147,34 +129,14 @@ const iconForSection = (key: string) => {
     case "board":
       return <Users className="h-4 w-4" />;
     case "sop":
-      return <Vote className="h-4 w-4" />;
+      return <FileCheck2 className="h-4 w-4" />;
     case "auditor":
-      return <FileCheck2 className="h-4 w-4" />;
-    case "sp":
       return <FileText className="h-4 w-4" />;
+    case "sp":
+      return <Vote className="h-4 w-4" />;
     default:
-      return <FileCheck2 className="h-4 w-4" />;
+      return null;
   }
-};
-
-type Rationale = {
-  investor: string;
-  vote: string;
-  proposal: string;
-  notes?: string;
-};
-
-type ProxySplit = {
-  summary: string;
-  buckets: { label: string; pct: number }[];
-};
-
-type ESGInvestor = {
-  name: string;
-  env?: string[];
-  soc?: string[];
-  gov?: string[];
-  noteIfNoTopics?: boolean;
 };
 
 type CompanyReport = {
@@ -183,18 +145,34 @@ type CompanyReport = {
   asOf: string;
   sharePriceTakeaway: string;
   esg?: {
-    themeSummary?: string;
-    investors: ESGInvestor[];
+    themeSummary: string;
+    investors: Array<{
+      name: string;
+      env?: string[];
+      soc?: string[];
+      gov?: string[];
+      noteIfNoTopics?: boolean;
+    }>;
   };
-  proxy?: ProxySplit;
+  proxy?: {
+    summary: string;
+    buckets: Array<{ label: string; pct: number }>;
+  };
   board?: {
     headlineBullets: string[];
     lowestSupport?: string[];
+    rationales?: Array<{
+      investor: string;
+      rationale: string;
+    }>;
   };
   sop?: {
     headlineBullets: string[];
     rationaleSummary?: string;
-    rationales?: Rationale[];
+    rationales?: Array<{
+      investor: string;
+      rationale: string;
+    }>;
   };
   auditor?: {
     headlineBullets: string[];
@@ -205,511 +183,167 @@ type CompanyReport = {
   };
 };
 
-// Replace this with your saved report(s)
-const sampleCompany: CompanyReport = {
-
-  company: "Apple Inc.",
-
-  ticker: "AAPL",
-
-  asOf: "February 17, 2026",
-
-  sharePriceTakeaway:
-
-    "Apple underperformed both the S&P 500 and Nasdaq over the 1-year period, while outperforming both indices over the 3-year and 5-year periods. The short-term relative underperformance could trigger pay-for-performance discussions or potential activist screening.",
-
-  esg: {
-
-    themeSummary:
-
-      "Most frequently cited engagement themes included climate risk management, talent and culture, executive succession planning, technology governance, climate change, biodiversity, diversity and inclusion, and human rights.",
-
-    investors: [
-
-      {
-
-        name: "BlackRock, Inc.",
-
-        env: ["Climate Risk Management"],
-
-        soc: ["Talent and Culture"],
-
-        gov: [
-
-          "Business Oversight/Risk Management",
-
-          "Executive Management and Succession Planning",
-
-          "Technology Deployment and Governance/Disclosure",
-
-        ],
-
-      },
-
-      {
-
-        name: "Schroder Investment Management Ltd",
-
-        env: ["Climate Change", "Natural Capital and Biodiversity"],
-
-        soc: ["Diversity and Inclusion", "Human Rights"],
-
-      },
-
-      {
-
-        name: "Dimensional Fund Advisors",
-
-        noteIfNoTopics: true,
-
-      },
-
-      {
-
-        name: "State Street Global Advisors",
-
-        noteIfNoTopics: true,
-
-      },
-
-    ],
-
-  },
-
-  proxy: {
-
-    summary:
-
-      "A substantial portion of Top 20 ownership subscribes to ISS and/or Glass Lewis alongside internal voting frameworks, indicating meaningful potential alignment with proxy advisory recommendations.",
-
-    buckets: [
-
-      { label: "Internal Only Guidelines", pct: 4.09 },
-
-      { label: "ISS & Glass Lewis (GL) Subscribers", pct: 24.07 },
-
-    ],
-
-  },
-
-  board: {
-
-    headlineBullets: [
-
-      "8 directors elected with support ranging from 92.8% to 99.2%",
-
-      "Overall director approval (2025): 96.29%",
-
-      "2024 director approval: 97.12%",
-
-    ],
-
-    lowestSupport: ["Art Levinson – 92.8%", "Andrea Jung – 93.5%"],
-
-  },
-
-  sop: {
-
-    headlineBullets: ["2025 Support: 91.9%", "2024 Support: 91.8%"],
-
-    rationaleSummary:
-
-      "Voting rationales cited concerns related to CEO pay magnitude, alignment of pay structure with best practices, and board refreshment.",
-
-    rationales: [
-
-      {
-
-        investor: "Morgan Stanley Investment Management",
-
-        vote: "Split Vote",
-
-        proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
-
-        notes:
-
-          "Certain aspects of pay program not aligned with best practice, though pay and performance considered reasonably aligned.",
-
-      },
-
-      {
-
-        investor: "T Rowe Price Associates",
-
-        vote: "Split Vote",
-
-        proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
-
-        notes:
-
-          "CEO pay deemed excessive after considering long-term performance.",
-
-      },
-
-      {
-
-        investor: "UBS Asset Management AG",
-
-        vote: "Against",
-
-        proposal: "Elect Director Sue Wagner",
-
-        notes: "Lack of board refreshment and presence of long-tenured directors.",
-
-      },
-
-    ],
-
-  },
-
-  auditor: {
-
-    headlineBullets: [
-
-      "Ernst & Young LLP ratified with 97.8% support (2025)",
-
-      "2024 support: 98.4%",
-
-    ],
-
-  },
-
-  shareholderProposals: {
-
-    headlineBullets: [
-
-      "China Entanglement Audit – Meeting not held or results not available.",
-
-    ],
-
-  },
-
+type ESGInvestorProps = {
+  inv: {
+    name: string;
+    env?: string[];
+    soc?: string[];
+    gov?: string[];
+    noteIfNoTopics?: boolean;
+  };
 };
 
-function pctPill(pct: number) {
-  if (pct >= 25) return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (pct >= 10) return "bg-amber-50 text-amber-700 border-amber-200";
-  return "bg-slate-50 text-slate-700 border-slate-200";
-}
+function ESGInvestorBlock({ inv }: ESGInvestorProps) {
+  const hasTopics = inv.env || inv.soc || inv.gov;
 
-function SectionHeader({
-  title,
-  icon,
-  right,
-}: {
-  title: string;
-  icon?: React.ReactNode;
-  right?: React.ReactNode;
-}) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
-          {icon ? React.cloneElement(icon as React.ReactElement, { className: "h-4 w-4 text-primary" }) : null}
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-2 font-semibold text-sm text-slate-900">{inv.name}</div>
+
+      {hasTopics ? (
+        <div className="space-y-1.5 text-xs text-slate-700">
+          {inv.env && (
+            <div>
+              <span className="font-semibold text-slate-600">Environmental:</span> {inv.env.join(", ")}
+            </div>
+          )}
+          {inv.soc && (
+            <div>
+              <span className="font-semibold text-slate-600">Social:</span> {inv.soc.join(", ")}
+            </div>
+          )}
+          {inv.gov && (
+            <div>
+              <span className="font-semibold text-slate-600">Governance:</span> {inv.gov.join(", ")}
+            </div>
+          )}
         </div>
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-      </div>
-      {right}
+      ) : inv.noteIfNoTopics ? (
+        <div className="text-xs italic text-slate-500">No specific engagement topics disclosed.</div>
+      ) : null}
     </div>
   );
 }
 
-function BulletList({ items }: { items?: string[] }) {
-  if (!items?.length) return null;
+type BulletListProps = { items?: string[] };
+
+function BulletList({ items }: BulletListProps) {
+  if (!items || items.length === 0) return null;
   return (
-    <ul className="mt-3 space-y-2 text-sm text-slate-700">
-      {items.map((t, i) => (
-        <li key={i} className="flex gap-2">
-          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-400" />
-          <span>{t}</span>
-        </li>
+    <ul className="ml-5 list-disc space-y-1 text-sm text-slate-700">
+      {items.map((item, i) => (
+        <li key={i}>{item}</li>
       ))}
     </ul>
   );
 }
 
+type RationaleListProps = {
+  items?: Array<{ investor: string; rationale: string }>;
+};
+
+function RationaleList({ items }: RationaleListProps) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="mt-4 space-y-3">
+      {items.map((r, i) => (
+        <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-1 text-xs font-semibold text-slate-600">{r.investor}</div>
+          <div className="text-sm text-slate-700">{r.rationale}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type CollapsibleCardProps = {
+  title: string;
+  iconKey?: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+};
+
 function CollapsibleCard({
   title,
   iconKey,
   children,
-  defaultOpen = true,
-}: {
-  title: string;
-  iconKey: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
+  defaultOpen,
+}: CollapsibleCardProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <Card className="rounded-2xl shadow-sm">
       <CardHeader className="pb-3">
-        <SectionHeader
-          title={title}
-          icon={iconForSection(iconKey)}
-          right={
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setOpen((v) => !v)}
-              className="gap-1"
-            >
-              {open ? (
-                <>
-                  <ChevronUp className="h-4 w-4" />
-                  <span className="text-xs">Hide</span>
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" />
-                  <span className="text-xs">Show</span>
-                </>
-              )}
-            </Button>
-          }
-        />
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <div className="flex items-center gap-2">
+            {iconKey && iconForSection(iconKey)}
+            <CardTitle>{title}</CardTitle>
+          </div>
+          {open ? (
+            <ChevronUp className="h-4 w-4 text-slate-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-slate-400" />
+          )}
+        </button>
       </CardHeader>
-      {open ? <CardContent className="pt-0">{children}</CardContent> : null}
+      {open && <CardContent>{children}</CardContent>}
     </Card>
   );
 }
 
-function RationaleList({ items }: { items?: Rationale[] }) {
-  if (!items?.length) return null;
-  return (
-    <div className="mt-4 space-y-3">
-      {items.map((r, idx) => (
-        <div key={idx} className="rounded-xl border bg-white p-3 shadow-sm">
-
-          <div className="flex flex-wrap items-center justify-between gap-2">
-
-            <div className="text-sm font-semibold text-slate-900">
-
-              {r.investor}
-
-            </div>
-
-            <Badge variant="secondary" className="rounded-full">
-
-              {r.vote}
-
-            </Badge>
-
-          </div>
-
-          <div className="mt-1 text-sm text-slate-700">
-
-            <span className="font-medium">Proposal:</span> {r.proposal}
-
-          </div>
-
-          {r.notes ? (
-
-            <div className="mt-2 text-sm text-slate-700">{r.notes}</div>
-
-          ) : null}
-
-        </div>
-
-      ))}
-
-    </div>
-
-  );
-
-}
-
-function ESGInvestorBlock({ inv }: { inv: ESGInvestor }) {
-
-  const hasTopics =
-
-    (inv.env && inv.env.length) || (inv.soc && inv.soc.length) || (inv.gov && inv.gov.length);
-
-
-
-  return (
-
-    <div className="rounded-xl border bg-white p-3 shadow-sm">
-
-      <div className="flex items-center justify-between gap-2">
-
-        <div className="text-sm font-semibold text-slate-900">{inv.name}</div>
-
-      </div>
-
-
-
-      {hasTopics ? (
-
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-
-          <div>
-
-            <div className="text-xs font-semibold text-slate-500">Environmental</div>
-
-            <BulletList items={inv.env} />
-
-          </div>
-
-          <div>
-
-            <div className="text-xs font-semibold text-slate-500">Social</div>
-
-            <BulletList items={inv.soc} />
-
-          </div>
-
-          <div>
-
-            <div className="text-xs font-semibold text-slate-500">Governance</div>
-
-            <BulletList items={inv.gov} />
-
-          </div>
-
-        </div>
-
-      ) : inv.noteIfNoTopics ? (
-
-        <div className="mt-2 text-sm text-slate-700">
-
-          Engagement reported (specific topics not detailed)
-
-        </div>
-
-      ) : null}
-
-    </div>
-
-  );
-
-}
-
-function copyText(text: string) {
-
-  try {
-
-    navigator.clipboard.writeText(text);
-
-  } catch {
-
-    // no-op
-
-  }
-
-}
-
-function buildPlainText(report: CompanyReport) {
-
+function buildPlainText(report: CompanyReport): string {
   const lines: string[] = [];
-
-  lines.push(`${report.company} (${report.ticker}) – Key Governance & Investor Summary`);
-
-  lines.push(`As of ${report.asOf}`);
-
-  lines.push("");
-
+  lines.push(report.company);
+  lines.push(report.ticker);
+  lines.push(report.asOf);
   lines.push("Share Price Performance");
-
-  lines.push(`- ${report.sharePriceTakeaway}`);
+  lines.push(report.sharePriceTakeaway);
 
   if (report.esg) {
-
-    lines.push("");
-
-    lines.push("ESG & Engagement (2025)");
-
-    if (report.esg.themeSummary) lines.push(`- ${report.esg.themeSummary}`);
-
-    report.esg.investors.forEach((i) => {
-
-      lines.push(`- ${i.name}`);
-
-      if (i.env?.length) lines.push(`  - Environmental: ${i.env.join("; ")}`);
-
-      if (i.soc?.length) lines.push(`  - Social: ${i.soc.join("; ")}`);
-
-      if (i.gov?.length) lines.push(`  - Governance: ${i.gov.join("; ")}`);
-
-      if (!i.env?.length && !i.soc?.length && !i.gov?.length && i.noteIfNoTopics) {
-
-        lines.push(`  - Engagement reported (specific topics not detailed)`);
-
-      }
-
+    lines.push("ESG & Engagement");
+    lines.push(report.esg.themeSummary);
+    report.esg.investors.forEach((inv) => {
+      lines.push(inv.name);
+      if (inv.env) inv.env.forEach((e) => lines.push(e));
+      if (inv.soc) inv.soc.forEach((s) => lines.push(s));
+      if (inv.gov) inv.gov.forEach((g) => lines.push(g));
     });
-
   }
 
   if (report.proxy) {
-
-    lines.push("");
-
-    lines.push("Proxy Advisor Influence (Top 20 Ownership)");
-
-    lines.push(`- ${report.proxy.summary}`);
-
-    report.proxy.buckets.forEach((b) => lines.push(`- ${b.label}: ${b.pct.toFixed(2)}%`));
-
+    lines.push("Proxy Advisor Influence");
+    lines.push(report.proxy.summary);
+    report.proxy.buckets.forEach((b) => lines.push(`${b.label}: ${b.pct}%`));
   }
 
   if (report.board) {
-
-    lines.push("");
-
     lines.push("Board of Directors");
-
     report.board.headlineBullets.forEach((b) => lines.push(`- ${b}`));
-
     report.board.lowestSupport?.forEach((b) => lines.push(`- ${b}`));
-
+    report.board.rationales?.forEach((r) => lines.push(`${r.investor}: ${r.rationale}`));
   }
 
   if (report.sop) {
-
-    lines.push("");
-
     lines.push("Executive Compensation (Say-on-Pay)");
-
     report.sop.headlineBullets.forEach((b) => lines.push(`- ${b}`));
-
-    if (report.sop.rationaleSummary) lines.push(`- ${report.sop.rationaleSummary}`);
-
-    report.sop.rationales?.forEach((r) => {
-
-      lines.push(`- ${r.investor} – ${r.vote}`);
-
-      lines.push(`  - Proposal: ${r.proposal}`);
-
-      if (r.notes) lines.push(`  - Notes: ${r.notes}`);
-
-    });
-
+    if (report.sop.rationaleSummary) lines.push(report.sop.rationaleSummary);
+    report.sop.rationales?.forEach((r) => lines.push(`${r.investor}: ${r.rationale}`));
   }
 
   if (report.auditor) {
-
-    lines.push("");
-
     lines.push("Auditor Ratification");
-
     report.auditor.headlineBullets.forEach((b) => lines.push(`- ${b}`));
-
   }
 
   if (report.shareholderProposals) {
-
-    lines.push("");
-
     lines.push("Shareholder Proposals");
-
     report.shareholderProposals.headlineBullets.forEach((b) => lines.push(`- ${b}`));
-
     report.shareholderProposals.selected?.forEach((b) => lines.push(`- ${b}`));
-
   }
 
   return lines.join("\n");
-
 }
 
 // Transform API response to match the UI format
@@ -769,7 +403,7 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         break;
 
       case "voting_rationale":
-        const rationaleItems: Array<{ investor: string; vote: string; proposal: string; notes?: string }> = [];
+        const rationaleItems: Array<{ investor: string; rationale: string }> = [];
         
         section.paragraphs?.forEach((p: string) => {
           const lines = p.split('\n').filter(l => l.trim());
@@ -784,10 +418,8 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
               const notesLines = lines.slice(2).map(l => l.replace(/^Notes:\s*/i, '')).join('\n').trim();
               
               rationaleItems.push({
-                investor: investor,
-                vote: vote,
-                proposal: proposal,
-                notes: notesLines
+                investor: `${investor} (${vote})`,
+                rationale: `Proposal: ${proposal}\n${notesLines}`
               });
             }
           }
@@ -821,12 +453,40 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
   return report;
 }
 
-export default function CompanyOverview() {
+function pctPill(pct: number) {
+  if (pct >= 25) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (pct >= 10) return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-slate-50 text-slate-700 border-slate-200";
+}
+
+function SectionHeader({
+  title,
+  icon,
+  right,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+          {icon ? React.cloneElement(icon as React.ReactElement, { className: "h-4 w-4 text-primary" }) : null}
+        </div>
+        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+export default function CompanyOverviewGPT() {
   const { companyGlobalSearchId } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
-  const { companyOverviewData, companyOverviewLoading } = useAppSelector(
+  const { companyOverviewGPTData, companyOverviewGPTLoading } = useAppSelector(
     (state) => state.dashboard
   );
 
@@ -834,13 +494,11 @@ export default function CompanyOverview() {
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {
-    return transformApiDataToReport(companyOverviewData);
-  }, [companyOverviewData]);
+    return transformApiDataToReport(companyOverviewGPTData);
+  }, [companyOverviewGPTData]);
 
-  // Use API data if available, otherwise use sample
+  // Use API data if available
   const reports: CompanyReport[] = apiReport ? [apiReport] : [];
-
-
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -850,11 +508,9 @@ export default function CompanyOverview() {
     });
   }, [reports, query]);
 
-
-
   return (
     <>
-      {companyOverviewLoading ? (
+      {companyOverviewGPTLoading ? (
         <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
           <LoadingIcon
             color="#800000"
@@ -890,8 +546,6 @@ export default function CompanyOverview() {
                 </Button>
               </div>
             </header>
-
-
 
             {filtered.length === 0 ? (
 
@@ -1038,14 +692,9 @@ export default function CompanyOverview() {
                 ))}
               </Tabs>
             )}
-
-            {/* <footer className="pt-2 text-xs text-slate-500">
-              Tip: Replace <span className="font-mono">sampleCompany</span> with your saved reports (AAPL, AMZN, MSFT, etc.) to generate a multi-company dashboard.
-            </footer> */}
           </div>
         </div>
       )}
     </>
   );
 }
-

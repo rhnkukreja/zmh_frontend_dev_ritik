@@ -97,6 +97,8 @@ interface CompanySliceState {
   graphQLBoardData: any;
   companyOverviewData: any;
   companyOverviewLoading: boolean;
+  companyOverviewGPTData: any;
+  companyOverviewGPTLoading: boolean;
 }
 
 const initialState: CompanySliceState = {
@@ -151,6 +153,8 @@ const initialState: CompanySliceState = {
   votingRationaleAllInvestors: [],
   companyOverviewData: null,
   companyOverviewLoading: false,
+  companyOverviewGPTData: null,
+  companyOverviewGPTLoading: false,
   graphQLBoardDataLoading: false,
   graphQLBoardData: null,
 
@@ -178,6 +182,14 @@ export const fetchCompanyDashboard = createAsyncThunk<
 
 export const fetchCompanyOverview = createAsyncThunk(
   `${name}/fetchCompanyOverview`,
+  async (url: string) => {
+    const response = await dashboardService.getCompanyOverview(url);
+    return response;
+  }
+);
+
+export const fetchCompanyOverviewGPT = createAsyncThunk(
+  `${name}/fetchCompanyOverviewGPT`,
   async (url: string) => {
     const response = await dashboardService.getCompanyOverview(url);
     return response;
@@ -800,6 +812,21 @@ const companySlice = createSlice({
       .addCase(fetchCompanyOverview.rejected, (state, action) => {
         state.companyOverviewLoading = false;
         state.error = action.error.message || "Failed to fetch company overview";
+      })
+
+      // Company Overview GPT
+      .addCase(fetchCompanyOverviewGPT.pending, (state) => {
+        state.companyOverviewGPTLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchCompanyOverviewGPT.fulfilled, (state, action) => {
+        state.companyOverviewGPTLoading = false;
+        state.companyOverviewGPTData = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchCompanyOverviewGPT.rejected, (state, action) => {
+        state.companyOverviewGPTLoading = false;
+        state.error = action.error.message || "Failed to fetch company overview GPT";
       });
   },
 });

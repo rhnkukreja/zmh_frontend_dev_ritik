@@ -6,6 +6,7 @@ import {
   fetchCompanyByName,
   fetchCompanyDashboard,
   fetchCompanyOverview,
+  fetchCompanyOverviewGPT,
   fetchAGMSummaryDashboard,
   getBoardDirectorMembers,
   setPage,
@@ -20,6 +21,7 @@ import InvestorCard from "@/components/InvestorCard";
 import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
 import CompanyOverview from "@/components/CompanyOverview";
+import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -37,8 +39,15 @@ import { FileText, Building2, Users, Vote } from "lucide-react";
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
 
-  // Active tab state
-  const [activeTab, setActiveTab] = useState('company-overview');
+  const { user } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+
+  // Check if user is admin
+  const isAdmin = user?.user_type === 'Admin';
+
+  // Active tab state - default based on user role
+  const [activeTab, setActiveTab] = useState(isAdmin ? 'company-overview' : 'ownership');
 
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
@@ -93,14 +102,10 @@ function Main() {
     }
   };
 
-  const { isCompanySelected } = useAppSelector(
+  const { isCompanySelected, companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, companyGlobalSearchId } = useAppSelector(
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
-
-  const { companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, companyGlobalSearchId, user } = useAppSelector(
-    (state: RootState) => state.authentiction
-  );
 
   const { companySearchAndUpdate } = useCompanySearch();
   const { tempSearch, graphQLBoardData, graphQLBoardDataLoading } =
@@ -140,7 +145,7 @@ function Main() {
     fetchModulesCount();
   }, [companyGlobalSearchName]);
 
-  // Fetch all three tab data on initial load
+  // Fetch all tab data on initial load
   useEffect(() => {
     if (companyGlobalSearchTicker && companyGlobalSearchId) {
       // Only fetch if data doesn't exist (first load or company changed)
@@ -154,14 +159,23 @@ function Main() {
           )
         );
 
-        // 2. Fetch Company Overview data
-        dispatch(
-          fetchCompanyOverview(
-            `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
-          )
-        );
+        // 2. Fetch Company Overview data (for admins only)
+        if (isAdmin) {
+          dispatch(
+            fetchCompanyOverview(
+              `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
+            )
+          );
 
-        // 3. Fetch Shareholder Meeting Results data
+          // 3. Fetch Company Overview GPT data (for admins only)
+          dispatch(
+            fetchCompanyOverviewGPT(
+              `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
+            )
+          );
+        }
+
+        // 4. Fetch Shareholder Meeting Results data
         dispatch(
           fetchAGMSummaryDashboard(
             createDynamicURL(
@@ -175,7 +189,7 @@ function Main() {
         dispatch(setTempSearch(companyGlobalSearchTicker));
       }
     }
-  }, [companyGlobalSearchTicker, companyGlobalSearchId, tempSearch, dispatch]);
+  }, [companyGlobalSearchTicker, companyGlobalSearchId, tempSearch, dispatch, isAdmin]);
 
   // No scroll-based tab update - tabs now show/hide content instead
 
@@ -223,17 +237,37 @@ function Main() {
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: "8.3rem" }}>
           <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-              <button
-                onClick={() => setActiveTab('company-overview')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                  activeTab === 'company-overview'
-                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <Building2 className="w-4 h-4" />
-                Company Overview
-              </button>
+              {/* Company Overview - Admin Only */}
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab('company-overview')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === 'company-overview'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Company Overview
+                </button>
+              )}
+
+              {/* Company Overview GPT - Admin Only */}
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab('company-overview-gpt')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === 'company-overview-gpt'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Company Overview GPT
+                </button>
+              )}
+
+              {/* Ownership - All Users */}
               <button
                 onClick={() => setActiveTab('ownership')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
@@ -245,6 +279,8 @@ function Main() {
                 <Users className="w-4 h-4" />
                 Ownership
               </button>
+
+              {/* Shareholder Meeting Results - All Users */}
               <button
                 onClick={() => setActiveTab('shareholder-meeting-results')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
@@ -257,7 +293,7 @@ function Main() {
                 Shareholder Meeting Results
               </button>
             </div>
-            {companyGlobalSearchTicker && (
+            {companyGlobalSearchTicker && isAdmin && (
               <button
                 className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
                 onClick={handleGenerateReport}
@@ -270,9 +306,15 @@ function Main() {
         </div>
 
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          {activeTab === 'company-overview' && (
+          {activeTab === 'company-overview' && isAdmin && (
             <div id="company-overview" className="col-span-12 xl:col-span-12">
               <CompanyOverview />
+            </div>
+          )}
+
+          {activeTab === 'company-overview-gpt' && isAdmin && (
+            <div id="company-overview-gpt" className="col-span-12 xl:col-span-12">
+              <CompanyOverviewGPT />
             </div>
           )}
 
