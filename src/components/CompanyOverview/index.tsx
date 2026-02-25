@@ -8,7 +8,7 @@ import {
   Vote,
   FileCheck2,
   FileText,
-  Leaf,
+  BarChart2,
   Download,
 } from "lucide-react";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -141,7 +141,7 @@ const iconForSection = (key: string) => {
     case "sharePrice":
       return <BarChart3 className="h-4 w-4" />;
     case "esg":
-      return <Leaf className="h-4 w-4" />;
+      return <BarChart2 className="h-4 w-4" />;
     case "proxy":
       return <ShieldCheck className="h-4 w-4" />;
     case "board":
@@ -194,6 +194,7 @@ type CompanyReport = {
   sop?: {
     headlineBullets: string[];
     rationaleSummary?: string;
+    votingRationaleSummary?: string;
     rationales?: Rationale[];
   };
   auditor?: {
@@ -674,6 +675,11 @@ function buildPlainText(report: CompanyReport) {
 
     if (report.sop.rationaleSummary) lines.push(`- ${report.sop.rationaleSummary}`);
 
+    if (report.sop.votingRationaleSummary) {
+      lines.push("- Voting Rationale");
+      lines.push(report.sop.votingRationaleSummary);
+    }
+
     report.sop.rationales?.forEach((r) => {
 
       lines.push(`- ${r.investor} – ${r.vote}`);
@@ -770,6 +776,7 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
       case "voting_rationale":
         const rationaleItems: Array<{ investor: string; vote: string; proposal: string; notes?: string }> = [];
+        const fallbackParagraphs: string[] = [];
         
         section.paragraphs?.forEach((p: string) => {
           const lines = p.split('\n').filter(l => l.trim());
@@ -790,15 +797,29 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
                 notes: notesLines
               });
             }
+          } else if (p?.trim()) {
+            fallbackParagraphs.push(p.trim());
           }
         });
+
+        const rawVotingRationale = (section.paragraphs || [])
+          .map((p: string) => p?.trim())
+          .filter(Boolean)
+          .join("\n\n");
         
         if (!report.sop) {
           report.sop = {
             headlineBullets: [],
+            votingRationaleSummary: rawVotingRationale || (fallbackParagraphs.length ? fallbackParagraphs.join("\n\n") : undefined),
             rationales: rationaleItems,
           };
         } else {
+          report.sop.votingRationaleSummary = [
+            report.sop.votingRationaleSummary,
+            rawVotingRationale || (fallbackParagraphs.length ? fallbackParagraphs.join("\n\n") : undefined),
+          ]
+            .filter(Boolean)
+            .join("\n\n");
           report.sop.rationales = rationaleItems;
         }
         break;
@@ -880,7 +901,8 @@ export default function CompanyOverview() {
                   Key Governance & Investor Summary
                 </h1>
               </div>
-              <div className="flex items-center gap-2">
+              {/* TODO: Add download functionality */}
+              {/* <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   className="gap-2"
@@ -888,7 +910,7 @@ export default function CompanyOverview() {
                   <Download className="h-4 w-4" />
                   Download
                 </Button>
-              </div>
+              </div> */}
             </header>
 
 
@@ -992,6 +1014,17 @@ export default function CompanyOverview() {
                               <p className="mt-3 text-sm text-slate-700">
                                 {r.sop.rationaleSummary}
                               </p>
+                            ) : null}
+                            {r.sop.votingRationaleSummary ? (
+                              <>
+                                <Separator className="my-4" />
+                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  Voting Rationale
+                                </div>
+                                <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
+                                  {r.sop.votingRationaleSummary}
+                                </p>
+                              </>
                             ) : null}
                             <RationaleList items={r.sop.rationales} />
                           </CollapsibleCard>
