@@ -418,7 +418,7 @@ function SectionHeader({
 function BulletList({ items }: { items?: string[] }) {
   if (!items?.length) return null;
   return (
-    <ul className="mt-3 space-y-2 text-sm text-slate-700">
+    <ul className="mt-3 space-y-2 text-[15px] text-slate-700">
       {items.map((t, i) => (
         <li key={i} className="flex gap-2">
           <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-400" />
@@ -483,7 +483,7 @@ function RationaleList({ items }: { items?: Rationale[] }) {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
 
-            <div className="text-sm font-semibold text-slate-900">
+            <div className="text-[15px] font-semibold text-slate-900">
 
               {r.investor}
 
@@ -497,7 +497,7 @@ function RationaleList({ items }: { items?: Rationale[] }) {
 
           </div>
 
-          <div className="mt-1 text-sm text-slate-700">
+          <div className="mt-1 text-[15px] text-slate-700">
 
             <span className="font-medium">Proposal:</span> {r.proposal}
 
@@ -505,7 +505,7 @@ function RationaleList({ items }: { items?: Rationale[] }) {
 
           {r.notes ? (
 
-            <div className="mt-2 text-sm text-slate-700">{r.notes}</div>
+            <div className="mt-2 text-[15px] text-slate-700">{r.notes}</div>
 
           ) : null}
 
@@ -533,7 +533,7 @@ function ESGInvestorBlock({ inv }: { inv: ESGInvestor }) {
 
       <div className="flex items-center justify-between gap-2">
 
-        <div className="text-sm font-semibold text-slate-900">{inv.name}</div>
+        <div className="text-[15px] font-semibold text-slate-900">{inv.name}</div>
 
       </div>
 
@@ -571,7 +571,7 @@ function ESGInvestorBlock({ inv }: { inv: ESGInvestor }) {
 
       ) : inv.noteIfNoTopics ? (
 
-        <div className="mt-2 text-sm text-slate-700">
+        <div className="mt-2 text-[15px] text-slate-700">
 
           Engagement reported (specific topics not detailed)
 
@@ -951,7 +951,7 @@ export default function CompanyOverview() {
                               title="Share Price Takeaway"
                               icon={<BarChart3 className="h-4 w-4" />}
                             />
-                            <p className="mt-3 text-sm text-slate-700">
+                            <p className="mt-3 text-[15px] text-slate-700">
                               {r.sharePriceTakeaway}
                             </p>
                           </div>
@@ -962,7 +962,7 @@ export default function CompanyOverview() {
                                 title="Proxy Advisor Influence"
                                 icon={<ShieldCheck className="h-4 w-4" />}
                               />
-                              <p className="mt-3 text-sm text-slate-700">{r.proxy.summary}</p>
+                              <p className="mt-3 text-[15px] text-slate-700">{r.proxy.summary}</p>
                               <div className="mt-3 space-y-2">
                                 {r.proxy.buckets
                                   .filter((b) => b.pct > 0)
@@ -971,7 +971,7 @@ export default function CompanyOverview() {
                                       key={i}
                                       className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
                                     >
-                                      <div className="text-sm text-slate-700">{b.label}</div>
+                                      <div className="text-[15px] text-slate-700">{b.label}</div>
                                       <span
                                         className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${pctPill(
                                           b.pct
@@ -1011,7 +1011,7 @@ export default function CompanyOverview() {
                           >
                             <BulletList items={r.sop.headlineBullets} />
                             {r.sop.rationaleSummary ? (
-                              <p className="mt-3 text-sm text-slate-700">
+                              <p className="mt-3 text-[15px] text-slate-700">
                                 {r.sop.rationaleSummary}
                               </p>
                             ) : null}
@@ -1021,7 +1021,7 @@ export default function CompanyOverview() {
                                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                                   Voting Rationale
                                 </div>
-                                <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
+                                <p className="mt-2 whitespace-pre-line text-[15px] text-slate-700">
                                   {r.sop.votingRationaleSummary}
                                 </p>
                               </>
@@ -1054,7 +1054,7 @@ export default function CompanyOverview() {
                         {r.esg ? (
                           <CollapsibleCard title="ESG & Engagement (2025)" iconKey="esg">
                             {r.esg.themeSummary ? (
-                              <p className="text-sm text-slate-700">
+                              <p className="text-[15px] text-slate-700">
                                 {r.esg.themeSummary}
                               </p>
                             ) : null}
