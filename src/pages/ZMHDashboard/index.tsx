@@ -293,7 +293,7 @@ function Main() {
                 Shareholder Meeting Results
               </button>
             </div>
-            {companyGlobalSearchTicker && isAdmin && (
+            {companyGlobalSearchTicker && isAdmin && activeTab !== 'company-overview' && activeTab !== 'company-overview-gpt' && (
               <button
                 className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
                 onClick={handleGenerateReport}
