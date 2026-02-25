@@ -234,7 +234,7 @@ function Main() {
     <>
       <section>
         {/* Tabs - Top Level Navigation */}
-        <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: "9.3rem" }}>
+        <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: "8.9rem" }}>
           <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
               {/* Company Overview - Admin Only */}
