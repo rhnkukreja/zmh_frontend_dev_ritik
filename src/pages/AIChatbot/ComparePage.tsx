@@ -941,7 +941,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                 onChange={(e) => setQuestion(e.target.value)} 
                                 onKeyDown={(e) => e.key === "Enter" && handleAsk()} 
                                 placeholder={isReady ? "Ask to compare..." : "Select investors/filters..."} 
-                                className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
+                                className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent" 
                             />
                             <button 
                                 onClick={() => setQuestion("")} 
@@ -1202,13 +1202,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
         {/* 4. INPUT AREA - Shows below controls when filters are visible */}
         {showFilters && (
-        <div className="bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-lg mb-6 z-10 relative">
+        <>
+        <div className="bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-lg mb-2 z-10 relative">
             <input 
                 value={question} 
                 onChange={(e) => setQuestion(e.target.value)} 
                 onKeyDown={(e) => e.key === "Enter" && handleAsk()} 
                 placeholder={isReady ? "Ask to compare..." : "Select investors/filters..."} 
-                className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
+                className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent" 
             />
             <button 
                 onClick={() => setQuestion("")} 
@@ -1226,6 +1227,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                 {loading ? "Thinking..." : "Compare"}
             </button>
         </div>
+        </>
         )}
 
         {/* 5. RESULTS HISTORY - LATEST Q&A PAIR ON TOP (Q3-A3, Q2-A2, Q1-A1) */}
@@ -1384,15 +1386,15 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                                             )}
                                                         </div>
 
-                                                        <p className="text-[11px] text-gray-500 mb-2 truncate">{ans.pdf_name}</p>
-                                                        <div className="text-xs text-gray-700 line-clamp-4 prose prose-sm">
+                                                        <p className="text-md text-gray-500 mb-2 truncate">{ans.pdf_name}</p>
+                                                        <div className="text-md text-gray-700 line-clamp-4 prose prose-sm">
                                                             <ReactMarkdown>{ans.answer_segments?.[0]?.text ?? ""}</ReactMarkdown>
                                                         </div>
                                                         {ans.answer_segments && ans.answer_segments.length > 0 && (
                                                             <div className="mt-2 flex flex-wrap gap-1">
                                                                 {ans.answer_segments.map((seg, i) => (
                                                                     seg.page !== null && (
-                                                                        <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[10px]">
+                                                                        <span key={i} className="bg-[#931638] text-white px-1.5 py-0.5 rounded text-[12px]">
                                                                             p.{seg.page}
                                                                         </span>
                                                                     )
@@ -1415,7 +1417,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                                             AI Comparison Summary
                                                         </h3>
                                                     </div>
-                                                    <div className="text-sm text-gray-700 leading-relaxed prose max-w-none">
+                                                    <div className="text-md text-gray-700 leading-relaxed prose max-w-none">
                                                         <ReactMarkdown>{pair.answer.comparison}</ReactMarkdown>
                                                     </div>
                                                 </div>
@@ -1437,6 +1439,10 @@ import { useState, useEffect, useRef, useMemo } from "react";
             ));
             })()}
             <div ref={messagesEndRef} className="h-4" />
+        </div>
+
+        <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
+            AI Assistant can make mistakes. Check important info.
         </div>
         </div>
     );

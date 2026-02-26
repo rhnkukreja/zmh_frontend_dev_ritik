@@ -4,11 +4,11 @@ import {
   ChevronUp,
   ShieldCheck,
   BarChart3,
+  BarChart2,
   Users,
   Vote,
   FileCheck2,
   FileText,
-  Leaf,
   Download,
 } from "lucide-react";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -123,7 +123,7 @@ const iconForSection = (key: string) => {
     case "sharePrice":
       return <BarChart3 className="h-4 w-4" />;
     case "esg":
-      return <Leaf className="h-4 w-4" />;
+      return <BarChart2 className="h-4 w-4" />;
     case "proxy":
       return <ShieldCheck className="h-4 w-4" />;
     case "board":
@@ -169,6 +169,7 @@ type CompanyReport = {
   sop?: {
     headlineBullets: string[];
     rationaleSummary?: string;
+    votingRationaleSummary?: string;
     rationales?: Array<{
       investor: string;
       rationale: string;
@@ -201,7 +202,7 @@ function ESGInvestorBlock({ inv }: ESGInvestorProps) {
       <div className="mb-2 font-semibold text-sm text-slate-900">{inv.name}</div>
 
       {hasTopics ? (
-        <div className="space-y-1.5 text-xs text-slate-700">
+        <div className="space-y-1.5 text-sm text-slate-700">
           {inv.env && (
             <div>
               <span className="font-semibold text-slate-600">Environmental:</span> {inv.env.join(", ")}
@@ -230,7 +231,7 @@ type BulletListProps = { items?: string[] };
 function BulletList({ items }: BulletListProps) {
   if (!items || items.length === 0) return null;
   return (
-    <ul className="ml-5 list-disc space-y-1 text-sm text-slate-700">
+    <ul className="ml-5 list-disc space-y-1 text-[15px] text-slate-700">
       {items.map((item, i) => (
         <li key={i}>{item}</li>
       ))}
@@ -248,8 +249,8 @@ function RationaleList({ items }: RationaleListProps) {
     <div className="mt-4 space-y-3">
       {items.map((r, i) => (
         <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <div className="mb-1 text-xs font-semibold text-slate-600">{r.investor}</div>
-          <div className="text-sm text-slate-700">{r.rationale}</div>
+          <div className="mb-1 text-sm font-semibold text-slate-600">{r.investor}</div>
+          <div className="text-[15px] text-slate-700">{r.rationale}</div>
         </div>
       ))}
     </div>
@@ -329,6 +330,10 @@ function buildPlainText(report: CompanyReport): string {
     lines.push("Executive Compensation (Say-on-Pay)");
     report.sop.headlineBullets.forEach((b) => lines.push(`- ${b}`));
     if (report.sop.rationaleSummary) lines.push(report.sop.rationaleSummary);
+    if (report.sop.votingRationaleSummary) {
+      lines.push("Voting Rationale");
+      lines.push(report.sop.votingRationaleSummary);
+    }
     report.sop.rationales?.forEach((r) => lines.push(`${r.investor}: ${r.rationale}`));
   }
 
@@ -403,35 +408,22 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         break;
 
       case "voting_rationale":
-        const rationaleItems: Array<{ investor: string; rationale: string }> = [];
-        
-        section.paragraphs?.forEach((p: string) => {
-          const lines = p.split('\n').filter(l => l.trim());
-          if (lines.length >= 3) {
-            const firstLine = lines[0];
-            const investorMatch = firstLine.match(/^(.+?)\s*[–-]\s*(.+)$/);
-            
-            if (investorMatch) {
-              const investor = investorMatch[1].trim();
-              const vote = investorMatch[2].trim();
-              const proposal = lines[1].replace(/^Proposal:\s*/i, '').trim();
-              const notesLines = lines.slice(2).map(l => l.replace(/^Notes:\s*/i, '')).join('\n').trim();
-              
-              rationaleItems.push({
-                investor: `${investor} (${vote})`,
-                rationale: `Proposal: ${proposal}\n${notesLines}`
-              });
-            }
-          }
-        });
-        
         if (!report.sop) {
           report.sop = {
             headlineBullets: [],
-            rationales: rationaleItems,
+            rationales: [],
           };
-        } else {
-          report.sop.rationales = rationaleItems;
+        }
+
+        const rawVotingRationale = (section.paragraphs || [])
+          .map((p: string) => p?.trim())
+          .filter(Boolean)
+          .join("\n\n");
+
+        if (rawVotingRationale) {
+          report.sop.votingRationaleSummary = [report.sop.votingRationaleSummary, rawVotingRationale]
+            .filter(Boolean)
+            .join("\n\n");
         }
         break;
 
@@ -536,7 +528,7 @@ export default function CompanyOverviewGPT() {
                   Key Governance & Investor Summary
                 </h1>
               </div>
-              <div className="flex items-center gap-2">
+              {/* <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   className="gap-2"
@@ -544,7 +536,7 @@ export default function CompanyOverviewGPT() {
                   <Download className="h-4 w-4" />
                   Download
                 </Button>
-              </div>
+              </div> */}
             </header>
 
             {filtered.length === 0 ? (
@@ -583,7 +575,7 @@ export default function CompanyOverviewGPT() {
                               title="Share Price Takeaway"
                               icon={<BarChart3 className="h-4 w-4" />}
                             />
-                            <p className="mt-3 text-sm text-slate-700">
+                            <p className="mt-3 text-[15px] text-slate-700">
                               {r.sharePriceTakeaway}
                             </p>
                           </div>
@@ -594,7 +586,7 @@ export default function CompanyOverviewGPT() {
                                 title="Proxy Advisor Influence"
                                 icon={<ShieldCheck className="h-4 w-4" />}
                               />
-                              <p className="mt-3 text-sm text-slate-700">{r.proxy.summary}</p>
+                              <p className="mt-3 text-[15px] text-slate-700">{r.proxy.summary}</p>
                               <div className="mt-3 space-y-2">
                                 {r.proxy.buckets
                                   .filter((b) => b.pct > 0)
@@ -603,7 +595,7 @@ export default function CompanyOverviewGPT() {
                                       key={i}
                                       className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
                                     >
-                                      <div className="text-sm text-slate-700">{b.label}</div>
+                                      <div className="text-[15px] text-slate-700">{b.label}</div>
                                       <span
                                         className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${pctPill(
                                           b.pct
@@ -643,9 +635,20 @@ export default function CompanyOverviewGPT() {
                           >
                             <BulletList items={r.sop.headlineBullets} />
                             {r.sop.rationaleSummary ? (
-                              <p className="mt-3 text-sm text-slate-700">
+                              <p className="mt-3 whitespace-pre-line text-[15px] text-slate-700">
                                 {r.sop.rationaleSummary}
                               </p>
+                            ) : null}
+                            {r.sop.votingRationaleSummary ? (
+                              <>
+                                <Separator className="my-4" />
+                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  Voting Rationale
+                                </div>
+                                <p className="mt-2 whitespace-pre-line text-[15px] text-slate-700">
+                                  {r.sop.votingRationaleSummary}
+                                </p>
+                              </>
                             ) : null}
                             <RationaleList items={r.sop.rationales} />
                           </CollapsibleCard>
@@ -675,7 +678,7 @@ export default function CompanyOverviewGPT() {
                         {r.esg ? (
                           <CollapsibleCard title="ESG & Engagement (2025)" iconKey="esg">
                             {r.esg.themeSummary ? (
-                              <p className="text-sm text-slate-700">
+                              <p className="text-[15px] text-slate-700">
                                 {r.esg.themeSummary}
                               </p>
                             ) : null}

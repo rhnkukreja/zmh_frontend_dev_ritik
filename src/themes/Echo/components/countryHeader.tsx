@@ -169,19 +169,20 @@ const CountryInfoHeader = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-white via-gray-50 to-white shadow-md rounded-xl p-5 mb-5 flex flex-col md:flex-row items-center justify-between border border-gray-200">
+    <div className="bg-gradient-to-r from-white via-gray-50 to-white shadow-md rounded-xl p-4 mb-5 border border-gray-200">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
       {/* Company Header */}
-      <div className="flex items-center gap-4 mb-3 md:mb-0">
-        <span className="font-bold text-lg text-gray-900">
+      <div className="flex items-center min-w-0 xl:flex-1">
+        <span className="font-bold text-lg text-gray-900 leading-tight whitespace-normal break-words">
           {finhub?.name || companyGlobalSearchName}{" "}
           {symbol && (
-            <span className="font-semibold text-primary">({symbol})</span>
+            <span className="font-semibold text-primary whitespace-nowrap">({symbol})</span>
           )}
         </span>
       </div>
 
       {/* Country + Exchange */}
-      <div className="flex items-center justify-center gap-3 mb-3 md:mb-0 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
+      <div className="flex items-center justify-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 shrink-0">
         {finhub?.country && (
           <ReactCountryFlag
             countryCode={finhub?.country}
@@ -190,28 +191,28 @@ const CountryInfoHeader = () => {
           />
         )}
         {finhub?.exchange && (
-          <span className="text-gray-700 text-sm font-semibold">{finhub?.exchange}</span>
+          <span className="text-gray-700 text-sm font-semibold whitespace-nowrap">{finhub?.exchange}</span>
         )}
       </div>
 
       {/* Industry */}
       {finhub?.finnhub_industry && (
-        <div className="flex items-center mb-3 md:mb-0 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex flex-row items-center gap-2">
-            <p className="text-gray-600 font-semibold text-sm">Industry:</p>
-            <p className="text-gray-800 text-sm font-medium">{finhub?.finnhub_industry}</p>
+        <div className="flex items-center bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 xl:max-w-[340px]">
+          <div className="flex flex-row items-center gap-2 min-w-0">
+            <p className="text-gray-600 font-semibold text-sm whitespace-nowrap">Industry:</p>
+            <p className="text-gray-800 text-sm font-medium truncate">{finhub?.finnhub_industry}</p>
           </div>
         </div>
       )}
 
       {/* Buttons */}
-      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm">
+      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm shrink-0">
         <button
           className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-200 group"
           onClick={() => setIsChartOpen(true)}
         >
           <Lucide icon="TrendingUp" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">Chart</span>
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary whitespace-nowrap">Chart</span>
         </button>
 
         <button
@@ -243,7 +244,7 @@ const CountryInfoHeader = () => {
           }}
         >
           <Lucide icon="Table" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">Price Perf.</span>
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary whitespace-nowrap">Price Perf.</span>
         </button>
 
         <button
@@ -259,8 +260,9 @@ const CountryInfoHeader = () => {
           }}
         >
           <Lucide icon="FileText" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
-          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary">SEC Filings</span>
+          <span className="text-sm font-semibold text-gray-700 group-hover:text-primary whitespace-nowrap">SEC Filings</span>
         </button>
+      </div>
       </div>
 
       {/* Chart Modal */}

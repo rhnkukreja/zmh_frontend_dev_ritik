@@ -831,7 +831,7 @@ export default function QAPage() {
             onChange={(e) => setQuestion(e.target.value)} 
             onKeyDown={(e) => e.key === "Enter" && handleAsk()} 
             placeholder="Type a question..." 
-            className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
+            className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent shadow-none focus:shadow-none" 
           />
           {question && (
             <button 
@@ -926,7 +926,7 @@ export default function QAPage() {
         <div className={`bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-lg z-10 relative transition-all duration-300 ${
           scope === "all" ? "w-full" : "w-1/2"
         }`}>
-          <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAsk()} placeholder="Type a question..." className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
+          <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAsk()} placeholder="Type a question..." className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent shadow-none focus:shadow-none" />
           {question && (
             <button 
               onClick={() => setQuestion("")} 
@@ -1182,6 +1182,10 @@ export default function QAPage() {
   </div>
 ))}
 
+      </div>
+
+      <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
+        AI Assistant can make mistakes. Check important info.
       </div>
     </div>
   );

@@ -407,7 +407,7 @@ export default function VotingGuidelinesPage() {
 
                         {!showFilters && (
                             <div className="flex-1 bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-xl">
-                                <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors first..."} className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
+                                <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors first..."} className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent" />
                                 <button onClick={() => setQuestion("")} className="text-gray-400 hover:text-[#931638] p-2 rounded-lg hover:bg-gray-100 transition-colors mr-1"><Trash2 size={16}/></button>
                                 <button onClick={handleAnalyze} disabled={!isReady} className="bg-[#931638] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#931638]/90 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                                     {analyzing ? <span className="animate-spin">⏳</span> : <Send size={14}/>} 
@@ -434,7 +434,7 @@ export default function VotingGuidelinesPage() {
 
             {showFilters && (
                 <div className="bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-lg mb-6 z-10 relative shrink-0">
-                    <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors to begin..."} className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
+                    <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors to begin..."} className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent" />
                     {question && (
                         <button 
                             onClick={() => setQuestion("")} 
@@ -511,7 +511,7 @@ export default function VotingGuidelinesPage() {
                                                         <div className="flex items-center justify-between gap-2 pb-1 border-b border-gray-200">
                                                             <div className="flex items-center gap-1.5 flex-1 min-w-0">
                                                                 <FileText size={11} className="text-[#931638] shrink-0"/>
-                                                                <span className="text-[10px] font-bold text-[#931638] truncate" title={res.pdf_name}>
+                                                                <span className="text-[11px] font-bold text-[#931638] truncate" title={res.pdf_name}>
                                                                     {res.pdf_name}
                                                                 </span>
                                                                 {res.year && (
@@ -536,7 +536,7 @@ export default function VotingGuidelinesPage() {
                                                         </div>
 
                                                         {/* Answer Preview - 2 lines only */}
-                                                        <div className="line-clamp-2 text-gray-700 text-[10px] leading-relaxed">
+                                                        <div className="line-clamp-2 text-gray-700 text-[11px] leading-relaxed">
                                                             {res.answer_segments?.[0]?.text ?? res.summary}
                                                         </div>
 
@@ -555,6 +555,10 @@ export default function VotingGuidelinesPage() {
                     </div>
                 )}
                 <div ref={resultsEndRef} className="h-4" />
+            </div>
+
+            <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
+                AI Assistant can make mistakes. Check important info.
             </div>
         </div>
     );
