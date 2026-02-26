@@ -342,6 +342,48 @@ class DashboardService {
     };
   }
 
+  public async getNPXPivotTableDropdown(params: {
+    company_id: string | number;
+    year: string | number;
+  }): Promise<{ result: any }> {
+    const query = new URLSearchParams({
+      company_id: String(params.company_id),
+      year: String(params.year),
+    });
+
+    const response = await axiosInstance.get(
+      `https://api.zmhadvisors.com/api/npx_pivot_table_dropdown/?${query.toString()}`
+    );
+
+    return {
+      result: response.data,
+    };
+  }
+
+  public async getNPXPivotTable(params: {
+    company_id: string | number;
+    year: string | number;
+    institution_name: string;
+    fund_name: string;
+    proposal_text: string;
+  }): Promise<{ result: any }> {
+    const query = new URLSearchParams({
+      company_id: String(params.company_id),
+      year: String(params.year),
+      institution_name: params.institution_name,
+      fund_name: params.fund_name,
+      proposal_text: params.proposal_text,
+    });
+
+    const response = await axiosInstance.get(
+      `https://api.zmhadvisors.com/api/npx_pivot_table/?${query.toString()}`
+    );
+
+    return {
+      result: response.data,
+    };
+  }
+
   public async getBoardDirectorMembers(ticker: string): Promise<{
     result: BoardDirectorMembers[];
   }> {

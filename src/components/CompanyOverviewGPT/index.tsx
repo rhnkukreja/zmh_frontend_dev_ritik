@@ -1,4 +1,16 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+  // Helper to render text with '**' as bold
+  function renderBold(text: string | undefined) {
+    if (!text) return null;
+    // Replace **text** with <strong>text</strong>
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, idx) => {
+      if (/^\*\*[^*]+\*\*$/.test(part)) {
+        return <strong key={idx}>{part.replace(/\*\*/g, "")}</strong>;
+      }
+      return part;
+    });
+  }
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -140,6 +152,7 @@ const iconForSection = (key: string) => {
 };
 
 type CompanyReport = {
+  report: { headlineBullets: any[]; rationales: any[]; };
   company: string;
   ticker: string;
   asOf: string;
@@ -159,20 +172,29 @@ type CompanyReport = {
     buckets: Array<{ label: string; pct: number }>;
   };
   board?: {
+    voting_rationales: any;
+    rationaleSummary: any;
     headlineBullets: string[];
     lowestSupport?: string[];
     rationales?: Array<{
+      vote: string;
+      notes?: string;
+      proposal?: string;
       investor: string;
-      rationale: string;
+      rationale?: string;
     }>;
   };
   sop?: {
+    voting_rationales: any;
     headlineBullets: string[];
     rationaleSummary?: string;
     votingRationaleSummary?: string;
     rationales?: Array<{
+      vote: string;
+      notes?: string;
+      proposal?: string;
       investor: string;
-      rationale: string;
+      rationale?: string;
     }>;
   };
   auditor?: {
@@ -352,6 +374,7 @@ function buildPlainText(report: CompanyReport): string {
 }
 
 // Transform API response to match the UI format
+
 function transformApiDataToReport(apiData: any): CompanyReport | null {
   if (!apiData) return null;
 
@@ -360,7 +383,52 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
     ticker: apiData.company?.ticker || "",
     asOf: apiData.report_metadata?.data_as_of || "",
     sharePriceTakeaway: "",
+    report: {
+      headlineBullets: [],
+      rationales: []
+    }
   };
+
+  // Helper to robustly split rationale blocks, even if embedded as a single string
+  function splitRationaleLines(paragraph: string): string[] {
+    // Split on \n, but also trim and filter empty lines
+    return paragraph.split(/\n|\r/).map(l => l.trim()).filter(Boolean);
+  }
+
+  // Helper to extract rationale blocks from paragraphs
+  function extractRationales(paragraphs: string[]): Array<{ investor: string; vote: string; proposal?: string; notes?: string }> {
+    const rationales: Array<{ investor: string; vote: string; proposal?: string; notes?: string }> = [];
+    let block: string[] = [];
+    function flushBlock() {
+      if (!block.length) return;
+      const [first, ...rest] = block;
+      const investorMatch = first.match(/^\*\*(.+?)\*\*\s*-\s*(.+)$/);
+      if (investorMatch) {
+        const investor = investorMatch[1];
+        const vote = investorMatch[2];
+        let proposal = "";
+        let notes = "";
+        rest.forEach(l => {
+          if (l.startsWith("Proposal:")) proposal = l.replace(/^Proposal:\s*/, "");
+          else if (l.startsWith("Notes:")) notes = l.replace(/^Notes:\s*/, "");
+        });
+        rationales.push({ investor, vote, proposal: proposal || undefined, notes: notes || undefined });
+      }
+      block = [];
+    }
+    for (let i = 0; i < paragraphs.length; i++) {
+      const line = paragraphs[i];
+      const isRationaleStart = /^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(line);
+      if (isRationaleStart) {
+        flushBlock();
+        block = [line];
+      } else if (block.length) {
+        block.push(line);
+      }
+    }
+    flushBlock();
+    return rationales;
+  }
 
   // Process sections from API
   apiData.sections?.forEach((section: any) => {
@@ -391,21 +459,66 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         };
         break;
 
-      case "board_of_directors":
+      case "board_of_directors": {
+        const bullets: string[] = [];
+        let rationaleSummary: string[] = [];
+        let rationaleLines: string[] = [];
+        let rationaleMode = false;
+        (section.paragraphs || []).forEach((p: string) => {
+          if (p.startsWith("### Voting Rationale")) {
+            rationaleMode = true;
+            return;
+          }
+          if (!rationaleMode) {
+            bullets.push(p);
+          } else {
+            if (/^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(p) || p.startsWith("Proposal:") || p.startsWith("Notes:")) {
+              rationaleLines.push(...splitRationaleLines(p));
+            } else {
+              rationaleSummary.push(p);
+            }
+          }
+        });
+        const rationales = extractRationales(rationaleLines);
         report.board = {
-          headlineBullets: section.paragraphs || [],
-          lowestSupport: section.lowest_support?.map((ls: any) => 
-            `${ls.nominee} – ${ls.support_pct}%`
-          ),
+          headlineBullets: bullets,
+          lowestSupport: section.lowest_support?.map((ls: any) => `${ls.nominee} – ${ls.support_pct}%`),
+          rationales: rationales.length ? rationales : undefined,
+          rationaleSummary: rationaleSummary.length ? rationaleSummary.join("\n") : undefined,
+          voting_rationales: section.voting_rationales || [],
         };
         break;
+      }
 
-      case "say_on_pay":
+      case "say_on_pay": {
+        const bullets: string[] = [];
+        let rationaleSummary: string[] = [];
+        let rationaleLines: string[] = [];
+        let rationaleMode = false;
+        (section.paragraphs || []).forEach((p: string) => {
+          if (p.startsWith("### Voting Rationale")) {
+            rationaleMode = true;
+            return;
+          }
+          if (!rationaleMode) {
+            bullets.push(p);
+          } else {
+            if (/^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(p) || p.startsWith("Proposal:") || p.startsWith("Notes:")) {
+              rationaleLines.push(...splitRationaleLines(p));
+            } else {
+              rationaleSummary.push(p);
+            }
+          }
+        });
+        const rationales = extractRationales(rationaleLines);
         report.sop = {
-          headlineBullets: section.paragraphs || [],
-          rationales: [],
+          headlineBullets: bullets,
+          rationales: rationales.length ? rationales : undefined,
+          rationaleSummary: rationaleSummary.length ? rationaleSummary.join("\n") : undefined,
+          voting_rationales: section.voting_rationales || [],
         };
         break;
+      }
 
       case "voting_rationale":
         if (!report.sop) {
@@ -616,6 +729,34 @@ export default function CompanyOverviewGPT() {
                         {r.board ? (
                           <CollapsibleCard title="Board of Directors" iconKey="board">
                             <BulletList items={r.board.headlineBullets} />
+                            {/* Voting Rationale Section */}
+                            {r.board.rationaleSummary && (
+                              <>
+                                <Separator className="my-4" />
+                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                                  Voting Rationale Disclosures - Election of Directors
+                                </div>
+                                <p className="mb-2 text-[15px] text-slate-700 whitespace-pre-line">{r.board.rationaleSummary}</p>
+                              </>
+                            )}
+                            {r.board.voting_rationales && r.board.voting_rationales.length > 0 && (
+                              <ul className="ml-4 list-disc text-[15px] text-slate-700">
+                                <li className="mb-2">
+                                  <span className="font-semibold">Voting Rationales:</span>
+                                  <ul className="ml-6 list-disc">
+                                    {r.board.voting_rationales.map((item, idx) => (
+                                      <li key={idx} className="mb-2">
+                                        <span className="font-semibold">{renderBold(item.investor)}</span> – {renderBold(item.vote)}
+                                        <ul className="ml-6 list-none">
+                                          {item.proposal && <li><span className="font-semibold">Proposal:</span> {renderBold(item.proposal)}</li>}
+                                          {item.notes && <li><span className="font-semibold">Notes:</span> {renderBold(item.notes)}</li>}
+                                        </ul>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </li>
+                              </ul>
+                            )}
                             {r.board.lowestSupport?.length ? (
                               <>
                                 <Separator className="my-4" />
@@ -634,23 +775,34 @@ export default function CompanyOverviewGPT() {
                             iconKey="sop"
                           >
                             <BulletList items={r.sop.headlineBullets} />
-                            {r.sop.rationaleSummary ? (
-                              <p className="mt-3 whitespace-pre-line text-[15px] text-slate-700">
-                                {r.sop.rationaleSummary}
-                              </p>
-                            ) : null}
-                            {r.sop.votingRationaleSummary ? (
+                            {/* Voting Rationale Section */}
+                            {r.sop.rationaleSummary && (
                               <>
                                 <Separator className="my-4" />
-                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                  Voting Rationale
+                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                                  Voting Rationale Disclosures - Say on Pay
                                 </div>
-                                <p className="mt-2 whitespace-pre-line text-[15px] text-slate-700">
-                                  {r.sop.votingRationaleSummary}
-                                </p>
+                                <p className="mb-2 text-[15px] text-slate-700 whitespace-pre-line">{r.sop.rationaleSummary}</p>
                               </>
-                            ) : null}
-                            <RationaleList items={r.sop.rationales} />
+                            )}
+                            {r.sop.voting_rationales && r.sop.voting_rationales.length > 0 && (
+                              <ul className="ml-4 list-disc text-[15px] text-slate-700">
+                                <li className="mb-2">
+                                  <span className="font-semibold">Voting Rationales:</span>
+                                  <ul className="ml-6 list-disc">
+                                    {r.sop.voting_rationales.map((item, idx) => (
+                                      <li key={idx} className="mb-2">
+                                        <span className="font-semibold">{renderBold(item.investor)}</span> – {renderBold(item.vote)}
+                                        <ul className="ml-6 list-none">
+                                          {item.proposal && <li><span className="font-semibold">Proposal:</span> {renderBold(item.proposal)}</li>}
+                                          {item.notes && <li><span className="font-semibold">Notes:</span> {renderBold(item.notes)}</li>}
+                                        </ul>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </li>
+                              </ul>
+                            )}
                           </CollapsibleCard>
                         ) : null}
 

@@ -190,6 +190,7 @@ type CompanyReport = {
   board?: {
     headlineBullets: string[];
     lowestSupport?: string[];
+    rationales?: Rationale[];
   };
   sop?: {
     headlineBullets: string[];
@@ -207,185 +208,185 @@ type CompanyReport = {
 };
 
 // Replace this with your saved report(s)
-const sampleCompany: CompanyReport = {
+// const sampleCompany: CompanyReport = {
 
-  company: "Apple Inc.",
+//   company: "Apple Inc.",
 
-  ticker: "AAPL",
+//   ticker: "AAPL",
 
-  asOf: "February 17, 2026",
+//   asOf: "February 17, 2026",
 
-  sharePriceTakeaway:
+//   sharePriceTakeaway:
 
-    "Apple underperformed both the S&P 500 and Nasdaq over the 1-year period, while outperforming both indices over the 3-year and 5-year periods. The short-term relative underperformance could trigger pay-for-performance discussions or potential activist screening.",
+//     "Apple underperformed both the S&P 500 and Nasdaq over the 1-year period, while outperforming both indices over the 3-year and 5-year periods. The short-term relative underperformance could trigger pay-for-performance discussions or potential activist screening.",
 
-  esg: {
+//   esg: {
 
-    themeSummary:
+//     themeSummary:
 
-      "Most frequently cited engagement themes included climate risk management, talent and culture, executive succession planning, technology governance, climate change, biodiversity, diversity and inclusion, and human rights.",
+//       "Most frequently cited engagement themes included climate risk management, talent and culture, executive succession planning, technology governance, climate change, biodiversity, diversity and inclusion, and human rights.",
 
-    investors: [
+//     investors: [
 
-      {
+//       {
 
-        name: "BlackRock, Inc.",
+//         name: "BlackRock, Inc.",
 
-        env: ["Climate Risk Management"],
+//         env: ["Climate Risk Management"],
 
-        soc: ["Talent and Culture"],
+//         soc: ["Talent and Culture"],
 
-        gov: [
+//         gov: [
 
-          "Business Oversight/Risk Management",
+//           "Business Oversight/Risk Management",
 
-          "Executive Management and Succession Planning",
+//           "Executive Management and Succession Planning",
 
-          "Technology Deployment and Governance/Disclosure",
+//           "Technology Deployment and Governance/Disclosure",
 
-        ],
+//         ],
 
-      },
+//       },
 
-      {
+//       {
 
-        name: "Schroder Investment Management Ltd",
+//         name: "Schroder Investment Management Ltd",
 
-        env: ["Climate Change", "Natural Capital and Biodiversity"],
+//         env: ["Climate Change", "Natural Capital and Biodiversity"],
 
-        soc: ["Diversity and Inclusion", "Human Rights"],
+//         soc: ["Diversity and Inclusion", "Human Rights"],
 
-      },
+//       },
 
-      {
+//       {
 
-        name: "Dimensional Fund Advisors",
+//         name: "Dimensional Fund Advisors",
 
-        noteIfNoTopics: true,
+//         noteIfNoTopics: true,
 
-      },
+//       },
 
-      {
+//       {
 
-        name: "State Street Global Advisors",
+//         name: "State Street Global Advisors",
 
-        noteIfNoTopics: true,
+//         noteIfNoTopics: true,
 
-      },
+//       },
 
-    ],
+//     ],
 
-  },
+//   },
 
-  proxy: {
+//   proxy: {
 
-    summary:
+//     summary:
 
-      "A substantial portion of Top 20 ownership subscribes to ISS and/or Glass Lewis alongside internal voting frameworks, indicating meaningful potential alignment with proxy advisory recommendations.",
+//       "A substantial portion of Top 20 ownership subscribes to ISS and/or Glass Lewis alongside internal voting frameworks, indicating meaningful potential alignment with proxy advisory recommendations.",
 
-    buckets: [
+//     buckets: [
 
-      { label: "Internal Only Guidelines", pct: 4.09 },
+//       { label: "Internal Only Guidelines", pct: 4.09 },
 
-      { label: "ISS & Glass Lewis (GL) Subscribers", pct: 24.07 },
+//       { label: "ISS & Glass Lewis (GL) Subscribers", pct: 24.07 },
 
-    ],
+//     ],
 
-  },
+//   },
 
-  board: {
+//   board: {
 
-    headlineBullets: [
+//     headlineBullets: [
 
-      "8 directors elected with support ranging from 92.8% to 99.2%",
+//       "8 directors elected with support ranging from 92.8% to 99.2%",
 
-      "Overall director approval (2025): 96.29%",
+//       "Overall director approval (2025): 96.29%",
 
-      "2024 director approval: 97.12%",
+//       "2024 director approval: 97.12%",
 
-    ],
+//     ],
 
-    lowestSupport: ["Art Levinson – 92.8%", "Andrea Jung – 93.5%"],
+//     lowestSupport: ["Art Levinson – 92.8%", "Andrea Jung – 93.5%"],
 
-  },
+//   },
 
-  sop: {
+//   sop: {
 
-    headlineBullets: ["2025 Support: 91.9%", "2024 Support: 91.8%"],
+//     headlineBullets: ["2025 Support: 91.9%", "2024 Support: 91.8%"],
 
-    rationaleSummary:
+//     rationaleSummary:
 
-      "Voting rationales cited concerns related to CEO pay magnitude, alignment of pay structure with best practices, and board refreshment.",
+//       "Voting rationales cited concerns related to CEO pay magnitude, alignment of pay structure with best practices, and board refreshment.",
 
-    rationales: [
+//     rationales: [
 
-      {
+//       {
 
-        investor: "Morgan Stanley Investment Management",
+//         investor: "Morgan Stanley Investment Management",
 
-        vote: "Split Vote",
+//         vote: "Split Vote",
 
-        proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
+//         proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
 
-        notes:
+//         notes:
 
-          "Certain aspects of pay program not aligned with best practice, though pay and performance considered reasonably aligned.",
+//           "Certain aspects of pay program not aligned with best practice, though pay and performance considered reasonably aligned.",
 
-      },
+//       },
 
-      {
+//       {
 
-        investor: "T Rowe Price Associates",
+//         investor: "T Rowe Price Associates",
 
-        vote: "Split Vote",
+//         vote: "Split Vote",
 
-        proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
+//         proposal: "Advisory Vote to Ratify Named Executive Officers' Compensation",
 
-        notes:
+//         notes:
 
-          "CEO pay deemed excessive after considering long-term performance.",
+//           "CEO pay deemed excessive after considering long-term performance.",
 
-      },
+//       },
 
-      {
+//       {
 
-        investor: "UBS Asset Management AG",
+//         investor: "UBS Asset Management AG",
 
-        vote: "Against",
+//         vote: "Against",
 
-        proposal: "Elect Director Sue Wagner",
+//         proposal: "Elect Director Sue Wagner",
 
-        notes: "Lack of board refreshment and presence of long-tenured directors.",
+//         notes: "Lack of board refreshment and presence of long-tenured directors.",
 
-      },
+//       },
 
-    ],
+//     ],
 
-  },
+//   },
 
-  auditor: {
+//   auditor: {
 
-    headlineBullets: [
+//     headlineBullets: [
 
-      "Ernst & Young LLP ratified with 97.8% support (2025)",
+//       "Ernst & Young LLP ratified with 97.8% support (2025)",
 
-      "2024 support: 98.4%",
+//       "2024 support: 98.4%",
 
-    ],
+//     ],
 
-  },
+//   },
 
-  shareholderProposals: {
+//   shareholderProposals: {
 
-    headlineBullets: [
+//     headlineBullets: [
 
-      "China Entanglement Audit – Meeting not held or results not available.",
+//       "China Entanglement Audit – Meeting not held or results not available.",
 
-    ],
+//     ],
 
-  },
+//   },
 
-};
+// };
 
 function pctPill(pct: number) {
   if (pct >= 25) return "bg-emerald-50 text-emerald-700 border-emerald-200";
@@ -726,8 +727,49 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
     company: apiData.company?.name || "",
     ticker: apiData.company?.ticker || "",
     asOf: apiData.report_metadata?.data_as_of || "",
-    sharePriceTakeaway: "",
+    sharePriceTakeaway: ""
   };
+
+  // Helper to robustly split rationale blocks, even if embedded as a single string
+  function splitRationaleLines(paragraph: string): string[] {
+    // Split on \n, but also trim and filter empty lines
+    return paragraph.split(/\n|\r/).map(l => l.trim()).filter(Boolean);
+  }
+
+  // Helper to extract rationale blocks from paragraphs
+  function extractRationales(paragraphs: string[]): Array<{ investor: string; vote: string; proposal?: string; notes?: string }> {
+    const rationales: Array<{ investor: string; vote: string; proposal?: string; notes?: string }> = [];
+    let block: string[] = [];
+    function flushBlock() {
+      if (!block.length) return;
+      const [first, ...rest] = block;
+      const investorMatch = first.match(/^\*\*(.+?)\*\*\s*-\s*(.+)$/);
+      if (investorMatch) {
+        const investor = investorMatch[1];
+        const vote = investorMatch[2];
+        let proposal = "";
+        let notes = "";
+        rest.forEach(l => {
+          if (l.startsWith("Proposal:")) proposal = l.replace(/^Proposal:\s*/, "");
+          else if (l.startsWith("Notes:")) notes = l.replace(/^Notes:\s*/, "");
+        });
+        rationales.push({ investor, vote, proposal: proposal || undefined, notes: notes || undefined });
+      }
+      block = [];
+    }
+    for (let i = 0; i < paragraphs.length; i++) {
+      const line = paragraphs[i];
+      const isRationaleStart = /^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(line);
+      if (isRationaleStart) {
+        flushBlock();
+        block = [line];
+      } else if (block.length) {
+        block.push(line);
+      }
+    }
+    flushBlock();
+    return rationales;
+  }
 
   // Process sections from API
   apiData.sections?.forEach((section: any) => {
@@ -758,69 +800,84 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         };
         break;
 
-      case "board_of_directors":
-        report.board = {
-          headlineBullets: section.paragraphs || [],
-          lowestSupport: section.lowest_support?.map((ls: any) => 
-            `${ls.nominee} – ${ls.support_pct}%`
-          ),
-        };
-        break;
-
-      case "say_on_pay":
-        report.sop = {
-          headlineBullets: section.paragraphs || [],
-          rationales: [],
-        };
-        break;
-
-      case "voting_rationale":
-        const rationaleItems: Array<{ investor: string; vote: string; proposal: string; notes?: string }> = [];
-        const fallbackParagraphs: string[] = [];
-        
-        section.paragraphs?.forEach((p: string) => {
-          const lines = p.split('\n').filter(l => l.trim());
-          if (lines.length >= 3) {
-            const firstLine = lines[0];
-            const investorMatch = firstLine.match(/^(.+?)\s*[–-]\s*(.+)$/);
-            
-            if (investorMatch) {
-              const investor = investorMatch[1].trim();
-              const vote = investorMatch[2].trim();
-              const proposal = lines[1].replace(/^Proposal:\s*/i, '').trim();
-              const notesLines = lines.slice(2).map(l => l.replace(/^Notes:\s*/i, '')).join('\n').trim();
-              
-              rationaleItems.push({
-                investor: investor,
-                vote: vote,
-                proposal: proposal,
-                notes: notesLines
-              });
+      case "board_of_directors": {
+        const bullets: string[] = [];
+        let rationaleSummary: string[] = [];
+        let rationaleLines: string[] = [];
+        let rationaleMode = false;
+        (section.paragraphs || []).forEach((p: string) => {
+          if (p.startsWith("### Voting Rationale")) {
+            rationaleMode = true;
+            return;
+          }
+          if (!rationaleMode) {
+            bullets.push(p);
+          } else {
+            if (/^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(p) || p.startsWith("Proposal:") || p.startsWith("Notes:")) {
+              rationaleLines.push(...splitRationaleLines(p));
+            } else {
+              rationaleSummary.push(p);
             }
-          } else if (p?.trim()) {
-            fallbackParagraphs.push(p.trim());
           }
         });
+        const rationales = extractRationales(rationaleLines);
+        report.board = {
+          headlineBullets: bullets,
+          lowestSupport: section.lowest_support?.map((ls: any) => `${ls.nominee} – ${ls.support_pct}%`),
+          rationales: rationales.length ? rationales : undefined,
+          rationaleSummary: rationaleSummary.length ? rationaleSummary.join("\n") : undefined,
+          voting_rationales: section.voting_rationales || [],
+        };
+        break;
+      }
+
+      case "say_on_pay": {
+        const bullets: string[] = [];
+        let rationaleSummary: string[] = [];
+        let rationaleLines: string[] = [];
+        let rationaleMode = false;
+        (section.paragraphs || []).forEach((p: string) => {
+          if (p.startsWith("### Voting Rationale")) {
+            rationaleMode = true;
+            return;
+          }
+          if (!rationaleMode) {
+            bullets.push(p);
+          } else {
+            if (/^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(p) || p.startsWith("Proposal:") || p.startsWith("Notes:")) {
+              rationaleLines.push(...splitRationaleLines(p));
+            } else {
+              rationaleSummary.push(p);
+            }
+          }
+        });
+        const rationales = extractRationales(rationaleLines);
+        report.sop = {
+          headlineBullets: bullets,
+          rationales: rationales.length ? rationales : undefined,
+          rationaleSummary: rationaleSummary.length ? rationaleSummary.join("\n") : undefined,
+          voting_rationales: section.voting_rationales || [],
+        };
+        break;
+      }
+
+      case "voting_rationale":
+        if (!report.sop) {
+          report.sop = {
+            headlineBullets: [],
+            rationales: [],
+          };
+        }
 
         const rawVotingRationale = (section.paragraphs || [])
           .map((p: string) => p?.trim())
           .filter(Boolean)
           .join("\n\n");
-        
-        if (!report.sop) {
-          report.sop = {
-            headlineBullets: [],
-            votingRationaleSummary: rawVotingRationale || (fallbackParagraphs.length ? fallbackParagraphs.join("\n\n") : undefined),
-            rationales: rationaleItems,
-          };
-        } else {
-          report.sop.votingRationaleSummary = [
-            report.sop.votingRationaleSummary,
-            rawVotingRationale || (fallbackParagraphs.length ? fallbackParagraphs.join("\n\n") : undefined),
-          ]
+
+        if (rawVotingRationale) {
+          report.sop.votingRationaleSummary = [report.sop.votingRationaleSummary, rawVotingRationale]
             .filter(Boolean)
             .join("\n\n");
-          report.sop.rationales = rationaleItems;
         }
         break;
 
@@ -1001,6 +1058,26 @@ export default function CompanyOverview() {
                                 <BulletList items={r.board.lowestSupport} />
                               </>
                             ) : null}
+                            {/* Voting Rationale as sub-bullets for Board of Directors, if present */}
+                            {r.board?.rationales && r.board.rationales.length > 0 ? (
+                              <>
+                                <Separator className="my-4" />
+                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  Voting Rationale
+                                </div>
+                                <ul className="mt-2 ml-4 list-disc space-y-2 text-[15px] text-slate-700">
+                                  {r.board.rationales.map((item, idx) => (
+                                    <li key={idx}>
+                                      <span className="font-semibold">{item.investor}</span> – {item.vote}
+                                      <ul className="ml-6 list-[circle] mt-1">
+                                        <li><span className="font-medium">Proposal:</span> {item.proposal}</li>
+                                        {item.notes && <li><span className="font-medium">Notes:</span> {item.notes}</li>}
+                                      </ul>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </>
+                            ) : null}
                           </CollapsibleCard>
                         ) : null}
 
@@ -1026,7 +1103,20 @@ export default function CompanyOverview() {
                                 </p>
                               </>
                             ) : null}
-                            <RationaleList items={r.sop.rationales} />
+                            {/* Voting Rationale as sub-bullets for Say-on-Pay, if present */}
+                            {r.sop?.rationales?.length ? (
+                              <ul className="mt-2 ml-4 list-disc space-y-2 text-[15px] text-slate-700">
+                                {r.sop.rationales.map((item, idx) => (
+                                  <li key={idx}>
+                                    <span className="font-semibold">{item.investor}</span> – {item.vote}
+                                    <ul className="ml-6 list-[circle] mt-1">
+                                      <li><span className="font-medium">Proposal:</span> {item.proposal}</li>
+                                      {item.notes && <li><span className="font-medium">Notes:</span> {item.notes}</li>}
+                                    </ul>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : null}
                           </CollapsibleCard>
                         ) : null}
 
