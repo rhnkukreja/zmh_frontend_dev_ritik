@@ -622,7 +622,7 @@ function buildPlainText(report: CompanyReport) {
 
     lines.push("");
 
-    lines.push("ESG & Engagement (2025)");
+    lines.push("Engagement Details (as disclosed by investors)");
 
     if (report.esg.themeSummary) lines.push(`- ${report.esg.themeSummary}`);
 
@@ -1092,7 +1092,7 @@ export default function CompanyOverview() {
                         ) : null}
 
                         {r.esg ? (
-                          <CollapsibleCard title="ESG & Engagement (2025)" iconKey="esg">
+                          <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
                             {r.esg.themeSummary ? (
                               <p className="text-[15px] text-slate-700">
                                 {r.esg.themeSummary}
