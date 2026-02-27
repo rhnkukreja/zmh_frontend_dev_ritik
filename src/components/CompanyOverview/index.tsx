@@ -427,6 +427,48 @@ function BulletList({ items }: { items?: string[] }) {
   );
 }
 
+function ProposalList({ items }: { items?: string[] }) {
+  if (!items || items.length === 0) return null;
+  
+  return (
+    <div className="space-y-3">
+      {items.map((item, i) => {
+        // Parse: "PROPOSAL TITLE (Proponent: Name) – XX.X%"
+        const proponentMatch = item.match(/\(Proponent:\s*([^)]+)\)\s*–\s*([\d.]+%)/i);
+        
+        if (proponentMatch) {
+          const title = item.substring(0, item.indexOf('(Proponent:')).trim();
+          const proponent = proponentMatch[1].trim();
+          const support = proponentMatch[2];
+          
+          return (
+            <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="text-[15px] font-semibold text-slate-900">{title}</div>
+                  <div className="mt-1 text-[15px] text-slate-600">
+                    <span className="font-medium">Proponent:</span> {proponent}
+                  </div>
+                </div>
+                <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700">
+                  {support}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
+        // Fallback for items without proponent info
+        return (
+          <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="text-[15px] text-slate-700">{item}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CollapsibleCard({
   title,
   iconKey,
@@ -498,8 +540,12 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
               <span className="font-medium">Proposal:</span> {r.proposal}
             </div>
             {r.notes ? (
-              <div className="mt-2 text-[15px] text-slate-700 whitespace-pre-line">
-                <span className="font-medium">Rationale:</span> {r.notes.replace(/<br\s*\/?>/gi, '\n')}
+              <div className="mt-2 space-y-2">
+                {r.notes.split(/<br\s*\/?>/gi).filter(n => n.trim()).map((note, noteIdx) => (
+                  <div key={noteIdx} className="text-[15px] text-slate-700">
+                    <span className="font-medium">Rationale {noteIdx + 1}:</span> {note.trim()}
+                  </div>
+                ))}
               </div>
             ) : null}
           </div>
@@ -1036,10 +1082,10 @@ export default function CompanyOverview() {
                             {r.shareholderProposals.selected?.length ? (
                               <>
                                 <Separator className="my-4" />
-                                <div className="text-[15px] font-semibold text-slate-500">
+                                <div className="text-[15px] font-semibold text-slate-500 mb-3">
                                   Selected proposal results
                                 </div>
-                                <BulletList items={r.shareholderProposals.selected} />
+                                <ProposalList items={r.shareholderProposals.selected} />
                               </>
                             ) : null}
                           </CollapsibleCard>
