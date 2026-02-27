@@ -264,12 +264,19 @@ function ProposalList({ items }: ProposalListProps) {
     <div className="space-y-3">
       {items.map((item, i) => {
         // Parse: "PROPOSAL TITLE (Proponent: Name) – XX.X%"
-        const proponentMatch = item.match(/\(Proponent:\s*([^)]+)\)\s*–\s*([\d.]+%)/i);
+        const proponentMatch = item.match(/\(Proponent:\s*([^)]+)\)\s*–\s*([\d.]+)%/i);
         
         if (proponentMatch) {
           const title = item.substring(0, item.indexOf('(Proponent:')).trim();
           const proponent = proponentMatch[1].trim();
-          const support = proponentMatch[2];
+          const supportPercent = parseFloat(proponentMatch[2]);
+          const support = `${proponentMatch[2]}%`;
+          
+          // Determine color based on support percentage
+          const isGreen = supportPercent >= 50;
+          const pillClass = isGreen
+            ? 'rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700'
+            : 'rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[15px] font-semibold text-red-700';
           
           return (
             <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -280,7 +287,7 @@ function ProposalList({ items }: ProposalListProps) {
                     <span className="font-medium">Proponent:</span> {proponent}
                   </div>
                 </div>
-                <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700">
+                <div className={pillClass}>
                   {support}
                 </div>
               </div>
