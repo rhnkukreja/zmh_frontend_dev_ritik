@@ -36,7 +36,7 @@ const CardContent = ({ className, children }: BasicProps) => (
 );
 
 const CardTitle = ({ className, children }: BasicProps) => (
-  <h3 className={cx("text-base font-semibold", className)}>{children}</h3>
+  <h3 className={cx("text-[15px] font-semibold", className)}>{children}</h3>
 );
 
 type BadgeProps = BasicProps & { variant?: "secondary" | "outline" | "destructive" };
@@ -50,7 +50,7 @@ const Badge = ({ className, children, variant = "secondary" }: BadgeProps) => {
         : "border border-slate-200 bg-slate-100 text-slate-700";
 
   return (
-    <span className={cx("inline-flex items-center px-2 py-0.5 text-xs font-medium", variantClass, className)}>
+    <span className={cx("inline-flex items-center px-2 py-0.5 text-[15px] font-medium", variantClass, className)}>
       {children}
     </span>
   );
@@ -69,7 +69,7 @@ const Button = ({ className, children, variant = "default", size = "default", ..
         ? "border-none bg-transparent text-slate-700 hover:bg-slate-100"
         : "border border-primary bg-primary text-white hover:opacity-90";
 
-  const sizeClass = size === "sm" ? "h-8 px-3 text-xs" : "h-10 px-4 text-sm";
+  const sizeClass = size === "sm" ? "h-8 px-3 text-[15px]" : "h-10 px-4 text-[15px]";
 
   return (
     <button
@@ -92,7 +92,7 @@ type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 const Input = ({ className, ...rest }: InputProps) => (
   <input
     className={cx(
-      "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none",
+      "h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-[15px] text-slate-700 placeholder:text-slate-400 focus:border-primary focus:outline-none",
       className
     )}
     {...rest}
@@ -409,7 +409,7 @@ function SectionHeader({
         <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
           {icon ? React.cloneElement(icon as React.ReactElement, { className: "h-4 w-4 text-primary" }) : null}
         </div>
-        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
       </div>
       {right}
     </div>
@@ -419,12 +419,9 @@ function SectionHeader({
 function BulletList({ items }: { items?: string[] }) {
   if (!items?.length) return null;
   return (
-    <ul className="mt-3 space-y-2 text-[15px] text-slate-700">
-      {items.map((t, i) => (
-        <li key={i} className="flex gap-2">
-          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-slate-400" />
-          <span>{t}</span>
-        </li>
+    <ul className="ml-5 list-disc space-y-1 text-[15px] text-slate-700">
+      {items.map((item, i) => (
+        <li key={i}>{item}</li>
       ))}
     </ul>
   );
@@ -458,12 +455,12 @@ function CollapsibleCard({
               {open ? (
                 <>
                   <ChevronUp className="h-4 w-4" />
-                  <span className="text-xs">Hide</span>
+                  <span className="text-[15px]">Hide</span>
                 </>
               ) : (
                 <>
                   <ChevronDown className="h-4 w-4" />
-                  <span className="text-xs">Show</span>
+                  <span className="text-[15px]">Show</span>
                 </>
               )}
             </Button>
@@ -480,29 +477,29 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
   return (
     <>
       <Separator className="my-4" />
-      <div className="text-xs font-semibold text-slate-500 mb-3">
+      <div className="text-[15px] font-semibold text-slate-500 mb-3">
         Voting Rationale Disclosures
       </div>
       {summary && (
-        <p className="mb-3 text-sm text-slate-700">{summary}</p>
+        <p className="mb-3 text-[15px] text-slate-700">{summary}</p>
       )}
       <div className="space-y-3">
         {items.map((r, idx) => (
           <div key={idx} className="rounded-xl border bg-white p-3 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-slate-900">
+              <div className="text-[15px] font-semibold text-slate-900">
                 {r.investor}
               </div>
               <Badge variant="secondary" className="rounded-full">
                 {r.vote}
               </Badge>
             </div>
-            <div className="mt-1 text-sm text-slate-700">
+            <div className="mt-1 text-[15px] text-slate-700">
               <span className="font-medium">Proposal:</span> {r.proposal}
             </div>
             {r.notes ? (
-              <div className="mt-2 text-sm text-slate-700">
-                <span className="font-medium">Rationale:</span> {r.notes}
+              <div className="mt-2 text-[15px] text-slate-700 whitespace-pre-line">
+                <span className="font-medium">Rationale:</span> {r.notes.replace(/<br\s*\/?>/gi, '\n')}
               </div>
             ) : null}
           </div>
@@ -513,64 +510,33 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
 }
 
 function ESGInvestorBlock({ inv }: { inv: ESGInvestor }) {
-
-  const hasTopics =
-
-    (inv.env && inv.env.length) || (inv.soc && inv.soc.length) || (inv.gov && inv.gov.length);
-
-
+  const hasTopics = inv.env || inv.soc || inv.gov;
 
   return (
-
-    <div className="rounded-xl border bg-white p-3 shadow-sm">
-
-      <div className="flex items-center justify-between gap-2">
-
-        <div className="text-[15px] font-semibold text-slate-900">{inv.name}</div>
-
-      </div>
-
-
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="mb-2 font-semibold text-[15px] text-slate-900">{inv.name}</div>
 
       {hasTopics ? (
-
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-
-          <div>
-
-            <div className="text-xs font-semibold text-slate-500">Environmental</div>
-
-            <BulletList items={inv.env} />
-
-          </div>
-
-          <div>
-
-            <div className="text-xs font-semibold text-slate-500">Social</div>
-
-            <BulletList items={inv.soc} />
-
-          </div>
-
-          <div>
-
-            <div className="text-xs font-semibold text-slate-500">Governance</div>
-
-            <BulletList items={inv.gov} />
-
-          </div>
-
+        <div className="space-y-1.5 text-[15px] text-slate-700">
+          {inv.env && (
+            <div>
+              <span className="font-semibold text-slate-600">Environmental:</span> {inv.env.join(", ")}
+            </div>
+          )}
+          {inv.soc && (
+            <div>
+              <span className="font-semibold text-slate-600">Social:</span> {inv.soc.join(", ")}
+            </div>
+          )}
+          {inv.gov && (
+            <div>
+              <span className="font-semibold text-slate-600">Governance:</span> {inv.gov.join(", ")}
+            </div>
+          )}
         </div>
-
-      ) : inv.noteIfNoTopics ? (
-
-        <div className="mt-2 text-[15px] text-slate-700">
-
-          Engagement reported (specific topics not detailed)
-
-        </div>
-
-      ) : null}
+      ) : (
+        <div className="text-[15px] italic text-slate-500">{inv.name} doesn't disclose the engagement details.</div>
+      )}
 
     </div>
 
@@ -933,7 +899,7 @@ export default function CompanyOverview() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <p className="text-gray-500 text-base font-medium">Search for a company to view its overview</p>
+          <p className="text-gray-500 text-[15px] font-medium">Search for a company to view its overview</p>
         </div>
       ) : (
         <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
@@ -962,7 +928,7 @@ export default function CompanyOverview() {
 
               <Card className="rounded-2xl">
 
-                <CardContent className="py-10 text-center text-sm text-slate-600">
+                <CardContent className="py-10 text-center text-[15px] text-slate-600">
                   No matches. Try a different search term.
                 </CardContent>
 
@@ -977,7 +943,7 @@ export default function CompanyOverview() {
                       {/* Left column: headline */}
                       <Card className="rounded-2xl shadow-sm md:col-span-4">
                         <CardHeader className="pb-3">
-                          <CardTitle className="text-base text-slate-900">
+                          <CardTitle className="text-[15px] text-slate-900">
                             {r.company}
                           </CardTitle>
 
@@ -1016,7 +982,7 @@ export default function CompanyOverview() {
                                     >
                                       <div className="text-[15px] text-slate-700">{b.label}</div>
                                       <span
-                                        className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${pctPill(
+                                        className={`rounded-full border px-2 py-0.5 text-[15px] font-semibold ${pctPill(
                                           b.pct
                                         )}`}
                                       >
@@ -1038,7 +1004,7 @@ export default function CompanyOverview() {
                             {r.board.lowestSupport?.length ? (
                               <>
                                 <Separator className="my-4" />
-                                <div className="text-xs font-semibold text-slate-500">
+                                <div className="text-[15px] font-semibold text-slate-500">
                                   Lowest support
                                 </div>
                                 <BulletList items={r.board.lowestSupport} />
@@ -1070,7 +1036,7 @@ export default function CompanyOverview() {
                             {r.shareholderProposals.selected?.length ? (
                               <>
                                 <Separator className="my-4" />
-                                <div className="text-xs font-semibold text-slate-500">
+                                <div className="text-[15px] font-semibold text-slate-500">
                                   Selected proposal results
                                 </div>
                                 <BulletList items={r.shareholderProposals.selected} />
