@@ -14,6 +14,8 @@ import {
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(" ");
@@ -760,15 +762,15 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
       case "board_of_directors":
         // Filter out duplicate/disclosure paragraphs
-        const boardParagraphs = (section.paragraphs || []).filter((p: string) => 
-          !p.includes('Voting Rationale Disclosures') && 
+        const boardParagraphs = (section.paragraphs || []).filter((p: string) =>
+          !p.includes('Voting Rationale Disclosures') &&
           !p.includes('Lowest support levels:') &&
           !p.toLowerCase().includes('voting rationale')
         );
-        
+
         report.board = {
           headlineBullets: boardParagraphs,
-          lowestSupport: section.lowest_support?.map((ls: any) => 
+          lowestSupport: section.lowest_support?.map((ls: any) =>
             `${ls.nominee} – ${ls.support_pct}%`
           ),
           rationales: section.voting_rationales?.map((r: any) => ({
@@ -782,11 +784,11 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
       case "say_on_pay":
         // Filter out duplicate/disclosure paragraphs
-        const sopParagraphs = (section.paragraphs || []).filter((p: string) => 
-          !p.includes('Voting Rationale Disclosures') && 
+        const sopParagraphs = (section.paragraphs || []).filter((p: string) =>
+          !p.includes('Voting Rationale Disclosures') &&
           !p.toLowerCase().includes('voting rationale')
         );
-        
+
         report.sop = {
           headlineBullets: sopParagraphs,
           rationales: section.voting_rationales?.map((r: any) => ({
@@ -800,19 +802,19 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
       case "voting_rationale":
         const rationaleItems: Array<{ investor: string; vote: string; proposal: string; notes?: string }> = [];
-        
+
         section.paragraphs?.forEach((p: string) => {
           const lines = p.split('\n').filter(l => l.trim());
           if (lines.length >= 3) {
             const firstLine = lines[0];
             const investorMatch = firstLine.match(/^(.+?)\s*[–-]\s*(.+)$/);
-            
+
             if (investorMatch) {
               const investor = investorMatch[1].trim();
               const vote = investorMatch[2].trim();
               const proposal = lines[1].replace(/^Proposal:\s*/i, '').trim();
               const notesLines = lines.slice(2).map(l => l.replace(/^Notes:\s*/i, '')).join('\n').trim();
-              
+
               rationaleItems.push({
                 investor: investor,
                 vote: vote,
@@ -822,7 +824,7 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
             }
           }
         });
-        
+
         if (!report.sop) {
           report.sop = {
             headlineBullets: [],
@@ -871,6 +873,472 @@ export default function CompanyOverview() {
   const reports: CompanyReport[] = apiReport ? [apiReport] : [];
 
 
+  const generatePDF = (report: CompanyReport) => {
+    const primaryColor = "#b91c1c";
+    const gray50 = "#f9fafb";
+    const gray200 = "#e5e7eb";
+    const gray600 = "#4b5563";
+    const gray700 = "#374151";
+    const gray900 = "#111827";
+
+    const content: any[] = [];
+
+    // Title
+    content.push({
+      text: `${report.company} (${report.ticker})`,
+      style: "title",
+      margin: [0, 0, 0, 5]
+    });
+
+    content.push({
+      text: "Key Governance & Investor Summary",
+      style: "subtitle",
+      margin: [0, 0, 0, 10]
+    });
+
+    content.push({
+      text: `As of ${report.asOf}`,
+      style: "caption",
+      margin: [0, 0, 0, 20]
+    });
+
+    // Share Price Performance
+    if (report.sharePriceTakeaway) {
+      content.push({
+        text: "Share Price Performance",
+        style: "sectionTitle"
+      });
+      content.push({
+        text: report.sharePriceTakeaway,
+        style: "bodyText",
+        margin: [0, 5, 0, 15]
+      });
+    }
+
+    // Proxy Advisor Influence
+    if (report.proxy) {
+      content.push({
+        text: "Proxy Advisor Influence",
+        style: "sectionTitle"
+      });
+      content.push({
+        text: report.proxy.summary,
+        style: "bodyText",
+        margin: [0, 5, 0, 10]
+      });
+
+      if (report.proxy.buckets.length > 0) {
+        const bucketRows = report.proxy.buckets
+          .filter(b => b.pct > 0)
+          .map(b => [
+            { text: b.label, style: "tableCell" },
+            { text: `${b.pct.toFixed(2)}%`, style: "tableCell", alignment: "right" }
+          ]);
+
+        content.push({
+          table: {
+            widths: ["*", "auto"],
+            body: [
+              [
+                { text: "Category", style: "tableHeader" },
+                { text: "Percentage", style: "tableHeader", alignment: "right" }
+              ],
+              ...bucketRows
+            ]
+          },
+          layout: {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => gray200,
+            paddingLeft: () => 8,
+            paddingRight: () => 8,
+            paddingTop: () => 6,
+            paddingBottom: () => 6
+          },
+          margin: [0, 0, 0, 15]
+        });
+      }
+    }
+
+    // Board of Directors
+    if (report.board) {
+      const boardContent: any[] = [];
+
+      boardContent.push({
+        text: "Board of Directors",
+        style: "sectionTitle"
+      });
+
+      if (report.board.headlineBullets?.length > 0) {
+        boardContent.push({
+          ul: report.board.headlineBullets.map(bullet => ({
+            text: bullet,
+            style: "bulletText"
+          })),
+          margin: [0, 5, 0, 10]
+        });
+      }
+
+      if (report.board.lowestSupport?.length > 0) {
+        boardContent.push({
+          text: "Lowest Support Levels:",
+          style: "subSectionTitle",
+          margin: [0, 5, 0, 5]
+        });
+        boardContent.push({
+          ul: report.board.lowestSupport.map(item => ({
+            text: item,
+            style: "bulletText"
+          })),
+          margin: [0, 0, 0, 10]
+        });
+      }
+
+      // Board Voting Rationale
+      if (report.board.rationales && report.board.rationales.length > 0) {
+        boardContent.push({
+          text: "Voting Rationale:",
+          style: "subSectionTitle",
+          margin: [0, 5, 0, 5]
+        });
+
+        report.board.rationales.forEach((rationale: any) => {
+          boardContent.push({
+            stack: [
+              {
+                text: `${rationale.investor} – ${rationale.vote}`,
+                style: "rationaleInvestor"
+              },
+              rationale.proposal ? {
+                text: `Proposal: ${rationale.proposal}`,
+                style: "rationaleDetail",
+                margin: [10, 2, 0, 0]
+              } : null,
+              rationale.notes ? {
+                text: `Notes: ${rationale.notes}`,
+                style: "rationaleDetail",
+                margin: [10, 2, 0, 0]
+              } : null
+            ].filter(Boolean),
+            margin: [0, 0, 0, 8],
+            unbreakable: true  // ✅ Keep rationale items together
+          });
+        });
+
+        boardContent.push({ text: "", margin: [0, 0, 0, 10] });
+      }
+
+      // ✅ Wrap entire section in unbreakable stack if it's short
+      if (boardContent.length <= 5) {
+        content.push({
+          stack: boardContent,
+          unbreakable: true
+        });
+      } else {
+        content.push(...boardContent);
+      }
+    }
+
+    // Say-on-Pay
+    if (report.sop) {
+      content.push({
+        text: "Executive Compensation (Say-on-Pay)",
+        style: "sectionTitle"
+      });
+
+      if (report.sop.headlineBullets?.length > 0) {
+        content.push({
+          ul: report.sop.headlineBullets.map(bullet => ({
+            text: bullet,
+            style: "bulletText"
+          })),
+          margin: [0, 5, 0, 10]
+        });
+      }
+
+      if (report.sop.rationaleSummary) {
+        content.push({
+          text: report.sop.rationaleSummary,
+          style: "bodyText",
+          margin: [0, 0, 0, 10]
+        });
+      }
+
+      // SOP Voting Rationale
+      if (report.sop.rationales && report.sop.rationales.length > 0) {
+        content.push({
+          text: "Voting Rationale:",
+          style: "subSectionTitle",
+          margin: [0, 5, 0, 5]
+        });
+
+        report.sop.rationales.forEach((rationale: any) => {
+          content.push({
+            stack: [
+              {
+                text: `${rationale.investor} – ${rationale.vote}`,
+                style: "rationaleInvestor"
+              },
+              rationale.proposal ? {
+                text: `Proposal: ${rationale.proposal}`,
+                style: "rationaleDetail",
+                margin: [10, 2, 0, 0]
+              } : null,
+              rationale.notes ? {
+                text: `Notes: ${rationale.notes}`,
+                style: "rationaleDetail",
+                margin: [10, 2, 0, 0]
+              } : null
+            ].filter(Boolean),
+            margin: [0, 0, 0, 8]
+          });
+        });
+
+        content.push({ text: "", margin: [0, 0, 0, 10] });
+      }
+    }
+
+    // Auditor Ratification
+    if (report.auditor) {
+      content.push({
+        text: "Auditor Ratification",
+        style: "sectionTitle"
+      });
+
+      if (report.auditor.headlineBullets?.length > 0) {
+        content.push({
+          ul: report.auditor.headlineBullets.map(bullet => ({
+            text: bullet,
+            style: "bulletText"
+          })),
+          margin: [0, 5, 0, 15]
+        });
+      }
+    }
+
+    // Shareholder Proposals
+    if (report.shareholderProposals) {
+      content.push({
+        text: "Shareholder Proposals",
+        style: "sectionTitle"
+      });
+
+      if (report.shareholderProposals.headlineBullets?.length > 0) {
+        content.push({
+          ul: report.shareholderProposals.headlineBullets.map(bullet => ({
+            text: bullet,
+            style: "bulletText"
+          })),
+          margin: [0, 5, 0, 10]
+        });
+      }
+
+      if (report.shareholderProposals.selected?.length > 0) {
+        content.push({
+          text: "Selected Proposal Results:",
+          style: "subSectionTitle",
+          margin: [0, 5, 0, 5]
+        });
+        content.push({
+          ul: report.shareholderProposals.selected.map(item => ({
+            text: item,
+            style: "bulletText"
+          })),
+          margin: [0, 0, 0, 15]
+        });
+      }
+    }
+
+    // ESG & Engagement
+    if (report.esg) {
+      content.push({
+        text: "ESG & Engagement",
+        style: "sectionTitle",
+        pageBreak: "before"
+      });
+
+      if (report.esg.themeSummary) {
+        content.push({
+          text: report.esg.themeSummary,
+          style: "bodyText",
+          margin: [0, 5, 0, 15]
+        });
+      }
+
+      report.esg.investors.forEach((investor: any) => {
+        content.push({
+          text: investor.name,
+          style: "investorName",
+          margin: [0, 0, 0, 5]
+        });
+
+        const hasTopics = investor.env?.length || investor.soc?.length || investor.gov?.length;
+
+        if (hasTopics) {
+          const topics: any[] = [];
+
+          if (investor.env?.length) {
+            topics.push({
+              text: [
+                { text: "Environmental: ", style: "topicLabel", bold: true },
+                { text: investor.env.join(", "), style: "topicText" }
+              ],
+              margin: [0, 2, 0, 2]
+            });
+          }
+
+          if (investor.soc?.length) {
+            topics.push({
+              text: [
+                { text: "Social: ", style: "topicLabel", bold: true },
+                { text: investor.soc.join(", "), style: "topicText" }
+              ],
+              margin: [0, 2, 0, 2]
+            });
+          }
+
+          if (investor.gov?.length) {
+            topics.push({
+              text: [
+                { text: "Governance: ", style: "topicLabel", bold: true },
+                { text: investor.gov.join(", "), style: "topicText" }
+              ],
+              margin: [0, 2, 0, 2]
+            });
+          }
+
+          content.push({
+            stack: topics,
+            margin: [0, 0, 0, 15]
+          });
+        } else if (investor.noteIfNoTopics) {
+          content.push({
+            text: "Engagement reported (specific topics not detailed)",
+            style: "bodyText",
+            italics: true,
+            margin: [0, 0, 0, 15]
+          });
+        }
+      });
+    }
+
+    const docDefinition: any = {
+      pageSize: "A4",
+      pageMargins: [40, 60, 40, 60],
+      header: (currentPage: number, pageCount: number) => ({
+        text: `${report.company} (${report.ticker}) - Key Governance & Investor Summary`,
+        alignment: "center",
+        fontSize: 9,
+        color: gray600,
+        margin: [40, 20, 40, 0]
+      }),
+      footer: (currentPage: number, pageCount: number) => ({
+        columns: [
+          {
+            text: `As of ${report.asOf}`,
+            alignment: "left",
+            fontSize: 8,
+            color: gray600
+          },
+          {
+            text: `Page ${currentPage} of ${pageCount}`,
+            alignment: "right",
+            fontSize: 8,
+            color: gray600
+          }
+        ],
+        margin: [40, 0, 40, 20]
+      }),
+      content,
+      styles: {
+        title: {
+          fontSize: 18,
+          bold: true,
+          color: gray900,
+          keepWithNext: true  // ✅ Prevent orphan
+        },
+        subtitle: {
+          fontSize: 14,
+          bold: true,
+          color: gray700,
+          keepWithNext: true  // ✅ Prevent orphan
+        },
+        sectionTitle: {
+          fontSize: 13,
+          bold: true,
+          color: primaryColor,
+          margin: [0, 15, 0, 8],
+          keepWithNext: true  // ✅ Prevent orphan - most important!
+        },
+        subSectionTitle: {
+          fontSize: 11,
+          bold: true,
+          color: gray700,
+          margin: [0, 10, 0, 5],
+          keepWithNext: true  // ✅ Prevent orphan
+        },
+        bodyText: {
+          fontSize: 10,
+          color: gray700,
+          lineHeight: 1.4
+        },
+        bulletText: {
+          fontSize: 10,
+          color: gray700,
+          lineHeight: 1.3,
+          margin: [0, 2, 0, 2]
+        },
+        caption: {
+          fontSize: 9,
+          color: gray600,
+          italics: true
+        },
+        tableHeader: {
+          fontSize: 10,
+          bold: true,
+          fillColor: gray50,
+          color: gray700
+        },
+        tableCell: {
+          fontSize: 9,
+          color: gray700
+        },
+        investorName: {
+          fontSize: 11,
+          bold: true,
+          color: gray900,
+          keepWithNext: true  // ✅ Prevent orphan for investor names
+        },
+        topicLabel: {
+          fontSize: 10,
+          bold: true,
+          color: gray700
+        },
+        topicText: {
+          fontSize: 10,
+          color: gray700,
+          bold: false
+        },
+        rationaleInvestor: {
+          fontSize: 10,
+          bold: true,
+          color: gray900,
+          keepWithNext: true  // ✅ Prevent orphan for rationale headings
+        },
+        rationaleDetail: {
+          fontSize: 9,
+          color: gray700,
+          lineHeight: 1.3
+        }
+      },
+      defaultStyle: {
+        font: 'Roboto'
+      }
+    };
+
+    const fileName = `${report.company.replace(/[^a-z0-9]/gi, '_')}_Overview_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdfMake.createPdf(docDefinition).download(fileName);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -910,16 +1378,21 @@ export default function CompanyOverview() {
                   Key Governance & Investor Summary
                 </h1>
               </div>
-              {/* TODO: Add download functionality */}
-              {/* <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   className="gap-2"
+                  onClick={() => {
+                    if (filtered.length > 0) {
+                      generatePDF(filtered[0]);
+                    }
+                  }}
+                  disabled={filtered.length === 0 || companyOverviewLoading}
                 >
                   <Download className="h-4 w-4" />
-                  Download
+                  Download PDF
                 </Button>
-              </div> */}
+              </div>
             </header>
 
 
