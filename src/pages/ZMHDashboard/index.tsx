@@ -46,8 +46,8 @@ function Main() {
   // Check if user is admin
   const isAdmin = user?.user_type === 'Admin';
 
-  // Active tab state - default based on user role
-  const [activeTab, setActiveTab] = useState(isAdmin ? 'company-overview' : 'ownership');
+  // Active tab state - default to company-overview for all users
+  const [activeTab, setActiveTab] = useState('company-overview');
 
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
