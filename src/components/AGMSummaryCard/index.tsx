@@ -641,7 +641,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         </div>
                       </Tippy>
                     )}
-                    {!showNpxActions && (
+                    {showNpxActions && (
                       <button
                         onClick={handleViewNPXAnalytics}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
