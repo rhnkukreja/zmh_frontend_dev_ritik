@@ -541,11 +541,16 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
             </div>
             {r.notes ? (
               <div className="mt-2 space-y-2">
-                {r.notes.split(/<br\s*\/?>/gi).filter(n => n.trim()).map((note, noteIdx) => (
-                  <div key={noteIdx} className="text-[15px] text-slate-700">
-                    <span className="font-medium">Rationale {noteIdx + 1}:</span> {note.trim()}
-                  </div>
-                ))}
+                {(() => {
+                  const notes = r.notes.split(/<br\s*\/?>/gi).filter(n => n.trim());
+                  return notes.map((note, noteIdx) => (
+                    <div key={noteIdx} className="text-[15px] text-slate-700">
+                      <span className="font-medium">
+                        {notes.length === 1 ? 'Rationale:' : `Rationale ${noteIdx + 1}:`}
+                      </span> {note.trim()}
+                    </div>
+                  ));
+                })()}
               </div>
             ) : null}
           </div>
