@@ -269,6 +269,17 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     window.open(`npx-details/?${urlParams.toString()}`, "_blank");
   };
 
+  const handleViewNPXAnalytics = () => {
+    const idToUse = institutionId || companyGlobalSearchId;
+    if (!idToUse) return;
+    const urlParams = new URLSearchParams({
+      company_id: String(idToUse),
+      year: (agmSummaryDetails?.Year ?? new Date().getFullYear()).toString(),
+    });
+
+    window.open(`npx-analytics/?${urlParams.toString()}`, "_blank");
+  };
+
   const [isInstitutionList, setIsInstitutionList] = useState<boolean>(false);
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -310,8 +321,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       const key = `url_${yearToCheck}`;
       const url = Array.isArray(data?.all_meeting_data)
         ? data.all_meeting_data
-            .map((x: any) => x?.[key])
-            .find((u: any) => typeof u === "string" && u.trim() !== "")
+          .map((x: any) => x?.[key])
+          .find((u: any) => typeof u === "string" && u.trim() !== "")
         : null;
 
       if (!url) return;
@@ -350,9 +361,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}&download=true`,
         { responseType: 'blob' }
       );
-      
+
       const filename = `Voting Analytics (${companyGlobalSearchTicker}).xlsx`;
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -370,7 +381,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const handleDownloadNPXData = async () => {
     const idToUse = institutionId || companyGlobalSearchId;
     const dynamicYear = (selectedYear || agmSummaryDetails?.Year || new Date().getFullYear()).toString();
-    
+
     if (!idToUse) {
       console.error('Institution or Company ID not available');
       return;
@@ -382,9 +393,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         `${baseURL}/api/top20_investor_fund_level/?company_id=${idToUse}&year=${encodeURIComponent(dynamicYear)}`,
         { responseType: 'blob' }
       );
-      
+
       const filename = `NPX-Data-${companyGlobalSearchTicker}-${new Date().getTime()}.xlsx`;
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -455,12 +466,12 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         return w.charAt(0).toUpperCase() + w.slice(1);
       })
       .join(" ");
-    
+
     // Map "Shareholder Proposal" or "Shareholder Proposals" to "Other Proposals"
     if (formattedName === "Shareholder Proposal" || formattedName === "Shareholder Proposals") {
       return "Other Proposals";
     }
-    
+
     return formattedName;
   };
 
@@ -630,6 +641,14 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         </div>
                       </Tippy>
                     )}
+                    {!showNpxActions && (
+                      <button
+                        onClick={handleViewNPXAnalytics}
+                        className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                      >
+                        NPX analytics
+                      </button>
+                    )}
                     <button
                       disabled={
                         is8kLoading ||
@@ -640,8 +659,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                       className={clsx([
                         "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
                         is8kLoading ||
-                        !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                        !(selectedYear || agmSummaryDetails?.Year)
+                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                          !(selectedYear || agmSummaryDetails?.Year)
                           ? "opacity-60 cursor-not-allowed"
                           : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
                       ])}
@@ -1073,9 +1092,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       </Dialog>
 
       {/* Expanded Year Modal */}
-      <Dialog 
-        open={expandedYearModal?.visible || false} 
-        onClose={() => {}}
+      <Dialog
+        open={expandedYearModal?.visible || false}
+        onClose={() => { }}
         staticBackdrop
       >
         <Dialog.Panel className="!max-w-[500px] !w-[500px]">
