@@ -172,29 +172,23 @@ type CompanyReport = {
     buckets: Array<{ label: string; pct: number }>;
   };
   board?: {
-    voting_rationales: any;
-    rationaleSummary: any;
     headlineBullets: string[];
     lowestSupport?: string[];
     rationales?: Array<{
-      vote: string;
-      notes?: string;
-      proposal?: string;
       investor: string;
-      rationale?: string;
+      vote: string;
+      proposal: string;
+      notes?: string;
     }>;
   };
   sop?: {
-    voting_rationales: any;
     headlineBullets: string[];
     rationaleSummary?: string;
-    votingRationaleSummary?: string;
     rationales?: Array<{
-      vote: string;
-      notes?: string;
-      proposal?: string;
       investor: string;
-      rationale?: string;
+      vote: string;
+      proposal: string;
+      notes?: string;
     }>;
   };
   auditor?: {
@@ -262,20 +256,44 @@ function BulletList({ items }: BulletListProps) {
 }
 
 type RationaleListProps = {
-  items?: Array<{ investor: string; rationale: string }>;
+  items?: Array<{ investor: string; vote: string; proposal: string; notes?: string }>;
+  summary?: string;
 };
 
-function RationaleList({ items }: RationaleListProps) {
+function RationaleList({ items, summary }: RationaleListProps) {
   if (!items || items.length === 0) return null;
   return (
-    <div className="mt-4 space-y-3">
-      {items.map((r, i) => (
-        <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <div className="mb-1 text-sm font-semibold text-slate-600">{r.investor}</div>
-          <div className="text-[15px] text-slate-700">{r.rationale}</div>
-        </div>
-      ))}
-    </div>
+    <>
+      <Separator className="my-4" />
+      <div className="text-xs font-semibold text-slate-500 mb-3">
+        Voting Rationale Disclosures
+      </div>
+      {summary && (
+        <p className="mb-3 text-sm text-slate-700">{summary}</p>
+      )}
+      <div className="space-y-3">
+        {items.map((r, idx) => (
+          <div key={idx} className="rounded-xl border bg-white p-3 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-slate-900">
+                {r.investor}
+              </div>
+              <Badge variant="secondary" className="rounded-full">
+                {r.vote}
+              </Badge>
+            </div>
+            <div className="mt-1 text-sm text-slate-700">
+              <span className="font-medium">Proposal:</span> {r.proposal}
+            </div>
+            {r.notes ? (
+              <div className="mt-2 text-sm text-slate-700">
+                <span className="font-medium">Rationale:</span> {r.notes}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -345,18 +363,22 @@ function buildPlainText(report: CompanyReport): string {
     lines.push("Board of Directors");
     report.board.headlineBullets.forEach((b) => lines.push(`- ${b}`));
     report.board.lowestSupport?.forEach((b) => lines.push(`- ${b}`));
-    report.board.rationales?.forEach((r) => lines.push(`${r.investor}: ${r.rationale}`));
+    report.board.rationales?.forEach((r) => {
+      lines.push(`- ${r.investor} – ${r.vote}`);
+      lines.push(`  - Proposal: ${r.proposal}`);
+      if (r.notes) lines.push(`  - Notes: ${r.notes}`);
+    });
   }
 
   if (report.sop) {
     lines.push("Executive Compensation (Say-on-Pay)");
     report.sop.headlineBullets.forEach((b) => lines.push(`- ${b}`));
     if (report.sop.rationaleSummary) lines.push(report.sop.rationaleSummary);
-    if (report.sop.votingRationaleSummary) {
-      lines.push("Voting Rationale");
-      lines.push(report.sop.votingRationaleSummary);
-    }
-    report.sop.rationales?.forEach((r) => lines.push(`${r.investor}: ${r.rationale}`));
+    report.sop.rationales?.forEach((r) => {
+      lines.push(`- ${r.investor} – ${r.vote}`);
+      lines.push(`  - Proposal: ${r.proposal}`);
+      if (r.notes) lines.push(`  - Notes: ${r.notes}`);
+    });
   }
 
   if (report.auditor) {
@@ -459,84 +481,76 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         };
         break;
 
-      case "board_of_directors": {
-        const bullets: string[] = [];
-        let rationaleSummary: string[] = [];
-        let rationaleLines: string[] = [];
-        let rationaleMode = false;
-        (section.paragraphs || []).forEach((p: string) => {
-          if (p.startsWith("### Voting Rationale")) {
-            rationaleMode = true;
-            return;
-          }
-          if (!rationaleMode) {
-            bullets.push(p);
-          } else {
-            if (/^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(p) || p.startsWith("Proposal:") || p.startsWith("Notes:")) {
-              rationaleLines.push(...splitRationaleLines(p));
-            } else {
-              rationaleSummary.push(p);
-            }
-          }
-        });
-        const rationales = extractRationales(rationaleLines);
+      case "board_of_directors":
+        const boardParagraphs = (section.paragraphs || []).filter((p: string) => 
+          !p.includes('Voting Rationale Disclosures') && 
+          !p.includes('Lowest support levels:') &&
+          !p.toLowerCase().includes('voting rationale')
+        );
+        
         report.board = {
-          headlineBullets: bullets,
-          lowestSupport: section.lowest_support?.map((ls: any) => `${ls.nominee} – ${ls.support_pct}%`),
-          rationales: rationales.length ? rationales : undefined,
-          rationaleSummary: rationaleSummary.length ? rationaleSummary.join("\n") : undefined,
-          voting_rationales: section.voting_rationales || [],
+          headlineBullets: boardParagraphs,
+          lowestSupport: section.lowest_support?.map((ls: any) => 
+            `${ls.nominee} – ${ls.support_pct}%`
+          ),
+          rationales: section.voting_rationales?.map((r: any) => ({
+            investor: r.investor,
+            vote: r.vote,
+            proposal: r.proposal,
+            notes: r.notes
+          })) || [],
         };
         break;
-      }
 
-      case "say_on_pay": {
-        const bullets: string[] = [];
-        let rationaleSummary: string[] = [];
-        let rationaleLines: string[] = [];
-        let rationaleMode = false;
-        (section.paragraphs || []).forEach((p: string) => {
-          if (p.startsWith("### Voting Rationale")) {
-            rationaleMode = true;
-            return;
-          }
-          if (!rationaleMode) {
-            bullets.push(p);
-          } else {
-            if (/^\*\*(.+?)\*\*\s*-\s*(.+)$/.test(p) || p.startsWith("Proposal:") || p.startsWith("Notes:")) {
-              rationaleLines.push(...splitRationaleLines(p));
-            } else {
-              rationaleSummary.push(p);
-            }
-          }
-        });
-        const rationales = extractRationales(rationaleLines);
+      case "say_on_pay":
+        const sopParagraphs = (section.paragraphs || []).filter((p: string) => 
+          !p.includes('Voting Rationale Disclosures') && 
+          !p.toLowerCase().includes('voting rationale')
+        );
+        
         report.sop = {
-          headlineBullets: bullets,
-          rationales: rationales.length ? rationales : undefined,
-          rationaleSummary: rationaleSummary.length ? rationaleSummary.join("\n") : undefined,
-          voting_rationales: section.voting_rationales || [],
+          headlineBullets: sopParagraphs,
+          rationales: section.voting_rationales?.map((r: any) => ({
+            investor: r.investor,
+            vote: r.vote,
+            proposal: r.proposal || '',
+            notes: r.notes
+          })) || [],
         };
         break;
-      }
 
       case "voting_rationale":
+        const rationaleItems: Array<{ investor: string; vote: string; proposal: string; notes?: string }> = [];
+        
+        section.paragraphs?.forEach((p: string) => {
+          const lines = p.split('\n').filter(l => l.trim());
+          if (lines.length >= 3) {
+            const firstLine = lines[0];
+            const investorMatch = firstLine.match(/^(.+?)\s*[–-]\s*(.+)$/);
+            
+            if (investorMatch) {
+              const investor = investorMatch[1].trim();
+              const vote = investorMatch[2].trim();
+              const proposal = lines[1].replace(/^Proposal:\s*/i, '').trim();
+              const notesLines = lines.slice(2).map(l => l.replace(/^Notes:\s*/i, '')).join('\n').trim();
+              
+              rationaleItems.push({
+                investor: investor,
+                vote: vote,
+                proposal: proposal,
+                notes: notesLines
+              });
+            }
+          }
+        });
+        
         if (!report.sop) {
           report.sop = {
             headlineBullets: [],
-            rationales: [],
+            rationales: rationaleItems,
           };
-        }
-
-        const rawVotingRationale = (section.paragraphs || [])
-          .map((p: string) => p?.trim())
-          .filter(Boolean)
-          .join("\n\n");
-
-        if (rawVotingRationale) {
-          report.sop.votingRationaleSummary = [report.sop.votingRationaleSummary, rawVotingRationale]
-            .filter(Boolean)
-            .join("\n\n");
+        } else {
+          report.sop.rationales = [...(report.sop.rationales || []), ...rationaleItems];
         }
         break;
 
@@ -729,34 +743,6 @@ export default function CompanyOverviewGPT() {
                         {r.board ? (
                           <CollapsibleCard title="Board of Directors" iconKey="board">
                             <BulletList items={r.board.headlineBullets} />
-                            {/* Voting Rationale Section */}
-                            {r.board.rationaleSummary && (
-                              <>
-                                <Separator className="my-4" />
-                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                                  Voting Rationale Disclosures - Election of Directors
-                                </div>
-                                <p className="mb-2 text-[15px] text-slate-700 whitespace-pre-line">{r.board.rationaleSummary}</p>
-                              </>
-                            )}
-                            {r.board.voting_rationales && r.board.voting_rationales.length > 0 && (
-                              <ul className="ml-4 list-disc text-[15px] text-slate-700">
-                                <li className="mb-2">
-                                  <span className="font-semibold">Voting Rationales:</span>
-                                  <ul className="ml-6 list-disc">
-                                    {r.board.voting_rationales.map((item, idx) => (
-                                      <li key={idx} className="mb-2">
-                                        <span className="font-semibold">{renderBold(item.investor)}</span> – {renderBold(item.vote)}
-                                        <ul className="ml-6 list-none">
-                                          {item.proposal && <li><span className="font-semibold">Proposal:</span> {renderBold(item.proposal)}</li>}
-                                          {item.notes && <li><span className="font-semibold">Notes:</span> {renderBold(item.notes)}</li>}
-                                        </ul>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </li>
-                              </ul>
-                            )}
                             {r.board.lowestSupport?.length ? (
                               <>
                                 <Separator className="my-4" />
@@ -766,6 +752,7 @@ export default function CompanyOverviewGPT() {
                                 <BulletList items={r.board.lowestSupport} />
                               </>
                             ) : null}
+                            <RationaleList items={r.board.rationales} />
                           </CollapsibleCard>
                         ) : null}
 
@@ -775,34 +762,12 @@ export default function CompanyOverviewGPT() {
                             iconKey="sop"
                           >
                             <BulletList items={r.sop.headlineBullets} />
-                            {/* Voting Rationale Section */}
-                            {r.sop.rationaleSummary && (
-                              <>
-                                <Separator className="my-4" />
-                                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                                  Voting Rationale Disclosures - Say on Pay
-                                </div>
-                                <p className="mb-2 text-[15px] text-slate-700 whitespace-pre-line">{r.sop.rationaleSummary}</p>
-                              </>
-                            )}
-                            {r.sop.voting_rationales && r.sop.voting_rationales.length > 0 && (
-                              <ul className="ml-4 list-disc text-[15px] text-slate-700">
-                                <li className="mb-2">
-                                  <span className="font-semibold">Voting Rationales:</span>
-                                  <ul className="ml-6 list-disc">
-                                    {r.sop.voting_rationales.map((item, idx) => (
-                                      <li key={idx} className="mb-2">
-                                        <span className="font-semibold">{renderBold(item.investor)}</span> – {renderBold(item.vote)}
-                                        <ul className="ml-6 list-none">
-                                          {item.proposal && <li><span className="font-semibold">Proposal:</span> {renderBold(item.proposal)}</li>}
-                                          {item.notes && <li><span className="font-semibold">Notes:</span> {renderBold(item.notes)}</li>}
-                                        </ul>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </li>
-                              </ul>
-                            )}
+                            {r.sop.rationaleSummary ? (
+                              <p className="mt-3 text-sm text-slate-700">
+                                {r.sop.rationaleSummary}
+                              </p>
+                            ) : null}
+                            <RationaleList items={r.sop.rationales} />
                           </CollapsibleCard>
                         ) : null}
 

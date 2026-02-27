@@ -91,7 +91,7 @@ import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
-import NPXAnalyticsPage from "@/pages/NPXAnalytics";
+// import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import ProxyContest from "@/pages/ProxyContest";
 import ProxyContestDetail from "@/pages/ProxyContestDetail";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
@@ -503,11 +503,11 @@ function Router() {
           element: <NPXDetails />,
           data: { titleName: "N-PX - ZMH Analytics" },
         },
-        {
-          path: "npx-analytics",
-          element: <NPXAnalyticsPage />,
-          data: { titleName: "N-PX Analytics - ZMH Analytics" },
-        },
+        // {
+        //   path: "npx-analytics",
+        //   element: <NPXAnalyticsPage />,
+        //   data: { titleName: "N-PX Analytics - ZMH Analytics" },
+        // },
         {
           path: "proxy-contest",
           element: <ProxyContest />,
