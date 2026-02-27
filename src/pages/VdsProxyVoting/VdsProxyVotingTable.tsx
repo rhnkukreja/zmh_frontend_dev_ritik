@@ -437,7 +437,11 @@ const VdsProxyVotingTable = () => {
       <div className="flex justify-between items-center mb-1">
         <Button
           onClick={() => {
-            navigate("/");
+            navigate("/", {
+              state: {
+                activeTab: "shareholder-meeting-results"
+              }
+            });
           }}
           variant="primary"
           className="bg-theme-2 border-bg-theme-2"

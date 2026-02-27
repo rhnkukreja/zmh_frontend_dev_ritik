@@ -47,8 +47,10 @@ function Main() {
   const isAdmin = user?.user_type === 'Admin';
 
   // Active tab state - default based on user role
-  const [activeTab, setActiveTab] = useState(isAdmin ? 'company-overview' : 'ownership');
-
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab || (isAdmin ? 'company-overview' : 'ownership')
+  );
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
 
@@ -241,11 +243,10 @@ function Main() {
               {isAdmin && (
                 <button
                   onClick={() => setActiveTab('company-overview')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                    activeTab === 'company-overview'
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview'
                       ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Building2 className="w-4 h-4" />
                   Company Overview
@@ -256,11 +257,10 @@ function Main() {
               {isAdmin && (
                 <button
                   onClick={() => setActiveTab('company-overview-gpt')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                    activeTab === 'company-overview-gpt'
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
                       ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Building2 className="w-4 h-4" />
                   Company Overview
@@ -270,11 +270,10 @@ function Main() {
               {/* Ownership - All Users */}
               <button
                 onClick={() => setActiveTab('ownership')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                  activeTab === 'ownership'
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <Users className="w-4 h-4" />
                 Ownership
@@ -283,11 +282,10 @@ function Main() {
               {/* Shareholder Meeting Results - All Users */}
               <button
                 onClick={() => setActiveTab('shareholder-meeting-results')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                  activeTab === 'shareholder-meeting-results'
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'shareholder-meeting-results'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <Vote className="w-4 h-4" />
                 Shareholder Meeting Results
