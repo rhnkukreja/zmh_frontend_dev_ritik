@@ -48,7 +48,7 @@ const CardContent = ({ className, children }: BasicProps) => (
 );
 
 const CardTitle = ({ className, children }: BasicProps) => (
-  <h3 className={cx("text-[15px] font-semibold", className)}>{children}</h3>
+  <h3 className={cx("text-base font-semibold text-slate-900", className)}>{children}</h3>
 );
 
 type BadgeProps = BasicProps & { variant?: "secondary" | "outline" | "destructive" };
@@ -593,7 +593,7 @@ function SectionHeader({
         <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
           {icon ? React.cloneElement(icon as React.ReactElement, { className: "h-4 w-4 text-primary" }) : null}
         </div>
-        <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
       </div>
       {right}
     </div>
