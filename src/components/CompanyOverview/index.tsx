@@ -15,7 +15,6 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
 
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(" ");
@@ -429,6 +428,55 @@ function BulletList({ items }: { items?: string[] }) {
   );
 }
 
+function ProposalList({ items }: { items?: string[] }) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, i) => {
+        // Parse: "PROPOSAL TITLE (Proponent: Name) – XX.X%"
+        const proponentMatch = item.match(/\(Proponent:\s*([^)]+)\)\s*–\s*([\d.]+)%/i);
+
+        if (proponentMatch) {
+          const title = item.substring(0, item.indexOf('(Proponent:')).trim();
+          const proponent = proponentMatch[1].trim();
+          const supportPercent = parseFloat(proponentMatch[2]);
+          const support = `${proponentMatch[2]}%`;
+
+          // Determine color based on support percentage
+          const isGreen = supportPercent >= 50;
+          const pillClass = isGreen
+            ? 'rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700'
+            : 'rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[15px] font-semibold text-red-700';
+
+          return (
+            <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="text-[15px] font-semibold text-slate-900">{title}</div>
+                  <div className="mt-1 text-[15px] text-slate-600">
+                    <span className="font-medium">Proponent:</span> {proponent}
+                  </div>
+                </div>
+                <div className={pillClass}>
+                  {support}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Fallback for items without proponent info
+        return (
+          <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="text-[15px] text-slate-700">{item}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CollapsibleCard({
   title,
   iconKey,
@@ -500,8 +548,17 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
               <span className="font-medium">Proposal:</span> {r.proposal}
             </div>
             {r.notes ? (
-              <div className="mt-2 text-[15px] text-slate-700 whitespace-pre-line">
-                <span className="font-medium">Rationale:</span> {r.notes.replace(/<br\s*\/?>/gi, '\n')}
+              <div className="mt-2 space-y-2">
+                {(() => {
+                  const notes = r.notes.split(/<br\s*\/?>/gi).filter(n => n.trim());
+                  return notes.map((note, noteIdx) => (
+                    <div key={noteIdx} className="text-[15px] text-slate-700">
+                      <span className="font-medium">
+                        {notes.length === 1 ? 'Rationale:' : `Rationale ${noteIdx + 1}:`}
+                      </span> {note.trim()}
+                    </div>
+                  ));
+                })()}
               </div>
             ) : null}
           </div>
@@ -546,20 +603,6 @@ function ESGInvestorBlock({ inv }: { inv: ESGInvestor }) {
 
 }
 
-function copyText(text: string) {
-
-  try {
-
-    navigator.clipboard.writeText(text);
-
-  } catch {
-
-    // no-op
-
-  }
-
-}
-
 function buildPlainText(report: CompanyReport) {
 
   const lines: string[] = [];
@@ -578,7 +621,7 @@ function buildPlainText(report: CompanyReport) {
 
     lines.push("");
 
-    lines.push("ESG & Engagement (2025)");
+    lines.push("Engagement Details (as disclosed by investors)");
 
     if (report.esg.themeSummary) lines.push(`- ${report.esg.themeSummary}`);
 
@@ -863,6 +906,7 @@ export default function CompanyOverview() {
   );
 
   const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {
@@ -882,6 +926,7 @@ export default function CompanyOverview() {
     const gray900 = "#111827";
 
     const content: any[] = [];
+    setLoading(true);
 
     // Title
     content.push({
@@ -1154,7 +1199,8 @@ export default function CompanyOverview() {
       content.push({
         text: "ESG & Engagement",
         style: "sectionTitle",
-        pageBreak: "before"
+        // ❌ REMOVED: pageBreak: "before"  - This was forcing new page
+        keepWithNext: true
       });
 
       if (report.esg.themeSummary) {
@@ -1166,10 +1212,13 @@ export default function CompanyOverview() {
       }
 
       report.esg.investors.forEach((investor: any) => {
-        content.push({
+        const investorContent: any[] = [];
+
+        investorContent.push({
           text: investor.name,
           style: "investorName",
-          margin: [0, 0, 0, 5]
+          margin: [0, 0, 0, 5],
+          keepWithNext: true
         });
 
         const hasTopics = investor.env?.length || investor.soc?.length || investor.gov?.length;
@@ -1207,18 +1256,24 @@ export default function CompanyOverview() {
             });
           }
 
-          content.push({
+          investorContent.push({
             stack: topics,
             margin: [0, 0, 0, 15]
           });
         } else if (investor.noteIfNoTopics) {
-          content.push({
+          investorContent.push({
             text: "Engagement reported (specific topics not detailed)",
             style: "bodyText",
             italics: true,
             margin: [0, 0, 0, 15]
           });
         }
+
+        // ✅ Keep each investor block together
+        content.push({
+          stack: investorContent,
+          unbreakable: true
+        });
       });
     }
 
@@ -1255,27 +1310,27 @@ export default function CompanyOverview() {
           fontSize: 18,
           bold: true,
           color: gray900,
-          keepWithNext: true  // ✅ Prevent orphan
+          keepWithNext: true  
         },
         subtitle: {
           fontSize: 14,
           bold: true,
           color: gray700,
-          keepWithNext: true  // ✅ Prevent orphan
+          keepWithNext: true  
         },
         sectionTitle: {
           fontSize: 13,
           bold: true,
           color: primaryColor,
           margin: [0, 15, 0, 8],
-          keepWithNext: true  // ✅ Prevent orphan - most important!
+          keepWithNext: true 
         },
         subSectionTitle: {
           fontSize: 11,
           bold: true,
           color: gray700,
           margin: [0, 10, 0, 5],
-          keepWithNext: true  // ✅ Prevent orphan
+          keepWithNext: true  
         },
         bodyText: {
           fontSize: 10,
@@ -1289,7 +1344,7 @@ export default function CompanyOverview() {
           margin: [0, 2, 0, 2]
         },
         caption: {
-          fontSize: 9,
+          fontSize: 10,
           color: gray600,
           italics: true
         },
@@ -1307,7 +1362,7 @@ export default function CompanyOverview() {
           fontSize: 11,
           bold: true,
           color: gray900,
-          keepWithNext: true  // ✅ Prevent orphan for investor names
+          keepWithNext: true  
         },
         topicLabel: {
           fontSize: 10,
@@ -1323,7 +1378,7 @@ export default function CompanyOverview() {
           fontSize: 10,
           bold: true,
           color: gray900,
-          keepWithNext: true  // ✅ Prevent orphan for rationale headings
+          keepWithNext: true 
         },
         rationaleDetail: {
           fontSize: 9,
@@ -1338,6 +1393,8 @@ export default function CompanyOverview() {
 
     const fileName = `${report.company.replace(/[^a-z0-9]/gi, '_')}_Overview_${new Date().toISOString().split('T')[0]}.pdf`;
     pdfMake.createPdf(docDefinition).download(fileName);
+
+    setLoading(false);
   };
 
   const filtered = useMemo(() => {
@@ -1387,10 +1444,10 @@ export default function CompanyOverview() {
                       generatePDF(filtered[0]);
                     }
                   }}
-                  disabled={filtered.length === 0 || companyOverviewLoading}
+                  disabled={loading ? true : (filtered.length === 0 || companyOverviewLoading)}
                 >
                   <Download className="h-4 w-4" />
-                  Download PDF
+                  {loading ? "Downloading..." : "Download PDF"}
                 </Button>
               </div>
             </header>
@@ -1509,17 +1566,17 @@ export default function CompanyOverview() {
                             {r.shareholderProposals.selected?.length ? (
                               <>
                                 <Separator className="my-4" />
-                                <div className="text-[15px] font-semibold text-slate-500">
+                                <div className="text-[15px] font-semibold text-slate-500 mb-3">
                                   Selected proposal results
                                 </div>
-                                <BulletList items={r.shareholderProposals.selected} />
+                                <ProposalList items={r.shareholderProposals.selected} />
                               </>
                             ) : null}
                           </CollapsibleCard>
                         ) : null}
 
                         {r.esg ? (
-                          <CollapsibleCard title="ESG & Engagement (2025)" iconKey="esg">
+                          <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
                             {r.esg.themeSummary ? (
                               <p className="text-[15px] text-slate-700">
                                 {r.esg.themeSummary}

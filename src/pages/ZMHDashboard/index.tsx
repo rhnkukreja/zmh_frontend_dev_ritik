@@ -64,7 +64,7 @@ function Main() {
   // Active tab state - default based on user role
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(
-    location.state?.activeTab || (isAdmin ? 'company-overview' : 'ownership')
+    location.state?.activeTab || 'company-overview'
   );
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
@@ -176,15 +176,15 @@ function Main() {
           )
         );
 
-        // 2. Fetch Company Overview data (for admins only)
-        if (isAdmin) {
-          dispatch(
-            fetchCompanyOverview(
-              `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
-            )
-          );
+        // 2. Fetch Company Overview data (for all users)
+        dispatch(
+          fetchCompanyOverview(
+            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
+          )
+        );
 
-          // 3. Fetch Company Overview GPT data (for admins only)
+        // 3. Fetch Company Overview GPT data (for admins only)
+        if (isAdmin) {
           dispatch(
             fetchCompanyOverviewGPT(
               `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
@@ -254,19 +254,18 @@ function Main() {
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
           <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-              {/* Company Overview - Admin Only */}
-              {isAdmin && (
-                <button
-                  onClick={() => setActiveTab('company-overview')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview'
-                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                >
-                  <Building2 className="w-4 h-4" />
-                  Company Overview
-                </button>
-              )}
+              {/* Company Overview - All Users */}
+              <button
+                onClick={() => setActiveTab('company-overview')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === 'company-overview'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                Company Overview
+              </button>
 
               {/* Company Overview GPT - Admin Only */}
               {isAdmin && (
@@ -306,7 +305,7 @@ function Main() {
                 Shareholder Meeting Results
               </button>
             </div>
-            {companyGlobalSearchTicker && isAdmin && activeTab !== 'company-overview' && activeTab !== 'company-overview-gpt' && (
+            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
               <button
                 className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
                 onClick={handleGenerateReport}
@@ -319,7 +318,7 @@ function Main() {
         </div>
 
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          {activeTab === 'company-overview' && isAdmin && (
+          {activeTab === 'company-overview' && (
             <div id="company-overview" className="col-span-12 xl:col-span-12">
               <CompanyOverview />
             </div>

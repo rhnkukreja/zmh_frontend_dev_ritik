@@ -614,7 +614,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    {showNpxActions && (
+                    {/* Download NPX btn hidden */}
+                    {/* {showNpxActions && (
                       <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
                         <div className="relative">
                           <button
@@ -641,7 +642,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                           </span>
                         </div>
                       </Tippy>
-                    )}
+                    )} */}
                     {user?.user_type === 'Admin' && (
                       <button
                         onClick={handleViewNPXAnalytics}
