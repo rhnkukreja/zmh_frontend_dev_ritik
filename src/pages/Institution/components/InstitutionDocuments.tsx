@@ -64,6 +64,7 @@ const InstitutionDocuments = () => {
   const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>([]);
   const [pendingDocumentId, setPendingDocumentId] = useState<number | null>(null); // For UI focus
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: 'delete'|'restore'|'bulk-delete'; document?: InstitutionDocument; ids?: number[] }>({ open: false, type: 'delete' });
+  const [linkConfirmOpen, setLinkConfirmOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
@@ -102,7 +103,7 @@ const InstitutionDocuments = () => {
       setSelectedRows([]);
       handleDocumentSuccess();
     } catch {
-      toast.error('Bulk delete failed');
+      // Error toast is already handled by axios interceptor
     } finally {
       setBulkActionLoading(false);
       setConfirmModal({ open: false, type: 'bulk-delete' });
@@ -120,7 +121,7 @@ const InstitutionDocuments = () => {
       toast.success("Document moved to trash successfully");
       handleDocumentSuccess();
     } catch {
-      toast.error("Failed to move document to trash");
+      // Error toast is already handled by axios interceptor
     } finally {
       setConfirmModal({ open: false, type: 'delete' });
     }
@@ -140,7 +141,7 @@ const InstitutionDocuments = () => {
       setTrashedDocuments((prev) => prev.filter(doc => doc.id !== confirmModal.document?.id));
       handleDocumentSuccess();
     } catch {
-      toast.error("Failed to restore document");
+      // Error toast is already handled by axios interceptor
     } finally {
       setConfirmModal({ open: false, type: 'restore' });
     }
@@ -180,19 +181,33 @@ const InstitutionDocuments = () => {
     section: ProfileSection,
     isCurrentlyLinked: boolean
   ) => {
-    // Instead of calling API, store the intended operation
-    setPendingDocumentId(document.id);
+    // Instead of calling API, store or remove the intended operation
     setPendingLinkOps((prev) => {
-      // Remove any previous op for this doc-section
-      const filtered = prev.filter(op => !(op.document_id === document.id && op.section === section));
-      // Add new op
+      const hasExisting = prev.some(
+        (op) => op.document_id === document.id && op.section === section
+      );
+
+      if (hasExisting) {
+        const next = prev.filter(
+          (op) => !(op.document_id === document.id && op.section === section)
+        );
+        if (pendingDocumentId === document.id && !next.some((op) => op.document_id === document.id)) {
+          setPendingDocumentId(null);
+        }
+        return next;
+      }
+
+      setPendingDocumentId(document.id);
+      const filtered = prev.filter(
+        (op) => !(op.document_id === document.id && op.section === section)
+      );
       return [
         ...filtered,
         {
           document_id: document.id,
           section,
-          action: isCurrentlyLinked ? "unlink" : "link"
-        }
+          action: isCurrentlyLinked ? "unlink" : "link",
+        },
       ];
     });
   };
@@ -252,6 +267,10 @@ const InstitutionDocuments = () => {
     }
   };
 
+  const pendingDocIds = Array.from(
+    new Set(pendingLinkOps.map((op) => op.document_id))
+  );
+
   return (
     <>
       <Button
@@ -275,7 +294,8 @@ const InstitutionDocuments = () => {
                 {loading ? "Loading..." : (
                   <>
                     {singleInstitution?.institution}
-                    {(singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id) && (
+                    {/* Document Tab btn is disabled for now */}
+                    {/* {(singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id) && (
                       <button
                         className="cursor-pointer ml-2 px-3 py-1 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors text-sm font-medium"
                         title="Document Tab"
@@ -286,7 +306,7 @@ const InstitutionDocuments = () => {
                       >
                         Document Tab
                       </button>
-                    )}
+                    )} */}
                   </>
                 )}
               </h1>
@@ -318,8 +338,13 @@ const InstitutionDocuments = () => {
               </div>
               {pendingLinkOps.length > 0 && (
                 <div className="flex justify-end gap-2 mt-2">
-                  <Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={handleBulkLinkToProfile} disabled={linkingInProgress.bulk}>
-                    {pendingLinkOps.some(op => op.action === "unlink") ? "Unlink from Profile" : "Link to Profile"}
+                  <Button
+                    variant="primary"
+                    className="bg-theme-2 border-bg-theme-2"
+                    onClick={() => setLinkConfirmOpen(true)}
+                    disabled={linkingInProgress.bulk}
+                  >
+                    Submit
                   </Button>
                   <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={handleCancelLinkOps}>Cancel</Button>
                 </div>
@@ -379,20 +404,6 @@ const InstitutionDocuments = () => {
                       Actions
                     </Table.Td>
                   </Table.Tr>
-                  <Table.Tr>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Sum</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Eng</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Rep</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">ESG</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">Vote</Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                    <Table.Td className="py-1 font-medium h-[30px] bg-header border-header text-[#000000B2] text-xs"></Table.Td>
-                  </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {documentsToDisplay?.length > 0 ? (
@@ -442,7 +453,10 @@ const InstitutionDocuments = () => {
                                   ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "summary")?.action === "link"
                                   : document.linked_to_summary
                               }
-                              disabled={isLinkingInProgress(document.id, "summary") || user?.user_type !== "Analyst"}
+                              disabled={
+                                isLinkingInProgress(document.id, "summary") ||
+                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
+                              }
                               onChange={() =>
                                 handleLinkToProfile(document, "summary", document.linked_to_summary)
                               }
@@ -458,7 +472,10 @@ const InstitutionDocuments = () => {
                                   ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "engagement_priorities")?.action === "link"
                                   : document.linked_to_engagement_priorities
                               }
-                              disabled={isLinkingInProgress(document.id, "engagement_priorities") || user?.user_type !== "Analyst"}
+                              disabled={
+                                isLinkingInProgress(document.id, "engagement_priorities") ||
+                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
+                              }
                               onChange={() =>
                                 handleLinkToProfile(document, "engagement_priorities", document.linked_to_engagement_priorities)
                               }
@@ -474,7 +491,10 @@ const InstitutionDocuments = () => {
                                   ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "reporting_expectation")?.action === "link"
                                   : document.linked_to_reporting_expectation
                               }
-                              disabled={isLinkingInProgress(document.id, "reporting_expectation") || user?.user_type !== "Analyst"}
+                              disabled={
+                                isLinkingInProgress(document.id, "reporting_expectation") ||
+                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
+                              }
                               onChange={() =>
                                 handleLinkToProfile(document, "reporting_expectation", document.linked_to_reporting_expectation)
                               }
@@ -490,7 +510,10 @@ const InstitutionDocuments = () => {
                                   ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "esg_integration")?.action === "link"
                                   : document.linked_to_esg_integration
                               }
-                              disabled={isLinkingInProgress(document.id, "esg_integration") || user?.user_type !== "Analyst"}
+                              disabled={
+                                isLinkingInProgress(document.id, "esg_integration") ||
+                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
+                              }
                               onChange={() =>
                                 handleLinkToProfile(document, "esg_integration", document.linked_to_esg_integration)
                               }
@@ -506,7 +529,10 @@ const InstitutionDocuments = () => {
                                   ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "voting_guidelines")?.action === "link"
                                   : document.linked_to_voting_guidelines
                               }
-                              disabled={isLinkingInProgress(document.id, "voting_guidelines") || user?.user_type !== "Analyst"}
+                              disabled={
+                                isLinkingInProgress(document.id, "voting_guidelines") ||
+                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
+                              }
                               onChange={() =>
                                 handleLinkToProfile(document, "voting_guidelines", document.linked_to_voting_guidelines)
                               }
@@ -589,6 +615,36 @@ const InstitutionDocuments = () => {
                             {confirmModal.type === 'bulk-delete' && (
                               <Button variant="danger" onClick={confirmBulkDelete} disabled={bulkActionLoading}>Move to Trash</Button>
                             )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {linkConfirmOpen && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+                        <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
+                          <div className="mb-4 text-lg font-semibold">
+                            {pendingDocIds.length === 1
+                              ? "Confirm changes for this document?"
+                              : `Confirm changes for ${pendingDocIds.length} documents?`}
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline-secondary"
+                              onClick={() => setLinkConfirmOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="primary"
+                              className="bg-theme-2 border-bg-theme-2"
+                              onClick={() => {
+                                setLinkConfirmOpen(false);
+                                handleBulkLinkToProfile();
+                              }}
+                              disabled={linkingInProgress.bulk}
+                            >
+                              Confirm
+                            </Button>
                           </div>
                         </div>
                       </div>

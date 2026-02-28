@@ -15,9 +15,12 @@ export type Institutions = {
   whale_wisdom_filer_id: string | number;
   proxy_advisor_influence?: string;
   unpri_signatory?: boolean;
+  documents?: InstitutionDocument[];
+  investor_profile_id?: number;
 };
 
 export type InstitutionDocument = {
+  month: string;
   id: number;
   name: string;
   document_name?: string;

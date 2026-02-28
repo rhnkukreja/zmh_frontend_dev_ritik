@@ -463,6 +463,7 @@ function countIndividualFilters(filters: FilterObject): number {
 
 function generateFilterChips(filters: Record<string, any>) {
   const mapping: Record<string, string> = {
+    global_search: "Company",
     company_name: "Company",
     company_names: "Company",
     institution_name: "Institution",
@@ -508,6 +509,7 @@ function generateFilterChips(filters: Record<string, any>) {
     'proponent_type',
     'vote_type',
     // Additional filters that might not be in the main form
+    'global_search',
     'company_name', 'company_names',
     'category',
     'proposal_keyword'

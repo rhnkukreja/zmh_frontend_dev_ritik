@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node scripts/fix-tom-select.cjs"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-balloon": "^40.2.0",
@@ -25,6 +26,7 @@
     "@jridgewell/sourcemap-codec": "^1.0.0",
     "@left4code/tw-starter": "^3.1.36",
     "@microsoft/clarity": "^1.0.0",
+    "@react-pdf/renderer": "^4.3.2",
     "@reduxjs/toolkit": "^2.2.3",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.15",
@@ -46,6 +48,7 @@
     "lucide": "^0.304.0",
     "lucide-react": "^0.307.0",
     "pdfjs-dist": "^3.11.174",
+    "pdfmake": "^0.2.10",
     "quill": "^2.0.2",
     "react": "^18.2.0",
     "react-country-flag": "^3.1.0",
@@ -95,6 +98,7 @@
     "@types/toastify-js": "^1.12.3",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "baseline-browser-mapping": "^2.9.19",
     "clsx": "^2.1.0",
     "lodash": "^4.17.21",
     "postcss": "^8.4.33",

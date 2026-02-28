@@ -21,7 +21,7 @@ import { Tab } from "@/components/Base/Headless";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 
-const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false }) => {
+const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingModal, institutionId = undefined, proxyContest = false, proxyContest2024 = false, proxyContest2025 = false, onLoaded = undefined }) => {
 
   const location = useLocation();
   const locationPathName = location?.pathname;
@@ -31,7 +31,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
     useAppSelector((state) => state.dashboard);
 
-  const { finhub } = useAppSelector((state) => state.authentiction);
+  const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
+  const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
+
+  const { finhub, companyGlobalSearchId } = useAppSelector((state) => state.authentiction);
 
   const companyDetails = agmSummaryDetails?.company
     ? agmSummaryDetails?.company[0]
@@ -107,28 +110,48 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   useEffect(() => {
-    if (companyGlobalSearchTicker && dashboardDataList?.length === 0) {
-      // Use year from query params or default behavior
-      const yearParam = yearFromQuery || (isMeetingModal ? "2025" : "");
-      const url = createDynamicURL(
-        `${baseURL}/voting_report_8k/`,
-        { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
-      );
-      dispatch(fetchAGMSummaryDashboard(url));
-      // dispatch(setTempSearch(companyGlobalSearchTicker));
-    }
-    else if (companyGlobalSearchTicker !== tempSearch) {
-      // Use year from query params or reset to empty
-      const yearParam = yearFromQuery || "";
+    // Only handle year changes, not initial fetch (dashboard handles that)
+    if (yearFromQuery && agmSummaryDetails) {
+      const yearParam = yearFromQuery;
       setSelectedYear(yearParam);
       const url = createDynamicURL(
         `${baseURL}/voting_report_8k/`,
         { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
       );
       dispatch(fetchAGMSummaryDashboard(url));
-      // dispatch(setTempSearch(companyGlobalSearchTicker));
     }
+  }, [yearFromQuery]);
+
+  useEffect(() => {
+    setHasLoadingStarted(false);
+    setHasNotifiedLoaded(false);
   }, [companyGlobalSearchTicker, yearFromQuery]);
+
+  useEffect(() => {
+    if (loading) {
+      setHasLoadingStarted(true);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (onLoaded && hasLoadingStarted && !loading && !hasNotifiedLoaded) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, hasLoadingStarted, loading, hasNotifiedLoaded]);
+
+  useEffect(() => {
+    const hasData = Boolean(
+      agmSummaryDetails?.company ||
+      agmSummaryDetails?.Year ||
+      agmSummaryDetails?.total_year?.length
+    );
+
+    if (onLoaded && !loading && !hasNotifiedLoaded && hasData) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, loading, hasNotifiedLoaded, agmSummaryDetails]);
 
   // Handle year query parameter changes
   useEffect(() => {
@@ -246,11 +269,23 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     window.open(`npx-details/?${urlParams.toString()}`, "_blank");
   };
 
+  const handleViewNPXAnalytics = () => {
+    const idToUse = institutionId || companyGlobalSearchId;
+    if (!idToUse) return;
+    const urlParams = new URLSearchParams({
+      company_id: String(idToUse),
+      year: (agmSummaryDetails?.Year ?? new Date().getFullYear()).toString(),
+    });
+
+    window.open(`npx-analytics/?${urlParams.toString()}`, "_blank");
+  };
+
   const [isInstitutionList, setIsInstitutionList] = useState<boolean>(false);
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [animateChart, setAnimateChart] = useState<boolean>(false);
   const [is8kLoading, setIs8kLoading] = useState<boolean>(false);
+  const [isNpxLoading, setIsNpxLoading] = useState<boolean>(false);
   const [expandedYearModal, setExpandedYearModal] = useState<{
     visible: boolean;
     year: string;
@@ -286,8 +321,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       const key = `url_${yearToCheck}`;
       const url = Array.isArray(data?.all_meeting_data)
         ? data.all_meeting_data
-            .map((x: any) => x?.[key])
-            .find((u: any) => typeof u === "string" && u.trim() !== "")
+          .map((x: any) => x?.[key])
+          .find((u: any) => typeof u === "string" && u.trim() !== "")
         : null;
 
       if (!url) return;
@@ -326,9 +361,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         `${baseURL}/voting_report_8k/?ticker=${companyGlobalSearchTicker}&download=true`,
         { responseType: 'blob' }
       );
-      
+
       const filename = `Voting Analytics (${companyGlobalSearchTicker}).xlsx`;
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -339,6 +374,40 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading analytics:', error);
+    }
+  };
+
+  // Download NPX data handler
+  const handleDownloadNPXData = async () => {
+    const idToUse = institutionId || companyGlobalSearchId;
+    const dynamicYear = (selectedYear || agmSummaryDetails?.Year || new Date().getFullYear()).toString();
+
+    if (!idToUse) {
+      console.error('Institution or Company ID not available');
+      return;
+    }
+
+    try {
+      setIsNpxLoading(true);
+      const response = await axiosInstance.get(
+        `${baseURL}/api/top20_investor_fund_level/?company_id=${idToUse}&year=${encodeURIComponent(dynamicYear)}`,
+        { responseType: 'blob' }
+      );
+
+      const filename = `NPX-Data-${companyGlobalSearchTicker}-${new Date().getTime()}.xlsx`;
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading NPX data:', error);
+    } finally {
+      setIsNpxLoading(false);
     }
   };
 
@@ -397,12 +466,12 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         return w.charAt(0).toUpperCase() + w.slice(1);
       })
       .join(" ");
-    
+
     // Map "Shareholder Proposal" or "Shareholder Proposals" to "Other Proposals"
     if (formattedName === "Shareholder Proposal" || formattedName === "Shareholder Proposals") {
       return "Other Proposals";
     }
-    
+
     return formattedName;
   };
 
@@ -455,10 +524,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   const ANALYTICS_COLORS = {
-    "Election Of Directors": "#dc2626", // Red-600 to match theme
-    "Say On Pay": "#b91c1c", // Red-700 
-    "Other Proposals": "#f87171", // Red-400 for lighter variant
-    "Ratification of Auditor": "#fb7185" // Rose-400
+    "Election of Directors": "#991b1b", // Maroon (bg-primary/red-800) - Most critical voting item
+    "Say on Pay": "#ea580c", // Orange - Executive compensation
+    "Other Proposals": "#2563eb", // Blue - Shareholder proposals
+    "Ratification of Auditor": "#16a34a" // Green - Standard procedure
   };
 
   const analyticsCategories = getAnalyticsCategories();
@@ -504,6 +573,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     return tabIndex >= 0 ? tabIndex : 0;
   };
 
+  const showNpxActions = Boolean(agmSummaryDetails?.npx_check);
+
   return (
     <>
       {agmSummaryDetails?.Year && (
@@ -532,7 +603,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         Voting Data
                       </button>
                     )}
-                    {dashboardDataList?.total_year?.length > 0 && agmSummaryDetails?.npx_check && (
+                    {showNpxActions && (
                       <button
                         onClick={(event: any) => handleViewNPX(event)}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
@@ -542,47 +613,74 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    <div className="relative">
-                      <button
-                        disabled={
-                          is8kLoading ||
-                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                          !(selectedYear || agmSummaryDetails?.Year)
-                        }
-                        onClick={handle8kLink}
-                        className={clsx([
-                          "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border font-semibold text-red-800 border-solid",
-                          is8kLoading ||
-                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                          !(selectedYear || agmSummaryDetails?.Year)
-                            ? "opacity-60 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
-                        ])}
-                      >
-                        {is8kLoading ? (
-                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "8-K"
-                        )}
-                      </button>
-                      <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                        NEW
-                      </span>
-                    </div>
-                    {analyticsData && (
-                      <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                    {showNpxActions && (
+                      <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
                         <div className="relative">
                           <button
-                            onClick={() => setChartModalVisible(true)}
-                            className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border
-                                       font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                            onClick={handleDownloadNPXData}
+                            disabled={isNpxLoading}
+                            className={clsx([
+                              "p-2 bg-white rounded-md w-auto flex items-center gap-2 justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                              isNpxLoading
+                                ? "opacity-60 cursor-not-allowed"
+                                : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
+                            ])}
                           >
-                            <Lucide icon="BarChart3" className="w-4 h-4" />
+                            {isNpxLoading ? (
+                              <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Lucide icon="Download" className="w-4 h-4" />
+                                <span>N-PX</span>
+                              </>
+                            )}
                           </button>
                           <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
                             NEW
                           </span>
                         </div>
+                      </Tippy>
+                    )}
+                    {/* NPX Analytics button hidden as requested */}
+                    {/* {!showNpxActions && (
+                      <button
+                        onClick={handleViewNPXAnalytics}
+                        className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                      >
+                        NPX analytics
+                      </button>
+                    )} */}
+                    <button
+                      disabled={
+                        is8kLoading ||
+                        !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                        !(selectedYear || agmSummaryDetails?.Year)
+                      }
+                      onClick={handle8kLink}
+                      className={clsx([
+                        "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                        is8kLoading ||
+                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                          !(selectedYear || agmSummaryDetails?.Year)
+                          ? "opacity-60 cursor-not-allowed"
+                          : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
+                      ])}
+                    >
+                      {is8kLoading ? (
+                        <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "8-K"
+                      )}
+                    </button>
+                    {analyticsData && (
+                      <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                        <button
+                          onClick={() => setChartModalVisible(true)}
+                          className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2
+                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                        >
+                          <Lucide icon="BarChart3" className="w-4 h-4" />
+                        </button>
                       </Tippy>
                     )}
                   </>}
@@ -897,7 +995,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         <div key={category.name} className="flex flex-col bg-white rounded-lg border border-slate-200 p-4 min-w-0">
                           <div className="text-center mb-6">
                             <h3 className="text-lg font-semibold text-slate-800 mb-2">{category.name}</h3>
-                            <div className="w-12 h-1 bg-primary mx-auto rounded-full"></div>
+                            <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: category.fill }}></div>
                           </div>
 
                           <div className="relative h-64 bg-slate-50 rounded-lg p-6 mb-6">
@@ -908,21 +1006,27 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                             </div> */}
 
                             <div className="relative h-full flex items-end justify-center gap-12">
-                              {yearDataList.map((item: any, idx: number) => (
-                                <div key={item.year} className="flex flex-col items-center">
-                                  <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
-                                    {item.data ? item.data.percentage : '--'}
-                                  </span>
-                                  <div
-                                    className={idx === 0 ? "bg-primary transition-all duration-700 ease-out" : "bg-slate-400 transition-all duration-700 ease-out"}
-                                    style={{
-                                      width: '48px',
-                                      height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
-                                    }}
-                                  ></div>
-                                  <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">{item.year}</span>
-                                </div>
-                              ))}
+                              {yearDataList.map((item: any, idx: number) => {
+                                const isNoProposal = item.data?.value === 0 || item.data?.value === 0.0;
+                                return (
+                                  <div key={item.year} className="flex flex-col items-center">
+                                    <span className="text-sm font-medium text-slate-700 mb-4 pt-4">
+                                      {isNoProposal ? "No proposal" : (item.data ? item.data.percentage : '--')}
+                                    </span>
+                                    {!isNoProposal && (
+                                      <div
+                                        className="transition-all duration-700 ease-out"
+                                        style={{
+                                          backgroundColor: category.fill,
+                                          width: '48px',
+                                          height: animateChart && item.data ? `${Math.max((item.data.value / (maxValue || 1)) * 160, 30)}px` : '4px'
+                                        }}
+                                      ></div>
+                                    )}
+                                    <span className="text-xs font-medium text-slate-600 mt-3 bg-white px-3 py-1 rounded-full border">{item.year}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
 
@@ -933,7 +1037,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                             <div className="flex gap-2">
                               {yearDataList.map((item: any, idx: number) => (
                                 <div key={item.year} className="flex-1 border border-slate-200 rounded-lg overflow-hidden relative">
-                                  <div className={idx === 0 ? "bg-primary text-white p-2 text-center text-sm font-medium relative" : "bg-slate-400 text-white p-2 text-center text-sm font-medium relative"}>
+                                  <div className="bg-primary text-white p-2 text-center text-sm font-medium relative">
                                     {item.year}
                                     <button
                                       onClick={(e) => {
@@ -989,9 +1093,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       </Dialog>
 
       {/* Expanded Year Modal */}
-      <Dialog 
-        open={expandedYearModal?.visible || false} 
-        onClose={() => {}}
+      <Dialog
+        open={expandedYearModal?.visible || false}
+        onClose={() => { }}
         staticBackdrop
       >
         <Dialog.Panel className="!max-w-[500px] !w-[500px]">

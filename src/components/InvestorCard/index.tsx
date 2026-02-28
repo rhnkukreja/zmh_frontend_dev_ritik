@@ -40,7 +40,11 @@ import EngagementQuestionsDialog from "../EngagementQuestionsDialog";
 import AddNoteModal from "@/pages/Notes/AddNotesModal";
 import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
 
-const index = () => {
+interface InvestorCardProps {
+  onLoaded?: () => void;
+}
+
+const index = ({ onLoaded }: InvestorCardProps) => {
   const location = useLocation();
   const locationPathName = location?.pathname;
   const dispatch: AppDispatch = useAppDispatch();
@@ -67,6 +71,8 @@ const index = () => {
 
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
+  const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
 
   // Check if Say on Pay column should be shown based on selected year
   const showSayOnPayColumn = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.say_on_pay_column_check === true;
@@ -81,32 +87,40 @@ const index = () => {
     setTodayDate(formattedDate);
   }, []);
 
-  const fetchData = async () => {
-    if (companyGlobalSearchTicker && dashboardDataList.length == 0) {
-      dispatch(
-        fetchCompanyDashboard(
-          createDynamicURL(
-            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
-          )
-        )
-      );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
-    } else if (companyGlobalSearchTicker !== tempSearch) {
+  useEffect(() => {
+    // Reset year when company changes
+    if (companyGlobalSearchTicker !== tempSearch) {
       setSelectedYear("");
-      dispatch(
-        fetchCompanyDashboard(
-          createDynamicURL(
-            `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
-          )
-        )
-      );
-      dispatch(setTempSearch(companyGlobalSearchTicker));
     }
-  }
+    setHasLoadingStarted(false);
+    setHasNotifiedLoaded(false);
+  }, [companyGlobalSearchTicker, searchTicker, tempSearch]);
 
   useEffect(() => {
-    fetchData()
-  }, [companyGlobalSearchTicker, searchTicker]);
+    if (investorCardLoading) {
+      setHasLoadingStarted(true);
+    }
+  }, [investorCardLoading]);
+
+  useEffect(() => {
+    if (onLoaded && hasLoadingStarted && !investorCardLoading && !hasNotifiedLoaded) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, hasLoadingStarted, investorCardLoading, hasNotifiedLoaded]);
+
+  useEffect(() => {
+    const hasData = Boolean(
+      dashboardDataList?.all_year_data?.length ||
+      dashboardDataList?.total_year?.length ||
+      dashboardDataList?.length
+    );
+
+    if (onLoaded && !investorCardLoading && !hasNotifiedLoaded && hasData) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, investorCardLoading, hasNotifiedLoaded, dashboardDataList]);
 
   // useEffect(() => {
   //   const validateImages = async () => {
@@ -762,7 +776,7 @@ const index = () => {
           setAddNoteModalVisible={setAddNoteModalVisible}
           title="Create New Note"
           data={data}
-          fetchData={fetchData}
+          fetchData={async () => {}}
           noteModule={false}
         />
       )}

@@ -4,6 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelL
 interface InvestorsVotingAgainstSectionProps {
   data: ChartsData;
   votedAgainstRationale?: VotedAgainstRationale[];
+  showOnlyTrend?: boolean;
+  showOnlyVotingRationale?: boolean;
 }
 
 const parseSplitVoteCounts = (value: unknown): { for?: number; against?: number } | null => {
@@ -54,7 +56,7 @@ const VotingRationaleTable = ({
             <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-[200px]">Investor</th>
             <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-[200px]">Proposal</th>
             <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[100px]">Vote</th>
-            <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[165px]">Vote Counts</th>
+            <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[165px]"># of Funds</th>
             <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs">Rationale</th>
           </tr>
         </thead>
@@ -118,24 +120,46 @@ const extractYearData = (data: any): { year: string; total_percent: number; volu
   return result.sort((a, b) => parseInt(a.year) - parseInt(b.year));
 };
 
+// Category-specific colors matching AGMSummaryCard analytics
+const ANALYTICS_COLORS: Record<string, string> = {
+  "Election of Directors": "#991b1b",      // Maroon (bg-primary/red-800)
+  "Say on Pay": "#ea580c",                 // Orange
+  "Other Proposals": "#2563eb",            // Blue
+  "Ratification of Auditor": "#16a34a"     // Green
+};
+
 // Trend Chart Component
 const TrendChart = ({ title, data }: { title: string; data: any }) => {
   const chartData = extractYearData(data);
   
-  if (chartData.length === 0) {
+  // Get category-specific color, fallback to default maroon
+  const barColor = ANALYTICS_COLORS[title] || "#800000";
+  
+  // Check if data is empty or all values are 0
+  const hasNoData = chartData.length === 0;
+  const allZeros = chartData.length > 0 && chartData.every(item => item.total_percent === 0);
+  
+  if (hasNoData || allZeros) {
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
         <h4 className="text-sm font-semibold text-gray-700 mb-3 text-center">{title}</h4>
         <div className="h-48 flex items-center justify-center bg-gray-50 rounded">
-          <span className="text-sm text-gray-400">No data available</span>
+          <span className="text-sm text-gray-500 font-medium">No proposal</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-      <h4 className="text-sm font-semibold text-gray-700 mb-3 text-center">{title}</h4>
+    <div
+      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+      data-pdf-chart
+      data-title={title}
+    >
+      <div className="text-center mb-3">
+        <h4 className="text-sm font-semibold text-gray-700 mb-2">{title}</h4>
+        <div className="w-12 h-1 mx-auto rounded-full" style={{ backgroundColor: barColor }}></div>
+      </div>
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 25, right: 10, left: 0, bottom: 10 }}>
@@ -156,7 +180,7 @@ const TrendChart = ({ title, data }: { title: string; data: any }) => {
             />
             <Bar 
               dataKey="total_percent" 
-              fill="#800000" 
+              fill={barColor}
               name="% Support" 
               radius={[4, 4, 0, 0]}
               maxBarSize={70}
@@ -164,7 +188,7 @@ const TrendChart = ({ title, data }: { title: string; data: any }) => {
               <LabelList 
                 dataKey="total_percent" 
                 position="top" 
-                formatter={(value: number) => `${value.toFixed(0)}%`}
+                formatter={(value: number) => value === 0 ? 'No proposal' : `${value.toFixed(0)}%`}
                 style={{ fontSize: 12, fill: '#374151', fontWeight: 600 }}
               />
             </Bar>
@@ -175,7 +199,7 @@ const TrendChart = ({ title, data }: { title: string; data: any }) => {
   );
 };
 
-const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: InvestorsVotingAgainstSectionProps) => {
+const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale, showOnlyTrend, showOnlyVotingRationale }: InvestorsVotingAgainstSectionProps) => {
   const safeRationaleData = Array.isArray(votedAgainstRationale) ? votedAgainstRationale : [];
   
   // Check if we have any meaningful data
@@ -186,17 +210,51 @@ const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: Investor
     data.ratification_of_auditor
   );
 
+  // If showOnlyTrend is true, only render Trend section
+  if (showOnlyTrend) {
+    return (
+      <>
+        {hasVotingData && (
+          <section id="trend-investor-support" className="mb-10">
+            <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+              Trend in Investor Support
+            </h2>
+            
+            <div className="grid grid-cols-2 gap-6 mb-6">
+              <TrendChart title="Election of Directors" data={data.election_of_directors} />
+              <TrendChart title="Say on Pay" data={data.say_on_pay} />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <TrendChart title="Other Proposals" data={data.shareholder_proposals} />
+              <TrendChart title="Ratification of Auditor" data={data.ratification_of_auditor} />
+            </div>
+          </section>
+        )}
+      </>
+    );
+  }
+
+  // If showOnlyVotingRationale is true, only render Voting Rationale section
+  if (showOnlyVotingRationale) {
+    return (
+      <>
+        {safeRationaleData.length > 0 && (
+          <section id="voting-rationale" className="mb-10">
+            <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+              Voting Rationale
+            </h2>
+            <VotingRationaleTable rationaleData={safeRationaleData} />
+          </section>
+        )}
+      </>
+    );
+  }
+
+  // Default: render both sections (for backward compatibility)
   return (
     <>
-      {/* Section for Voting Rationale Table */}
-      <section className="mb-10">
-        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
-          Voting Rationale
-        </h2>
-        <VotingRationaleTable rationaleData={safeRationaleData} />
-      </section>
-
-      {/* Separate Section for Trend Charts */}
+      {/* Section 2: Trend in Investor Support (charts first) */}
       {hasVotingData && (
         <section id="trend-investor-support" className="mb-10">
           <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
@@ -214,6 +272,16 @@ const InvestorsVotingAgainstSection = ({ data, votedAgainstRationale }: Investor
             <TrendChart title="Other Proposals" data={data.shareholder_proposals} />
             <TrendChart title="Ratification of Auditor" data={data.ratification_of_auditor} />
           </div>
+        </section>
+      )}
+
+      {/* Section 5: Voting Rationale Table (after other sections) */}
+      {safeRationaleData.length > 0 && (
+        <section id="voting-rationale" className="mb-10">
+          <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+            Voting Rationale
+          </h2>
+          <VotingRationaleTable rationaleData={safeRationaleData} />
         </section>
       )}
     </>

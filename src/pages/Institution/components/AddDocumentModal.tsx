@@ -37,6 +37,8 @@ const categories = [
   "Climate Related",
   "Proxy Voting Stats",
   "Voting Choice",
+  "Voting guidelines",
+  "Company Specific Engagement Stats",
   "Stewardship Report",
   "ESG Integration",
   "UN PRI Report",
@@ -50,9 +52,9 @@ const categories = [
   "Others - Environmental",
   "Others - Social",
   "Others - Governance",
-];
+].sort();
 
-const priorityOptions = ["Low", "Medium", "High", "Extremely High"];
+const priorityOptions = ["Extremely High", "High", "Medium", "Low"];
 
 const months = [
   { value: "01", label: "January" },
@@ -180,12 +182,11 @@ const AddDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Category <span className="text-red-500">*</span>
+              Category
             </label>
             <Controller
               name="category"
               control={control}
-              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
                   value={field.value}
@@ -193,7 +194,7 @@ const AddDocumentModal = ({
                   options={{ placeholder: "Select category" }}
                   className="w-full"
                 >
-                  <option value="">Select Category</option>
+                  <option value=""></option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -202,11 +203,6 @@ const AddDocumentModal = ({
                 </TomSelect>
               )}
             />
-            {errors.category && (
-              <span className="text-red-500 text-sm mt-1 block">
-                {errors.category.message}
-              </span>
-            )}
           </div>
 
           <div className="col-span-12 sm:col-span-6">

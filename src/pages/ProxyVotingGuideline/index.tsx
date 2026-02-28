@@ -275,7 +275,7 @@ function ProxyGuideline() {
                 </span>
               </div>
             </a>
-            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+            {/* {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
                   onClick={() => {
@@ -288,7 +288,7 @@ function ProxyGuideline() {
                   Add New Proxy Voting Guideline
                 </Button>
               </div>
-            )}
+            )} */}
           </div>
 
           <div className="mt-3.5">
