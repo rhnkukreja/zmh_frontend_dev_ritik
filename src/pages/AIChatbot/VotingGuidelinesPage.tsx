@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { 
     Send, Bot, Users, FileText, X, ChevronDown, Check,
-    Eye, EyeOff, Search, Trash2, User, Maximize2, ArrowRight, FileSearch 
+    Eye, EyeOff, Search, Trash2, Maximize2, ArrowRight, FileSearch 
 } from "lucide-react";
 import { fetchInvestors, AI_CHATBOT_API_BASE } from "./api"; 
-import ReactMarkdown from "react-markdown";
-
+import { useChat } from "./ChatContext.tsx";
 // ─────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────
@@ -13,6 +12,15 @@ type InvestorItem = {
     id: string;
     name: string;
     disabled?: boolean; // Optional, used for the separator
+};
+
+type HistoryItem = {
+    id: string;
+    question: string;
+    results?: GuidelineResult[];
+    loading?: boolean;
+    error?: boolean;
+    message?: string;
 };
 
 type GuidelineResult = {
@@ -24,7 +32,7 @@ type GuidelineResult = {
     year: number | null;
     quarter: string | null;
     relevance_score: number | null;
-    file_url?: string; // Add file URL for clickable PDF links
+    file_url?: string;
 };
 
 export default function VotingGuidelinesPage() {
@@ -32,23 +40,33 @@ export default function VotingGuidelinesPage() {
     // STATE
     // ─────────────────────────────────────────────────────────
     const [allInvestors, setAllInvestors] = useState<InvestorItem[]>([]);
-    const [selectedInvestors, setSelectedInvestors] = useState<string[]>([]);
-    const [guidelineResults, setGuidelineResults] = useState<GuidelineResult[]>([]);
+    
+    const { 
+        guidelineResults: history, 
+        setGuidelineResults: setHistory,
+        guidelineFilters,
+        setGuidelineFilters
+    } = useChat();
+
+    // ─── Derive filter values from context ───
+    const selectedInvestors = guidelineFilters.selectedInvestors;
+    const includeEmea = guidelineFilters.includeEmea;
+    const question = guidelineFilters.question;
+
+    // ─── Setters that write back to context ───
+    const setSelectedInvestors = (v: string[]) => setGuidelineFilters(f => ({ ...f, selectedInvestors: v }));
+    const setIncludeEmea = (v: boolean) => setGuidelineFilters(f => ({ ...f, includeEmea: v }));
+    const setQuestion = (v: string) => setGuidelineFilters(f => ({ ...f, question: v }));
     
     const availableYears = ["2026", "2025", "2024"];
     
     const [selectedYears, setSelectedYears] = useState<string[]>(() => {
-        // Get the latest year from available years
         const latest = Math.max(...availableYears.map(Number));
-        // If latest year is 2026, default to 2025; otherwise use the latest year
         const defaultYear = latest === 2026 ? "2025" : latest.toString();
         return [defaultYear];
     });
-    const [includeEmea, setIncludeEmea] = useState(false);
     const [llmStrength, setLlmStrength] = useState(0);
     
-    const [question, setQuestion] = useState("");
-    const [lastAskedQuestion, setLastAskedQuestion] = useState<string | null>(null); 
     const [loading, setLoading] = useState(true);
     const [analyzing, setAnalyzing] = useState(false);
     const [showFilters, setShowFilters] = useState(true);
@@ -73,11 +91,10 @@ export default function VotingGuidelinesPage() {
                 
                 const allInvestorsData: InvestorItem[] = data.investors || [];
 
-                // Priority order (same as QA page)
                 const priorityOrder = [
-                    "c4a5a2c7-c493-414b-854f-1c99c9aef7ed", // BlackRock
-                    "2b622a0e-1a72-43fd-add2-d4b863f0731c", // State Street
-                    "347446c8-649d-4b5a-be03-9c178c82ff2a", // Vanguard
+                    "c4a5a2c7-c493-414b-854f-1c99c9aef7ed",
+                    "2b622a0e-1a72-43fd-add2-d4b863f0731c",
+                    "347446c8-649d-4b5a-be03-9c178c82ff2a",
                     "21881b9b-7970-414e-baae-c84635d03d45",
                     "4f383fdd-b46d-4952-b128-624c9603c411"
                 ];
@@ -115,23 +132,23 @@ export default function VotingGuidelinesPage() {
     }, []);
 
     useEffect(() => {
-        if (guidelineResults.length > 0 || analyzing) {
+        if (history.length > 0 || analyzing) {
             resultsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [guidelineResults, analyzing]);
+    }, [history, analyzing]);
 
     // ─────────────────────────────────────────────────────────
     // HANDLERS
     // ─────────────────────────────────────────────────────────
     const toggleInvestor = (id: string) => {
-        setSelectedInvestors(prev => {
-            if (prev.includes(id)) return prev.filter(item => item !== id);
-            if (prev.length >= 5) {
+        setSelectedInvestors((() => {
+            if (selectedInvestors.includes(id)) return selectedInvestors.filter(item => item !== id);
+            if (selectedInvestors.length >= 5) {
                 alert("Maximum 5 investors allowed for comparison.");
-                return prev;
+                return selectedInvestors;
             }
-            return [...prev, id];
-        });
+            return [...selectedInvestors, id];
+        })());
     };
 
     const toggleYearSelection = (year: string) => {
@@ -141,9 +158,7 @@ export default function VotingGuidelinesPage() {
     };
 
     const clearChat = () => {
-        setGuidelineResults([]);
-        setLastAskedQuestion(null);
-        setQuestion(""); // Clear the question from input too
+        setHistory([]);
     };
 
     const filteredInvestors = useMemo(() => {
@@ -171,7 +186,6 @@ export default function VotingGuidelinesPage() {
     // DYNAMIC WIDTH HELPER
     // ─────────────────────────────────────────────────────────
     const getColumnWidthClass = (count: number) => {
-        // Dynamic widths based on selection count
         if (count >= 5) return "w-1/5 min-w-[180px]"; 
         if (count === 4) return "w-1/4 min-w-[220px]";
         if (count === 3) return "w-1/3 min-w-[250px]";
@@ -181,15 +195,22 @@ export default function VotingGuidelinesPage() {
     const isReady = selectedInvestors.length > 0 && question.trim().length > 0 && !analyzing;
 
     const handleAnalyze = async () => {
-        if (!isReady || !question.trim()) return; // Require user to type a question
+        if (!isReady || !question.trim()) return;
         
         setAnalyzing(true);
-        setGuidelineResults([]);
         
         const finalQuestion = question.trim();
-        setLastAskedQuestion(finalQuestion);
-        // Don't clear question - keep it in the input like QA page
-        // setQuestion(""); 
+
+        const itemId = crypto.randomUUID();
+
+        setHistory(prev => [
+            ...prev,
+            {
+                id: itemId,
+                question: finalQuestion,
+                loading: true,
+            },
+        ]);
 
         try {
             const response = await fetch(`${AI_CHATBOT_API_BASE}/api/voting-guidelines-table`, {
@@ -209,9 +230,24 @@ export default function VotingGuidelinesPage() {
             if (!response.ok) throw new Error("Analysis failed");
 
             const data = await response.json();
-            setGuidelineResults(data.results || []);
+            const results = data.results || [];
+
+            setHistory(prev =>
+                prev.map(item =>
+                    item.id === itemId
+                        ? { ...item, results, loading: false }
+                        : item
+                )
+            );
         } catch (error) {
             console.error("Error fetching guidelines:", error);
+            setHistory(prev =>
+                prev.map(item =>
+                    item.id === itemId
+                        ? { ...item, loading: false, error: true, message: "Failed to analyze guidelines. Please try again." }
+                        : item
+                )
+            );
             alert("Failed to analyze guidelines. Please try again.");
         } finally {
             setAnalyzing(false);
@@ -267,16 +303,24 @@ export default function VotingGuidelinesPage() {
                                     const uniquePages = new Set(segments.map(s => s.page));
                                     const isMultiPage = uniquePages.size > 1;
 
+                                    const renderLines = (text: string) =>
+                                        text
+                                            .split(/\n/)
+                                            .map(line => line.trim())
+                                            .filter(line => line.length > 0)
+                                            .map((line, i) => (
+                                                <p key={i} className="mb-3 text-sm text-gray-800 leading-relaxed">{line}</p>
+                                            ));
+
                                     if (!isMultiPage) {
-                                        // Single page — render as one combined block
-                                        const combinedText = segments.length > 0
-                                            ? segments.map(s => s.text).join("\n\n")
+                                        const rawText = segments.length > 0
+                                            ? segments.map(s => s.text).join("\n")
                                             : selectedResult.summary;
                                         const singlePage = segments[0]?.page;
                                         const singlePageUrl = segments[0]?.page_url;
                                         return (
                                             <div>
-                                                <ReactMarkdown>{combinedText}</ReactMarkdown>
+                                                {renderLines(rawText)}
                                                 {singlePage !== null && singlePage !== undefined && (
                                                     <a
                                                         href={singlePageUrl ?? (selectedResult.file_url ? `${selectedResult.file_url}#page=${singlePage}` : "#")}
@@ -291,16 +335,15 @@ export default function VotingGuidelinesPage() {
                                         );
                                     }
 
-                                    // Multiple pages — one paragraph per segment with its own page link
                                     return segments.map((seg, i) => (
                                         <div key={i}>
-                                            <ReactMarkdown>{seg.text}</ReactMarkdown>
+                                            {renderLines(seg.text)}
                                             {seg.page !== null && (
                                                 <a
                                                     href={seg.page_url ?? (selectedResult.file_url ? `${selectedResult.file_url}#page=${seg.page}` : "#")}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="inline-block mt-1 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                                    className="inline-block mt-1 mb-4 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
                                                 >
                                                     p.{seg.page}
                                                 </a>
@@ -318,14 +361,6 @@ export default function VotingGuidelinesPage() {
             <div className={`space-y-4 relative z-20 ${showFilters ? 'mb-4' : 'mb-6'}`}>
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-1">
-                        {/* COMMENTED OUT: Eye button to hide/show filters (matching QA page)
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="p-2 bg-white border-2 border-[#931638]/50 rounded-lg hover:bg-gray-50 transition-all shrink-0"
-                        >
-                            {showFilters ? <Eye size={16} className="text-[#931638]" /> : <EyeOff size={16} className="text-gray-400" />}
-                        </button>
-                        */}
 
                         {showFilters && (
                         <>
@@ -356,7 +391,6 @@ export default function VotingGuidelinesPage() {
                                         </div>
                                         <div className="max-h-60 overflow-y-auto custom-scrollbar">
                                             {filteredInvestors.map((inv) => {
-                                                // Handle separator
                                                 if (inv.disabled) {
                                                     return (
                                                         <div key={inv.id} className="px-4 py-1 text-center text-gray-300 text-xs pointer-events-none">
@@ -449,110 +483,141 @@ export default function VotingGuidelinesPage() {
                 </div>
             )}
 
+            {showFilters && (
+                <div className="flex justify-start mb-2">
+                </div>
+            )}
+
             {/* RESULTS / CHAT HISTORY SECTION */}
             <div className="flex-1 overflow-y-auto space-y-6 pr-4 pb-4 custom-scrollbar">
-                {!analyzing && !lastAskedQuestion && guidelineResults.length === 0 && (
+                {!analyzing && history.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4 pt-10">
                         <Bot size={48} strokeWidth={1} />
                         <p className="text-sm font-light">Select investors and ask a question to analyze their guidelines.</p>
                     </div>
                 )}
 
-                {lastAskedQuestion && (
-                    <div className="flex justify-between items-start mt-4 group w-full">
-                        <button onClick={clearChat} className="text-gray-400 hover:text-[#931638] p-2 rounded-full hover:bg-gray-100 transition-colors ml-2" title="Clear Chat Results"><Trash2 size={18} /></button>
-                        <div className="flex gap-4 flex-row-reverse animate-in slide-in-from-right-2 flex-1">
-                            <div className="w-8 h-8 rounded-full bg-[#931638] flex items-center justify-center shrink-0"><User size={14} className="text-white" /></div>
-                            <div className="bg-[#931638] text-white p-3 rounded-2xl rounded-tr-sm text-sm shadow-lg inline-block whitespace-nowrap">{lastAskedQuestion}</div>
+                {history.length > 0 && (
+                    <div className="flex justify-start mt-4">
+                        <button onClick={clearChat} className="flex items-center gap-2 bg-gray-100 hover:bg-[#931638]/10 border border-gray-300 hover:border-[#931638] text-gray-600 hover:text-[#931638] px-3 py-1.5 rounded-lg text-xs font-medium transition-all" title="Clear all messages">
+                            <Trash2 size={14} />
+                            Clear Chat
+                        </button>
+                    </div>
+                )}
+
+                {history.map((item) => (
+                    <div key={item.id} className="space-y-3">
+                        {/* Question bubble */}
+                        <div className="flex justify-end">
+                            <div className="bg-[#931638] text-white p-3 rounded-2xl rounded-tr-sm text-sm shadow-lg inline-block">
+                                {item.question}
+                            </div>
                         </div>
-                    </div>
-                )}
 
-                {analyzing && guidelineResults.length === 0 && (
-                    <div className="flex gap-4 items-center animate-in slide-in-from-left-2 mt-4 ml-1">
-                        <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse flex items-center justify-center shrink-0"><Bot size={14} className="text-[#931638]" /></div>
-                        <div className="text-sm text-gray-500 animate-pulse font-medium bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">Extracting and analyzing guidelines...</div>
-                    </div>
-                )}
+                        {/* Loading state */}
+                        {item.loading && (
+                            <div className="flex gap-4 items-center animate-in slide-in-from-left-2 ml-1">
+                                <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse flex items-center justify-center shrink-0"><Bot size={14} className="text-[#931638]" /></div>
+                                <div className="text-sm text-gray-500 animate-pulse font-medium bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">Extracting and analyzing guidelines...</div>
+                            </div>
+                        )}
 
-                {/* RESULTS AREA - TABLE LAYOUT */}
-                {guidelineResults.length > 0 && (
-                    <div className="animate-in slide-in-from-bottom-4 duration-500 pb-10">
-                        <div className="border border-[#931638]/20 rounded-lg shadow-md bg-white overflow-hidden">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-gradient-to-r from-[#931638] to-[#931638]/90">
-                                        <th className="text-left px-2 py-1 text-white font-bold text-xs w-[120px]">Investor</th>
-                                        <th className="text-left px-2 py-1 text-white font-bold text-xs">Answer</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {guidelineResults.map((res, idx) => {
-                                        const investorName = allInvestors.find(i => i.id === res.investor_id)?.name || res.investor_id;
-                                        
-                                        return (
-                                            <tr 
-                                                key={idx}
-                                                onClick={() => setSelectedResult(res)}
-                                                className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors group"
-                                            >
-                                                {/* Investor Name Column */}
-                                                <td className="p-2 align-top bg-gray-50 border-r border-gray-200">
-                                                    <div className="font-bold text-[#931638] text-xs">
-                                                        {investorName}
-                                                    </div>
-                                                </td>
+                        {/* Error state */}
+                        {item.error && !item.loading && (
+                            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                                <div>
+                                    <p className="text-sm font-medium text-red-900 mb-1">Error</p>
+                                    <p className="text-xs text-red-700">{item.message || "Something went wrong. Please try again."}</p>
+                                </div>
+                            </div>
+                        )}
 
-                                                {/* Answer Column */}
-                                                <td className="p-2">
-                                                    <div className="space-y-1.5">
-                                                        {/* PDF Name Header - Reduced Padding */}
-                                                        <div className="flex items-center justify-between gap-2 pb-1 border-b border-gray-200">
-                                                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                                                <FileText size={11} className="text-[#931638] shrink-0"/>
-                                                                <span className="text-[10px] font-bold text-[#931638] truncate" title={res.pdf_name}>
-                                                                    {res.pdf_name}
-                                                                </span>
-                                                                {res.year && (
-                                                                    <span className="text-[9px] text-gray-500 font-medium shrink-0">
-                                                                        ({res.year})
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            {res.file_url && (
-                                                                <a
-                                                                    href={res.file_url}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                    className="flex items-center gap-1 bg-[#931638] text-white px-1.5 py-0.5 rounded text-[9px] font-bold hover:bg-[#931638]/90 transition-colors shrink-0"
-                                                                    title="Open PDF"
-                                                                >
-                                                                    <FileSearch size={10} />
-                                                                    PDF
-                                                                </a>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Answer Preview - 2 lines only */}
-                                                        <div className="line-clamp-2 text-gray-700 text-[10px] leading-relaxed">
-                                                            {res.answer_segments?.[0]?.text ?? res.summary}
-                                                        </div>
-
-                                                        {/* View Full Link - No Pages in Preview */}
-                                                        <div className="flex items-center justify-end pt-1">
-
-                                                        </div>
-                                                    </div>
-                                                </td>
+                        {/* Results table */}
+                        {!item.loading && !item.error && item.results && item.results.length > 0 && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 pb-4">
+                                <div className="border border-[#931638]/20 rounded-lg shadow-md bg-white overflow-hidden">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="bg-gradient-to-r from-[#931638] to-[#931638]/90">
+                                                <th className="text-left px-2 py-1 text-white font-bold text-xs w-[120px]">Investor</th>
+                                                <th className="text-left px-2 py-1 text-white font-bold text-xs">Answer</th>
                                             </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                        </thead>
+                                        <tbody>
+                                        {item.results.map((res: GuidelineResult, idx: number) => {
+                                                const investorName = allInvestors.find(i => i.id === res.investor_id)?.name || res.investor_id;
+                                                return (
+                                                    <tr
+                                                        key={idx}
+                                                        onClick={() => setSelectedResult(res)}
+                                                        className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors group"
+                                                    >
+                                                        {/* Investor Name Column */}
+                                                        <td className="p-2 align-top bg-gray-50 border-r border-gray-200">
+                                                            <div className="font-bold text-[#931638] text-xs">
+                                                                {investorName}
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Answer Column */}
+                                                        <td className="p-2">
+                                                            <div className="space-y-1.5">
+                                                                {/* PDF Name Header */}
+                                                                <div className="flex items-center justify-between gap-2 pb-1 border-b border-gray-200">
+                                                                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                                                        <FileText size={11} className="text-[#931638] shrink-0"/>
+                                                                        <span className="text-[10px] font-bold text-[#931638] truncate" title={res.pdf_name}>
+                                                                            {res.pdf_name}
+                                                                        </span>
+                                                                        {res.year && (
+                                                                            <span className="text-[9px] text-gray-500 font-medium shrink-0">
+                                                                                ({res.year})
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    {res.file_url && (
+                                                                        <a
+                                                                            href={res.file_url}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            className="flex items-center gap-1 bg-[#931638] text-white px-1.5 py-0.5 rounded text-[9px] font-bold hover:bg-[#931638]/90 transition-colors shrink-0"
+                                                                            title="Open PDF"
+                                                                        >
+                                                                            <FileSearch size={10} />
+                                                                            PDF
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Answer Preview - 2 lines only */}
+                                                                <div className="line-clamp-2 text-gray-700 text-[10px] leading-relaxed">
+                                                                    {res.answer_segments?.[0]?.text ?? res.summary}
+                                                                </div>
+
+                                                                <div className="flex items-center justify-end pt-1"></div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {!item.loading && !item.error && item.results && item.results.length === 0 && (
+                            <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-lg border-2 border-amber-200">
+                                <div>
+                                    <p className="text-sm font-medium text-amber-900 mb-1">No Results Found</p>
+                                    <p className="text-xs text-amber-700">No relevant information found for your question.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                )}
+                ))}
                 <div ref={resultsEndRef} className="h-4" />
             </div>
         </div>

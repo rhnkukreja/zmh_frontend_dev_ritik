@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { Send, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, AlertCircle, Trash2, Eye, EyeOff, Info} from "lucide-react";
 import { AI_CHATBOT_API_BASE , fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api";
 import ReactMarkdown from "react-markdown";
+import { useChat } from "./ChatContext.tsx";
 
 // --- Types ---
 interface Investor {
@@ -51,6 +52,7 @@ type QAItem = {
     error?: boolean;
     message?: string;
     status?: string;
+    activeLoadingCategory?: string | null; // <-- Add this line
 };
   
 
@@ -61,28 +63,40 @@ const getPdfLink = (url: string | undefined, page: string | number, filename: st
 };
 
 export default function QAPage() {
-  const [question, setQuestion] = useState("");
+  const cancelRef = useRef(false);
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState<QAItem[]>([]);
+  const { qaHistory: history, setQaHistory: setHistory, qaFilters, setQaFilters } = useChat();
 
-  
+  // ─── Derive filter values from context ───
+  const investorId = qaFilters.investorId;
+  const selectedCategories = qaFilters.selectedCategories;
+  const selectedYears = qaFilters.selectedYears;
+  const includeEmea = qaFilters.includeEmea;
+  const question = qaFilters.question;
+
+  // ─── Setters that write back to context ───
+  const setInvestorId = (v: string) => setQaFilters(f => ({ ...f, investorId: v }));
+  const setSelectedCategories = (v: string[]) => setQaFilters(f => ({ ...f, selectedCategories: v }));
+  const setSelectedYears = (v: string[]) => setQaFilters(f => ({ ...f, selectedYears: v }));
+  const setIncludeEmea = (v: boolean) => setQaFilters(f => ({ ...f, includeEmea: v }));
+  const setQuestion = (v: string) => setQaFilters(f => ({ ...f, question: v }));
+  const setScope = (v: "specific" | "all") => setQaFilters(f => ({ ...f, scope: v }));
+  const setSelectedPdfIds = (v: string[] | ((prev: string[]) => string[])) =>
+    setQaFilters(f => ({
+      ...f,
+      selectedPdfIds: typeof v === "function" ? v(f.selectedPdfIds) : v,
+    }));
+
   // Scopes - REMOVED "compare"
-  const [scope, setScope] = useState<"specific" | "all">("specific");
+  const scope = qaFilters.scope;
+  const selectedPdfIds = qaFilters.selectedPdfIds;
 
-  // Filters
-  const [investorId, setInvestorId] = useState<string>("");
-  
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedYears, setSelectedYears] = useState<string[]>([]);
-  const [includeEmea, setIncludeEmea] = useState(false);
-  
   // Data Lists
   const [investorList, setInvestorList] = useState<Investor[]>([]);
   const [allDocs, setAllDocs] = useState<DocItem[]>([]);
   const [yearList, setYearList] = useState<string[]>([]); 
 
   // Selection
-  const [selectedPdfIds, setSelectedPdfIds] = useState<string[]>([]);
   const [isDocDropdownOpen, setIsDocDropdownOpen] = useState(false);
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -132,6 +146,12 @@ export default function QAPage() {
   const yearDropdownRef = useRef<HTMLDivElement>(null); 
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
+  // ─────────────────────────────────────────────────────────
+  // REF: Track previous investorId to detect real changes
+  // vs. remounts from page navigation
+  // ─────────────────────────────────────────────────────────
+  const prevInvestorIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const initData = async () => {
         try {
@@ -163,7 +183,8 @@ export default function QAPage() {
             const sortedInvestors = [...priorityInvestors, separator, ...otherInvestors];
             setInvestorList(sortedInvestors);
             
-            if (sortedInvestors.length > 0) {
+            // Only initialize if no investor is already selected (i.e., first time loading)
+            if (sortedInvestors.length > 0 && !investorId) {
                 const firstInvestorId = sortedInvestors[0].id;
                 setInvestorId(firstInvestorId);
                 
@@ -195,42 +216,51 @@ export default function QAPage() {
 }, []);
   
   // --- 2. Fetch Filters ---
-    useEffect(() => {
-        const loadFilters = async () => {
-            if (!investorId) return;
-    
-            try {
-                const data = await fetchInvestorFilters(investorId);
-                const years = data.years ? data.years.map(String) : [];
-                setYearList(years);
-                
-                const formatted: DocItem[] = data.all_docs.map((doc: any) => ({
-                pdf_id: doc.id,
-                name: doc.name,
-                investor_id: investorId,
-                category: doc.category ? String(doc.category) : "General",
-                year: doc.year || "",
-                is_emea: doc.is_emea 
-                }));
-                setAllDocs(formatted);
-    
-                setSelectedCategories([]); 
-                
-                // Auto-select latest year when investor changes
-                if (years.length > 0) {
-                  const latest = Math.max(...years.map(Number));
-                  setSelectedYears([latest.toString()]);
-                } else {
-                  setSelectedYears([]); 
-                }
-                
-                setSelectedPdfIds([]);
-            } catch (error) {
-                console.error("Failed to load investor filters", error);
-            }
-        };
-        loadFilters();
-    }, [investorId]);
+  // Only resets filter selections when investor actually changes,
+  // NOT on remount (page navigation back to this page).
+  useEffect(() => {
+      const loadFilters = async () => {
+          if (!investorId) return;
+
+          // Detect if the investor actually changed vs. this being a remount
+          const isInvestorChange = prevInvestorIdRef.current !== null && prevInvestorIdRef.current !== investorId;
+
+          // Update ref to current value
+          prevInvestorIdRef.current = investorId;
+
+          try {
+              const data = await fetchInvestorFilters(investorId);
+              const years = data.years ? data.years.map(String) : [];
+              setYearList(years);
+              
+              const formatted: DocItem[] = data.all_docs.map((doc: any) => ({
+              pdf_id: doc.id,
+              name: doc.name,
+              investor_id: investorId,
+              category: doc.category ? String(doc.category) : "General",
+              year: doc.year || "",
+              is_emea: doc.is_emea 
+              }));
+              setAllDocs(formatted);
+
+              // ✅ Only reset filter selections when the investor actually changed,
+              //    not on remount (so context persists across page navigation)
+              if (isInvestorChange) {
+                  setSelectedCategories([]);
+                  setSelectedPdfIds([]);
+                  if (years.length > 0) {
+                      const latest = Math.max(...years.map(Number));
+                      setSelectedYears([latest.toString()]);
+                  } else {
+                      setSelectedYears([]);
+                  }
+              }
+          } catch (error) {
+              console.error("Failed to load investor filters", error);
+          }
+      };
+      loadFilters();
+  }, [investorId]);
 
   // --- 3. Dynamic Categories ---
   const availableCategories = useMemo(() => {
@@ -264,17 +294,142 @@ export default function QAPage() {
   }, [availableCategories, selectedCategories]);
 
   // --- 5. Auto-Select Timer Logic ---
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    if (isVerifying && countdown > 0) {
-        timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    } else if (isVerifying && countdown === 0) {
-        if (pendingQuestion && pendingCategory) {
-            fetchAnswers(pendingQuestion, [pendingCategory]);
+  
+  // DELETE the useEffect that starts with: 
+  // useEffect(() => { let timer: ReturnType<typeof setTimeout>; if (isVerifying && countdown > 0) ...
+
+  const handleUserRejection = () => {
+    cancelRef.current = true; // Aborts the background countdown
+    setIsVerifying(false);
+    setCountdown(3);
+    setLoadingQuestion(null);
+    if (pendingQuestion) setQuestion(pendingQuestion);
+    
+    // Remove the pending item from history
+    setHistory(prev => prev.filter(item => item.loading !== true || item.question !== pendingQuestion));
+    
+    setShowCategoryTooltip(true);
+    setIsCategoryDropdownOpen(true);
+    setTimeout(() => setShowCategoryTooltip(false), 5000);
+  };
+
+  const fetchAnswers = async (qaId: string, q: string, cats: string[] | null, overrideScope?: "specific" | "all") => {
+      setIsVerifying(false);
+      setCountdown(3);
+      setPendingQuestion(null);
+      setPendingCategory(null);
+      setShowCategoryTooltip(false); 
+      
+      const catUsed = (cats && cats.length > 0) ? cats[0] : null;
+      setActiveLoadingCategory(catUsed);
+      setLoadingQuestion(q);
+      setLoading(true);
+
+      // Update the existing history item with the category
+      setHistory(prev => prev.map(item => 
+        item.id === qaId ? { ...item, activeLoadingCategory: catUsed } : item
+      ));
+
+      try {
+        const currentScope = overrideScope !== undefined ? overrideScope : scope;
+        const response = await fetch(`${AI_CHATBOT_API_BASE}/ask-pdf`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: q,
+            pdf_ids: currentScope === "specific" ? selectedPdfIds : [],
+            investor_id: investorId,
+            search_scope: currentScope,
+            category: (cats && cats.length > 0) ? cats : null, 
+            years: selectedYears.length > 0 ? selectedYears.map(Number) : null,
+            llm_strength: llmStrength,
+            include_emea: includeEmea
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          setHistory(prev => prev.map(item => item.id === qaId ? { ...item, error: true, loading: false, message: data.detail || "Error in backend." } : item));
+          return;
         }
+        
+        const standardizedAnswers = data.answers || [];
+        setHistory(prev => prev.map(item => item.id === qaId ? { ...item, answers: standardizedAnswers, loading: false, message: data.message, status: data.status, error: data.error || false } : item));
+        setSelectedCategories([]);
+
+    } catch (err) {
+        setHistory(prev => prev.map(item => item.id === qaId ? { ...item, error: true, loading: false, message: "Unable to connect to server. Please try again." } : item));
+    } finally {
+        setLoading(false);
+        setLoadingQuestion(null);
+        setActiveLoadingCategory(null);
     }
-    return () => clearTimeout(timer);
-  }, [isVerifying, countdown, pendingQuestion, pendingCategory]);
+  };
+
+  const handleAsk = async () => {
+    const currentQ = question.trim();
+    if (!currentQ) return;
+    if (!investorId) return alert("Please select an investor.");
+    if (scope === "specific" && selectedPdfIds.length === 0) return alert("Please select at least one document.");
+
+    setQuestion(""); // Clear input immediately
+    const qaId = crypto.randomUUID();
+    
+    // PUSH TO HISTORY IMMEDIATELY (Survives tab switching)
+    setHistory(prev => [{ id: qaId, question: currentQ, loading: true }, ...prev]);
+
+    if (selectedCategories.length > 0) {
+        await fetchAnswers(qaId, currentQ, selectedCategories);
+        return;
+    }
+
+    setLoading(true);
+    setLoadingQuestion(currentQ);
+    try {
+        const res = await fetch(`${AI_CHATBOT_API_BASE}/predict-category`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question: currentQ, investor_id: investorId }),
+        });
+        const data = await res.json();
+        setLoading(false);
+
+        if (data.detected_category) {
+            setPendingQuestion(currentQ);
+            setPendingCategory(data.detected_category);
+            setIsVerifying(true);
+            
+            // INTERNAL COUNTDOWN LOOP (Survives tab switching)
+            cancelRef.current = false;
+            for (let i = 3; i > 0; i--) {
+                if (cancelRef.current) return; 
+                setCountdown(i);
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            if (cancelRef.current) return;
+            
+            await fetchAnswers(qaId, currentQ, [data.detected_category]);
+            return; 
+        }
+        await fetchAnswers(qaId, currentQ, null);
+
+    } catch (e) {
+        setLoading(false);
+        await fetchAnswers(qaId, currentQ, null);
+    }
+  };
+
+  const handleSampleQuestionClick = async (sampleQuestion: string, sampleCategory: string, sampleScope: "specific" | "all") => {
+    setQuestion(sampleQuestion);
+    setSelectedCategories([sampleCategory]);
+    setScope(sampleScope);
+    
+    const qaId = crypto.randomUUID();
+    setHistory(prev => [{ id: qaId, question: sampleQuestion, loading: true }, ...prev]);
+    await fetchAnswers(qaId, sampleQuestion, [sampleCategory], sampleScope);
+  };
+
 
   // Auto-scroll
   useEffect(() => {
@@ -335,188 +490,12 @@ export default function QAPage() {
     }
   };
 
-  // Handler for sample question clicks
-  const handleSampleQuestionClick = async (sampleQuestion: string, sampleCategory: string, sampleScope: "specific" | "all") => {
-    // Set the question in the input field
-    setQuestion(sampleQuestion);
-    
-    // Set the category
-    setSelectedCategories([sampleCategory]);
-    
-    // Set the scope
-    setScope(sampleScope);
-    
-    // Immediately trigger the search with the sample question and pass the scope directly
-    await fetchAnswers(sampleQuestion, [sampleCategory], sampleScope);
-  };
 
-  const handleUserRejection = () => {
-    setIsVerifying(false);
-    setCountdown(3);
-    setLoadingQuestion(null);
-    if (pendingQuestion) setQuestion(pendingQuestion);
-    
-    setShowCategoryTooltip(true);
-    setIsCategoryDropdownOpen(true);
-
-    setTimeout(() => setShowCategoryTooltip(false), 5000);
-  };
-
-  // ─────────────────────────────────────────────────────────
-  // Step 2: ACTUAL Search Execution - COMPARE MODE REMOVED
-  // ─────────────────────────────────────────────────────────
-  const fetchAnswers = async (q: string, cats: string[] | null, overrideScope?: "specific" | "all") => {
-      setIsVerifying(false);
-      setCountdown(3);
-      setPendingQuestion(null);
-      setPendingCategory(null);
-      setShowCategoryTooltip(false); 
-      
-      const catUsed = (cats && cats.length > 0) ? cats[0] : null;
-      setActiveLoadingCategory(catUsed);
-      setLoadingQuestion(q);
-      setLoading(true);
-      
-      const qaId = crypto.randomUUID();
-
-      setHistory(prev => [
-        {
-          id: qaId,
-          question: q,
-          loading: true,
-        },
-        ...prev,
-      ]);
-
-      try {
-        // Use overrideScope if provided, otherwise use the state scope
-        const currentScope = overrideScope !== undefined ? overrideScope : scope;
-        
-        // REMOVED: Compare mode logic - only one API call now
-        const response = await fetch(`${AI_CHATBOT_API_BASE }/ask-pdf`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question: q,
-            pdf_ids: currentScope === "specific" ? selectedPdfIds : [],
-            investor_id: investorId,
-            search_scope: currentScope,
-            category: (cats && cats.length > 0) ? cats : null, 
-            years: selectedYears.length > 0 ? selectedYears.map(Number) : null,
-            llm_strength: llmStrength,
-            include_emea: includeEmea
-          }),
-        });
-
-        const data = await response.json();
-        
-        // Check if response has an error status
-        if (!response.ok) {
-          // This is a system error from backend
-          setHistory(prev =>
-            prev.map(item =>
-              item.id === qaId
-                ? { 
-                    ...item, 
-                    error: true, 
-                    loading: false,
-                    message: data.detail || "Error in backend. Please contact support."
-                  }
-                : item
-            )
-          );
-          return;
-        }
-        
-        const standardizedAnswers = data.answers || [];
-        
-        setHistory(prev =>
-            prev.map(item =>
-              item.id === qaId
-                ? { 
-                    ...item, 
-                    answers: standardizedAnswers, 
-                    loading: false,
-                    message: data.message,
-                    status: data.status,
-                    error: data.error || false
-                  }
-                : item
-            )
-          );
-        
-        setSelectedCategories([]);
-
-    } catch (err) {
-        console.error("API call failed:", err);
-        setHistory(prev =>
-            prev.map(item =>
-              item.id === qaId
-                ? { 
-                    ...item, 
-                    error: true, 
-                    loading: false,
-                    message: "Unable to connect to server. Please try again."
-                  }
-                : item
-            )
-          );
-    } finally {
-        setLoading(false);
-        setLoadingQuestion(null);
-        setActiveLoadingCategory(null);
-    }
-  };
 
   // ─────────────────────────────────────────────────────────
   // Step 1: Handle Ask - COMPARE MODE REMOVED
   // ─────────────────────────────────────────────────────────
-  const handleAsk = async () => {
-    const currentQ = question.trim();
-    if (!currentQ) return;
-    
-    // REMOVED: scope !== "compare" check
-    if (!investorId) return alert("Please select an investor.");
-    if (scope === "specific" && selectedPdfIds.length === 0) return alert("Please select at least one document.");
-
-    if (selectedCategories.length > 0) {
-        await fetchAnswers(currentQ, selectedCategories);
-        return;
-    }
-
-    // REMOVED: Compare mode check
-
-    setLoading(true);
-    setLoadingQuestion(currentQ);
-    try {
-        const res = await fetch(`${AI_CHATBOT_API_BASE }/predict-category`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                question: currentQ, 
-                investor_id: investorId 
-            }),
-        });
-        const data = await res.json();
-        setLoading(false);
-
-        if (data.detected_category) {
-            setPendingQuestion(currentQ);
-            setPendingCategory(data.detected_category);
-            setCountdown(3);
-            setIsVerifying(true);
-            return; 
-        }
-
-        await fetchAnswers(currentQ, null);
-
-    } catch (e) {
-        console.error("Prediction failed", e);
-        setLoading(false);
-        await fetchAnswers(currentQ, null);
-    }
-  };
-
+  
   const getStrengthLabel = (val: number) => {
     switch(val) {
       case 0: return "Factual";
@@ -600,17 +579,48 @@ export default function QAPage() {
                             const uniquePages = new Set(segments.map(s => s.page));
                             const isMultiPage = uniquePages.size > 1;
 
+                              // NEW: Ultra-strict helper function to detect squashed headings
+                              const formatTextAsMarkdown = (text: string) => {
+                                  if (!text) return "";
+                                  
+                                  // Split by newlines and filter out empty lines
+                                  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                                  if (lines.length === 0) return "";
+
+                                  let firstLine = lines[0];
+                                  let formattedFirstLine = firstLine;
+
+                                  // Regex: Looks for 4-80 characters with NO punctuation (.,!?;:), 
+                                  // followed by a space and a standard Capitalized word (like "Executive", "The", etc.)
+                                  const match = firstLine.match(/^([^.,!?;:]{4,80}?)\s([A-Z][a-z]+.*)/);
+                                  
+                                  if (match) {
+                                      // Successfully found a squashed heading!
+                                      const heading = match[1].trim();
+                                      const restOfParagraph = match[2].trim();
+                                      formattedFirstLine = `**${heading}**\n\n${restOfParagraph}`;
+                                  } 
+                                  // If it's just a normal standalone heading (short, no ending punctuation)
+                                  else if (firstLine.length < 100 && !/[.!?:]$/.test(firstLine)) {
+                                      formattedFirstLine = `**${firstLine.replace(/\*\*/g, '')}**`;
+                                  }
+
+                                  // Combine the fixed first line back with the rest of the paragraphs
+                                  if (lines.length > 1) {
+                                      const body = lines.slice(1).join("\n\n");
+                                      return `${formattedFirstLine}\n\n${body}`;
+                                  }
+                                  
+                                  return formattedFirstLine;
+                              };
+
                             if (!isMultiPage) {
                                 // Single page — combine all segments into one block
-                                // Ensure paragraph breaks are preserved: split on lines and re-join with double newlines
                                 const rawText = segments.map(s => s.text).join("\n\n");
-                                const combinedText = rawText
-                                    .split(/\n/)
-                                    .map(line => line.trim())
-                                    .filter(line => line.length > 0)
-                                    .join("\n\n");
+                                const combinedText = formatTextAsMarkdown(rawText);
                                 const singlePage = segments[0]?.page;
                                 const singlePageUrl = segments[0]?.page_url;
+                                
                                 return (
                                     <div>
                                         <ReactMarkdown>{combinedText}</ReactMarkdown>
@@ -630,14 +640,14 @@ export default function QAPage() {
 
                             // Multiple pages — one paragraph per segment with its own page link
                             return segments.map((seg, i) => (
-                                <div key={i}>
-                                    <ReactMarkdown>{seg.text}</ReactMarkdown>
+                                <div key={i} className="mb-6 border-b pb-4 last:border-0">
+                                    <ReactMarkdown>{formatTextAsMarkdown(seg.text)}</ReactMarkdown>
                                     {seg.page !== null && (
                                         <a
                                             href={seg.page_url}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-block mt-1 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
+                                            className="inline-block mt-2 bg-[#931638] hover:bg-[#931638]/90 px-2 py-0.5 rounded text-xs text-white transition-colors"
                                         >
                                             p.{seg.page}
                                         </a>
@@ -645,6 +655,7 @@ export default function QAPage() {
                                 </div>
                             ));
                         })()}
+
                     </div>
                 </div>
             </div>
@@ -656,19 +667,6 @@ export default function QAPage() {
   <div className="flex items-center justify-between gap-4">
     <div className="flex items-center gap-3 flex-1">
       
-      {/* NEW: Eye/EyeOff Toggle */}
-      {/* <button
-        onClick={() => setShowFilters(!showFilters)}
-        className="p-2 bg-white border-2 border-[#931638]/50 rounded-lg hover:bg-gray-50 transition-all shrink-0"
-        title={showFilters ? "Hide filter controls" : "Show filter controls"}
-      >
-        {showFilters ? (
-          <Eye size={16} className="text-[#931638]" />
-        ) : (
-          <EyeOff size={16} className="text-gray-400" />
-        )}
-      </button> */}
-
       {showFilters && (
       <>
 {/* 1. Investor Selection with Google-style Search */}
@@ -1023,7 +1021,7 @@ export default function QAPage() {
         {history.length > 0 && (
           <div className="flex justify-start">
             <button
-              onClick={() => setHistory([])}
+              onClick={() => { setHistory([]); }}
               className="flex items-center gap-2 bg-gray-100 hover:bg-[#931638]/10 border border-gray-300 hover:border-[#931638] text-gray-600 hover:text-[#931638] px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
               title="Clear all messages"
             >
@@ -1109,7 +1107,7 @@ export default function QAPage() {
         </div>
       )}
 
-      {qa.answers?.map((ans, idx) => (
+        {qa.answers?.map((ans: AnswerData, idx: number) => (
         <div
           key={idx}
           className="group bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl overflow-hidden transition-all"

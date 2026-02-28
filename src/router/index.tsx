@@ -106,7 +106,7 @@ import AiChatbot from "../pages/AIChatbot/AiChatbot";
 import QAPage from "../pages/AIChatbot/QAPage";
 import ComparePage from "../pages/AIChatbot/ComparePage";
 import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
-
+import { ChatProvider } from "../pages/AIChatbot/ChatContext";
 
 function Router() {
   const TitleManager = () => {
@@ -552,7 +552,7 @@ function Router() {
     },
     {
       path: "ai-chatbot",
-      element: React.createElement(AiChatbot),
+      element: <ChatProvider><AiChatbot /></ChatProvider>,      
       children: [
     {
       path: "qa",
