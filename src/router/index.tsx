@@ -108,6 +108,8 @@ import QAPage from "../pages/AIChatbot/QAPage";
 import ComparePage from "../pages/AIChatbot/ComparePage";
 import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
 import { ChatProvider } from "../pages/AIChatbot/ChatContext";
+import NPXAnalyticsPage from "@/pages/NPXAnalytics";
+
 
 function Router() {
   const TitleManager = () => {
@@ -503,11 +505,11 @@ function Router() {
           element: <NPXDetails />,
           data: { titleName: "N-PX - ZMH Analytics" },
         },
-        // {
-        //   path: "npx-analytics",
-        //   element: <NPXAnalyticsPage />,
-        //   data: { titleName: "N-PX Analytics - ZMH Analytics" },
-        // },
+        {
+          path: "npx-analytics",
+          element: <NPXAnalyticsPage />,
+          data: { titleName: "N-PX Analytics - ZMH Analytics" },
+        },
         {
           path: "proxy-contest",
           element: <ProxyContest />,
