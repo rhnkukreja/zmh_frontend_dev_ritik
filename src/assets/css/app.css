@@ -120,6 +120,14 @@ body {
   background-color: #0000000d;
 }
 
+.company-name-wrapper {
+  min-width: 0; /* Allow flex items to shrink below content size */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
 .sticky-table {
   position: sticky;
   top: 0;

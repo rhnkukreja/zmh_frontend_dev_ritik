@@ -30,6 +30,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const dispatch: AppDispatch = useAppDispatch();
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
     useAppSelector((state) => state.dashboard);
+  const { user } = useAppSelector((state) => state.authentiction);
 
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
@@ -613,7 +614,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    {showNpxActions && (
+                    {/* Download NPX btn hidden */}
+                    {/* {showNpxActions && (
                       <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
                         <div className="relative">
                           <button
@@ -640,16 +642,15 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                           </span>
                         </div>
                       </Tippy>
-                    )}
-                    {/* NPX Analytics button hidden as requested */}
-                    {/* {!showNpxActions && (
+                    )} */}
+                    {user?.user_type === 'Admin' && (
                       <button
                         onClick={handleViewNPXAnalytics}
                         className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                       >
                         NPX analytics
                       </button>
-                    )} */}
+                    )}
                     <button
                       disabled={
                         is8kLoading ||
