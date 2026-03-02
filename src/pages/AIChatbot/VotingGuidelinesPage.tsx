@@ -592,7 +592,7 @@ export default function VotingGuidelinesPage() {
                                                                 </div>
 
                                                                 {/* Answer Preview - 2 lines only */}
-                                                                <div className="line-clamp-2 text-gray-700 text-[10px] leading-relaxed">
+                                                                <div className="line-clamp-2 text-gray-700 text-sm leading-relaxed">
                                                                     {res.answer_segments?.[0]?.text ?? res.summary}
                                                                 </div>
 
