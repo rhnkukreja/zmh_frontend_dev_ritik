@@ -395,7 +395,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         { responseType: 'blob' }
       );
 
-      const filename = `NPX-Data-${companyGlobalSearchTicker}-${new Date().getTime()}.xlsx`;
+      const filename = `NPX Fund Level Data (${companyGlobalSearchTicker}).xlsx`;
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -615,7 +615,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                       </button>
                     )}
                     {/* Download NPX btn hidden */}
-                    {/* {showNpxActions && (
+                    {showNpxActions && (
                       <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
                         <div className="relative">
                           <button
@@ -642,7 +642,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                           </span>
                         </div>
                       </Tippy>
-                    )} */}
+                    )}
                     {user?.user_type === 'Admin' && (
                       <button
                         onClick={handleViewNPXAnalytics}
