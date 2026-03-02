@@ -537,7 +537,7 @@ export default function QAPage() {
 
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] relative border bg-white p-8 rounded-lg">
+    <div className="flex flex-col h-[calc(100vh-140px)] relative bg-white p-8">
       
       {/* Answer Detail Modal */}
       {selectedAnswer && (
@@ -1135,7 +1135,7 @@ export default function QAPage() {
               </div>
             </div>
             <p 
-              className="text-xs text-gray-700 line-clamp-3 cursor-pointer"
+              className="text-sm text-gray-700 line-clamp-3 cursor-pointer"
               onClick={() => setSelectedAnswer(ans)}
             >
               {ans.answer_segments?.[0]?.text ?? ""}
@@ -1182,9 +1182,6 @@ export default function QAPage() {
 
       </div>
 
-      <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
-        AI Assistant can make mistakes. Check important info.
-      </div>
     </div>
   );
 }

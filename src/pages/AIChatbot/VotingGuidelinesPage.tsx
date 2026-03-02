@@ -261,7 +261,7 @@ export default function VotingGuidelinesPage() {
     );
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] relative animate-in fade-in duration-500 border rounded-md bg-white p-8">
+        <div className="flex flex-col h-[calc(100vh-140px)] relative bg-white p-8">
             
             {/* FULL TEXT MODAL */}
             {selectedResult && (
@@ -622,9 +622,6 @@ export default function VotingGuidelinesPage() {
                 <div ref={resultsEndRef} className="h-4" />
             </div>
 
-            <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
-                AI Assistant can make mistakes. Check important info.
-            </div>
         </div>
     );
 }
