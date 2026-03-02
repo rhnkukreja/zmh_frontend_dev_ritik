@@ -261,7 +261,7 @@ export default function VotingGuidelinesPage() {
     );
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] relative animate-in fade-in duration-500">
+        <div className="flex flex-col h-[calc(100vh-140px)] relative animate-in fade-in duration-500 border rounded-md bg-white p-8">
             
             {/* FULL TEXT MODAL */}
             {selectedResult && (
@@ -420,12 +420,28 @@ export default function VotingGuidelinesPage() {
                                 </div>
                                 <span className={`text-[10px] font-medium transition-colors ${includeEmea ? "text-[#931638]" : "text-gray-600"}`}>Add EMEA</span>
                             </button>
+
+                            <div className="ml-auto flex items-center gap-3">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-gray-500 font-medium">Answer type:</span>
+                                    <div className="relative group flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 group-hover:text-gray-700 cursor-help transition-colors">
+                                            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                                        </svg>
+                                        <div className="absolute bottom-full mb-2 right-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-75 z-50 pointer-events-none">
+                                            <div className="bg-gray-900 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap shadow-xl border border-white/10">{getStrengthDescription(llmStrength)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span className="text-[10px] uppercase font-bold text-gray-600 w-16 text-center">{getStrengthLabel(llmStrength)}</span>
+                                <input type="range" min="0" max="8" step="4" value={llmStrength} onChange={(e) => setLlmStrength(Number(e.target.value))} className="w-24 h-1.5 bg-gray-300 rounded-full appearance-none cursor-pointer accent-[#931638] hover:opacity-80 transition-opacity" />
+                            </div>
                         </>
                         )}
 
                         {!showFilters && (
                             <div className="flex-1 bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-xl">
-                                <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors first..."} className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
+                                <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors first..."} className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent" />
                                 <button onClick={() => setQuestion("")} className="text-gray-400 hover:text-[#931638] p-2 rounded-lg hover:bg-gray-100 transition-colors mr-1"><Trash2 size={16}/></button>
                                 <button onClick={handleAnalyze} disabled={!isReady} className="bg-[#931638] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#931638]/90 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                                     {analyzing ? <span className="animate-spin">⏳</span> : <Send size={14}/>} 
@@ -438,7 +454,7 @@ export default function VotingGuidelinesPage() {
 
                 {showFilters && (
                     <div className="flex items-center justify-between w-full pt-1">
-                        <div className="flex flex-wrap gap-2 flex-1 mr-4">
+                        <div className="flex flex-wrap gap-2 flex-1">
                             {selectedInvestors.map(id => (
                                 <div key={id} className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/60 px-2 py-0.5 rounded text-[10px] animate-in fade-in">
                                     <span>{allInvestors.find(i => i.id === id)?.name || id}</span>
@@ -446,28 +462,13 @@ export default function VotingGuidelinesPage() {
                                 </div>
                             ))}
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-gray-500 font-medium">Answer type:</span>
-                                <div className="relative group flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 group-hover:text-gray-700 cursor-help transition-colors">
-                                        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-                                    </svg>
-                                    <div className="absolute bottom-full mb-2 right-0 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-75 z-50 pointer-events-none">
-                                        <div className="bg-gray-900 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap shadow-xl border border-white/10">{getStrengthDescription(llmStrength)}</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <span className="text-[10px] uppercase font-bold text-gray-600 w-16 text-center">{getStrengthLabel(llmStrength)}</span>
-                            <input type="range" min="0" max="8" step="4" value={llmStrength} onChange={(e) => setLlmStrength(Number(e.target.value))} className="w-24 h-1.5 bg-gray-300 rounded-full appearance-none cursor-pointer accent-[#931638] hover:opacity-80 transition-opacity" />
-                        </div>
                     </div>
                 )}
             </div>
 
             {showFilters && (
-                <div className="bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-xl mb-6 z-10 relative shrink-0">
-                    <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors to begin..."} className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
+                <div className="bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-lg mb-6 z-10 relative shrink-0">
+                    <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAnalyze()} placeholder={isReady ? "Ask about voting guidelines..." : "Select investors to begin..."} className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent" />
                     {question && (
                         <button 
                             onClick={() => setQuestion("")} 
@@ -619,6 +620,10 @@ export default function VotingGuidelinesPage() {
                     </div>
                 ))}
                 <div ref={resultsEndRef} className="h-4" />
+            </div>
+
+            <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
+                AI Assistant can make mistakes. Check important info.
             </div>
         </div>
     );

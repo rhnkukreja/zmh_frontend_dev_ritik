@@ -91,6 +91,7 @@ import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
+// import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import ProxyContest from "@/pages/ProxyContest";
 import ProxyContestDetail from "@/pages/ProxyContestDetail";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
@@ -107,6 +108,8 @@ import QAPage from "../pages/AIChatbot/QAPage";
 import ComparePage from "../pages/AIChatbot/ComparePage";
 import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
 import { ChatProvider } from "../pages/AIChatbot/ChatContext";
+import NPXAnalyticsPage from "@/pages/NPXAnalytics";
+
 
 function Router() {
   const TitleManager = () => {
@@ -501,6 +504,11 @@ function Router() {
           path: "npx-details",
           element: <NPXDetails />,
           data: { titleName: "N-PX - ZMH Analytics" },
+        },
+        {
+          path: "npx-analytics",
+          element: <NPXAnalyticsPage />,
+          data: { titleName: "N-PX Analytics - ZMH Analytics" },
         },
         {
           path: "proxy-contest",

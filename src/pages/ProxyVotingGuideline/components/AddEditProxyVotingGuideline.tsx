@@ -41,6 +41,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
   setAddNewProxyVotingGuidelineVisible,
   selectedProxyVotingGuideline,
 }) => {
+  const isEditMode = Boolean(selectedProxyVotingGuideline?.id);
   const instituteSelectRef = useRef<any>(null);
   // const categorySelectRef = useRef<any>(null);
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
@@ -147,7 +148,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
     try {
       let response;
 
-      if (selectedProxyVotingGuideline) {
+      if (isEditMode) {
         response = await dispatch(
           addEditProxyVotingGuideline({
             id: selectedProxyVotingGuideline?.id,
@@ -166,7 +167,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
 
       if (response?.results?.id) {
         toast.success(
-          selectedProxyVotingGuideline
+          isEditMode
             ? "Policy Guideline updated successfully"
             : "Policy Guideline saved successfully"
         );
@@ -202,7 +203,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
-              {selectedProxyVotingGuideline
+              {isEditMode
                 ? "Edit Policy Guideline"
                 : "Add New Policy Guideline"}
             </h2>

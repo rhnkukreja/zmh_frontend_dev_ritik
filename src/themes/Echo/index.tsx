@@ -116,6 +116,7 @@ function Main() {
   const sideMenu = () => nestedMenu(sideMenuStore, location);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
+  const isCompanyReportPage = location.pathname.startsWith("/company-report");
 
   const [topBarActive, setTopBarActive] = useState(false);
 
@@ -475,7 +476,11 @@ function Main() {
   };
 
 
-  return (
+  return isCompanyReportPage ? (
+    <div>
+      <Outlet />
+    </div>
+  ) : (
     <div
       className={clsx([
         "echo group  h-full",
@@ -613,7 +618,10 @@ function Main() {
                             <span className="relative">
                               <Lucide
                                 icon={menu?.icon}
-                                className="side-menu__link__icon side-menu__link--active"
+                                className={clsx(
+                                  "side-menu__link__icon side-menu__link--active",
+                                  menu.title === "Admin Panel" && "w-6 h-6"
+                                )}
                               />
                               {menu.title === "Proxy Contest" &&
                                 modulesData?.proxy_contest && (
@@ -925,7 +933,7 @@ function Main() {
                   href="/ai-chatbot/qa"
                   target="_blank"
                   rel="noreferrer"
-                  className="px-2 py-1.`ww5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex cursor-pointer"
+                  className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex cursor-pointer"
                 >
                   <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
                   <span className="ml-2 text-sm font-medium hidden xl:flex">

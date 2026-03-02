@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyByName,
   fetchCompanyDashboard,
+  fetchCompanyOverview,
+  fetchCompanyOverviewGPT,
+  fetchAGMSummaryDashboard,
   getBoardDirectorMembers,
-  // getGraphQLBoardData,
   setPage,
+  setTempSearch,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -17,6 +20,8 @@ import { baseURL } from "@/constant";
 import InvestorCard from "@/components/InvestorCard";
 import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
+import CompanyOverview from "@/components/CompanyOverview";
+import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -29,15 +34,44 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
+import { FileText, Building2, Users, Vote } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
 
-  // Active tab state
-  const [activeTab, setActiveTab] = useState('ownership');
+  const { user } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
 
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleHeaderHeightChange = (event: CustomEvent) => {
+      const height = event.detail.height;
+      setHeaderHeight(height);
+    };
+    window.addEventListener('headerHeightChange' as any, handleHeaderHeightChange);
+    return () => {
+      window.removeEventListener('headerHeightChange' as any, handleHeaderHeightChange);
+    };
+  }, []);
+
+
+  // Check if user is admin
+  const isAdmin = user?.user_type === 'Admin';
+
+  // Active tab state - default based on user role
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab || 'company-overview'
+  );
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
+
+  // Loading states for both components
+  const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
+  const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
 
   // Handle generate report
   const handleGenerateReport = () => {
@@ -85,14 +119,10 @@ function Main() {
     }
   };
 
-  const { isCompanySelected } = useAppSelector(
+  const { isCompanySelected, companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, companyGlobalSearchId } = useAppSelector(
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
-
-  const { companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, user } = useAppSelector(
-    (state: RootState) => state.authentiction
-  );
 
   const { companySearchAndUpdate } = useCompanySearch();
   const { tempSearch, graphQLBoardData, graphQLBoardDataLoading } =
@@ -132,42 +162,53 @@ function Main() {
     fetchModulesCount();
   }, [companyGlobalSearchName]);
 
-  // Scroll-based tab update
+  // Fetch all tab data on initial load
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = [
-        { id: 'ownership', tab: 'ownership' },
-        { id: 'shareholder-meeting-results', tab: 'shareholder-meeting-results' },
-      ];
+    if (companyGlobalSearchTicker && companyGlobalSearchId) {
+      // Only fetch if data doesn't exist (first load or company changed)
+      if (companyGlobalSearchTicker !== tempSearch) {
+        // 1. Fetch Ownership data
+        dispatch(
+          fetchCompanyDashboard(
+            createDynamicURL(
+              `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+            )
+          )
+        );
 
-      const scrollPosition = window.scrollY + 250; // Increased offset for sticky header
+        // 2. Fetch Company Overview data (for all users)
+        dispatch(
+          fetchCompanyOverview(
+            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
+          )
+        );
 
-      // Check from bottom to top to get the most visible section
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const section = document.getElementById(sections[i].id);
-        if (section) {
-          const sectionTop = section.offsetTop;
-          const sectionBottom = sectionTop + section.offsetHeight;
-
-          // If scroll position is within this section
-          if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
-            setActiveTab(sections[i].tab);
-            break;
-          }
-          // If we're past all sections, activate the last one
-          else if (i === sections.length - 1 && scrollPosition >= sectionTop) {
-            setActiveTab(sections[i].tab);
-            break;
-          }
+        // 3. Fetch Company Overview GPT data (for admins only)
+        if (isAdmin) {
+          dispatch(
+            fetchCompanyOverviewGPT(
+              `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
+            )
+          );
         }
-      }
-    };
 
-    window.addEventListener('scroll', handleScroll);
-    // Initial check on mount
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+        // 4. Fetch Shareholder Meeting Results data
+        dispatch(
+          fetchAGMSummaryDashboard(
+            createDynamicURL(
+              `${baseURL}/voting_report_8k/`,
+              { ticker: companyGlobalSearchTicker }
+            )
+          )
+        );
+
+        // Set tempSearch to mark data as loaded for this company
+        dispatch(setTempSearch(companyGlobalSearchTicker));
+      }
+    }
+  }, [companyGlobalSearchTicker, companyGlobalSearchId, tempSearch, dispatch, isAdmin]);
+
+  // No scroll-based tab update - tabs now show/hide content instead
 
 
   if (window.clarity && user?.user_id) {
@@ -208,93 +249,106 @@ function Main() {
 
   return (
     <>
-      <section >
+      <section>
         {/* Tabs - Top Level Navigation */}
-        <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: "8.3rem" }}>
-          <div className="bg-white mb-4 flex flex-col md:flex-row items-center justify-between">
-            <div className="border-b border-gray-200 w-full">
-              <nav className="flex w-full items-center">
-                  <button
-                    onClick={() => {
-                      setActiveTab('ownership');
-                      const element = document.getElementById('ownership');
-                      if (element) {
-                        const offsetTop = element.offsetTop - 200;
-                        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                      }
-                    }}
-                    className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
-                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                    Ownership
-                  </button>
-                  <button
-                    onClick={() => {
-                      setActiveTab('shareholder-meeting-results');
-                      const element = document.getElementById('shareholder-meeting-results');
-                      if (element) {
-                        const offsetTop = element.offsetTop - 200;
-                        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                      }
-                    }}
-                    className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
-                      ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                      }`}
-                  >
-                    Shareholder Meeting Results
-                  </button>
-                  {user?.user_type === "Admin" && (
-                    <div className="flex items-center justify-end px-4 py-2">
-                      <button
-                        className="px-6 py-2.5 bg-primary text-white font-medium text-sm rounded-lg hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={handleGenerateReport}
-                        disabled={!companyGlobalSearchTicker}
-                      >
-                        Generate Report
-                      </button>
-                    </div>
-                  )}
-                {/* <button
-                  onClick={() => {
-                    setActiveTab('board-composition');
-                    const element = document.getElementById('board-composition');
-                    if (element) {
-                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
-                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'board-composition'
-                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+        <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
+          <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
+              {/* Company Overview - All Users */}
+              <button
+                onClick={() => setActiveTab('company-overview')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === 'company-overview'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                Company Overview
+              </button>
+
+              {/* Company Overview GPT - Admin Only */}
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab('company-overview-gpt')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                 >
-                  Board Composition (Beta)
-                </button> */}
-              </nav>
+                  <Building2 className="w-4 h-4" />
+                  Company Overview
+                </button>
+              )}
+
+              {/* Ownership - All Users */}
+              <button
+                onClick={() => setActiveTab('ownership')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                <Users className="w-4 h-4" />
+                Ownership
+              </button>
+
+              {/* Shareholder Meeting Results - All Users */}
+              <button
+                onClick={() => setActiveTab('shareholder-meeting-results')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'shareholder-meeting-results'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                <Vote className="w-4 h-4" />
+                Shareholder Meeting Results
+              </button>
             </div>
+            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
+              <button
+                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
+                onClick={handleGenerateReport}
+              >
+                <FileText className="w-4 h-4" />
+                Generate Report
+              </button>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          <div id="ownership" className="col-span-12 xl:col-span-12">
-            <InvestorCard />
-          </div>
+          {activeTab === 'company-overview' && (
+            <div id="company-overview" className="col-span-12 xl:col-span-12">
+              <CompanyOverview />
+            </div>
+          )}
 
-          {/* <BoardDirectorMembers /> */}
+          {activeTab === 'company-overview-gpt' && isAdmin && (
+            <div id="company-overview-gpt" className="col-span-12 xl:col-span-12">
+              <CompanyOverviewGPT />
+            </div>
+          )}
 
-          <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
-            <AGMSummaryCard
-              companyGlobalSearchTicker={companyGlobalSearchTicker}
-              companyGlobalSearchName={companyGlobalSearchName}
-              isMeetingModal={false}
-              proxyContest={modulesCount?.proxy_contest || false}
-              proxyContest2024={modulesCount?.proxy_contest_2024 || false}
-              proxyContest2025={modulesCount?.proxy_contest_2025 || false}
-            />
-          </div>
+          {activeTab === 'ownership' && (
+            <div id="ownership" className="col-span-12 xl:col-span-12">
+              <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
+            </div>
+          )}
+
+          {activeTab === 'shareholder-meeting-results' && (
+            <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
+              <AGMSummaryCard
+                companyGlobalSearchTicker={companyGlobalSearchTicker}
+                companyGlobalSearchName={companyGlobalSearchName}
+                isMeetingModal={false}
+                proxyContest={modulesCount?.proxy_contest || false}
+                proxyContest2024={modulesCount?.proxy_contest_2024 || false}
+                proxyContest2025={modulesCount?.proxy_contest_2025 || false}
+                onLoaded={() => setIsMeetingLoaded(true)}
+              />
+            </div>
+          )}
 
           {/* <div id="board-composition" className="col-span-12 xl:col-span-12">
             <div className="p-5 mt-3.5 box">

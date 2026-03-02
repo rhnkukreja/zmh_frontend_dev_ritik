@@ -1,6 +1,6 @@
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactCountryFlag from "react-country-flag";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
@@ -18,6 +18,8 @@ const CountryInfoHeader = () => {
     (state: RootState) => state.authentiction
   );
   const location = useLocation();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   // Hide on user-management and institution routes
   if (location.pathname === "/user-management" || location.pathname === "/institution" || location.pathname.startsWith("/institution/")) {
@@ -30,7 +32,7 @@ const CountryInfoHeader = () => {
   const [sharePrice, setSharePrice] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [secFilingsUrl, setSecFilingsUrl] = useState<string>("");
-  
+
   // Filter state
   const [endDate, setEndDate] = useState<string>("");
   const [selectedCompanies, setSelectedCompanies] = useState<any[]>([]);
@@ -63,13 +65,34 @@ const CountryInfoHeader = () => {
     fetchModulesCount();
   }, [companyGlobalSearchName, finhub?.name, finhub?.sec_filing]);
 
+  useEffect(() => {
+    const measureHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.offsetHeight;
+        setHeaderHeight(height);
+        window.dispatchEvent(new CustomEvent('headerHeightChange', {
+          detail: { height }
+        }));
+      }
+    };
+
+    measureHeight();
+    const timer = setTimeout(measureHeight, 100);
+    window.addEventListener('resize', measureHeight);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', measureHeight);
+    };
+  }, [finhub?.name, companyGlobalSearchName, symbol]);
+
   const fetchSharePrice = async (symbols?: string, date?: string) => {
     const symbolsToFetch = symbols || symbol;
     if (!symbolsToFetch) return;
 
     // Create cache key including symbols and date
     const cacheKey = `${symbolsToFetch}_${date || ''}`;
-    
+
     // ✅ Use cached response if available
     if (sharePriceCache[cacheKey]) {
       setSharePrice(sharePriceCache[cacheKey]);
@@ -104,17 +127,17 @@ const CountryInfoHeader = () => {
     // Always start with the global company symbol
     const globalSymbol = symbol;
     const symbolsArray = globalSymbol ? [globalSymbol] : [];
-    
+
     // Add manually selected companies (up to 5 additional)
     if (selectedCompanies.length > 0) {
       const additionalSymbols = selectedCompanies.map(company => {
         // Extract ticker/symbol from the company object
         return company.symbol || company.company?.symbol || company.company?.ticker || company.value;
       }).filter(Boolean).filter(sym => sym !== globalSymbol); // Avoid duplicates
-      
+
       symbolsArray.push(...additionalSymbols);
     }
-    
+
     // ✅ Always include benchmark indices (NASDAQ Composite & S&P 500) regardless of selections
     const benchmarkSymbols = ['IXIC', 'SPX']; // NASDAQ Composite and S&P 500
     benchmarkSymbols.forEach(benchmark => {
@@ -122,9 +145,9 @@ const CountryInfoHeader = () => {
         symbolsArray.push(benchmark);
       }
     });
-    
+
     const symbolsParam = symbolsArray.join(',');
-    
+
     // Format date to YYYY-MM-DD if it exists
     let formattedDate = endDate;
     if (endDate) {
@@ -143,14 +166,14 @@ const CountryInfoHeader = () => {
         console.error('Date formatting error:', error);
       }
     }
-    
+
     // Check cache first before making API call
     const cacheKey = `${symbolsParam}_${formattedDate || ''}`;
     if (sharePriceCache[cacheKey]) {
       setSharePrice(sharePriceCache[cacheKey]);
       return;
     }
-    
+
     // If no cache, fetch fresh data
     fetchSharePrice(symbolsParam, formattedDate);
   };
@@ -161,107 +184,108 @@ const CountryInfoHeader = () => {
     // Always fetch with global company + benchmarks when resetting
     const globalSymbol = symbol;
     const benchmarkSymbols = ['IXIC', 'SPX']; // Always include NASDAQ & S&P 500
-    const symbolsToFetch = globalSymbol 
+    const symbolsToFetch = globalSymbol
       ? [globalSymbol, ...benchmarkSymbols].join(',')
       : benchmarkSymbols.join(',');
-    
+
     fetchSharePrice(symbolsToFetch);
   };
 
   return (
-    <div className="bg-white shadow-sm rounded-lg p-4 mb-4 flex flex-col md:flex-row items-center justify-between">
-      {/* Company Header */}
-      <div className="flex items-center gap-4 mb-2 md:mb-0">
-        <span className="font-semibold text-base">
-          {finhub?.name || companyGlobalSearchName}{" "}
-          {symbol ? `(${symbol})` : ""}
-        </span>
-      </div>
-
-      {/* Country + Exchange */}
-      <div className="flex items-center justify-center mb-2 md:mb-0">
-        {finhub?.country && (
-          <ReactCountryFlag
-            countryCode={finhub?.country}
-            svg
-            style={{ fontSize: "1.5em", lineHeight: "1.5em" }}
-          />
-        )}
-        {finhub?.exchange && (
-          <span className="text-gray-600 text-xs ml-2">{finhub?.exchange}</span>
-        )}
-      </div>
-
-      {/* Industry */}
-      {finhub?.finnhub_industry && (
-        <div className="flex items-center">
-          <div className="flex flex-row items-start gap-2">
-            <p className="text-gray-600 font-medium text-xs">Industry:</p>
-            <p className="text-gray-500 text-xs">{finhub?.finnhub_industry}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Buttons */}
-      <div className="flex items-center gap-2 border border-gray-200 rounded-full p-1">
-        <button
-          className="flex items-center gap-1 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors"
-          onClick={() => setIsChartOpen(true)}
-        >
-          <Lucide icon="TrendingUp" className="w-5 h-5 text-pink-400" />
-          <span className="text-xs font-medium text-gray-700">Chart</span>
-        </button>
-
-        <button
-          className="relative flex items-center gap-1 px-3 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
-          onClick={() => {
-            setIsTableOpen(true);
-            // ✅ Always fetch data when opening modal to ensure cache works properly
-            if (selectedCompanies.length > 0 || endDate) {
-              // If filters are applied, use them
-              handleApplyFilters();
-            } else {
-              // Always fetch with global company + benchmarks, check cache first
-              const globalSymbol = symbol;
-              const benchmarkSymbols = ['IXIC', 'SPX']; // Always include NASDAQ & S&P 500
-              const symbolsToFetch = globalSymbol 
-                ? [globalSymbol, ...benchmarkSymbols].join(',')
-                : benchmarkSymbols.join(',');
-              
-              const cacheKey = `${symbolsToFetch}_`;
-              
-              // Check if we have cached data for this combination
-              if (sharePriceCache[cacheKey]) {
-                setSharePrice(sharePriceCache[cacheKey]);
-              } else {
-                // Fetch fresh data if no cache
-                fetchSharePrice(symbolsToFetch);
-              }
-            }
-          }}
-        >
-          <Lucide icon="Table" className="w-5 h-5 text-pink-400" />
-          <span className="text-xs font-medium text-gray-700">Price Perf.</span>
-        </button>
-
-        <button
-          className={
-            secFilingsUrl
-              ? "relative flex items-center gap-1 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors"
-              : "relative flex items-center gap-1 px-3 py-1 rounded-full opacity-50 cursor-not-allowed"
-          }
-          disabled={!secFilingsUrl}
-          onClick={() => {
-            if (!secFilingsUrl) return;
-            window.open(secFilingsUrl, "_blank", "noopener,noreferrer");
-          }}
-        >
-          <Lucide icon="FileText" className="w-5 h-5 text-pink-400" />
-          <span className="text-xs font-medium text-gray-700">SEC Filings</span>
-          <span className="absolute top-0 right-0 -mt-1 mr-1 text-[6px] font-bold text-white bg-orange-500 rounded-full px-0.5 animate-pulse">
-            NEW
+    <div ref={headerRef} className="bg-gradient-to-r from-white via-gray-50 to-white shadow-md rounded-xl p-4 mb-5 border border-gray-200">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+        {/* Company Header */}
+        <div className="flex items-center min-w-0 xl:flex-1">
+          <span className="font-bold text-lg text-gray-900 leading-tight break-words company-name-wrapper">
+            {finhub?.name || companyGlobalSearchName}{" "}
+            {symbol && (
+              <span className="font-semibold text-primary whitespace-nowrap">({symbol})</span>
+            )}
           </span>
-        </button>
+        </div>
+
+        {/* Country + Exchange */}
+        <div className="flex items-center justify-center gap-3 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 shrink-0">
+          {finhub?.country && (
+            <ReactCountryFlag
+              countryCode={finhub?.country}
+              svg
+              style={{ fontSize: "1.8em", lineHeight: "1.8em" }}
+            />
+          )}
+          {finhub?.exchange && (
+            <span className="text-gray-700 text-sm font-semibold whitespace-nowrap">{finhub?.exchange}</span>
+          )}
+        </div>
+
+        {/* Industry */}
+        {finhub?.finnhub_industry && (
+          <div className="flex items-center bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 xl:max-w-[340px]">
+            <div className="flex flex-row items-center gap-2 min-w-0">
+              <p className="text-gray-600 font-semibold text-sm whitespace-nowrap">Industry:</p>
+              <p className="text-gray-800 text-sm font-medium truncate">{finhub?.finnhub_industry}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Buttons */}
+        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm shrink-0">
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-200 group"
+            onClick={() => setIsChartOpen(true)}
+          >
+            <Lucide icon="TrendingUp" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-semibold text-gray-700 group-hover:text-primary whitespace-nowrap">Chart</span>
+          </button>
+
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-200 group"
+            onClick={() => {
+              setIsTableOpen(true);
+              // ✅ Always fetch data when opening modal to ensure cache works properly
+              if (selectedCompanies.length > 0 || endDate) {
+                // If filters are applied, use them
+                handleApplyFilters();
+              } else {
+                // Always fetch with global company + benchmarks, check cache first
+                const globalSymbol = symbol;
+                const benchmarkSymbols = ['IXIC', 'SPX']; // Always include NASDAQ & S&P 500
+                const symbolsToFetch = globalSymbol
+                  ? [globalSymbol, ...benchmarkSymbols].join(',')
+                  : benchmarkSymbols.join(',');
+
+                const cacheKey = `${symbolsToFetch}_`;
+
+                // Check if we have cached data for this combination
+                if (sharePriceCache[cacheKey]) {
+                  setSharePrice(sharePriceCache[cacheKey]);
+                } else {
+                  // Fetch fresh data if no cache
+                  fetchSharePrice(symbolsToFetch);
+                }
+              }
+            }}
+          >
+            <Lucide icon="Table" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-semibold text-gray-700 group-hover:text-primary whitespace-nowrap">Price Perf.</span>
+          </button>
+
+          <button
+            className={
+              secFilingsUrl
+                ? "flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gradient-to-r hover:from-primary/10 hover:to-primary/5 transition-all duration-200 group"
+                : "flex items-center gap-2 px-4 py-2 rounded-lg opacity-50 cursor-not-allowed"
+            }
+            disabled={!secFilingsUrl}
+            onClick={() => {
+              if (!secFilingsUrl) return;
+              window.open(secFilingsUrl, "_blank", "noopener,noreferrer");
+            }}
+          >
+            <Lucide icon="FileText" className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-semibold text-gray-700 group-hover:text-primary whitespace-nowrap">SEC Filings</span>
+          </button>
+        </div>
       </div>
 
       {/* Chart Modal */}
@@ -422,7 +446,7 @@ const CountryInfoHeader = () => {
                         const companies = entries.filter(([ticker]) => {
                           // Common composite index patterns - these will always be shown at bottom
                           const compositePatterns = [
-                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i, 
+                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i,
                             /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
                             /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
                           ];
@@ -432,7 +456,7 @@ const CountryInfoHeader = () => {
                         const composites = entries.filter(([ticker]) => {
                           // Common composite index patterns - always show these at bottom
                           const compositePatterns = [
-                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i, 
+                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i,
                             /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
                             /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
                           ];
@@ -440,7 +464,7 @@ const CountryInfoHeader = () => {
                         });
 
                         // Sort companies alphabetically, always show composites at bottom
-                        const sortedCompanies = companies.sort(([tickerA], [tickerB]) => 
+                        const sortedCompanies = companies.sort(([tickerA], [tickerB]) =>
                           tickerA.localeCompare(tickerB)
                         );
 

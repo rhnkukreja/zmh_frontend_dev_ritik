@@ -32,6 +32,7 @@ export interface SharePricePerformanceData {
 }
 
 export interface PercentOwnershipData {
+  investor_profile_id: any;
   filer_id?: number;
   institution_name?: string;
   institution__institution?: string;

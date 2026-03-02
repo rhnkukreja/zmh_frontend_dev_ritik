@@ -298,19 +298,21 @@ const EngagementStatsSection = ({ data, exGlobalData, companyName, isGeneratingP
         />
       </section>
 
-      {/* Separate Section for Peer Engagement */}
-      <section className="mb-8">
-        <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
-          Engagement Topics for Peers
-        </h2>
-        <p className="text-sm text-gray-600 mb-3">Shows engagement data for all companies in the same peer grouping</p>
-        <PeerEngagementTable 
-          title=""
-          subtitle=""
-          data={peerEngagements}
-          isGeneratingPDF={isGeneratingPDF}
-        />
-      </section>
+      {/* Separate Section for Peer Engagement - Only show if data exists */}
+      {peerEngagements.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-base font-bold text-gray-900 border-b-2 border-primary pb-2 mb-4">
+            Engagement Topics for Peers
+          </h2>
+          <p className="text-sm text-gray-600 mb-3">Shows engagement data for all companies in the same peer grouping</p>
+          <PeerEngagementTable 
+            title=""
+            subtitle=""
+            data={peerEngagements}
+            isGeneratingPDF={isGeneratingPDF}
+          />
+        </section>
+      )}
     </>
   );
 };

@@ -537,7 +537,7 @@ export default function QAPage() {
 
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] relative">
+    <div className="flex flex-col h-[calc(100vh-140px)] relative border bg-white p-8 rounded-lg">
       
       {/* Answer Detail Modal */}
       {selectedAnswer && (
@@ -823,13 +823,13 @@ export default function QAPage() {
 
       {/* NEW: INPUT AREA - Shows next to Eye button when filters are hidden */}
       {!showFilters && (
-        <div className="flex-1 bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-xl">
+        <div className="flex-1 bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 ">
           <input 
             value={question} 
             onChange={(e) => setQuestion(e.target.value)} 
             onKeyDown={(e) => e.key === "Enter" && handleAsk()} 
             placeholder="Type a question..." 
-            className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" 
+            className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent shadow-none focus:shadow-none" 
           />
           {question && (
             <button 
@@ -852,50 +852,50 @@ export default function QAPage() {
       )}
     </div>
 
-      {/* 6. Balanced (LLM Strength) - Only show when filters visible */}
-      {showFilters && (
-  <div className="flex items-center gap-3">
-    {/* Label */}
-    <span className="text-xs text-gray-500 font-medium">Answer type:</span>
-    <span className="text-[10px] uppercase font-bold text-gray-600 w-16 text-center transition-all">
-      {getStrengthLabel(llmStrength)}
-    </span>
+    {/* 6. Balanced (LLM Strength) - Only show when filters visible */}
+    {showFilters && (
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Label */}
+        <span className="text-xs text-gray-500 font-medium">Answer type:</span>
+        <span className="text-[10px] uppercase font-bold text-gray-600 w-16 text-center transition-all">
+          {getStrengthLabel(llmStrength)}
+        </span>
 
-    {/* Instant Tooltip Container */}
-    <div className="relative group flex items-center">
-      {/* Modern SVG Info Icon */}
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width="14" height="14" 
-        viewBox="0 0 24 24" fill="none" 
-        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
-        className="text-gray-400 group-hover:text-gray-700 cursor-help transition-colors"
-      >
-        <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-      </svg>
+        {/* Instant Tooltip Container */}
+        <div className="relative group flex items-center">
+          {/* Modern SVG Info Icon */}
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="14" height="14" 
+            viewBox="0 0 24 24" fill="none" 
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
+            className="text-gray-400 group-hover:text-gray-700 cursor-help transition-colors"
+          >
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+          </svg>
 
-      {/* The "Fast" Tooltip: Appears instantly on hover via Tailwind 'group-hover' */}
-      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-100 z-50">
-        <div className="bg-gray-800 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap shadow-xl">
-          {getStrengthDescription(llmStrength)}
-          {/* Tooltip Arrow */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+          {/* The "Fast" Tooltip: Appears instantly on hover via Tailwind 'group-hover' */}
+          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-100 z-50">
+            <div className="bg-gray-800 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap shadow-xl">
+              {getStrengthDescription(llmStrength)}
+              {/* Tooltip Arrow */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    {/* Range Input */}
-    <input 
-      type="range" 
-      min="0" 
-      max="8" 
-      step="4"
-      value={llmStrength}
-      onChange={(e) => setLlmStrength(Number(e.target.value))}
-      className="w-24 h-1.5 bg-gray-300 rounded-full appearance-none cursor-pointer accent-[#931638] hover:opacity-80 transition-opacity"
-    />
-  </div>
-)}
+        {/* Range Input */}
+        <input 
+          type="range" 
+          min="0" 
+          max="8" 
+          step="4"
+          value={llmStrength}
+          onChange={(e) => setLlmStrength(Number(e.target.value))}
+          className="w-24 h-1.5 bg-gray-300 rounded-full appearance-none cursor-pointer accent-[#931638] hover:opacity-80 transition-opacity"
+        />
+      </div>
+    )}
   </div>
 
         {/* --- SELECTED FILTERS TAGS --- */}
@@ -921,10 +921,10 @@ export default function QAPage() {
       {showFilters && (
       <div className={`flex gap-3 mb-3 transition-all duration-300 ${scope === "all" ? "flex-col" : "flex-row"}`}>
         {/* Input Box - Changes width based on scope */}
-        <div className={`bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-xl z-10 relative transition-all duration-300 ${
+        <div className={`bg-white border-2 border-[#931638] rounded-xl flex items-center p-2 shadow-lg z-10 relative transition-all duration-300 ${
           scope === "all" ? "w-full" : "w-1/2"
         }`}>
-          <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAsk()} placeholder="Type a question..." className="flex-1 bg-transparent border-none outline-none text-black px-2 text-sm" />
+          <input value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAsk()} placeholder="Type a question..." className="flex-1 appearance-none bg-transparent border-none outline-none text-black px-2 text-sm focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0 focus:border-transparent shadow-none focus:shadow-none" />
           {question && (
             <button 
               onClick={() => setQuestion("")} 
@@ -995,12 +995,12 @@ export default function QAPage() {
       {/* SAMPLE QUESTIONS - Shows for all investors */}
       {showFilters && SAMPLE_QUESTIONS[investorId] && history.length === 0 && (
         
-          <div className="space-y-1.5">
+          <div className="space-y-5 space-x-3 mx-auto">
             {SAMPLE_QUESTIONS[investorId].map((sample, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSampleQuestionClick(sample.question, sample.category, sample.scope|| "all")}
-                className="w-full text-left bg-white hover:bg-[#931638]/5 border border-[#931638]/30 hover:border-[#931638]/60 rounded-lg p-2 transition-all group"
+                className=" text-left bg-white hover:bg-[#931638]/5 border border-[#931638]/30 hover:border-[#931638]/60 rounded-lg p-2 transition-all group"
               >
                 <div className="flex items-start gap-2">
                   <span className="text-[#931638] font-bold text-xs mt-0.5 shrink-0">{idx + 1}.</span>
@@ -1180,6 +1180,10 @@ export default function QAPage() {
   </div>
 ))}
 
+      </div>
+
+      <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
+        AI Assistant can make mistakes. Check important info.
       </div>
     </div>
   );

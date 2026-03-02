@@ -214,10 +214,13 @@ function CaseStudies() {
       return;
     }
 
-    // Create filters without global_search for "View For All Companies"
-    const apiFilters = isAllCompanySelected 
-      ? { ...filters, global_search: undefined }
-      : filters;
+    // For "View For All Companies", keep global_search only when companies are selected
+    const hasSelectedCompanies =
+      Array.isArray(filters?.global_search) && filters.global_search.length > 0;
+    const apiFilters =
+      isAllCompanySelected && !hasSelectedCompanies
+        ? { ...filters, global_search: undefined }
+        : filters;
 
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
@@ -236,10 +239,13 @@ function CaseStudies() {
       )
     );
 
-    // Include institution_name in filter chips with proper formatting
+    // Include institution/company filters in chips with proper formatting
     const filtersWithInstitution = {
       ...restFilters,
-      ...(institution_name && institution_name.length > 0 && { institution_name })
+      ...(institution_name && institution_name.length > 0 && { institution_name }),
+      ...(isAllCompanySelected && global_search && global_search.length > 0 && {
+        global_search,
+      }),
     };
     
     setSelectedChipFilters(generateFilterChips(filtersWithInstitution));
@@ -516,10 +522,13 @@ function CaseStudies() {
     return field.onChange(event);
   }
   const handleDownload = async () => {
-    // Create filters without global_search for "View For All Companies"
-    const apiFilters = isAllCompanySelected 
-      ? { ...filters, global_search: undefined }
-      : filters;
+    // For "View For All Companies", keep global_search only when companies are selected
+    const hasSelectedCompanies =
+      Array.isArray(filters?.global_search) && filters.global_search.length > 0;
+    const apiFilters =
+      isAllCompanySelected && !hasSelectedCompanies
+        ? { ...filters, global_search: undefined }
+        : filters;
 
     downloadFileFromAPI({
       url: createDynamicURL(
@@ -581,7 +590,8 @@ function CaseStudies() {
           {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked bg-white p-5">
-              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
+              {/* Hidden Add New Case Studies btn until needed */}
+              {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
                 {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                   <div className="flex justify-end">
                     <Button
@@ -600,7 +610,7 @@ function CaseStudies() {
                     </Button>
                   </div>
                 )}
-              </div>
+              </div> */}
               <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
                 <div className="flex">
                   <MultiSearchBar
@@ -618,8 +628,8 @@ function CaseStudies() {
                     showPills={false}
                   />
 
-                  <div className="hover:bg-slate-50">
-
+                  {/* Hiding clear filter for now */}
+                  {/* <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
                       <Tippy
                         content="Clear Filters"
@@ -631,11 +641,12 @@ function CaseStudies() {
                           className="text-slate-500 cursor-pointer	"
                         />
                       </Tippy>
-                      {/* <span className="text-slate-500">Clear Filters</span> */}
+                      <span className="text-slate-500">Clear Filters</span>
                     </Button>
-                  </div>
+                  </div> */}
 
-                  <div className="hover:bg-slate-50 ml-2">
+                  {/* Hiding save searches filter for now */}
+                  {/* <div className="hover:bg-slate-50 ml-2">
                     <Button onClick={saveSearch}>
                       <Tippy
                         content="Save Searches"
@@ -648,7 +659,7 @@ function CaseStudies() {
                         />
                       </Tippy>
                     </Button>
-                  </div>
+                  </div> */}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
                   {user?.saved_search?.["Case Studies"] !== undefined && (
@@ -823,6 +834,18 @@ function CaseStudies() {
                                       field.onChange(value);
                                     }}
                                     isMulti={true}
+                                    currentFilters={{
+                                      year: watch("year") || [],
+                                      market: watch("market") || [],
+                                      sector: watch("sector") || [],
+                                      themes: watch("themes") || [],
+                                      proposal_type: watch("proposal_type") || [],
+                                      vote: watch("vote") || [],
+                                      approval_status: watch("approval_status") || "",
+                                      caspio_company_name: watch("caspio_company_name") || "",
+                                      index: watch("index") || [],
+                                      // institution_name: searchTerms || [],
+                                    }}
                                   />
                                 )}
                               />

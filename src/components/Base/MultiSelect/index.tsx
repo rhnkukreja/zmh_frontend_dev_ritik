@@ -17,6 +17,8 @@ interface MultiSelectDropdownProps {
   selectedOption?: string[] | Option[] | any; // Can be array of strings or Option objects
   preventRemoveLastItem?: boolean; // New prop to prevent removing last item
   fieldName?: string; // Field name for custom error messages
+  alignLeft?: boolean;
+  size?: "default" | "compact";
 }
 
 const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
@@ -27,6 +29,8 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   selectedOption = [], // Default to an empty array
   preventRemoveLastItem = false,
   fieldName = "item",
+  alignLeft = false,
+  size = "default",
 }) => {
   const [options, setOptions] = useState<Option[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<Option[]>([]);
@@ -127,17 +131,28 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
   };
 
   // Custom styles to fix blue selection box and maintain proper styling
+  const isCompact = size === "compact";
+  const controlMinHeight = isCompact ? "36px" : "42px";
+  const controlFontSize = isCompact ? "14px" : "14px";
+  const controlBorderColor = "#e2e8f0";
+  const controlShadow = "0 1px 2px 0 rgba(0, 0, 0, 0.05)";
+
   const customStyles = {
     control: (provided: any, state: any) => ({
       ...provided,
-      borderColor: '#d1d5db',
-      boxShadow: state.isFocused ? '0 0 0 1px #d1d5db' : 'none',
-      border: '1px solid #d1d5db !important',
+      borderColor: controlBorderColor,
+      boxShadow: controlShadow,
+      border: `1px solid ${controlBorderColor} !important`,
       outline: 'none',
-      minHeight: '42px',
+      minHeight: controlMinHeight,
+      fontSize: controlFontSize,
+      backgroundColor: '#ffffff',
+      borderRadius: '0.375rem',
+      width: '100%',
+      textAlign: alignLeft ? 'left' : undefined,
       '&:hover': {
-        borderColor: '#d1d5db',
-        border: '1px solid #d1d5db !important'
+        borderColor: controlBorderColor,
+        border: `1px solid ${controlBorderColor} !important`
       },
       '&:focus': {
         borderColor: '#d1d5db',
@@ -155,6 +170,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     input: (provided: any) => ({
       ...provided,
       color: '#374151',
+      fontSize: controlFontSize,
       outline: 'none !important',
       boxShadow: 'none !important',
       border: 'none !important',
@@ -172,24 +188,39 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     }),
     valueContainer: (provided: any) => ({
       ...provided,
-      padding: '2px 8px'
+      padding: isCompact ? '2px 12px' : '4px 12px',
+      textAlign: alignLeft ? 'left' : undefined,
     }),
     placeholder: (provided: any) => ({
       ...provided,
-      color: '#9ca3af'
+      color: '#9ca3af',
+      fontSize: controlFontSize,
+      textAlign: alignLeft ? 'left' : undefined,
     }),
     menu: (provided: any) => ({
       ...provided,
       zIndex: 999,
-      border: '1px solid #e5e7eb',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+      border: '1px solid #e2e8f0',
+      boxShadow: controlShadow,
+      marginTop: '1px',
+      borderRadius: '0.375rem',
+      width: '100%',
+      textAlign: alignLeft ? 'left' : undefined,
+    }),
+    menuList: (provided: any) => ({
+      ...provided,
+      maxHeight: 220,
+      paddingTop: 4,
+      paddingBottom: 4,
     }),
     option: (provided: any, state: any) => ({
       ...provided,
       backgroundColor: state.isSelected ? 'transparent' : state.isFocused ? '#f3f4f6' : 'white',
       color: '#374151',
       cursor: 'pointer',
+      fontSize: controlFontSize,
       padding: 0,
+      textAlign: alignLeft ? 'left' : undefined,
       '&:hover': {
         backgroundColor: '#f3f4f6'
       }
@@ -197,11 +228,17 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     multiValue: (provided: any) => ({
       ...provided,
       backgroundColor: '#e5e7eb',
-      border: '1px solid #d1d5db'
+      border: '1px solid #d1d5db',
+      maxWidth: '100%'
     }),
     multiValueLabel: (provided: any) => ({
       ...provided,
-      color: '#374151'
+      color: '#374151',
+      fontSize: controlFontSize,
+      textAlign: alignLeft ? 'left' : undefined,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap'
     }),
     multiValueRemove: (provided: any) => ({
       ...provided,

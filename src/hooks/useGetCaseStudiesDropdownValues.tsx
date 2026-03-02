@@ -29,6 +29,16 @@ const useCaseStudyDropdowns = (): UseCaseStudyDropdownsResult => {
     try {
       const res = await caseStudiesService.getCaseStudiesDropdownValues();
       if (res.result) {
+        // Ensure current year is always included in the year options
+        const currentYear = new Date().getFullYear().toString();
+        const yearOptions = res.result.year || [];
+        
+        if (!yearOptions.includes(currentYear)) {
+          // Add current year and sort in descending order
+          const updatedYears = [...yearOptions, currentYear].sort((a, b) => parseInt(b) - parseInt(a));
+          res.result.year = updatedYears;
+        }
+        
         setApiDropdownOptions(res.result);
       }
     } catch (error) {
