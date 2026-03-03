@@ -188,15 +188,6 @@ export default function NPXAnalyticsPage() {
               Year: {year || "-"}
             </p>
           </div>
-          {/* <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              onClick={fetchPivotTable}
-              disabled={tableLoading || dropdownLoading}
-            >
-              {tableLoading ? "Loading..." : "Search"}
-            </Button>
-          </div> */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline-secondary"
