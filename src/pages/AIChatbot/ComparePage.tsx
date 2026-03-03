@@ -604,7 +604,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
     }, [loading, mode, manualSelectedPdfIds, investor1, investor2, docsFoundForInv1, docsFoundForInv2, allDocs]);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-140px)] relative border rounded-md bg-white p-8">
+        // <div className="flex flex-col h-[calc(100vh-140px)] relative border rounded-md bg-white p-8">
+        <div className="flex flex-col h-[calc(100vh-140px)] relative bg-white p-8">
         
         {/* 1. CATEGORY VERIFICATION MODAL — removed, now shown inline */}
 
@@ -1417,7 +1418,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                                                             AI Comparison Summary
                                                         </h3>
                                                     </div>
-                                                    <div className="text-md text-gray-700 leading-relaxed prose max-w-none">
+                                                    <div className="text-sm text-gray-700 leading-relaxed prose max-w-none">
                                                         <ReactMarkdown>{pair.answer.comparison}</ReactMarkdown>
                                                     </div>
                                                 </div>
@@ -1441,9 +1442,6 @@ import { useState, useEffect, useRef, useMemo } from "react";
             <div ref={messagesEndRef} className="h-4" />
         </div>
 
-        <div className="shrink-0 pt-2 text-center text-xs text-gray-500">
-            AI Assistant can make mistakes. Check important info.
-        </div>
         </div>
     );
     }
