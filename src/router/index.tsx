@@ -559,21 +559,20 @@ function Router() {
       element: <Register />,
     },
     {
-      path: "ai-chatbot",
       element: <ChatProvider><AiChatbot /></ChatProvider>,      
       children: [
     {
-      path: "qa",
+      path: "ai-assistant",
       element: <QAPage />,
       data: { titleName: "AI Assistant - ZMH Analytics" },
     },
     {
-      path: "compare",
+      path: "ai-assistant/compare-documents",
       element: <ComparePage />,
       data: { titleName: "AI Assistant - ZMH Analytics" },
     },
     {
-      path: "voting-guidelines",
+      path: "ai-assistant/voting-guidelines",
       element: <VotingGuidelinesPage />,
       data: { titleName: "AI Assistant - ZMH Analytics" },
     }]

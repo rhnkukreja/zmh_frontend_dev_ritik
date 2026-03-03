@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { MessageSquare, GitCompare, Scale, ChevronLeft, ChevronRight } from "lucide-react";
+import { MessageSquare,FileText, GitCompare, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 export default function DashboardLayout() {
@@ -7,9 +7,9 @@ export default function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   const navItems = [
-    { icon: MessageSquare, label: "AI Assistant", path: "/ai-chatbot/qa" },
-    { icon: Scale, label: "Voting Guidelines", path: "/ai-chatbot/voting-guidelines" },
-    { icon: GitCompare, label: "Compare Documents", path: "/ai-chatbot/compare" },
+    { icon: MessageSquare, label: "AI Assistant", path: "/ai-assistant" },
+    { icon: FileText, label: "Voting Guidelines", path: "/ai-assistant/voting-guidelines" },
+    { icon: GitCompare, label: "Compare Documents", path: "/ai-assistant/compare-documents" },
   ];
 
   return (
@@ -108,10 +108,10 @@ export default function DashboardLayout() {
             <h2 className="font-semibold text-lg text-black leading-tight">
               {navItems.find(i => i.path === location.pathname)?.label || "Dashboard"}
             </h2>
-            {location.pathname === "/ai-chatbot/voting-guidelines" && (
+            {location.pathname === "/ai-assistant/voting-guidelines" && (
               <span className="text-xs text-gray-500 mt-0.5">Based on latest available document</span>
             )}
-            {location.pathname === "/ai-chatbot/qa" && (
+            {location.pathname === "/ai-assistant" && (
               <span className="text-xs text-gray-500 mt-0.5">AI can make mistakes. Check important info.</span>
             )}
           </div>
