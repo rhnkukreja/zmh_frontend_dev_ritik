@@ -345,7 +345,7 @@ class DashboardService {
   public async getNPXPivotTableDropdown(params: {
     company_id: string | number;
     year: string | number;
-    institution_name?: string;
+    institution_name?: string[];
   }): Promise<{ result: any }> {
     const queryParams: Record<string, any> = {
       company_id: String(params.company_id),
@@ -368,26 +368,23 @@ class DashboardService {
   public async getNPXPivotTable(params: {
     company_id: string | number;
     year: string | number;
-    institution_name?: string | string[];
-    fund_name?: string | string[];
-    proposal_text?: string | string[];
+    institution_name?: string[];
+    fund_name?: string[];
+    proposal_text?: string[];
   }): Promise<{ result: any }> {
     const queryParams: Record<string, any> = {
       company_id: String(params.company_id),
       year: String(params.year),
     };
 
-    const toParam = (val?: string | string[]) =>
-      Array.isArray(val) ? val.join(",") : val;
-
-    if (params.institution_name && (Array.isArray(params.institution_name) ? params.institution_name.length > 0 : params.institution_name)) {
-      queryParams.institution_name = toParam(params.institution_name);
+    if (params.institution_name) {
+      queryParams.institution_name = params.institution_name;
     }
-    if (params.fund_name && (Array.isArray(params.fund_name) ? params.fund_name.length > 0 : params.fund_name)) {
-      queryParams.fund_name = toParam(params.fund_name);
+    if (params.fund_name) {
+      queryParams.fund_name = params.fund_name;
     }
-    if (params.proposal_text && (Array.isArray(params.proposal_text) ? params.proposal_text.length > 0 : params.proposal_text)) {
-      queryParams.proposal_text = toParam(params.proposal_text);
+    if (params.proposal_text) {
+      queryParams.proposal_text = params.proposal_text;
     }
 
     const response = await axiosInstance.get(

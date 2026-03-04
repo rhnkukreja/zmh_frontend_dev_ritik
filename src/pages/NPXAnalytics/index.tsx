@@ -7,6 +7,8 @@ import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
+import { MdOutlineClear } from "react-icons/md";
+import { FaSearch } from "react-icons/fa";
 
 const toOptions = (arr: string[]) => arr.map((v) => ({ value: v, label: v }));
 
@@ -71,7 +73,7 @@ export default function NPXAnalyticsPage() {
       setDropdownLoading(true);
       const params: any = { company_id: companyId, year };
       if (selectedInstitution && selectedInstitution.length > 0) {
-        params.institution_name = selectedInstitution.join(",");
+        params.institution_name = selectedInstitution;
       }
 
       const response = await dashboardService.getNPXPivotTableDropdown(params);
@@ -102,7 +104,11 @@ export default function NPXAnalyticsPage() {
   // ------------------------------------
   // Fetch pivot table data
   // ------------------------------------
-  const fetchPivotTable = async () => {
+  const fetchPivotTable = async (filters?: {
+    institution_name?: string[];
+    fund_name?: string[];
+    proposal_text?: string[];
+  }) => {
     if (!companyId || !year) return;
 
     try {
@@ -112,9 +118,9 @@ export default function NPXAnalyticsPage() {
       const response = await dashboardService.getNPXPivotTable({
         company_id: companyId,
         year,
-        institution_name: institutionName,
-        fund_name: fundName || "",
-        proposal_text: proposalText,
+        institution_name: filters?.institution_name ?? institutionName,
+        fund_name: filters?.fund_name ?? fundName,
+        proposal_text: filters?.proposal_text ?? proposalText,
       });
 
       const payload =
@@ -130,15 +136,31 @@ export default function NPXAnalyticsPage() {
     }
   };
 
+  const onApplyFilters = () => {
+    fetchPivotTable();
+  };
+
   // Load dropdowns on mount. Re-fetch with institution filter when it changes.
   useEffect(() => {
     fetchDropdown(institutionName.length > 0 ? institutionName : undefined);
   }, [companyId, year, institutionName]);
 
-  // Re-fetch table whenever any filter changes
+  // Fetch table on initial load / context change only
   useEffect(() => {
     fetchPivotTable();
-  }, [companyId, year, institutionName, fundName, proposalText]);
+  }, [companyId, year]);
+
+  const onFilterClear = () => {
+    setInstitutionName([]);
+    setFundName([]);
+    setProposalText([]);
+    setErrorMessage("");
+    fetchPivotTable({
+      institution_name: [],
+      fund_name: [],
+      proposal_text: [],
+    });
+  };
 
   // ------------------------------------
   // Render
@@ -168,11 +190,23 @@ export default function NPXAnalyticsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="primary"
-              onClick={fetchPivotTable}
-              disabled={tableLoading || dropdownLoading}
+              variant="outline-secondary"
+              onClick={() => {
+                onFilterClear();
+              }}
+              className="w-full sm:w-auto flex items-center gap-2"
+              type="button"
             >
-              {tableLoading ? "Loading..." : "Search"}
+              <MdOutlineClear className="text-lg mr-1" />Clear
+            </Button>
+
+            <Button
+              variant="primary"
+              onClick={onApplyFilters}
+              className="w-full sm:w-auto flex items-center gap-2"
+              type="button"
+            >
+              <FaSearch className="text-lg" /> Apply
             </Button>
           </div>
         </div>
@@ -186,7 +220,6 @@ export default function NPXAnalyticsPage() {
             </label>
             <Select
               isMulti
-              isLoading={dropdownLoading}
               options={toOptions(institutions)}
               value={institutionName.map((i) => ({ value: i, label: i }))}
               onChange={(opts) =>
@@ -202,7 +235,6 @@ export default function NPXAnalyticsPage() {
             <label className="text-sm font-semibold mb-1 block">Fund</label>
             <Select
               isMulti
-              isLoading={dropdownLoading}
               options={toOptions(funds)}
               value={fundName.map((f) => ({ value: f, label: f }))}
               onChange={(opts) =>
@@ -218,7 +250,6 @@ export default function NPXAnalyticsPage() {
             <label className="text-sm font-semibold mb-1 block">Proposal</label>
             <Select
               isMulti
-              isLoading={dropdownLoading}
               options={toOptions(proposals)}
               value={proposalText.map((p) => ({ value: p, label: p }))}
               onChange={(opts) =>
@@ -236,7 +267,7 @@ export default function NPXAnalyticsPage() {
             Total Count: {rows.length}
           </div>
 
-          {(dropdownLoading || tableLoading) && (
+          {tableLoading && (
             <div className="flex items-center justify-center bg-white p-8 border rounded-md">
               <LoadingIcon color="#800000" icon="three-dots" className="w-12 h-12" />
             </div>
@@ -248,7 +279,7 @@ export default function NPXAnalyticsPage() {
             </div>
           )} */}
 
-          {!dropdownLoading && !tableLoading && (
+          {!tableLoading && (
             <TableWrapper isLoading={false}>
               <Table bordered>
                 <Table.Thead variant="light">
