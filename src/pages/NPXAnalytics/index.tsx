@@ -264,7 +264,7 @@ export default function NPXAnalyticsPage() {
         {/* Table */}
         <div className="mt-6">
           <div className="text-right text-sm text-gray-500 mb-2">
-            Total Count: {rows.length}
+            Total Count: {rows.length - 1}
           </div>
 
           {tableLoading && (
