@@ -614,7 +614,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    {/* Download NPX & Analytics btn for ADMIN */}
+                    {/* Download NPX btn hidden */}
                     {user?.user_type === 'Admin' && (
                       <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
                         <div className="relative">
