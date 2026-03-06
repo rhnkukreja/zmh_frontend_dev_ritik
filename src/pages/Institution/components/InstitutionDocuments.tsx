@@ -8,7 +8,7 @@ import {
 } from "@/stores/institutionSlice";
 import { AppDispatch } from "@/stores/store";
 import Button from "@/components/Base/Button";
-import { ChevronLeft, FileText, ExternalLink, Plus, PenLine, Trash2, RotateCcw } from "lucide-react";
+import { ChevronLeft, FileText, ExternalLink, Plus, PenLine, Trash2, RotateCcw, Loader2 } from "lucide-react";
 import Table from "@/components/Base/Table";
 import TableWrapper from "@/components/TableWrapper";
 import Tippy from "@/components/Base/Tippy";
@@ -20,6 +20,9 @@ import EditDocumentModal from "./EditDocumentModal";
 import { institutionService } from "@/services/institution";
 import { toast } from "react-toastify";
 import investorIcon from "../../../assets/images/zmh-images/investor-icon.png";
+import { axiosInstance } from "@/services";
+import axios from "axios";
+import DraftReviewModal from "./DraftReviewModal";
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
 
@@ -54,23 +57,45 @@ const InstitutionDocuments = () => {
     loading,
   } = useAppSelector((state) => state.institutions);
 
-
-
   const [addDocumentVisible, setAddDocumentVisible] = useState(false);
   const [editDocumentVisible, setEditDocumentVisible] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<InstitutionDocument | null>(null);
   const [linkingInProgress, setLinkingInProgress] = useState<{[key: string]: boolean}>({});
-  // Store pending link/unlink operations before API call
   const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>([]);
-  const [pendingDocumentId, setPendingDocumentId] = useState<number | null>(null); // For UI focus
+  const [pendingDocumentId, setPendingDocumentId] = useState<number | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: 'delete'|'restore'|'bulk-delete'; document?: InstitutionDocument; ids?: number[] }>({ open: false, type: 'delete' });
   const [linkConfirmOpen, setLinkConfirmOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
-  // Only show active documents for bulk selection
   const filteredDocuments = institutionDocuments?.filter((doc) => !doc.is_deleted) || [];
   const documentsToDisplay = showTrash ? trashedDocuments : institutionDocuments;
+
+  const [processingStatuses, setProcessingStatuses] = useState<{[key: number]: {status: string, message: string}}>({});
+  const [pendingDrafts, setPendingDrafts] = useState<any[]>([]);
+  const [currentProfile, setCurrentProfile] = useState<any>(null);
+  const [isSyncingSummary, setIsSyncingSummary] = useState(false);
+
+  // 🌟 Animated Loading Text State
+  const [loadingText, setLoadingText] = useState("Creating Investor Profile...");
+
+  useEffect(() => {
+    if (linkingInProgress.bulk) {
+      const texts = [
+        "Creating Investor Profile...",
+        "Loading Documents...",
+        "Analyzing Changes...",
+        "Please Wait..."
+      ];
+      let i = 0;
+      setLoadingText(texts[0]);
+      const interval = setInterval(() => {
+        i = (i + 1) % texts.length;
+        setLoadingText(texts[i]);
+      }, 2500); // Changes text every 2.5 seconds
+      return () => clearInterval(interval);
+    }
+  }, [linkingInProgress.bulk]);
 
   const handleSelectRow = (id: number) => {
     setSelectedRows((prev) =>
@@ -109,7 +134,7 @@ const InstitutionDocuments = () => {
       setConfirmModal({ open: false, type: 'bulk-delete' });
     }
   };
-  // Soft delete (move to trash)
+
   const handleDeleteDocument = (document: InstitutionDocument) => {
     setConfirmModal({ open: true, type: 'delete', document });
   };
@@ -127,7 +152,6 @@ const InstitutionDocuments = () => {
     }
   };
 
-  // Restore from trash
   const handleRestoreDocument = (document: InstitutionDocument) => {
     setConfirmModal({ open: true, type: 'restore', document });
   };
@@ -137,7 +161,6 @@ const InstitutionDocuments = () => {
     try {
       await institutionService.restoreInstitutionDocument(confirmModal.document.id);
       toast.success("Document restored successfully");
-      // Remove restored document from trash view immediately
       setTrashedDocuments((prev) => prev.filter(doc => doc.id !== confirmModal.document?.id));
       handleDocumentSuccess();
     } catch {
@@ -146,7 +169,6 @@ const InstitutionDocuments = () => {
       setConfirmModal({ open: false, type: 'restore' });
     }
   };
-
 
   const { user } = useAppSelector((state) => state.authentiction);
 
@@ -170,10 +192,55 @@ const InstitutionDocuments = () => {
     setEditDocumentVisible(true);
   };
 
-  const handleDocumentSuccess = () => {
+  const handleDocumentSuccess = (drafts?: any[], profile?: any) => {
     if (params.id) {
       dispatch(fetchInstitutionDocuments(Number(params.id)));
     }
+    
+    if (drafts && drafts.length > 0) {
+      setPendingDrafts(drafts);
+      setCurrentProfile(profile);
+    }
+  };
+
+  // 🌟 UPDATE: Add "updatedDrafts: any[]" inside the parentheses to catch the edits!
+  const handleApproveAll = async (updatedDrafts: any[]) => {
+    // 1. Get the current profile state
+    const updatedProfile = { ...currentProfile };
+    
+    // 2. Loop through the NEW EDITED drafts from the modal, not the old pendingDrafts!
+    updatedDrafts.forEach(draft => {
+      if (draft.proposed_content !== undefined) {
+        // Save the user's manual edits into the state
+        updatedProfile.sections[draft.section] = draft.proposed_content;
+      }
+    });
+    
+    setCurrentProfile(updatedProfile);
+
+    // 3. Clear pending list and trigger the loading screen (spinning wheel)
+    setPendingDrafts([]);
+    setIsSyncingSummary(true); 
+    
+    // 4. Navigate to final page and pass the newly EDITED profile
+    setTimeout(() => {
+      setIsSyncingSummary(false);
+      toast.success("Investor Profile updated successfully!");
+      
+      navigate(`/final-summary/${params.id}`, { 
+      state: { 
+        profile: updatedProfile, 
+        oldProfile: currentProfile, // 🌟 NEW: Pass the old data for comparison
+        investorName: singleInstitution?.institution 
+      } 
+    });
+      
+    }, 3500);
+  };
+
+  const handleRejectAll = () => {
+    setPendingDrafts([]);
+    toast.info("All updates discarded.");
   };
 
   const handleLinkToProfile = async (
@@ -181,7 +248,6 @@ const InstitutionDocuments = () => {
     section: ProfileSection,
     isCurrentlyLinked: boolean
   ) => {
-    // Instead of calling API, store or remove the intended operation
     setPendingLinkOps((prev) => {
       const hasExisting = prev.some(
         (op) => op.document_id === document.id && op.section === section
@@ -211,38 +277,164 @@ const InstitutionDocuments = () => {
       ];
     });
   };
-  // Bulk link/unlink handler
+
+
   const handleBulkLinkToProfile = async () => {
-    if (!params.id || pendingLinkOps.length === 0) return;
+    if (!params.id || (pendingLinkOps.length === 0 && selectedRows.length === 0)) return;
+
     setLinkingInProgress((prev) => ({ ...prev, bulk: true }));
-    // Group operations by document for API
+
+    const combinedDocIds = Array.from(
+      new Set([
+        ...pendingLinkOps.map((op) => op.document_id),
+        ...selectedRows, 
+      ])
+    );
+
+    const payload = combinedDocIds.map((docId) => {
+      const doc = institutionDocuments?.find((d) => d.id === docId);
+
+      const getFinalState = (
+        section: string,
+        originalState: boolean | undefined
+      ): boolean => {
+        const op = pendingLinkOps.find(
+          (o) => o.document_id === docId && o.section === section
+        );
+
+        if (op) {
+          return op.action === "link";
+        }
+
+        return Boolean(originalState);
+      };
+
+      return {
+        name: doc?.name ?? "",
+        year: doc?.year ? String(doc.year) : null,
+        priority: doc?.priority ?? "Low",
+        sum: getFinalState("summary", doc?.linked_to_summary),
+        eng: getFinalState("engagement_priorities", doc?.linked_to_engagement_priorities),
+        rep: getFinalState("reporting_expectation", doc?.linked_to_reporting_expectation),
+        esg: getFinalState("esg_integration", doc?.linked_to_esg_integration),
+        vote: getFinalState("voting_guidelines", doc?.linked_to_voting_guidelines),
+      };
+    });
+
     const grouped: { [docId: number]: { sections: ProfileSection[]; action: "link" | "unlink" } } = {};
     pendingLinkOps.forEach(op => {
       if (!grouped[op.document_id]) {
         grouped[op.document_id] = { sections: [], action: op.action };
       }
       grouped[op.document_id].sections.push(op.section);
-      grouped[op.document_id].action = op.action; // last op wins
+      grouped[op.document_id].action = op.action; 
     });
+    
     const operations = Object.entries(grouped).map(([document_id, { sections, action }]) => ({
       document_id: Number(document_id),
       sections,
       action
     }));
+
     try {
-      await institutionService.bulkLinkDocumentsToProfile(Number(params.id), operations);
+      if (operations.length > 0) {
+        try {
+          await institutionService.bulkLinkDocumentsToProfile(Number(params.id), operations);
+        } catch (originalApiError) {
+          console.error("Original API failed, but continuing to Python API...", originalApiError);
+        }
+      }
+
+      // ========================================
+      // CHANGE THIS URL TO YOUR LOCALHOST FOR TESTING
+      // ========================================
+      const response = await axios.post(
+        "https://ai-chatbot-zmh.onrender.com/api/compare-updates", 
+        { 
+          investor_name: singleInstitution?.institution || "Unknown Institution",
+          institution_id: Number(params.id), 
+          documents: payload 
+        }, 
+        { 
+          headers: { 
+            "Content-Type": "application/json"
+          },
+          timeout: 120000 // 2 minute timeout
+        }
+      );
+
       dispatch(fetchInstitutionDocuments(Number(params.id)));
-      toast.success("Profile link(s) updated");
+      
+      const comparisons = response.data?.comparisons || {};
+      
+      const stripHtml = (html: string) => {
+        if (!html) return "";
+        return html
+          .replace(/<p>/gi, "")
+          .replace(/<\/p>/gi, "\n\n")
+          .replace(/<ul>/gi, "") // Remove opening ul
+          .replace(/<\/ul>/gi, "\n")
+          .replace(/<li>/gi, "- ") // Bullet points
+          .replace(/<\/li>/gi, "\n")
+          .replace(/<br\s*\/?>/gi, "\n")
+          .replace(/&nbsp;/gi, " ") // Preserve spaces
+          .replace(/<[^>]+>/g, "") // Strip remaining HTML tags (like <strong>)
+          .trim();
+      };
+
+      const realDrafts: any[] = [];
+      const realProfileSections: Record<string, string> = {};
+
+      // 🌟 Because the backend now ALWAYS returns all 5, this will process all 5
+      Object.keys(comparisons).forEach((sectionKey) => {
+        const item = comparisons[sectionKey];
+        
+        const cleanOld = stripHtml(item.old_content);
+        const cleanNew = stripHtml(item.new_content);
+
+        realProfileSections[sectionKey] = cleanOld;
+
+        realDrafts.push({
+          section: sectionKey,
+          status: "draft_ready",
+          proposed_content: cleanNew,
+        });
+      });
+
+      const realProfile = {
+        investor_id: String(params.id),
+        sections: realProfileSections,
+      };
+
+      if (realDrafts.length > 0) {
+        handleDocumentSuccess(realDrafts, realProfile);
+      } else {
+        toast.info("No material changes found in the selected documents.");
+      }
+
+    } catch (error: any) {
+      console.error("Python API Error:", error);
+      
+      if (error.response) {
+        const errorDetail = error.response.data?.detail || error.response.statusText;
+        toast.error(`Action Failed: ${errorDetail}`);
+      } else if (error.request) {
+        toast.error("Backend server not responding. Please check if the server is running.");
+      } else {
+        toast.error(`Failed to submit documents: ${error.message}`);
+      }
+
+    } finally {
+      // 1. Hide the loading screen
+      setLinkingInProgress((prev) => ({ ...prev, bulk: false }));
+      
+      // 2. Clear selections on BOTH success and error so checkboxes reset
       setPendingLinkOps([]);
       setPendingDocumentId(null);
-    } catch (error) {
-      toast.error("Failed to update document link(s)");
-    } finally {
-      setLinkingInProgress((prev) => ({ ...prev, bulk: false }));
+      setSelectedRows([]); 
     }
   };
 
-  // Cancel pending link ops
   const handleCancelLinkOps = () => {
     setPendingLinkOps([]);
     setPendingDocumentId(null);
@@ -273,6 +465,17 @@ const InstitutionDocuments = () => {
 
   return (
     <>
+      {/* 🌟 NEW ANIMATED LOADING OVERLAY 🌟 */}
+      {linkingInProgress.bulk && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl shadow-2xl p-10 flex flex-col items-center max-w-md text-center transform scale-100 animate-in zoom-in-95">
+            <Loader2 className="w-14 h-14 text-[#901639] animate-spin mb-6" />
+            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{loadingText}</h2>
+            <p className="text-gray-500 text-sm mt-1">Please do not close or refresh this page.</p>
+          </div>
+        </div>
+      )}
+
       <Button
         onClick={backToPreviousPage}
         variant="primary"
@@ -285,7 +488,7 @@ const InstitutionDocuments = () => {
         />
         Back
       </Button>
-
+      
       <div className="box box--stacked">
         <div className="p-5 border-b border-slate-200/80">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -294,19 +497,6 @@ const InstitutionDocuments = () => {
                 {loading ? "Loading..." : (
                   <>
                     {singleInstitution?.institution}
-                    {/* Document Tab btn is disabled for now */}
-                    {/* {(singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id) && (
-                      <button
-                        className="cursor-pointer ml-2 px-3 py-1 bg-primary text-white rounded-md hover:bg-primary/80 transition-colors text-sm font-medium"
-                        title="Document Tab"
-                        onClick={() => {
-                          const id = singleInstitution?.investor_profile_id || institutionDocuments?.[0]?.investor_profile_id;
-                          window.open(`/investor-company-details/${id}`, '_blank');
-                        }}
-                      >
-                        Document Tab
-                      </button>
-                    )} */}
                   </>
                 )}
               </h1>
@@ -354,7 +544,6 @@ const InstitutionDocuments = () => {
         </div>
 
         <div className="p-5">
-          {/* Bulk Delete Button */}
           {selectedRows.length > 0 && (
             <div className="mb-3 flex justify-end">
               <Button variant="danger" onClick={handleBulkDelete} disabled={bulkActionLoading}>
@@ -372,7 +561,6 @@ const InstitutionDocuments = () => {
                         <FormCheck.Input
                           type="checkbox"
                           checked={selectedRows.length === filteredDocuments.length && filteredDocuments.length > 0}
-                          // indeterminate prop removed, not supported by FormCheck.Input
                           onChange={handleSelectAllRows}
                         />
                       </FormCheck>
@@ -546,10 +734,8 @@ const InstitutionDocuments = () => {
                             {document.priority || "-"}
                           </span>
                         </Table.Td>
-                        {/* Actions column */}
                         <Table.Td className="py-1.5 bg-white border-slate-200/80">
                           <div className="flex gap-2 items-center">
-                            {/* Show Edit/Delete for active, Restore for trashed */}
                             {!showTrash && !document.is_deleted && (user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                               <>
                                 <Tippy content="Edit" options={{ theme: "light" }}>
@@ -595,61 +781,63 @@ const InstitutionDocuments = () => {
                     </Table.Tr>
                   )}
                 </Table.Tbody>
-                    {/* Confirm Modals */}
-                    {confirmModal.open && (
-                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                        <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
-                          <div className="mb-4 text-lg font-semibold">
-                            {confirmModal.type === 'delete' && 'Move this document to trash?'}
-                            {confirmModal.type === 'restore' && 'Restore this document?'}
-                            {confirmModal.type === 'bulk-delete' && `Move ${confirmModal.ids?.length || 0} selected documents to trash?`}
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <Button variant="outline-secondary" onClick={() => setConfirmModal({ open: false, type: confirmModal.type })}>Cancel</Button>
-                            {confirmModal.type === 'delete' && (
-                              <Button variant="danger" onClick={confirmDeleteDocument}>Move to Trash</Button>
-                            )}
-                            {confirmModal.type === 'restore' && (
-                              <Button variant="success" onClick={confirmRestoreDocument}>Restore</Button>
-                            )}
-                            {confirmModal.type === 'bulk-delete' && (
-                              <Button variant="danger" onClick={confirmBulkDelete} disabled={bulkActionLoading}>Move to Trash</Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {linkConfirmOpen && (
-                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                        <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
-                          <div className="mb-4 text-lg font-semibold">
-                            {pendingDocIds.length === 1
-                              ? "Confirm changes for this document?"
-                              : `Confirm changes for ${pendingDocIds.length} documents?`}
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline-secondary"
-                              onClick={() => setLinkConfirmOpen(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="primary"
-                              className="bg-theme-2 border-bg-theme-2"
-                              onClick={() => {
-                                setLinkConfirmOpen(false);
-                                handleBulkLinkToProfile();
-                              }}
-                              disabled={linkingInProgress.bulk}
-                            >
-                              Confirm
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
               </Table>
+              
+              {/* Confirm Modals */}
+              {confirmModal.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+                  <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
+                    <div className="mb-4 text-lg font-semibold">
+                      {confirmModal.type === 'delete' && 'Move this document to trash?'}
+                      {confirmModal.type === 'restore' && 'Restore this document?'}
+                      {confirmModal.type === 'bulk-delete' && `Move ${confirmModal.ids?.length || 0} selected documents to trash?`}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline-secondary" onClick={() => setConfirmModal({ open: false, type: confirmModal.type })}>Cancel</Button>
+                      {confirmModal.type === 'delete' && (
+                        <Button variant="danger" onClick={confirmDeleteDocument}>Move to Trash</Button>
+                      )}
+                      {confirmModal.type === 'restore' && (
+                        <Button variant="success" onClick={confirmRestoreDocument}>Restore</Button>
+                      )}
+                      {confirmModal.type === 'bulk-delete' && (
+                        <Button variant="danger" onClick={confirmBulkDelete} disabled={bulkActionLoading}>Move to Trash</Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {linkConfirmOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+                  <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
+                    <div className="mb-4 text-lg font-semibold">
+                      {pendingDocIds.length === 1
+                        ? "Confirm changes for this document?"
+                        : `Confirm changes for ${pendingDocIds.length} documents?`}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => setLinkConfirmOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="bg-theme-2 border-bg-theme-2"
+                        onClick={() => {
+                          setLinkConfirmOpen(false);
+                          handleBulkLinkToProfile();
+                        }}
+                        disabled={linkingInProgress.bulk}
+                      >
+                        Confirm
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </TableWrapper>
         </div>
@@ -661,7 +849,10 @@ const InstitutionDocuments = () => {
           setVisible={setAddDocumentVisible}
           institutionId={params.id}
           institutionName={singleInstitution?.institution}
-          onSuccess={handleDocumentSuccess}
+          onSuccess={() => {
+            // This safely refreshes the document table without triggering the AI Modal
+            dispatch(fetchInstitutionDocuments(Number(params.id)));
+          }}
         />
       )}
 
@@ -673,6 +864,17 @@ const InstitutionDocuments = () => {
           onSuccess={handleDocumentSuccess}
         />
       )}
+
+      {(pendingDrafts.length > 0 || isSyncingSummary) && (
+        <DraftReviewModal
+          investorName={singleInstitution?.institution || "Institution"}
+          drafts={pendingDrafts}
+          profile={currentProfile}
+          onApproveAll={handleApproveAll}
+          onRejectAll={handleRejectAll}
+          isSyncingSummary={isSyncingSummary}
+        />
+      )}  
     </>
   );
 };
