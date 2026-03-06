@@ -528,7 +528,7 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
     <>
       <Separator className="my-4" />
       <div className="text-[15px] font-semibold text-slate-500 mb-3">
-        Voting Rationale Disclosures <span>(Top 20 Investors)</span>
+        Voting Rationale Disclosures <span>(Against or Withhold votes for top 20 investors only)</span>
       </div>
       {summary && (
         <p className="mb-3 text-[15px] text-slate-700">{summary}</p>
