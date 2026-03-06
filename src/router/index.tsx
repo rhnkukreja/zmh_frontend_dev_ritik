@@ -111,6 +111,9 @@ import { ChatProvider } from "../pages/AIChatbot/ChatContext";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 
 
+import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
+
+
 function Router() {
   const TitleManager = () => {
     const location = useLocation();
@@ -557,6 +560,10 @@ function Router() {
     {
       path: "register",
       element: <Register />,
+    },
+    {
+      path: "final-summary/:id",
+      element: <FinalProfileSummary/>,
     },
     {
       element: <ChatProvider><AiChatbot /></ChatProvider>,      
