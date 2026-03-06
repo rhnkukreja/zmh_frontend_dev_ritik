@@ -3,8 +3,23 @@ import {
     Send, Bot, Users, FileText, X, ChevronDown, Check,
     Eye, EyeOff, Search, Trash2, Maximize2, ArrowRight, FileSearch 
 } from "lucide-react";
-import { fetchInvestors, AI_CHATBOT_API_BASE } from "./api"; 
+import { fetchInvestors, AI_CHATBOT_API_BASE } from "./api";
 import { useChat } from "./ChatContext.tsx";
+
+const getInvestorDisplayName = (name: string): string => {
+    const words = name.split(/\s+/);
+    const norm = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normed = words.map(norm);
+    for (let len = 1; len < words.length; len++) {
+        const prefix = normed.slice(0, len).join(' ');
+        for (let start = len; start <= words.length - len; start++) {
+            if (normed.slice(start, start + len).join(' ') === prefix) {
+                return words.slice(0, len).join(' ');
+            }
+        }
+    }
+    return name;
+};
 // ─────────────────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────────────────
@@ -163,7 +178,7 @@ export default function VotingGuidelinesPage() {
 
     const filteredInvestors = useMemo(() => {
         return allInvestors.filter(inv =>
-            inv.name.toLowerCase().includes(investorSearchQuery.toLowerCase())
+            getInvestorDisplayName(inv.name).toLowerCase().includes(investorSearchQuery.toLowerCase())
         );
     }, [allInvestors, investorSearchQuery]);
 
@@ -402,7 +417,7 @@ export default function VotingGuidelinesPage() {
                                                 const isSelected = selectedInvestors.includes(inv.id);
                                                 return (
                                                     <div key={inv.id} onClick={() => toggleInvestor(inv.id)} className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors border-b border-gray-50 last:border-0 ${isSelected ? 'bg-[#931638]/5' : 'hover:bg-gray-50'}`}>
-                                                        <span className={`text-xs ${isSelected ? "text-[#931638] font-bold" : "text-gray-700"}`}>{inv.name}</span>
+                                                        <span className={`text-xs ${isSelected ? "text-[#931638] font-bold" : "text-gray-700"}`}>{getInvestorDisplayName(inv.name)}</span>
                                                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-[#931638] border-[#931638]' : 'border-gray-300 bg-white'}`}>
                                                             {isSelected && <Check size={10} className="text-white" />}
                                                         </div>

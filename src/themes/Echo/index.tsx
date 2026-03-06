@@ -930,7 +930,7 @@ function Main() {
 
                 {/* BEGIN: AI Assistant - Open /ai-chatbot in new tab */}
                 <a
-                  href="/ai-chatbot/qa"
+                  href="/ai-assistant"
                   target="_blank"
                   rel="noreferrer"
                   className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex cursor-pointer"

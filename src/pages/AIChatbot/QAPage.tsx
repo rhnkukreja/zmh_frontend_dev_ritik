@@ -171,7 +171,7 @@ export default function QAPage() {
             // FIX: The Type Guard (inv is Investor) removes the red lines
             const priorityInvestors = priorityOrder
                 .map(id => allInvestors.find(inv => inv.id === id))
-                .filter((inv): inv is Investor => !!inv); 
+                .filter((inv): inv is Investor => !!inv);
 
             const otherInvestors = allInvestors
                 .filter(inv => !priorityOrder.includes(inv.id))
@@ -1135,7 +1135,7 @@ export default function QAPage() {
               </div>
             </div>
             <p 
-              className="text-sm text-gray-700 line-clamp-3 cursor-pointer"
+              className="text-base text-gray-1200 line-clamp-3 cursor-pointer"
               onClick={() => setSelectedAnswer(ans)}
             >
               {ans.answer_segments?.[0]?.text ?? ""}

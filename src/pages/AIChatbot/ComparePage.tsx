@@ -3,9 +3,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
     Send, Layers, FileSearch, X, Tag, Maximize2, ChevronDown, Check, Calendar, 
     AlertCircle, GitCompare, Sparkles, ListFilter, Grid, Settings, Eye, EyeOff, Info, Trash2
     } from "lucide-react";
-    import { AI_CHATBOT_API_BASE , fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api"; 
+    import { AI_CHATBOT_API_BASE , fetchDocuments, fetchInvestors, fetchInvestorFilters } from "./api";
     import ReactMarkdown from "react-markdown";
-  
+
     // ─────────────────────────────────────────────────────────
     // TYPES
     // ─────────────────────────────────────────────────────────
@@ -303,14 +303,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
     // Filtered investors for search
     const filteredInvestors1 = useMemo(() => {
         if (!investor1Search.trim()) return allInvestors;
-        return allInvestors.filter(inv => 
+        return allInvestors.filter(inv =>
             inv.name.toLowerCase().includes(investor1Search.toLowerCase())
         );
     }, [allInvestors, investor1Search]);
 
     const filteredInvestors2 = useMemo(() => {
         if (!investor2Search.trim()) return allInvestors;
-        return allInvestors.filter(inv => 
+        return allInvestors.filter(inv =>
             inv.name.toLowerCase().includes(investor2Search.toLowerCase())
         );
     }, [allInvestors, investor2Search]);
@@ -793,7 +793,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                         )}
                     </div>
 
-                    <span className="text-gray-400 text-xs font-bold">VS</span>
+                    <span className="text-gray-400 text-xs font-bold">vs</span>
 
                     {/* Investor 2 Selection with Search */}
                     <div className="relative" ref={investor2DropdownRef}>
@@ -851,7 +851,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
                     <div className="relative" ref={categoryDropdownRef}>
                         <button 
                             onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)} 
-                            className="relative flex items-center justify-between h-[34px] pl-7 pr-2 bg-gray-50 border border-[#931638]/50 rounded-lg text-xs transition-all w-[100px]"
+                            className="relative flex items-center justify-between h-[34px] pl-7 pr-2 bg-gray-50 border border-[#931638]/50 rounded-lg text-xs transition-all w-[120px]"
                         >
                             <span className="truncate">
                                 {selectedCategories.length === 0 ? "Category" : `${selectedCategories.length} Selected`}
