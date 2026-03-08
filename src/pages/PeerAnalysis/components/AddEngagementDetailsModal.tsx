@@ -220,8 +220,16 @@ const AddEngagementDetailsModal = ({
       handleClose();
       onSuccess?.();
     } catch (err) {
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      toast.error(error?.response?.data?.message || error?.message || "Failed to upload engagement details");
+      // const error = err as {
+      //   response?: { data?: { message?: string; Error?: string; error?: string } };
+      //   message?: string;
+      // };
+      // const serverMessage =
+      //   error?.response?.data?.message ||
+      //   error?.response?.data?.Error ||
+      //   error?.response?.data?.error;
+
+      // toast.error(serverMessage || error?.message || "Failed to upload engagement details");
     } finally {
       setLoading(false);
     }
