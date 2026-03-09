@@ -25,6 +25,23 @@ import axios from "axios";
 import DraftReviewModal from "./DraftReviewModal";
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
+type ProfileMode = "create" | "update" | null;
+
+const SECTIONS: ProfileSection[] = [
+  "summary",
+  "engagement_priorities",
+  "reporting_expectation",
+  "esg_integration",
+  "voting_guidelines",
+];
+
+const sectionToField: Record<ProfileSection, keyof InstitutionDocument> = {
+  summary: "linked_to_summary",
+  engagement_priorities: "linked_to_engagement_priorities",
+  reporting_expectation: "linked_to_reporting_expectation",
+  esg_integration: "linked_to_esg_integration",
+  voting_guidelines: "linked_to_voting_guidelines",
+};
 
 const InstitutionDocuments = () => {
   const params = useParams();
@@ -68,6 +85,11 @@ const InstitutionDocuments = () => {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
+  // Profile mode state
+  const [profileMode, setProfileMode] = useState<ProfileMode>(null);
+  const [modeSwitchConfirmOpen, setModeSwitchConfirmOpen] = useState(false);
+  const [pendingModeSwitch, setPendingModeSwitch] = useState<ProfileMode>(null);
+
   const filteredDocuments = institutionDocuments?.filter((doc) => !doc.is_deleted) || [];
   const documentsToDisplay = showTrash ? trashedDocuments : institutionDocuments;
 
@@ -76,26 +98,44 @@ const InstitutionDocuments = () => {
   const [currentProfile, setCurrentProfile] = useState<any>(null);
   const [isSyncingSummary, setIsSyncingSummary] = useState(false);
 
-  // 🌟 Animated Loading Text State
-  const [loadingText, setLoadingText] = useState("Creating Investor Profile...");
+  const [loadingText, setLoadingText] = useState("Processing...");
 
   useEffect(() => {
     if (linkingInProgress.bulk) {
-      const texts = [
-        "Creating Investor Profile...",
-        "Loading Documents...",
-        "Analyzing Changes...",
-        "Please Wait..."
-      ];
+      const isCreate = profileMode === 'create';
+      const texts = isCreate
+        ? ["Creating Investor Profile...", "Loading Documents...", "Analyzing Content...", "Please Wait..."]
+        : ["Updating Investor Profile...", "Loading Documents...", "Analyzing Changes...", "Please Wait..."];
       let i = 0;
       setLoadingText(texts[0]);
       const interval = setInterval(() => {
         i = (i + 1) % texts.length;
         setLoadingText(texts[i]);
-      }, 2500); // Changes text every 2.5 seconds
+      }, 2500);
       return () => clearInterval(interval);
     }
   }, [linkingInProgress.bulk]);
+
+  // ---- Checkbox state helpers ----
+
+  /** Returns current effective checked state for a doc+section, accounting for pending ops. */
+  const isCheckedForSection = (doc: InstitutionDocument, section: ProfileSection): boolean => {
+    const op = pendingLinkOps.find(o => o.document_id === doc.id && o.section === section);
+    if (op) return op.action === "link";
+    return Boolean(doc[sectionToField[section]]);
+  };
+
+  /**
+   * Red = newly checked in the current session (pendingLinkOps with action "link").
+   * Same in both modes — only the backend submission scope differs.
+   */
+  const isRedCheckbox = (doc: InstitutionDocument, section: ProfileSection): boolean => {
+    if (!profileMode) return false;
+    const op = pendingLinkOps.find(o => o.document_id === doc.id && o.section === section);
+    return Boolean(op && op.action === "link");
+  };
+
+  // ---- End helpers ----
 
   const handleSelectRow = (id: number) => {
     setSelectedRows((prev) =>
@@ -120,7 +160,6 @@ const InstitutionDocuments = () => {
       toast.error('No documents selected for bulk delete');
       return;
     }
-    console.log('Bulk delete payload:', { document_ids: confirmModal.ids });
     setBulkActionLoading(true);
     try {
       await institutionService.bulkDeleteInstitutionDocuments(confirmModal.ids);
@@ -172,6 +211,8 @@ const InstitutionDocuments = () => {
 
   const { user } = useAppSelector((state) => state.authentiction);
 
+  const isAnalystOrAdmin = user?.user_type === "Analyst" || user?.user_type === "Admin";
+
   useEffect(() => {
     if (params.id) {
       dispatch(getSingleInstitution(Number(params.id)));
@@ -196,45 +237,37 @@ const InstitutionDocuments = () => {
     if (params.id) {
       dispatch(fetchInstitutionDocuments(Number(params.id)));
     }
-    
+
     if (drafts && drafts.length > 0) {
       setPendingDrafts(drafts);
       setCurrentProfile(profile);
     }
   };
 
-  // 🌟 UPDATE: Add "updatedDrafts: any[]" inside the parentheses to catch the edits!
   const handleApproveAll = async (updatedDrafts: any[]) => {
-    // 1. Get the current profile state
     const updatedProfile = { ...currentProfile };
-    
-    // 2. Loop through the NEW EDITED drafts from the modal, not the old pendingDrafts!
+
     updatedDrafts.forEach(draft => {
       if (draft.proposed_content !== undefined) {
-        // Save the user's manual edits into the state
         updatedProfile.sections[draft.section] = draft.proposed_content;
       }
     });
-    
-    setCurrentProfile(updatedProfile);
 
-    // 3. Clear pending list and trigger the loading screen (spinning wheel)
+    setCurrentProfile(updatedProfile);
     setPendingDrafts([]);
-    setIsSyncingSummary(true); 
-    
-    // 4. Navigate to final page and pass the newly EDITED profile
+    setIsSyncingSummary(true);
+
     setTimeout(() => {
       setIsSyncingSummary(false);
       toast.success("Investor Profile updated successfully!");
-      
-      navigate(`/final-summary/${params.id}`, { 
-      state: { 
-        profile: updatedProfile, 
-        oldProfile: currentProfile, // 🌟 NEW: Pass the old data for comparison
-        investorName: singleInstitution?.institution 
-      } 
-    });
-      
+
+      navigate(`/final-summary/${params.id}`, {
+        state: {
+          profile: updatedProfile,
+          oldProfile: currentProfile,
+          investorName: singleInstitution?.institution
+        }
+      });
     }, 3500);
   };
 
@@ -243,7 +276,34 @@ const InstitutionDocuments = () => {
     toast.info("All updates discarded.");
   };
 
-  const handleLinkToProfile = async (
+  // ---- Mode management ----
+
+  const handleActivateMode = (mode: ProfileMode) => {
+    if (profileMode === mode) return;
+
+    // If already in a different mode with pending changes, confirm before switching
+    if (profileMode !== null && pendingLinkOps.length > 0) {
+      setPendingModeSwitch(mode);
+      setModeSwitchConfirmOpen(true);
+      return;
+    }
+
+    setProfileMode(mode);
+    setPendingLinkOps([]);
+    setPendingDocumentId(null);
+  };
+
+  const confirmModeSwitch = () => {
+    setProfileMode(pendingModeSwitch);
+    setPendingLinkOps([]);
+    setPendingDocumentId(null);
+    setModeSwitchConfirmOpen(false);
+    setPendingModeSwitch(null);
+  };
+
+  // ---- Checkbox interaction ----
+
+  const handleLinkToProfile = (
     document: InstitutionDocument,
     section: ProfileSection,
     isCurrentlyLinked: boolean
@@ -278,62 +338,72 @@ const InstitutionDocuments = () => {
     });
   };
 
+  // ---- Backend submission ----
+
+  /** True when there is at least one item that would be sent to the backend. */
+  const hasSubmittableOps =
+    profileMode === 'create'
+      ? filteredDocuments.some(doc => SECTIONS.some(section => isCheckedForSection(doc, section)))
+      : pendingLinkOps.some(op => op.action === "link");
 
   const handleBulkLinkToProfile = async () => {
-    if (!params.id || (pendingLinkOps.length === 0 && selectedRows.length === 0)) return;
+    if (!params.id) return;
 
     setLinkingInProgress((prev) => ({ ...prev, bulk: true }));
 
-    const combinedDocIds = Array.from(
-      new Set([
-        ...pendingLinkOps.map((op) => op.document_id),
-        ...selectedRows, 
-      ])
-    );
+    let docsToSubmit: InstitutionDocument[];
 
-    const payload = combinedDocIds.map((docId) => {
-      const doc = institutionDocuments?.find((d) => d.id === docId);
+    if (profileMode === 'create') {
+      // All documents that have at least one section checked (red)
+      docsToSubmit = filteredDocuments.filter(doc =>
+        SECTIONS.some(section => isCheckedForSection(doc, section))
+      );
+    } else {
+      // Update mode: only docs that have a new red (link) operation
+      const redDocIds = new Set(
+        pendingLinkOps.filter(op => op.action === "link").map(op => op.document_id)
+      );
+      docsToSubmit = filteredDocuments.filter(doc => redDocIds.has(doc.id));
+    }
 
-      const getFinalState = (
-        section: string,
-        originalState: boolean | undefined
-      ): boolean => {
-        const op = pendingLinkOps.find(
-          (o) => o.document_id === docId && o.section === section
-        );
+    // Build payload for Python AI backend
+    const payload = docsToSubmit.map((doc) => ({
+      name: doc.name ?? "",
+      year: doc.year ? String(doc.year) : null,
+      priority: doc.priority ?? "Low",
+      sum: isCheckedForSection(doc, "summary"),
+      eng: isCheckedForSection(doc, "engagement_priorities"),
+      rep: isCheckedForSection(doc, "reporting_expectation"),
+      esg: isCheckedForSection(doc, "esg_integration"),
+      vote: isCheckedForSection(doc, "voting_guidelines"),
+    }));
 
-        if (op) {
-          return op.action === "link";
-        }
-
-        return Boolean(originalState);
-      };
-
-      return {
-        name: doc?.name ?? "",
-        year: doc?.year ? String(doc.year) : null,
-        priority: doc?.priority ?? "Low",
-        sum: getFinalState("summary", doc?.linked_to_summary),
-        eng: getFinalState("engagement_priorities", doc?.linked_to_engagement_priorities),
-        rep: getFinalState("reporting_expectation", doc?.linked_to_reporting_expectation),
-        esg: getFinalState("esg_integration", doc?.linked_to_esg_integration),
-        vote: getFinalState("voting_guidelines", doc?.linked_to_voting_guidelines),
-      };
-    });
-
+    // Build operations for Django API
     const grouped: { [docId: number]: { sections: ProfileSection[]; action: "link" | "unlink" } } = {};
-    pendingLinkOps.forEach(op => {
-      if (!grouped[op.document_id]) {
-        grouped[op.document_id] = { sections: [], action: op.action };
-      }
-      grouped[op.document_id].sections.push(op.section);
-      grouped[op.document_id].action = op.action; 
-    });
-    
+
+    if (profileMode === 'update') {
+      pendingLinkOps.forEach(op => {
+        if (!grouped[op.document_id]) {
+          grouped[op.document_id] = { sections: [], action: op.action };
+        }
+        grouped[op.document_id].sections.push(op.section);
+        grouped[op.document_id].action = op.action;
+      });
+    } else if (profileMode === 'create') {
+      docsToSubmit.forEach(doc => {
+        SECTIONS.forEach(section => {
+          if (isCheckedForSection(doc, section)) {
+            if (!grouped[doc.id]) grouped[doc.id] = { sections: [], action: "link" };
+            grouped[doc.id].sections.push(section);
+          }
+        });
+      });
+    }
+
     const operations = Object.entries(grouped).map(([document_id, { sections, action }]) => ({
       document_id: Number(document_id),
       sections,
-      action
+      action,
     }));
 
     try {
@@ -349,51 +419,47 @@ const InstitutionDocuments = () => {
       // CHANGE THIS URL TO YOUR LOCALHOST FOR TESTING
       // ========================================
       const response = await axios.post(
-        "https://ai-chatbot-zmh.onrender.com/api/compare-updates", 
-        { 
+        "https://ai-chatbot-zmh.onrender.com/api/compare-updates",
+        // "http://localhost:8000/api/compare-updates",
+        {
           investor_name: singleInstitution?.institution || "Unknown Institution",
-          institution_id: Number(params.id), 
-          documents: payload 
-        }, 
-        { 
-          headers: { 
-            "Content-Type": "application/json"
-          },
-          timeout: 120000 // 2 minute timeout
+          institution_id: Number(params.id),
+          documents: payload,
+          mode: profileMode,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 120000, // 2 minute timeout
         }
       );
 
       dispatch(fetchInstitutionDocuments(Number(params.id)));
-      
+
       const comparisons = response.data?.comparisons || {};
-      
+
       const stripHtml = (html: string) => {
         if (!html) return "";
         return html
           .replace(/<p>/gi, "")
           .replace(/<\/p>/gi, "\n\n")
-          .replace(/<ul>/gi, "") // Remove opening ul
+          .replace(/<ul>/gi, "")
           .replace(/<\/ul>/gi, "\n")
-          .replace(/<li>/gi, "- ") // Bullet points
+          .replace(/<li>/gi, "- ")
           .replace(/<\/li>/gi, "\n")
           .replace(/<br\s*\/?>/gi, "\n")
-          .replace(/&nbsp;/gi, " ") // Preserve spaces
-          .replace(/<[^>]+>/g, "") // Strip remaining HTML tags (like <strong>)
+          .replace(/&nbsp;/gi, " ")
+          .replace(/<[^>]+>/g, "")
           .trim();
       };
 
       const realDrafts: any[] = [];
       const realProfileSections: Record<string, string> = {};
 
-      // 🌟 Because the backend now ALWAYS returns all 5, this will process all 5
       Object.keys(comparisons).forEach((sectionKey) => {
         const item = comparisons[sectionKey];
-        
         const cleanOld = stripHtml(item.old_content);
         const cleanNew = stripHtml(item.new_content);
-
         realProfileSections[sectionKey] = cleanOld;
-
         realDrafts.push({
           section: sectionKey,
           status: "draft_ready",
@@ -414,7 +480,7 @@ const InstitutionDocuments = () => {
 
     } catch (error: any) {
       console.error("Python API Error:", error);
-      
+
       if (error.response) {
         const errorDetail = error.response.data?.detail || error.response.statusText;
         toast.error(`Action Failed: ${errorDetail}`);
@@ -425,19 +491,18 @@ const InstitutionDocuments = () => {
       }
 
     } finally {
-      // 1. Hide the loading screen
       setLinkingInProgress((prev) => ({ ...prev, bulk: false }));
-      
-      // 2. Clear selections on BOTH success and error so checkboxes reset
       setPendingLinkOps([]);
       setPendingDocumentId(null);
-      setSelectedRows([]); 
+      setSelectedRows([]);
+      setProfileMode(null);
     }
   };
 
   const handleCancelLinkOps = () => {
     setPendingLinkOps([]);
     setPendingDocumentId(null);
+    setProfileMode(null);
   };
 
   const isLinkingInProgress = (documentId: number, section: string) => {
@@ -446,26 +511,44 @@ const InstitutionDocuments = () => {
 
   const getPriorityBadgeClass = (priority: string) => {
     switch (priority?.toLowerCase()) {
-      case "extremely high":
-        return "bg-purple-100 text-purple-800";
-      case "high":
-        return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "low":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case "extremely high": return "bg-purple-100 text-purple-800";
+      case "high":           return "bg-red-100 text-red-800";
+      case "medium":         return "bg-yellow-100 text-yellow-800";
+      case "low":            return "bg-gray-100 text-gray-800";
+      default:               return "bg-gray-100 text-gray-800";
     }
   };
 
-  const pendingDocIds = Array.from(
-    new Set(pendingLinkOps.map((op) => op.document_id))
-  );
+  const pendingDocIds = Array.from(new Set(pendingLinkOps.map((op) => op.document_id)));
+
+  // ---- Reusable section checkbox renderer ----
+  const renderSectionCheckbox = (document: InstitutionDocument, section: ProfileSection) => {
+    const red = isRedCheckbox(document, section);
+    const checked = isCheckedForSection(document, section);
+
+    return (
+      <div className={`flex justify-center ${red ? "rounded ring-2 ring-red-500 ring-offset-1" : ""}`}>
+        <FormCheck className="flex justify-center">
+          <FormCheck.Input
+            type="checkbox"
+            checked={checked}
+            disabled={
+              isLinkingInProgress(document.id, section) ||
+              !isAnalystOrAdmin ||
+              !profileMode  // no mode selected = non-interactive
+            }
+            onChange={() =>
+              handleLinkToProfile(document, section, Boolean(document[sectionToField[section]]))
+            }
+          />
+        </FormCheck>
+      </div>
+    );
+  };
 
   return (
     <>
-      {/* 🌟 NEW ANIMATED LOADING OVERLAY 🌟 */}
+      {/* Animated Loading Overlay */}
       {linkingInProgress.bulk && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-xl shadow-2xl p-10 flex flex-col items-center max-w-md text-center transform scale-100 animate-in zoom-in-95">
@@ -488,25 +571,24 @@ const InstitutionDocuments = () => {
         />
         Back
       </Button>
-      
+
       <div className="box box--stacked">
+        {/* Header */}
         <div className="p-5 border-b border-slate-200/80">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-slate-700 flex items-center gap-2">
-                {loading ? "Loading..." : (
-                  <>
-                    {singleInstitution?.institution}
-                  </>
-                )}
+                {loading ? "Loading..." : singleInstitution?.institution}
               </h1>
             </div>
-            <div className="flex flex-col gap-2">
+
+            <div className="flex flex-col gap-2 items-end">
+              {/* Top row: count + document controls */}
               <div className="flex items-center gap-4">
                 <span className="text-base font-semibold text-slate-700">
                   {documentsCount > 0 && `Total Documents: ${documentsCount}`}
                 </span>
-                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                {isAnalystOrAdmin && (
                   <>
                     <Button
                       onClick={() => setAddDocumentVisible(true)}
@@ -526,17 +608,55 @@ const InstitutionDocuments = () => {
                   </>
                 )}
               </div>
-              {pendingLinkOps.length > 0 && (
-                <div className="flex justify-end gap-2 mt-2">
+
+              {/* Profile mode buttons — only when viewing active documents */}
+              {isAnalystOrAdmin && !showTrash && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={profileMode === 'update' ? "primary" : "outline-secondary"}
+                    className={
+                      profileMode === 'update'
+                        ? "bg-theme-2 border-bg-theme-2"
+                        : "border-theme-2 text-theme-2"
+                    }
+                    onClick={() => handleActivateMode('update')}
+                    disabled={linkingInProgress.bulk}
+                  >
+                    Update Existing Profile
+                  </Button>
+                  <Button
+                    variant={profileMode === 'create' ? "primary" : "outline-secondary"}
+                    className={
+                      profileMode === 'create'
+                        ? "bg-theme-2 border-bg-theme-2"
+                        : "border-theme-2 text-theme-2"
+                    }
+                    onClick={() => handleActivateMode('create')}
+                    disabled={linkingInProgress.bulk}
+                  >
+                    Create New Profile
+                  </Button>
+                </div>
+              )}
+
+              {/* Submit / Cancel — only when a mode is active */}
+              {profileMode && (
+                <div className="flex justify-end gap-2">
                   <Button
                     variant="primary"
                     className="bg-theme-2 border-bg-theme-2"
                     onClick={() => setLinkConfirmOpen(true)}
-                    disabled={linkingInProgress.bulk}
+                    disabled={linkingInProgress.bulk || !hasSubmittableOps}
                   >
                     Submit
                   </Button>
-                  <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={handleCancelLinkOps}>Cancel</Button>
+                  <Button
+                    variant="outline-secondary"
+                    className="border-theme-2 text-theme-2"
+                    onClick={handleCancelLinkOps}
+                  >
+                    Cancel
+                  </Button>
                 </div>
               )}
             </div>
@@ -544,6 +664,29 @@ const InstitutionDocuments = () => {
         </div>
 
         <div className="p-5">
+          {/* Legend — visible when a mode is active */}
+          {isAnalystOrAdmin && !showTrash && profileMode && (
+            <div className="mb-4 flex flex-wrap items-center gap-5 bg-slate-50 border border-slate-200 rounded-md px-4 py-2.5 text-xs text-slate-600">
+              <span className="font-semibold text-slate-700">Legend:</span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3.5 h-3.5 rounded-[3px] ring-2 ring-red-500 ring-offset-1 flex-shrink-0" />
+                <span>Red ring = Newly selected in this session</span>
+              </span>
+              <span className="text-slate-400 italic">
+                {profileMode === 'create'
+                  ? "All checked documents (existing + newly selected) will be sent to the backend."
+                  : "Only newly selected (red) documents will be sent to the backend."}
+              </span>
+            </div>
+          )}
+
+          {/* Hint when no mode is selected */}
+          {isAnalystOrAdmin && !showTrash && !profileMode && (
+            <div className="mb-4 text-xs text-slate-500 italic">
+              Select <strong>Update Existing Profile</strong> or <strong>Create New Profile</strong> above to start editing profile links.
+            </div>
+          )}
+
           {selectedRows.length > 0 && (
             <div className="mb-3 flex justify-end">
               <Button variant="danger" onClick={handleBulkDelete} disabled={bulkActionLoading}>
@@ -551,6 +694,7 @@ const InstitutionDocuments = () => {
               </Button>
             </div>
           )}
+
           <TableWrapper isLoading={documentsLoading}>
             <div>
               <Table>
@@ -630,102 +774,24 @@ const InstitutionDocuments = () => {
                           {document.created_by_name || "-"}
                         </Table.Td>
                         <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">
-                          {document.date_created ? new Date(document.date_created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : "-"}
+                          {document.date_created
+                            ? new Date(document.date_created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+                            : "-"}
                         </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
-                          <FormCheck className="flex justify-center">
-                            <FormCheck.Input
-                              type="checkbox"
-                              checked={
-                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "summary")
-                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "summary")?.action === "link"
-                                  : document.linked_to_summary
-                              }
-                              disabled={
-                                isLinkingInProgress(document.id, "summary") ||
-                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
-                              }
-                              onChange={() =>
-                                handleLinkToProfile(document, "summary", document.linked_to_summary)
-                              }
-                            />
-                          </FormCheck>
+                          {renderSectionCheckbox(document, "summary")}
                         </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
-                          <FormCheck className="flex justify-center">
-                            <FormCheck.Input
-                              type="checkbox"
-                              checked={
-                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "engagement_priorities")
-                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "engagement_priorities")?.action === "link"
-                                  : document.linked_to_engagement_priorities
-                              }
-                              disabled={
-                                isLinkingInProgress(document.id, "engagement_priorities") ||
-                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
-                              }
-                              onChange={() =>
-                                handleLinkToProfile(document, "engagement_priorities", document.linked_to_engagement_priorities)
-                              }
-                            />
-                          </FormCheck>
+                          {renderSectionCheckbox(document, "engagement_priorities")}
                         </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
-                          <FormCheck className="flex justify-center">
-                            <FormCheck.Input
-                              type="checkbox"
-                              checked={
-                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "reporting_expectation")
-                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "reporting_expectation")?.action === "link"
-                                  : document.linked_to_reporting_expectation
-                              }
-                              disabled={
-                                isLinkingInProgress(document.id, "reporting_expectation") ||
-                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
-                              }
-                              onChange={() =>
-                                handleLinkToProfile(document, "reporting_expectation", document.linked_to_reporting_expectation)
-                              }
-                            />
-                          </FormCheck>
+                          {renderSectionCheckbox(document, "reporting_expectation")}
                         </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
-                          <FormCheck className="flex justify-center">
-                            <FormCheck.Input
-                              type="checkbox"
-                              checked={
-                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "esg_integration")
-                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "esg_integration")?.action === "link"
-                                  : document.linked_to_esg_integration
-                              }
-                              disabled={
-                                isLinkingInProgress(document.id, "esg_integration") ||
-                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
-                              }
-                              onChange={() =>
-                                handleLinkToProfile(document, "esg_integration", document.linked_to_esg_integration)
-                              }
-                            />
-                          </FormCheck>
+                          {renderSectionCheckbox(document, "esg_integration")}
                         </Table.Td>
                         <Table.Td className="py-2 bg-white border-slate-200/80 text-center">
-                          <FormCheck className="flex justify-center">
-                            <FormCheck.Input
-                              type="checkbox"
-                              checked={
-                                pendingLinkOps.some(op => op.document_id === document.id && op.section === "voting_guidelines")
-                                  ? pendingLinkOps.find(op => op.document_id === document.id && op.section === "voting_guidelines")?.action === "link"
-                                  : document.linked_to_voting_guidelines
-                              }
-                              disabled={
-                                isLinkingInProgress(document.id, "voting_guidelines") ||
-                                !(user?.user_type === "Analyst" || user?.user_type === "Admin")
-                              }
-                              onChange={() =>
-                                handleLinkToProfile(document, "voting_guidelines", document.linked_to_voting_guidelines)
-                              }
-                            />
-                          </FormCheck>
+                          {renderSectionCheckbox(document, "voting_guidelines")}
                         </Table.Td>
                         <Table.Td className="py-1.5 bg-white border-slate-200/80">
                           <span
@@ -736,7 +802,7 @@ const InstitutionDocuments = () => {
                         </Table.Td>
                         <Table.Td className="py-1.5 bg-white border-slate-200/80">
                           <div className="flex gap-2 items-center">
-                            {!showTrash && !document.is_deleted && (user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            {!showTrash && !document.is_deleted && isAnalystOrAdmin && (
                               <>
                                 <Tippy content="Edit" options={{ theme: "light" }}>
                                   <button
@@ -756,7 +822,7 @@ const InstitutionDocuments = () => {
                                 </Tippy>
                               </>
                             )}
-                            {showTrash && (user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            {showTrash && isAnalystOrAdmin && (
                               <Tippy content="Restore" options={{ theme: "light" }}>
                                 <button
                                   onClick={() => handleRestoreDocument(document)}
@@ -782,8 +848,10 @@ const InstitutionDocuments = () => {
                   )}
                 </Table.Tbody>
               </Table>
-              
-              {/* Confirm Modals */}
+
+              {/* ---- Modals ---- */}
+
+              {/* Delete / Restore confirm */}
               {confirmModal.open && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
                   <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
@@ -807,14 +875,15 @@ const InstitutionDocuments = () => {
                   </div>
                 </div>
               )}
-              
+
+              {/* Link submit confirm */}
               {linkConfirmOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
                   <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
                     <div className="mb-4 text-lg font-semibold">
-                      {pendingDocIds.length === 1
-                        ? "Confirm changes for this document?"
-                        : `Confirm changes for ${pendingDocIds.length} documents?`}
+                      {profileMode === 'create'
+                        ? "Create a new investor profile using the selected documents?"
+                        : `Update investor profile with changes from ${pendingDocIds.length === 1 ? "this document" : `${pendingDocIds.length} documents`}?`}
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button
@@ -838,6 +907,35 @@ const InstitutionDocuments = () => {
                   </div>
                 </div>
               )}
+
+              {/* Mode switch confirm */}
+              {modeSwitchConfirmOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+                  <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
+                    <div className="mb-4 text-lg font-semibold">
+                      Switching modes will reset your changes. Continue?
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => {
+                          setModeSwitchConfirmOpen(false);
+                          setPendingModeSwitch(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="bg-theme-2 border-bg-theme-2"
+                        onClick={confirmModeSwitch}
+                      >
+                        Continue
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </TableWrapper>
         </div>
@@ -850,7 +948,6 @@ const InstitutionDocuments = () => {
           institutionId={params.id}
           institutionName={singleInstitution?.institution}
           onSuccess={() => {
-            // This safely refreshes the document table without triggering the AI Modal
             dispatch(fetchInstitutionDocuments(Number(params.id)));
           }}
         />
@@ -874,7 +971,7 @@ const InstitutionDocuments = () => {
           onRejectAll={handleRejectAll}
           isSyncingSummary={isSyncingSummary}
         />
-      )}  
+      )}
     </>
   );
 };

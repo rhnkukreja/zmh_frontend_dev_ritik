@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, XCircle, Sparkles, Loader2, Edit3, Save } from "lucide-react";
+import { CheckCircle2, XCircle, Sparkles, Loader2, Edit3, Save, X } from "lucide-react";
 
 export interface Draft {
   section: string;
   status: "draft_ready" | "no_change";
-  proposed_content?: string;
+  proposed_content?: string | null;
 }
 
 export interface InvestorProfileData {
@@ -182,53 +182,54 @@ const DraftReviewModal: React.FC<DraftReviewModalProps> = ({
               <p className="text-sm text-red-100 mt-1">{investorName} • Full Profile Review</p>
             </div>
           </div>
+          <button
+            onClick={onRejectAll}
+            className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
+            title="Close"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
         </div>
 
-        {/* Content Area - Side by Side Grid */}
-        <div className="flex-1 min-h-0 p-8 bg-gray-50 grid grid-cols-2 gap-8">
-          
-          {/* LEFT PANEL: Original Text */}
-          <div className="flex flex-col min-h-0 bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-            <h4 className="shrink-0 text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-4 border-b border-gray-100 pb-3 flex items-center justify-between">
-              Current Version <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded text-[10px]">Live Profile</span>
-            </h4>
-            <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar">
-              {localDrafts.map((draft, idx) => {
-                const sectionTitle = draft.section.replace(/_/g, " ").toUpperCase();
-                const currentContent = profile?.sections[draft.section] || "";
-                return (
-                  <div key={`old-${idx}`} className="mb-10 pb-8 border-b border-gray-100 last:border-b-0">
-                    <h5 className="text-[#901639] text-sm font-bold mb-4">{sectionTitle}</h5>
-                    {currentContent.trim() ? (
-                      <div className="whitespace-pre-wrap">{formatContent(currentContent, false)}</div>
-                    ) : (
-                      <div className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-dashed border-gray-200 text-center">
-                        This section is currently empty.
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {/* Content Area - Per-section rows */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-8 bg-gray-50 space-y-6 custom-scrollbar">
+
+          {/* Column header row */}
+          <div className="grid grid-cols-2 gap-8 px-1">
+            <span className="text-xs font-extrabold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              Current Version <span className="bg-gray-100 text-gray-500 px-2 py-1 rounded text-[10px] normal-case font-semibold">Live Profile</span>
+            </span>
+            <span className="text-xs font-extrabold text-[#901639] uppercase tracking-widest flex items-center gap-2">
+              Proposed Updates <span className="bg-red-50 text-[#901639] px-2 py-1 rounded text-[10px] normal-case font-semibold">{isEditing ? 'Editing Mode' : 'AI Draft'}</span>
+            </span>
           </div>
 
-          {/* RIGHT PANEL: Proposed / Editable Text */}
-          <div className="flex flex-col min-h-0 bg-white border border-[#901639]/30 rounded-xl p-6 shadow-md relative">
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#901639] rounded-l-xl"></div>
-            <h4 className="shrink-0 text-xs font-extrabold text-[#901639] uppercase tracking-widest mb-4 border-b border-[#901639]/10 pb-3 flex items-center justify-between">
-              Proposed Updates <span className="bg-red-50 text-[#901639] px-2 py-1 rounded text-[10px]">{isEditing ? 'Editing Mode' : 'AI Draft'}</span>
-            </h4>
-            <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar">
-              {localDrafts.map((draft, idx) => {
-                const sectionTitle = draft.section.replace(/_/g, " ").toUpperCase();
-                const currentContent = profile?.sections[draft.section] || "";
-                const proposedContent = draft.proposed_content || currentContent; 
-                
-                return (
-                  <div key={`new-${idx}`} className="mb-10 pb-8 border-b border-red-50 last:border-b-0">
+          {localDrafts.map((draft, idx) => {
+            const sectionTitle = draft.section.replace(/_/g, " ").toUpperCase();
+            const currentContent = profile?.sections[draft.section] || "";
+            // null means section was not selected (create mode) — skip entirely
+            const isNotSelected = draft.proposed_content === null || draft.proposed_content === undefined;
+            const proposedContent = isNotSelected ? "" : (draft.proposed_content || currentContent);
+
+            return (
+              <div key={`section-${idx}`} className="grid grid-cols-2 gap-8">
+
+                {/* LEFT: Current Version — always shown */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                  <h5 className="text-[#901639] text-sm font-bold mb-4">{sectionTitle}</h5>
+                  {currentContent.trim() ? (
+                    <div className="whitespace-pre-wrap">{formatContent(currentContent, false)}</div>
+                  ) : (
+                    <div className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-dashed border-gray-200 text-center">
+                      This section is currently empty.
+                    </div>
+                  )}
+                </div>
+
+                {/* RIGHT: Proposed — only when section was selected */}
+                {!isNotSelected && <div className="bg-white border border-[#901639]/30 rounded-xl p-6 shadow-md relative">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-[#901639] rounded-l-xl" />
                     <h5 className="text-[#901639] text-sm font-bold mb-4">{sectionTitle}</h5>
-                    
-                    {/* The Toggle: Show Textarea if Editing, otherwise show formatted text */}
                     {isEditing ? (
                       <textarea
                         className="w-full min-h-[250px] p-4 text-sm border border-[#901639]/50 rounded-lg focus:ring-2 focus:ring-[#901639] outline-none custom-scrollbar leading-relaxed text-gray-800 bg-white shadow-inner"
@@ -247,11 +248,11 @@ const DraftReviewModal: React.FC<DraftReviewModalProps> = ({
                         )}
                       </div>
                     )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                  </div>}
+
+              </div>
+            );
+          })}
 
         </div>
 
