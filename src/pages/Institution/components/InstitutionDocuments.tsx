@@ -419,8 +419,8 @@ const InstitutionDocuments = () => {
       // CHANGE THIS URL TO YOUR LOCALHOST FOR TESTING
       // ========================================
       const response = await axios.post(
-        // "https://ai-chatbot-zmh.onrender.com/api/compare-updates",
-        "http://localhost:8000/api/compare-updates",
+        "https://ai-chatbot-zmh.onrender.com/api/compare-updates",
+        // "http://localhost:8000/api/compare-updates",
         {
           investor_name: singleInstitution?.institution || "Unknown Institution",
           institution_id: Number(params.id),
