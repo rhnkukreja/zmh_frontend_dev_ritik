@@ -55,6 +55,7 @@ const FilterChips: React.FC<FilterChipsProps> = ({ filters, onRemove, showProxyY
       sector: "Sector",
       region: "Region",
       sub_category: "Sub Category",
+      anti_category: "Proposal Screen",
     };
     
     return mapping[key] || convertToTitleCase(key);

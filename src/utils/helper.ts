@@ -513,6 +513,7 @@ function generateFilterChips(filters: Record<string, any>) {
     'global_search',
     'company_name', 'company_names',
     'category',
+    'anti_category',
     'proposal_keyword'
   ];
 
