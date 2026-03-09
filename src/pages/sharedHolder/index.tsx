@@ -233,6 +233,7 @@ function ShareHolderProposal() {
       head_support: filters?.head_support,
       nl_exist: filters?.nl_exist,
       index: filters?.index ?? undefined,
+      anti_category: filters?.anti_category || [],
       global_search:
         filters?.global_search?.map((item: string) => ({
           value: item,
@@ -1395,6 +1396,31 @@ function ShareHolderProposal() {
                             //     )
                             //   )}
                             // </TomSelect>
+                          )}
+                        />
+                      </div>
+
+                      <div className="w-full">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaTags className="text-gray-400" /> Proposal Screen (e.g. anti-DEI)
+                          </span>
+                        </div>
+                        <Controller
+                          name="anti_category"
+                          control={control}
+                          defaultValue={[]}
+                          render={({ field }) => (
+                            <MultiSelectDropdown
+                              data={["DEI", "China", "Human Rights", "Climate"]}
+                              placeholder="Select Proposal Screen"
+                              loading={false}
+                              onChange={(selectedOptions) => {
+                                const selectedValues = selectedOptions.map((option) => option.value);
+                                field.onChange(selectedValues);
+                              }}
+                              selectedOption={field.value || []}
+                            />
                           )}
                         />
                       </div>

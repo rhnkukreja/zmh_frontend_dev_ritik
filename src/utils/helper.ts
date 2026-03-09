@@ -489,6 +489,7 @@ function generateFilterChips(filters: Record<string, any>) {
     market: "Country",
     sector: "Sector",
     region: "Region",
+    anti_category: "Proposal Screen",
   };
 
   // Define the order of filters as they appear in the UI

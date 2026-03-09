@@ -90,9 +90,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         ? [selectedCaseStudies?.primary_source_link]
         : [],
       page_reference: selectedCaseStudies?.page_reference || "",
-      anti_category: selectedCaseStudies?.anti_category
-        ? selectedCaseStudies?.anti_category?.split(",")
-        : [],
       approval_status: selectedCaseStudies?.approval_status,
       investment_type:
         selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
@@ -194,9 +191,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
           ? [selectedCaseStudies?.primary_source_link]
           : [],
         page_reference: selectedCaseStudies?.page_reference || "",
-        anti_category: selectedCaseStudies?.anti_category
-          ? selectedCaseStudies?.anti_category?.split(",")
-          : [],
         approval_status: selectedCaseStudies?.approval_status || "",
         investment_type: selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
         esg_category: selectedCaseStudies?.esg_category
@@ -235,7 +229,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         primary_source: "",
         primary_source_link: [],
         page_reference: "",
-        anti_category: [],
         approval_status: "",
         investment_type: holdingTypesDropdown[0] || "",
         esg_category: [],
@@ -273,10 +266,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         Array.isArray(data.esg_themes) && data.esg_themes.length > 0
           ? data.esg_themes.join(",")
           : isProxyContestContext ? "Proxy Contest/M&A" : null,
-      anti_category:
-        Array.isArray(data.anti_category) && data.anti_category.length > 0
-          ? data.anti_category.join(",")
-          : null,
       esg_category:
         Array.isArray(data.esg_category) && data.esg_category.length > 0
           ? data.esg_category.join(",")
@@ -922,41 +911,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                         <FormInput placeholder="Enter URL 8k" {...field} />
                         {error && (
                           <Error className="text-red-600 ">
-                            {error.message}
-                          </Error>
-                        )}
-                      </>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1 w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Anti Category
-                </FormCheck.Label>
-                <div className="mt-2">
-                  <Controller
-                    name="anti_category"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <>
-                        <TomSelect
-                          multiple
-                          value={field.value || []}
-                          onChange={field.onChange}
-                          options={{
-                            placeholder: "Select Anti Categories",
-                          }}
-                          className="w-full text-left"
-                        >
-                          <option value="DEI">DEI</option>
-                          <option value="China">China</option>
-                          <option value="Human Rights">Human Rights</option>
-                          <option value="Climate">Climate</option>
-                        </TomSelect>
-                        {error && (
-                          <Error className="text-red-600 mt-2">
                             {error.message}
                           </Error>
                         )}

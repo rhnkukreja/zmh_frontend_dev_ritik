@@ -82,6 +82,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         percentage_support: selectedShareholderProposal?.percentage_support,
         no_shareholder_proposal:
           selectedShareholderProposal?.no_shareholder_proposal ? true : false,
+        anti_category: selectedShareholderProposal?.anti_category || [],
         approved: selectedShareholderProposal?.approved ?? true,
       };
 
@@ -226,6 +227,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
         data?.matched_id_no_action === "  " ? null : parseInt(data?.matched_id_no_action),
 
       nl_exist: data?.matched_id_no_action ? true : false,
+      anti_category: Array.isArray(data?.anti_category) && data.anti_category.length > 0
+        ? data.anti_category
+        : [],
       approved: data?.approved ? true : false,
     };
     try {
@@ -1007,6 +1011,43 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </div>
                 </div>
                 {/* )} */}
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                <div className="flex-1 w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Proposal Screen (e.g. anti-DEI)
+                  </FormCheck.Label>
+                  <div className="mt-2">
+                    <Controller
+                      name="anti_category"
+                      control={control}
+                      render={({ field, fieldState: { error } }) => (
+                        <>
+                          <TomSelect
+                            multiple
+                            value={field.value || []}
+                            onChange={field.onChange}
+                            options={{
+                              placeholder: "Select Proposal Screen",
+                            }}
+                            className="w-full text-left"
+                          >
+                            <option value="DEI">DEI</option>
+                            <option value="China">China</option>
+                            <option value="Human Rights">Human Rights</option>
+                            <option value="Climate">Climate</option>
+                          </TomSelect>
+                          {error && (
+                            <Error className="text-red-600 mt-2">
+                              {error.message}
+                            </Error>
+                          )}
+                        </>
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
