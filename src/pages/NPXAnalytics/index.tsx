@@ -254,7 +254,6 @@ export default function NPXAnalyticsPage() {
               placeholder="Select Institution(s)"
               isClearable
               closeMenuOnSelect={false}
-              hideSelectedOptions={false}
             />
           </div>
 
@@ -271,7 +270,6 @@ export default function NPXAnalyticsPage() {
               placeholder="Select Fund(s)"
               isClearable
               closeMenuOnSelect={false}
-              hideSelectedOptions={false}
             />
           </div>
 
@@ -288,7 +286,6 @@ export default function NPXAnalyticsPage() {
               placeholder="Select Proposal(s)"
               isClearable
               closeMenuOnSelect={false}
-              hideSelectedOptions={false}
             />
           </div>
         </div>
