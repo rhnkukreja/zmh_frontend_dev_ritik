@@ -1,5 +1,5 @@
 import Lucide from "@/components/Base/Lucide";
-import { Popover } from "@/components/Base/Headless";
+import { Popover, Dialog } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
@@ -108,8 +108,77 @@ function CaseStudies() {
     useState<boolean>(false);
 
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCaseStudy, setSelectedCaseStudy] = useState<any>(null);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
+  const [aiSearchTerm, setAiSearchTerm] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiResponse, setAiResponse] = useState<any>(null);
+
+  const AI_MOCK_DATA: any = {
+    "Real Living Wage": {
+      title: "Aviva Investors: Real Living Wage & Employee Pay Transparency",
+      stats: [
+        { num: "3", label: "Cases (2025)" },
+        { num: "1 For / 1 Against / 1 Abstain", label: "Split Outcome" },
+      ],
+      verdict: "Nuanced — outcome varies by company practice",
+      verdictType: "engaged",
+      summary: "<strong>Aviva Investors</strong> applied differentiated judgment across three UK retailers subject to identical shareholder proposals on Real Living Wage transparency in 2025. The outcome differed at each company based on current practice: Aviva voted <strong>For</strong> at JD Sports (does not pay RLW, limited HCM disclosure), <strong>Abstained</strong> at Next (does not pay RLW but receptive in engagement), and voted <strong>Against</strong> at M&S (already pays RLW to direct staff, market-leading benefits).",
+      points: [
+        "Companies already paying the Real Living Wage with robust benefits programmes are unlikely to face escalation.",
+        "Positive and receptive engagement can shift an outcome from 'for' to 'abstain'.",
+        "Companies with both non-payment and limited HCM transparency face the highest risk.",
+        "Aviva is a member of the Good Work Coalition — expect continued engagement."
+      ]
+    },
+    "Climate Disclosure": {
+      title: "BlackRock: Climate Disclosure & Board Oversight",
+      stats: [
+        { num: "3", label: "Cases (2025)" },
+        { num: "3", label: "Voted Against Directors" },
+      ],
+      verdict: "Voted against climate oversight directors at Atmos, Guangzhou Auto",
+      verdictType: "against",
+      summary: "<strong>BlackRock</strong> voted against directors responsible for climate oversight at three companies in 2025: Atmos Energy (methane disclosure below peer standard), Guangzhou Automobile (emissions targets not linked to actions), and Coal India. <strong>Acknowledgement without governance transparency triggers escalation.</strong>",
+      points: [
+        "Acknowledging climate risk in annual reports is necessary but not sufficient.",
+        "For emissions-intensive sectors, quantified disclosure on targets and progress is expected.",
+        "Disclosure that is 'much more limited than peers' is a direct trigger for adverse director votes.",
+        "These votes are structural: BIS targets the relevant oversight committee members specifically."
+      ]
+    }
+  };
+
+  const handleAiAnalysis = (term: string) => {
+    const query = term || aiSearchTerm;
+    if (!query) return;
+
+    setIsAiLoading(true);
+    setAiResponse(null);
+
+    // Simulate API delay
+    setTimeout(() => {
+      setIsAiLoading(false);
+      const match = Object.keys(AI_MOCK_DATA).find(key =>
+        query.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(query.toLowerCase())
+      );
+
+      if (match) {
+        setAiResponse(AI_MOCK_DATA[match]);
+      } else {
+        setAiResponse({
+          title: `Analysis: "${query}"`,
+          stats: [{ num: "~", label: "Limited Data" }],
+          verdict: "Informational — No direct case studies matched",
+          verdictType: "neutral",
+          summary: `No direct case studies matched "<strong>${query}</strong>" in the current dataset. Try one of the topic chips above, or broaden your search terms.`,
+          points: ["Try searching for standard ESG topics like 'Climate' or 'Real Living Wage'."]
+        });
+      }
+    }, 1500);
+  };
 
   const {
     handleSubmit,
@@ -172,9 +241,9 @@ function CaseStudies() {
           { keyword: searchTerm },
           null
         );
-        
+
         const response = await axiosInstance.get(dynamicURL);
-        
+
         // Extract synonyms from the response
         const synonyms = response.data.synonyms || [];
         console.log('Received synonyms:', synonyms); // Debug log
@@ -247,7 +316,7 @@ function CaseStudies() {
         global_search,
       }),
     };
-    
+
     setSelectedChipFilters(generateFilterChips(filtersWithInstitution));
 
   }, [page, filters, InstituteName]);
@@ -705,11 +774,6 @@ function CaseStudies() {
                 />
               )}
 
-              {count > 0 && (
-                <h2 className="flex items-end font-semibold justify-end my-2 md:ml-auto mx-5 mb-1" style={{ fontSize: '14px' }}>
-                  Count: {count.toLocaleString()}
-                </h2>
-              )}
 
               {isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -1218,8 +1282,326 @@ function CaseStudies() {
               )}
 
 
+              {/* AI Investor Stance Analyzer Section */}
+              <div className="px-5 mt-6 mb-8">
+                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+                  {/* Subtle Background Pattern */}
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
-              <div className=" px-5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+                      <Lucide icon="Zap" className="fill-current" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-800">AI Investor Stance Analyzer</h2>
+                  </div>
+
+                  <p className="text-md text-slate-500 mb-6 pl-11">
+                    Ask how an investor has engaged or voted on any ESG topic — across all case studies
+                  </p>
+
+                  <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center mb-6 pl-0 md:pl-11">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={aiSearchTerm}
+                        onChange={(e) => setAiSearchTerm(e.target.value)}
+                        placeholder="e.g. How does BlackRock approach climate disclosure?"
+                        className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-slate-700"
+                      />
+                    </div>
+                    <Button
+                      variant="primary"
+                      className="px-8 py-3 rounded-xl flex items-center justify-center gap-2 whitespace-nowrap"
+                      onClick={() => handleAiAnalysis(aiSearchTerm)}
+                    >
+                      Analyze <Lucide icon="ArrowRight" />
+                    </Button>
+                  </div>
+
+                  <div className="pl-0 md:pl-11">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                      Topics in this dataset
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "Real Living Wage",
+                        "Executive Compensation",
+                        "Climate Disclosure",
+                        "Special Meeting Rights",
+                        "Proxy Contest",
+                        "Human Capital",
+                        "AI & Climate"
+                      ].map((topic) => (
+                        <button
+                          key={topic}
+                          onClick={() => {
+                            setAiSearchTerm(topic);
+                            handleAiAnalysis(topic);
+                          }}
+                          className={clsx(
+                            "px-4 py-1.5 rounded-full text-xs font-semibold transition-all border",
+                            aiSearchTerm === topic
+                              ? "bg-primary text-white border-primary"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-primary/50 hover:text-primary"
+                          )}
+                        >
+                          {topic}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Loading State */}
+                {isAiLoading && (
+                  <div className="mt-4 p-6 bg-white border border-slate-200 rounded-2xl flex items-center gap-4 animate-pulse shadow-sm">
+                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <div className="text-lg font-medium text-slate-600">
+                      Analyzing case studies for investor stance on <span className="text-primary">"{aiSearchTerm}"</span>...
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Response Section */}
+                {aiResponse && !isAiLoading && (
+                  <div className="mt-4 bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-md animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="bg-slate-50/50 border-b p-5 flex items-center justify-between">
+                      <h3 className="text-xl font-bold text-slate-800">{aiResponse.title}</h3>
+                      <span className="bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">AI Summary</span>
+                    </div>
+
+                    <div className="p-6 md:p-8">
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        {aiResponse.stats.map((stat: any, idx: number) => (
+                          <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-6 text-center shadow-sm">
+                            <div className="text-4xl font-mono font-bold text-primary mb-1">{stat.num}</div>
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-wide">{stat.label}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Verdict Badge */}
+                      <div className={clsx(
+                        "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-6 border",
+                        aiResponse.verdictType === 'against' ? "bg-red-50 text-red-700 border-red-100" :
+                          aiResponse.verdictType === 'engaged' ? "bg-amber-50 text-amber-700 border-amber-100" :
+                            "bg-blue-50 text-blue-700 border-blue-100"
+                      )}>
+                        {aiResponse.verdictType === 'against' ? "⚠" : aiResponse.verdictType === 'engaged' ? "↔" : "✓"} {aiResponse.verdict}
+                      </div>
+
+                      {/* Summary Text (Increased Font) */}
+                      <div
+                        className="text-lg leading-relaxed text-slate-700 mb-8"
+                        dangerouslySetInnerHTML={{ __html: aiResponse.summary }}
+                      />
+
+                      {/* Key Points (Increased Font) */}
+                      <div className="bg-slate-50 border-l-4 border-primary rounded-r-xl p-6 md:p-8 mb-8">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Key Observations from Case Studies</h4>
+                        <ul className="space-y-4">
+                          {aiResponse.points.map((point: string, idx: number) => (
+                            <li key={idx} className="flex gap-3 text-md text-slate-600 leading-relaxed">
+                              <span className="text-primary font-bold">→</span>
+                              {point}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Scroll Button */}
+                      <Button
+                        variant="secondary"
+                        className="flex items-center gap-2 text-md font-bold px-6 py-3"
+                        onClick={() => {
+                          const grid = document.getElementById('case-studies-grid');
+                          grid?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        View underlying case studies <Lucide icon="ArrowDown" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {count > 0 && (
+                <h2 className="flex items-end font-semibold justify-end my-2 md:ml-auto mx-5 mb-1" style={{ fontSize: '14px' }}>
+                  Count: {count.toLocaleString()}
+                </h2>
+              )}
+              {/* New Card View */}
+              {!loading && caseStudies?.length > 0 && (
+                <div id="case-studies-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-5 mt-4">
+                  {caseStudies.map((item: any) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedCaseStudy(item);
+                        setIsModalOpen(true);
+                      }}
+                      className="bg-white border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:border-primary hover:shadow-lg flex flex-col h-full"
+                    >
+                      <div className="p-4 border-b flex justify-between items-start gap-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-slate-800 line-clamp-1">
+                            {item?.company_name || item?.caspio_company_name}
+                          </h3>
+                          <p className="text-sm text-slate-500 mt-0.5 line-clamp-1">
+                            {item?.institution_name}
+                          </p>
+                        </div>
+                        <span className="shrink-0 px-2 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                          {item?.esg_themes?.split(',')?.[0] || 'Uncategorized'}
+                        </span>
+                      </div>
+
+                      <div className="p-4 flex-1">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-primary"><FaListUl size={12} /></span>
+                          <span className="text-md font-semibold text-slate-700 line-clamp-1">
+                            {item?.resolution_engagement_topic || 'No Topic'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
+                          {item?.voting_details || 'No engagement details available.'}
+                        </p>
+                      </div>
+
+                      <div className="p-3 bg-slate-50/50 flex items-center justify-between border-t mt-auto">
+                        <div className={clsx(
+                          "px-2.5 py-1 rounded-full text-[11px] font-bold",
+                          item?.vote?.toLowerCase()?.includes('for') ? "bg-success/10 text-success" :
+                            item?.vote?.toLowerCase()?.includes('against') ? "bg-danger/10 text-danger" :
+                              "bg-warning/10 text-warning"
+                        )}>
+                          {item?.vote || 'Pending'}
+                        </div>
+                        <span className="text-xs font-mono text-slate-600">
+                          {item?.year}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* No Data State */}
+              {!loading && caseStudies?.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Lucide
+                    icon="FileSearch"
+                    className="w-16 h-16 text-slate-200 mb-4"
+                  />
+                  <div className="text-xl font-bold text-slate-700">No Case Studies Found</div>
+                  <div className="text-slate-500 mt-2">
+                    Try adjusting your filters or keyword search
+                  </div>
+                </div>
+              )}
+
+              {/* Loading State for Cards */}
+              {loading && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-5 mt-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="animate-pulse bg-slate-50 border rounded-xl h-48"></div>
+                  ))}
+                </div>
+              )}
+
+              {/* Detailed Modal */}
+              <Dialog
+                open={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                size="lg"
+              >
+                <Dialog.Panel>
+                  <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold">
+                        {selectedCaseStudy?.company_name || selectedCaseStudy?.caspio_company_name}
+                      </h2>
+                      <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
+                        <span>{selectedCaseStudy?.institution_name}</span>
+                        <span>•</span>
+                        <span>{selectedCaseStudy?.esg_themes}</span>
+                        <span>•</span>
+                        <span>{selectedCaseStudy?.year}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsModalOpen(false)}
+                      className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                    >
+                      <FaTimes size={20} />
+                    </button>
+                  </Dialog.Title>
+                  <Dialog.Description className="p-8 overflow-y-auto max-h-[70vh]">
+                    <div className="space-y-8">
+                      <div>
+                        <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
+                          <FaLayerGroup size={12} /> Resolution / Engagement Topic
+                        </h4>
+                        <div className="text-lg font-semibold text-slate-800">
+                          {selectedCaseStudy?.resolution_engagement_topic || 'Not Specified'}
+                    </div>
+                  </div>
+
+                      <div>
+                        <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
+                          <FaBuilding size={12} /> Background & Details
+                        </h4>
+                        <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                          {selectedCaseStudy?.engagement_details || 'No details available.'}
+                      </p>
+                      </div>
+
+                      <div>
+                        <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
+                          <FaHandshake size={12} /> Engagement/Voting Summary
+                        </h4>
+                        <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                          {selectedCaseStudy?.voting_details || 'No voting details available.'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
+                          <FaCheckCircle size={12} /> Outcome & Voting Decision
+                        </h4>
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center gap-3">
+                            <span className={clsx(
+                              "px-4 py-1.5 rounded-full font-bold text-sm",
+                              selectedCaseStudy?.vote?.toLowerCase()?.includes('for') ? "bg-success/10 text-success border border-success/20" :
+                                selectedCaseStudy?.vote?.toLowerCase()?.includes('against') ? "bg-danger/10 text-danger border border-danger/20" :
+                                  "bg-warning/10 text-warning border border-warning/20"
+                            )}>
+                              Vote: {selectedCaseStudy?.vote || 'Pending'}
+                            </span>
+                          </div>
+                          <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-lg border border-slate-100 italic">
+                            {selectedCaseStudy?.voting_rationale || 'No rationale provided.'}
+                          </p>
+                          </div>
+                      </div>
+                  </div>
+                  </Dialog.Description>
+                  <div className="p-6 border-t bg-slate-50 flex justify-end">
+                    <Button
+                      variant="primary"
+                      onClick={() => setIsModalOpen(false)}
+                      className="px-8"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </Dialog.Panel>
+              </Dialog>
+
+              {/* Temporary Disabled the Table */}
+              {/* <div className=" px-5">
                 <StandardizedTable isLoading={loading} maxHeight="400px">
                   <StandardizedTable.Header>
                     <StandardizedTable.Cell isHeader>
@@ -1337,8 +1719,9 @@ function CaseStudies() {
                     </Table.Tbody>
                   )}
                 </StandardizedTable>
-              </div>
-              <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+              </div> */}
+
+              <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row border-t mt-4">
                 <CPagination
                   page={page}
                   totalPages={totalPages}
@@ -1357,6 +1740,7 @@ function CaseStudies() {
                   />
                 )}
               </div>
+
             </div>
           </div>
         </div>
