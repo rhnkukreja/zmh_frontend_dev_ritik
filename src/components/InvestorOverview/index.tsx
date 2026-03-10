@@ -85,26 +85,25 @@ const InvestorOverview: React.FC = () => {
         {/* Header */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-base font-semibold text-slate-900">
-              Executive Compensation Opposition Dashboard
-            </h3>
+            <h1 className="text-xl font-bold tracking-tight">
+              Executive Compensation Opposition
+            </h1>
             {stats?.data_coverage && (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 Data Coverage: {stats.data_coverage}
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-600">
-            Select an investor to see why the investor voted against executive compensation proposals, 
-            plus a high-level summary and underlying voting detail.
+          <p className="text-[15px] text-slate-600">
+            Select an institution to view reasons for voting against executive compensation, including a summary and voting details.
           </p>
         </div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-5">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Investor
+            <label className="block text-[15px] font-medium text-slate-700 mb-2">
+              Institution
             </label>
             <FormSelect
               value={selectedInvestor || ''}
@@ -120,7 +119,7 @@ const InvestorOverview: React.FC = () => {
           </div>
 
           <div className="w-full sm:w-48">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-[15px] font-medium text-slate-700 mb-2">
               Year
             </label>
             <FormSelect
@@ -138,8 +137,12 @@ const InvestorOverview: React.FC = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex justify-center items-center py-20">
-          <LoadingIcon icon="oval" className="w-8 h-8" />
+        <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
         </div>
       )}
 
@@ -147,7 +150,7 @@ const InvestorOverview: React.FC = () => {
       {error && !loading && (
         <div className="px-5 pb-5">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <span className="text-sm font-medium text-red-800">{error}</span>
+            <span className="text-[15px] font-medium text-red-800">{error}</span>
           </div>
         </div>
       )}
@@ -158,41 +161,41 @@ const InvestorOverview: React.FC = () => {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
-              <h3 className="text-xs font-medium text-blue-700 mb-2">Against votes</h3>
+              <h3 className="text-[15px] font-medium text-blue-700 mb-2">Against votes</h3>
               <div className="text-3xl font-bold text-blue-900 mb-1">
                 {stats.stats.against_votes.toLocaleString()}
               </div>
-              <p className="text-xs text-blue-700">
+              <p className="text-[15px] text-blue-700">
                 Total opposition votes on executive comp proposals
               </p>
             </div>
 
             <div className="bg-gradient-to-br from-green-50 to-green-100 p-5 rounded-lg border border-green-200">
-              <h3 className="text-xs font-medium text-green-700 mb-2">Companies</h3>
+              <h3 className="text-[15px] font-medium text-green-700 mb-2">Companies</h3>
               <div className="text-3xl font-bold text-green-900 mb-1">
                 {stats.stats.companies.toLocaleString()}
               </div>
-              <p className="text-xs text-green-700">
+              <p className="text-[15px] text-green-700">
                 Unique companies affected
               </p>
             </div>
 
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-lg border border-purple-200">
-              <h3 className="text-xs font-medium text-purple-700 mb-2">Explicit rationales</h3>
+              <h3 className="text-[15px] font-medium text-purple-700 mb-2">Explicit rationales</h3>
               <div className="text-3xl font-bold text-purple-900 mb-1">
                 {stats.stats.explicit_rationales.toLocaleString()}
               </div>
-              <p className="text-xs text-purple-700">
+              <p className="text-[15px] text-purple-700">
                 Rows with a specific stated rationale
               </p>
             </div>
 
             <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-5 rounded-lg border border-orange-200">
-              <h3 className="text-xs font-medium text-orange-700 mb-2">Coverage</h3>
+              <h3 className="text-[15px] font-medium text-orange-700 mb-2">Coverage</h3>
               <div className="text-3xl font-bold text-orange-900 mb-1">
                 {stats.stats.coverage_percentage}%
               </div>
-              <p className="text-xs text-orange-700">
+              <p className="text-[15px] text-orange-700">
                 {stats.stats.votes_without_rationale} votes without a disclosed rationale
               </p>
             </div>
@@ -200,29 +203,33 @@ const InvestorOverview: React.FC = () => {
 
           {/* High-level Summary */}
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6">
-            <h3 className="text-base font-semibold text-slate-900 mb-3 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              High-level summary
-            </h3>
-            <p className="text-sm text-slate-700 leading-relaxed">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">High-level summary</h3>
+            </div>
+            <p className="text-[15px] text-slate-700 leading-relaxed">
               {stats.high_level_summary}
             </p>
           </div>
 
           {/* Top Stated Reasons */}
           <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
-            <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Top stated reasons
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                <BarChart3 className="h-4 w-4 text-primary" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">Top stated reasons</h3>
+            </div>
             <div className="space-y-3">
               {stats.top_stated_reasons.map((reason, idx) => (
                 <div key={idx} className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-700">
+                    <span className="text-[15px] font-medium text-slate-700">
                       {reason.reason}
                     </span>
-                    <span className="text-sm font-semibold text-slate-900">
+                    <span className="text-[15px] font-semibold text-slate-900">
                       {reason.count} · {reason.percentage}%
                     </span>
                   </div>
@@ -239,18 +246,20 @@ const InvestorOverview: React.FC = () => {
 
           {/* Proposal Mix */}
           <div className="bg-white border border-slate-200 rounded-lg p-5">
-            <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <PieChart className="w-4 h-4" />
-              Proposal mix
-            </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                <PieChart className="h-4 w-4 text-primary" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">Proposal mix</h3>
+            </div>
             <div className="space-y-3">
               {stats.proposal_mix.map((item, idx) => (
                 <div key={idx} className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-700">
+                    <span className="text-[15px] font-medium text-slate-700">
                       {item.type}
                     </span>
-                    <span className="text-sm font-semibold text-slate-900">
+                    <span className="text-[15px] font-semibold text-slate-900">
                       {item.count} · {item.percentage}%
                     </span>
                   </div>

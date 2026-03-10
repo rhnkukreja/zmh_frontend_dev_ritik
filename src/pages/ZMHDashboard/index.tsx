@@ -269,7 +269,7 @@ function Main() {
               </button>
 
               {/* Company Overview GPT - Admin Only */}
-              {isAdmin && (
+              {/* {isAdmin && (
                 <button
                   onClick={() => setActiveTab('company-overview-gpt')}
                   className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
@@ -280,19 +280,7 @@ function Main() {
                   <Building2 className="w-4 h-4" />
                   Company Overview
                 </button>
-              )}
-
-              {/* Ownership - All Users */}
-              <button
-                onClick={() => setActiveTab('ownership')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
-                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-              >
-                <Users className="w-4 h-4" />
-                Ownership
-              </button>
+              )} */}
 
               {/* Investor Overview - Admin Only */}
               {isAdmin && (
@@ -307,6 +295,20 @@ function Main() {
                   Investor Overview
                 </button>
               )}
+    
+              {/* Ownership - All Users */}
+              <button
+                onClick={() => setActiveTab('ownership')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                <Users className="w-4 h-4" />
+                Ownership
+              </button>
+
+              
 
               {/* Shareholder Meeting Results - All Users */}
               <button
@@ -320,7 +322,7 @@ function Main() {
                 Shareholder Meeting Results
               </button>
             </div>
-            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && activeTab !== 'investor-overview' && (
+            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
               <button
                 className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
                 onClick={handleGenerateReport}
