@@ -22,6 +22,7 @@ import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
 import CompanyOverview from "@/components/CompanyOverview";
 import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
+import InvestorOverview from "@/components/InvestorOverview";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -34,7 +35,7 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
-import { FileText, Building2, Users, Vote } from "lucide-react";
+import { FileText, Building2, Users, Vote, TrendingUp } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -293,6 +294,20 @@ function Main() {
                 Ownership
               </button>
 
+              {/* Investor Overview - Admin Only */}
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab('investor-overview')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Investor Overview
+                </button>
+              )}
+
               {/* Shareholder Meeting Results - All Users */}
               <button
                 onClick={() => setActiveTab('shareholder-meeting-results')}
@@ -305,7 +320,7 @@ function Main() {
                 Shareholder Meeting Results
               </button>
             </div>
-            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
+            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && activeTab !== 'investor-overview' && (
               <button
                 className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
                 onClick={handleGenerateReport}
@@ -333,6 +348,12 @@ function Main() {
           {activeTab === 'ownership' && (
             <div id="ownership" className="col-span-12 xl:col-span-12">
               <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
+            </div>
+          )}
+
+          {activeTab === 'investor-overview' && isAdmin && (
+            <div id="investor-overview" className="col-span-12 xl:col-span-12">
+              <InvestorOverview />
             </div>
           )}
 
