@@ -482,6 +482,18 @@ class DashboardService {
       result: response.data,
     };
   }
+
+  public async getNPXPivotTableFile(url: string): Promise<{
+    result: Blob;
+  }> {
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
 }
 
 
