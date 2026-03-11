@@ -335,8 +335,8 @@ const InvestorOverview: React.FC = () => {
             </div>
           </div>
 
-          {/* Top Companies */}
-          <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
+          {/* Top Companies - Hidden for now */}
+          {/* <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
                 <Building2 className="h-4 w-4 text-primary" />
@@ -355,7 +355,7 @@ const InvestorOverview: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Monthly Distribution */}
           <div className="bg-white border border-slate-200 rounded-lg p-5">

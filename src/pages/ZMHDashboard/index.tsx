@@ -35,7 +35,7 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
-import { FileText, Building2, Users, Vote, TrendingUp } from "lucide-react";
+import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -282,8 +282,8 @@ function Main() {
                 </button>
               )} */}
 
-              {/* Investor Overview - Admin Only */}
-              {isAdmin && (
+              {/* Investor Insight - All Users */}
+              <div className="relative">
                 <button
                   onClick={() => setActiveTab('investor-overview')}
                   className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
@@ -291,10 +291,13 @@ function Main() {
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                 >
-                  <TrendingUp className="w-4 h-4" />
-                  Investor Overview
+                  <BarChart3 className="w-4 h-4" />
+                  Investor Insight
                 </button>
-              )}
+                <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                  BETA
+                </span>
+              </div>
     
               {/* Ownership - All Users */}
               <button
@@ -353,7 +356,7 @@ function Main() {
             </div>
           )}
 
-          {activeTab === 'investor-overview' && isAdmin && (
+          {activeTab === 'investor-overview' && (
             <div id="investor-overview" className="col-span-12 xl:col-span-12">
               <InvestorOverview />
             </div>
