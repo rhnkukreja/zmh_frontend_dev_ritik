@@ -115,90 +115,90 @@ const InvestorOverview: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
+  const formatCoverage = (coverage: string): string => {
+    if (coverage === 'Q1') {
+      return 'Q1 Coverage';
+    }
+    const quarterNum = parseInt(coverage.replace('Q', ''));
+    return `Q1-Q${quarterNum} Coverage`;
+  };
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white">
       <div className="px-5 pt-5">
-        {/* Header */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl font-bold tracking-tight">
-              Investor Opposition Dashboard
-            </h1>
-            {stats?.data_coverage && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Data Coverage: {stats.data_coverage}
-              </span>
-            )}
-          </div>
-          <p className="text-[15px] text-slate-600">
-            Select an investor to analyze voting patterns across Election of Directors, Executive Compensation, and Shareholder Proposals.
-          </p>
-        </div>
+        {/* Filters Section */}
+        <div className="bg-white rounded-lg p-4 mb-5 border border-slate-200">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-[15px] font-medium text-slate-700">
+                  Investor
+                </label>
+                {stats?.data_coverage && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                    {formatCoverage(stats.data_coverage)}
+                  </span>
+                )}
+              </div>
+              <FormSelect
+                value={selectedInvestor || ''}
+                onChange={(e) => setSelectedInvestor(Number(e.target.value))}
+                className="w-full text-[15px] font-medium"
+              >
+                {investors.map((inv) => (
+                  <option key={inv.id} value={inv.id}>
+                    {inv.institution}
+                  </option>
+                ))}
+              </FormSelect>
+            </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-5">
-          <div className="flex-1">
-            <label className="block text-[15px] font-medium text-slate-700 mb-2">
-              Investor
-            </label>
-            <FormSelect
-              value={selectedInvestor || ''}
-              onChange={(e) => setSelectedInvestor(Number(e.target.value))}
-              className="w-full"
-            >
-              {investors.map((inv) => (
-                <option key={inv.id} value={inv.id}>
-                  {inv.institution}
-                </option>
-              ))}
-            </FormSelect>
-          </div>
-
-          <div className="w-full sm:w-48">
-            <label className="block text-[15px] font-medium text-slate-700 mb-2">
-              Year
-            </label>
-            <FormSelect
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full"
-            >
-              <option value={2025}>2025</option>
-              <option value={2024}>2024</option>
-            </FormSelect>
+            <div className="w-full sm:w-56">
+              <label className="block text-[15px] font-medium text-slate-700 mb-2">
+                Year
+              </label>
+              <FormSelect
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="w-full text-[15px] font-medium"
+              >
+                <option value={2025}>2025</option>
+                <option value={2024}>2024</option>
+              </FormSelect>
+            </div>
           </div>
         </div>
 
         {/* Sub-Tabs for Buckets */}
         {stats && !loading && (
-          <div className="mb-5">
-            <div className="bg-slate-100 rounded-lg p-1 flex items-center gap-1">
+          <div className="mb-5 border-b border-slate-200">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setSelectedBucket('election_of_directors')}
-                className={`flex-1 px-4 py-2.5 rounded-md text-[15px] font-semibold transition-all duration-200 ${
+                className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
                   selectedBucket === 'election_of_directors'
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
               >
                 Election of Directors
               </button>
               <button
                 onClick={() => setSelectedBucket('executive_compensation')}
-                className={`flex-1 px-4 py-2.5 rounded-md text-[15px] font-semibold transition-all duration-200 ${
+                className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
                   selectedBucket === 'executive_compensation'
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
               >
                 Executive Compensation
               </button>
               <button
                 onClick={() => setSelectedBucket('shareholder_proposals')}
-                className={`flex-1 px-4 py-2.5 rounded-md text-[15px] font-semibold transition-all duration-200 ${
+                className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
                   selectedBucket === 'shareholder_proposals'
-                    ? 'bg-white text-primary shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
               >
                 Shareholder Proposals
@@ -224,7 +224,7 @@ const InvestorOverview: React.FC = () => {
       {bucketData && !loading && (
         <div className="px-5 pb-5">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
               <h3 className="text-[15px] font-medium text-blue-700 mb-2">Total Votes</h3>
               <div className="text-3xl font-bold text-blue-900 mb-1">
@@ -246,22 +246,12 @@ const InvestorOverview: React.FC = () => {
             </div>
 
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-lg border border-purple-200">
-              <h3 className="text-[15px] font-medium text-purple-700 mb-2">Explicit rationales</h3>
+              <h3 className="text-[15px] font-medium text-purple-700 mb-2">Rationales</h3>
               <div className="text-3xl font-bold text-purple-900 mb-1">
                 {bucketData.explicit_rationales.toLocaleString()}
               </div>
               <p className="text-[15px] text-purple-700">
-                Votes with specific stated rationale
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-5 rounded-lg border border-orange-200">
-              <h3 className="text-[15px] font-medium text-orange-700 mb-2">Coverage</h3>
-              <div className="text-3xl font-bold text-orange-900 mb-1">
-                {bucketData.coverage_percentage}%
-              </div>
-              <p className="text-[15px] text-orange-700">
-                {bucketData.votes_without_rationale} votes without rationale
+                Votes with specific stated rationale ({bucketData.coverage_percentage}% coverage)
               </p>
             </div>
           </div>
