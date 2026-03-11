@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { institutionStatsService } from '@/services/institutionStats';
 import LoadingIcon from '@/components/Base/LoadingIcon';
-import { FormSelect } from '@/components/Base/Form';
+import TomSelect from '@/components/Base/TomSelect';
 import { BarChart3, FileText, PieChart, Calendar, Building2 } from 'lucide-react';
 
 interface InvestorOption {
@@ -140,31 +140,37 @@ const InvestorOverview: React.FC = () => {
                   </span>
                 )}
               </div>
-              <FormSelect
-                value={selectedInvestor || ''}
+              <TomSelect
+                value={selectedInvestor?.toString() || ''}
                 onChange={(e) => setSelectedInvestor(Number(e.target.value))}
-                className="w-full text-[15px] font-medium"
+                options={{
+                  placeholder: 'Select an investor',
+                }}
+                className="w-full text-[15px]"
               >
                 {investors.map((inv) => (
                   <option key={inv.id} value={inv.id}>
                     {inv.institution}
                   </option>
                 ))}
-              </FormSelect>
+              </TomSelect>
             </div>
 
             <div className="w-full sm:w-56">
               <label className="block text-[15px] font-medium text-slate-700 mb-2">
                 Year
               </label>
-              <FormSelect
-                value={selectedYear}
+              <TomSelect
+                value={selectedYear.toString()}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="w-full text-[15px] font-medium"
+                options={{
+                  placeholder: 'Select a year',
+                }}
+                className="w-full text-[15px]"
               >
-                <option value={2025}>2025</option>
-                <option value={2024}>2024</option>
-              </FormSelect>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+              </TomSelect>
             </div>
           </div>
         </div>
