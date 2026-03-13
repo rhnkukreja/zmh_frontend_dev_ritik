@@ -35,7 +35,7 @@ const index = () => {
       dispatch(
         fetchInvestorProfileDetails(
           createDynamicURL(
-            `${baseURL}/api/investor-detail-page/?institution_id=${id}`
+            `${baseURL}/investor_profile_detail_page/?institution_id=${id}`
           )
         )
       );
@@ -43,38 +43,40 @@ const index = () => {
   }, [id, companyGlobalSearchName]);
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-50">
+      {/* Back Button */}
       {location.pathname !== "/" && (
-        <Button
-          onClick={() => {
-            navigate("/");
-          }}
-          variant="primary"
-          className="bg-theme-2 border-bg-theme-2 mb-4"
-        >
-          <ChevronLeft
-            className="group-[.mode--light]:text-white text-white"
-            size={18}
-            strokeWidth={1.5}
-          />
-          Back
-        </Button>
+        <div className="bg-white border-b border-slate-200 px-6 py-4">
+          <Button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-slate-700 hover:text-primary hover:bg-slate-100 border border-slate-300 bg-white"
+          >
+            <ChevronLeft size={18} strokeWidth={2} />
+            Back to Dashboard
+          </Button>
+        </div>
       )}
-      {!investorProfileLoading && investorProfileDetails?.institution_name && (
-        <div className="space-y-6">
-          <TopBar
-            companyName={investorProfileDetails?.institution_name}
-          />
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {!investorProfileLoading && investorProfileDetails?.institution_name && (
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Header Section */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              {investorProfileDetails?.institution_name}
+            </h1>
+            <p className="text-slate-600">Investor documents and contact information</p>
+          </div>
+
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Only show ContactCard if contacts exist */}
-            {investorProfileDetails?.contacts && (
-              <div className="w-full">
+            {investorProfileDetails?.contacts && investorProfileDetails.contacts.length > 0 && (
+              <div className="lg:col-span-1">
                 <ContactCard contacts={investorProfileDetails?.contacts} />
               </div>
             )}
 
-            <div className={investorProfileDetails?.contacts ? "w-full" : "col-span-2"}>
+            <div className={investorProfileDetails?.contacts && investorProfileDetails.contacts.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
               <PDFCard pdfDocuments={investorProfileDetails?.documents} />
             </div>
           </div>
@@ -102,18 +104,19 @@ const index = () => {
         </div>
       )}
 
-      {
-        /* dashboardDataList.length === 0 &&  */ investorProfileLoading && (
-          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+      {investorProfileLoading && (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center">
             <LoadingIcon
               color="#800000"
               icon="three-dots"
-              className="w-16 h-16"
+              className="w-16 h-16 mx-auto mb-4"
             />
+            <p className="text-slate-600 text-sm">Loading investor details...</p>
           </div>
-        )
-      }
-    </>
+        </div>
+      )}
+    </div>
   );
 };
 

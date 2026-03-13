@@ -462,15 +462,15 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                               )}
                                               <h1
                                                 onClick={() =>
-                                                  dashboard?.investor_profile_id &&
+                                                  dashboard?.institution_id &&
                                                   window.open(
-                                                    `/investor-company-details/${dashboard?.investor_profile_id}`,
+                                                    `/investor-company-details/${dashboard?.institution_id}`,
                                                     "_blank"
                                                   )
                                                 }
                                                 className={clsx([
                                                   "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                  dashboard?.investor_profile_id &&
+                                                  dashboard?.institution_id &&
                                                   "cursor-pointer underline",
                                                 ])}
                                               >
