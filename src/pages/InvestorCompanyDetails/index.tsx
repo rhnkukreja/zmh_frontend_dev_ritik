@@ -67,15 +67,8 @@ const index = () => {
           </div>
 
           {/* Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Only show ContactCard if contacts exist */}
-            {investorProfileDetails?.contacts && investorProfileDetails.contacts.length > 0 && (
-              <div className="lg:col-span-1">
-                <ContactCard contacts={investorProfileDetails?.contacts} />
-              </div>
-            )}
-
-            <div className={investorProfileDetails?.contacts && investorProfileDetails.contacts.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="w-full">
               <PDFCard pdfDocuments={investorProfileDetails?.documents} />
             </div>
           </div>

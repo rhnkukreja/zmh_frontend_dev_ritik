@@ -125,6 +125,19 @@ const InvestorOverview: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   };
 
+  const getVoteTypeText = (voteTypeBreakdown: Array<{ vote_type: string; count: number; percentage: number }>): string => {
+    if (!voteTypeBreakdown || voteTypeBreakdown.length === 0) return 'votes in this category';
+    
+    const voteTypes = voteTypeBreakdown.map(v => v.vote_type);
+    const uniqueTypes = [...new Set(voteTypes)];
+    
+    if (uniqueTypes.length === 1) {
+      return `${uniqueTypes[0]} votes in this category`;
+    }
+    
+    return uniqueTypes.join('/') + ' votes in this category';
+  };
+
   const formatCoverage = (coverage: string): string => {
     if (coverage === 'Q1') {
       return 'Q1 Coverage';
@@ -140,6 +153,9 @@ const InvestorOverview: React.FC = () => {
         .summary-text strong {
           font-weight: 600;
           color: #1e293b;
+        }
+        .summary-text {
+          white-space: pre-line;
         }
       `}</style>
       <div className="rounded-xl border border-slate-200 bg-white">
@@ -255,7 +271,7 @@ const InvestorOverview: React.FC = () => {
                 {bucketData.total_votes.toLocaleString()}
               </div>
               <p className="text-[15px] text-blue-700">
-                Against/Withhold votes in this category
+                {getVoteTypeText(bucketData.vote_type_breakdown)}
               </p>
             </div>
 
@@ -289,7 +305,7 @@ const InvestorOverview: React.FC = () => {
               <h3 className="text-base font-semibold text-slate-900">High-level summary</h3>
             </div>
             <div className="text-[15px] text-slate-700 leading-relaxed summary-text">
-              {parse(bucketData.high_level_summary)}
+              {parse(bucketData.high_level_summary.replace(/\n\n/g, '<br/><br/>'))}
             </div>
           </div>
 
@@ -322,7 +338,7 @@ const InvestorOverview: React.FC = () => {
                       {idx + 1}. {reason.reason}
                     </span>
                     <span className="text-[15px] font-semibold text-slate-900 whitespace-nowrap ml-4">
-                      {reason.count} · {reason.percentage}%
+                      {reason.count}
                     </span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
@@ -469,8 +485,6 @@ const InvestorOverview: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-semibold text-slate-900">{reason.count}</span>
-                            <span className="text-slate-500">·</span>
-                            <span className="font-semibold text-primary">{reason.percentage}%</span>
                           </div>
                         </div>
                       </div>
