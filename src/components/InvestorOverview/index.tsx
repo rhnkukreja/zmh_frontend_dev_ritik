@@ -9,6 +9,12 @@ interface InvestorOption {
   institution: string;
 }
 
+interface ReasonItem {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
 interface BucketData {
   total_votes: number;
   companies: number;
@@ -16,11 +22,8 @@ interface BucketData {
   coverage_percentage: number;
   votes_without_rationale: number;
   high_level_summary: string;
-  top_stated_reasons: Array<{
-    reason: string;
-    count: number;
-    percentage: number;
-  }>;
+  top_5_reasons: Array<ReasonItem>;
+  top_20_reasons: Array<ReasonItem>;
   vote_type_breakdown: Array<{
     vote_type: string;
     count: number;
@@ -59,6 +62,8 @@ const InvestorOverview: React.FC = () => {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showReasonsModal, setShowReasonsModal] = useState(false);
+  const [modalReasons, setModalReasons] = useState<Array<ReasonItem>>([]);
 
   // Load investor dropdown on mount
   useEffect(() => {
@@ -277,14 +282,27 @@ const InvestorOverview: React.FC = () => {
 
           {/* Top Stated Reasons */}
           <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
-                <BarChart3 className="h-4 w-4 text-primary" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-900">Top stated reasons</h3>
               </div>
-              <h3 className="text-base font-semibold text-slate-900">Top stated reasons</h3>
+              {bucketData.top_20_reasons && bucketData.top_20_reasons.length > 5 && (
+                <button
+                  onClick={() => {
+                    setModalReasons(bucketData.top_20_reasons);
+                    setShowReasonsModal(true);
+                  }}
+                  className="px-3 py-1.5 text-[13px] font-semibold text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                >
+                  See More
+                </button>
+              )}
             </div>
             <div className="space-y-3">
-              {bucketData.top_stated_reasons.map((reason, idx) => (
+              {bucketData.top_5_reasons.map((reason, idx) => (
                 <div key={idx} className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <span className="text-[15px] font-medium text-slate-700">
@@ -386,6 +404,47 @@ const InvestorOverview: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top 20 Reasons Modal */}
+      {showReasonsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900">Top 20 Stated Reasons</h2>
+              <button
+                onClick={() => setShowReasonsModal(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
+              <div className="space-y-4">
+                {modalReasons.map((reason, idx) => (
+                  <div key={idx} className="space-y-2">
+                    <div className="flex justify-between items-start gap-4">
+                      <span className="text-[15px] font-medium text-slate-700 flex-1">
+                        {idx + 1}. {reason.reason}
+                      </span>
+                      <span className="text-[15px] font-semibold text-slate-900 whitespace-nowrap">
+                        {reason.count} · {reason.percentage}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-primary to-primary/80 h-2.5 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${reason.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

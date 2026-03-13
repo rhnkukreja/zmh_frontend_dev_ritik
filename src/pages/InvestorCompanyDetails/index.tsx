@@ -35,7 +35,7 @@ const index = () => {
       dispatch(
         fetchInvestorProfileDetails(
           createDynamicURL(
-            `${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}`
+            `${baseURL}/api/investor-detail-page/?institution_id=${id}`
           )
         )
       );
@@ -61,48 +61,44 @@ const index = () => {
         </Button>
       )}
       {!investorProfileLoading && investorProfileDetails?.institution_name && (
-        <div>
+        <div className="space-y-6">
           <TopBar
             companyName={investorProfileDetails?.institution_name}
           />
 
-          <div className="flex justify-between ">
-            {/* <div className='w-[300px] '>
-                            <DocumentationMenu menu={investorProfileDetails}/>
-                        </div> */}
-            <div className="">
-              <div className="flex justify-between items-center xs:flex-col lg:flex-row">
-                <div className=" mr-4">
-                  <ContactCard contacts={investorProfileDetails?.contacts} />
-                </div>
-
-                <div className="">
-                  <PDFCard pdfDocuments={investorProfileDetails?.documents} />
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Only show ContactCard if contacts exist */}
+            {investorProfileDetails?.contacts && (
+              <div className="w-full">
+                <ContactCard contacts={investorProfileDetails?.contacts} />
               </div>
+            )}
 
-              {/* {
-                                investorProfileDetails?.companies_engaged?.length > 0 &&
-                                <div className='w-[1000px]'>
-                                    <MasterCardGrid gridHeaders={companies_engaged_gridHeaders} gridRecords={investorProfileDetails?.companies_engaged} gridTitle="Companies Engaged" />
-                                </div>
-                            }
-
-                            {
-                                investorProfileDetails?.case_studies?.length > 0 &&
-                                <div className='w-[1000px]'>
-                                    <MasterCardGrid gridHeaders={case_studies_gridHeaders} gridRecords={investorProfileDetails?.case_studies} gridTitle="Case Studies" />
-                                </div>
-                            }
-
-                            {
-                                investorProfileDetails?.engagement_questions?.length > 0 &&
-                                <div className='w-[1000px]'>
-                                    <MasterCardGrid gridHeaders={engagement_questions_gridHeaders} gridRecords={investorProfileDetails?.engagement_questions} gridTitle="Engagement Questions" />
-                                </div>
-                            } */}
+            <div className={investorProfileDetails?.contacts ? "w-full" : "col-span-2"}>
+              <PDFCard pdfDocuments={investorProfileDetails?.documents} />
             </div>
           </div>
+
+          {/* {
+            investorProfileDetails?.companies_engaged?.length > 0 &&
+            <div className='w-[1000px]'>
+              <MasterCardGrid gridHeaders={companies_engaged_gridHeaders} gridRecords={investorProfileDetails?.companies_engaged} gridTitle="Companies Engaged" />
+            </div>
+          }
+
+          {
+            investorProfileDetails?.case_studies?.length > 0 &&
+            <div className='w-[1000px]'>
+              <MasterCardGrid gridHeaders={case_studies_gridHeaders} gridRecords={investorProfileDetails?.case_studies} gridTitle="Case Studies" />
+            </div>
+          }
+
+          {
+            investorProfileDetails?.engagement_questions?.length > 0 &&
+            <div className='w-[1000px]'>
+              <MasterCardGrid gridHeaders={engagement_questions_gridHeaders} gridRecords={investorProfileDetails?.engagement_questions} gridTitle="Engagement Questions" />
+            </div>
+          } */}
         </div>
       )}
 
