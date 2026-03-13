@@ -71,7 +71,11 @@ const InvestorOverview: React.FC = () => {
       try {
         const data = await institutionStatsService.getInvestorDropdown();
         setInvestors(data);
-        if (data.length > 0) {
+        // Set BlackRock (id: 34) as default, or first investor if BlackRock not found
+        const blackRock = data.find(inv => inv.id === 34);
+        if (blackRock) {
+          setSelectedInvestor(34);
+        } else if (data.length > 0) {
           setSelectedInvestor(data[0].id);
         }
       } catch (err) {
@@ -295,20 +299,20 @@ const InvestorOverview: React.FC = () => {
                     setModalReasons(bucketData.top_20_reasons);
                     setShowReasonsModal(true);
                   }}
-                  className="px-3 py-1.5 text-[13px] font-semibold text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  className="px-4 py-2 text-[13px] font-semibold text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-sm"
                 >
                   See More
                 </button>
               )}
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {bucketData.top_5_reasons.map((reason, idx) => (
-                <div key={idx} className="space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[15px] font-medium text-slate-700">
-                      {reason.reason}
+                <div key={idx} className="space-y-2">
+                  <div className="flex justify-between items-start gap-4">
+                    <span className="text-[15px] font-medium text-slate-700 flex-1 leading-relaxed">
+                      {idx + 1}. {reason.reason}
                     </span>
-                    <span className="text-[15px] font-semibold text-slate-900">
+                    <span className="text-[15px] font-semibold text-slate-900 whitespace-nowrap ml-4">
                       {reason.count} · {reason.percentage}%
                     </span>
                   </div>
@@ -411,36 +415,56 @@ const InvestorOverview: React.FC = () => {
 
       {/* Top 20 Reasons Modal */}
       {showReasonsModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Top 20 Stated Reasons</h2>
-              <button
-                onClick={() => setShowReasonsModal(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4" onClick={() => setShowReasonsModal(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden mt-16" onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-gradient-to-r from-primary to-primary/90 px-6 py-5 z-10">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-bold text-white">Top 20 Stated Reasons</h2>
+                <button
+                  onClick={() => setShowReasonsModal(false)}
+                  className="text-white/80 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="flex items-center gap-3 text-white/90 text-sm">
+                <span className="font-medium">{stats?.institution_name}</span>
+                <span>•</span>
+                <span className="font-medium">{getBucketLabel(selectedBucket)}</span>
+                <span>•</span>
+                <span className="font-medium">{selectedYear}</span>
+              </div>
             </div>
-            <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
-              <div className="space-y-4">
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)] p-6 bg-slate-50">
+              <div className="space-y-3">
                 {modalReasons.map((reason, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <div className="flex justify-between items-start gap-4">
-                      <span className="text-[15px] font-medium text-slate-700 flex-1">
-                        {idx + 1}. {reason.reason}
-                      </span>
-                      <span className="text-[15px] font-semibold text-slate-900 whitespace-nowrap">
-                        {reason.count} · {reason.percentage}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-primary to-primary/80 h-2.5 rounded-full transition-all duration-500 ease-out"
-                        style={{ width: `${reason.percentage}%` }}
-                      />
+                  <div key={idx} className="bg-white rounded-lg p-4 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-start gap-4 mb-3">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">{idx + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-medium text-slate-700 leading-relaxed mb-2">
+                          {reason.reason}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                              <div
+                                className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500 ease-out"
+                                style={{ width: `${reason.percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-semibold text-slate-900">{reason.count}</span>
+                            <span className="text-slate-500">·</span>
+                            <span className="font-semibold text-primary">{reason.percentage}%</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -99,7 +99,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
         dispatch(
           fetchInvestorProfileDetails(
             createDynamicURL(
-              `${baseURL}/api/investor-detail-page/?institution_id=${id}`
+              `${baseURL}/investor-detail-page/?institution_id=${id}`
             )
           )
         );
