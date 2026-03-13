@@ -1,4 +1,3 @@
-import TopBar from "@/components/TopBar";
 import DocumentationMenu from "@/components/DocumentationMenu";
 import ContactCard from "@/components/ContactCard";
 import PDFCard from "@/components/PDFCard";
@@ -61,10 +60,10 @@ const index = () => {
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header Section */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
               {investorProfileDetails?.institution_name}
             </h1>
-            <p className="text-slate-600">Investor documents and contact information</p>
+            <p className="text-[15px] text-slate-600">Investor documents and contact information</p>
           </div>
 
           {/* Content Grid */}

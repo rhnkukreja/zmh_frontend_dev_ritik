@@ -69,15 +69,19 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
                 </ul>
             </div> */}
 
-      <div className="p-6 max-h-[500px] overflow-y-auto">
-        <div className="space-y-4">
-          {contacts?.length > 0 &&
-            contacts?.map((contact: any) => (
+      <div className="p-6 max-h-[600px] overflow-y-auto">
+        {contacts?.length === 0 ? (
+          <div className="text-center py-8 text-slate-500">
+            <p className="text-sm">No contact information available</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {contacts?.map((contact: any) => (
               <div
                 key={contact.name}
-                className="flex items-start gap-4 p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200"
+                className="flex items-start gap-4 p-4 rounded-lg bg-slate-50/50 hover:bg-slate-100/80 transition-all duration-200 border border-slate-200/60 hover:border-slate-300 hover:shadow-sm"
               >
-                <div className="flex-shrink-0 w-14 h-14 overflow-hidden rounded-full border-2 border-primary/20">
+                <div className="flex-shrink-0 w-12 h-12 overflow-hidden rounded-full border-2 border-primary/20 shadow-sm">
                   <img
                     alt={contact?.name}
                     src={validImages[contact.name]}
@@ -85,11 +89,11 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-slate-900 text-[15px] mb-1">
+                  <h3 className="font-semibold text-slate-900 text-[15px] mb-0.5">
                     {contact?.name}
                   </h3>
                   <div
-                    className="text-sm text-slate-600"
+                    className="text-[13px] text-slate-600 leading-relaxed mb-2"
                     dangerouslySetInnerHTML={{
                       __html: contact?.designation,
                     }}
@@ -97,16 +101,17 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
                   {contact?.linkedin && (
                     <button
                       onClick={() => window.open(contact?.linkedin, "_blank")}
-                      className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:text-primary/80 transition-colors"
                     >
-                      <img src={linkedinIcon} className="w-4 h-4" alt="LinkedIn" />
-                      LinkedIn Profile
+                      <img src={linkedinIcon} className="w-3.5 h-3.5" alt="LinkedIn" />
+                      View Profile
                     </button>
                   )}
                 </div>
               </div>
             ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

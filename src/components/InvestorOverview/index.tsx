@@ -3,6 +3,7 @@ import { institutionStatsService } from '@/services/institutionStats';
 import LoadingIcon from '@/components/Base/LoadingIcon';
 import TomSelect from '@/components/Base/TomSelect';
 import { BarChart3, FileText, PieChart, Calendar, Building2 } from 'lucide-react';
+import parse from 'html-react-parser';
 
 interface InvestorOption {
   id: number;
@@ -133,8 +134,16 @@ const InvestorOverview: React.FC = () => {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="px-5 pt-5">
+    <>
+      <style>{`
+        .summary-text b,
+        .summary-text strong {
+          font-weight: 600;
+          color: #1e293b;
+        }
+      `}</style>
+      <div className="rounded-xl border border-slate-200 bg-white">
+        <div className="px-5 pt-5">
         {/* Filters Section */}
         <div className="bg-white rounded-lg p-4 mb-5 border border-slate-200">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -272,16 +281,16 @@ const InvestorOverview: React.FC = () => {
           </div>
 
           {/* High-level Summary */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
+            <div className="flex items-center gap-2 mb-4">
               <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
                 <FileText className="h-4 w-4 text-primary" />
               </div>
               <h3 className="text-base font-semibold text-slate-900">High-level summary</h3>
             </div>
-            <p className="text-[15px] text-slate-700 leading-relaxed">
-              {bucketData.high_level_summary}
-            </p>
+            <div className="text-[15px] text-slate-700 leading-relaxed summary-text">
+              {parse(bucketData.high_level_summary)}
+            </div>
           </div>
 
           {/* Top Stated Reasons */}
@@ -473,7 +482,8 @@ const InvestorOverview: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
