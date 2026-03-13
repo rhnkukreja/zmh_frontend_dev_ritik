@@ -146,6 +146,39 @@ const InvestorOverview: React.FC = () => {
     return `Q1-Q${quarterNum} Coverage`;
   };
 
+  const formatSummaryWithBullets = (summary: string): string => {
+    // Split by double newlines to get paragraphs
+    const parts = summary.split('\n\n');
+    
+    return parts.map((part, index) => {
+      const trimmedPart = part.trim();
+      
+      // Check if this is the final note (starts with "It should be noted")
+      if (trimmedPart.startsWith('It should be noted') || trimmedPart.startsWith(' It should be noted')) {
+        return `<div class="final-note">${trimmedPart}</div>`;
+      }
+      
+      // Check if this part contains quoted reasons (starts with <b>")
+      if (trimmedPart.startsWith('<b>"')) {
+        // Split by newlines to get individual bullet items
+        const lines = part.split('\n').filter(line => line.trim());
+        // Wrap each line in a div with reason-item class and replace comma with period
+        return lines.map(line => {
+          // Replace multiple spaces with single space for cleaner formatting
+          let cleanedLine = line.replace(/\s+/g, ' ');
+          // Replace comma before percentage with period
+          cleanedLine = cleanedLine.replace(/,\s*([\d.]+%)/g, '. $1');
+          // Replace trailing comma with period
+          cleanedLine = cleanedLine.replace(/,\s*$/g, '.');
+          return `<div class="reason-item">${cleanedLine.trim()}</div>`;
+        }).join('');
+      }
+      
+      // Regular paragraph
+      return part;
+    }).join('<br/><br/>');
+  };
+
   return (
     <>
       <style>{`
@@ -156,6 +189,17 @@ const InvestorOverview: React.FC = () => {
         }
         .summary-text {
           white-space: pre-line;
+        }
+        .summary-text .reason-item {
+          display: list-item;
+          list-style-type: disc;
+          margin-left: 20px;
+          margin-bottom: 8px;
+          line-height: 1.6;
+        }
+        .summary-text .final-note {
+          margin-top: 16px;
+          margin-left: 0;
         }
       `}</style>
       <div className="rounded-xl border border-slate-200 bg-white">
@@ -305,7 +349,7 @@ const InvestorOverview: React.FC = () => {
               <h3 className="text-base font-semibold text-slate-900">High-level summary</h3>
             </div>
             <div className="text-[15px] text-slate-700 leading-relaxed summary-text">
-              {parse(bucketData.high_level_summary.replace(/\n\n/g, '<br/><br/>'))}
+              {parse(formatSummaryWithBullets(bucketData.high_level_summary))}
             </div>
           </div>
 
