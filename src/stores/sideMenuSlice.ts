@@ -79,6 +79,11 @@ const initialState: any = {
       pathname: "/case-studies",
       title: "Case Studies",
     },
+    {
+      icon: "FileSearch",
+      pathname: "/case-studies-ai",
+      title: "Case Studies AI",
+    },
     // {
     //   icon: "MessageCircle",
     //   pathname: "/engagement-question",
