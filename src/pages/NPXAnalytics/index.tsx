@@ -9,6 +9,11 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
 import { MdOutlineClear } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
+import Tippy from "@/components/Base/Tippy";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import { createDynamicURL, downloadFileFromAPI } from "@/utils/helper";
+import { baseURL } from "@/constant";
+
 
 const toOptions = (arr: string[]) => arr.map((v) => ({ value: v, label: v }));
 
@@ -55,8 +60,11 @@ export default function NPXAnalyticsPage() {
 
   // Table state
   const [tableLoading, setTableLoading] = useState(false);
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [rows, setRows] = useState<Record<string, any>[]>([]);
+
+  const [meetingDate, setMeetingDate] = useState<string>("");
 
   const headers = useMemo(() => {
     if (!rows.length) return [] as string[];
@@ -94,6 +102,7 @@ export default function NPXAnalyticsPage() {
           ? payload.proposal_text.filter(Boolean)
           : []
       );
+      setMeetingDate(payload.meeting_date);
     } catch (err) {
       console.error("[NPXAnalytics] fetchDropdown error:", err);
     } finally {
@@ -108,20 +117,35 @@ export default function NPXAnalyticsPage() {
     institution_name?: string[];
     fund_name?: string[];
     proposal_text?: string[];
+    download?: boolean;
   }) => {
     if (!companyId || !year) return;
+    if (filters?.download && loadingDownload) return;
 
     try {
-      setTableLoading(true);
-      setErrorMessage("");
-
-      const response = await dashboardService.getNPXPivotTable({
+      const queryParams = {
         company_id: companyId,
         year,
         institution_name: filters?.institution_name ?? institutionName,
         fund_name: filters?.fund_name ?? fundName,
         proposal_text: filters?.proposal_text ?? proposalText,
-      });
+      };
+
+      if (filters?.download) {
+        setLoadingDownload(true);
+        downloadFileFromAPI({
+          url: createDynamicURL(`${baseURL}/api/npx_pivot_table/`, queryParams),
+          fileName: "npx_analytics.xlsx",
+          setLoading: setLoadingDownload,
+          serviceMethod: dashboardService.getNPXPivotTableFile
+        });
+        return;
+      }
+
+      setTableLoading(true);
+      setErrorMessage("");
+
+      const response = await dashboardService.getNPXPivotTable(queryParams);
 
       const payload =
         (response as any)?.result || (response as any)?.data || response;
@@ -132,7 +156,9 @@ export default function NPXAnalyticsPage() {
       setRows([]);
       setErrorMessage("Failed to load pivot analytics data.");
     } finally {
-      setTableLoading(false);
+      if (!filters?.download) {
+        setTableLoading(false);
+      }
     }
   };
 
@@ -185,7 +211,7 @@ export default function NPXAnalyticsPage() {
           <div>
             <h1 className="text-lg font-bold">NPX Analytics</h1>
             <p className="italic">
-              Year: {year || "-"}
+              Meeting Date: {meetingDate || "-"}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -227,6 +253,7 @@ export default function NPXAnalyticsPage() {
               }
               placeholder="Select Institution(s)"
               isClearable
+              closeMenuOnSelect={false}
             />
           </div>
 
@@ -242,6 +269,7 @@ export default function NPXAnalyticsPage() {
               }
               placeholder="Select Fund(s)"
               isClearable
+              closeMenuOnSelect={false}
             />
           </div>
 
@@ -257,14 +285,33 @@ export default function NPXAnalyticsPage() {
               }
               placeholder="Select Proposal(s)"
               isClearable
+              closeMenuOnSelect={false}
             />
           </div>
         </div>
 
         {/* Table */}
         <div className="mt-6">
-          <div className="text-right text-sm text-gray-500 mb-2">
-            Total Count: {rows.length - 1}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-right text-sm text-gray-500">
+              Total Count: {rows.length ? rows.length - 1 : 0}
+            </div>
+            <Tippy content="Download Excel" options={{ theme: "light" }}>
+              <div
+                className="box p-[5px] cursor-pointer"
+                onClick={() => fetchPivotTable({ download: true })}
+              >
+                {loadingDownload ? (
+                  <Lucide
+                    icon="Loader"
+                    className={`w-6 h-6 stroke-[1.3] ${loadingDownload ? "animate-spin" : ""
+                      }`}
+                  />
+                ) : (
+                  <img alt="download-icon" src={downloadIcon} />
+                )}
+              </div>
+            </Tippy>
           </div>
 
           {tableLoading && (

@@ -112,6 +112,7 @@ import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 
 
 import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
+import CaseStudiesAI from "@/pages/CaseStudiesAI";
 
 
 function Router() {
@@ -451,6 +452,11 @@ function Router() {
           path: "case-studies/:id",
           element: <DetailCaseStudies />,
           data: { titleName: "Case Studies Detail - ZMH Analytics" },
+        },
+        {
+          path: "case-studies-ai",
+          element: <CaseStudiesAI />,
+          data: { titleName: "Case Studies AI - ZMH Analytics" },
         },
         {
           path: "investor-details",
