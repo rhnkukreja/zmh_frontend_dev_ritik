@@ -907,9 +907,9 @@ const index = () => {
           { keyword: searchTerm },
           null
         );
-        
+
         const response = await axiosInstance.get(dynamicURL);
-        
+
         // Extract synonyms from the response
         const synonyms = response.data.synonyms || [];
         console.log('Received synonyms:', synonyms); // Debug log
@@ -1067,12 +1067,12 @@ const index = () => {
       setIsFilterCollapse(false); // Ensure filter panel collapses in analytics mode
       return;
     }
-    
+
     // Check if institution is empty for regular view
     if (!npxFilter?.institution_name?.length) {
       return;
     }
-    
+
     if (!npxFilter?.company_name || npxFilter?.company_name.length === 0) {
       toast.warning("Please Select Company Name");
       return;
@@ -1251,7 +1251,7 @@ const index = () => {
     let institutionsToKeep = ["BlackRock, Inc."];
     let countryToKeep = ["USA"];
     let indexToKeep = ["S&P 500"];
-    
+
     // Preserve query parameter values if present
     if (hasQueryParams && institutionParam) {
       const institutions = institutionParam.split('||').map(inst => decodeURIComponent(inst.trim()));
@@ -1268,9 +1268,9 @@ const index = () => {
         country: hasQueryParams ? [] : countryToKeep,
         analyticsYear: hasQueryParams ? [] : defaultYears,
       };
-      
+
       setAllAnalyticsFilter(mandatoryFilters);
-      
+
       // Reset form to mandatory values only
       setValue("institution_name", institutionsToKeep);
       setValue("index", indexToKeep);
@@ -1283,7 +1283,7 @@ const index = () => {
         setValue("analyticsYear", []);
         setSelectedCountries([]);
       }
-      
+
       // Clear non-mandatory fields
       setValue("company_name", []);
       setValue("vote", []);
@@ -1295,12 +1295,12 @@ const index = () => {
       setValue("proposal_keyword", []);
       setValue("meeting_type", []);
       setValue("year", "");
-      
+
       // Update filter chips and save to localStorage
       setSelectedChipFilters(generateFilterChips(mandatoryFilters));
       setFiltersLength(countValidFilters(mandatoryFilters));
       localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(mandatoryFilters));
-      
+
       // Reset analytics data to force refetch
       dispatch(resetAnalyticsDataLoaded());
     } else {
@@ -1310,9 +1310,9 @@ const index = () => {
         country: hasQueryParams ? [] : countryToKeep,
         year: hasQueryParams ? "" : currentYear,
       };
-      
+
       setallApplyFilter(mandatoryFilters);
-      
+
       // Reset form to mandatory values only
       setValue("institution_name", institutionsToKeep);
       if (!hasQueryParams) {
@@ -1324,7 +1324,7 @@ const index = () => {
         setValue("year", "");
         setSelectedCountries([]);
       }
-      
+
       // Clear non-mandatory fields
       setValue("company_name", []);
       setValue("vote", []);
@@ -1337,24 +1337,24 @@ const index = () => {
       setValue("proposal_type", []);
       setValue("proposal_keyword", []);
       setValue("meeting_type", []);
-      
+
       // Update filter chips and save to localStorage
       setSelectedChipFilters(generateFilterChips(mandatoryFilters));
       setFiltersLength(countValidFilters(mandatoryFilters));
       localStorage.setItem("vdsEuropeanFilters", JSON.stringify(mandatoryFilters));
-      
+
       // Reset page and data to force refetch
       dispatch(resetPage());
       dispatch(resetDataLoaded());
     }
-    
+
     // Reset dropdown values
     setDropdownValues({
       company_name: [],
       institution: [],
       index: [],
     });
-    
+
     // Force country component refresh
     setCountryComponentKey(prev => prev + 1);
   };
@@ -1470,7 +1470,7 @@ const index = () => {
       setValue("proposal_keyword", []);
       setValue("meeting_type", []);
     }, 50); // Small delay to prevent form interference
-    
+
     setDropdownValues({
       company_name: [],
       institution: [],
@@ -1562,12 +1562,12 @@ const index = () => {
     // Handle institution filter removal - prevent removal of last institution
     if (removeKey === "institution_name") {
       const currentInstitutions = isViewAnalysis ? allAnalyticsFilter.institution_name || [] : allApplyFilter.institution_name || [];
-      
+
       // Prevent removal if it's the last institution
       if (currentInstitutions.length <= 1) {
         return; // Block removal when only one institution remains
       }
-      
+
       // Remove the specific institution value
       const updatedInstitutions = currentInstitutions.filter((institution: string) => institution !== removeValue);
       if (isViewAnalysis) {
@@ -1688,7 +1688,7 @@ const index = () => {
           return keywordValue !== removeValueStr;
         });
         updatedFilters[removeKey] = updatedKeywords;
-        
+
         // Use setTimeout to prevent form field interference
         setTimeout(() => {
           setValue(removeKey, updatedKeywords);
@@ -1731,7 +1731,7 @@ const index = () => {
         return keywordValue !== removeValueStr;
       });
       updatedFilters[removeKey] = updatedKeywords;
-      
+
       // Use setTimeout to prevent form field interference
       setTimeout(() => {
         setValue(removeKey, updatedKeywords);
@@ -1771,10 +1771,12 @@ const index = () => {
 
       if (isViewAnalysis && allAnalyticsFilter?.institution_name && allAnalyticsFilter.institution_name.length > 0) {
         // If analytics data is already loaded and we're not changing page, don't fetch again
-        const shouldRefetch = !analyticsDataLoaded || analyticsPage > 1;
-        if (!shouldRefetch) {
-          return; // Skip fetching if data is already loaded
-        }
+
+        // Refetch if data is missing OR if analyticsPage is different from what was potentially last loaded
+        const shouldRefetch = !analyticsDataLoaded || analyticsPage >= 1;
+
+        // Note: We always allow refetch if analyticsPage is set, because createDynamicURL 
+        // will handle the page parameter correctly.
         dispatch(setAnalyticsFilters(allAnalyticsFilter));
 
         // Check if query parameters are present
@@ -1829,7 +1831,8 @@ const index = () => {
         );
 
         // Only fetch if data isn't already loaded or we're on a different page
-        if (!analyticsDataLoaded || analyticsPage > 1) {
+        if (shouldRefetch) {
+          console.log("Fetching Analytics with URL:", analyticsUrl);
           dispatch(fetchVdsEuropeanAnalytics(analyticsUrl));
         }
       }
@@ -2216,7 +2219,7 @@ const index = () => {
                     defaultValue={[]}
                     rules={{
                       required: "At least one institution must be selected",
-                      validate: (value) => 
+                      validate: (value) =>
                         value && value.length >= 1 ? true : "At least one institution must be selected"
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -2231,12 +2234,12 @@ const index = () => {
                           loading={getFundNameDropdownLoader}
                           onChange={(selectedOptions) => {
                             const selectedValues = selectedOptions.map((option) => option.value);
-                            
+
                             // Prevent selecting more than 3 institutions
                             if (selectedValues.length > 3) {
                               return; // Don't update the field if more than 3 are selected
                             }
-                            
+
                             // Show/hide message when 3 institutions are selected
                             if (selectedValues.length === 3) {
                               setShowMaxInstitutionMessage(true);
@@ -2246,7 +2249,7 @@ const index = () => {
                             } else {
                               setShowMaxInstitutionMessage(false);
                             }
-                            
+
                             field.onChange(selectedValues);
                             handleDropdownChange("institution_name", selectedValues);
                             // Fetch vote and year options based on selected institutions
@@ -2416,16 +2419,16 @@ const index = () => {
                         onChange={(companyNames) => {
                           // Ensure companyNames is always treated as an array
                           const companyArray = Array.isArray(companyNames) ? companyNames : companyNames ? [companyNames] : [];
-                          
+
                           // Extract company names as strings from the objects
                           const companyNameStrings = companyArray.map((item: any) => {
                             if (typeof item === 'string') return item;
                             return item?.label || item?.company?.name || item?.value || item;
                           });
-                          
+
                           // Set the form field with string array
                           field.onChange(companyNameStrings);
-                          
+
                           // Clear country when company is selected
                           if (companyNameStrings && companyNameStrings.length > 0) {
                             // Only clear country if it hasn't been manually set
@@ -2777,7 +2780,7 @@ const index = () => {
             {analytics?.by_company?.length > 0 && (
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                 <CPagination
-                  page={analytics?.pagination?.current_page || 1}
+                  page={analyticsPage || 1}
                   totalPages={analytics?.pagination?.total_pages || 1}
                   handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}

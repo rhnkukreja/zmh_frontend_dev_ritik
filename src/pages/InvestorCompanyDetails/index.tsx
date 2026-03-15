@@ -1,4 +1,3 @@
-import TopBar from "@/components/TopBar";
 import DocumentationMenu from "@/components/DocumentationMenu";
 import ContactCard from "@/components/ContactCard";
 import PDFCard from "@/components/PDFCard";
@@ -35,7 +34,7 @@ const index = () => {
       dispatch(
         fetchInvestorProfileDetails(
           createDynamicURL(
-            `${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}`
+            `${baseURL}/investor_profile_detail_page/?institution_id=${id}`
           )
         )
       );
@@ -43,81 +42,73 @@ const index = () => {
   }, [id, companyGlobalSearchName]);
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-50">
+      {/* Back Button */}
       {location.pathname !== "/" && (
-        <Button
-          onClick={() => {
-            navigate("/");
-          }}
-          variant="primary"
-          className="bg-theme-2 border-bg-theme-2 mb-4"
-        >
-          <ChevronLeft
-            className="group-[.mode--light]:text-white text-white"
-            size={18}
-            strokeWidth={1.5}
-          />
-          Back
-        </Button>
-      )}
-      {!investorProfileLoading && investorProfileDetails?.institution_name && (
-        <div>
-          <TopBar
-            companyName={investorProfileDetails?.institution_name}
-          />
-
-          <div className="flex justify-between ">
-            {/* <div className='w-[300px] '>
-                            <DocumentationMenu menu={investorProfileDetails}/>
-                        </div> */}
-            <div className="">
-              <div className="flex justify-between items-center xs:flex-col lg:flex-row">
-                <div className=" mr-4">
-                  <ContactCard contacts={investorProfileDetails?.contacts} />
-                </div>
-
-                <div className="">
-                  <PDFCard pdfDocuments={investorProfileDetails?.documents} />
-                </div>
-              </div>
-
-              {/* {
-                                investorProfileDetails?.companies_engaged?.length > 0 &&
-                                <div className='w-[1000px]'>
-                                    <MasterCardGrid gridHeaders={companies_engaged_gridHeaders} gridRecords={investorProfileDetails?.companies_engaged} gridTitle="Companies Engaged" />
-                                </div>
-                            }
-
-                            {
-                                investorProfileDetails?.case_studies?.length > 0 &&
-                                <div className='w-[1000px]'>
-                                    <MasterCardGrid gridHeaders={case_studies_gridHeaders} gridRecords={investorProfileDetails?.case_studies} gridTitle="Case Studies" />
-                                </div>
-                            }
-
-                            {
-                                investorProfileDetails?.engagement_questions?.length > 0 &&
-                                <div className='w-[1000px]'>
-                                    <MasterCardGrid gridHeaders={engagement_questions_gridHeaders} gridRecords={investorProfileDetails?.engagement_questions} gridTitle="Engagement Questions" />
-                                </div>
-                            } */}
-            </div>
-          </div>
+        <div className="bg-white border-b border-slate-200 px-6 py-4">
+          <Button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-slate-700 hover:text-primary hover:bg-slate-100 border border-slate-300 bg-white"
+          >
+            <ChevronLeft size={18} strokeWidth={2} />
+            Back to Dashboard
+          </Button>
         </div>
       )}
 
-      {
-        /* dashboardDataList.length === 0 &&  */ investorProfileLoading && (
-          <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+      {!investorProfileLoading && investorProfileDetails?.institution_name && (
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {/* Header Section */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
+              {investorProfileDetails?.institution_name}
+            </h1>
+            <p className="text-[15px] text-slate-600">Investor documents and contact information</p>
+          </div>
+
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 gap-6">
+            <div className="w-full">
+              <PDFCard pdfDocuments={investorProfileDetails?.documents} />
+            </div>
+          </div>
+
+          {/* {
+            investorProfileDetails?.companies_engaged?.length > 0 &&
+            <div className='w-[1000px]'>
+              <MasterCardGrid gridHeaders={companies_engaged_gridHeaders} gridRecords={investorProfileDetails?.companies_engaged} gridTitle="Companies Engaged" />
+            </div>
+          }
+
+          {
+            investorProfileDetails?.case_studies?.length > 0 &&
+            <div className='w-[1000px]'>
+              <MasterCardGrid gridHeaders={case_studies_gridHeaders} gridRecords={investorProfileDetails?.case_studies} gridTitle="Case Studies" />
+            </div>
+          }
+
+          {
+            investorProfileDetails?.engagement_questions?.length > 0 &&
+            <div className='w-[1000px]'>
+              <MasterCardGrid gridHeaders={engagement_questions_gridHeaders} gridRecords={investorProfileDetails?.engagement_questions} gridTitle="Engagement Questions" />
+            </div>
+          } */}
+        </div>
+      )}
+
+      {investorProfileLoading && (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center">
             <LoadingIcon
               color="#800000"
               icon="three-dots"
-              className="w-16 h-16"
+              className="w-16 h-16 mx-auto mb-4"
             />
+            <p className="text-slate-600 text-sm">Loading investor details...</p>
           </div>
-        )
-      }
-    </>
+        </div>
+      )}
+    </div>
   );
 };
 

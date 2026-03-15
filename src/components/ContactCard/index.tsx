@@ -38,9 +38,9 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
   }, [contacts]);
 
   return (
-    <div className="p-5 mt-3.5 box ">
-      <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
-        <h1 className="text-lg font-bold">Contacts</h1>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full">
+      <div className="bg-gradient-to-r from-primary to-primary/90 px-6 py-4">
+        <h2 className="text-lg font-bold text-white">Key Contacts</h2>
       </div>
 
       {/* <div className='w-full h-[250px] pr-6 overflow-y-scroll'>
@@ -69,71 +69,49 @@ const index: React.FC<ChildProps> = ({ contacts }) => {
                 </ul>
             </div> */}
 
-      <div className="w-full h-[390px] pr-6 overflow-y-scroll">
-        <TableWrapper>
-          <div>
-            <Table className="table">
-              {/* <Table.Thead>
-                                <Table.Tr className="row">
-                                    <Table.Td className="cell py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                        Name
-                                    </Table.Td>
-                                    <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                        Year
-                                    </Table.Td>
-                                    <Table.Td className="cell py-2 font-semibold w-[150px] h-[50px]  bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
-                                        Download
-                                    </Table.Td>
-
-                                </Table.Tr>
-                            </Table.Thead> */}
-              <Table.Tbody>
-                {contacts?.length > 0 &&
-                  contacts?.map((contact: any) => (
-                    <Table.Tr
-                      key={contact.name}
-                      className="row [&_td]:last:border-b-0"
-                    >
-                      <Table.Td className="px-0 py-3 border-b dark:border-darkmode-300 w-[50px]">
-                        <div className=" w-12 h-12 mr-3 overflow-hidden rounded-full image-fit border-[3px] border-slate-200/70">
-                          <img
-                            alt="ZMH Analytics"
-                            src={validImages[contact.name]}
-                          />
-                        </div>
-                      </Table.Td>
-                      <Table.Td className="px-0 py-3 border-b dark:border-darkmode-300 w-[300px]">
-                        <div className="flex justify-between items-center ">
-                          <div>
-                            <h1 className="font-semibold ">{contact?.name}</h1>
-                            <div
-                              className="text-sm "
-                              dangerouslySetInnerHTML={{
-                                __html: contact?.designation,
-                              }}
-                            ></div>
-                          </div>
-                        </div>
-                      </Table.Td>
-                      <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
-                        <div
-                          className=" flex text-right font-semibold hover:text-blue-900 hover:underline cursor-pointer text-blue-800 whitespace-nowrap"
-                          onClick={() =>
-                            window.open(contact?.linkedin, "_blank")
-                          }
-                        >
-                          linkedin
-                          <div className=" w-5 h-5 ml-1 overflow-hidden  image-fit border-[3px] border-slate-200/70">
-                            <img src={linkedinIcon} />
-                          </div>
-                        </div>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-              </Table.Tbody>
-            </Table>
+      <div className="p-6 max-h-[600px] overflow-y-auto">
+        {contacts?.length === 0 ? (
+          <div className="text-center py-8 text-slate-500">
+            <p className="text-sm">No contact information available</p>
           </div>
-        </TableWrapper>
+        ) : (
+          <div className="space-y-3">
+            {contacts?.map((contact: any) => (
+              <div
+                key={contact.name}
+                className="flex items-start gap-4 p-4 rounded-lg bg-slate-50/50 hover:bg-slate-100/80 transition-all duration-200 border border-slate-200/60 hover:border-slate-300 hover:shadow-sm"
+              >
+                <div className="flex-shrink-0 w-12 h-12 overflow-hidden rounded-full border-2 border-primary/20 shadow-sm">
+                  <img
+                    alt={contact?.name}
+                    src={validImages[contact.name]}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-slate-900 text-[15px] mb-0.5">
+                    {contact?.name}
+                  </h3>
+                  <div
+                    className="text-[13px] text-slate-600 leading-relaxed mb-2"
+                    dangerouslySetInnerHTML={{
+                      __html: contact?.designation,
+                    }}
+                  />
+                  {contact?.linkedin && (
+                    <button
+                      onClick={() => window.open(contact?.linkedin, "_blank")}
+                      className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <img src={linkedinIcon} className="w-3.5 h-3.5" alt="LinkedIn" />
+                      View Profile
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

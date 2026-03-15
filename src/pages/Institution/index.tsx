@@ -491,11 +491,11 @@ function Main() {
                             )} */}
 
                             {/* Document Tab Column */}
-                            {institution?.investor_profile_id && (
+                            {institution?.id && (
                               <Table.Td className="py-2  bg-white border-slate-200/80">
                                 <button
                                   onClick={() => {
-                                    window.open(`/investor-company-details/${institution.investor_profile_id}`, '_blank');
+                                    window.open(`/investor-company-details/${institution.id}`, '_blank');
                                   }}
                                   className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
                                   title="View Document Tab"

@@ -22,6 +22,7 @@ import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
 import CompanyOverview from "@/components/CompanyOverview";
 import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
+import InvestorOverview from "@/components/InvestorOverview";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -34,7 +35,7 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
-import { FileText, Building2, Users, Vote } from "lucide-react";
+import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -268,7 +269,7 @@ function Main() {
               </button>
 
               {/* Company Overview GPT - Admin Only */}
-              {isAdmin && (
+              {/* {isAdmin && (
                 <button
                   onClick={() => setActiveTab('company-overview-gpt')}
                   className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
@@ -279,8 +280,25 @@ function Main() {
                   <Building2 className="w-4 h-4" />
                   Company Overview
                 </button>
-              )}
+              )} */}
 
+              {/* Investor Insight - All Users */}
+              <div className="relative">
+                <button
+                  onClick={() => setActiveTab('investor-overview')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Investor Insight
+                </button>
+                <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                  BETA
+                </span>
+              </div>
+    
               {/* Ownership - All Users */}
               <button
                 onClick={() => setActiveTab('ownership')}
@@ -292,6 +310,8 @@ function Main() {
                 <Users className="w-4 h-4" />
                 Ownership
               </button>
+
+              
 
               {/* Shareholder Meeting Results - All Users */}
               <button
@@ -333,6 +353,12 @@ function Main() {
           {activeTab === 'ownership' && (
             <div id="ownership" className="col-span-12 xl:col-span-12">
               <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
+            </div>
+          )}
+
+          {activeTab === 'investor-overview' && (
+            <div id="investor-overview" className="col-span-12 xl:col-span-12">
+              <InvestorOverview />
             </div>
           )}
 
