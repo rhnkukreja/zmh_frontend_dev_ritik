@@ -1,6 +1,7 @@
 import React from "react";
 import Lucide from "@/components/Base/Lucide";
 import clsx from "clsx";
+import Tippy from "@/components/Base/Tippy";
 
 interface AiFiltersSidebarProps {
   isAiFiltersLoading: boolean;
@@ -114,16 +115,18 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <span
-                        className={clsx(
-                          "text-sm font-medium line-clamp-1",
-                          isAiFilterSelected("investor", inv.id)
-                            ? "text-primary font-bold"
-                            : "text-slate-600 group-hover:text-slate-800"
-                        )}
-                      >
-                        {inv.name}
-                      </span>
+                      <Tippy content={inv.name}>
+                        <span
+                          className={clsx(
+                            "text-sm font-medium line-clamp-1",
+                            isAiFilterSelected("investor", inv.id)
+                              ? "text-primary font-bold"
+                              : "text-slate-600 group-hover:text-slate-800"
+                          )}
+                        >
+                          {inv.name}
+                        </span>
+                      </Tippy>
                     </div>
                     <span
                       className={clsx(
@@ -192,16 +195,18 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <span
-                          className={clsx(
-                            "text-sm font-medium line-clamp-1",
-                            isAiFilterSelected("theme", theme.name)
-                              ? "text-primary font-bold"
-                              : "text-slate-600 group-hover:text-slate-800"
-                          )}
-                        >
-                          {theme.name}
-                        </span>
+                        <Tippy content={theme.name}>
+                          <span
+                            className={clsx(
+                              "text-sm font-medium line-clamp-1",
+                              isAiFilterSelected("theme", theme.name)
+                                ? "text-primary font-bold"
+                                : "text-slate-600 group-hover:text-slate-800"
+                            )}
+                          >
+                            {theme.name}
+                          </span>
+                        </Tippy>
                       </div>
                       <span
                         className={clsx(
