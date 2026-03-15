@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { institutionStatsService } from '@/services/institutionStats';
 import LoadingIcon from '@/components/Base/LoadingIcon';
 import TomSelect from '@/components/Base/TomSelect';
-import { BarChart3, FileText, PieChart, Calendar, Building2 } from 'lucide-react';
+import { BarChart3, FileText, PieChart, Calendar, Building2, BookOpen } from 'lucide-react';
 import parse from 'html-react-parser';
 
 interface InvestorOption {
@@ -46,6 +47,7 @@ interface StatsData {
   year: number;
   data_coverage: string;
   total_votes: number;
+  is_case_studies: boolean;
   buckets: {
     election_of_directors: BucketData;
     executive_compensation: BucketData;
@@ -56,6 +58,7 @@ interface StatsData {
 type BucketKey = 'election_of_directors' | 'executive_compensation' | 'shareholder_proposals';
 
 const InvestorOverview: React.FC = () => {
+  const navigate = useNavigate();
   const [investors, setInvestors] = useState<InvestorOption[]>([]);
   const [selectedInvestor, setSelectedInvestor] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(2025);
@@ -179,6 +182,13 @@ const InvestorOverview: React.FC = () => {
     }).join('<br/><br/>');
   };
 
+  const handleCaseStudiesClick = () => {
+    if (stats?.institution_id) {
+      // Open Case Studies AI in new tab with institution_id filter
+      window.open(`/case-studies-ai?institution_id=${stats.institution_id}`, '_blank');
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -256,37 +266,50 @@ const InvestorOverview: React.FC = () => {
         {/* Sub-Tabs for Buckets */}
         {stats && !loading && (
           <div className="mb-5 border-b border-slate-200">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setSelectedBucket('election_of_directors')}
-                className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
-                  selectedBucket === 'election_of_directors'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-              >
-                Election of Directors
-              </button>
-              <button
-                onClick={() => setSelectedBucket('executive_compensation')}
-                className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
-                  selectedBucket === 'executive_compensation'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-              >
-                Executive Compensation
-              </button>
-              <button
-                onClick={() => setSelectedBucket('shareholder_proposals')}
-                className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
-                  selectedBucket === 'shareholder_proposals'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-              >
-                Shareholder Proposals
-              </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setSelectedBucket('election_of_directors')}
+                  className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
+                    selectedBucket === 'election_of_directors'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  }`}
+                >
+                  Election of Directors
+                </button>
+                <button
+                  onClick={() => setSelectedBucket('executive_compensation')}
+                  className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
+                    selectedBucket === 'executive_compensation'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  }`}
+                >
+                  Executive Compensation
+                </button>
+                <button
+                  onClick={() => setSelectedBucket('shareholder_proposals')}
+                  className={`px-6 py-3 text-[15px] font-semibold transition-all duration-200 border-b-2 ${
+                    selectedBucket === 'shareholder_proposals'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
+                  }`}
+                >
+                  Shareholder Proposals
+                </button>
+              </div>
+              
+              {/* Case Studies Button - Only show if is_case_studies is true */}
+              {stats.is_case_studies && (
+                <button
+                  onClick={handleCaseStudiesClick}
+                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center gap-2 text-[14px] font-semibold shadow-sm mr-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Case Studies
+                </button>
+              )}
             </div>
           </div>
         )}

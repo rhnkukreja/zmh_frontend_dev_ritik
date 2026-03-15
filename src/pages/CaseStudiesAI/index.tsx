@@ -113,6 +113,17 @@ function CaseStudiesAI() {
         (state) => state.authentiction
     );
 
+    // Handle institution_id from URL params (from Investor Insight)
+    useEffect(() => {
+        const institutionIdParam = searchParams.get('institution_id');
+        if (institutionIdParam) {
+            const institutionId = parseInt(institutionIdParam, 10);
+            if (!isNaN(institutionId) && !selectedAiInstitutionIds.includes(institutionId)) {
+                setSelectedAiInstitutionIds([institutionId]);
+            }
+        }
+    }, [searchParams]);
+
     const { instituteName: InstituteName } = useAppSelector(
         (state) => state.dashboard
     );
