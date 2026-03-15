@@ -18,6 +18,9 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import DraftReviewModal, { RegenerateTarget } from "./DraftReviewModal";
 
+import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
+
+
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
 type ProfileMode = "create" | "update" | null;
 
@@ -96,6 +99,8 @@ const InstitutionDocuments = () => {
   // 🌟 NEW: Array of regenerating sections to handle batches
   const [regeneratingSections, setRegeneratingSections] = useState<string[]>([]);
 
+  const [processingDocs, setProcessingDocs] = useState<{ document_name: string; institution_id: string }[]>([]);
+
   const [loadingText, setLoadingText] = useState("Processing...");
 
   const filteredDocuments = institutionDocuments?.filter((doc) => !doc.is_deleted) || [];
@@ -125,6 +130,37 @@ const InstitutionDocuments = () => {
       return () => clearInterval(interval);
     }
   }, [linkingInProgress.bulk, profileMode]);
+
+  useEffect(() => {
+    if (processingDocs.length === 0) return;
+
+    const interval = setInterval(async () => {
+      const resolved = await Promise.all(
+        processingDocs.map(async (doc) => {
+          try {
+            const res = await axios.get(`${AI_CHATBOT_API_BASE}/api/upload/status`, {
+              params: { document_name: doc.document_name, institution_id: doc.institution_id },
+              headers: { "ngrok-skip-browser-warning": "69420" },
+            });
+            return { doc, status: res.data.status };
+          } catch {
+            return { doc, status: "error" };
+          }
+        })
+      );
+
+      const stillProcessing = resolved
+        .filter(({ status }) => status === "queued" || status === "processing")
+        .map(({ doc }) => doc);
+
+      const justFinished = resolved.filter(({ status }) => status === "done");
+      if (justFinished.length > 0) dispatch(fetchInstitutionDocuments(Number(params.id)));
+
+      setProcessingDocs(stillProcessing);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [processingDocs]);
 
   const isCheckedForSection = (doc: InstitutionDocument, section: ProfileSection): boolean => {
     const op = pendingLinkOps.find(o => o.document_id === doc.id && o.section === section);
@@ -265,7 +301,7 @@ const InstitutionDocuments = () => {
       }
       
 
-      const response = await axios.post("https://ai-chatbot-zmh.onrender.com/api/compare-updates", 
+      const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/compare-updates`, 
         { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 120000 }
       );
 
@@ -335,7 +371,7 @@ const InstitutionDocuments = () => {
 
     try {
       const response = await axios.post(
-        "https://ai-chatbot-zmh.onrender.com/api/regenerate-updates", 
+        `${AI_CHATBOT_API_BASE}/api/regenerate-updates`, 
         regeneratePayload, 
         { 
           headers: { 
@@ -447,7 +483,7 @@ const InstitutionDocuments = () => {
                 {documentsToDisplay?.length > 0 ? documentsToDisplay.map((doc: InstitutionDocument) => (
                   <Table.Tr key={doc.id}>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs w-[40px]">{!showTrash && !doc.is_deleted && <FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={selectedRows.includes(doc.id)} onChange={() => setSelectedRows(p => p.includes(doc.id) ? p.filter(id => id !== doc.id) : [...p, doc.id])} /></FormCheck>}</Table.Td>
-                    <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs align-top"><div className="flex items-start"><FileText className="w-3.5 h-3.5 text-slate-400 mr-1.5 mt-0.5" /><button onClick={() => window.open(doc.link, "_blank")} className="font-medium text-blue-600 hover:underline text-left">{doc.name}</button></div></Table.Td>
+                    <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs align-top">{(() => { const isProcessing = processingDocs.some(p => p.document_name.toLowerCase() === doc.name?.toLowerCase()); return (<div className="flex items-start gap-1"><FileText className="w-3.5 h-3.5 text-slate-400 mr-1.5 mt-0.5" /><button onClick={() => window.open(doc.link, "_blank")} className={`font-medium text-left hover:underline ${isProcessing ? "text-slate-400 opacity-60" : "text-blue-600"}`}>{doc.name}</button>{isProcessing && <Loader2 className="w-3 h-3 text-slate-400 animate-spin mt-0.5 ml-1 shrink-0" />}</div>); })()}</Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.document_type || "-"}</Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.year || "-"}</Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs truncate">{doc.created_by_name || "-"}</Table.Td>
@@ -498,7 +534,7 @@ const InstitutionDocuments = () => {
         </div>
       )}
 
-      {addDocumentVisible && params.id && <AddDocumentModal visible={addDocumentVisible} setVisible={setAddDocumentVisible} institutionId={params.id} institutionName={singleInstitution?.institution} onSuccess={() => dispatch(fetchInstitutionDocuments(Number(params.id)))} />}
+      {addDocumentVisible && params.id && <AddDocumentModal visible={addDocumentVisible} setVisible={setAddDocumentVisible} institutionId={params.id} institutionName={singleInstitution?.institution} onSuccess={(_drafts, _profile, queuedDoc) => { dispatch(fetchInstitutionDocuments(Number(params.id))); if (queuedDoc) setProcessingDocs(prev => [...prev, queuedDoc]); }} />}
       {editDocumentVisible && selectedDocument && <EditDocumentModal visible={editDocumentVisible} setVisible={setEditDocumentVisible} document={selectedDocument} onSuccess={handleDocumentSuccess} />}
       
       {(pendingDrafts.length > 0 || isSyncingSummary) && (
