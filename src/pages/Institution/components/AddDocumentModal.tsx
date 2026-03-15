@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect";
 import axios from "axios";
 import { baseURL } from "@/constant";
+import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
 
 /**
  * Robust AddDocumentModal with:
@@ -30,7 +31,8 @@ interface AddDocumentModalProps {
   setVisible: (visible: boolean) => void;
   institutionId: string | number;
   institutionName?: string;
-  onSuccess?: () => void;
+  // Make onSuccess accept data
+  onSuccess?: (drafts?: any[], profileData?: any, queuedDoc?: { document_name: string; institution_id: string }) => void;
 }
 
 const categories = [
@@ -116,9 +118,13 @@ const AddDocumentModal = ({
     setLoading(true);
 
     try {
+      // ==========================================
+      // 1. MAIN UPLOAD (Must succeed to continue)
+      // ==========================================
       const formData = new FormData();
       formData.append("institution_id", String(institutionId));
       formData.append("year", data.year);
+      formData.append("month", data.month); // Added this so month saves properly
       formData.append("document_name", data.document_name);
       formData.append("document_type", data.category);
       formData.append("tags", data.tags);
@@ -126,16 +132,54 @@ const AddDocumentModal = ({
       formData.append("active", "true");
       formData.append("document", documentFile);
 
+      // If this fails, it jumps straight to the outer catch block
       await axios.post(`${baseURL}/institute_documents/`, formData, {
         headers: {
           Authorization: `JWT ${localStorage.getItem("token")}`,
         },
       });
 
+      // ==========================================
+      // 2. FASTAPI Call Start from here 
+      try {
+        const expectedUrl = `https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Investor_Documents/${encodeURIComponent(documentFile.name)}`;
+        
+        const jsonPayload = {
+          institution_id: String(institutionId),
+          document_name: data.document_name,
+          document_type: data.category,
+          year: data.year,
+          month: data.month,
+          tags: data.tags,
+          priority: data.priority,
+          file_url: expectedUrl,
+          file_name: documentFile.name
+        };
+
+        const aibackendkUrl = `${AI_CHATBOT_API_BASE}/api/upload`;
+        
+        await axios.post(aibackendkUrl, jsonPayload, {
+          headers: {
+            Authorization: `JWT ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "69420"
+          },
+        });
+        console.log("FastAPI payload sent successfully.");
+      } catch (fastApiError) {
+        // Silently catch the error, log it, and allow the code to continue
+        console.warn("FastAPI queue call failed, but main upload succeeded.", fastApiError);
+      }
+
+      // ==========================================
+      // 3. SUCCESS UI 
+      // ==========================================
       toast.success("Document uploaded successfully");
+      onSuccess?.(undefined, undefined, { document_name: data.document_name, institution_id: String(institutionId) });
       handleClose();
-      onSuccess?.();
+
     } catch (err: any) {
+      // This ONLY triggers if the Main Upload fails
       toast.error(err?.response?.data?.message || "Failed to upload document");
     } finally {
       setLoading(false);
