@@ -177,12 +177,12 @@ export const useAiCaseStudies = () => {
         }
     }, [aiFiltersData, fetchAiTopics]);
 
-    // Initial analysis call on mount - once topics are loaded
+    // Automatically trigger analysis when filters change
     useEffect(() => {
-        if (aiFiltersData && aiTopics.length > 0 && !aiResponse && !isAiLoading) {
+        if (aiFiltersData && !isAiLoading) {
             handleAiAnalysis();
         }
-    }, [aiFiltersData, aiTopics, aiResponse, isAiLoading]);
+    }, [aiFiltersData, selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
 
     return {
         // States

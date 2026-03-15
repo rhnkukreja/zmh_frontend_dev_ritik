@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
 import clsx from "clsx";
@@ -11,8 +11,6 @@ interface InvestorModalProps {
   selectedAiInstitutionIds: number[];
   setSelectedAiInstitutionIds: (ids: number[]) => void;
   aiFiltersData: any;
-  toggleAiFilter: (type: "investor", value: number) => void;
-  isAiFilterSelected: (type: "investor", value: number) => boolean;
 }
 
 const InvestorModal: React.FC<InvestorModalProps> = ({
@@ -23,10 +21,30 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
   selectedAiInstitutionIds,
   setSelectedAiInstitutionIds,
   aiFiltersData,
-  toggleAiFilter,
-  isAiFilterSelected,
 }) => {
+  const [tempSelectedIds, setTempSelectedIds] = useState<number[]>([]);
+
+  // Initialize local state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTempSelectedIds([...selectedAiInstitutionIds]);
+    }
+  }, [isOpen, selectedAiInstitutionIds]);
+
   if (!isOpen) return null;
+
+  const handleToggle = (id: number) => {
+    setTempSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleApply = () => {
+    setSelectedAiInstitutionIds(tempSelectedIds);
+    onClose();
+  };
+
+  const isSelected = (id: number) => tempSelectedIds.includes(id);
 
   return (
     <div
@@ -65,13 +83,13 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
         </div>
 
         {/* Selected count */}
-        {selectedAiInstitutionIds.length > 0 && (
+        {tempSelectedIds.length > 0 && (
           <div className="px-6 py-2 bg-primary/5 border-b flex items-center justify-between">
             <span className="text-xs font-semibold text-primary">
-              {selectedAiInstitutionIds.length} selected
+              {tempSelectedIds.length} selected
             </span>
             <button
-              onClick={() => setSelectedAiInstitutionIds([])}
+              onClick={() => setTempSelectedIds([])}
               className="text-xs text-slate-500 hover:text-primary"
             >
               Clear
@@ -88,10 +106,10 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
             .map((inv: any) => (
               <div
                 key={inv.id}
-                onClick={() => toggleAiFilter("investor", inv.id)}
+                onClick={() => handleToggle(inv.id)}
                 className={clsx(
                   "flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors border",
-                  isAiFilterSelected("investor", inv.id)
+                  isSelected(inv.id)
                     ? "bg-primary/10 border-primary/30"
                     : "hover:bg-slate-50 border-transparent"
                 )}
@@ -100,19 +118,19 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
                   <div
                     className={clsx(
                       "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
-                      isAiFilterSelected("investor", inv.id)
+                      isSelected(inv.id)
                         ? "bg-primary border-primary"
                         : "border-slate-300"
                     )}
                   >
-                    {isAiFilterSelected("investor", inv.id) && (
+                    {isSelected(inv.id) && (
                       <span className="text-white text-[10px] font-bold">✓</span>
                     )}
                   </div>
                   <span
                     className={clsx(
                       "text-sm font-medium",
-                      isAiFilterSelected("investor", inv.id)
+                      isSelected(inv.id)
                         ? "text-primary font-bold"
                         : "text-slate-700"
                     )}
@@ -123,7 +141,7 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
                 <span
                   className={clsx(
                     "text-xs font-mono px-2 py-0.5 rounded-full border",
-                    isAiFilterSelected("investor", inv.id)
+                    isSelected(inv.id)
                       ? "bg-white text-primary border-primary/20"
                       : "bg-slate-100 text-slate-500 border-transparent"
                   )}
@@ -146,7 +164,7 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
           <Button variant="secondary" onClick={onClose} className="px-6">
             Cancel
           </Button>
-          <Button variant="primary" onClick={onClose} className="px-6">
+          <Button variant="primary" onClick={handleApply} className="px-6">
             Apply
           </Button>
         </div>

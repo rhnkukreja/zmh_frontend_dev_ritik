@@ -1,7 +1,6 @@
 import React from "react";
 import Lucide from "@/components/Base/Lucide";
 import clsx from "clsx";
-import Tippy from "@/components/Base/Tippy";
 
 interface AiFiltersSidebarProps {
   isAiFiltersLoading: boolean;
@@ -115,7 +114,6 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <Tippy content={inv.name}>
                         <span
                           className={clsx(
                             "text-sm font-medium line-clamp-1",
@@ -126,7 +124,6 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                         >
                           {inv.name}
                         </span>
-                      </Tippy>
                     </div>
                     <span
                       className={clsx(
@@ -195,7 +192,6 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                       )}
                     >
                       <div className="flex items-center gap-3">
-                        <Tippy content={theme.name}>
                           <span
                             className={clsx(
                               "text-sm font-medium line-clamp-1",
@@ -206,7 +202,6 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                           >
                             {theme.name}
                           </span>
-                        </Tippy>
                       </div>
                       <span
                         className={clsx(
