@@ -18,6 +18,9 @@ interface AiFiltersSidebarProps {
   setIsAllThemesSelected: React.Dispatch<React.SetStateAction<boolean>>;
   isAllYearsSelected: boolean;
   setIsAllYearsSelected: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedAiInstitutionIds: number[];
+  selectedAiThemes: string[];
+  selectedAiYears: number[];
 }
 
 const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
@@ -28,6 +31,9 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
   toggleAiFilter,
   isAiFilterSelected,
   setInvestorSearch,
+  selectedAiInstitutionIds,
+  selectedAiThemes,
+  selectedAiYears,
   setIsInvestorModalOpen,
   isAllThemesSelected,
   setIsAllThemesSelected,
@@ -36,9 +42,25 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
 }) => {
   return (
     <div className="col-span-12 md:col-span-4 xl:col-span-3 mb-6 md:mb-0">
+      <style>{`
+        .ai-filters-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .ai-filters-scroll::-webkit-scrollbar-track {
+          background: transparent;
+          border-radius: 10px;
+        }
+        .ai-filters-scroll::-webkit-scrollbar-thumb {
+          background: #e2e8f0;
+          border-radius: 10px;
+        }
+        .ai-filters-scroll::-webkit-scrollbar-thumb:hover {
+          background: #cbd5e1;
+        }
+      `}</style>
       <div
-        className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 sticky"
-        style={{ top: "6.5rem" }}
+        className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 sticky overflow-y-auto ai-filters-scroll"
+        style={{ top: "6.5rem", maxHeight: "calc(100vh - 8rem)" }}
       >
         <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
           <Lucide icon="Filter" className="w-5 h-5 text-primary" />
@@ -73,16 +95,16 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                   onClick={() => setIsAllInvestorsSelected((prev) => !prev)}
                   className={clsx(
                     "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
-                    isAllInvestorsSelected
+                    selectedAiInstitutionIds.length === 0
                       ? "bg-primary/10 border-primary/30"
-                      : "bg-slate-50 border-slate-200 hover:bg-primary/5"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <span
                       className={clsx(
                         "text-sm font-semibold",
-                        isAllInvestorsSelected ? "text-primary" : "text-slate-500"
+                        selectedAiInstitutionIds.length === 0 ? "text-primary" : "text-slate-600"
                       )}
                     >
                       {aiFiltersData?.investors?.all_investors?.label ||
@@ -92,7 +114,7 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                   <span
                     className={clsx(
                       "text-xs font-mono px-2 py-0.5 rounded-full border",
-                      isAllInvestorsSelected
+                      selectedAiInstitutionIds.length === 0
                         ? "bg-white text-primary border-primary/20"
                         : "bg-slate-100 text-slate-500 border-transparent"
                     )}
@@ -151,16 +173,16 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                   onClick={() => setIsAllThemesSelected((prev) => !prev)}
                   className={clsx(
                     "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
-                    isAllThemesSelected
+                    selectedAiThemes.length === 0
                       ? "bg-primary/10 border-primary/30"
-                      : "bg-slate-50 border-slate-200 hover:bg-primary/5"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <span
                       className={clsx(
                         "text-sm font-semibold",
-                        isAllThemesSelected ? "text-primary" : "text-slate-500"
+                        selectedAiThemes.length === 0 ? "text-primary" : "text-slate-600"
                       )}
                     >
                       {aiFiltersData?.themes?.all_themes?.label || "All Themes"}
@@ -169,7 +191,7 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                   <span
                     className={clsx(
                       "text-xs font-mono px-2 py-0.5 rounded-full border",
-                      isAllThemesSelected
+                      selectedAiThemes.length === 0
                         ? "bg-white text-primary border-primary/20"
                         : "bg-slate-100 text-slate-500 border-transparent"
                     )}
@@ -230,16 +252,16 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                   onClick={() => setIsAllYearsSelected((prev) => !prev)}
                   className={clsx(
                     "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
-                    isAllYearsSelected
+                    selectedAiYears.length === 0
                       ? "bg-primary/10 border-primary/30"
-                      : "bg-slate-50 border-slate-200 hover:bg-primary/5"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <span
                       className={clsx(
                         "text-sm font-semibold",
-                        isAllYearsSelected ? "text-primary" : "text-slate-500"
+                        selectedAiYears.length === 0 ? "text-primary" : "text-slate-600"
                       )}
                     >
                       {aiFiltersData?.years?.all_years?.label || "All Years"}
@@ -248,7 +270,7 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                   <span
                     className={clsx(
                       "text-xs font-mono px-2 py-0.5 rounded-full border",
-                      isAllYearsSelected
+                      selectedAiYears.length === 0
                         ? "bg-white text-primary border-primary/20"
                         : "bg-slate-100 text-slate-500 border-transparent"
                     )}

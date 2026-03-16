@@ -83,6 +83,7 @@ const initialState: any = {
       icon: "FileSearch",
       pathname: "/case-studies-ai",
       title: "Case Studies AI",
+      isAdmin: true,
     },
     // {
     //   icon: "MessageCircle",

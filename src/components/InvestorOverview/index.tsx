@@ -68,6 +68,9 @@ const InvestorOverview: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showReasonsModal, setShowReasonsModal] = useState(false);
   const [modalReasons, setModalReasons] = useState<Array<ReasonItem>>([]);
+  
+  // Get user type from localStorage for Admin check
+  const userType = localStorage.getItem('userType');
 
   // Load investor dropdown on mount
   useEffect(() => {
@@ -300,8 +303,8 @@ const InvestorOverview: React.FC = () => {
                 </button>
               </div>
               
-              {/* Case Studies Button - Only show if is_case_studies is true */}
-              {stats.is_case_studies && (
+              {/* Case Studies Button - Only show if is_case_studies is true AND user is Admin */}
+              {stats.is_case_studies && userType === 'Admin' && (
                 <button
                   onClick={handleCaseStudiesClick}
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center gap-2 text-[14px] font-semibold shadow-sm mr-2"

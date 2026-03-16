@@ -313,6 +313,9 @@ function CaseStudiesAI() {
                                     setIsAllThemesSelected={setIsAllThemesSelected}
                                     isAllYearsSelected={isAllYearsSelected}
                                     setIsAllYearsSelected={setIsAllYearsSelected}
+                                    selectedAiInstitutionIds={selectedAiInstitutionIds}
+                                    selectedAiThemes={selectedAiThemes}
+                                    selectedAiYears={selectedAiYears}
                                 />
 
                                 {/* MAIN CONTENT: Analyzer + Case Studies */}
