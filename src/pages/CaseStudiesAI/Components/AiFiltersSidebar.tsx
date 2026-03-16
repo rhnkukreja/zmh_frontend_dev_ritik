@@ -43,19 +43,22 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
   return (
     <div className="col-span-12 md:col-span-4 xl:col-span-3 mb-6 md:mb-0">
       <style>{`
+        .ai-filters-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(226, 232, 240, 0.3) transparent;
+        }
         .ai-filters-scroll::-webkit-scrollbar {
-          width: 6px;
+          width: 4px;
         }
         .ai-filters-scroll::-webkit-scrollbar-track {
           background: transparent;
-          border-radius: 10px;
         }
         .ai-filters-scroll::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 10px;
+          background: rgba(226, 232, 240, 0.4);
+          border-radius: 4px;
         }
         .ai-filters-scroll::-webkit-scrollbar-thumb:hover {
-          background: #cbd5e1;
+          background: rgba(203, 213, 225, 0.6);
         }
       `}</style>
       <div
