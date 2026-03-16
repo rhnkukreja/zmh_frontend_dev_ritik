@@ -2379,7 +2379,7 @@ function ShareHolderProposal() {
                                 >
                                   <StandardizedTable.Cell>
                                     <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                      {noAction?.proxy_season ?? noAction?.year}
+                                      {noAction?.proxy_season}
                                     </span>
                                   </StandardizedTable.Cell>
                                   {isAllCompanySelected && (
@@ -2689,7 +2689,7 @@ function ShareHolderProposal() {
                               >
                                 <StandardizedTable.Cell>
                                   <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                    {tab === "no-action" ? noAction.proxy_season : noAction?.year}
+                                    {noAction?.proxy_season || '-'}
                                   </span>
                                 </StandardizedTable.Cell>
                                 {isAllCompanySelected && (
