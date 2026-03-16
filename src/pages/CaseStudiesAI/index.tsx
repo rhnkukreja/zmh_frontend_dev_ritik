@@ -113,13 +113,22 @@ function CaseStudiesAI() {
         (state) => state.authentiction
     );
 
-    // Handle institution_id from URL params (from Investor Insight)
+    // Handle institution_id and year from URL params (from Investor Insight)
     useEffect(() => {
         const institutionIdParam = searchParams.get('institution_id');
+        const yearParam = searchParams.get('year');
+        
         if (institutionIdParam) {
             const institutionId = parseInt(institutionIdParam, 10);
             if (!isNaN(institutionId) && !selectedAiInstitutionIds.includes(institutionId)) {
                 setSelectedAiInstitutionIds([institutionId]);
+            }
+        }
+        
+        if (yearParam) {
+            const year = parseInt(yearParam, 10);
+            if (!isNaN(year) && !selectedAiYears.includes(year)) {
+                setSelectedAiYears([year]);
             }
         }
     }, [searchParams]);
