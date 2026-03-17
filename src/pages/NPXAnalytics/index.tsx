@@ -203,7 +203,12 @@ export default function NPXAnalyticsPage() {
       <div className="p-5 mt-1 box">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-lg font-bold">NPX Analytics</h1>
+            <h1 className="text-lg font-bold flex items-center gap-2">
+              NPX Analytics
+              <span className="px-2 py-1 text-xs font-bold bg-red-800 text-white rounded-full">
+                BETA
+              </span>
+            </h1>
             <p className="italic">
               Meeting Date: {meetingDate || "-"}
             </p>
