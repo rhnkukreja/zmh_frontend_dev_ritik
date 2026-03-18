@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CheckCircle2, XCircle, Sparkles, Loader2, Edit3, Save, X, RefreshCw, ListPlus, Trash } from "lucide-react";
-
+import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
+import axios from "axios";
 export interface Draft {
   section: string;
   status: "draft_ready" | "no_change";
@@ -28,6 +29,9 @@ interface DraftReviewModalProps {
   isSyncingSummary: boolean;
   onRegenerate?: (targets: RegenerateTarget[]) => Promise<boolean>;
   regeneratingSections?: string[];
+  documentLinks?: Record<string, string>;
+  pendingOperations?: any[];
+  profileMode?: "create" | "update" | null; // 🌟 NEW: Added to pass to Backend
 }
 
 const DraftReviewModal: React.FC<DraftReviewModalProps> = ({
@@ -40,6 +44,9 @@ const DraftReviewModal: React.FC<DraftReviewModalProps> = ({
   isSyncingSummary,
   onRegenerate,
   regeneratingSections = [],
+  documentLinks,
+  pendingOperations,
+  profileMode = "update",
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localDrafts, setLocalDrafts] = useState<Draft[]>([]);
@@ -64,6 +71,39 @@ const DraftReviewModal: React.FC<DraftReviewModalProps> = ({
   const handleCancelEdits = () => {
     setLocalDrafts(drafts);
     setIsEditing(false);
+  };
+
+  const sendDraftsToBackend = async (draftsToSend: Draft[]) => {
+    try {
+      const payload = {
+        investor_id: profile?.investor_id,
+        investor_name: investorName,
+        drafts: draftsToSend.filter(d => d.status === "draft_ready" && d.proposed_content),
+        document_links: documentLinks,
+        operations: pendingOperations, // 🌟 NEW: Send checkmarks to FastAPI
+        mode: profileMode // 🌟 NEW: Tell backend whether to Wipe (Create) or Merge (Update)
+      };
+
+      const response = await axios.post(`${AI_CHATBOT_API_BASE}/add-to-db`, payload, {
+      // Included the ngrok header from your example just in case you are tunneling
+        headers: { "ngrok-skip-browser-warning": "69420" } 
+      });
+
+      console.log("Drafts sent successfully:", response.data);
+      
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+      // Axios specific error handling gives you access to the response status and data
+      console.error(
+        "Failed to send drafts:", 
+        err.response?.status, 
+        err.response?.statusText,
+        err.response?.data || err.message
+      );
+      } else {
+        console.error("Unexpected error sending drafts to backend:", err);
+      }
+    }
   };
 
   const handleBatchRegenerate = async () => {
@@ -303,7 +343,7 @@ const DraftReviewModal: React.FC<DraftReviewModalProps> = ({
                   Regenerate Queued Group ({queuedCount})
                 </button>
               )}
-              <button onClick={() => onApproveAll(localDrafts)} className="flex items-center gap-2 px-8 py-3 bg-[#901639] text-white rounded-lg hover:bg-[#7a1230] font-bold text-sm transition-colors shadow-md transform active:scale-95"><CheckCircle2 size={18} /> Approve & Continue</button>
+              <button onClick={async () => { await sendDraftsToBackend(localDrafts); onApproveAll(localDrafts); }} className="flex items-center gap-2 px-8 py-3 bg-[#901639] text-white rounded-lg hover:bg-[#7a1230] font-bold text-sm transition-colors shadow-md transform active:scale-95"><CheckCircle2 size={18} /> Approve & Continue</button>
             </div>
           </div>
         </div>

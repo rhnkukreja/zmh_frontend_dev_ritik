@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchInstitutionDocuments, getSingleInstitution } from "@/stores/institutionSlice";
-import { fetchSingleInvestersProfile } from "@/stores/investersProfileSlice";
 import { AppDispatch } from "@/stores/store";
 import Button from "@/components/Base/Button";
 import { ChevronLeft, FileText, Plus, PenLine, Trash2, RotateCcw, Loader2 } from "lucide-react";
@@ -54,7 +53,7 @@ const InstitutionDocuments = () => {
   const [showTrash, setShowTrash] = useState(false);
   const [trashedDocuments, setTrashedDocuments] = useState<InstitutionDocument[]>([]);
 
-  const { singleInvesterProfile } = useAppSelector((state) => state.investersProfile);
+  // Documents fetched from Redux
   const { singleInstitution, institutionDocuments, documentsLoading, documentsCount, loading } = useAppSelector((state) => state.institutions);
   const { user } = useAppSelector((state) => state.authentiction);
   const isAnalystOrAdmin = user?.user_type === "Analyst" || user?.user_type === "Admin";
@@ -66,22 +65,9 @@ const InstitutionDocuments = () => {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
-  const [profileMode, setProfileMode] = useState<ProfileMode>(() => {
-    try { const saved = sessionStorage.getItem(`profileMode-${params.id}`); return saved ? JSON.parse(saved) : null; } catch { return null; }
-  });
-  const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>(() => {
-    try { const saved = sessionStorage.getItem(`pendingLinkOps-${params.id}`); return saved ? JSON.parse(saved) : []; } catch { return []; }
-  });
-
-  useEffect(() => {
-    if (profileMode !== null) sessionStorage.setItem(`profileMode-${params.id}`, JSON.stringify(profileMode));
-    else sessionStorage.removeItem(`profileMode-${params.id}`);
-  }, [profileMode, params.id]);
-
-  useEffect(() => {
-    if (pendingLinkOps.length > 0) sessionStorage.setItem(`pendingLinkOps-${params.id}`, JSON.stringify(pendingLinkOps));
-    else sessionStorage.removeItem(`pendingLinkOps-${params.id}`);
-  }, [pendingLinkOps, params.id]);
+  // NO MORE LOCAL STORAGE. Checklists start empty every load.
+  const [profileMode, setProfileMode] = useState<ProfileMode>(null);
+  const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>([]);
 
   const [pendingModeSwitch, setPendingModeSwitch] = useState<ProfileMode>(null);
   const [confirmModal, setConfirmModal] = useState<{ open: boolean; type: string; document?: InstitutionDocument; ids?: number[] }>({ open: false, type: '' });
@@ -95,6 +81,8 @@ const InstitutionDocuments = () => {
   
   const [lastDocsToSubmit, setLastDocsToSubmit] = useState<any[]>([]);
   const [lastApiPayload, setLastApiPayload] = useState<any>(null);
+  const [lastDocumentLinks, setLastDocumentLinks] = useState<Record<string, string>>({});
+  const [lastOperations, setLastOperations] = useState<any[]>([]);
   
   // 🌟 NEW: Array of regenerating sections to handle batches
   const [regeneratingSections, setRegeneratingSections] = useState<string[]>([]);
@@ -103,8 +91,26 @@ const InstitutionDocuments = () => {
 
   const [loadingText, setLoadingText] = useState("Processing...");
 
+  // Local State for the new FastAPI Profile call
+  const [fastApiProfile, setFastApiProfile] = useState<any>(null);
+
   const filteredDocuments = institutionDocuments?.filter((doc) => !doc.is_deleted) || [];
   const documentsToDisplay = showTrash ? trashedDocuments : institutionDocuments;
+
+  // FastAPI call to replace the 404 Django call
+  const fetchProfileData = async () => {
+    if (!params.id) return;
+    try {
+      const res = await axios.get(`${AI_CHATBOT_API_BASE}/investor-profile/${params.id}`, {
+        headers: { "ngrok-skip-browser-warning": "69420" }
+      });
+      if (res.data.status === "success" && res.data.sections) {
+        setFastApiProfile(res.data.sections);
+      }
+    } catch (e) {
+      console.error("Failed to load profile via FastAPI", e);
+    }
+  };
 
   useEffect(() => {
     if (showTrash && params.id) {
@@ -115,8 +121,8 @@ const InstitutionDocuments = () => {
   useEffect(() => {
     if (params.id) {
       dispatch(getSingleInstitution(Number(params.id)));
-      dispatch(fetchInstitutionDocuments(Number(params.id)));
-      dispatch(fetchSingleInvestersProfile({ id: Number(params.id), type: "create" }));
+      dispatch(fetchInstitutionDocuments(Number(params.id))); 
+      fetchProfileData(); 
     }
   }, [params.id, dispatch]);
 
@@ -162,13 +168,29 @@ const InstitutionDocuments = () => {
     return () => clearInterval(interval);
   }, [processingDocs]);
 
+  // 🌟 SAFELY check if a URL is in the DB, applying decodeURI to prevent mismatch bugs
   const isCheckedForSection = (doc: InstitutionDocument, section: ProfileSection): boolean => {
+    // 1. Check for unsaved changes pending in the UI
     const op = pendingLinkOps.find(o => o.document_id === doc.id && o.section === section);
-    return op ? op.action === "link" : Boolean(doc[sectionToField[section]]);
+    if (op) return op.action === "link";
+    
+    // 2. Check if the URL is saved securely in the database profile links!
+    if (fastApiProfile && doc.link) {
+       const linkField = section === "reporting_expectation" ? "reporting_expectation_link" : `${section}_link`;
+       const savedLinks = fastApiProfile[linkField] || "";
+       return decodeURIComponent(savedLinks).includes(decodeURIComponent(doc.link));
+    }
+    
+    // Fallback to original logic if no FastAPI profile exists yet
+    return Boolean(doc[sectionToField[section]]);
   };
 
   const isRedCheckbox = (doc: InstitutionDocument, section: ProfileSection): boolean => {
     return Boolean(profileMode && pendingLinkOps.find(o => o.document_id === doc.id && o.section === section && o.action === "link"));
+  };
+
+  const isGreenCheckbox = (doc: InstitutionDocument, section: ProfileSection): boolean => {
+    return Boolean(profileMode && pendingLinkOps.find(o => o.document_id === doc.id && o.section === section && o.action === "unlink"));
   };
 
   const handleDocumentSuccess = (drafts?: any[], profile?: any, fullDb?: any) => {
@@ -223,15 +245,14 @@ const InstitutionDocuments = () => {
       name: doc.name, year: doc.year, sections: SECTIONS.filter(section => isCheckedForSection(doc, section)).map(s => s.replace(/_/g, " "))
     }));
 
-    sessionStorage.removeItem(`profileMode-${params.id}`);
-    sessionStorage.removeItem(`pendingLinkOps-${params.id}`);
     setProfileMode(null);
     setPendingLinkOps([]);
 
     setTimeout(() => {
       setIsSyncingSummary(false);
       toast.success("Investor Profile updated successfully!");
-      navigate(`/final-summary/${params.id}`, { state: { profile: updatedProfile, oldProfile: fullDbProfileState || currentProfile, investorName: singleInstitution?.institution, usedDocuments, profileMode }});
+      if (params.id) dispatch(fetchInstitutionDocuments(Number(params.id)));
+      navigate(`/investor-profile`, { state: { profile: updatedProfile, oldProfile: fullDbProfileState || currentProfile, investorName: singleInstitution?.institution, usedDocuments, profileMode }});
     }, 3500);
   };
 
@@ -259,18 +280,32 @@ const InstitutionDocuments = () => {
     if (!params.id) return;
     setLinkingInProgress({ bulk: true });
 
-    let docsToSubmit = profileMode === 'create'
-      ? filteredDocuments.filter(doc => SECTIONS.some(s => isCheckedForSection(doc, s)))
-      : filteredDocuments.filter(doc => new Set(pendingLinkOps.filter(op => op.action === "link").map(op => op.document_id)).has(doc.id));
+    const targetSections = profileMode === 'create'
+      ? new Set(SECTIONS)
+      : new Set(pendingLinkOps.map(op => op.section));
+
+    const docsToSubmit = filteredDocuments.filter(doc =>
+      Array.from(targetSections).some(s => isCheckedForSection(doc, s as ProfileSection))
+    );
     setLastDocsToSubmit(docsToSubmit);
 
     const requestedBackendSections = new Set<string>();
+    const docLinksAcc: Record<string, string[]> = {
+      summary_link: [], engagement_priorities_link: [], reporting_expectation_link: [], esg_integration_link: [], voting_guidelines_link: []
+    };
+
     const payload = docsToSubmit.map((doc) => {
-      const activeSections = profileMode === 'update' 
-        ? new Set(pendingLinkOps.filter(op => op.document_id === doc.id && op.action === "link").map(op => op.section))
-        : new Set(SECTIONS.filter(s => isCheckedForSection(doc, s)));
+      const activeSections = new Set(SECTIONS.filter(s => isCheckedForSection(doc, s) && targetSections.has(s)));
       
-      activeSections.forEach(s => requestedBackendSections.add(s === "reporting_expectation" ? "reporting_expectations" : s === "esg_integration" ? "esg_integration_process" : s));
+      activeSections.forEach(s => {
+        const backendKey = s === "reporting_expectation" ? "reporting_expectations" : s === "esg_integration" ? "esg_integration_process" : s;
+        requestedBackendSections.add(backendKey);
+        
+        if (doc.link) {
+           const linkKey = s === "reporting_expectation" ? "reporting_expectation_link" : `${s}_link`;
+           if (docLinksAcc[linkKey]) docLinksAcc[linkKey].push(doc.link);
+        }
+      });
       
       return {
         name: doc.name ?? "", year: doc.year ? String(doc.year) : null, priority: doc.priority ?? "Low",
@@ -279,6 +314,12 @@ const InstitutionDocuments = () => {
     });
 
     setLastApiPayload(payload);
+
+    const finalLinks: Record<string, string> = {};
+    Object.entries(docLinksAcc).forEach(([k, urls]) => {
+       if (urls.length > 0) finalLinks[k] = urls.join(", ");
+    });
+    setLastDocumentLinks(finalLinks);
 
     const operations: any[] = [];
     if (profileMode === 'update') {
@@ -294,13 +335,9 @@ const InstitutionDocuments = () => {
       docsToSubmit.forEach(doc => { SECTIONS.forEach(sec => { if (isCheckedForSection(doc, sec)) { if (!grouped[doc.id]) grouped[doc.id] = { sections: [], action: "link" }; grouped[doc.id].sections.push(sec); }}); });
       operations.push(...Object.entries(grouped).map(([id, data]) => ({ document_id: Number(id), ...data })));
     }
+    setLastOperations(operations);
 
     try {
-      if (operations.length > 0) {
-        try { await institutionService.bulkLinkDocumentsToProfile(Number(params.id), operations); } catch (e) { console.error("Local API failed", e); }
-      }
-      
-
       const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/compare-updates`, 
         { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 120000 }
       );
@@ -413,9 +450,17 @@ const InstitutionDocuments = () => {
     }
   };
 
-  const fullDbProfile = singleInvesterProfile ? { investor_id: String(params.id), sections: {
-    summary: stripHtml(singleInvesterProfile.summary || ""), engagement_priorities: stripHtml(singleInvesterProfile.engagement_priorities || ""), reporting_expectations: stripHtml(singleInvesterProfile.reporting_expectations || singleInvesterProfile.reporting_expectation || ""), esg_integration_process: stripHtml(singleInvesterProfile.esg_integration_process || singleInvesterProfile.esg_integration || ""), voting_guidelines: stripHtml(singleInvesterProfile.voting_guidelines || ""),
-  }} : null; 
+  // FAST-API PROFILE MAPPING
+  const fullDbProfile = fastApiProfile ? { 
+    investor_id: String(params.id), 
+    sections: {
+      summary: stripHtml(fastApiProfile.summary || ""), 
+      engagement_priorities: stripHtml(fastApiProfile.engagement_priorities || ""), 
+      reporting_expectations: stripHtml(fastApiProfile.reporting_expectations || ""), 
+      esg_integration_process: stripHtml(fastApiProfile.esg_integration_process || ""), 
+      voting_guidelines: stripHtml(fastApiProfile.voting_guidelines || ""),
+    }
+  } : null; 
 
   return (
     <>
@@ -458,7 +503,8 @@ const InstitutionDocuments = () => {
             <div className="mb-4 flex flex-wrap items-center gap-5 bg-slate-50 border border-slate-200 rounded-md px-4 py-2.5 text-xs text-slate-600">
               <span className="font-semibold text-slate-700">Legend:</span>
               <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-[3px] ring-2 ring-red-500 ring-offset-1" /><span>Red ring = Newly selected</span></span>
-              <span className="text-slate-400 italic">{profileMode === 'create' ? "All checked documents sent to backend." : "Only red documents sent to backend."}</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-[3px] ring-2 ring-green-500 ring-offset-1" /><span>Green ring = Unchecked</span></span>
+              <span className="text-slate-400 italic ml-auto">{profileMode === 'create' ? "All checked documents sent to backend." : "Only red/green changes sent to backend."}</span>
             </div>
           )}
           
@@ -487,8 +533,8 @@ const InstitutionDocuments = () => {
                     <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.document_type || "-"}</Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.year || "-"}</Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs truncate">{doc.created_by_name || "-"}</Table.Td>
-                    <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.date_created ? new Date(doc.date_created).toLocaleDateString() : "-"}</Table.Td>
-                    {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 bg-white border-slate-200/80 text-center"><div className={`flex justify-center ${isRedCheckbox(doc, c.key) ? "rounded ring-2 ring-red-500 ring-offset-1" : ""}`}><FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={isCheckedForSection(doc, c.key)} disabled={linkingInProgress[`${doc.id}-${c.key}`] || !isAnalystOrAdmin || !profileMode} onChange={() => handleLinkToProfile(doc, c.key, Boolean(doc[sectionToField[c.key]]))} /></FormCheck></div></Table.Td>)}
+                    <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.date_created ? new Date(doc.date_created).toLocaleDateString() : "-"}</Table.Td> 
+                    {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 bg-white border-slate-200/80 text-center"><div className={`flex justify-center ${isRedCheckbox(doc, c.key) ? "rounded ring-2 ring-red-500 ring-offset-1" : isGreenCheckbox(doc, c.key) ? "rounded ring-2 ring-green-500 ring-offset-1" : ""}`}><FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={isCheckedForSection(doc, c.key)} disabled={linkingInProgress[`${doc.id}-${c.key}`] || !isAnalystOrAdmin || !profileMode || (profileMode === 'update' && isCheckedForSection(doc, c.key) && !isRedCheckbox(doc, c.key))} onChange={() => handleLinkToProfile(doc, c.key, isCheckedForSection(doc, c.key))} /></FormCheck></div></Table.Td>)}
                     <Table.Td className="py-1.5 bg-white border-slate-200/80"><span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800`}>{doc.priority || "-"}</span></Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80">
                       <div className="flex gap-2">
@@ -548,6 +594,9 @@ const InstitutionDocuments = () => {
           isSyncingSummary={isSyncingSummary} 
           onRegenerate={handleRegenerateTargets}
           regeneratingSections={regeneratingSections}
+          documentLinks={lastDocumentLinks} 
+          pendingOperations={lastOperations} 
+          profileMode={profileMode} 
         />
       )}
     </>
