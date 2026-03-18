@@ -311,7 +311,7 @@ function Main() {
   const backToPreviousPage = () => {
     if (from) {
       // navigate(`/?ticker=${companyGlobalSearchTicker}`);
-      navigate(`/`);
+      navigate(`/`, { state: { activeTab: 'ownership' } });
     } else {
       dispatch(setPage(currentPage));
       navigate(`/investor-profile`);
