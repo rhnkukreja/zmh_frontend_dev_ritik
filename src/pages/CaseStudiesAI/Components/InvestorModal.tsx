@@ -34,8 +34,9 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
   if (!isOpen) return null;
 
   const handleToggle = (id: number) => {
+    // Single selection only - replace instead of toggle
     setTempSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? [] : [id]
     );
   };
 
@@ -82,11 +83,11 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
           />
         </div>
 
-        {/* Selected count */}
+        {/* Selected investor name */}
         {tempSelectedIds.length > 0 && (
           <div className="px-6 py-2 bg-primary/5 border-b flex items-center justify-between">
             <span className="text-xs font-semibold text-primary">
-              {tempSelectedIds.length} selected
+              {aiFiltersData?.investors?.all?.find((inv: any) => inv.id === tempSelectedIds[0])?.name || 'Selected'}
             </span>
             <button
               onClick={() => setTempSelectedIds([])}
@@ -117,14 +118,14 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
                 <div className="flex items-center gap-3">
                   <div
                     className={clsx(
-                      "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+                      "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
                       isSelected(inv.id)
                         ? "bg-primary border-primary"
                         : "border-slate-300"
                     )}
                   >
                     {isSelected(inv.id) && (
-                      <span className="text-white text-[10px] font-bold">✓</span>
+                      <div className="w-2 h-2 rounded-full bg-white" />
                     )}
                   </div>
                   <span

@@ -1,5 +1,6 @@
 import React from "react";
 import Lucide from "@/components/Base/Lucide";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 import Button from "@/components/Base/Button";
 import clsx from "clsx";
 
@@ -63,7 +64,11 @@ const AiAnalyzerSection: React.FC<AiAnalyzerSectionProps> = ({
           <h4 className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
             Topics in this dataset
             {isAiTopicsLoading && (
-              <div className="w-3 h-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <LoadingIcon
+                color="#800000"
+                icon="oval"
+                className="w-3 h-3"
+              />
             )}
           </h4>
 
@@ -114,8 +119,12 @@ const AiAnalyzerSection: React.FC<AiAnalyzerSectionProps> = ({
 
       {/* AI Loading State */}
       {isAiLoading && (
-        <div className="mt-4 p-6 bg-white border border-slate-200 rounded-2xl flex items-center gap-4 animate-pulse shadow-sm">
-          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <div className="mt-4 p-6 bg-white border border-slate-200 rounded-2xl flex items-center gap-4 shadow-sm">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-10 h-10"
+          />
           <div className="text-lg font-medium text-slate-600">
             Analyzing case studies for investor stance on{" "}
             <span className="text-primary">"{aiSearchTerm}"</span>...

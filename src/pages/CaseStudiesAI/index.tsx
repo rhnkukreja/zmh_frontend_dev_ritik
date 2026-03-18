@@ -89,6 +89,9 @@ function CaseStudiesAI() {
         setInvestorSearch,
         toggleAiFilter,
         isAiFilterSelected,
+        toggleAllInvestors,
+        toggleAllThemes,
+        toggleAllYears,
         handleAiAnalysis,
         handleAiPageChange,
         handleAiNextPage,
@@ -313,15 +316,15 @@ function CaseStudiesAI() {
                                     isAiFiltersLoading={isAiFiltersLoading}
                                     aiFiltersData={aiFiltersData}
                                     isAllInvestorsSelected={isAllInvestorsSelected}
-                                    setIsAllInvestorsSelected={setIsAllInvestorsSelected}
                                     toggleAiFilter={toggleAiFilter}
                                     isAiFilterSelected={isAiFilterSelected}
+                                    toggleAllInvestors={toggleAllInvestors}
+                                    toggleAllThemes={toggleAllThemes}
+                                    toggleAllYears={toggleAllYears}
                                     setInvestorSearch={setInvestorSearch}
                                     setIsInvestorModalOpen={setIsInvestorModalOpen}
                                     isAllThemesSelected={isAllThemesSelected}
-                                    setIsAllThemesSelected={setIsAllThemesSelected}
                                     isAllYearsSelected={isAllYearsSelected}
-                                    setIsAllYearsSelected={setIsAllYearsSelected}
                                     selectedAiInstitutionIds={selectedAiInstitutionIds}
                                     selectedAiThemes={selectedAiThemes}
                                     selectedAiYears={selectedAiYears}

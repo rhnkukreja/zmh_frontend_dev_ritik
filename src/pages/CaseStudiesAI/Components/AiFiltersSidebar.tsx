@@ -1,23 +1,24 @@
 import React from "react";
 import Lucide from "@/components/Base/Lucide";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 import clsx from "clsx";
 
 interface AiFiltersSidebarProps {
   isAiFiltersLoading: boolean;
   aiFiltersData: any;
   isAllInvestorsSelected: boolean;
-  setIsAllInvestorsSelected: React.Dispatch<React.SetStateAction<boolean>>;
   toggleAiFilter: (type: "investor" | "theme" | "year", value: any) => void;
   isAiFilterSelected: (
     type: "investor" | "theme" | "year",
     value: any
   ) => boolean;
+  toggleAllInvestors: () => void;
+  toggleAllThemes: () => void;
+  toggleAllYears: () => void;
   setInvestorSearch: (val: string) => void;
   setIsInvestorModalOpen: (val: boolean) => void;
   isAllThemesSelected: boolean;
-  setIsAllThemesSelected: React.Dispatch<React.SetStateAction<boolean>>;
   isAllYearsSelected: boolean;
-  setIsAllYearsSelected: React.Dispatch<React.SetStateAction<boolean>>;
   selectedAiInstitutionIds: number[];
   selectedAiThemes: string[];
   selectedAiYears: number[];
@@ -27,18 +28,18 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
   isAiFiltersLoading,
   aiFiltersData,
   isAllInvestorsSelected,
-  setIsAllInvestorsSelected,
   toggleAiFilter,
   isAiFilterSelected,
+  toggleAllInvestors,
+  toggleAllThemes,
+  toggleAllYears,
   setInvestorSearch,
   selectedAiInstitutionIds,
   selectedAiThemes,
   selectedAiYears,
   setIsInvestorModalOpen,
   isAllThemesSelected,
-  setIsAllThemesSelected,
   isAllYearsSelected,
-  setIsAllYearsSelected,
 }) => {
   return (
     <div className="col-span-12 md:col-span-4 xl:col-span-3 mb-6 md:mb-0">
@@ -72,14 +73,95 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
 
         {isAiFiltersLoading ? (
           <div className="flex justify-center items-center h-40">
-            <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            <LoadingIcon
+              color="#800000"
+              icon="three-dots"
+              className="w-16 h-16"
+            />
           </div>
         ) : aiFiltersData ? (
           <div className="space-y-6">
+            {/* YEARS */}
+            <div>
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">
+                Year
+              </h4>
+              <div className="space-y-1">
+                {/* All Years */}
+                <div
+                  onClick={toggleAllYears}
+                  className={clsx(
+                    "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
+                    selectedAiYears.length === 0
+                      ? "bg-primary/10 border-primary/30"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={clsx(
+                        "text-sm font-semibold",
+                        selectedAiYears.length === 0 ? "text-primary" : "text-slate-600"
+                      )}
+                    >
+                      {aiFiltersData?.years?.all_years?.label || "All Years"}
+                    </span>
+                  </div>
+                  <span
+                    className={clsx(
+                      "text-xs font-mono px-2 py-0.5 rounded-full border",
+                      selectedAiYears.length === 0
+                        ? "bg-white text-primary border-primary/20"
+                        : "bg-slate-100 text-slate-500 border-transparent"
+                    )}
+                  >
+                    {aiFiltersData?.years?.all_years?.count || 0}
+                  </span>
+                </div>
+
+                {/* Individual Years */}
+                {aiFiltersData?.years?.individual?.map(
+                  (yearData: any, idx: number) => (
+                    <div
+                      key={idx}
+                      onClick={() => toggleAiFilter("year", yearData.year)}
+                      className={clsx(
+                        "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors group border",
+                        isAiFilterSelected("year", yearData.year)
+                          ? "bg-primary/10 border-primary/30"
+                          : "hover:bg-slate-50 border-transparent"
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          "text-sm font-medium",
+                          isAiFilterSelected("year", yearData.year)
+                            ? "text-primary font-bold"
+                            : "text-slate-600 group-hover:text-slate-800"
+                        )}
+                      >
+                        {yearData.year}
+                      </span>
+                      <span
+                        className={clsx(
+                          "text-xs font-mono px-2 py-0.5 rounded-full border",
+                          isAiFilterSelected("year", yearData.year)
+                            ? "bg-white text-primary border-primary/20"
+                            : "bg-slate-100 text-slate-500 border-transparent"
+                        )}
+                      >
+                        {yearData.count}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+
             {/* INVESTORS / INSTITUTIONS */}
             <div>
               <div className="flex items-center justify-between">
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] border-t border-slate-100 pt-4">
                   Investors
                 </h4>
                 <span
@@ -95,7 +177,7 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
               <div className="space-y-1 mt-3">
                 {/* All Investors */}
                 <div
-                  onClick={() => setIsAllInvestorsSelected((prev) => !prev)}
+                  onClick={toggleAllInvestors}
                   className={clsx(
                     "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
                     selectedAiInstitutionIds.length === 0
@@ -173,7 +255,7 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
               <div className="space-y-1">
                 {/* All Themes */}
                 <div
-                  onClick={() => setIsAllThemesSelected((prev) => !prev)}
+                  onClick={toggleAllThemes}
                   className={clsx(
                     "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
                     selectedAiThemes.length === 0
@@ -237,83 +319,6 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
                         )}
                       >
                         {theme.count}
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* YEARS */}
-            <div>
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 border-t border-slate-100 pt-4">
-                Year
-              </h4>
-              <div className="space-y-1">
-                {/* All Years */}
-                <div
-                  onClick={() => setIsAllYearsSelected((prev) => !prev)}
-                  className={clsx(
-                    "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
-                    selectedAiYears.length === 0
-                      ? "bg-primary/10 border-primary/30"
-                      : "bg-white border-slate-200 hover:bg-slate-50"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={clsx(
-                        "text-sm font-semibold",
-                        selectedAiYears.length === 0 ? "text-primary" : "text-slate-600"
-                      )}
-                    >
-                      {aiFiltersData?.years?.all_years?.label || "All Years"}
-                    </span>
-                  </div>
-                  <span
-                    className={clsx(
-                      "text-xs font-mono px-2 py-0.5 rounded-full border",
-                      selectedAiYears.length === 0
-                        ? "bg-white text-primary border-primary/20"
-                        : "bg-slate-100 text-slate-500 border-transparent"
-                    )}
-                  >
-                    {aiFiltersData?.years?.all_years?.count || 0}
-                  </span>
-                </div>
-
-                {/* Individual Years */}
-                {aiFiltersData?.years?.individual?.map(
-                  (yearData: any, idx: number) => (
-                    <div
-                      key={idx}
-                      onClick={() => toggleAiFilter("year", yearData.year)}
-                      className={clsx(
-                        "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors group border",
-                        isAiFilterSelected("year", yearData.year)
-                          ? "bg-primary/10 border-primary/30"
-                          : "hover:bg-slate-50 border-transparent"
-                      )}
-                    >
-                      <span
-                        className={clsx(
-                          "text-sm font-medium",
-                          isAiFilterSelected("year", yearData.year)
-                            ? "text-primary font-bold"
-                            : "text-slate-600 group-hover:text-slate-800"
-                        )}
-                      >
-                        {yearData.year}
-                      </span>
-                      <span
-                        className={clsx(
-                          "text-xs font-mono px-2 py-0.5 rounded-full border",
-                          isAiFilterSelected("year", yearData.year)
-                            ? "bg-white text-primary border-primary/20"
-                            : "bg-slate-100 text-slate-500 border-transparent"
-                        )}
-                      >
-                        {yearData.count}
                       </span>
                     </div>
                   )

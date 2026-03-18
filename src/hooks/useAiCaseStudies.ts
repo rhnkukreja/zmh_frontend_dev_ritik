@@ -8,15 +8,15 @@ export const useAiCaseStudies = () => {
     const [isAiFiltersLoading, setIsAiFiltersLoading] = useState(false);
     
     // Selection states
-    const [selectedAiInstitutionIds, setSelectedAiInstitutionIds] = useState<number[]>([]);
+    const [selectedAiInstitutionIds, setSelectedAiInstitutionIds] = useState<number[]>([]); // Single selection for institutions
     const [selectedAiThemes, setSelectedAiThemes] = useState<string[]>([]);
-    const [selectedAiYears, setSelectedAiYears] = useState<number[]>([]);
+    const [selectedAiYears, setSelectedAiYears] = useState<number[]>([2025]); // Default to 2025
     const [selectedAiCompanyIds, setSelectedAiCompanyIds] = useState<number[]>([]);
     
-    // "All" row toggle states — selected by default
+    // "All" row toggle states
     const [isAllInvestorsSelected, setIsAllInvestorsSelected] = useState(true);
     const [isAllThemesSelected, setIsAllThemesSelected] = useState(true);
-    const [isAllYearsSelected, setIsAllYearsSelected] = useState(true);
+    const [isAllYearsSelected, setIsAllYearsSelected] = useState(false); // Not selected by default since 2025 is pre-selected
 
     // AI Search/Topics states
     const [aiSearchTerm, setAiSearchTerm] = useState("");
@@ -41,33 +41,67 @@ export const useAiCaseStudies = () => {
     const fetchAiFilters = useCallback(async () => {
         setIsAiFiltersLoading(true);
         try {
-            const data = await caseStudiesService.getCaseStudiesAIFilters();
+            // Build query params with current selections for dynamic counts
+            const params: any = {};
+            if (selectedAiInstitutionIds.length > 0) {
+                params.institution_ids = selectedAiInstitutionIds.join(',');
+            }
+            if (selectedAiThemes.length > 0) {
+                params.themes = selectedAiThemes.join(',');
+            }
+            if (selectedAiYears.length > 0) {
+                params.years = selectedAiYears.join(',');
+            }
+            if (selectedAiCompanyIds.length > 0) {
+                params.company_ids = selectedAiCompanyIds.join(',');
+            }
+            
+            const data = await caseStudiesService.getCaseStudiesAIFilters(params);
             setAiFiltersData(data);
         } catch (error) {
             console.error("Error fetching AI filters:", error);
         } finally {
             setIsAiFiltersLoading(false);
         }
-    }, []);
+    }, [selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
 
     const toggleAiFilter = (type: 'investor' | 'theme' | 'year' | 'company', value: any) => {
         if (type === 'investor') {
+            // Single selection for institutions - replace instead of toggle
             setSelectedAiInstitutionIds(prev => 
-                prev.includes(value) ? prev.filter(id => id !== value) : [...prev, value]
+                prev.includes(value) ? [] : [value]
             );
+            setIsAllInvestorsSelected(false);
         } else if (type === 'theme') {
             setSelectedAiThemes(prev => 
                 prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]
             );
+            setIsAllThemesSelected(false);
         } else if (type === 'year') {
             setSelectedAiYears(prev => 
                 prev.includes(value) ? prev.filter(y => y !== value) : [...prev, value]
             );
+            setIsAllYearsSelected(false);
         } else if (type === 'company') {
             setSelectedAiCompanyIds(prev => 
                 prev.includes(value) ? prev.filter(id => id !== value) : [...prev, value]
             );
         }
+    };
+    
+    const toggleAllInvestors = () => {
+        setSelectedAiInstitutionIds([]);
+        setIsAllInvestorsSelected(true);
+    };
+    
+    const toggleAllThemes = () => {
+        setSelectedAiThemes([]);
+        setIsAllThemesSelected(true);
+    };
+    
+    const toggleAllYears = () => {
+        setSelectedAiYears([]);
+        setIsAllYearsSelected(true);
     };
 
     const isAiFilterSelected = (type: 'investor' | 'theme' | 'year' | 'company', value: any) => {
@@ -177,12 +211,17 @@ export const useAiCaseStudies = () => {
         }
     }, [aiFiltersData, fetchAiTopics]);
 
-    // Automatically trigger analysis when filters change
+    // Clear search term and fetch summary when filters change (without topic)
     useEffect(() => {
-        if (aiFiltersData && !isAiLoading) {
-            handleAiAnalysis();
+        setAiSearchTerm("");
+        setAiResponse(null);
+        setAiCaseStudies([]);
+        
+        // Auto-fetch summary based on filters only (no topic/query)
+        if (aiFiltersData) {
+            handleAiAnalysis("");
         }
-    }, [aiFiltersData, selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
+    }, [selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
 
     return {
         // States
@@ -221,6 +260,9 @@ export const useAiCaseStudies = () => {
         // Methods
         toggleAiFilter,
         isAiFilterSelected,
+        toggleAllInvestors,
+        toggleAllThemes,
+        toggleAllYears,
         handleAiAnalysis,
         handleAiPageChange,
         handleAiNextPage,
