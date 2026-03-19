@@ -1,5 +1,6 @@
 import Lucide from "@/components/Base/Lucide";
-import { Popover } from "@/components/Base/Headless";
+import { Popover, Dialog } from "@/components/Base/Headless";
+import { proxyVotingGuidelineService } from "@/services/proxyVotingGuideline";
 
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
@@ -90,6 +91,10 @@ function ProxyGuideline() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -161,6 +166,33 @@ function ProxyGuideline() {
   const onEditClickHandler = (guideline: ProxyVotingGuideline) => {
     setSelectedProxyVotingGuideline(guideline);
     setAddNewProxyVotingGuidelineVisible(true);
+  };
+
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await proxyVotingGuidelineService.deleteProxyVotingGuideline(itemToDelete.id);
+
+      toast.success("Voting Guideline deleted successfully");
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
+
+      // Refresh data
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/proxy_voting_guidelines/`,
+        filters,
+        undefined,
+        page
+      );
+      dispatch(fetchProxyVotingGuidelines(dynamicURL));
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error?.response?.data?.message || "Something went wrong!");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getSavedSearches = () => {
@@ -622,6 +654,9 @@ function ProxyGuideline() {
                           <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
                             Details
                           </Table.Td>
+                          {/* <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
+                            Actions
+                          </Table.Td> */}
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>
@@ -729,21 +764,41 @@ function ProxyGuideline() {
                                     )}
 
                                     {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                      <Tippy
-                                        content="Edit"
-                                        options={{
-                                          theme: "light",
-                                        }}
-                                      >
-                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                          <Lucide
-                                            onClick={() => {
-                                              onEditClickHandler(guideline);
-                                            }}
-                                            icon="PenLine"
-                                          />
-                                        </div>
-                                      </Tippy>
+                                      <>
+                                        <Tippy
+                                          content="Edit"
+                                          options={{
+                                            theme: "light",
+                                          }}
+                                        >
+                                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                            <Lucide
+                                              onClick={() => {
+                                                onEditClickHandler(guideline);
+                                              }}
+                                              icon="PenLine"
+                                              className="text-primary"
+                                            />
+                                          </div>
+                                        </Tippy>
+                                        <Tippy
+                                          content="Delete"
+                                          options={{
+                                            theme: "light",
+                                          }}
+                                        >
+                                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                            <Lucide
+                                              onClick={() => {
+                                                setItemToDelete(guideline);
+                                                setIsDeleteModalOpen(true);
+                                              }}
+                                              icon="Trash2"
+                                              className="text-danger"
+                                            />
+                                          </div>
+                                        </Tippy>
+                                      </>
                                     )}
 
                                     {/* <Tippy
@@ -852,6 +907,51 @@ function ProxyGuideline() {
             // file={currentPdfDoc}
             // file_name={currentPdfName}
             />
+          )}
+
+          {isDeleteModalOpen && (
+            <Dialog
+              size="md"
+              open={isDeleteModalOpen}
+              onClose={() => {
+                setIsDeleteModalOpen(false);
+              }}
+            >
+              <Dialog.Panel className="p-0 text-center">
+                <div className="p-5 text-center">
+                  <Lucide
+                    icon="XCircle"
+                    className="w-16 h-16 mx-auto mt-3 text-danger"
+                  />
+                  <div className="mt-5 text-3xl">Are you sure?</div>
+                  <div className="mt-2 text-slate-500">
+                    Do you really want to delete this voting guideline? <br />
+                    This action cannot be undone.
+                  </div>
+                </div>
+                <div className="px-5 pb-8 text-center">
+                  <Button
+                    variant="outline-secondary"
+                    type="button"
+                    onClick={() => {
+                      setIsDeleteModalOpen(false);
+                    }}
+                    className="w-24 mr-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    type="button"
+                    className="w-24"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </Dialog.Panel>
+            </Dialog>
           )}
         </div >
       </div >
