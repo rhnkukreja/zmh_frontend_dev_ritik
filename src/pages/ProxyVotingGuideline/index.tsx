@@ -313,7 +313,7 @@ function ProxyGuideline() {
             <div className="flex gap-3">
               <a
                 className="p-2 bg-primary border-white border-2 text-white rounded-md"
-                href="https://ai.zmhadvisors.com/ai-assistant/voting-guidelines"
+                href="/ai-assistant/voting-guidelines"
                 target="_blank"
                 rel="noopener noreferrer"
               >
