@@ -277,33 +277,51 @@ function ProxyGuideline() {
         <div className="col-span-12">
           <div className="flex justify-between items-center bg-white px-4 py-4 pl-6 bg-white shadow sticky top-16 z-40">
             <div className="font-semibold text-xl">Voting Guidelines</div>
-            <a
-              className="p-2 bg-primary
-                   border-white border-2 text-white rounded-md"
+            <div className="flex gap-3">
+              <a
+                className="p-2 bg-primary border-white border-2 text-white rounded-md"
+                href="https://ai.zmhadvisors.com/ai-assistant/voting-guidelines"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="flex items-center justify-center cursor-pointer">
+                  <Lucide
+                    icon="Bot"
+                    className="stroke-[2] w-4 h-4 text-white"
+                  />
+                  <span className="ml-2 font-semibold hidden xl:flex">
+                    AI Assistant: Voting Guidelines
+                  </span>
+                </div>
+              </a>
+              <a
+                className="p-2 bg-primary
+                     border-white border-2 text-white rounded-md"
 
-              onClick={() => {
-                gotoDetailPage(
-                  'https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2025.pdf',
-                  'Key Overboarding Policies'
-                );
+                onClick={() => {
+                  gotoDetailPage(
+                    'https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2025.pdf',
+                    'Key Overboarding Policies'
+                  );
 
-                setPdfVisible(true);
-              }}
-            // onClick={(event: React.MouseEvent) => {
-            //   event.preventDefault();
-            //   window.open('')
-            // }}
-            >
-              <div className="flex items-center justify-center cursor-pointer" >
-                <Lucide
-                  icon="File"
-                  className="stroke-[2] w-4 h-4 text-white "
-                />
-                <span className="ml-2 font-semibold hidden xl:flex">
-                  Key Overboarding Policies
-                </span>
-              </div>
-            </a>
+                  setPdfVisible(true);
+                }}
+              // onClick={(event: React.MouseEvent) => {
+              //   event.preventDefault();
+              //   window.open('')
+              // }}
+              >
+                <div className="flex items-center justify-center cursor-pointer" >
+                  <Lucide
+                    icon="File"
+                    className="stroke-[2] w-4 h-4 text-white "
+                  />
+                  <span className="ml-2 font-semibold hidden xl:flex">
+                    Key Overboarding Policies
+                  </span>
+                </div>
+              </a>
+            </div>
             {/* {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
@@ -652,9 +670,6 @@ function ProxyGuideline() {
                             Key Changes
                           </Table.Td>
                           <Table.Td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px', width: '60px'}}>
-                            Searchable
-                          </Table.Td>
-                          <Table.Td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px', width: '60px'}}>
                             Voting Guidelines
                           </Table.Td>
                           <Table.Td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px', width: '60px'}}>
@@ -710,31 +725,6 @@ function ProxyGuideline() {
                                         }}
                                       >
                                         <Lucide icon="GitCompare" className="w-4 h-4" />
-                                      </div>
-                                    ) : (
-                                      <span className="text-gray-300">-</span>
-                                    )}
-                                  </div>
-                                </Table.Td>
-                                {/* Searchable Column */}
-                                <Table.Td className="py-2 px-3 text-center">
-                                  <div className="flex items-center justify-center">
-                                    {guidelines.length === 1 && firstGuideline?.is_search ? (
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
-                                        <Lucide
-                                          onClick={() => {
-                                            const data = {
-                                              name: firstGuideline?.institution_name,
-                                              year: firstGuideline?.year,
-                                            };
-                                            navigate(
-                                              `/voting-guidelines/pdf-sumamry/${firstGuideline?.id}`,
-                                              { state: data }
-                                            );
-                                          }}
-                                          icon="Search"
-                                          className="w-4 h-4"
-                                        />
                                       </div>
                                     ) : (
                                       <span className="text-gray-300">-</span>
@@ -864,31 +854,6 @@ function ProxyGuideline() {
                                 <Table.Td className="py-2 px-3 text-center">
                                   <div className="flex items-center justify-center">
                                     <span className="text-gray-300">-</span>
-                                  </div>
-                                </Table.Td>
-                                {/* Searchable Column */}
-                                <Table.Td className="py-2 px-3 text-center">
-                                  <div className="flex items-center justify-center">
-                                    {guideline?.is_search ? (
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
-                                        <Lucide
-                                          onClick={() => {
-                                            const data = {
-                                              name: guideline?.institution_name,
-                                              year: guideline?.year,
-                                            };
-                                            navigate(
-                                              `/voting-guidelines/pdf-sumamry/${guideline?.id}`,
-                                              { state: data }
-                                            );
-                                          }}
-                                          icon="Search"
-                                          className="w-4 h-4"
-                                        />
-                                      </div>
-                                    ) : (
-                                      <span className="text-gray-300">-</span>
-                                    )}
                                   </div>
                                 </Table.Td>
                                 {/* Voting Guidelines Column */}
