@@ -90,6 +90,17 @@ function ProxyGuideline() {
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [expandedInstitutions, setExpandedInstitutions] = useState<Set<string>>(new Set());
+
+  // Auto-expand all institutions with multiple policies on mount
+  useEffect(() => {
+    const autoExpand = new Set<string>();
+    groupedGuidelines.forEach((guidelines, institutionName) => {
+      if (guidelines.length > 1) {
+        autoExpand.add(institutionName);
+      }
+    });
+    setExpandedInstitutions(autoExpand);
+  }, [proxyVotingGuidelines]);
   const [documentsModalVisible, setDocumentsModalVisible] = useState<boolean>(false);
   const [keyChangesModalVisible, setKeyChangesModalVisible] = useState<boolean>(false);
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
@@ -658,46 +669,54 @@ function ProxyGuideline() {
                                 </Table.Td>
                                 <Table.Td className="py-2 px-3">
                                   <div className="flex items-center gap-2">
-                                    <Lucide
-                                      icon={isExpanded ? "ChevronDown" : "ChevronRight"}
-                                      className="w-4 h-4 cursor-pointer text-slate-600"
-                                      onClick={() => toggleInstitutionExpand(institutionName)}
-                                    />
+                                    {guidelines.length > 1 && (
+                                      <Lucide
+                                        icon={isExpanded ? "ChevronDown" : "ChevronRight"}
+                                        className="w-4 h-4 cursor-pointer text-slate-600"
+                                        onClick={() => toggleInstitutionExpand(institutionName)}
+                                      />
+                                    )}
                                     <p className="font-medium">
-                                      {firstGuideline?.institution_name}
+                                      {firstGuideline?.institution_name.split(' - ')[0]}
                                     </p>
                                   </div>
                                 </Table.Td>
                                 {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                   <Table.Td className="py-2 px-3" colSpan={4}>
-                                    <span className="text-xs text-slate-500 italic">
-                                      {guidelines.length} {guidelines.length === 1 ? 'policy' : 'policies'}
-                                    </span>
                                   </Table.Td>
                                 )}
                                 <Table.Td className="py-2 px-3 relative w-[150px]">
-                                  <div className="flex gap-3 items-center">
-                                    {firstGuideline?.voting_guidelines_key_changes && (
-                                      <Tippy content="Key Changes" options={{ theme: "light" }}>
-                                        <div 
-                                          className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                          onClick={() => {
-                                            setSelectedKeyChanges(firstGuideline.voting_guidelines_key_changes || "");
+                                  <div className="flex gap-3 items-center justify-end">
+                                    <Tippy content="Key Changes" options={{ theme: "light" }}>
+                                      <div 
+                                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                                          firstGuideline?.voting_guidelines_key_changes 
+                                            ? 'bg-primary/10 text-primary cursor-pointer hover:bg-primary/20' 
+                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-40'
+                                        }`}
+                                        onClick={() => {
+                                          if (firstGuideline?.voting_guidelines_key_changes) {
+                                            setSelectedKeyChanges(firstGuideline.voting_guidelines_key_changes);
                                             setKeyChangesModalVisible(true);
-                                          }}
-                                        >
-                                          <Lucide icon="FileEdit" className="w-4 h-4" />
-                                        </div>
-                                      </Tippy>
-                                    )}
+                                          }
+                                        }}
+                                      >
+                                        <Lucide icon="Edit" className="w-4 h-4" />
+                                      </div>
+                                    </Tippy>
                                     <Tippy content="Documents" options={{ theme: "light" }}>
                                       <div 
-                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
                                         onClick={async () => {
                                           setSelectedInstitutionId(firstGuideline.institution);
-                                          // Fetch documents for this institution
                                           try {
-                                            const response = await fetch(`https://api.zmhadvisors.com/investor_profile_detail_page/?institution_id=${firstGuideline.institution}`);
+                                            const token = localStorage.getItem("token");
+                                            const response = await fetch(`${baseURL}/investor_profile_detail_page/?institution_id=${firstGuideline.institution}`, {
+                                              headers: {
+                                                Authorization: `JWT ${token}`,
+                                                "Content-Type": "application/json",
+                                              },
+                                            });
                                             const data = await response.json();
                                             setInstitutionDocuments(data?.documents || []);
                                             setDocumentsModalVisible(true);
@@ -722,11 +741,8 @@ function ProxyGuideline() {
                                 className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer"
                               >
                                 <Table.Td className="py-2 px-3">
-                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                    {guideline?.year}
-                                  </span>
                                 </Table.Td>
-                                <Table.Td className="py-2 px-3">
+                                <Table.Td className="py-2 px-3 pl-10">
                                   <p 
                                     className="font-medium cursor-pointer hover:text-primary transition-colors"
                                     onClick={() => {
@@ -946,7 +962,7 @@ function ProxyGuideline() {
               open={documentsModalVisible}
               onClose={() => setDocumentsModalVisible(false)}
             >
-              <Dialog.Panel className="max-w-3xl">
+              <Dialog.Panel className="max-w-7xl w-[90vw]">
                 <Dialog.Title>
                   <h2 className="text-lg font-semibold">Institution Documents</h2>
                 </Dialog.Title>
@@ -984,7 +1000,6 @@ function ProxyGuideline() {
                 </Dialog.Description>
                 <div className="mt-6 flex justify-end">
                   <Button
-                    variant="outline"
                     onClick={() => setDocumentsModalVisible(false)}
                   >
                     Close
@@ -1000,7 +1015,7 @@ function ProxyGuideline() {
               open={keyChangesModalVisible}
               onClose={() => setKeyChangesModalVisible(false)}
             >
-              <Dialog.Panel className="max-w-4xl">
+              <Dialog.Panel className="max-w-7xl w-[90vw]">
                 <Dialog.Title>
                   <h2 className="text-lg font-semibold">Key Changes in Voting Guidelines</h2>
                 </Dialog.Title>
@@ -1012,7 +1027,6 @@ function ProxyGuideline() {
                 </Dialog.Description>
                 <div className="mt-6 flex justify-end">
                   <Button
-                    variant="outline"
                     onClick={() => setKeyChangesModalVisible(false)}
                   >
                     Close
