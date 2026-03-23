@@ -34,6 +34,7 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import { FormCheck } from "@/components/Base/Form";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
+import aiIcon from "../../assets/images/zmh-images/ai-Icon.png";
 import { useNavigate } from "react-router-dom";
 import UploadFile from "@/components/UploadFile";
 import FilterChips from "@/components/FilterChips";
@@ -285,10 +286,7 @@ function ProxyGuideline() {
                 rel="noopener noreferrer"
               >
                 <div className="flex items-center justify-center cursor-pointer">
-                  <Lucide
-                    icon="Bot"
-                    className="stroke-[2] w-4 h-4 text-white"
-                  />
+                  <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
                   <span className="ml-2 font-semibold hidden xl:flex">
                     AI Assistant: Voting Guidelines
                   </span>
