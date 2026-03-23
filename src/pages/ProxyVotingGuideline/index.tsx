@@ -1,10 +1,10 @@
 import Lucide from "@/components/Base/Lucide";
-import { Popover } from "@/components/Base/Headless";
+import { Popover, Dialog } from "@/components/Base/Headless";
 
 import Tippy from "@/components/Base/Tippy";
 import Button from "@/components/Base/Button";
 import Table from "@/components/Base/Table";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -89,6 +89,12 @@ function ProxyGuideline() {
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+  const [expandedInstitutions, setExpandedInstitutions] = useState<Set<string>>(new Set());
+  const [documentsModalVisible, setDocumentsModalVisible] = useState<boolean>(false);
+  const [keyChangesModalVisible, setKeyChangesModalVisible] = useState<boolean>(false);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
+  const [selectedKeyChanges, setSelectedKeyChanges] = useState<string>("");
+  const [institutionDocuments, setInstitutionDocuments] = useState<any[]>([]);
 
   const navigate = useNavigate();
 
@@ -226,20 +232,30 @@ function ProxyGuideline() {
 
     dispatch(setAllFilters(updatedFilters));
   }
-  const uniqueGuidelines = (guidelines: ProxyVotingGuideline[]) => {
-    // If user is searching for specific institutions, show all results for those institutions
-    if (searchTerms.length > 0) {
-      return guidelines;
-    }
+  // Group guidelines by institution_name_raw
+  const groupedGuidelines = useMemo(() => {
+    const grouped = new Map<string, ProxyVotingGuideline[]>();
     
-    // Otherwise, show only unique institutions (for general browsing)
-    const seenInstitutions = new Set<string>();
-    return guidelines.filter((guideline) => {
-      if (seenInstitutions.has(guideline.institution_name)) {
-        return false;
+    proxyVotingGuidelines.forEach((guideline) => {
+      const key = guideline.institution_name_raw;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
       }
-      seenInstitutions.add(guideline.institution_name);
-      return true;
+      grouped.get(key)!.push(guideline);
+    });
+    
+    return grouped;
+  }, [proxyVotingGuidelines]);
+  
+  const toggleInstitutionExpand = (institutionName: string) => {
+    setExpandedInstitutions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(institutionName)) {
+        newSet.delete(institutionName);
+      } else {
+        newSet.add(institutionName);
+      }
+      return newSet;
     });
   };
   return (
@@ -625,9 +641,82 @@ function ProxyGuideline() {
                         </Table.Tr>
                       </Table.Thead>
                       <Table.Tbody>
-                        {proxyVotingGuidelines?.length > 0 &&
-                          uniqueGuidelines(proxyVotingGuidelines)?.map(
-                            (guideline: ProxyVotingGuideline, index: number) => (
+                        {Array.from(groupedGuidelines.entries()).map(([institutionName, guidelines]) => {
+                          const isExpanded = expandedInstitutions.has(institutionName);
+                          const firstGuideline = guidelines[0];
+                          
+                          return (
+                            <React.Fragment key={institutionName}>
+                              {/* Main Institution Row */}
+                              <Table.Tr
+                                className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer bg-slate-50"
+                              >
+                                <Table.Td className="py-2 px-3">
+                                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                    {firstGuideline?.year}
+                                  </span>
+                                </Table.Td>
+                                <Table.Td className="py-2 px-3">
+                                  <div className="flex items-center gap-2">
+                                    <Lucide
+                                      icon={isExpanded ? "ChevronDown" : "ChevronRight"}
+                                      className="w-4 h-4 cursor-pointer text-slate-600"
+                                      onClick={() => toggleInstitutionExpand(institutionName)}
+                                    />
+                                    <p className="font-medium">
+                                      {firstGuideline?.institution_name}
+                                    </p>
+                                  </div>
+                                </Table.Td>
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                  <Table.Td className="py-2 px-3" colSpan={4}>
+                                    <span className="text-xs text-slate-500 italic">
+                                      {guidelines.length} {guidelines.length === 1 ? 'policy' : 'policies'}
+                                    </span>
+                                  </Table.Td>
+                                )}
+                                <Table.Td className="py-2 px-3 relative w-[150px]">
+                                  <div className="flex gap-3 items-center">
+                                    {firstGuideline?.voting_guidelines_key_changes && (
+                                      <Tippy content="Key Changes" options={{ theme: "light" }}>
+                                        <div 
+                                          className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                          onClick={() => {
+                                            setSelectedKeyChanges(firstGuideline.voting_guidelines_key_changes || "");
+                                            setKeyChangesModalVisible(true);
+                                          }}
+                                        >
+                                          <Lucide icon="FileEdit" className="w-4 h-4" />
+                                        </div>
+                                      </Tippy>
+                                    )}
+                                    <Tippy content="Documents" options={{ theme: "light" }}>
+                                      <div 
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                        onClick={async () => {
+                                          setSelectedInstitutionId(firstGuideline.institution);
+                                          // Fetch documents for this institution
+                                          try {
+                                            const response = await fetch(`https://api.zmhadvisors.com/investor_profile_detail_page/?institution_id=${firstGuideline.institution}`);
+                                            const data = await response.json();
+                                            setInstitutionDocuments(data?.documents || []);
+                                            setDocumentsModalVisible(true);
+                                          } catch (error) {
+                                            console.error("Error fetching documents:", error);
+                                            setInstitutionDocuments([]);
+                                            setDocumentsModalVisible(true);
+                                          }
+                                        }}
+                                      >
+                                        <Lucide icon="FileText" className="w-4 h-4" />
+                                      </div>
+                                    </Tippy>
+                                  </div>
+                                </Table.Td>
+                              </Table.Tr>
+                              
+                              {/* Expanded Sub-Rows */}
+                              {isExpanded && guidelines.map((guideline: ProxyVotingGuideline, index: number) => (
                               <Table.Tr
                                 key={guideline?.id}
                                 className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer"
@@ -798,14 +887,11 @@ function ProxyGuideline() {
                                   </div>
                                 </Table.Td>
                               </Table.Tr>
-                            )
-                          )}
+                              ))}
+                            </React.Fragment>
+                          );
+                        })}
                       </Table.Tbody>
-                      {proxyVotingGuidelines?.length === 0 && (
-                        <div className="w-full">
-                          <h1 className="mt-3">No Records Found..</h1>
-                        </div>
-                      )}
                     </Table>
                   </div>
                 </TableWrapper>
@@ -852,6 +938,88 @@ function ProxyGuideline() {
             // file={currentPdfDoc}
             // file_name={currentPdfName}
             />
+          )}
+
+          {/* Documents Modal */}
+          {documentsModalVisible && (
+            <Dialog
+              open={documentsModalVisible}
+              onClose={() => setDocumentsModalVisible(false)}
+            >
+              <Dialog.Panel className="max-w-3xl">
+                <Dialog.Title>
+                  <h2 className="text-lg font-semibold">Institution Documents</h2>
+                </Dialog.Title>
+                <Dialog.Description className="mt-4">
+                  {institutionDocuments.length > 0 ? (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {institutionDocuments.map((doc: any, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <Lucide icon="FileText" className="w-5 h-5 text-slate-600" />
+                            <div>
+                              <p className="font-medium text-sm">{doc.name || doc.title || 'Document'}</p>
+                              {doc.description && (
+                                <p className="text-xs text-slate-500 mt-1">{doc.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <a
+                            href={doc.url || doc.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
+                          >
+                            <Lucide icon="ExternalLink" className="w-4 h-4" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-center py-8">No documents available for this institution.</p>
+                  )}
+                </Dialog.Description>
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDocumentsModalVisible(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </Dialog.Panel>
+            </Dialog>
+          )}
+
+          {/* Key Changes Modal */}
+          {keyChangesModalVisible && (
+            <Dialog
+              open={keyChangesModalVisible}
+              onClose={() => setKeyChangesModalVisible(false)}
+            >
+              <Dialog.Panel className="max-w-4xl">
+                <Dialog.Title>
+                  <h2 className="text-lg font-semibold">Key Changes in Voting Guidelines</h2>
+                </Dialog.Title>
+                <Dialog.Description className="mt-4">
+                  <div 
+                    className="prose prose-sm max-w-none max-h-[500px] overflow-y-auto"
+                    dangerouslySetInnerHTML={{ __html: selectedKeyChanges }}
+                  />
+                </Dialog.Description>
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setKeyChangesModalVisible(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </Dialog.Panel>
+            </Dialog>
           )}
         </div >
       </div >
