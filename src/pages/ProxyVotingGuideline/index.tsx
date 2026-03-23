@@ -648,8 +648,17 @@ function ProxyGuideline() {
                           Active
                         </Table.Td> */}
 
-                          <Table.Td className="py-2 px-3 text-left font-medium" style={{fontSize: '14px'}}>
-                            Details
+                          <Table.Td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px', width: '60px'}}>
+                            Key Changes
+                          </Table.Td>
+                          <Table.Td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px', width: '60px'}}>
+                            Searchable
+                          </Table.Td>
+                          <Table.Td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px', width: '60px'}}>
+                            Voting Guidelines
+                          </Table.Td>
+                          <Table.Td className="py-2 px-3 text-center font-medium" style={{fontSize: '14px', width: '60px'}}>
+                            All Documents
                           </Table.Td>
                         </Table.Tr>
                       </Table.Thead>
@@ -687,119 +696,105 @@ function ProxyGuideline() {
                                   <Table.Td className="py-2 px-3" colSpan={4}>
                                   </Table.Td>
                                 )}
-                                <Table.Td className="py-2 px-3 relative w-[150px]">
-                                  <div className="flex gap-3 items-center justify-end">
-                                    {guidelines.length === 1 ? (
-                                      // Single policy - show all detail icons
-                                      <>
-                                        <Tippy content="See Details" options={{ theme: "light" }}>
-                                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                            <Lucide
-                                              onClick={() => {
-                                                gotoDetailPage(
-                                                  firstGuideline?.voting_guidelines_pdf_url!,
-                                                  firstGuideline?.voting_guidelines_pdf_name!
-                                                );
-                                                setPdfVisible(true);
-                                              }}
-                                              icon="Eye"
-                                            />
-                                          </div>
-                                        </Tippy>
-                                        {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                          <Tippy content="Upload" options={{ theme: "light" }}>
-                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                              <Lucide
-                                                onClick={() => {
-                                                  setUploadFileVisible(true);
-                                                  setProxyId(firstGuideline?.id);
-                                                }}
-                                                icon="Upload"
-                                              />
-                                            </div>
-                                          </Tippy>
-                                        )}
-                                        {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                          <Tippy content="Edit" options={{ theme: "light" }}>
-                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                              <Lucide
-                                                onClick={() => {
-                                                  onEditClickHandler(firstGuideline);
-                                                }}
-                                                icon="PenLine"
-                                              />
-                                            </div>
-                                          </Tippy>
-                                        )}
-                                        {firstGuideline?.is_search && (
-                                          <Tippy content="Searchable" options={{ theme: "light" }}>
-                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                              <Lucide
-                                                onClick={() => {
-                                                  const data = {
-                                                    name: firstGuideline?.institution_name,
-                                                    year: firstGuideline?.year,
-                                                  };
-                                                  navigate(
-                                                    `/voting-guidelines/pdf-sumamry/${firstGuideline?.id}`,
-                                                    { state: data }
-                                                  );
-                                                }}
-                                                icon="Search"
-                                              />
-                                            </div>
-                                          </Tippy>
-                                        )}
-                                      </>
-                                    ) : null}
-                                    {/* Key Changes and Documents icons - show for all rows */}
-                                    <Tippy content="Key Changes" options={{ theme: "light" }}>
+                                {/* Key Changes Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center">
+                                    {firstGuideline?.voting_guidelines_key_changes ? (
                                       <div 
-                                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
-                                          firstGuideline?.voting_guidelines_key_changes 
-                                            ? 'bg-gray-100 text-slate-900 cursor-pointer hover:bg-gray-200' 
-                                            : 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                                        }`}
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-slate-900 cursor-pointer"
                                         onClick={() => {
-                                          if (firstGuideline?.voting_guidelines_key_changes) {
-                                            setSelectedKeyChanges(firstGuideline.voting_guidelines_key_changes);
-                                            setSelectedPolicyName(firstGuideline?.institution_name || "");
-                                            setSelectedYear(firstGuideline?.year || "");
-                                            setKeyChangesModalVisible(true);
-                                          }
+                                          setSelectedKeyChanges(firstGuideline.voting_guidelines_key_changes);
+                                          setSelectedPolicyName(firstGuideline?.institution_name || "");
+                                          setSelectedYear(firstGuideline?.year || "");
+                                          setKeyChangesModalVisible(true);
                                         }}
                                       >
                                         <Lucide icon="GitCompare" className="w-4 h-4" />
                                       </div>
-                                    </Tippy>
-                                    <Tippy content="Documents" options={{ theme: "light" }}>
-                                      <div 
-                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                        onClick={async () => {
-                                          setSelectedInstitutionId(firstGuideline.institution);
-                                          setSelectedPolicyName(firstGuideline?.institution_name.split(' - ')[0] || "");
-                                          setSelectedYear(firstGuideline?.year || "");
-                                          try {
-                                            const token = localStorage.getItem("token");
-                                            const response = await fetch(`${baseURL}/investor_profile_detail_page/?institution_id=${firstGuideline.institution}&year=${firstGuideline?.year}`, {
-                                              headers: {
-                                                Authorization: `JWT ${token}`,
-                                                "Content-Type": "application/json",
-                                              },
-                                            });
-                                            const data = await response.json();
-                                            setInstitutionDocuments(data?.documents || []);
-                                            setDocumentsModalVisible(true);
-                                          } catch (error) {
-                                            console.error("Error fetching documents:", error);
-                                            setInstitutionDocuments([]);
-                                            setDocumentsModalVisible(true);
-                                          }
-                                        }}
-                                      >
-                                        <Lucide icon="FileText" className="w-4 h-4" />
+                                    ) : (
+                                      <span className="text-gray-300">-</span>
+                                    )}
+                                  </div>
+                                </Table.Td>
+                                {/* Searchable Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center">
+                                    {guidelines.length === 1 && firstGuideline?.is_search ? (
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
+                                        <Lucide
+                                          onClick={() => {
+                                            const data = {
+                                              name: firstGuideline?.institution_name,
+                                              year: firstGuideline?.year,
+                                            };
+                                            navigate(
+                                              `/voting-guidelines/pdf-sumamry/${firstGuideline?.id}`,
+                                              { state: data }
+                                            );
+                                          }}
+                                          icon="Search"
+                                          className="w-4 h-4"
+                                        />
                                       </div>
-                                    </Tippy>
+                                    ) : (
+                                      <span className="text-gray-300">-</span>
+                                    )}
+                                  </div>
+                                </Table.Td>
+                                {/* Voting Guidelines Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    {guidelines.length === 1 && (
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
+                                        <Lucide
+                                          onClick={() => {
+                                            gotoDetailPage(
+                                              firstGuideline?.voting_guidelines_pdf_url!,
+                                              firstGuideline?.voting_guidelines_pdf_name!
+                                            );
+                                            setPdfVisible(true);
+                                          }}
+                                          icon="Eye"
+                                          className="w-4 h-4"
+                                        />
+                                      </div>
+                                    )}
+                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                      <>
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
+                                          <Lucide
+                                            onClick={() => {
+                                              setUploadFileVisible(true);
+                                              setProxyId(firstGuideline?.id);
+                                            }}
+                                            icon="Upload"
+                                            className="w-4 h-4"
+                                          />
+                                        </div>
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
+                                          <Lucide
+                                            onClick={() => {
+                                              onEditClickHandler(firstGuideline);
+                                            }}
+                                            icon="PenLine"
+                                            className="w-4 h-4"
+                                          />
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                </Table.Td>
+                                {/* All Documents Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center">
+                                    <div 
+                                      className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer"
+                                      onClick={() => {
+                                        window.open(`/investor-company-details/${firstGuideline.institution}`, '_blank', 'noopener,noreferrer');
+                                      }}
+                                    >
+                                      <Lucide icon="FileText" className="w-4 h-4" />
+                                    </div>
                                   </div>
                                 </Table.Td>
                               </Table.Tr>
@@ -811,6 +806,11 @@ function ProxyGuideline() {
                                 className="border-b border-slate-200 dark:border-slate-600 transition-all hover:bg-primary/5 cursor-pointer"
                               >
                                 <Table.Td className="py-2 px-3">
+                                  {guideline?.year !== firstGuideline?.year && (
+                                    <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                      {guideline?.year}
+                                    </span>
+                                  )}
                                 </Table.Td>
                                 <Table.Td className="py-2 px-3 pl-10">
                                   <p 
@@ -860,116 +860,82 @@ function ProxyGuideline() {
                                   </Table.Td>
                                 )}
 
-                                <Table.Td className="py-2 px-3 relative w-[150px]" style={{fontSize: '14px'}}>
-                                  <div className="flex gap-3 items-center justify-end">
-                                    <Tippy
-                                      content="See Details"
-                                      options={{
-                                        theme: "light",
-                                      }}
-                                    >
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                {/* Key Changes Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center">
+                                    <span className="text-gray-300">-</span>
+                                  </div>
+                                </Table.Td>
+                                {/* Searchable Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center">
+                                    {guideline?.is_search ? (
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
                                         <Lucide
                                           onClick={() => {
-                                            gotoDetailPage(
-                                              guideline?.voting_guidelines_pdf_url!,
-                                              guideline?.voting_guidelines_pdf_name!
+                                            const data = {
+                                              name: guideline?.institution_name,
+                                              year: guideline?.year,
+                                            };
+                                            navigate(
+                                              `/voting-guidelines/pdf-sumamry/${guideline?.id}`,
+                                              { state: data }
                                             );
-
-                                            setPdfVisible(true);
                                           }}
-                                          icon="Eye"
+                                          icon="Search"
+                                          className="w-4 h-4"
                                         />
                                       </div>
-                                    </Tippy>
-
-                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                      <Tippy
-                                        content="Upload"
-                                        options={{
-                                          theme: "light",
+                                    ) : (
+                                      <span className="text-gray-300">-</span>
+                                    )}
+                                  </div>
+                                </Table.Td>
+                                {/* Voting Guidelines Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
+                                      <Lucide
+                                        onClick={() => {
+                                          gotoDetailPage(
+                                            guideline?.voting_guidelines_pdf_url!,
+                                            guideline?.voting_guidelines_pdf_name!
+                                          );
+                                          setPdfVisible(true);
                                         }}
-                                      >
-                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        icon="Eye"
+                                        className="w-4 h-4"
+                                      />
+                                    </div>
+                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                      <>
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
                                           <Lucide
                                             onClick={() => {
                                               setUploadFileVisible(true);
                                               setProxyId(guideline?.id);
                                             }}
                                             icon="Upload"
+                                            className="w-4 h-4"
                                           />
                                         </div>
-                                      </Tippy>
-
-                                    )}
-
-                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                      <Tippy
-                                        content="Edit"
-                                        options={{
-                                          theme: "light",
-                                        }}
-                                      >
-                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-600 cursor-pointer">
                                           <Lucide
                                             onClick={() => {
                                               onEditClickHandler(guideline);
                                             }}
                                             icon="PenLine"
+                                            className="w-4 h-4"
                                           />
                                         </div>
-                                      </Tippy>
+                                      </>
                                     )}
-
-                                    {/* <Tippy
-                                      content="Download"
-                                      options={{
-                                        theme: "light",
-                                      }}
-                                    >
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                        <a
-                                          href={
-                                            guideline?.voting_guidelines_pdf_url ||
-                                            ""
-                                          }
-                                          download
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        >
-                                          <Lucide
-                                            icon="Download"
-                                          />
-                                        </a>
-                                      </div>
-                                    </Tippy> */}
-
-                                    {guideline?.is_search ? (
-                                      <Tippy
-                                        content="Searchable"
-                                        options={{
-                                          theme: "light",
-                                        }}
-                                      >
-                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                          <Lucide
-                                            onClick={() => {
-                                              const data = {
-                                                name: guideline?.institution_name,
-                                                year: guideline?.year,
-                                              };
-                                              navigate(
-                                                `/voting-guidelines/pdf-sumamry/${guideline?.id}`,
-                                                { state: data }
-                                              );
-                                            }}
-                                            icon="Search"
-                                          />
-                                        </div>
-                                      </Tippy>
-                                    ) : (
-                                      <span className="w-4 h-4 mr-1.5 stroke-[1.3]"></span>
-                                    )}
+                                  </div>
+                                </Table.Td>
+                                {/* All Documents Column */}
+                                <Table.Td className="py-2 px-3 text-center">
+                                  <div className="flex items-center justify-center">
+                                    <span className="text-gray-300">-</span>
                                   </div>
                                 </Table.Td>
                               </Table.Tr>
