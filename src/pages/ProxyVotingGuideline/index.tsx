@@ -105,6 +105,8 @@ function ProxyGuideline() {
   const [keyChangesModalVisible, setKeyChangesModalVisible] = useState<boolean>(false);
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
   const [selectedKeyChanges, setSelectedKeyChanges] = useState<string>("");
+  const [selectedPolicyName, setSelectedPolicyName] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>("");
   const [institutionDocuments, setInstitutionDocuments] = useState<any[]>([]);
 
   const navigate = useNavigate();
@@ -687,31 +689,99 @@ function ProxyGuideline() {
                                 )}
                                 <Table.Td className="py-2 px-3 relative w-[150px]">
                                   <div className="flex gap-3 items-center justify-end">
+                                    {guidelines.length === 1 ? (
+                                      // Single policy - show all detail icons
+                                      <>
+                                        <Tippy content="See Details" options={{ theme: "light" }}>
+                                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                            <Lucide
+                                              onClick={() => {
+                                                gotoDetailPage(
+                                                  firstGuideline?.voting_guidelines_pdf_url!,
+                                                  firstGuideline?.voting_guidelines_pdf_name!
+                                                );
+                                                setPdfVisible(true);
+                                              }}
+                                              icon="Eye"
+                                            />
+                                          </div>
+                                        </Tippy>
+                                        {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                          <Tippy content="Upload" options={{ theme: "light" }}>
+                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                              <Lucide
+                                                onClick={() => {
+                                                  setUploadFileVisible(true);
+                                                  setProxyId(firstGuideline?.id);
+                                                }}
+                                                icon="Upload"
+                                              />
+                                            </div>
+                                          </Tippy>
+                                        )}
+                                        {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                          <Tippy content="Edit" options={{ theme: "light" }}>
+                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                              <Lucide
+                                                onClick={() => {
+                                                  onEditClickHandler(firstGuideline);
+                                                }}
+                                                icon="PenLine"
+                                              />
+                                            </div>
+                                          </Tippy>
+                                        )}
+                                        {firstGuideline?.is_search && (
+                                          <Tippy content="Searchable" options={{ theme: "light" }}>
+                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                              <Lucide
+                                                onClick={() => {
+                                                  const data = {
+                                                    name: firstGuideline?.institution_name,
+                                                    year: firstGuideline?.year,
+                                                  };
+                                                  navigate(
+                                                    `/voting-guidelines/pdf-sumamry/${firstGuideline?.id}`,
+                                                    { state: data }
+                                                  );
+                                                }}
+                                                icon="Search"
+                                              />
+                                            </div>
+                                          </Tippy>
+                                        )}
+                                      </>
+                                    ) : null}
+                                    {/* Key Changes and Documents icons - show for all rows */}
                                     <Tippy content="Key Changes" options={{ theme: "light" }}>
                                       <div 
                                         className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
                                           firstGuideline?.voting_guidelines_key_changes 
-                                            ? 'bg-primary/10 text-primary cursor-pointer hover:bg-primary/20' 
-                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-40'
+                                            ? 'bg-gray-100 text-slate-900 cursor-pointer hover:bg-gray-200' 
+                                            : 'bg-gray-50 text-gray-300 cursor-not-allowed'
                                         }`}
                                         onClick={() => {
                                           if (firstGuideline?.voting_guidelines_key_changes) {
                                             setSelectedKeyChanges(firstGuideline.voting_guidelines_key_changes);
+                                            setSelectedPolicyName(firstGuideline?.institution_name || "");
+                                            setSelectedYear(firstGuideline?.year || "");
                                             setKeyChangesModalVisible(true);
                                           }
                                         }}
                                       >
-                                        <Lucide icon="Edit" className="w-4 h-4" />
+                                        <Lucide icon="FileDiff" className="w-4 h-4" />
                                       </div>
                                     </Tippy>
                                     <Tippy content="Documents" options={{ theme: "light" }}>
                                       <div 
-                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
+                                        className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
                                         onClick={async () => {
                                           setSelectedInstitutionId(firstGuideline.institution);
+                                          setSelectedPolicyName(firstGuideline?.institution_name.split(' - ')[0] || "");
+                                          setSelectedYear(firstGuideline?.year || "");
                                           try {
                                             const token = localStorage.getItem("token");
-                                            const response = await fetch(`${baseURL}/investor_profile_detail_page/?institution_id=${firstGuideline.institution}`, {
+                                            const response = await fetch(`${baseURL}/investor_profile_detail_page/?institution_id=${firstGuideline.institution}&year=${firstGuideline?.year}`, {
                                               headers: {
                                                 Authorization: `JWT ${token}`,
                                                 "Content-Type": "application/json",
@@ -961,25 +1031,39 @@ function ProxyGuideline() {
             <Dialog
               open={documentsModalVisible}
               onClose={() => setDocumentsModalVisible(false)}
+              size="lg"
             >
-              <Dialog.Panel className="max-w-7xl w-[90vw]">
-                <Dialog.Title>
-                  <h2 className="text-lg font-semibold">Institution Documents</h2>
+              <Dialog.Panel>
+                <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold">Key Documents</h2>
+                    <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
+                      <span>{selectedPolicyName}</span>
+                      <span>•</span>
+                      <span>{selectedYear}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setDocumentsModalVisible(false)}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Lucide icon="X" className="w-5 h-5" />
+                  </button>
                 </Dialog.Title>
-                <Dialog.Description className="mt-4">
+                <Dialog.Description className="p-8 overflow-y-auto max-h-[70vh]">
                   {institutionDocuments.length > 0 ? (
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div className="space-y-4">
                       {institutionDocuments.map((doc: any, index: number) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center gap-3 flex-1">
                             <Lucide icon="FileText" className="w-5 h-5 text-slate-600" />
                             <div>
-                              <p className="font-medium text-sm">{doc.name || doc.title || 'Document'}</p>
+                              <p className="font-medium text-base">{doc.name || doc.title || 'Document'}</p>
                               {doc.description && (
-                                <p className="text-xs text-slate-500 mt-1">{doc.description}</p>
+                                <p className="text-sm text-slate-500 mt-1">{doc.description}</p>
                               )}
                             </div>
                           </div>
@@ -987,20 +1071,26 @@ function ProxyGuideline() {
                             href={doc.url || doc.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full transition-colors bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
                           >
-                            <Lucide icon="ExternalLink" className="w-4 h-4" />
+                            <Lucide icon="ExternalLink" className="w-5 h-5" />
                           </a>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-slate-500 text-center py-8">No documents available for this institution.</p>
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <Lucide icon="FileSearch" className="w-16 h-16 text-slate-200 mb-4" />
+                      <p className="text-lg font-semibold text-slate-700">No Documents Available</p>
+                      <p className="text-slate-500 mt-2">This institution has no documents on file.</p>
+                    </div>
                   )}
                 </Dialog.Description>
-                <div className="mt-6 flex justify-end">
+                <div className="p-6 border-t bg-slate-50 flex justify-end">
                   <Button
+                    variant="primary"
                     onClick={() => setDocumentsModalVisible(false)}
+                    className="px-8"
                   >
                     Close
                   </Button>
@@ -1014,20 +1104,34 @@ function ProxyGuideline() {
             <Dialog
               open={keyChangesModalVisible}
               onClose={() => setKeyChangesModalVisible(false)}
+              size="lg"
             >
-              <Dialog.Panel className="max-w-7xl w-[90vw]">
-                <Dialog.Title>
-                  <h2 className="text-lg font-semibold">Key Changes in Voting Guidelines</h2>
+              <Dialog.Panel>
+                <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold">{selectedPolicyName}</h2>
+                    <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
+                      <span>{selectedYear}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setKeyChangesModalVisible(false)}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Lucide icon="X" className="w-5 h-5" />
+                  </button>
                 </Dialog.Title>
-                <Dialog.Description className="mt-4">
+                <Dialog.Description className="p-8 overflow-y-auto max-h-[70vh]">
                   <div 
-                    className="prose prose-sm max-w-none max-h-[500px] overflow-y-auto"
+                    className="prose prose-sm max-w-none text-slate-600 leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: selectedKeyChanges }}
                   />
                 </Dialog.Description>
-                <div className="mt-6 flex justify-end">
+                <div className="p-6 border-t bg-slate-50 flex justify-end">
                   <Button
+                    variant="primary"
                     onClick={() => setKeyChangesModalVisible(false)}
+                    className="px-8"
                   >
                     Close
                   </Button>
