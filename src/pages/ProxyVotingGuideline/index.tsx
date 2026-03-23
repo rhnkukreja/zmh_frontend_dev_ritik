@@ -769,7 +769,7 @@ function ProxyGuideline() {
                                           }
                                         }}
                                       >
-                                        <Lucide icon="FileDiff" className="w-4 h-4" />
+                                        <Lucide icon="GitCompare" className="w-4 h-4" />
                                       </div>
                                     </Tippy>
                                     <Tippy content="Documents" options={{ theme: "light" }}>
@@ -861,7 +861,7 @@ function ProxyGuideline() {
                                 )}
 
                                 <Table.Td className="py-2 px-3 relative w-[150px]" style={{fontSize: '14px'}}>
-                                  <div className="flex gap-3 items-center">
+                                  <div className="flex gap-3 items-center justify-end">
                                     <Tippy
                                       content="See Details"
                                       options={{
@@ -1059,7 +1059,9 @@ function ProxyGuideline() {
                           className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <Lucide icon="FileText" className="w-5 h-5 text-slate-600" />
+                            <div className="flex items-center justify-center w-6 h-6">
+                              <Lucide icon="FileText" className="w-5 h-5 text-slate-600" />
+                            </div>
                             <div>
                               <p className="font-medium text-base">{doc.name || doc.title || 'Document'}</p>
                               {doc.description && (
@@ -1067,14 +1069,17 @@ function ProxyGuideline() {
                               )}
                             </div>
                           </div>
-                          <a
-                            href={doc.url || doc.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => {
+                              const url = doc.link || doc.url || doc.file_url;
+                              if (url) {
+                                window.open(url, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
                             className="inline-flex items-center justify-center w-10 h-10 rounded-full transition-colors bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
                           >
                             <Lucide icon="ExternalLink" className="w-5 h-5" />
-                          </a>
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -1123,8 +1128,19 @@ function ProxyGuideline() {
                 </Dialog.Title>
                 <Dialog.Description className="p-8 overflow-y-auto max-h-[70vh]">
                   <div 
-                    className="prose prose-sm max-w-none text-slate-600 leading-relaxed"
+                    className="prose prose-sm max-w-none text-slate-600 leading-relaxed [&_a]:cursor-pointer [&_a]:text-primary [&_a]:underline hover:[&_a]:text-primary/80"
                     dangerouslySetInnerHTML={{ __html: selectedKeyChanges }}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.tagName === 'A' || target.closest('a')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const link = (target.tagName === 'A' ? target : target.closest('a')) as HTMLAnchorElement;
+                        if (link && link.href) {
+                          window.open(link.href, '_blank', 'noopener,noreferrer');
+                        }
+                      }
+                    }}
                   />
                 </Dialog.Description>
                 <div className="p-6 border-t bg-slate-50 flex justify-end">
