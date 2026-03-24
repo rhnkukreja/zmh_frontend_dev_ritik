@@ -67,6 +67,11 @@ class InvestersProfileService {
       results,
     };
   }
+
+  public async deleteInvestersProfile(id: number): Promise<any> {
+    const response = await axiosInstance.delete(`/investor_profile/${id}/`);
+    return response.data;
+  }
 }
 
 export const investersProfileService = new InvestersProfileService();

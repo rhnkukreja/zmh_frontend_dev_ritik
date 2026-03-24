@@ -47,6 +47,7 @@ import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
+import { caseStudiesService } from "@/services/caseStudies";
 
 interface CaseStudyFilter {
   keyword: string[];
@@ -109,7 +110,10 @@ function CaseStudies() {
 
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCaseStudy, setSelectedCaseStudy] = useState<any>(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
   
@@ -403,9 +407,38 @@ function CaseStudies() {
     }
   };
 
-  const onEditCaseStudiesClickHandler = (caseStudy: any) => {
-    setSelectedCaseStudies(caseStudy);
+  const onEditCaseStudiesClickHandler = (caseStudies: any) => {
+    setSelectedCaseStudies(caseStudies);
     setAddNewCaseStudyModalVisible(true);
+  };
+
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await caseStudiesService.deleteCaseStudy(itemToDelete.id);
+
+      toast.success("Case Study deleted successfully");
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
+
+      // Refresh data
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/case_studies/`,
+        filters,
+        undefined,
+        page
+      );
+      dispatch(fetchCaseStudies(dynamicURL));
+      // Optionally refresh dropdowns if needed
+      // useCaseStudyDropdowns().refresh(); // If refresh is available
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error?.response?.data?.message || "Something went wrong!");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const multSearchUrl = useMemo(() => {
@@ -1249,14 +1282,14 @@ function CaseStudies() {
                   <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
                     <div className="flex-1">
                       <h2 className="text-2xl font-bold">
-                        {selectedCaseStudy?.company_name || selectedCaseStudy?.caspio_company_name}
+                        {selectedCaseStudies?.company_name || selectedCaseStudies?.caspio_company_name}
                       </h2>
                       <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
-                        <span>{selectedCaseStudy?.institution_name}</span>
+                        <span>{selectedCaseStudies?.institution_name}</span>
                         <span>•</span>
-                        <span>{selectedCaseStudy?.esg_themes}</span>
+                        <span>{selectedCaseStudies?.esg_themes}</span>
                         <span>•</span>
-                        <span>{selectedCaseStudy?.year}</span>
+                        <span>{selectedCaseStudies?.year}</span>
                       </div>
                     </div>
                     <button
@@ -1273,7 +1306,7 @@ function CaseStudies() {
                           <FaLayerGroup size={12} /> Resolution / Engagement Topic
                         </h4>
                         <div className="text-lg font-semibold text-slate-800">
-                          {selectedCaseStudy?.resolution_engagement_topic || 'Not Specified'}
+                          {selectedCaseStudies?.resolution_engagement_topic || 'Not Specified'}
                     </div>
                   </div>
 
@@ -1282,7 +1315,7 @@ function CaseStudies() {
                           <FaBuilding size={12} /> Background & Details
                         </h4>
                         <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                          {selectedCaseStudy?.engagement_details || 'No details available.'}
+                          {selectedCaseStudies?.engagement_details || 'No details available.'}
                       </p>
                       </div>
 
@@ -1291,7 +1324,7 @@ function CaseStudies() {
                           <FaHandshake size={12} /> Engagement/Voting Summary
                         </h4>
                         <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                          {selectedCaseStudy?.voting_details || 'No voting details available.'}
+                          {selectedCaseStudies?.voting_details || 'No voting details available.'}
                         </p>
                       </div>
 
@@ -1303,15 +1336,15 @@ function CaseStudies() {
                           <div className="flex items-center gap-3">
                             <span className={clsx(
                               "px-4 py-1.5 rounded-full font-bold text-sm",
-                              selectedCaseStudy?.vote?.toLowerCase()?.includes('for') ? "bg-success/10 text-success border border-success/20" :
-                                selectedCaseStudy?.vote?.toLowerCase()?.includes('against') ? "bg-danger/10 text-danger border border-danger/20" :
+                              selectedCaseStudies?.vote?.toLowerCase()?.includes('for') ? "bg-success/10 text-success border border-success/20" :
+                                selectedCaseStudies?.vote?.toLowerCase()?.includes('against') ? "bg-danger/10 text-danger border border-danger/20" :
                                   "bg-warning/10 text-warning border border-warning/20"
                             )}>
-                              Vote: {selectedCaseStudy?.vote || 'Pending'}
+                              Vote: {selectedCaseStudies?.vote || 'Pending'}
                             </span>
                           </div>
                           <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-lg border border-slate-100 italic">
-                            {selectedCaseStudy?.voting_rationale || 'No rationale provided.'}
+                            {selectedCaseStudies?.voting_rationale || 'No rationale provided.'}
                           </p>
                           </div>
                       </div>
@@ -1351,6 +1384,9 @@ function CaseStudies() {
                     </StandardizedTable.Cell>
                     <StandardizedTable.Cell isHeader>
                       Details
+                    </StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader>
+                      Actions
                     </StandardizedTable.Cell>
                   </StandardizedTable.Header>
 
@@ -1406,21 +1442,43 @@ function CaseStudies() {
                                     />
                                   </div>
                                 </Tippy>
+                              </div>
+                            </StandardizedTable.Cell>
 
+                            <StandardizedTable.Cell>
+                              <div className="flex gap-3 justify-center">
                                 {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                  <Tippy
-                                    content="Edit"
-                                    options={{ theme: "light" }}
-                                  >
-                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                      <Lucide
-                                        onClick={() =>
-                                          onEditCaseStudiesClickHandler(item)
-                                        }
-                                        icon="PenLine"
-                                      />
-                                    </div>
-                                  </Tippy>
+                                  <>
+                                    <Tippy
+                                      content="Edit"
+                                      options={{ theme: "light" }}
+                                    >
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <Lucide
+                                          onClick={() =>
+                                            onEditCaseStudiesClickHandler(item)
+                                          }
+                                          icon="PenLine"
+                                          className="text-primary"
+                                        />
+                                      </div>
+                                    </Tippy>
+                                    <Tippy
+                                      content="Delete"
+                                      options={{ theme: "light" }}
+                                    >
+                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <Lucide
+                                          onClick={() => {
+                                            setItemToDelete(item);
+                                            setIsDeleteModalOpen(true);
+                                          }}
+                                          icon="Trash2"
+                                          className="text-danger"
+                                        />
+                                      </div>
+                                    </Tippy>
+                                  </>
                                 )}
                               </div>
                             </StandardizedTable.Cell>
@@ -1468,9 +1526,53 @@ function CaseStudies() {
                   />
                 )}
               </div>
-
             </div>
           </div>
+
+          {isDeleteModalOpen && (
+            <Dialog
+              size="md"
+              open={isDeleteModalOpen}
+              onClose={() => {
+                setIsDeleteModalOpen(false);
+              }}
+            >
+              <Dialog.Panel className="p-0 text-center">
+                <div className="p-5 text-center">
+                  <Lucide
+                    icon="XCircle"
+                    className="w-16 h-16 mx-auto mt-3 text-danger"
+                  />
+                  <div className="mt-5 text-3xl">Are you sure?</div>
+                  <div className="mt-2 text-slate-500">
+                    Do you really want to delete this case study? <br />
+                    This action cannot be undone.
+                  </div>
+                </div>
+                <div className="px-5 pb-8 text-center">
+                  <Button
+                    variant="outline-secondary"
+                    type="button"
+                    onClick={() => {
+                      setIsDeleteModalOpen(false);
+                    }}
+                    className="w-24 mr-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    type="button"
+                    className="w-24"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </Dialog.Panel>
+            </Dialog>
+          )}
         </div>
       </div>
     </>

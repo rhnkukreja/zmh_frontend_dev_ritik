@@ -80,6 +80,11 @@ class CaseStudiesService {
     const response = await axiosInstance.get(`/api/case-studies-ai/related/`, { params });
     return response.data;
   }
+
+  public async deleteCaseStudy(id: number): Promise<any> {
+    const response = await axiosInstance.delete(`/case_studies/${id}/`);
+    return response.data;
+  }
 }
 
 export const caseStudiesService = new CaseStudiesService();

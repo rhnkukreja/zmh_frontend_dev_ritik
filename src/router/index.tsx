@@ -122,9 +122,27 @@ function Router() {
     useEffect(() => {
       const parentRoute = routes.find((route: any) => route.path === "/");
       const slicePathName = location.pathname?.split("/")[1];
-      const childRoute = parentRoute?.children?.find((route: any) =>
+      let childRoute = parentRoute?.children?.find((route: any) =>
         route.path.includes(slicePathName)
       );
+
+      // Also resolve titles for top-level route groups with children (e.g. ai-assistant/*)
+      if (!childRoute) {
+        const normalizedPath = location.pathname.replace(/^\//, "");
+        const routeGroup = routes.find(
+          (route: any) =>
+            Array.isArray(route?.children) &&
+            route.children.some((child: any) =>
+              normalizedPath === child?.path || normalizedPath.startsWith(`${child?.path}/`)
+            )
+        );
+
+        childRoute = routeGroup?.children?.find(
+          (child: any) =>
+            normalizedPath === child?.path || normalizedPath.startsWith(`${child?.path}/`)
+        );
+      }
+
       document.title = childRoute?.data?.titleName || "ZMH Analytics";
     }, [location.pathname]);
 
