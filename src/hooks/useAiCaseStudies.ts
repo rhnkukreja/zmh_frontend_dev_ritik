@@ -1,6 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { caseStudiesService } from '@/services/caseStudies';
 import { toast } from 'react-toastify';
+
+type ActiveAiFilterItem = {
+    type: 'investor' | 'theme' | 'year';
+    value: number | string;
+};
 
 export const useAiCaseStudies = () => {
     // === AI Related States ===
@@ -31,6 +36,8 @@ export const useAiCaseStudies = () => {
     const [aiPage, setAiPage] = useState(1);
     const [aiTotalPages, setAiTotalPages] = useState(1);
     const [aiCaseStudiesCount, setAiCaseStudiesCount] = useState(0);
+    const [activeAiFilterOrder, setActiveAiFilterOrder] = useState<ActiveAiFilterItem[]>([]);
+    const lastAutoAnalysisKeyRef = useRef<string | null>(null);
 
     // Investor modal state
     const [isInvestorModalOpen, setIsInvestorModalOpen] = useState(false);
@@ -132,7 +139,7 @@ export const useAiCaseStudies = () => {
     }, [selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
 
     const handleAiAnalysis = async (term?: string) => {
-        const query = term || aiSearchTerm;
+        const query = term !== undefined ? term : aiSearchTerm;
         
         setIsAiLoading(true);
         // setAiResponse(null); // Optional: clear previous response
@@ -211,17 +218,65 @@ export const useAiCaseStudies = () => {
         }
     }, [aiFiltersData, fetchAiTopics]);
 
-    // Clear search term and fetch summary when filters change (without topic)
+    useEffect(() => {
+        const selectedFilters: ActiveAiFilterItem[] = [
+            ...selectedAiInstitutionIds.map((id) => ({ type: 'investor' as const, value: id })),
+            ...selectedAiThemes.map((theme) => ({ type: 'theme' as const, value: theme })),
+            ...selectedAiYears.map((year) => ({ type: 'year' as const, value: year })),
+        ];
+
+        setActiveAiFilterOrder((prev) => {
+            const preserved = prev.filter((prevItem) =>
+                selectedFilters.some(
+                    (item) => item.type === prevItem.type && item.value === prevItem.value
+                )
+            );
+
+            const appended = selectedFilters.filter(
+                (item) =>
+                    !preserved.some(
+                        (prevItem) => prevItem.type === item.type && prevItem.value === prevItem.value
+                    )
+            );
+
+            const next = [...preserved, ...appended];
+            const hasChanged =
+                next.length !== prev.length ||
+                next.some(
+                    (item, index) =>
+                        item.type !== prev[index]?.type || item.value !== prev[index]?.value
+                );
+
+            return hasChanged ? next : prev;
+        });
+    }, [selectedAiInstitutionIds, selectedAiThemes, selectedAiYears]);
+
     useEffect(() => {
         setAiSearchTerm("");
         setAiResponse(null);
         setAiCaseStudies([]);
-        
-        // Auto-fetch summary based on filters only (no topic/query)
-        if (aiFiltersData) {
-            handleAiAnalysis("");
-        }
+        setAiPage(1);
     }, [selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
+
+    useEffect(() => {
+        if (!aiFiltersData) {
+            return;
+        }
+
+        const autoAnalysisKey = JSON.stringify({
+            institution_ids: selectedAiInstitutionIds,
+            themes: selectedAiThemes,
+            years: selectedAiYears,
+            company_ids: selectedAiCompanyIds,
+        });
+
+        if (lastAutoAnalysisKeyRef.current === autoAnalysisKey) {
+            return;
+        }
+
+        lastAutoAnalysisKeyRef.current = autoAnalysisKey;
+        handleAiAnalysis("");
+    }, [aiFiltersData, selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
 
     return {
         // States
@@ -252,6 +307,7 @@ export const useAiCaseStudies = () => {
         aiPage,
         aiTotalPages,
         aiCaseStudiesCount,
+        activeAiFilterOrder,
         // Modal
         isInvestorModalOpen,
         setIsInvestorModalOpen,
