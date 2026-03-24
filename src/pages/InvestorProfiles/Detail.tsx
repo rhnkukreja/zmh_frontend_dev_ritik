@@ -438,11 +438,11 @@ function Main() {
                   (key, index) => {
                     const typedKey =
                       key as keyof typeof investorProfileEditableSectionsInvestors;
-                    const value = singleInvesterProfile?.[typedKey];
-                    const shouldRenderSection =
-                      !!value || (!value && (user?.user_type === "Analyst" || user?.user_type === "Admin"));
+                    const value = singleInvesterProfile?.[typedKey] as string | undefined;
+                    
+                    const isContentEmpty = !value || value.replace(/<[^>]*>?/gm, "").replace(/&nbsp;/g, "").trim() === "";
 
-                    if (!shouldRenderSection) {
+                    if (isContentEmpty) {
                       return null;
                     }
 
@@ -466,7 +466,6 @@ function Main() {
                           )}
                         toggleAllGroups={toggleAllGroups}
                         areAllGroupsExpanded={areAllGroupsExpanded}
-
                       />
                     );
                   }
