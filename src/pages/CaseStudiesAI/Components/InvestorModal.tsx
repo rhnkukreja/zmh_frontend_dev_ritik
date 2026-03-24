@@ -49,11 +49,11 @@ const InvestorModal: React.FC<InvestorModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col"
+        className="relative z-[121] bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden flex flex-col"
         style={{ maxHeight: "80vh" }}
         onClick={(e) => e.stopPropagation()}
       >

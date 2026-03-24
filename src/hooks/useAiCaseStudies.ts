@@ -7,6 +7,12 @@ type ActiveAiFilterItem = {
     value: number | string;
 };
 
+const aiFilterTypeToApiKey: Record<ActiveAiFilterItem['type'], string> = {
+    investor: 'institution_ids',
+    theme: 'themes',
+    year: 'years',
+};
+
 export const useAiCaseStudies = () => {
     // === AI Related States ===
     const [aiFiltersData, setAiFiltersData] = useState<any>(null);
@@ -62,6 +68,14 @@ export const useAiCaseStudies = () => {
             if (selectedAiCompanyIds.length > 0) {
                 params.company_ids = selectedAiCompanyIds.join(',');
             }
+
+            const selectionOrder = activeAiFilterOrder
+                .map((item) => aiFilterTypeToApiKey[item.type])
+                .filter((value, index, arr) => arr.indexOf(value) === index);
+
+            if (selectionOrder.length > 0) {
+                params.selection_order = selectionOrder.join(',');
+            }
             
             const data = await caseStudiesService.getCaseStudiesAIFilters(params);
             setAiFiltersData(data);
@@ -70,7 +84,7 @@ export const useAiCaseStudies = () => {
         } finally {
             setIsAiFiltersLoading(false);
         }
-    }, [selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds]);
+    }, [selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds, activeAiFilterOrder]);
 
     const toggleAiFilter = (type: 'investor' | 'theme' | 'year' | 'company', value: any) => {
         if (type === 'investor') {
