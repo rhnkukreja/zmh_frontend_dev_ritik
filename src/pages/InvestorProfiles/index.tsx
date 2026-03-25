@@ -426,15 +426,16 @@ function Main() {
                 <TableWrapper 
                   isLoading={loading}
                   skeleton={
-                    <div className="space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="bg-white rounded-lg p-4 space-y-3">
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-                          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-                          <div className="flex space-x-2">
-                            <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-                            <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                    <div className="space-y-0">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                        <div
+                          key={i}
+                          className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5 my-2 shadow-md bg-white"
+                        >
+                          <div className="ml-5 flex items-center w-full">
+                            <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[45%]" />
                           </div>
+                          <div className="w-5 h-5 rounded-full bg-slate-200 animate-pulse mr-1.5" />
                         </div>
                       ))}
                     </div>
