@@ -61,7 +61,13 @@ class CaseStudiesService {
     };
   }
 
-  public async getCaseStudiesAIFilters(params?: { company_ids?: string }): Promise<any> {
+  public async getCaseStudiesAIFilters(params?: {
+    company_ids?: string;
+    years?: string;
+    institution_ids?: string;
+    themes?: string;
+    selection_order?: string;
+  }): Promise<any> {
     const response = await axiosInstance.get(`/api/case-studies-ai/filters/`, { params });
     return response.data;
   }

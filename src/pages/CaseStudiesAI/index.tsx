@@ -83,6 +83,7 @@ function CaseStudiesAI() {
         aiPage,
         aiTotalPages,
         aiCaseStudiesCount,
+        activeAiFilterOrder,
         isInvestorModalOpen,
         setIsInvestorModalOpen,
         investorSearch,
@@ -299,6 +300,7 @@ function CaseStudiesAI() {
                                 selectedAiInstitutionIds={selectedAiInstitutionIds}
                                 selectedAiThemes={selectedAiThemes}
                                 selectedAiYears={selectedAiYears}
+                                activeAiFilterOrder={activeAiFilterOrder}
                                 aiFiltersData={aiFiltersData}
                                 toggleAiFilter={toggleAiFilter}
                                 onClearAll={() => {
