@@ -2,34 +2,38 @@ import { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
 import TableWrapper from "@/components/TableWrapper";
 import Table from "@/components/Base/Table";
+import clsx from "clsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { dashboardService } from "@/services/dashboard";
+import { MdOutlineClear } from "react-icons/md";
+import { FaSearch } from "react-icons/fa";
+import Tippy from "@/components/Base/Tippy";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import { createDynamicURL, downloadFileFromAPI } from "@/utils/helper";
+import { baseURL } from "@/constant";
 
-const toOptions = (arr: string[]) => arr.map((v) => ({ value: v, label: v }));
 
-const normalizeRows = (result: any): Record<string, any>[] => {
-  if (!result || typeof result !== "object") return [];
+interface PivotColumn {
+  title: string;
+  sub_columns: string[];
+}
 
-  const dataObject = result.result || result.data || result;
+interface PivotRow {
+  fund_name: string;
+  values: Record<string, Record<string, string>>;
+}
 
-  if (Array.isArray(dataObject)) return dataObject;
-
-  const rows: Record<string, any>[] = [];
-  for (const [name, data] of Object.entries(dataObject)) {
-    if (typeof data === "object" && data !== null) {
-      rows.push({ Institution: name, ...data });
-    }
-  }
-  return rows;
-};
+interface PivotData {
+  columns: PivotColumn[];
+  rows: PivotRow[];
+  grand_total?: Record<string, Record<string, string>>;
+}
 
 const formatCell = (value: any) => {
   if (value === null || value === undefined || value === "") return "-";
-  if (Array.isArray(value)) return value.join(", ");
-  if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 };
 
@@ -53,13 +57,13 @@ export default function NPXAnalyticsPage() {
 
   // Table state
   const [tableLoading, setTableLoading] = useState(false);
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [rows, setRows] = useState<Record<string, any>[]>([]);
+  const [pivotData, setPivotData] = useState<PivotData | null>(null);
 
-  const headers = useMemo(() => {
-    if (!rows.length) return [] as string[];
-    return Object.keys(rows[0]);
-  }, [rows]);
+  const [meetingDate, setMeetingDate] = useState<string>("");
+
+  const toOptions = (arr: string[]) => arr.map((v) => ({ value: v, label: v }));
 
   // ------------------------------------
   // Fetch dropdown options
@@ -71,7 +75,7 @@ export default function NPXAnalyticsPage() {
       setDropdownLoading(true);
       const params: any = { company_id: companyId, year };
       if (selectedInstitution && selectedInstitution.length > 0) {
-        params.institution_name = selectedInstitution.join(",");
+        params.institution_name = selectedInstitution;
       }
 
       const response = await dashboardService.getNPXPivotTableDropdown(params);
@@ -92,6 +96,7 @@ export default function NPXAnalyticsPage() {
           ? payload.proposal_text.filter(Boolean)
           : []
       );
+      setMeetingDate(payload.meeting_date);
     } catch (err) {
       console.error("[NPXAnalytics] fetchDropdown error:", err);
     } finally {
@@ -102,32 +107,56 @@ export default function NPXAnalyticsPage() {
   // ------------------------------------
   // Fetch pivot table data
   // ------------------------------------
-  const fetchPivotTable = async () => {
+  const fetchPivotTable = async (filters?: {
+    institution_name?: string[];
+    fund_name?: string[];
+    proposal_text?: string[];
+    download?: boolean;
+  }) => {
     if (!companyId || !year) return;
+    if (filters?.download && loadingDownload) return;
 
     try {
+      const queryParams = {
+        company_id: companyId,
+        year,
+        institution_name: filters?.institution_name ?? institutionName,
+        fund_name: filters?.fund_name ?? fundName,
+        proposal_text: filters?.proposal_text ?? proposalText,
+      };
+
+      if (filters?.download) {
+        setLoadingDownload(true);
+        downloadFileFromAPI({
+          url: createDynamicURL(`${baseURL}/api/npx_pivot_table/`, queryParams),
+          fileName: "npx_analytics.xlsx",
+          setLoading: setLoadingDownload,
+          serviceMethod: dashboardService.getNPXPivotTableFile
+        });
+        return;
+      }
+
       setTableLoading(true);
       setErrorMessage("");
 
-      const response = await dashboardService.getNPXPivotTable({
-        company_id: companyId,
-        year,
-        institution_name: institutionName,
-        fund_name: fundName || "",
-        proposal_text: proposalText,
-      });
+      const response = await dashboardService.getNPXPivotTable(queryParams);
 
       const payload =
         (response as any)?.result || (response as any)?.data || response;
-      const parsedRows = normalizeRows(payload);
-      setRows(parsedRows);
+      setPivotData(payload);
     } catch (err) {
       console.error("[NPXAnalytics] fetchPivotTable error:", err);
-      setRows([]);
+      setPivotData(null);
       setErrorMessage("Failed to load pivot analytics data.");
     } finally {
-      setTableLoading(false);
+      if (!filters?.download) {
+        setTableLoading(false);
+      }
     }
+  };
+
+  const onApplyFilters = () => {
+    fetchPivotTable();
   };
 
   // Load dropdowns on mount. Re-fetch with institution filter when it changes.
@@ -135,10 +164,23 @@ export default function NPXAnalyticsPage() {
     fetchDropdown(institutionName.length > 0 ? institutionName : undefined);
   }, [companyId, year, institutionName]);
 
-  // Re-fetch table whenever any filter changes
+  // Fetch table on initial load / context change only
   useEffect(() => {
     fetchPivotTable();
-  }, [companyId, year, institutionName, fundName, proposalText]);
+  }, [companyId, year]);
+
+  const onFilterClear = () => {
+    setInstitutionName([]);
+    setFundName([]);
+    setProposalText([]);
+    setErrorMessage("");
+    setPivotData(null);
+    fetchPivotTable({
+      institution_name: [],
+      fund_name: [],
+      proposal_text: [],
+    });
+  };
 
   // ------------------------------------
   // Render
@@ -161,18 +203,35 @@ export default function NPXAnalyticsPage() {
       <div className="p-5 mt-1 box">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-lg font-bold">NPX Analytics</h1>
+            <h1 className="text-lg font-bold flex items-center gap-2">
+              NPX Analytics
+              <span className="px-2 py-1 text-xs font-bold bg-red-800 text-white rounded-full">
+                BETA
+              </span>
+            </h1>
             <p className="italic">
-              Year: {year || "-"}
+              Meeting Date: {meetingDate || "-"}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="primary"
-              onClick={fetchPivotTable}
-              disabled={tableLoading || dropdownLoading}
+              variant="outline-secondary"
+              onClick={() => {
+                onFilterClear();
+              }}
+              className="w-full sm:w-auto flex items-center gap-2"
+              type="button"
             >
-              {tableLoading ? "Loading..." : "Search"}
+              <MdOutlineClear className="text-lg mr-1" />Clear
+            </Button>
+
+            <Button
+              variant="primary"
+              onClick={onApplyFilters}
+              className="w-full sm:w-auto flex items-center gap-2"
+              type="button"
+            >
+              <FaSearch className="text-lg" /> Apply
             </Button>
           </div>
         </div>
@@ -186,7 +245,6 @@ export default function NPXAnalyticsPage() {
             </label>
             <Select
               isMulti
-              isLoading={dropdownLoading}
               options={toOptions(institutions)}
               value={institutionName.map((i) => ({ value: i, label: i }))}
               onChange={(opts) =>
@@ -194,6 +252,7 @@ export default function NPXAnalyticsPage() {
               }
               placeholder="Select Institution(s)"
               isClearable
+              closeMenuOnSelect={false}
             />
           </div>
 
@@ -202,7 +261,6 @@ export default function NPXAnalyticsPage() {
             <label className="text-sm font-semibold mb-1 block">Fund</label>
             <Select
               isMulti
-              isLoading={dropdownLoading}
               options={toOptions(funds)}
               value={fundName.map((f) => ({ value: f, label: f }))}
               onChange={(opts) =>
@@ -210,6 +268,7 @@ export default function NPXAnalyticsPage() {
               }
               placeholder="Select Fund(s)"
               isClearable
+              closeMenuOnSelect={false}
             />
           </div>
 
@@ -218,7 +277,6 @@ export default function NPXAnalyticsPage() {
             <label className="text-sm font-semibold mb-1 block">Proposal</label>
             <Select
               isMulti
-              isLoading={dropdownLoading}
               options={toOptions(proposals)}
               value={proposalText.map((p) => ({ value: p, label: p }))}
               onChange={(opts) =>
@@ -226,17 +284,36 @@ export default function NPXAnalyticsPage() {
               }
               placeholder="Select Proposal(s)"
               isClearable
+              closeMenuOnSelect={false}
             />
           </div>
         </div>
 
         {/* Table */}
         <div className="mt-6">
-          <div className="text-right text-sm text-gray-500 mb-2">
-            Total Count: {rows.length}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-right text-sm text-gray-500">
+              Total Count: {pivotData?.rows?.length ? pivotData.rows.length : 0}
+            </div>
+            <Tippy content="Download Excel" options={{ theme: "light" }}>
+              <div
+                className="box p-[5px] cursor-pointer"
+                onClick={() => fetchPivotTable({ download: true })}
+              >
+                {loadingDownload ? (
+                  <Lucide
+                    icon="Loader"
+                    className={`w-6 h-6 stroke-[1.3] ${loadingDownload ? "animate-spin" : ""
+                      }`}
+                  />
+                ) : (
+                  <img alt="download-icon" src={downloadIcon} />
+                )}
+              </div>
+            </Tippy>
           </div>
 
-          {(dropdownLoading || tableLoading) && (
+          {tableLoading && (
             <div className="flex items-center justify-center bg-white p-8 border rounded-md">
               <LoadingIcon color="#800000" icon="three-dots" className="w-12 h-12" />
             </div>
@@ -248,50 +325,136 @@ export default function NPXAnalyticsPage() {
             </div>
           )} */}
 
-          {!dropdownLoading && !tableLoading && (
+          {!tableLoading && pivotData && (
             <TableWrapper isLoading={false}>
               <Table bordered>
-                <Table.Thead variant="light">
+                <Table.Thead className="bg-slate-50">
+                  {/* Row 1: Main Column Titles */}
                   <Table.Tr>
-                    {headers.length > 0 ? (
-                      headers.map((head) => (
-                        <Table.Th key={head}>
-                          {head.toLowerCase() === "total"
-                            ? "Grand Total"
-                            : head.replaceAll("_", " ").charAt(0).toUpperCase() + head.slice(1)}
-                        </Table.Th>
-                      ))
-                    ) : (
-                      <Table.Th>No Data</Table.Th>
+                    {pivotData.columns.map((col, idx) => (
+                      <Table.Th
+                        key={idx}
+                        rowSpan={col.sub_columns.length === 0 ? 2 : 1}
+                        colSpan={col.sub_columns.length || 1}
+                        className={clsx(
+                          "text-center align-middle border",
+                          idx === 0 && "sticky left-0 z-20 bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+                        )}
+                      >
+                        {col.title}
+                      </Table.Th>
+                    ))}
+                  </Table.Tr>
+                  {/* Row 2: Sub-columns (For/Against) */}
+                  <Table.Tr>
+                    {pivotData.columns.map((col, idx) =>
+                      col.sub_columns.map((sub, sIdx) => {
+                        // idx === 0 check is technically redundant for sub_columns based on your JSON format,
+                        // but included for absolute robustness.
+                        return (
+                          <Table.Th
+                            key={`${col.title}-${sIdx}`}
+                            className={clsx(
+                              "text-center italic text-xs border whitespace-nowrap",
+                              idx === 0 && "sticky left-0 z-20 bg-slate-50"
+                            )}
+                          >
+                            {sub}
+                          </Table.Th>
+                        );
+                      })
                     )}
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {rows.length > 0 ? (
-                    rows.map((row, index) => {
-                      const isLastRow = index === rows.length - 1;
-                      return (
-                        <Table.Tr key={index} className={isLastRow ? "font-bold" : ""}>
-                          {headers.map((head) => {
-                            const raw = row?.[head];
-                            const display =
-                              head === "Institution" &&
-                                typeof raw === "string" &&
-                                raw.toLowerCase() === "grand_total"
-                                ? "Grand Total"
-                                : formatCell(raw);
-                            return (
-                              <Table.Td key={`${index}-${head}`}>
-                                {display}
-                              </Table.Td>
-                            );
+                  {pivotData.rows.length > 0 ? (
+                    <>
+                      {pivotData.rows.map((row, rIdx) => {
+                        const isGrandTotal = row.fund_name.toLowerCase() === "grand total";
+                        return (
+                          <Table.Tr
+                            key={rIdx}
+                            className={isGrandTotal ? "font-bold bg-slate-50" : ""}
+                          >
+                            {/* Fund Name Column - Sticky */}
+                            <Table.Td
+                              className={clsx(
+                                "border sticky left-0 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                                isGrandTotal ? "bg-slate-50" : "bg-white"
+                              )}
+                            >
+                              {row.fund_name}
+                            </Table.Td>
+
+                            {/* Values Columns */}
+                            {pivotData.columns.slice(1).map((col) => {
+                              if (col.sub_columns.length === 0) {
+                                const val = (row.values[col.title] as any) || "-";
+                                return (
+                                  <Table.Td key={col.title} className="text-center border">
+                                    {formatCell(val)}
+                                  </Table.Td>
+                                );
+                              }
+
+                              return col.sub_columns.map((sub) => {
+                                const val = row.values[col.title]?.[sub.toLowerCase()] || "";
+                                return (
+                                  <Table.Td
+                                    key={`${col.title}-${sub}`}
+                                    className="text-center border"
+                                  >
+                                    {formatCell(val)}
+                                  </Table.Td>
+                                );
+                              });
+                            })}
+                          </Table.Tr>
+                        );
+                      })}
+
+                      {/* Explicit Grand Total Row from API */}
+                      {pivotData.grand_total && (
+                        <Table.Tr className="font-bold bg-slate-50">
+                          <Table.Td
+                            className="border sticky left-0 z-10 bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
+                          >
+                            Grand Total
+                          </Table.Td>
+                          {pivotData.columns.slice(1).map((col) => {
+                            if (col.sub_columns.length === 0) {
+                              const val = (pivotData.grand_total?.[col.title] as any) || "-";
+                              return (
+                                <Table.Td key={col.title} className="text-center border">
+                                  {formatCell(val)}
+                                </Table.Td>
+                              );
+                            }
+
+                            return col.sub_columns.map((sub) => {
+                              const val = pivotData.grand_total?.[col.title]?.[sub.toLowerCase()] || "";
+                              return (
+                                <Table.Td
+                                  key={`${col.title}-${sub}`}
+                                  className="text-center border"
+                                >
+                                  {formatCell(val)}
+                                </Table.Td>
+                              );
+                            });
                           })}
                         </Table.Tr>
-                      );
-                    })
+                      )}
+                    </>
                   ) : (
                     <Table.Tr>
-                      <Table.Td colSpan={headers.length || 1}>
+                      <Table.Td
+                        colSpan={pivotData.columns.reduce(
+                          (acc, col) => acc + (col.sub_columns.length || 1),
+                          0
+                        )}
+                        className="text-center py-8"
+                      >
                         No analytics data found for selected filters.
                       </Table.Td>
                     </Table.Tr>

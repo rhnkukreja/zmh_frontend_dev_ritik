@@ -200,7 +200,7 @@ const DetailShareHolder = () => {
                   {getSingleShareHolder?.year && (
                     <div>
                       <h3 className="font-semibold min-w-[150px] mb-2">Proxy Year</h3>
-                      <p> {getSingleShareHolder?.proxy_season ?? getSingleShareHolder?.year}</p>
+                      <p> {getSingleShareHolder?.proxy_season || "-"}</p>
                     </div>
                   )}
                   {getSingleShareHolder?.proponent_name && (

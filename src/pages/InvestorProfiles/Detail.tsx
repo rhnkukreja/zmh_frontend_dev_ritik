@@ -14,6 +14,8 @@ import {
   fetchSingleInvestersProfile,
   updateInvestersProfile,
 } from "@/stores/investersProfileSlice";
+import { Dialog } from "@/components/Base/Headless";
+import { investersProfileService } from "@/services/investersProfile";
 
 import LoadingWrapper from "@/components/LoadingWrapper";
 
@@ -139,9 +141,11 @@ function Main() {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [expandedSections, setExpandedSections] = useState<boolean[]>(() => {
-
     return Object.keys(investorProfileEditableSectionsInvestors).map((_, idx) => idx === 0);
   });
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const navigate = useNavigate();
   const toggleExpand = () => {
@@ -304,6 +308,23 @@ function Main() {
     );
   };
 
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await investersProfileService.deleteInvestersProfile(
+        Number(params.id)
+      );
+      toast.success("Investor Profile deleted successfully");
+      setIsDeleteModalOpen(false);
+      navigate("/investor-profile");
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error?.response?.data?.message || "Something went wrong!");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const { companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
@@ -311,7 +332,7 @@ function Main() {
   const backToPreviousPage = () => {
     if (from) {
       // navigate(`/?ticker=${companyGlobalSearchTicker}`);
-      navigate(`/`);
+      navigate(`/`, { state: { activeTab: 'ownership' } });
     } else {
       dispatch(setPage(currentPage));
       navigate(`/investor-profile`);
@@ -362,6 +383,17 @@ function Main() {
             />
             Back
           </Button>
+
+          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+            <Button
+              onClick={() => setIsDeleteModalOpen(true)}
+              variant="danger"
+              className="bg-theme-2 border-bg-theme-2"
+            >
+              <Lucide icon="Trash2" className="w-4 h-4 mr-2" />
+              Delete Profile
+            </Button>
+          )}
         </div>
  
         <div ref={contentRef}>
@@ -707,6 +739,51 @@ function Main() {
           </div>
         </div>
       </div>
+
+      {isDeleteModalOpen && (
+        <Dialog
+          size="md"
+          open={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+          }}
+        >
+          <Dialog.Panel className="p-0 text-center">
+            <div className="p-5 text-center">
+              <Lucide
+                icon="XCircle"
+                className="w-16 h-16 mx-auto mt-3 text-danger"
+              />
+              <div className="mt-5 text-3xl">Are you sure?</div>
+              <div className="mt-2 text-slate-500">
+                Do you really want to delete this investor profile? <br />
+                This action cannot be undone.
+              </div>
+            </div>
+            <div className="px-5 pb-8 text-center">
+              <Button
+                variant="outline-secondary"
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                }}
+                className="w-24 mr-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                type="button"
+                className="w-24"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
     </div>
   );
 }

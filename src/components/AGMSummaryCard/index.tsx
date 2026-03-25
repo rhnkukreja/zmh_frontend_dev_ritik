@@ -395,7 +395,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         { responseType: 'blob' }
       );
 
-      const filename = `NPX-Data-${companyGlobalSearchTicker}-${new Date().getTime()}.xlsx`;
+      const filename = `NPX Fund Level Data (${companyGlobalSearchTicker}).xlsx`;
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -614,8 +614,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                         View N-PX
                       </button>
                     )}
-                    {/* Download NPX btn hidden */}
-                    {/* {showNpxActions && (
+                    {/* NPX download and NPX analytics for admin only */}
+                    {showNpxActions && user?.user_type === 'Admin' && (
                       <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
                         <div className="relative">
                           <button
@@ -642,14 +642,19 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                           </span>
                         </div>
                       </Tippy>
-                    )} */}
-                    {user?.user_type === 'Admin' && (
-                      <button
-                        onClick={handleViewNPXAnalytics}
-                        className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                      >
-                        NPX analytics
-                      </button>
+                    )}
+                    {showNpxActions && (
+                      <div className="relative">
+                        <button
+                          onClick={handleViewNPXAnalytics}
+                          className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                        >
+                          NPX Analytics
+                        </button>
+                        <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                          BETA
+                        </span>
+                      </div>
                     )}
                     <button
                       disabled={
@@ -659,7 +664,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                       }
                       onClick={handle8kLink}
                       className={clsx([
-                        "p-2 bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                        "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
                         is8kLoading ||
                           !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
                           !(selectedYear || agmSummaryDetails?.Year)
@@ -677,8 +682,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                       <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
                         <button
                           onClick={() => setChartModalVisible(true)}
-                          className="p-2 cursor-pointer bg-white rounded-md w-auto flex items-center justify-center border-red-800 border-2
-                                     font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                          className="p-2 cursor-pointer bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
                         >
                           <Lucide icon="BarChart3" className="w-4 h-4" />
                         </button>

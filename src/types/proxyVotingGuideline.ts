@@ -3,6 +3,7 @@ export type ProxyVotingGuideline = {
   proxy_voting_guidelines_id: string;
   institution: number;
   institution_name: string;
+  institution_name_raw: string;
   year: string;
   category?: string;
   sub_category?: string | null;
@@ -11,11 +12,15 @@ export type ProxyVotingGuideline = {
   policy_type?: string | null;
   voting_guidelines_pdf: string | null;
   voting_guidelines_pdf_url: string | null;
+  voting_guidelines_pdf_name: string;
   active: boolean;
   date_created: string;
   date_updated: string;
+  created_by: number;
+  updated_by?: number | null;
+  created_by_email: string;
   institution_logo_url: string;
-  voting_guidelines_pdf_name: string;
+  voting_guidelines_key_changes?: string | null;
   is_search?: boolean;
 };
 

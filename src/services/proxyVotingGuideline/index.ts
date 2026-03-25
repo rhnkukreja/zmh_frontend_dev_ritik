@@ -89,6 +89,11 @@ class ProxyVotingGuidelineService {
       result: response.data,
     };
   }
+
+  public async deleteProxyVotingGuideline(id: number): Promise<any> {
+    const response = await axiosInstance.delete(`/proxy_voting_guidelines/${id}/`);
+    return response.data;
+  }
 }
 
 export const proxyVotingGuidelineService = new ProxyVotingGuidelineService();

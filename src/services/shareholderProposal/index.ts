@@ -202,6 +202,11 @@ class ShareHolderProposalService {
       result: result,
     };
   }
+
+  public async deleteShareHolderProposal(id: string): Promise<any> {
+    const response = await axiosInstance.delete(`/shareholder_proposal/def14a/${id}/`);
+    return response.data;
+  }
 }
 
 export const shareHolderProposalService = new ShareHolderProposalService();

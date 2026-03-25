@@ -112,6 +112,7 @@ import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 
 
 import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
+import CaseStudiesAI from "@/pages/CaseStudiesAI";
 
 
 function Router() {
@@ -121,9 +122,27 @@ function Router() {
     useEffect(() => {
       const parentRoute = routes.find((route: any) => route.path === "/");
       const slicePathName = location.pathname?.split("/")[1];
-      const childRoute = parentRoute?.children?.find((route: any) =>
+      let childRoute = parentRoute?.children?.find((route: any) =>
         route.path.includes(slicePathName)
       );
+
+      // Also resolve titles for top-level route groups with children (e.g. ai-assistant/*)
+      if (!childRoute) {
+        const normalizedPath = location.pathname.replace(/^\//, "");
+        const routeGroup = routes.find(
+          (route: any) =>
+            Array.isArray(route?.children) &&
+            route.children.some((child: any) =>
+              normalizedPath === child?.path || normalizedPath.startsWith(`${child?.path}/`)
+            )
+        );
+
+        childRoute = routeGroup?.children?.find(
+          (child: any) =>
+            normalizedPath === child?.path || normalizedPath.startsWith(`${child?.path}/`)
+        );
+      }
+
       document.title = childRoute?.data?.titleName || "ZMH Analytics";
     }, [location.pathname]);
 
@@ -451,6 +470,11 @@ function Router() {
           path: "case-studies/:id",
           element: <DetailCaseStudies />,
           data: { titleName: "Case Studies Detail - ZMH Analytics" },
+        },
+        {
+          path: "case-studies-ai",
+          element: <CaseStudiesAI />,
+          data: { titleName: "Case Studies AI - ZMH Analytics" },
         },
         {
           path: "investor-details",

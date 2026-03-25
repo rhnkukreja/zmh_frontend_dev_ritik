@@ -56,6 +56,7 @@ export type AddShareholderType = {
   no_shareholder_proposal:boolean;
   link_to_filing:string;
   matched_id_no_action: string;
+  anti_category?: string[];
   
 };
 

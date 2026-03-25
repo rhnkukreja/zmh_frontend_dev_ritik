@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
@@ -22,7 +22,7 @@ import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
 import CompanyOverview from "@/components/CompanyOverview";
 import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
-import EngagementPriorities from "@/components/EngagementPriorities";
+import InvestorOverview from "@/components/InvestorOverview";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -35,7 +35,7 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
-import { FileText, Building2, Users, Vote } from "lucide-react";
+import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -44,19 +44,36 @@ function Main() {
     (state: RootState) => state.authentiction
   );
 
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleHeaderHeightChange = (event: CustomEvent) => {
+      const height = event.detail.height;
+      setHeaderHeight(height);
+    };
+    window.addEventListener('headerHeightChange' as any, handleHeaderHeightChange);
+    return () => {
+      window.removeEventListener('headerHeightChange' as any, handleHeaderHeightChange);
+    };
+  }, []);
+
+
   // Check if user is admin
   const isAdmin = user?.user_type === 'Admin';
 
-  // Active tab state - default to company-overview for all users
-  const [activeTab, setActiveTab] = useState('company-overview');
-
+  // Active tab state - default based on user role
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab || 'company-overview'
+  );
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
 
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
-  const [isEngagementLoaded, setIsEngagementLoaded] = useState(false);
+
   // Handle generate report
   const handleGenerateReport = () => {
     if (companyGlobalSearchTicker) {
@@ -235,105 +252,88 @@ function Main() {
     <>
       <section>
         {/* Tabs - Top Level Navigation */}
-        <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: "8.9rem" }}>
-          
-          {/* Main header row is now flex-col to stack row 1 and row 2 vertically */}
-          <div className="bg-gradient-to-r from-white to-gray-50 flex flex-col px-6 py-4 border-b border-gray-200 gap-4">
-            
-            {/* --- Row 1 for Original Tabs and Button --- */}
-            {/* This new horizontal flex row keeps original tabs on the left and the button on the right */}
-            <div className="flex items-center justify-between gap-4 w-full">
-              
-              {/* This is your original white pill box for the main tabs */}
-              {/* I removed flex-wrap here so these stay on one line */}
-              <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-                {/* Company Overview - All Users */}
+        <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
+          <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
+              {/* Company Overview - All Users */}
+              <button
+                onClick={() => setActiveTab('company-overview')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === 'company-overview'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                Company Overview
+              </button>
+
+              {/* Company Overview GPT - Admin Only */}
+              {/* {isAdmin && (
                 <button
-                  onClick={() => setActiveTab('company-overview')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                    activeTab === 'company-overview'
+                  onClick={() => setActiveTab('company-overview-gpt')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
                       ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <Building2 className="w-4 h-4" />
                   Company Overview
                 </button>
+              )} */}
 
-                {/* Company Overview GPT - Admin Only */}
-                {isAdmin && (
-                  <button
-                    onClick={() => setActiveTab('company-overview-gpt')}
-                    className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                      activeTab === 'company-overview-gpt'
-                        ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              {/* Investor Insight - All Users */}
+              <div className="relative">
+                <button
+                  onClick={() => setActiveTab('investor-overview')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
-                  >
-                    <Building2 className="w-4 h-4" />
-                    Company Overview
-                  </button>
-                )}
-
-                {/* Ownership - All Users */}
-                <button
-                  onClick={() => setActiveTab('ownership')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                    activeTab === 'ownership'
-                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
                 >
-                  <Users className="w-4 h-4" />
-                  Ownership
+                  <BarChart3 className="w-4 h-4" />
+                  Investor Insight
                 </button>
-
-                {/* Shareholder Meeting Results - All Users */}
-                <button
-                  onClick={() => setActiveTab('shareholder-meeting-results')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                    activeTab === 'shareholder-meeting-results'
-                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  <Vote className="w-4 h-4" />
-                  Shareholder Meeting Results
-                </button>
+                <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                  BETA
+                </span>
               </div>
-              
-              {/* Generate Report Button - always here on row 1 */}
-              {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && activeTab !== 'engagement-priorities' && (
-                <button
-                  className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20 flex-shrink-0"
-                  onClick={handleGenerateReport}
-                >
-                  <FileText className="w-4 h-4" />
-                  Generate Report
-                </button>
-              )}
-            </div>
-            
-            {/* --- Row 2 for New Tab --- */}
-            {/* This new horizontal flex row is dedicated to the new tab, aligned to the left */}
-            <div className="flex items-center justify-start gap-4 w-full">
-              {/* A new white pill box just for the Engagement Priorities tab */}
-              <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-                {/* Engagement Priorities - All Users */}
-                <button
-                  onClick={() => setActiveTab('engagement-priorities')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                    activeTab === 'engagement-priorities'
-                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md' // No scale-105 here, as you already had it
+    
+              {/* Ownership - All Users */}
+              <button
+                onClick={() => setActiveTab('ownership')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
-                >
-                  <Lucide icon="Activity" className="w-4 h-4" />
-                  Engagement Priorities
-                </button>
-              </div>
-            </div>
+              >
+                <Users className="w-4 h-4" />
+                Ownership
+              </button>
 
+              
+
+              {/* Shareholder Meeting Results - All Users */}
+              <button
+                onClick={() => setActiveTab('shareholder-meeting-results')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'shareholder-meeting-results'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                <Vote className="w-4 h-4" />
+                Shareholder Meeting Results
+              </button>
+            </div>
+            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
+              <button
+                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
+                onClick={handleGenerateReport}
+              >
+                <FileText className="w-4 h-4" />
+                Generate Report
+              </button>
+            )}
           </div>
         </div>
 
@@ -355,7 +355,12 @@ function Main() {
               <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
             </div>
           )}
-          
+
+          {activeTab === 'investor-overview' && (
+            <div id="investor-overview" className="col-span-12 xl:col-span-12">
+              <InvestorOverview />
+            </div>
+          )}
 
           {activeTab === 'shareholder-meeting-results' && (
             <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
@@ -367,14 +372,6 @@ function Main() {
                 proxyContest2024={modulesCount?.proxy_contest_2024 || false}
                 proxyContest2025={modulesCount?.proxy_contest_2025 || false}
                 onLoaded={() => setIsMeetingLoaded(true)}
-              />
-            </div>
-          )}
-
-          {activeTab === 'engagement-priorities' && (
-            <div id="engagement-priorities" className="col-span-12 xl:col-span-12">
-              <EngagementPriorities 
-                onLoaded={() => setIsEngagementLoaded(true)} 
               />
             </div>
           )}

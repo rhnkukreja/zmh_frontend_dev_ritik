@@ -201,10 +201,23 @@ type CompanyReport = {
   };
   auditor?: {
     headlineBullets: string[];
+    rationales?: Rationale[];
   };
   shareholderProposals?: {
     headlineBullets: string[];
     selected?: string[];
+    proposalVotes?: Array<{
+      proposal: string;
+      proposal_name: string;
+      proponent: string;
+      outcome_percentage: string;
+      vote_outcome: string | null;
+      year: number;
+      institution_votes: Array<{
+        institution: string;
+        vote: string;
+      }>;
+    }>;
   };
 };
 
@@ -477,6 +490,78 @@ function ProposalList({ items }: { items?: string[] }) {
   );
 }
 
+function ProposalVotesList({ proposals }: { proposals?: Array<{
+  proposal: string;
+  proposal_name: string;
+  proponent: string;
+  outcome_percentage: string;
+  vote_outcome: string | null;
+  year: number;
+  institution_votes: Array<{
+    institution: string;
+    vote: string;
+  }>;
+}> }) {
+  if (!proposals || proposals.length === 0) return null;
+
+  return (
+    <div className="space-y-4">
+      {proposals.map((prop, idx) => {
+        const supportPercent = parseFloat(prop.outcome_percentage);
+        const isGreen = supportPercent >= 50;
+        const pillClass = isGreen
+          ? 'rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700'
+          : 'rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[15px] font-semibold text-red-700';
+
+        return (
+          <div key={idx} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            {/* Proposal Header */}
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div className="flex-1">
+                <div className="text-[15px] font-semibold text-slate-900">{prop.proposal_name}</div>
+                <div className="mt-1 text-[15px] text-slate-600">
+                  <span className="font-medium">Proponent:</span> {prop.proponent}
+                </div>
+              </div>
+              <div className={pillClass}>
+                {prop.outcome_percentage}
+              </div>
+            </div>
+
+            {/* Institution Votes */}
+            {prop.institution_votes && prop.institution_votes.length > 0 && (
+              <>
+                <Separator className="my-3" />
+                <div className="text-[13px] font-semibold text-slate-500 mb-2">
+                  Top Investor Votes
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {prop.institution_votes.map((instVote, instIdx) => (
+                    <div
+                      key={instIdx}
+                      className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                    >
+                      <div className="text-[14px] text-slate-700 font-medium truncate pr-2">
+                        {instVote.institution}
+                      </div>
+                      <Badge 
+                        variant={instVote.vote === "For" ? "secondary" : "destructive"}
+                        className="rounded-full shrink-0"
+                      >
+                        {instVote.vote}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CollapsibleCard({
   title,
   iconKey,
@@ -528,7 +613,7 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
     <>
       <Separator className="my-4" />
       <div className="text-[15px] font-semibold text-slate-500 mb-3">
-        Voting Rationale Disclosures
+        Voting Rationale Disclosures <span>(Against or Withhold votes for top 20 investors only)</span>
       </div>
       {summary && (
         <p className="mb-3 text-[15px] text-slate-700">{summary}</p>
@@ -881,6 +966,12 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
       case "auditor_ratification":
         report.auditor = {
           headlineBullets: section.paragraphs || [],
+          rationales: section.voting_rationales?.map((r: any) => ({
+            investor: r.investor,
+            vote: r.vote,
+            proposal: r.proposal,
+            notes: r.notes
+          })) || [],
         };
         break;
 
@@ -888,6 +979,7 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         report.shareholderProposals = {
           headlineBullets: section.paragraphs || [],
           selected: section.selected_support_levels || [],
+          proposalVotes: section.shareholder_proposal_votes || [],
         };
         break;
     }
@@ -1557,13 +1649,22 @@ export default function CompanyOverview() {
                         {r.auditor ? (
                           <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
                             <BulletList items={r.auditor.headlineBullets} />
+                            <RationaleList items={r.auditor.rationales} />
                           </CollapsibleCard>
                         ) : null}
 
                         {r.shareholderProposals ? (
                           <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
                             <BulletList items={r.shareholderProposals.headlineBullets} />
-                            {r.shareholderProposals.selected?.length ? (
+                            {r.shareholderProposals.proposalVotes?.length ? (
+                              <>
+                                <Separator className="my-4" />
+                                <div className="text-[15px] font-semibold text-slate-500 mb-3">
+                                  Proposal Details with Top Investor Votes
+                                </div>
+                                <ProposalVotesList proposals={r.shareholderProposals.proposalVotes} />
+                              </>
+                            ) : r.shareholderProposals.selected?.length ? (
                               <>
                                 <Separator className="my-4" />
                                 <div className="text-[15px] font-semibold text-slate-500 mb-3">
