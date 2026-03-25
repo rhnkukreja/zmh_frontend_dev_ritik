@@ -24,6 +24,7 @@ import AddNewCaseStudies from "../CaseStudies/Components/AddEditCaseStudies";
 
 import CaseStudyCard from "./Components/CaseStudyCard";
 import InvestorModal from "./Components/InvestorModal";
+import MarketModal from "./Components/MarketModal";
 
 // Hook
 import { useAiCaseStudies } from "../../hooks/useAiCaseStudies";
@@ -66,12 +67,16 @@ function CaseStudiesAI() {
         setSelectedAiYears,
         selectedAiCompanyIds,
         setSelectedAiCompanyIds,
+        selectedAiMarkets,
+        setSelectedAiMarkets,
         isAllInvestorsSelected,
         setIsAllInvestorsSelected,
         isAllThemesSelected,
         setIsAllThemesSelected,
         isAllYearsSelected,
         setIsAllYearsSelected,
+        isAllMarketsSelected,
+        setIsAllMarketsSelected,
         aiSearchTerm,
         setAiSearchTerm,
         aiTopics,
@@ -88,11 +93,16 @@ function CaseStudiesAI() {
         setIsInvestorModalOpen,
         investorSearch,
         setInvestorSearch,
+        isMarketModalOpen,
+        setIsMarketModalOpen,
+        marketSearch,
+        setMarketSearch,
         toggleAiFilter,
         isAiFilterSelected,
         toggleAllInvestors,
         toggleAllThemes,
         toggleAllYears,
+        toggleAllMarkets,
         handleAiAnalysis,
         handleAiPageChange,
         handleAiNextPage,
@@ -117,10 +127,11 @@ function CaseStudiesAI() {
         (state) => state.authentiction
     );
 
-    // Handle institution_id and year from URL params (from Investor Insight)
+    // Handle institution_id, year, and market from URL params (from Investor Insight)
     useEffect(() => {
         const institutionIdParam = searchParams.get('institution_id');
         const yearParam = searchParams.get('year');
+        const marketParam = searchParams.get('market');
         
         if (institutionIdParam) {
             const institutionId = parseInt(institutionIdParam, 10);
@@ -134,6 +145,10 @@ function CaseStudiesAI() {
             if (!isNaN(year) && !selectedAiYears.includes(year)) {
                 setSelectedAiYears([year]);
             }
+        }
+        
+        if (marketParam && !selectedAiMarkets.includes(marketParam)) {
+            setSelectedAiMarkets([marketParam]);
         }
     }, [searchParams]);
 
@@ -300,6 +315,7 @@ function CaseStudiesAI() {
                                 selectedAiInstitutionIds={selectedAiInstitutionIds}
                                 selectedAiThemes={selectedAiThemes}
                                 selectedAiYears={selectedAiYears}
+                                selectedAiMarkets={selectedAiMarkets}
                                 activeAiFilterOrder={activeAiFilterOrder}
                                 aiFiltersData={aiFiltersData}
                                 toggleAiFilter={toggleAiFilter}
@@ -307,6 +323,7 @@ function CaseStudiesAI() {
                                     setSelectedAiInstitutionIds([]);
                                     setSelectedAiThemes([]);
                                     setSelectedAiYears([]);
+                                    setSelectedAiMarkets([]);
                                 }}
                             />
 
@@ -323,13 +340,18 @@ function CaseStudiesAI() {
                                     toggleAllInvestors={toggleAllInvestors}
                                     toggleAllThemes={toggleAllThemes}
                                     toggleAllYears={toggleAllYears}
+                                    toggleAllMarkets={toggleAllMarkets}
                                     setInvestorSearch={setInvestorSearch}
                                     setIsInvestorModalOpen={setIsInvestorModalOpen}
+                                    setMarketSearch={setMarketSearch}
+                                    setIsMarketModalOpen={setIsMarketModalOpen}
                                     isAllThemesSelected={isAllThemesSelected}
                                     isAllYearsSelected={isAllYearsSelected}
+                                    isAllMarketsSelected={isAllMarketsSelected}
                                     selectedAiInstitutionIds={selectedAiInstitutionIds}
                                     selectedAiThemes={selectedAiThemes}
                                     selectedAiYears={selectedAiYears}
+                                    selectedAiMarkets={selectedAiMarkets}
                                 />
 
                                 {/* MAIN CONTENT: Analyzer + Case Studies */}
@@ -452,6 +474,17 @@ function CaseStudiesAI() {
                 setInvestorSearch={setInvestorSearch}
                 selectedAiInstitutionIds={selectedAiInstitutionIds}
                 setSelectedAiInstitutionIds={setSelectedAiInstitutionIds}
+                aiFiltersData={aiFiltersData}
+            />
+
+            {/* ===== ALL MARKETS MODAL ===== */}
+            <MarketModal
+                isOpen={isMarketModalOpen}
+                onClose={() => setIsMarketModalOpen(false)}
+                marketSearch={marketSearch}
+                setMarketSearch={setMarketSearch}
+                selectedAiMarkets={selectedAiMarkets}
+                setSelectedAiMarkets={setSelectedAiMarkets}
                 aiFiltersData={aiFiltersData}
             />
         </>
