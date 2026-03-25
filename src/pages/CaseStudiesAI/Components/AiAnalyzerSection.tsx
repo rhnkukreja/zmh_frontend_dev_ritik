@@ -8,6 +8,7 @@ interface AiAnalyzerSectionProps {
   aiSearchTerm: string;
   setAiSearchTerm: (val: string) => void;
   handleAiAnalysis: (topic: string) => void;
+  handleClearAnalysis: () => void;
   isAiTopicsLoading: boolean;
   aiTopics: string[];
   isAiLoading: boolean;
@@ -17,6 +18,7 @@ const AiAnalyzerSection: React.FC<AiAnalyzerSectionProps> = ({
   aiSearchTerm,
   setAiSearchTerm,
   handleAiAnalysis,
+  handleClearAnalysis,
   isAiTopicsLoading,
   aiTopics,
   isAiLoading,
@@ -58,6 +60,15 @@ const AiAnalyzerSection: React.FC<AiAnalyzerSectionProps> = ({
           >
             Analyze <Lucide icon="ArrowRight" />
           </Button>
+          {aiSearchTerm && (
+            <Button
+              variant="secondary"
+              className="px-8 py-3 rounded-xl flex items-center justify-center gap-2 whitespace-nowrap"
+              onClick={handleClearAnalysis}
+            >
+              Clear <Lucide icon="X" />
+            </Button>
+          )}
         </div>
 
         <div className="pl-0 md:pl-11 mt-4">

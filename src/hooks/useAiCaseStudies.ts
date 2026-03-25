@@ -244,6 +244,14 @@ export const useAiCaseStudies = () => {
         if (aiPage > 1) handleAiPageChange(aiPage - 1);
     };
 
+    const handleClearAnalysis = () => {
+        setAiSearchTerm("");
+        setAiResponse(null);
+        setAiPage(1);
+        // Trigger auto-analysis with empty query to show filter-based case studies
+        handleAiAnalysis("");
+    };
+
     // === Effects ===
 
     useEffect(() => {
@@ -369,6 +377,7 @@ export const useAiCaseStudies = () => {
         toggleAllYears,
         toggleAllMarkets,
         handleAiAnalysis,
+        handleClearAnalysis,
         handleAiPageChange,
         handleAiNextPage,
         handleAiPreviousPage

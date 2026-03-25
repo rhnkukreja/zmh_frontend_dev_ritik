@@ -104,6 +104,7 @@ function CaseStudiesAI() {
         toggleAllYears,
         toggleAllMarkets,
         handleAiAnalysis,
+        handleClearAnalysis,
         handleAiPageChange,
         handleAiNextPage,
         handleAiPreviousPage
@@ -362,6 +363,7 @@ function CaseStudiesAI() {
                                         aiSearchTerm={aiSearchTerm}
                                         setAiSearchTerm={setAiSearchTerm}
                                         handleAiAnalysis={handleAiAnalysis}
+                                        handleClearAnalysis={handleClearAnalysis}
                                         isAiTopicsLoading={isAiTopicsLoading}
                                         aiTopics={aiTopics}
                                         isAiLoading={isAiLoading}
