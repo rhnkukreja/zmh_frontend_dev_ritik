@@ -694,11 +694,11 @@ function Main() {
                         </Table.Tr>
                       )}
                     </Table.Tbody>
-                    {institutions?.length === 0 && (
+                    {/* {institutions?.length === 0 && (
                       <div className="w-full">
                         <h1 className="mt-3">No Records Found..</h1>
                       </div>
-                    )}
+                    )} */}
                   </Table>
                 </div>
               </TableWrapper>

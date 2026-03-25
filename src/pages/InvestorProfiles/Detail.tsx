@@ -37,6 +37,7 @@ import { Controller, useForm } from "react-hook-form";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { ChevronLeft } from "lucide-react";
 import { setPage } from "@/stores/investersProfileSlice";
+import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
 
 // --- START OF FORMATTING HELPER FUNCTIONS ---
 const renderTextWithLinksHtml = (text: string) => {
@@ -319,6 +320,7 @@ function Main() {
       navigate("/investor-profile");
     } catch (error: any) {
       console.error("Delete error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Something went wrong!")) return;
       toast.error(error?.response?.data?.message || "Something went wrong!");
     } finally {
       setIsDeleting(false);

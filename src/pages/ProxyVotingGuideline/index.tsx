@@ -43,6 +43,7 @@ import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCirc
 import { MdOutlineClear } from "react-icons/md";
 import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
 import AIAssistantButton from "@/components/Base/AIAssistantButton";
 
 interface ProxyGuidelineFilter {
@@ -210,6 +211,7 @@ function ProxyGuideline() {
       dispatch(fetchProxyVotingGuidelines(dynamicURL));
     } catch (error: any) {
       console.error("Delete error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Something went wrong!")) return;
       toast.error(error?.response?.data?.message || "Something went wrong!");
     } finally {
       setIsDeleting(false);
