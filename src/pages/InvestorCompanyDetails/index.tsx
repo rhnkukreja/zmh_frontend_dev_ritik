@@ -14,7 +14,7 @@ import { fetchInvestorProfileDetails } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import { SkeletonCard, SkeletonTable, SkeletonText } from "@/components/Base/Skeletons";
 import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
 
@@ -48,11 +48,11 @@ const index = () => {
       {location.pathname !== "/" && (
         <div className="bg-white border-b border-slate-200 px-6 py-4">
           <Button
-            onClick={() => navigate("/", { state: { activeTab: 'ownership' } })}
+            onClick={() => navigate("/voting-guidelines")}
             className="flex items-center gap-2 text-slate-700 hover:text-primary hover:bg-slate-100 border border-slate-300 bg-white"
           >
             <ChevronLeft size={18} strokeWidth={2} />
-            Back to Dashboard
+            Back
           </Button>
         </div>
       )}
@@ -98,14 +98,16 @@ const index = () => {
       )}
 
       {investorProfileLoading && (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <div className="text-center">
-            <LoadingIcon
-              color="#800000"
-              icon="three-dots"
-              className="w-16 h-16 mx-auto mb-4"
-            />
-            <p className="text-slate-600 text-sm">Loading investor details...</p>
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mb-8">
+            <SkeletonText lines={1} height="h-8" className="max-w-[420px] mb-3" />
+            <SkeletonText lines={1} height="h-5" className="max-w-[320px]" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8">
+              <SkeletonTable rows={7} columns={4} cellHeight="h-10" />
+            </div>
           </div>
         </div>
       )}

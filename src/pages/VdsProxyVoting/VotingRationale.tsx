@@ -1,4 +1,3 @@
-import LoadingIcon from "@/components/Base/LoadingIcon";
 import Lucide from "@/components/Base/Lucide";
 import Table from "@/components/Base/Table";
 import Tippy from "@/components/Base/Tippy";
@@ -42,6 +41,11 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
   const [groupVotingRationale, setGroupVotingRationale] = useState<any>([]);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const yearTicker = searchParams.get("year");
+
+  const emptyStateAnimationStyle: React.CSSProperties = {
+    animationDelay: "120ms",
+    animationFillMode: "both",
+  };
 
   // Select the correct voting rationale data based on tab type
   const currentVotingRationale =
@@ -225,6 +229,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
         <>
           <TableWrapper
             isLoading={getProxyVotingRationaleLoading || parentLoading}
+            rows={6}
+            columns={3}
           >
             <div className="overflow-auto max-h-[400px]">
               <Table>
@@ -351,7 +357,10 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
         (!currentVotingRationale || currentVotingRationale?.length === 0) &&
         !getProxyVotingRationaleLoading &&
         !parentLoading && (
-          <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+          <div
+            className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+            style={emptyStateAnimationStyle}
+          >
             <div className="text-center text-slate-500 dark:text-slate-400">
               <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
               <h3 className="text-lg font-medium mb-2">
@@ -371,7 +380,10 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
         filter?.length === 0 &&
         !getProxyVotingRationaleLoading &&
         !parentLoading && (
-          <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+          <div
+            className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+            style={emptyStateAnimationStyle}
+          >
             <div className="text-center text-slate-500 dark:text-slate-400">
               <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
               <h3 className="text-lg font-medium mb-2">
@@ -392,7 +404,10 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
         filter?.length > 0 &&
         !getProxyVotingRationaleLoading &&
         !parentLoading && (
-          <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+          <div
+            className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+            style={emptyStateAnimationStyle}
+          >
             <div className="text-center text-slate-500 dark:text-slate-400">
               <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
               <h3 className="text-lg font-medium mb-2">

@@ -561,13 +561,12 @@ const index = () => {
         </div>
 
         <div>
-          {proxyContestLoading ? (
-            <div className="h-52 flex items-center justify-center">
-              <LoadingIcon icon="three-dots" className="w-8 h-8" />
-            </div>
-          ) : (
             <>
-              <TableWrapper isLoading={proxyContestLoading}>
+              <TableWrapper
+                isLoading={proxyContestLoading}
+                rows={8}
+                columns={4}
+              >
                 <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
                   <Table>
                     <Table.Thead>
@@ -797,7 +796,6 @@ const index = () => {
                 </div>
               )}
             </>
-          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import React from "react";
 import Lucide from "@/components/Base/Lucide";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import SkeletonText from "@/components/Base/Skeletons/SkeletonText";
 import clsx from "clsx";
 
 interface AiFiltersSidebarProps {
@@ -72,12 +72,33 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
         </h3>
 
         {isAiFiltersLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <LoadingIcon
-              color="#800000"
-              icon="three-dots"
-              className="w-16 h-16"
-            />
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <SkeletonText key={`year-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <SkeletonText key={`investor-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <SkeletonText key={`theme-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
           </div>
         ) : aiFiltersData ? (
           <div className="space-y-6">

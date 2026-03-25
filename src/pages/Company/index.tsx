@@ -346,7 +346,11 @@ function CompanyList() {
               </div>
             </div>
             <div className=" px-5">
-              <TableWrapper isLoading={loading}>
+              <TableWrapper
+                isLoading={loading}
+                rows={8}
+                columns={6}
+              >
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
                     <Table.Thead>

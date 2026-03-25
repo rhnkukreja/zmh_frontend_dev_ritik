@@ -460,7 +460,11 @@ function UserDetail() {
               )} */}
 
                             <div className="overflow-auto xl:overflow-visible px-5">
-                                <TableWrapper isLoading={loading}>
+                              <TableWrapper
+                                isLoading={loading}
+                                rows={6}
+                                columns={7}
+                              >
                                     <div className="overflow-auto max-h-[400px]">
                                         <Table>
                                             <Table.Thead>

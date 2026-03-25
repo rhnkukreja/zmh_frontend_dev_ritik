@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { useAppSelector } from "@/stores/hooks";
+import SkeletonWrapper from "@/components/Base/SkeletonWrapper";
+import { SkeletonCard, SkeletonText } from "@/components/Base/Skeletons";
 import { RootState } from "@/stores/store";
 import pdfMake from "pdfmake/build/pdfmake";
 
@@ -1274,12 +1276,13 @@ export default function CompanyOverviewGPT() {
   return (
     <>
       {companyOverviewGPTLoading ? (
-        <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
+        <div className="bg-white p-6 mt-3.5 border rounded-md space-y-6">
+          <SkeletonCard hasImage={true} lines={2} />
+          <div className="grid md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <SkeletonCard key={i} hasImage={false} lines={3} />
+            ))}
+          </div>
         </div>
       ) : !companyGlobalSearchId ? (
         <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 text-center">

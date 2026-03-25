@@ -44,7 +44,7 @@ import { setTempSearch } from "@/stores/dashboardSlice";
 import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import { SkeletonTable } from "@/components/Base/Skeletons";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
@@ -2651,8 +2651,8 @@ const index = () => {
         {/* ANALYTICS TABLE (by_institution) and COLLAPSIBLE COMPANY LIST (by_company) with loader */}
         {isViewAnalysis && analyticsLoading && (
           <div className="flex justify-center items-center min-h-[300px]">
-            <div className="rounded-2xl shadow-lg bg-white p-8 border border-gray-100 flex flex-col items-center">
-              <LoadingIcon icon="three-dots" className="w-12 h-12 text-primary" />
+            <div className="rounded-2xl shadow-lg bg-white p-6 border border-gray-100 w-full">
+              <SkeletonTable rows={6} columns={6} />
             </div>
           </div>
         )}
@@ -2827,7 +2827,11 @@ const index = () => {
                 </Tippy>
               </div>
             )}
-            <TableWrapper isLoading={allApplyFilter && loading}>
+            <TableWrapper
+              isLoading={allApplyFilter && loading}
+              rows={8}
+              columns={5}
+            >
               <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                 <Table>
                   <Table.Thead>

@@ -38,9 +38,14 @@ module.exports = {
           '50%': { transform: 'rotate(5deg)' },
           '60%, 100%': { transform: 'rotate(0)' },
         },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
       },
       animation: {
         spinOnce: "spinOnce 1s ease-in-out 1",
+        'fade-in': "fadeIn 0.3s ease-in-out",
       },
       screens: {
         xs: "350px", // Adds a custom 'xs' breakpoint at 400px

@@ -198,7 +198,7 @@ function Main() {
               <div className="flex items-center h-[64px]">
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
-              <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
+              {/* <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
                 {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                   <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                     <Button
@@ -213,7 +213,7 @@ function Main() {
                     </Button>
                   </div>
                 )}
-              </div>
+              </div> */}
             </div>
           </div>
           <div className="mt-3.5">
@@ -423,7 +423,23 @@ function Main() {
               )}
 
               <div className="overflow-auto xl:overflow-visible px-5">
-                <TableWrapper isLoading={loading}>
+                <TableWrapper 
+                  isLoading={loading}
+                  skeleton={
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-white rounded-lg p-4 space-y-3">
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                          <div className="flex space-x-2">
+                            <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                            <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  }
+                >
                   {investersProfile?.length > 0 &&
                     investersProfile.map((profile: InvestersProfile) => {
                       return (
@@ -489,7 +505,23 @@ function Main() {
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed"></Tab.Panel>
                     <Tab.Panel className="leading-relaxed">
-                      <TableWrapper isLoading={loading}>
+                      <TableWrapper 
+                        isLoading={loading}
+                        skeleton={
+                          <div className="space-y-3">
+                            {[1, 2, 3].map((i) => (
+                              <div key={i} className="bg-white rounded-lg p-4 space-y-3">
+                                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                <div className="flex space-x-2">
+                                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                  <div className="flex-1 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        }
+                      >
                         {investersProfile?.length > 0 &&
                           investersProfile.map((profile: InvestersProfile) => {
                             return (

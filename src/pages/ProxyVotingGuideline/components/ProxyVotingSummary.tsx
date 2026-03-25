@@ -470,7 +470,11 @@ function ProxyVotingSummary() {
               </div>
               
               <div className="overflow-auto xl:overflow-visible px-5">
-                <TableWrapper isLoading={summaryLoading}>
+                <TableWrapper
+                  isLoading={summaryLoading}
+                  rows={6}
+                  columns={4}
+                >
                   <div className="overflow-auto max-h-[400px]">
                     <Table>
                       <Table.Thead>

@@ -28,7 +28,12 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import {
+  SkeletonCard,
+  SkeletonChart,
+  SkeletonTable,
+  SkeletonText,
+} from "@/components/Base/Skeletons";
 
 import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormSwitch } from "@/components/Base/Form";
@@ -1017,12 +1022,21 @@ function PeerAnalysis() {
 
               {isViewAnalysis && (
                 loading ? (
-                  <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                    <LoadingIcon
-                      color="#800000"
-                      icon="three-dots"
-                      className="w-16 h-16"
-                    />
+                  <div className="p-5 mt-3.5 box bg-white space-y-6">
+                    <SkeletonText lines={1} className="max-w-[180px]" height="h-6" />
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      <div className="lg:col-span-8">
+                        <SkeletonTable rows={6} columns={5} />
+                      </div>
+                      <div className="lg:col-span-4">
+                        <SkeletonChart />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <SkeletonCard hasImage={false} lines={6} />
+                      <SkeletonCard hasImage={false} lines={6} />
+                      <SkeletonCard hasImage={false} lines={6} />
+                    </div>
                   </div>
                 ) : peerAnalysisData?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
@@ -1060,7 +1074,11 @@ function PeerAnalysis() {
                 </Tippy>
               </div>
               <div className="px-5">
-                <TableWrapper isLoading={loading}>
+                <TableWrapper
+                  isLoading={loading}
+                  rows={6}
+                  columns={isAllCompanySelected ? 8 : 7}
+                >
                   <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
