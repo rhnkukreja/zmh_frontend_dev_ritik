@@ -73,7 +73,12 @@ import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderPropo
 import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import {
+  SkeletonCard,
+  SkeletonChart,
+  SkeletonTable,
+  SkeletonText,
+} from "@/components/Base/Skeletons";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
@@ -2302,12 +2307,21 @@ function ShareHolderProposal() {
                           {/* Content */}
                           <div>
                             {loadingAnalytics ? (
-                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                <LoadingIcon
-                                  color="#800000"
-                                  icon="three-dots"
-                                  className="w-16 h-16"
-                                />
+                              <div className="p-5 mt-3.5 box bg-white space-y-6">
+                                <SkeletonText lines={1} className="max-w-[160px]" height="h-6" />
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                                  <div className="lg:col-span-8">
+                                    <SkeletonTable rows={6} columns={5} />
+                                  </div>
+                                  <div className="lg:col-span-4">
+                                    <SkeletonChart />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                </div>
                               </div>
                             ) : !isAnalyticsDataAvailable() ? (
                               <div className="flex flex-col items-center justify-center py-12">
@@ -2644,12 +2658,21 @@ function ShareHolderProposal() {
                           {/* Content */}
                           <div>
                             {loading ? (
-                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                <LoadingIcon
-                                  color="#800000"
-                                  icon="three-dots"
-                                  className="w-16 h-16"
-                                />
+                              <div className="p-5 mt-3.5 box bg-white space-y-6">
+                                <SkeletonText lines={1} className="max-w-[160px]" height="h-6" />
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                                  <div className="lg:col-span-8">
+                                    <SkeletonTable rows={6} columns={5} />
+                                  </div>
+                                  <div className="lg:col-span-4">
+                                    <SkeletonChart />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                </div>
                               </div>
                             ) : !isAnalyticsDataAvailable() ? (
                               <div className="flex flex-col items-center justify-center py-12">

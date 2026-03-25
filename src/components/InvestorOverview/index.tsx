@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { institutionStatsService } from '@/services/institutionStats';
-import LoadingIcon from '@/components/Base/LoadingIcon';
+import { SkeletonCard, SkeletonTable, SkeletonText } from '@/components/Base/Skeletons';
 import TomSelect from '@/components/Base/TomSelect';
 import { BarChart3, FileText, PieChart, Calendar, Building2, BookOpen } from 'lucide-react';
 import parse from 'html-react-parser';
@@ -321,12 +321,14 @@ const InvestorOverview: React.FC = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
+        <div className="bg-white p-6 mt-3.5 border rounded-md space-y-5">
+          <SkeletonText lines={2} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <SkeletonCard hasImage={false} lines={3} />
+            <SkeletonCard hasImage={false} lines={3} />
+            <SkeletonCard hasImage={false} lines={3} />
+          </div>
+          <SkeletonTable rows={6} columns={4} />
         </div>
       )}
 

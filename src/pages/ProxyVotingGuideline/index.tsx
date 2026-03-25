@@ -661,7 +661,11 @@ function ProxyGuideline() {
               )}
               <div className="overflow-auto xl:overflow-visible px-5">
 
-                <TableWrapper isLoading={loading}>
+                <TableWrapper 
+                  isLoading={loading}
+                  rows={5}
+                  columns={8}
+                >
                   <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>

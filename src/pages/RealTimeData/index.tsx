@@ -787,7 +787,11 @@ const index = () => {
 
         {isViewAnalysis && (
           <div className="mb-20">
-            <TableWrapper isLoading={allApplyFilter && isAnalyticsLoading}>
+            <TableWrapper
+              isLoading={allApplyFilter && isAnalyticsLoading}
+              rows={6}
+              columns={6}
+            >
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                 <Table>
                   <Table.Thead>
@@ -888,7 +892,11 @@ const index = () => {
               <>
                 <div className="">
                   <div>
-                    <TableWrapper isLoading={allApplyFilter && loading}>
+                    <TableWrapper
+                      isLoading={allApplyFilter && loading}
+                      rows={8}
+                      columns={10}
+                    >
                       <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                         <Table>
                           <Table.Thead className="relative">

@@ -15,7 +15,7 @@ import {
 import { baseURL } from "@/constant";
 import { axiosInstance } from "@/services";
 import { AppDispatch } from "@/stores/store";
-import LoadingIcon from "../Base/LoadingIcon";
+import { SkeletonTable } from "@/components/Base/Skeletons";
 import { dashboardService } from "@/services/dashboard";
 import { Tab } from "@/components/Base/Headless";
 import { Dialog } from "@/components/Base/Headless";
@@ -753,7 +753,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
               }
 
               <div className="mt-5">
-                <TableWrapper isLoading={loading}>
+                <TableWrapper 
+                  isLoading={loading}
+                  rows={4}
+                  columns={5}
+                >
                   <div
                     className={clsx([
                       locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}
@@ -828,7 +832,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   </div>
                 </TableWrapper>
                 <br />
-                <TableWrapper isLoading={loading}>
+                <TableWrapper 
+                  isLoading={loading}
+                  rows={4}
+                  columns={5}
+                >
                   <div
                     className={clsx([
                       locationPathName === "/" &&
@@ -921,12 +929,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       )}
 
       {!agmSummaryDetails && loading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
+        <div className="p-5 mt-3.5 box bg-white">
+          <SkeletonTable rows={4} columns={5} />
         </div>
       )}
 
