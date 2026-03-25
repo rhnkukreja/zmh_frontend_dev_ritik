@@ -43,6 +43,7 @@ import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCirc
 import { MdOutlineClear } from "react-icons/md";
 import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import AIAssistantButton from "@/components/Base/AIAssistantButton";
 
 interface ProxyGuidelineFilter {
   year: string[];
@@ -311,19 +312,10 @@ function ProxyGuideline() {
           <div className="flex justify-between items-center bg-white px-4 py-4 pl-6 bg-white shadow sticky top-16 z-40">
             <div className="font-semibold text-xl">Voting Guidelines</div>
             <div className="flex gap-3">
-              <a
-                className="p-2 bg-primary border-white border-2 text-white rounded-md"
+              <AIAssistantButton 
+                label="AI Assistant Voting Guideline"
                 href="/ai-assistant/voting-guidelines"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <div className="flex items-center justify-center cursor-pointer">
-                  <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
-                  <span className="ml-2 font-semibold hidden xl:flex">
-                    AI Assistant: Voting Guidelines
-                  </span>
-                </div>
-              </a>
+              />             
               <a
                 className="p-2 bg-primary
                      border-white border-2 text-white rounded-md"
