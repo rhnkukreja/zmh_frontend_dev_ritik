@@ -254,7 +254,6 @@
 }
 
 .ai-assistant-cta__label {
-  text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
@@ -340,7 +339,6 @@
 }
 
 .ai-assistant-cta-secondary__label {
-  text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
@@ -397,7 +395,6 @@
 }
 
 .ai-assistant-cta-minimal__label {
-  text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.65rem;
   font-weight: 600;
