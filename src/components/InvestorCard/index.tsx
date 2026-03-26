@@ -563,8 +563,8 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                             {dashboard?.percent_ownership}%
                                           </div>
                                         </Table.Td>
-                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                          <div className="whitespace-nowrap ">
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[180px]">
+                                          <div className="px-2">
                                             {dashboard.proxy_advisor_influence ||
                                               "-"}
                                           </div>
