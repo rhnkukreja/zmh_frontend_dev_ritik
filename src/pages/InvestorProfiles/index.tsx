@@ -85,7 +85,7 @@ function Main() {
     const dynamicURL = createDynamicURL(
       `${baseURL}/investor_with_voting_guidelines/`,
       filters,
-      { type: tab },
+      {},
       page
     );
 
