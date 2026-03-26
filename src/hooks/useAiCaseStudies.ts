@@ -104,22 +104,26 @@ export const useAiCaseStudies = () => {
             );
             setIsAllInvestorsSelected(false);
         } else if (type === 'theme') {
+            // Single selection for themes - replace instead of toggle
             setSelectedAiThemes(prev => 
-                prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]
+                prev.includes(value) ? [] : [value]
             );
             setIsAllThemesSelected(false);
         } else if (type === 'year') {
+            // Single selection for years - replace instead of toggle
             setSelectedAiYears(prev => 
-                prev.includes(value) ? prev.filter(y => y !== value) : [...prev, value]
+                prev.includes(value) ? [] : [value]
             );
             setIsAllYearsSelected(false);
         } else if (type === 'company') {
+            // Single selection for companies - replace instead of toggle
             setSelectedAiCompanyIds(prev => 
-                prev.includes(value) ? prev.filter(id => id !== value) : [...prev, value]
+                prev.includes(value) ? [] : [value]
             );
         } else if (type === 'market') {
+            // Single selection for markets - replace instead of toggle
             setSelectedAiMarkets(prev => 
-                prev.includes(value) ? prev.filter(m => m !== value) : [...prev, value]
+                prev.includes(value) ? [] : [value]
             );
             setIsAllMarketsSelected(false);
         }
@@ -286,7 +290,15 @@ export const useAiCaseStudies = () => {
                     )
             );
 
-            const next = [...preserved, ...appended];
+            const combined = [...preserved, ...appended];
+            
+            // Sort to ensure markets are always first, then maintain relative order for others
+            const next = combined.sort((a, b) => {
+                if (a.type === 'market' && b.type !== 'market') return -1;
+                if (a.type !== 'market' && b.type === 'market') return 1;
+                return 0;
+            });
+            
             const hasChanged =
                 next.length !== prev.length ||
                 next.some(

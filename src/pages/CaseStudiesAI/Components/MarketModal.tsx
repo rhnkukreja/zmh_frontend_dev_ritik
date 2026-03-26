@@ -34,10 +34,9 @@ const MarketModal: React.FC<MarketModalProps> = ({
   if (!isOpen) return null;
 
   const handleToggle = (marketName: string) => {
+    // Single selection only - replace instead of toggle
     setTempSelectedMarkets((prev) =>
-      prev.includes(marketName)
-        ? prev.filter((m) => m !== marketName)
-        : [...prev, marketName]
+      prev.includes(marketName) ? [] : [marketName]
     );
   };
 
@@ -84,17 +83,17 @@ const MarketModal: React.FC<MarketModalProps> = ({
           />
         </div>
 
-        {/* Selected markets count */}
+        {/* Selected market name */}
         {tempSelectedMarkets.length > 0 && (
           <div className="px-6 py-2 bg-primary/5 border-b flex items-center justify-between">
             <span className="text-xs font-semibold text-primary">
-              {tempSelectedMarkets.length} market{tempSelectedMarkets.length !== 1 ? 's' : ''} selected
+              {tempSelectedMarkets[0]}
             </span>
             <button
               onClick={() => setTempSelectedMarkets([])}
               className="text-xs text-slate-500 hover:text-primary"
             >
-              Clear all
+              Clear
             </button>
           </div>
         )}
@@ -119,14 +118,14 @@ const MarketModal: React.FC<MarketModalProps> = ({
                 <div className="flex items-center gap-3">
                   <div
                     className={clsx(
-                      "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+                      "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
                       isSelected(market.name)
                         ? "bg-primary border-primary"
                         : "border-slate-300"
                     )}
                   >
                     {isSelected(market.name) && (
-                      <Lucide icon="Check" className="w-3 h-3 text-white stroke-[3]" />
+                      <div className="w-2 h-2 rounded-full bg-white" />
                     )}
                   </div>
                   <span
