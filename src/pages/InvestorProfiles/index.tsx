@@ -19,6 +19,9 @@ import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
 import { useNavigate } from "react-router-dom";
+import Table from "@/components/Base/Table";
+import { Dialog } from "@/components/Base/Headless";
+import AIAssistantButton from "@/components/Base/AIAssistantButton";
 
 import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
@@ -61,6 +64,10 @@ function Main() {
   );
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
+  const [votingGuidelinesModalOpen, setVotingGuidelinesModalOpen] = useState<boolean>(false);
+  const [selectedVotingGuidelines, setSelectedVotingGuidelines] = useState<any>(null);
+  const [keyChangesModalOpen, setKeyChangesModalOpen] = useState<boolean>(false);
+  const [selectedKeyChanges, setSelectedKeyChanges] = useState<any>(null);
   const { user } = useAppSelector((state) => state.authentiction);
 
   const { handleSubmit, control, reset, setValue, watch } =
@@ -76,7 +83,7 @@ function Main() {
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
-      `${baseURL}/investor_profile/`,
+      `${baseURL}/investor_with_voting_guidelines/`,
       filters,
       { type: tab },
       page
@@ -137,9 +144,36 @@ function Main() {
     dispatch(setPage(newPage));
   };
 
-  const gotoDetailPage = (id: number) => {
+  const gotoDetailPage = (investorProfileId: number | null | undefined) => {
+    if (!investorProfileId) return;
     const data = { currentPage: page };
-    navigate(`/investor-profile/${tab}/${id}`, { state: data });
+    navigate(`/investor-profile/${tab}/${investorProfileId}`, { state: data });
+  };
+
+  const handleKeyChangesClick = (profile: InvestersProfile) => {
+    if (profile.proxy_voting_key_changes) {
+      setSelectedKeyChanges({
+        institution_name: profile.institution || profile.institution_name,
+        key_changes: profile.proxy_voting_key_changes
+      });
+      setKeyChangesModalOpen(true);
+    }
+  };
+
+  const handleDocumentsClick = (institutionId: number | null | undefined) => {
+    if (institutionId) {
+      window.open(`/investor-company-details/${institutionId}`, '_blank');
+    }
+  };
+
+  const handleVotingGuidelinesClick = (profile: InvestersProfile) => {
+    if (profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0) {
+      setSelectedVotingGuidelines({
+        institution_name: profile.institution || profile.institution_name,
+        docs: profile.voting_guideline_docs
+      });
+      setVotingGuidelinesModalOpen(true);
+    }
   };
 
   const getSavedSearches = () => {
@@ -198,22 +232,12 @@ function Main() {
               <div className="flex items-center h-[64px]">
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
-              {/* <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                  <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
-                    <Button
-                      onClick={() => {
-                        setAddNewInvesterModalVisible(true);
-                      }}
-                      variant="primary"
-                      className="bg-theme-2 border-bg-theme-2"
-                    >
-                      <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />
-                      Add New Investor
-                    </Button>
-                  </div>
-                )}
-              </div> */}
+              <div className="flex items-center gap-3">
+                <AIAssistantButton 
+                  label="AI Assistant Voting Guideline"
+                  href="/ai-assistant/voting-guidelines"
+                />
+              </div>
             </div>
           </div>
           <div className="mt-3.5">
@@ -227,11 +251,12 @@ function Main() {
                     }}
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
-                    url="/investor_profile/"
+                    url="/investor_with_voting_guidelines/"
                     getOptionKey="institution_name"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
                     showPills={false}
+                    searchPoponents={true}
                   />
 
                   <div className="hover:bg-slate-50">
@@ -273,140 +298,6 @@ function Main() {
                       </Button>
                     </div>
                   )}
-
-                  <Popover className="inline-block">
-                    {({ close }) => (
-                      <>
-                        <Popover.Button
-                          as={Button}
-                          variant="outline-secondary"
-                          className="w-full sm:w-auto"
-                        >
-                          <Lucide
-                            icon="ArrowDownWideNarrow"
-                            className="stroke-[1.3] w-4 h-4 mr-2"
-                          />
-                          Filter
-                          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {filtersLength}
-                          </div>
-                        </Popover.Button>
-                        <Popover.Panel className="w-[300px]">
-                          <form onSubmit={handleSubmit(onSubmit)}>
-                            <div className="p-2">
-                              {/* Filter Content */}
-                              <div className="mb-4">
-                                <h4 className="text-base font-semibold text-slate-700 mb-4">Filters</h4>
-                              </div>
-                              <div>
-                                <div className="w-full my-2">
-                                  {/* Clear and Apply buttons outside filter */}
-                                  <div className="w-full">
-                                    <Button
-                                      variant="outline-secondary"
-                                      onClick={() => {
-                                        onFilterClear();
-                                      }}
-                                      className="w-full flex items-center gap-2 mb-2"
-                                    >
-                                      <MdOutlineClear className="text-lg" />
-                                      Clear
-                                    </Button>
-
-                                    <Button
-                                      variant="primary"
-                                      onClick={handleSubmit(onSubmit)}
-                                      className="w-full flex items-center gap-2 mb-4"
-                                    >
-                                      <FaSearch className="text-sm" />
-                                      Apply
-                                    </Button>
-                                  </div>
-                                  <div className="text-left text-slate-500 flex justify-between mb-1">
-                                    <span className="font-semibold">Region</span>
-                                    {investerProfileFilterOption?.region
-                                      ?.length > 0 && (
-                                        <div>
-                                          <FormCheck className="mr-2">
-                                            <FormCheck.Label>
-                                              Select All
-                                            </FormCheck.Label>
-                                            <FormCheck.Input
-                                              className="ml-1"
-                                              id={`region`}
-                                              checked={
-                                                investerProfileFilterOption.region
-                                                  .length ===
-                                                watch("region")?.length
-                                              }
-                                              type="checkbox"
-                                              onChange={(e) => {
-                                                if (e.target.checked === true) {
-                                                  setValue(
-                                                    "region",
-                                                    investerProfileFilterOption.region
-                                                  );
-                                                } else {
-                                                  setValue("region", []);
-                                                }
-                                              }}
-                                            />
-                                          </FormCheck>
-                                        </div>
-                                      )}
-                                  </div>
-                                  <Controller
-                                    name="region"
-                                    control={control}
-                                    render={({ field }) => (
-                                      <MultiSelectDropdown
-                                        data={investerProfileFilterOption?.region}
-                                        placeholder="Select Region"
-                                        loading={investerProfileFilterOption?.region
-                                          .length === 0}
-                                        onChange={(selectedOptions) => {
-                                          const selectedValues = selectedOptions.map((option) => option.value);
-                                          field.onChange(selectedValues);
-
-
-                                        }}
-                                        selectedOption={field.value || []}
-                                      />
-                                      // <TomSelect
-                                      //   value={field.value || []}
-                                      //   onChange={(value) => {
-                                      //     field.onChange(value);
-                                      //   }}
-                                      //   options={{
-                                      //     placeholder: "Select region",
-                                      //   }}
-                                      //   className="w-full"
-                                      //   multiple
-                                      // >
-                                      //   <>
-                                      //     {investerProfileFilterOption?.region
-                                      //       .length > 0 &&
-                                      //       investerProfileFilterOption?.region?.map(
-                                      //         (region: string) => {
-                                      //           return (
-                                      //             <option value={region}>
-                                      //               {region}
-                                      //             </option>
-                                      //           );
-                                      //         }
-                                      //       )}
-                                      //   </>
-                                      // </TomSelect>
-                                    )}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          </form>
-                        </Popover.Panel>
-                      </>
-                    )}
-                  </Popover>
                 </div>
               </div>
 
@@ -423,59 +314,125 @@ function Main() {
               )}
 
               <div className="overflow-auto xl:overflow-visible px-5">
-                <TableWrapper 
-                  isLoading={loading}
-                  skeleton={
-                    <div className="space-y-0">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                        <div
-                          key={i}
-                          className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5 my-2 shadow-md bg-white"
-                        >
-                          <div className="ml-5 flex items-center w-full">
-                            <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[45%]" />
-                          </div>
-                          <div className="w-5 h-5 rounded-full bg-slate-200 animate-pulse mr-1.5" />
-                        </div>
-                      ))}
-                    </div>
-                  }
-                >
-                  {investersProfile?.length > 0 &&
-                    investersProfile.map((profile: InvestersProfile) => {
-                      return (
-                        <div className="relative flex items-center justify-between p-4 pl-0 border border-solid rounded-lg pr-5  my-2 shadow-md">
-                          <div className="ml-5 flex items-center">
+                <Table className="border-spacing-y-[10px] border-separate -mt-2">
+                  <Table.Thead className="bg-[#ab123d] sticky top-0 z-10">
+                    <Table.Tr>
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 whitespace-nowrap first:rounded-l-md">
+                        Institution
+                      </Table.Td>
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                        Investor Profile
+                      </Table.Td>
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                        Key Changes
+                      </Table.Td>
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                        Voting Guidelines
+                      </Table.Td>
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap last:rounded-r-md">
+                        All Documents
+                      </Table.Td>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {loading ? (
+                      <>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                          <Table.Tr key={i} className="intro-x">
+                            <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
+                              <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[80%]" />
+                            </Table.Td>
+                            <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+                            </Table.Td>
+                            <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+                            </Table.Td>
+                            <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+                            </Table.Td>
+                            <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
+                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </>
+                    ) : investersProfile?.length > 0 ? (
+                      investersProfile.map((profile: InvestersProfile) => (
+                        <Table.Tr key={profile.id} className="intro-x">
+                          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
                             <span
-                              onClick={() => {
-                                gotoDetailPage(profile.id);
-                              }}
+                              onClick={() => gotoDetailPage(profile.investor_profile_id)}
+                              className="font-semibold text-[0.94rem] cursor-pointer hover:text-primary transition-colors"
                             >
-                              <div className="font-semibold text-[0.94rem] truncate max-w-[200px] sm:max-w-[400px] w-full cursor-pointer hover:text-primary transition-colors">
-                                {profile?.institution_name}
-                              </div>
+                              {profile.institution || profile.institution_name}
                             </span>
-                            {/* </Tippy> */}
-                          </div>
-
-                          <Tippy
-                            content="See Details"
-                            options={{
-                              theme: "light",
-                            }}
-                          >
+                          </Table.Td>
+                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+                            <Lucide
+                              onClick={() => gotoDetailPage(profile.investor_profile_id)}
+                              icon="Briefcase"
+                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
+                                profile.investor_profile_id
+                                  ? 'cursor-pointer hover:text-primary'
+                                  : 'opacity-30 cursor-not-allowed'
+                              }`}
+                            />
+                          </Table.Td>
+                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+                            <Lucide
+                              onClick={() => handleKeyChangesClick(profile)}
+                              icon="GitCompare"
+                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
+                                profile.proxy_voting_key_changes
+                                  ? 'cursor-pointer hover:text-primary'
+                                  : 'opacity-30 cursor-not-allowed'
+                              }`}
+                            />
+                          </Table.Td>
+                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+                            <Lucide
+                              onClick={() => handleVotingGuidelinesClick(profile)}
+                              icon="Vote"
+                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
+                                profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0
+                                  ? 'cursor-pointer hover:text-primary'
+                                  : 'opacity-30 cursor-not-allowed'
+                              }`}
+                            />
+                          </Table.Td>
+                          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
                             <Lucide
                               onClick={() => {
-                                gotoDetailPage(profile.id);
+                                if (profile.is_document) {
+                                  handleDocumentsClick(profile.id);
+                                }
                               }}
-                              icon="Eye"
-                              className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                              icon="FileText"
+                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
+                                profile.is_document
+                                  ? 'cursor-pointer hover:text-primary'
+                                  : 'opacity-30 cursor-not-allowed'
+                              }`}
                             />
-                          </Tippy>
-                        </div>
-                      );
-                    })}
-                </TableWrapper>
+                          </Table.Td>
+                        </Table.Tr>
+                      ))
+                    ) : (
+                      <Table.Tr>
+                        <Table.Td colSpan={5} className="py-12 text-center bg-white shadow-md rounded-md">
+                          <div className="flex flex-col items-center justify-center">
+                            <Lucide icon="FileSearch" className="w-12 h-12 text-gray-300 mb-2" />
+                            <div className="text-lg font-medium">No data found</div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              Try adjusting your filters or search criteria
+                            </div>
+                          </div>
+                        </Table.Td>
+                      </Table.Tr>
+                    )}
+                  </Table.Tbody>
+                </Table>
                 {/* <Tab.Group>
                   <Tab.List variant="link-tabs">
                     <Tab>
@@ -611,6 +568,188 @@ function Main() {
               addNewInvesterModalVisible={addNewInvesterModalVisible}
               setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
             />
+          )}
+
+          {/* Removed All Documents Modal - opens in new tab directly */}
+
+          {/* {allDocumentsModalOpen && (
+            <Dialog
+              size="lg"
+              open={allDocumentsModalOpen}
+              onClose={() => {
+                setAllDocumentsModalOpen(false);
+                setSelectedInstitution(null);
+              }}
+            >
+              <Dialog.Panel className="p-0">
+                <Dialog.Title>
+                  <div className="px-6 py-5 border-b border-slate-200/60">
+                    <h2 className="font-semibold text-lg">
+                      All Documents - {selectedInstitution?.institution_name}
+                    </h2>
+                  </div>
+                </Dialog.Title>
+                <Dialog.Description className="p-8 text-center">
+                  <Lucide icon="FileText" className="w-16 h-16 mx-auto text-slate-300 mb-4" />
+                  <p className="text-slate-600 mb-6">
+                    Click the button below to view all documents for {selectedInstitution?.institution_name}
+                  </p>
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      window.open(`/investor-company-details/${selectedInstitution?.institution_id}`, '_blank');
+                      setAllDocumentsModalOpen(false);
+                      setSelectedInstitution(null);
+                    }}
+                  >
+                    <Lucide icon="ExternalLink" className="w-4 h-4 mr-2" />
+                    View All Documents
+                  </Button>
+                </Dialog.Description>
+              </Dialog.Panel>
+            </Dialog>
+          )} */}
+
+          {keyChangesModalOpen && (
+            <Dialog
+              size="lg"
+              open={keyChangesModalOpen}
+              onClose={() => {
+                setKeyChangesModalOpen(false);
+                setSelectedKeyChanges(null);
+              }}
+            >
+              <Dialog.Panel>
+                <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold">{selectedKeyChanges?.institution_name}</h2>
+                    <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
+                      <span>Key Changes</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setKeyChangesModalOpen(false);
+                      setSelectedKeyChanges(null);
+                    }}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Lucide icon="X" className="w-5 h-5" />
+                  </button>
+                </Dialog.Title>
+                <Dialog.Description className="p-8 overflow-y-auto max-h-[70vh]">
+                  <div 
+                    className="prose prose-sm max-w-none text-slate-600 leading-relaxed [&_a]:cursor-pointer [&_a]:text-primary [&_a]:underline hover:[&_a]:text-primary/80"
+                    dangerouslySetInnerHTML={{ __html: selectedKeyChanges?.key_changes || '' }}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.tagName === 'A' || target.closest('a')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const link = (target.tagName === 'A' ? target : target.closest('a')) as HTMLAnchorElement;
+                        if (link && link.href) {
+                          window.open(link.href, '_blank', 'noopener,noreferrer');
+                        }
+                      }
+                    }}
+                  />
+                </Dialog.Description>
+                <div className="p-6 border-t bg-slate-50 flex justify-end">
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setKeyChangesModalOpen(false);
+                      setSelectedKeyChanges(null);
+                    }}
+                    className="px-8"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </Dialog.Panel>
+            </Dialog>
+          )}
+
+          {votingGuidelinesModalOpen && (
+            <Dialog
+              size="lg"
+              open={votingGuidelinesModalOpen}
+              onClose={() => {
+                setVotingGuidelinesModalOpen(false);
+                setSelectedVotingGuidelines(null);
+              }}
+            >
+              <Dialog.Panel>
+                <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold">{selectedVotingGuidelines?.institution_name}</h2>
+                    <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
+                      <span>Voting Guidelines</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setVotingGuidelinesModalOpen(false);
+                      setSelectedVotingGuidelines(null);
+                    }}
+                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <Lucide icon="X" className="w-5 h-5" />
+                  </button>
+                </Dialog.Title>
+                <Dialog.Description className="p-0">
+                  <div className="overflow-auto max-h-[70vh]">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 sticky top-0">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Year</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
+                          <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-slate-200">
+                        {selectedVotingGuidelines?.docs?.map((doc: any, index: number) => (
+                          <tr key={index} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-primary/10 text-primary">
+                                {doc.year}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-medium text-slate-900">
+                                {doc.policy_type || selectedVotingGuidelines?.institution_name}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => window.open(doc.link, '_blank')}
+                              >
+                                <Lucide icon="ExternalLink" className="w-4 h-4 mr-1" />
+                                View
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Dialog.Description>
+                <div className="p-6 border-t bg-slate-50 flex justify-end">
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setVotingGuidelinesModalOpen(false);
+                      setSelectedVotingGuidelines(null);
+                    }}
+                    className="px-8"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </Dialog.Panel>
+            </Dialog>
           )}
         </div>
       </div >

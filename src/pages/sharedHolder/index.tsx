@@ -2405,9 +2405,11 @@ function ShareHolderProposal() {
                           <StandardizedTable.Cell isHeader width="8%" className="text-center">
                             Details
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="8%" className="text-center">
-                            Actions
-                          </StandardizedTable.Cell>
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            <StandardizedTable.Cell isHeader width="8%" className="text-center">
+                              Actions
+                            </StandardizedTable.Cell>
+                          )}
                         </StandardizedTable.Header>
 
                         <Table.Tbody>
@@ -2550,42 +2552,40 @@ function ShareHolderProposal() {
                                     </div>
                                   </StandardizedTable.Cell>
 
-                                  <StandardizedTable.Cell className="text-center">
-                                    <div className="flex gap-3 justify-center">
-                                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                        <>
-                                          <Tippy
-                                            content="Edit"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
-                                              onClick={() =>
-                                                onEditProposalClickHandler(
-                                                  noAction,
-                                                  "edit"
-                                                )
-                                              }
-                                              icon="PenLine"
-                                              className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                            />
-                                          </Tippy>
-                                          <Tippy
-                                            content="Delete"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
-                                              onClick={() => {
-                                                setProposalToDelete(noAction);
-                                                setIsDeleteModalOpen(true);
-                                              }}
-                                              icon="Trash2"
-                                              className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                            />
-                                          </Tippy>
-                                        </>
-                                      )}
-                                    </div>
-                                  </StandardizedTable.Cell>
+                                  {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                    <StandardizedTable.Cell className="text-center">
+                                      <div className="flex gap-3 justify-center">
+                                        <Tippy
+                                          content="Edit"
+                                          options={{ theme: "light" }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              onEditProposalClickHandler(
+                                                noAction,
+                                                "edit"
+                                              )
+                                            }
+                                            icon="PenLine"
+                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
+                                          />
+                                        </Tippy>
+                                        <Tippy
+                                          content="Delete"
+                                          options={{ theme: "light" }}
+                                        >
+                                          <Lucide
+                                            onClick={() => {
+                                              setProposalToDelete(noAction);
+                                              setIsDeleteModalOpen(true);
+                                            }}
+                                            icon="Trash2"
+                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </StandardizedTable.Cell>
+                                  )}
                                 </StandardizedTable.Row>
                               )
                             )}
@@ -2747,9 +2747,11 @@ function ShareHolderProposal() {
                           <StandardizedTable.Cell isHeader width="10%" className="text-center">
                             Details
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="10%" className="text-center">
-                            Actions
-                          </StandardizedTable.Cell>
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            <StandardizedTable.Cell isHeader width="10%" className="text-center">
+                              Actions
+                            </StandardizedTable.Cell>
+                          )}
                         </StandardizedTable.Header>
 
                         <Table.Tbody>
@@ -2800,41 +2802,39 @@ function ShareHolderProposal() {
                                   </div>
                                 </StandardizedTable.Cell>
 
-                                <StandardizedTable.Cell className="text-center">
-                                  <div className="flex gap-3 justify-center">
-                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                      <>
-                                        <Tippy
-                                          content="Edit"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() => {
-                                              onEditNoActionClickHandler(
-                                                noAction
-                                              );
-                                            }}
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                          />
-                                        </Tippy>
-                                        <Tippy
-                                          content="Delete"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() => {
-                                              setProposalToDelete(noAction);
-                                              setIsDeleteModalOpen(true);
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                          />
-                                        </Tippy>
-                                      </>
-                                    )}
-                                  </div>
-                                </StandardizedTable.Cell>
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                  <StandardizedTable.Cell className="text-center">
+                                    <div className="flex gap-3 justify-center">
+                                      <Tippy
+                                        content="Edit"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            onEditNoActionClickHandler(
+                                              noAction
+                                            );
+                                          }}
+                                          icon="PenLine"
+                                          className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
+                                        />
+                                      </Tippy>
+                                      <Tippy
+                                        content="Delete"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            setProposalToDelete(noAction);
+                                            setIsDeleteModalOpen(true);
+                                          }}
+                                          icon="Trash2"
+                                          className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
+                                        />
+                                      </Tippy>
+                                    </div>
+                                  </StandardizedTable.Cell>
+                                )}
                               </StandardizedTable.Row>
                             ))}
                         </Table.Tbody>
@@ -2899,9 +2899,11 @@ function ShareHolderProposal() {
                           <StandardizedTable.Cell isHeader width="15%" className="text-center">
                             Details
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="15%" className="text-center">
-                            Actions
-                          </StandardizedTable.Cell>
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            <StandardizedTable.Cell isHeader width="15%" className="text-center">
+                              Actions
+                            </StandardizedTable.Cell>
+                          )}
                         </StandardizedTable.Header>
 
                         <Table.Tbody>
@@ -2946,41 +2948,39 @@ function ShareHolderProposal() {
                                   </div>
                                 </StandardizedTable.Cell>
 
-                                <StandardizedTable.Cell className="text-center">
-                                  <div className="flex gap-3 justify-center">
-                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                      <>
-                                        <Tippy
-                                          content="Edit"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() =>
-                                              onEditWithdrawnClickHandler(
-                                                noAction
-                                              )
-                                            }
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                          />
-                                        </Tippy>
-                                        <Tippy
-                                          content="Delete"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() => {
-                                              setProposalToDelete(noAction);
-                                              setIsDeleteModalOpen(true);
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                          />
-                                        </Tippy>
-                                      </>
-                                    )}
-                                  </div>
-                                </StandardizedTable.Cell>
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                  <StandardizedTable.Cell className="text-center">
+                                    <div className="flex gap-3 justify-center">
+                                      <Tippy
+                                        content="Edit"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() =>
+                                            onEditWithdrawnClickHandler(
+                                              noAction
+                                            )
+                                          }
+                                          icon="PenLine"
+                                          className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
+                                        />
+                                      </Tippy>
+                                      <Tippy
+                                        content="Delete"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            setProposalToDelete(noAction);
+                                            setIsDeleteModalOpen(true);
+                                          }}
+                                          icon="Trash2"
+                                          className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
+                                        />
+                                      </Tippy>
+                                    </div>
+                                  </StandardizedTable.Cell>
+                                )}
                               </StandardizedTable.Row>
                             ))}
                         </Table.Tbody>

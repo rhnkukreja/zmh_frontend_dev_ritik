@@ -1387,9 +1387,11 @@ function CaseStudies() {
                     <StandardizedTable.Cell isHeader>
                       Details
                     </StandardizedTable.Cell>
-                    <StandardizedTable.Cell isHeader>
-                      Actions
-                    </StandardizedTable.Cell>
+                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                      <StandardizedTable.Cell isHeader>
+                        Actions
+                      </StandardizedTable.Cell>
+                    )}
                   </StandardizedTable.Header>
 
                   <Table.Tbody>
@@ -1447,43 +1449,41 @@ function CaseStudies() {
                               </div>
                             </StandardizedTable.Cell>
 
-                            <StandardizedTable.Cell>
-                              <div className="flex gap-3 justify-center">
-                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                  <>
-                                    <Tippy
-                                      content="Edit"
-                                      options={{ theme: "light" }}
-                                    >
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                        <Lucide
-                                          onClick={() =>
-                                            onEditCaseStudiesClickHandler(item)
-                                          }
-                                          icon="PenLine"
-                                          className="text-primary"
-                                        />
-                                      </div>
-                                    </Tippy>
-                                    <Tippy
-                                      content="Delete"
-                                      options={{ theme: "light" }}
-                                    >
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                        <Lucide
-                                          onClick={() => {
-                                            setItemToDelete(item);
-                                            setIsDeleteModalOpen(true);
-                                          }}
-                                          icon="Trash2"
-                                          className="text-danger"
-                                        />
-                                      </div>
-                                    </Tippy>
-                                  </>
-                                )}
-                              </div>
-                            </StandardizedTable.Cell>
+                            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                              <StandardizedTable.Cell>
+                                <div className="flex gap-3 justify-center">
+                                  <Tippy
+                                    content="Edit"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                      <Lucide
+                                        onClick={() =>
+                                          onEditCaseStudiesClickHandler(item)
+                                        }
+                                        icon="PenLine"
+                                        className="text-primary"
+                                      />
+                                    </div>
+                                  </Tippy>
+                                  <Tippy
+                                    content="Delete"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                      <Lucide
+                                        onClick={() => {
+                                          setItemToDelete(item);
+                                          setIsDeleteModalOpen(true);
+                                        }}
+                                        icon="Trash2"
+                                        className="text-danger"
+                                      />
+                                    </div>
+                                  </Tippy>
+                                </div>
+                              </StandardizedTable.Cell>
+                            )}
                           </StandardizedTable.Row>
                         );
                       })}
