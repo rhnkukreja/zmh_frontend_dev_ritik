@@ -564,8 +564,56 @@ const index = () => {
             <>
               <TableWrapper
                 isLoading={proxyContestLoading}
-                rows={8}
-                columns={4}
+                skeleton={
+                  <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
+                    <Table>
+                      <Table.Thead>
+                        <Table.Tr className="bg-primary text-white text-sm">
+                          <Table.Td className="px-4 py-2 font-semibold">
+                            <div className="h-5 w-14 rounded bg-white/35 animate-pulse" />
+                          </Table.Td>
+                          <Table.Td className="px-4 py-2 font-semibold">
+                            <div className="h-5 w-28 rounded bg-white/35 animate-pulse" />
+                          </Table.Td>
+                          <Table.Td className="px-4 py-2 font-semibold">
+                            <div className="h-5 w-24 rounded bg-white/35 animate-pulse" />
+                          </Table.Td>
+                          <Table.Td className="px-4 py-2 font-semibold">
+                            <div className="h-5 w-16 rounded bg-white/35 animate-pulse" />
+                          </Table.Td>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {Array.from({ length: 12 }).map((_, idx) => (
+                          <Table.Tr
+                            key={`proxy-contest-skeleton-${idx}`}
+                            className={`[&_td]:last:border-b-0 ${
+                              idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                            }`}
+                          >
+                            <Table.Td className="py-2 border-dashed">
+                              <div className="inline-block h-6 w-11 rounded-full bg-slate-200 animate-pulse" />
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <div className="h-5 w-[72%] rounded-md bg-slate-200 animate-pulse" />
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <div className="inline-block h-6 w-28 rounded-full bg-slate-200 animate-pulse" />
+                            </Table.Td>
+                            <Table.Td className="py-2 border-dashed">
+                              <div className="flex gap-2">
+                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                              </div>
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </div>
+                }
               >
                 <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
                   <Table>

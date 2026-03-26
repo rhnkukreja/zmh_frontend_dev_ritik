@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
 import { useLocation, useSearchParams } from "react-router-dom";
 import {
@@ -124,9 +124,11 @@ function Main() {
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
+  const [companyFetchError, setCompanyFetchError] = useState<string | null>(null);
+  const [isRetryingCompanyData, setIsRetryingCompanyData] = useState(false);
 
   const { companySearchAndUpdate } = useCompanySearch();
-  const { tempSearch, graphQLBoardData, graphQLBoardDataLoading } =
+  const { graphQLBoardData, graphQLBoardDataLoading } =
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
 
@@ -163,51 +165,101 @@ function Main() {
     fetchModulesCount();
   }, [companyGlobalSearchName]);
 
-  // Fetch all tab data on initial load
-  useEffect(() => {
-    if (companyGlobalSearchTicker && companyGlobalSearchId) {
-      // Only fetch if data doesn't exist (first load or company changed)
-      if (companyGlobalSearchTicker !== tempSearch) {
-        // 1. Fetch Ownership data
+  const fetchCompanySearchData = useCallback(
+    async (source: "initial" | "manual" | "online" | "focus" = "initial") => {
+      if (!companyGlobalSearchTicker || !companyGlobalSearchId) return;
+
+      if (source !== "initial") {
+        setIsRetryingCompanyData(true);
+      }
+
+      const requests: Promise<any>[] = [
         dispatch(
           fetchCompanyDashboard(
             createDynamicURL(
               `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
             )
           )
-        );
-
-        // 2. Fetch Company Overview data (for all users)
+        ).unwrap(),
         dispatch(
           fetchCompanyOverview(
             `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
           )
-        );
+        ).unwrap(),
+        dispatch(
+          fetchAGMSummaryDashboard(
+            createDynamicURL(`${baseURL}/voting_report_8k/`, {
+              ticker: companyGlobalSearchTicker,
+            })
+          )
+        ).unwrap(),
+      ];
 
-        // 3. Fetch Company Overview GPT data (for admins only)
-        if (isAdmin) {
+      if (isAdmin) {
+        requests.push(
           dispatch(
             fetchCompanyOverviewGPT(
               `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
             )
-          );
-        }
-
-        // 4. Fetch Shareholder Meeting Results data
-        dispatch(
-          fetchAGMSummaryDashboard(
-            createDynamicURL(
-              `${baseURL}/voting_report_8k/`,
-              { ticker: companyGlobalSearchTicker }
-            )
-          )
+          ).unwrap()
         );
-
-        // Set tempSearch to mark data as loaded for this company
-        dispatch(setTempSearch(companyGlobalSearchTicker));
       }
-    }
-  }, [companyGlobalSearchTicker, companyGlobalSearchId, tempSearch, dispatch, isAdmin]);
+
+      const results = await Promise.allSettled(requests);
+      const hasSuccess = results.some((r) => r.status === "fulfilled");
+
+      if (hasSuccess) {
+        setCompanyFetchError(null);
+        dispatch(setTempSearch(companyGlobalSearchTicker));
+      } else {
+        setCompanyFetchError(
+          "Company Search data could not be loaded. Please retry."
+        );
+      }
+
+      if (source !== "initial") {
+        setIsRetryingCompanyData(false);
+      }
+    },
+    [
+      companyGlobalSearchTicker,
+      companyGlobalSearchId,
+      dispatch,
+      isAdmin,
+    ]
+  );
+
+  // Initial/company-change fetch
+  useEffect(() => {
+    fetchCompanySearchData("initial");
+  }, [fetchCompanySearchData]);
+
+  // Auto-refetch once connection is restored.
+  useEffect(() => {
+    const handleOnline = () => {
+      fetchCompanySearchData("online");
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [fetchCompanySearchData]);
+
+  // Refetch when user returns to this tab after an error.
+  useEffect(() => {
+    const handleFocusOrVisible = () => {
+      if (document.visibilityState === "visible" && navigator.onLine && companyFetchError) {
+        fetchCompanySearchData("focus");
+      }
+    };
+
+    window.addEventListener("focus", handleFocusOrVisible);
+    document.addEventListener("visibilitychange", handleFocusOrVisible);
+
+    return () => {
+      window.removeEventListener("focus", handleFocusOrVisible);
+      document.removeEventListener("visibilitychange", handleFocusOrVisible);
+    };
+  }, [companyFetchError, fetchCompanySearchData]);
 
   // No scroll-based tab update - tabs now show/hide content instead
 
@@ -326,17 +378,46 @@ function Main() {
               </button>
             </div>
             {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
-              <button
-                className="px-6 py-2.5 text-primary font-semibold text-sm rounded-full hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary"
-                onClick={handleGenerateReport}
-              >
-                <FileText className="w-4 h-4" />
-                Generate Report
-              </button>
+              <div className="flex items-center gap-2">
+                {/* {companyFetchError && (
+                  <button
+                    type="button"
+                    onClick={() => fetchCompanySearchData("manual")}
+                    disabled={isRetryingCompanyData}
+                    className="px-5 py-2.5 text-[#9f1239] font-semibold text-sm rounded-full transition-all duration-200 shadow-md flex items-center gap-2 border border-[#9f1239] hover:bg-[#9f1239] hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Lucide icon="RotateCw" className="w-4 h-4" />
+                    {isRetryingCompanyData ? "Retrying..." : "Retry Data"}
+                  </button>
+                )} */}
+                <button
+                  className="px-6 py-2.5 text-primary font-semibold text-sm rounded-full hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary"
+                  onClick={handleGenerateReport}
+                >
+                  <FileText className="w-4 h-4" />
+                  Generate Report
+                </button>
+              </div>
             )}
           </div>
         </div>
 
+        {companyFetchError ? (
+          <div className="min-h-[58vh] flex items-center justify-center px-6">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-sm text-slate-600">{companyFetchError}</p>
+              <button
+                type="button"
+                onClick={() => fetchCompanySearchData("manual")}
+                disabled={isRetryingCompanyData}
+                className="px-5 py-2 text-sm font-semibold rounded-full border border-[#9f1239] text-[#9f1239] hover:bg-[#9f1239] hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isRetryingCompanyData ? "Retrying..." : "Retry"}
+              </button>
+              <span className="text-xs text-slate-500">Auto-retry on reconnect is enabled.</span>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
           {activeTab === 'company-overview' && (
             <div id="company-overview" className="col-span-12 xl:col-span-12">
@@ -496,6 +577,7 @@ function Main() {
             <CaseStudiesCard />
           </div> */}
         </div>
+        )}
       </section>
       {/* </>
       } */}

@@ -43,6 +43,7 @@ import FilterChips from "@/components/FilterChips";
 import StandardizedFilterPills from "@/components/StandardizedFilterPills";
 import StandardizedTable from "@/components/StandardizedTable";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
@@ -435,6 +436,7 @@ function CaseStudies() {
       // useCaseStudyDropdowns().refresh(); // If refresh is available
     } catch (error: any) {
       console.error("Delete error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Something went wrong!")) return;
       toast.error(error?.response?.data?.message || "Something went wrong!");
     } finally {
       setIsDeleting(false);

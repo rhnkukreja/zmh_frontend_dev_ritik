@@ -932,7 +932,7 @@ function Main() {
                 <AIAssistantButton 
                   href="/ai-assistant"
                   className="ml-2 hidden md:flex border-4 hover:border-transparent"
-                  size="lg"
+                  size="md"
                 />
                 {/* END: AI Assistant - Open /ai-assistant in new tab */}
               </>
