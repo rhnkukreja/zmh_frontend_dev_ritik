@@ -99,6 +99,8 @@ interface CompanySliceState {
   companyOverviewLoading: boolean;
   companyOverviewGPTData: any;
   companyOverviewGPTLoading: boolean;
+  resultsCache: Record<string, any>;
+  modulesCount: any | null;
 }
 
 const initialState: CompanySliceState = {
@@ -157,6 +159,8 @@ const initialState: CompanySliceState = {
   companyOverviewGPTLoading: false,
   graphQLBoardDataLoading: false,
   graphQLBoardData: null,
+  resultsCache: {},
+  modulesCount: null,
 
   // {
   //   nominees: [],
@@ -399,21 +403,55 @@ const companySlice = createSlice({
     clearVotingRationale(state) {
       state.votingRationale = [];
     },
-    
+
     setVotingRationaleTop20(state, action: PayloadAction<any[]>) {
       state.votingRationaleTop20 = action.payload;
     },
-    
+
     setVotingRationaleAllInvestors(state, action: PayloadAction<any[]>) {
       state.votingRationaleAllInvestors = action.payload;
     },
-    
+
     clearVotingRationaleTop20(state) {
       state.votingRationaleTop20 = [];
     },
-    
+
     clearVotingRationaleAllInvestors(state) {
       state.votingRationaleAllInvestors = [];
+    },
+
+    saveToCache(state, action: PayloadAction<string>) {
+      const ticker = action.payload;
+      state.resultsCache[ticker] = {
+        dashboardDataList: state.dashboardDataList,
+        dashboardData: state.dashboardData,
+        agmSummaryDetails: state.agmSummaryDetails,
+        companyOverviewData: state.companyOverviewData,
+        boardDirectorMembers: state.boardDirectorMembers,
+        modulesCount: state.modulesCount,
+        timestamp: Date.now(),
+      };
+    },
+
+    loadFromCache(state, action: PayloadAction<string>) {
+      const ticker = action.payload;
+      const cached = state.resultsCache[ticker];
+      if (cached) {
+        state.dashboardDataList = cached.dashboardDataList;
+        state.dashboardData = cached.dashboardData;
+        state.agmSummaryDetails = cached.agmSummaryDetails;
+        state.companyOverviewData = cached.companyOverviewData;
+        state.boardDirectorMembers = cached.boardDirectorMembers;
+        state.modulesCount = cached.modulesCount;
+        state.loading = false;
+        state.investorCardLoading = false;
+        state.companyOverviewLoading = false;
+        state.getBoardDirectorMembersLoading = false;
+      }
+    },
+
+    setModulesCount(state, action: PayloadAction<any>) {
+      state.modulesCount = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -845,10 +883,12 @@ export const {
   setProxyContestInvestorFilter,
   setProxyTopFilter,
   // setVotingRationalePage,
-  // resetVotingRationalePage,
   clearVotingRationale,
   setVotingRationaleTop20,
   setVotingRationaleAllInvestors,
   clearVotingRationaleTop20,
   clearVotingRationaleAllInvestors,
+  saveToCache,
+  loadFromCache,
+  setModulesCount,
 } = companySlice.actions;
