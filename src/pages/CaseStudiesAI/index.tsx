@@ -133,21 +133,21 @@ function CaseStudiesAI() {
         const institutionIdParam = searchParams.get('institution_id');
         const yearParam = searchParams.get('year');
         const marketParam = searchParams.get('market');
-        
+
         if (institutionIdParam) {
             const institutionId = parseInt(institutionIdParam, 10);
             if (!isNaN(institutionId) && !selectedAiInstitutionIds.includes(institutionId)) {
                 setSelectedAiInstitutionIds([institutionId]);
             }
         }
-        
+
         if (yearParam) {
             const year = parseInt(yearParam, 10);
             if (!isNaN(year) && !selectedAiYears.includes(year)) {
                 setSelectedAiYears([year]);
             }
         }
-        
+
         if (marketParam && !selectedAiMarkets.includes(marketParam)) {
             setSelectedAiMarkets([marketParam]);
         }
@@ -312,9 +312,6 @@ function CaseStudiesAI() {
                     {/* Scrollable Content BELOW sticky header */}
                     <div className="mt-1 relative">
                         <div className="flex flex-col box box--stacked bg-white p-5">
-                            <h1 className="text-2xl font-bold mb-6 text-gray-800">
-                                Case Studies AI
-                            </h1>
                             <ActiveFilterChips
                                 selectedAiInstitutionIds={selectedAiInstitutionIds}
                                 selectedAiThemes={selectedAiThemes}
