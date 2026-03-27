@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchInstitutionDocuments, getSingleInstitution } from "@/stores/institutionSlice";
@@ -21,7 +21,7 @@ import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
 
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
-type ProfileMode = "create" | "update" | null;
+type ProfileMode = "create" | "update"  | "voting" | null;
 
 const SECTIONS: ProfileSection[] = ["summary", "engagement_priorities", "reporting_expectation", "esg_integration", "voting_guidelines"];
 const SECTION_COLS: { key: ProfileSection; label: string }[] = [
@@ -45,10 +45,20 @@ const stripHtml = (html: string) => {
   return html.replace(/<p>/gi, "").replace(/<\/p>/gi, "\n\n").replace(/<ul>/gi, "").replace(/<\/ul>/gi, "\n").replace(/<li>/gi, "- ").replace(/<\/li>/gi, "\n").replace(/<br\s*\/?>/gi, "\n").replace(/&nbsp;/gi, " ").replace(/<[^>]+>/g, "").trim();
 };
 
+const safeDecode = (url: string) => {
+  try {
+    return decodeURIComponent(url);
+  } catch (e) {
+    return url;
+  }
+};
+
 const InstitutionDocuments = () => {
   const params = useParams();
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  const hasVerifiedDocs = useRef<string | null>(null);
 
   const [showTrash, setShowTrash] = useState(false);
   const [trashedDocuments, setTrashedDocuments] = useState<InstitutionDocument[]>([]);
@@ -93,6 +103,11 @@ const InstitutionDocuments = () => {
 
   // Local State for the new FastAPI Profile call
   const [fastApiProfile, setFastApiProfile] = useState<any>(null);
+  const [verifiedDocs, setVerifiedDocs] = useState<Record<string, boolean>>({});
+  
+  // 🌟 NEW STATE: Tracks if the S3 bulk verification is currently running
+  const [isVerifyingDocs, setIsVerifyingDocs] = useState(false);
+  const [uploadConfirmModal, setUploadConfirmModal] = useState<{open: boolean, doc: InstitutionDocument | null}>({open: false, doc: null});
 
   const filteredDocuments = institutionDocuments?.filter((doc) => !doc.is_deleted) || [];
   const documentsToDisplay = showTrash ? trashedDocuments : institutionDocuments;
@@ -111,6 +126,48 @@ const InstitutionDocuments = () => {
       console.error("Failed to load profile via FastAPI", e);
     }
   };
+
+  // 🌟 FAST BULK FETCH WITH BACKEND FUZZY MATCHING (POST REQUEST)
+  const checkAllDocsVerification = async (instId: string, docs: InstitutionDocument[]) => {
+    if (!docs || docs.length === 0) return;
+    setIsVerifyingDocs(true); 
+    
+    try {
+      const documentNames = docs.map(d => d.name).filter(Boolean) as string[];
+      
+      // ✅ Must be .post() to /check-all-documents-status
+      const res = await axios.post(`${AI_CHATBOT_API_BASE}/check-all-documents-status`, 
+        { 
+          investor_id: instId,
+          document_names: documentNames
+        },
+        { headers: { "ngrok-skip-browser-warning": "69420" } }
+      );
+      
+      console.log("🟢 VERIFIED VIA FUZZY MATCH:", res.data.verified_docs);
+      setVerifiedDocs(res.data.verified_docs || {});
+    } catch (e) {
+      console.error("Bulk verification check failed", e);
+    } finally {
+      setIsVerifyingDocs(false); 
+    }
+  };
+
+  useEffect(() => {
+    if (documentsLoading || !institutionDocuments || institutionDocuments.length === 0 || !params.id) return;
+
+    const docsSignature = `${params.id}_${institutionDocuments.map(d => d.id).join(',')}`;
+    
+    if (hasVerifiedDocs.current !== docsSignature) {
+      // Add a small delay to let Redux batch its state updates
+      const timer = setTimeout(() => {
+        checkAllDocsVerification(params.id!, institutionDocuments);
+        hasVerifiedDocs.current = docsSignature;
+      }, 300); // 300ms debounce
+
+      return () => clearTimeout(timer); // Cleanup if state changes rapidly
+    }
+  }, [params.id, documentsLoading, institutionDocuments]);
 
   useEffect(() => {
     if (showTrash && params.id) {
@@ -168,6 +225,28 @@ const InstitutionDocuments = () => {
     return () => clearInterval(interval);
   }, [processingDocs]);
 
+  // 🌟 NEW: Trigger manual processing for files not in S3
+  const handleManualUpload = async (doc: InstitutionDocument) => {
+    setUploadConfirmModal({ open: false, doc: null });
+    if (!params.id) return;
+    setProcessingDocs(prev => [...prev, { document_name: doc.name || "", institution_id: params.id! }]);
+  try {
+      await axios.post(`${AI_CHATBOT_API_BASE}/api/upload`, {
+        institution_id: params.id,
+        document_name: doc.name || "",
+        document_type: doc.document_type || "Stewardship Report",
+        year: String(doc.year || ""),
+        month: "", tags: "",
+        priority: doc.priority || "Medium",
+        file_name: doc.name || ""
+      }, { headers: { "ngrok-skip-browser-warning": "69420" } });
+      toast.success(`Processing started for: ${doc.name}`);
+    } catch (e) {
+      setProcessingDocs(prev => prev.filter(p => p.document_name !== doc.name));
+      toast.error("Failed to start processing.");
+    }
+  };
+
   // 🌟 SAFELY check if a URL is in the DB, applying decodeURI to prevent mismatch bugs
   const isCheckedForSection = (doc: InstitutionDocument, section: ProfileSection): boolean => {
     // 1. Check for unsaved changes pending in the UI
@@ -178,7 +257,7 @@ const InstitutionDocuments = () => {
     if (fastApiProfile && doc.link) {
        const linkField = section === "reporting_expectation" ? "reporting_expectation_link" : `${section}_link`;
        const savedLinks = fastApiProfile[linkField] || "";
-       return decodeURIComponent(savedLinks).includes(decodeURIComponent(doc.link));
+       return safeDecode(savedLinks).includes(safeDecode(doc.link));
     }
     
     // Fallback to original logic if no FastAPI profile exists yet
@@ -252,7 +331,7 @@ const InstitutionDocuments = () => {
       setIsSyncingSummary(false);
       toast.success("Investor Profile updated successfully!");
       if (params.id) dispatch(fetchInstitutionDocuments(Number(params.id)));
-      navigate(`/investor-profile`, { state: { profile: updatedProfile, oldProfile: fullDbProfileState || currentProfile, investorName: singleInstitution?.institution, usedDocuments, profileMode }});
+      navigate(`/final-summary/${params.id}`, { state: { profile: updatedProfile, oldProfile: fullDbProfileState || currentProfile, investorName: singleInstitution?.institution, usedDocuments, profileMode: profileMode === 'voting' ? 'update' : profileMode }});
     }, 3500);
   };
 
@@ -322,9 +401,9 @@ const InstitutionDocuments = () => {
     setLastDocumentLinks(finalLinks);
 
     const operations: any[] = [];
-    if (profileMode === 'update') {
+    if (profileMode === 'update' || profileMode === 'voting') {
       const groupedOps: Record<string, { document_id: number, sections: ProfileSection[], action: "link" | "unlink" }> = {};
-      pendingLinkOps.forEach(op => {
+    pendingLinkOps.forEach(op => {
         const key = `${op.document_id}-${op.action}`;
         if (!groupedOps[key]) groupedOps[key] = { document_id: op.document_id, sections: [], action: op.action };
         groupedOps[key].sections.push(op.section);
@@ -338,9 +417,30 @@ const InstitutionDocuments = () => {
     setLastOperations(operations);
 
     try {
-      const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/compare-updates`, 
-        { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 120000 }
-      );
+      let response;
+      if (profileMode === 'voting') {
+        
+        // 1. Create the array of objects the backend expects
+        const docPayload = docsToSubmit.map(doc => ({
+           name: doc.name || "",
+           year: doc.year ? Number(doc.year) : null
+        })).filter(d => d.name !== "");
+
+        // 2. Send docPayload instead of documentNames
+        response = await axios.post(`${AI_CHATBOT_API_BASE}/ai/compre-votingguideline`, 
+          { 
+            investor_name: singleInstitution?.institution || "Unknown", 
+            institution_id: Number(params.id), 
+            documents: docPayload // <--- THIS IS THE CRITICAL FIX
+          }, 
+          { headers: { "Content-Type": "application/json" }, timeout: 120000 }
+        );
+      }
+        else {
+        response = await axios.post(`${AI_CHATBOT_API_BASE}/api/compare-updates`, 
+          { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 120000 }
+        );
+      }
 
       const comparisons = response.data?.comparisons || {};
       const realDrafts: any[] = [];
@@ -398,7 +498,7 @@ const InstitutionDocuments = () => {
       investor_name: singleInstitution?.institution || "Unknown",
       institution_id: Number(params.id),
       documents: lastApiPayload,
-      mode: profileMode || "update",
+      mode: profileMode === 'voting' ? 'update' : (profileMode || "update"),
       regenerate_targets: targets.map(t => ({
         category: sectionToShortCode[t.section] || t.section,
         custom_prompt: t.customPrompt,
@@ -485,6 +585,7 @@ const InstitutionDocuments = () => {
             </div>
             {isAnalystOrAdmin && !showTrash && (
               <div className="flex items-center gap-2">
+                <Button variant={profileMode === 'voting' ? "primary" : "outline-secondary"} className={profileMode === 'voting' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('voting')} disabled={linkingInProgress.bulk}>Voting Guideline</Button>
                 <Button variant={profileMode === 'update' ? "primary" : "outline-secondary"} className={profileMode === 'update' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('update')} disabled={linkingInProgress.bulk}>Update Existing Profile</Button>
                 <Button variant={profileMode === 'create' ? "primary" : "outline-secondary"} className={profileMode === 'create' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('create')} disabled={linkingInProgress.bulk}>Create New Profile</Button>
               </div>
@@ -530,15 +631,21 @@ const InstitutionDocuments = () => {
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {documentsToDisplay?.length > 0 ? documentsToDisplay.map((doc: InstitutionDocument) => (
-                  <Table.Tr key={doc.id}>
-                    <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs w-[40px]">{!showTrash && !doc.is_deleted && <FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={selectedRows.includes(doc.id)} onChange={() => setSelectedRows(p => p.includes(doc.id) ? p.filter(id => id !== doc.id) : [...p, doc.id])} /></FormCheck>}</Table.Td>
-                    <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs align-top">{(() => { const isProcessing = processingDocs.some(p => p.document_name.toLowerCase() === doc.name?.toLowerCase()); return (<div className="flex items-start gap-1"><FileText className="w-3.5 h-3.5 text-slate-400 mr-1.5 mt-0.5" /><button onClick={() => window.open(doc.link, "_blank")} className={`font-medium text-left hover:underline ${isProcessing ? "text-slate-400 opacity-60" : "text-blue-600"}`}>{doc.name}</button>{isProcessing && <Loader2 className="w-3 h-3 text-slate-400 animate-spin mt-0.5 ml-1 shrink-0" />}</div>); })()}</Table.Td>
-                    <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.document_type || "-"}</Table.Td>
-                    <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.year || "-"}</Table.Td>
-                    <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs truncate">{doc.created_by_name || "-"}</Table.Td>
-                    <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.date_created ? new Date(doc.date_created).toLocaleDateString() : "-"}</Table.Td> 
-                    {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 bg-white border-slate-200/80 text-center"><div className={`flex justify-center ${isRedCheckbox(doc, c.key) ? "rounded ring-2 ring-red-500 ring-offset-1" : isGreenCheckbox(doc, c.key) ? "rounded ring-2 ring-green-500 ring-offset-1" : ""}`}><FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={isCheckedForSection(doc, c.key)} disabled={linkingInProgress[`${doc.id}-${c.key}`] || !isAnalystOrAdmin || !profileMode || (profileMode === 'update' && isCheckedForSection(doc, c.key) && !isRedCheckbox(doc, c.key))} onChange={() => handleLinkToProfile(doc, c.key, isCheckedForSection(doc, c.key))} /></FormCheck></div></Table.Td>)}
+                {documentsToDisplay?.length > 0 ? documentsToDisplay.map((doc: InstitutionDocument) => {
+                  
+                  const rawName = doc.name || "";
+                  const isProcessing = processingDocs.some(p => p.document_name?.toLowerCase() === rawName.toLowerCase());
+                  const isVerified = rawName ? verifiedDocs[rawName] : false;
+
+                  return (
+                    <Table.Tr key={doc.id}>
+                      <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs w-[40px]">{!showTrash && !doc.is_deleted && (<FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={selectedRows.includes(doc.id)} onChange={() => setSelectedRows(p => p.includes(doc.id) ? p.filter(id => id !== doc.id) : [...p, doc.id])} /></FormCheck>)}</Table.Td>
+                      <Table.Td className="py-1.5 bg-white text-slate-700 border-slate-200/80 text-xs align-top"><div className="flex items-start gap-1"><FileText className="w-3.5 h-3.5 text-slate-400 mr-1.5 mt-0.5" /><button onClick={() => window.open(doc.link, "_blank")} className={`font-medium text-left hover:underline ${isProcessing ? "text-slate-400 opacity-60" : "text-blue-600"}`}>{doc.name}</button>{isVerifyingDocs ? (<Tippy content="Checking S3..."><Loader2 className="ml-1 w-3.5 h-3.5 text-slate-400 animate-spin inline-block shrink-0 mt-0.5" /></Tippy>) : isVerified ? null : (<Tippy content="Process document"><button onClick={(e) => { e.stopPropagation(); setUploadConfirmModal({ open: true, doc }); }} className="ml-1 p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors" disabled={isProcessing}><Plus className="w-3.5 h-3.5" strokeWidth={3} /></button></Tippy>)}{isProcessing && !isVerifyingDocs && <Loader2 className="w-3 h-3 text-slate-400 animate-spin mt-0.5 ml-1 shrink-0" />}</div></Table.Td>
+                      <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.document_type || "-"}</Table.Td>
+                      <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.year || "-"}</Table.Td>
+                      <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs truncate">{doc.created_by_name || "-"}</Table.Td>
+                      <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.date_created ? new Date(doc.date_created).toLocaleDateString() : "-"}</Table.Td>
+                      {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 bg-white border-slate-200/80 text-center"><div className={`flex justify-center ${isRedCheckbox(doc, c.key) ? "rounded ring-2 ring-red-500 ring-offset-1" : isGreenCheckbox(doc, c.key) ? "rounded ring-2 ring-green-500 ring-offset-1" : ""}`}><FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={isCheckedForSection(doc, c.key)} disabled={linkingInProgress[`${doc.id}-${c.key}`] || !isAnalystOrAdmin || !profileMode || (profileMode === 'update' && isCheckedForSection(doc, c.key) && !isRedCheckbox(doc, c.key)) || (profileMode === 'voting' && c.key !== 'voting_guidelines')} onChange={() => handleLinkToProfile(doc, c.key, isCheckedForSection(doc, c.key))} /></FormCheck></div></Table.Td>)}
                     <Table.Td className="py-1.5 bg-white border-slate-200/80"><span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800`}>{doc.priority || "-"}</span></Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80">
                       <div className="flex gap-2">
@@ -546,8 +653,8 @@ const InstitutionDocuments = () => {
                         {showTrash && isAnalystOrAdmin && (<Tippy content="Restore"><button onClick={() => setConfirmModal({ open: true, type: 'restore', document: doc })} className="p-0.5 hover:bg-green-100 rounded"><RotateCcw className="w-3.5 h-3.5 text-green-600" /></button></Tippy>)}
                       </div>
                     </Table.Td>
-                  </Table.Tr>
-                )) : <Table.Tr><Table.Td colSpan={13} className="py-10 text-center text-slate-500">No documents found.</Table.Td></Table.Tr>}
+                    </Table.Tr>
+                  );}) :( <Table.Tr><Table.Td colSpan={13} className="py-10 text-center text-slate-500">No documents found.</Table.Td></Table.Tr>)}
               </Table.Tbody>
             </Table>
           </TableWrapper>
@@ -569,7 +676,7 @@ const InstitutionDocuments = () => {
       {linkConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
-            <div className="mb-4 text-lg font-semibold">{profileMode === 'create' ? "Create new investor profile?" : "Update investor profile with selected changes?"}</div>
+            <div className="mb-4 text-lg font-semibold">{profileMode === 'create' ? "Create new investor profile?" : profileMode === 'voting' ? "Update voting guidelines with selected changes?" : "Update investor profile with selected changes?"}</div>
             <div className="flex justify-end gap-2"><Button variant="outline-secondary" onClick={() => setLinkConfirmOpen(false)}>Cancel</Button><Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => { setLinkConfirmOpen(false); handleBulkLinkToProfile(); }}>Confirm</Button></div>
           </div>
         </div>
@@ -600,8 +707,19 @@ const InstitutionDocuments = () => {
           regeneratingSections={regeneratingSections}
           documentLinks={lastDocumentLinks} 
           pendingOperations={lastOperations} 
-          profileMode={profileMode} 
+          profileMode={profileMode === 'voting' ? 'update' : profileMode as any} 
         />
+      )}
+      {uploadConfirmModal.open && uploadConfirmModal.doc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
+            <div className="mb-4 text-lg font-semibold">Upload document to S3 to process summary?</div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline-secondary" onClick={() => setUploadConfirmModal({ open: false, doc: null })}>Cancel</Button>
+              <Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => handleManualUpload(uploadConfirmModal.doc!)}>Confirm Upload</Button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
