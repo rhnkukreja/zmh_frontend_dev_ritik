@@ -88,9 +88,9 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   const [error, setError] = useState<string | null>(null);
   const [showReasonsModal, setShowReasonsModal] = useState(false);
   const [modalReasons, setModalReasons] = useState<Array<ReasonItem>>([]);
-  
-  // Get user type from localStorage for Admin check
-  const userType = localStorage.getItem('userType');
+
+  // FIX 1: Read userType into state so it's reactive and reliable
+  const [userType, setUserType] = useState<string | null>(() => localStorage.getItem('userType'));
 
   // Load investor dropdown on mount
   useEffect(() => {
@@ -99,7 +99,11 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
         const data = await institutionStatsService.getInvestorDropdown();
         setInvestors(data);
         if (data && data.length > 0) {
-          setSelectedInvestor(data[0].id);
+          // FIX 2: Pre-select BlackRock by name (case-insensitive), fallback to first item
+          const blackrock = data.find((inv: InvestorOption) =>
+            inv.institution.toLowerCase().includes('blackrock')
+          );
+          setSelectedInvestor(blackrock ? blackrock.id : data[0].id);
         }
       } catch (err) {
         setError('Failed to load investors');
@@ -169,44 +173,39 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   };
 
   const formatSummaryWithBullets = (summary: string): string => {
-    // Split by double newlines to get paragraphs
     const parts = summary.split('\n\n');
     
     return parts.map((part, index) => {
       const trimmedPart = part.trim();
       
-      // Check if this is the final note (starts with "It should be noted")
       if (trimmedPart.startsWith('It should be noted') || trimmedPart.startsWith(' It should be noted')) {
         return `<div class="final-note">${trimmedPart}</div>`;
       }
       
-      // Check if this part contains quoted reasons (starts with <b>")
       if (trimmedPart.startsWith('<b>"')) {
-        // Split by newlines to get individual bullet items
         const lines = part.split('\n').filter(line => line.trim());
-        // Wrap each line in a div with reason-item class and replace comma with period
         return lines.map(line => {
-          // Replace multiple spaces with single space for cleaner formatting
           let cleanedLine = line.replace(/\s+/g, ' ');
-          // Replace comma before percentage with period
           cleanedLine = cleanedLine.replace(/,\s*([\d.]+%)/g, '. $1');
-          // Replace trailing comma with period
           cleanedLine = cleanedLine.replace(/,\s*$/g, '.');
           return `<div class="reason-item">${cleanedLine.trim()}</div>`;
         }).join('');
       }
       
-      // Regular paragraph
       return part;
     }).join('<br/><br/>');
   };
 
   const handleCaseStudiesClick = () => {
     if (stats?.institution_id) {
-      // Open Case Studies Overview tab in new tab with institution_id, year, and market filters
       window.open(`/case-studies?tab=overview&institution_id=${stats.institution_id}&year=${selectedYear}&market=USA`, '_blank');
     }
   };
+
+  // FIX 1 (continued): Derived boolean for the Case Studies button visibility.
+  // Checks both is_case_studies flag AND that the user is Admin.
+  // If you want to show it for ALL users when is_case_studies is true, just remove `&& isAdmin`.
+  const showCaseStudiesButton = !!stats?.is_case_studies;
 
   return (
     <>
@@ -298,7 +297,6 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                   </TomSelect>
                 </div>
 
-
                 <div className="w-full sm:w-56">
                   <label className="block text-[15px] font-medium text-slate-700 mb-2">
                     Year
@@ -355,8 +353,8 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                     </button>
                   </div>
                   
-              {/* Case Studies Button - Only show if is_case_studies is true AND user is Admin */}
-                  {stats.is_case_studies && userType === 'Admin' && (
+                  {/* FIX 1: Case Studies Button - uses derived showCaseStudiesButton boolean */}
+                  {showCaseStudiesButton && (
                     <button
                       onClick={handleCaseStudiesClick}
                       className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center gap-2 text-[14px] font-semibold shadow-sm mr-2"
@@ -371,14 +369,14 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
 
           </div>
 
-      {/* Loading State */}
+          {/* Loading State */}
           {loading && (
             <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
               <LoadingIcon color="#800000" icon="three-dots" className="w-16 h-16" />
             </div>
           )}
 
-      {/* Stats Display */}
+          {/* Stats Display */}
           {bucketData && !loading && (
             <div className="px-5 pb-5">
               {/* Stats Cards */}
@@ -500,28 +498,6 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                 </div>
               </div>
 
-          {/* Top Companies - Hidden for now */}
-          {/* <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
-                <Building2 className="h-4 w-4 text-primary" />
-              </div>
-              <h3 className="text-base font-semibold text-slate-900">Top companies by vote count</h3>
-            </div>
-            <div className="space-y-2">
-              {bucketData.top_companies.map((company, idx) => (
-                <div key={idx} className="flex justify-between items-center py-2 px-3 rounded-lg bg-slate-50 border border-slate-200">
-                  <span className="text-[15px] font-medium text-slate-700">
-                    {idx + 1}. {company.company_name}
-                  </span>
-                  <span className="text-[15px] font-semibold text-slate-900">
-                    {company.vote_count} votes
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div> */}
-
               {/* Monthly Distribution */}
               <div className="bg-white border border-slate-200 rounded-lg p-5">
                 <div className="flex items-center gap-2 mb-4">
@@ -623,10 +599,6 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
       <div className={activeInsightTab === 'engagement_priorities' ? 'block' : 'hidden'}>
         <EngagementPriorities companyTicker={companyTicker} />
       </div>
-
-      {/* <div className={activeInsightTab === 'reporting_expectations' ? 'block' : 'hidden'}>
-        <ReportingExpectations companyTicker={companyTicker} />
-      </div> */}
     </>
   );
 };
