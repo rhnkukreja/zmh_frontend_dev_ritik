@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import parse from 'html-react-parser';
 
-import EngagementPriorities from './EngagementPriorities'; 
-import ReportingExpectations from './ReportingExpectations';
+import LoadingIcon from '@/components/Base/LoadingIcon';
+import EngagementPriorities from './EngagementPriorities';
 
 interface InvestorOption {
   id: number;
@@ -261,7 +261,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
 
       </div>  
 
-<<<<<<< dev_rohan_feature/ai_chatbot_integrated
+
       {/* ------------------------------------------------------------------------- */}
       {/* CSS HIDING RENDER: VOTING RATIONALE                                      */}
       {/* ------------------------------------------------------------------------- */}
@@ -297,20 +297,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                     ))}
                   </TomSelect>
                 </div>
-=======
-      {/* Loading State */}
-      {loading && (
-        <div className="bg-white p-6 mt-3.5 border rounded-md space-y-5">
-          <SkeletonText lines={2} />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SkeletonCard hasImage={false} lines={3} />
-            <SkeletonCard hasImage={false} lines={3} />
-            <SkeletonCard hasImage={false} lines={3} />
-          </div>
-          <SkeletonTable rows={6} columns={4} />
-        </div>
-      )}
->>>>>>> development
+
 
                 <div className="w-full sm:w-56">
                   <label className="block text-[15px] font-medium text-slate-700 mb-2">
