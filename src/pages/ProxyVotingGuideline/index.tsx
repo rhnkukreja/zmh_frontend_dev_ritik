@@ -43,6 +43,8 @@ import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCirc
 import { MdOutlineClear } from "react-icons/md";
 import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
+import AIAssistantButton from "@/components/Base/AIAssistantButton";
 
 interface ProxyGuidelineFilter {
   year: string[];
@@ -209,6 +211,7 @@ function ProxyGuideline() {
       dispatch(fetchProxyVotingGuidelines(dynamicURL));
     } catch (error: any) {
       console.error("Delete error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Something went wrong!")) return;
       toast.error(error?.response?.data?.message || "Something went wrong!");
     } finally {
       setIsDeleting(false);
@@ -308,22 +311,13 @@ function ProxyGuideline() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="flex justify-between items-center bg-white px-4 py-4 pl-6 bg-white shadow sticky top-16 z-40">
+          <div className="flex justify-between items-center px-4 py-4 pl-6 bg-white shadow sticky top-16 z-40">
             <div className="font-semibold text-xl">Voting Guidelines</div>
             <div className="flex gap-3">
-              <a
-                className="p-2 bg-primary border-white border-2 text-white rounded-md"
+              <AIAssistantButton 
+                label="AI Assistant Voting Guideline"
                 href="/ai-assistant/voting-guidelines"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <div className="flex items-center justify-center cursor-pointer">
-                  <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
-                  <span className="ml-2 font-semibold hidden xl:flex">
-                    AI Assistant: Voting Guidelines
-                  </span>
-                </div>
-              </a>
+              />             
               <a
                 className="p-2 bg-primary
                      border-white border-2 text-white rounded-md"
@@ -661,7 +655,100 @@ function ProxyGuideline() {
               )}
               <div className="overflow-auto xl:overflow-visible px-5">
 
-                <TableWrapper isLoading={loading}>
+                <TableWrapper 
+                  isLoading={loading}
+                  skeleton={
+                    <div className="overflow-auto max-h-[400px] rounded-lg">
+                      <Table>
+                        <Table.Thead>
+                          <Table.Tr className="bg-primary text-white">
+                            <Table.Td className="py-5 px-3">
+                              <div className="h-5 w-10 rounded bg-white/35 animate-pulse" />
+                            </Table.Td>
+                            <Table.Td className="py-2 px-3">
+                              <div className="h-4 w-24 rounded bg-white/35 animate-pulse" />
+                            </Table.Td>
+                            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                              <>
+                                <Table.Td className="py-2 px-3">
+                                  <div className="h-4 w-16 rounded bg-white/35 animate-pulse" />
+                                </Table.Td>
+                                <Table.Td className="py-2 px-3">
+                                  <div className="h-4 w-20 rounded bg-white/35 animate-pulse" />
+                                </Table.Td>
+                                <Table.Td className="py-2 px-3">
+                                  <div className="h-4 w-14 rounded bg-white/35 animate-pulse" />
+                                </Table.Td>
+                                <Table.Td className="py-2 px-3">
+                                  <div className="h-4 w-24 rounded bg-white/35 animate-pulse" />
+                                </Table.Td>
+                              </>
+                            )}
+                            <Table.Td className="py-2 px-3">
+                              <div className="h-4 w-14 rounded bg-white/35 animate-pulse mx-auto" />
+                            </Table.Td>
+                            <Table.Td className="py-2 px-3">
+                              <div className="h-4 w-16 rounded bg-white/35 animate-pulse mx-auto" />
+                            </Table.Td>
+                            <Table.Td className="py-2 px-3">
+                              <div className="h-4 w-14 rounded bg-white/35 animate-pulse mx-auto" />
+                            </Table.Td>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {Array.from({ length: 9 }).map((_, idx) => (
+                            <Table.Tr
+                              key={`proxy-guideline-skeleton-${idx}`}
+                              className={`border-b border-slate-200 ${
+                                idx % 2 === 0 ? "bg-slate-50" : "bg-white"
+                              }`}
+                            >
+                              <Table.Td className="py-2 px-3">
+                                <div className="inline-block h-6 w-11 rounded-full bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 px-3">
+                                <div className="h-5 w-[78%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                <>
+                                  <Table.Td className="py-2 px-3">
+                                    <div className="h-5 w-[70%] rounded bg-slate-200 animate-pulse" />
+                                  </Table.Td>
+                                  <Table.Td className="py-2 px-3">
+                                    <div className="h-5 w-[72%] rounded bg-slate-200 animate-pulse" />
+                                  </Table.Td>
+                                  <Table.Td className="py-2 px-3">
+                                    <div className="h-5 w-[60%] rounded bg-slate-200 animate-pulse" />
+                                  </Table.Td>
+                                  <Table.Td className="py-2 px-3">
+                                    <div className="h-5 w-[80%] rounded bg-slate-200 animate-pulse" />
+                                  </Table.Td>
+                                </>
+                              )}
+                              <Table.Td className="py-2 px-3 text-center">
+                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 px-3 text-center">
+                                <div className="inline-flex items-center justify-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                                  <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                                  {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                    <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                                  )}
+                                </div>
+                              </Table.Td>
+                              <Table.Td className="py-2 px-3 text-center">
+                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </div>
+                  }
+                  rows={5}
+                  columns={8}
+                >
                   <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>

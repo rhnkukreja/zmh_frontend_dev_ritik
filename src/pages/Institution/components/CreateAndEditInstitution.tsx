@@ -363,7 +363,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                   Proxy Advisory Influence
                 </FormCheck.Label>
                 <div className="flex flex-col gap-2">
-                  {["Internal", "ISS", "GL"].map((option) => (
+                  {["Internal", "ISS", "GL", "Typically does not vote proxies"].map((option) => (
                     <FormCheck key={option} className="flex items-center">
                       <FormCheck.Input
                         id={`proxy_${option}`}

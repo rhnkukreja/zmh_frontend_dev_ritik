@@ -618,7 +618,11 @@ function Main() {
             )}
             <div className=" xl:overflow-auto px-5 ">
 
-              <TableWrapper isLoading={loading}>
+              <TableWrapper
+                isLoading={loading}
+                rows={6}
+                columns={5}
+              >
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
                     <Table.Thead>

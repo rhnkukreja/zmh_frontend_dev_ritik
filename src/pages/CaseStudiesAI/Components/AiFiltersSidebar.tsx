@@ -1,27 +1,32 @@
 import React from "react";
 import Lucide from "@/components/Base/Lucide";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import SkeletonText from "@/components/Base/Skeletons/SkeletonText";
 import clsx from "clsx";
 
 interface AiFiltersSidebarProps {
   isAiFiltersLoading: boolean;
   aiFiltersData: any;
   isAllInvestorsSelected: boolean;
-  toggleAiFilter: (type: "investor" | "theme" | "year", value: any) => void;
+  toggleAiFilter: (type: "investor" | "theme" | "year" | "market", value: any) => void;
   isAiFilterSelected: (
-    type: "investor" | "theme" | "year",
+    type: "investor" | "theme" | "year" | "market",
     value: any
   ) => boolean;
   toggleAllInvestors: () => void;
   toggleAllThemes: () => void;
   toggleAllYears: () => void;
+  toggleAllMarkets: () => void;
   setInvestorSearch: (val: string) => void;
   setIsInvestorModalOpen: (val: boolean) => void;
+  setMarketSearch: (val: string) => void;
+  setIsMarketModalOpen: (val: boolean) => void;
   isAllThemesSelected: boolean;
   isAllYearsSelected: boolean;
+  isAllMarketsSelected: boolean;
   selectedAiInstitutionIds: number[];
   selectedAiThemes: string[];
   selectedAiYears: number[];
+  selectedAiMarkets: string[];
 }
 
 const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
@@ -33,13 +38,18 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
   toggleAllInvestors,
   toggleAllThemes,
   toggleAllYears,
+  toggleAllMarkets,
   setInvestorSearch,
   selectedAiInstitutionIds,
   selectedAiThemes,
   selectedAiYears,
+  selectedAiMarkets,
   setIsInvestorModalOpen,
+  setMarketSearch,
+  setIsMarketModalOpen,
   isAllThemesSelected,
   isAllYearsSelected,
+  isAllMarketsSelected,
 }) => {
   return (
     <div className="col-span-12 md:col-span-4 xl:col-span-3 mb-6 md:mb-0">
@@ -72,18 +82,127 @@ const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
         </h3>
 
         {isAiFiltersLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <LoadingIcon
-              color="#800000"
-              icon="three-dots"
-              className="w-16 h-16"
-            />
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <SkeletonText key={`year-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <SkeletonText key={`investor-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <SkeletonText key={`theme-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
           </div>
         ) : aiFiltersData ? (
           <div className="space-y-6">
+            {/* MARKETS / COUNTRIES */}
+            <div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                  Markets
+                </h4>
+                <span
+                  className="text-xs font-semibold text-primary cursor-pointer hover:underline"
+                  onClick={() => {
+                    setMarketSearch("");
+                    setIsMarketModalOpen(true);
+                  }}
+                >
+                  See more
+                </span>
+              </div>
+              <div className="space-y-1 mt-3">
+                {/* All Markets */}
+                <div
+                  onClick={toggleAllMarkets}
+                  className={clsx(
+                    "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
+                    selectedAiMarkets.length === 0
+                      ? "bg-primary/10 border-primary/30"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={clsx(
+                        "text-sm font-semibold",
+                        selectedAiMarkets.length === 0 ? "text-primary" : "text-slate-600"
+                      )}
+                    >
+                      {aiFiltersData?.markets?.all_markets?.label || "All Markets"}
+                    </span>
+                  </div>
+                  <span
+                    className={clsx(
+                      "text-xs font-mono px-2 py-0.5 rounded-full border",
+                      selectedAiMarkets.length === 0
+                        ? "bg-white text-primary border-primary/20"
+                        : "bg-slate-100 text-slate-500 border-transparent"
+                    )}
+                  >
+                    {aiFiltersData?.markets?.all_markets?.count || 0}
+                  </span>
+                </div>
+
+                {/* Top 3 Markets */}
+                {aiFiltersData?.markets?.breakdown?.slice(0, 3).map((market: any, idx: number) => (
+                  <div
+                    key={idx}
+                    onClick={() => toggleAiFilter("market", market.name)}
+                    className={clsx(
+                      "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors group border",
+                      isAiFilterSelected("market", market.name)
+                        ? "bg-primary/10 border-primary/30"
+                        : "hover:bg-slate-50 border-transparent"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={clsx(
+                          "text-sm font-medium line-clamp-1",
+                          isAiFilterSelected("market", market.name)
+                            ? "text-primary font-bold"
+                            : "text-slate-600 group-hover:text-slate-800"
+                        )}
+                      >
+                        {market.name}
+                      </span>
+                    </div>
+                    <span
+                      className={clsx(
+                        "text-xs font-mono px-2 py-0.5 rounded-full border",
+                        isAiFilterSelected("market", market.name)
+                          ? "bg-white text-primary border-primary/20"
+                          : "bg-slate-100 text-slate-500 border-transparent"
+                      )}
+                    >
+                      {market.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* YEARS */}
             <div>
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 border-t border-slate-100 pt-4">
                 Year
               </h4>
               <div className="space-y-1">

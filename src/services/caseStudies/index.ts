@@ -66,23 +66,24 @@ class CaseStudiesService {
     years?: string;
     institution_ids?: string;
     themes?: string;
+    markets?: string;
     selection_order?: string;
   }): Promise<any> {
     const response = await axiosInstance.get(`/api/case-studies-ai/filters/`, { params });
     return response.data;
   }
 
-  public async generateCaseStudiesAITopics(data: { institution_ids?: number[], themes?: string[], years?: number[], company_ids?: number[] }): Promise<any> {
+  public async generateCaseStudiesAITopics(data: { institution_ids?: number[], themes?: string[], years?: number[], company_ids?: number[], markets?: string[] }): Promise<any> {
     const response = await axiosInstance.post(`/api/case-studies-ai/generate-topics/`, data);
     return response.data;
   }
 
-  public async getCaseStudiesAISummary(data: { query?: string, institution_ids?: number[], themes?: string[], years?: number[], company_ids?: number[] }): Promise<any> {
+  public async getCaseStudiesAISummary(data: { query?: string, institution_ids?: number[], themes?: string[], years?: number[], company_ids?: number[], markets?: string[] }): Promise<any> {
     const response = await axiosInstance.post(`/api/case-studies-ai/summary/`, data);
     return response.data;
   }
 
-  public async getRelatedCaseStudiesAI(params: { query?: string, institution_ids?: string, themes?: string, years?: string, company_ids?: string, page?: number, page_size?: number }): Promise<any> {
+  public async getRelatedCaseStudiesAI(params: { query?: string, institution_ids?: string, themes?: string, years?: string, company_ids?: string, markets?: string, page?: number, page_size?: number }): Promise<any> {
     const response = await axiosInstance.get(`/api/case-studies-ai/related/`, { params });
     return response.data;
   }

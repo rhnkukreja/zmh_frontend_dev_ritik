@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { institutionStatsService } from '@/services/institutionStats';
-import LoadingIcon from '@/components/Base/LoadingIcon';
+import { SkeletonCard, SkeletonTable, SkeletonText } from '@/components/Base/Skeletons';
 import TomSelect from '@/components/Base/TomSelect';
 import { 
   BarChart3, 
@@ -203,8 +203,8 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
 
   const handleCaseStudiesClick = () => {
     if (stats?.institution_id) {
-      // Open Case Studies AI in new tab with institution_id and year filters
-      window.open(`/case-studies-ai?institution_id=${stats.institution_id}&year=${selectedYear}`, '_blank');
+      // Open Case Studies Overview tab in new tab with institution_id, year, and market filters
+      window.open(`/case-studies?tab=overview&institution_id=${stats.institution_id}&year=${selectedYear}&market=USA`, '_blank');
     }
   };
 
@@ -261,6 +261,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
 
       </div>  
 
+<<<<<<< dev_rohan_feature/ai_chatbot_integrated
       {/* ------------------------------------------------------------------------- */}
       {/* CSS HIDING RENDER: VOTING RATIONALE                                      */}
       {/* ------------------------------------------------------------------------- */}
@@ -296,6 +297,20 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                     ))}
                   </TomSelect>
                 </div>
+=======
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white p-6 mt-3.5 border rounded-md space-y-5">
+          <SkeletonText lines={2} />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <SkeletonCard hasImage={false} lines={3} />
+            <SkeletonCard hasImage={false} lines={3} />
+            <SkeletonCard hasImage={false} lines={3} />
+          </div>
+          <SkeletonTable rows={6} columns={4} />
+        </div>
+      )}
+>>>>>>> development
 
                 <div className="w-full sm:w-56">
                   <label className="block text-[15px] font-medium text-slate-700 mb-2">

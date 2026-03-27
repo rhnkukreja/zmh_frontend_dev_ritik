@@ -44,7 +44,6 @@ import { setTempSearch } from "@/stores/dashboardSlice";
 import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
-import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
@@ -2650,9 +2649,28 @@ const index = () => {
 
         {/* ANALYTICS TABLE (by_institution) and COLLAPSIBLE COMPANY LIST (by_company) with loader */}
         {isViewAnalysis && analyticsLoading && (
-          <div className="flex justify-center items-center min-h-[300px]">
-            <div className="rounded-2xl shadow-lg bg-white p-8 border border-gray-100 flex flex-col items-center">
-              <LoadingIcon icon="three-dots" className="w-12 h-12 text-primary" />
+          <div className="rounded-2xl shadow-lg bg-white border border-gray-100 p-3">
+            <div className="bg-primary text-white rounded-xl px-5 py-3 flex items-center justify-between">
+              <div className="h-6 w-28 rounded bg-white/35 animate-pulse" />
+              <div className="flex flex-col items-end gap-2">
+                <div className="h-6 w-52 rounded bg-white/35 animate-pulse" />
+                <div className="h-4 w-36 rounded bg-white/30 animate-pulse" />
+              </div>
+            </div>
+            <div className="mt-1">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div
+                  key={`vds-summary-skeleton-${idx}`}
+                  className={`grid grid-cols-12 gap-4 px-4 py-3 ${
+                    idx < 7 ? "border-b border-gray-200" : ""
+                  }`}
+                >
+                  <div className="col-span-8 h-5 w-[72%] rounded bg-slate-200 animate-pulse" />
+                  <div className="col-span-4 flex justify-end">
+                    <div className="h-5 w-20 rounded bg-slate-200 animate-pulse" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -2827,7 +2845,11 @@ const index = () => {
                 </Tippy>
               </div>
             )}
-            <TableWrapper isLoading={allApplyFilter && loading}>
+            <TableWrapper
+              isLoading={allApplyFilter && loading}
+              rows={8}
+              columns={5}
+            >
               <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                 <Table>
                   <Table.Thead>

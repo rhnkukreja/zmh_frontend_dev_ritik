@@ -39,10 +39,12 @@ import { setInstitution } from "@/stores/dashboardSlice";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 import clsx from "clsx";
+import CaseStudiesAI from "@/pages/CaseStudiesAI";
 import FilterChips from "@/components/FilterChips";
 import StandardizedFilterPills from "@/components/StandardizedFilterPills";
 import StandardizedTable from "@/components/StandardizedTable";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
@@ -97,6 +99,9 @@ function CaseStudies() {
       : filters.institution_name.length > 0
         ? filters.institution_name
         : []
+  );
+  const [activeTab, setActiveTab] = useState<"overview" | "specific" | "all">(
+    searchParams.get("tab") === "overview" ? "overview" : "overview"
   );
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
@@ -435,6 +440,7 @@ function CaseStudies() {
       // useCaseStudyDropdowns().refresh(); // If refresh is available
     } catch (error: any) {
       console.error("Delete error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Something went wrong!")) return;
       toast.error(error?.response?.data?.message || "Something went wrong!");
     } finally {
       setIsDeleting(false);
@@ -583,71 +589,67 @@ function CaseStudies() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          {/* Sticky Header OUTSIDE scrollable content */}
-          <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
-            <div className="bg-white px-4 mb-4 flex flex-col md:flex-row items-center justify-between shadow">
-              {isAllCompanySelected === true ? (
-                <h1 className="text-lg font-bold flex items-center gap-2">
-                  All Case Studies
-                </h1>
-              ) : (
-                <div className="font-semibold text-xl">Case Studies</div>
-              )}
-              <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
+          {/* Sticky Header with Tabs - Dashboard Style */}
+          <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: '4rem' }}>
+            <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
                 <button
-                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                    ? "bg-primary text-white shadow"
-                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
-                  onClick={async (e) => {
+                  onClick={() => setActiveTab("overview")}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === "overview"
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  <Lucide icon="LayoutGrid" className="w-4 h-4" />
+                  Overview
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab("specific");
                     if (isAllCompanySelected) {
                       handleViewAllChange({ target: { checked: false } });
                     }
                   }}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === "specific"
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
-                  {companyGlobalSearchName || "Company"}
+                  <Lucide icon="Building2" className="w-4 h-4" />
+                  {companyGlobalSearchName || "Specific Company"}
                 </button>
                 <button
-                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                    ? "bg-primary text-white shadow"
-                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
-                  onClick={async (e) => {
+                  onClick={() => {
+                    setActiveTab("all");
                     if (!isAllCompanySelected) {
                       handleViewAllChange({ target: { checked: true } });
                     }
                   }}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                    activeTab === "all"
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
                 >
-                  View For All Companies
+                  <Lucide icon="Building" className="w-4 h-4" />
+                  View All Companies
                 </button>
               </div>
             </div>
           </div>
           {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
-            <div className="flex flex-col box box--stacked bg-white p-5">
-              {/* Hidden Add New Case Studies btn until needed */}
-              {/* <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
-                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => {
-                        setSelectedCaseStudies(null);
-                        setAddNewCaseStudyModalVisible(true);
-                      }}
-                      variant="primary"
-                      className="bg-theme-2 border-bg-theme-2"
-                    >
-                      <Lucide
-                        icon="PenLine"
-                        className="stroke-[1.3] w-4 h-4 mr-2"
-                      />
-                      Add New Case Studies
-                    </Button>
-                  </div>
-                )}
-              </div> */}
-              <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
+            {/* Overview Tab - Case Studies AI */}
+            {activeTab === "overview" && (
+              <CaseStudiesAI />
+            )}
+
+            {/* Specific Company and View All Companies Tabs */}
+            {(activeTab === "specific" || activeTab === "all") && (
+              <div className="flex flex-col box box--stacked bg-white p-5">
+                <div className="flex flex-col px-5 pt-5 sm:flex-row gap-y-2 items-center">
                 <div className="flex">
                   <MultiSearchBar
                     onSearch={handleSearch}
@@ -1385,9 +1387,11 @@ function CaseStudies() {
                     <StandardizedTable.Cell isHeader>
                       Details
                     </StandardizedTable.Cell>
-                    <StandardizedTable.Cell isHeader>
-                      Actions
-                    </StandardizedTable.Cell>
+                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                      <StandardizedTable.Cell isHeader>
+                        Actions
+                      </StandardizedTable.Cell>
+                    )}
                   </StandardizedTable.Header>
 
                   <Table.Tbody>
@@ -1445,43 +1449,41 @@ function CaseStudies() {
                               </div>
                             </StandardizedTable.Cell>
 
-                            <StandardizedTable.Cell>
-                              <div className="flex gap-3 justify-center">
-                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                  <>
-                                    <Tippy
-                                      content="Edit"
-                                      options={{ theme: "light" }}
-                                    >
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                        <Lucide
-                                          onClick={() =>
-                                            onEditCaseStudiesClickHandler(item)
-                                          }
-                                          icon="PenLine"
-                                          className="text-primary"
-                                        />
-                                      </div>
-                                    </Tippy>
-                                    <Tippy
-                                      content="Delete"
-                                      options={{ theme: "light" }}
-                                    >
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                        <Lucide
-                                          onClick={() => {
-                                            setItemToDelete(item);
-                                            setIsDeleteModalOpen(true);
-                                          }}
-                                          icon="Trash2"
-                                          className="text-danger"
-                                        />
-                                      </div>
-                                    </Tippy>
-                                  </>
-                                )}
-                              </div>
-                            </StandardizedTable.Cell>
+                            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                              <StandardizedTable.Cell>
+                                <div className="flex gap-3 justify-center">
+                                  <Tippy
+                                    content="Edit"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                      <Lucide
+                                        onClick={() =>
+                                          onEditCaseStudiesClickHandler(item)
+                                        }
+                                        icon="PenLine"
+                                        className="text-primary"
+                                      />
+                                    </div>
+                                  </Tippy>
+                                  <Tippy
+                                    content="Delete"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                      <Lucide
+                                        onClick={() => {
+                                          setItemToDelete(item);
+                                          setIsDeleteModalOpen(true);
+                                        }}
+                                        icon="Trash2"
+                                        className="text-danger"
+                                      />
+                                    </div>
+                                  </Tippy>
+                                </div>
+                              </StandardizedTable.Cell>
+                            )}
                           </StandardizedTable.Row>
                         );
                       })}
@@ -1526,7 +1528,8 @@ function CaseStudies() {
                   />
                 )}
               </div>
-            </div>
+              </div>
+            )}
           </div>
 
           {isDeleteModalOpen && (

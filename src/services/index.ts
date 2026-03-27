@@ -8,6 +8,10 @@ import axios, {
 } from "axios";
 import { toast } from "react-toastify";
 
+const NETWORK_TOAST_ID = "global-network-error";
+const NETWORK_TOAST_COOLDOWN_MS = 15000;
+let lastNetworkToastAt = 0;
+
 const multipartFormDataUrls = [
   "/investor_profile/",
   "/proxy_voting_guidelines/",
@@ -28,21 +32,44 @@ const logout = () => {
   window.location.replace("/");
 };
 
-function APIErrors(message: string) {
-  if (
-    message &&
-    message
-      ?.toLowerCase()
-      .includes(
-        "Signature has expired".toLowerCase() ||
-          "signature has expired.".toLowerCase() ||
-          "Authentication credentials were not provided".toLowerCase()
-      )
-  ) {
-    return logout();
-  } else {
+function showDedupedToast(message: string) {
+  const normalized = (message || "").trim().toLowerCase();
+  const isNetworkError =
+    normalized.includes("no response received from server") ||
+    normalized.includes("network error") ||
+    normalized.includes("failed to fetch");
+
+  if (!isNetworkError) {
     toast.error(message);
+    return;
   }
+
+  const now = Date.now();
+  const inCooldown = now - lastNetworkToastAt < NETWORK_TOAST_COOLDOWN_MS;
+
+  // Show only one global offline/network toast within cooldown window.
+  if (toast.isActive(NETWORK_TOAST_ID) || inCooldown) {
+    return;
+  }
+
+  lastNetworkToastAt = now;
+  toast.error("No response received from server", {
+    toastId: NETWORK_TOAST_ID,
+  });
+}
+
+function APIErrors(message: string) {
+  const lower = (message || "").toLowerCase();
+  const shouldLogout =
+    lower.includes("signature has expired") ||
+    lower.includes("signature has expired.") ||
+    lower.includes("authentication credentials were not provided");
+
+  if (shouldLogout) {
+    return logout();
+  }
+
+  showDedupedToast(message);
 }
 
 class AxiosServiceConfig {
@@ -92,6 +119,7 @@ class AxiosServiceConfig {
         },
         (error: AxiosError) => {
           let errorMessage = "";
+          let isNetworkNoResponse = false;
 
           if (error.response) {
             // Don't show toast for 404 errors - they're normal when no data exists
@@ -120,6 +148,7 @@ class AxiosServiceConfig {
             }
           } else if (error.request) {
             errorMessage = "No response received from server";
+            isNetworkNoResponse = true;
 
           } else {
             errorMessage = error.message;
@@ -127,11 +156,19 @@ class AxiosServiceConfig {
 
           APIErrors(errorMessage);
 
-          if(error?.status === 401){
+          if (error?.response?.status === 401) {
             logout();
           }
           
-          return Promise.reject(new Error(errorMessage));
+          const wrappedError = new Error(errorMessage) as Error & {
+            __globalToastHandled?: boolean;
+          };
+
+          if (isNetworkNoResponse) {
+            wrappedError.__globalToastHandled = true;
+          }
+
+          return Promise.reject(wrappedError);
           
         }
       );

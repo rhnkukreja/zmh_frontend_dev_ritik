@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import { SkeletonTable } from "@/components/Base/Skeletons";
 import { dashboardService } from "@/services/dashboard";
 import { MdOutlineClear } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
@@ -314,8 +314,8 @@ export default function NPXAnalyticsPage() {
           </div>
 
           {tableLoading && (
-            <div className="flex items-center justify-center bg-white p-8 border rounded-md">
-              <LoadingIcon color="#800000" icon="three-dots" className="w-12 h-12" />
+            <div className="bg-white p-5 border rounded-md">
+              <SkeletonTable rows={8} columns={6} cellHeight="h-10" />
             </div>
           )}
 

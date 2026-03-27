@@ -9,6 +9,7 @@ import TomSelect from "@/components/Base/TomSelect";
 import axios from "axios";
 import { baseURL } from "@/constant";
 import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
+import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
 
 /**
  * Robust AddDocumentModal with:
@@ -180,6 +181,7 @@ const AddDocumentModal = ({
 
     } catch (err: any) {
       // This ONLY triggers if the Main Upload fails
+      if (shouldSuppressLocalErrorToast(err, "Failed to upload document")) return;
       toast.error(err?.response?.data?.message || "Failed to upload document");
     } finally {
       setLoading(false);

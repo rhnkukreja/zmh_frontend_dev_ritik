@@ -611,7 +611,11 @@ const InstitutionDocuments = () => {
           
           {selectedRows.length > 0 && <div className="mb-3 flex justify-end"><Button variant="danger" onClick={() => setConfirmModal({ open: true, type: 'bulk-delete', ids: selectedRows })} disabled={bulkActionLoading}>Move Selected to Trash ({selectedRows.length})</Button></div>}
 
-          <TableWrapper isLoading={documentsLoading}>
+          <TableWrapper
+            isLoading={documentsLoading}
+            rows={8}
+            columns={13}
+          >
             <Table>
               <Table.Thead>
                 <Table.Tr>

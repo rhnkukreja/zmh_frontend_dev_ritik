@@ -46,12 +46,13 @@ import { BellRing, FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
-import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
 import notificationIcon2 from "@/assets/images/zmh-images/side-bell.png";
+import AIAssistantButton from "@/components/Base/AIAssistantButton";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
 import VotingDataBanner from "./components/VotingDataBanner";
+import InvestorProfileTour from "./components/InvestorProfileTour";
 import GetHelp from "@/components/Help";
 import { resetInvestorProfiles } from "@/stores/investersProfileSlice";
 import { resetCompany } from "@/stores/companySlice";
@@ -611,6 +612,7 @@ function Main() {
                         }
                         setFormattedMenu([...formattedMenu]);
                       }}
+                      id={menu.title === "Investor Profile" ? "investor-profile-menu-link" : undefined}
                     >
                       <Tippy content={menu.title} options={{ theme: "light" }}>
                         {menu.title !== "Shareholder Proposals" && (
@@ -928,19 +930,13 @@ function Main() {
                   </div>
                 )}
 
-                {/* BEGIN: AI Assistant - Open /ai-chatbot in new tab */}
-                <a
+                {/* BEGIN: AI Assistant - Open /ai-assistant in new tab */}
+                <AIAssistantButton 
                   href="/ai-assistant"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex cursor-pointer"
-                >
-                  <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
-                  <span className="ml-2 text-sm font-medium hidden xl:flex">
-                    AI Assistant
-                  </span>
-                </a>
-                {/* END: AI Assistant - Open /ai-chatbot in new tab */}
+                  className="ml-2 hidden md:flex border-4 hover:border-transparent"
+                  size="md"
+                />
+                {/* END: AI Assistant - Open /ai-assistant in new tab */}
               </>
 
               <QuickSearch
@@ -952,7 +948,8 @@ function Main() {
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
                   {/* Your existing layout container */}
-                  <VotingDataBanner />  {/* Info icon hidden */}
+                  <VotingDataBanner />
+                  <InvestorProfileTour compactMenu={compactMenu} />
                   {/* User Guide Button */}
                   <a
                     className="px-3 py-1.5 bg-red-100 rounded-full flex items-center justify-center transition-colors hover:bg-red-200"

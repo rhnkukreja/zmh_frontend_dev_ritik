@@ -73,7 +73,12 @@ import ShareHolderProposalAnalyticsComponent from "@/components/ShareHolderPropo
 import ProponentsAnalyticsComponent from "@/components/ProponentsAnalytics";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import {
+  SkeletonCard,
+  SkeletonChart,
+  SkeletonTable,
+  SkeletonText,
+} from "@/components/Base/Skeletons";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
@@ -2302,12 +2307,21 @@ function ShareHolderProposal() {
                           {/* Content */}
                           <div>
                             {loadingAnalytics ? (
-                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                <LoadingIcon
-                                  color="#800000"
-                                  icon="three-dots"
-                                  className="w-16 h-16"
-                                />
+                              <div className="p-5 mt-3.5 box bg-white space-y-6">
+                                <SkeletonText lines={1} className="max-w-[160px]" height="h-6" />
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                                  <div className="lg:col-span-8">
+                                    <SkeletonTable rows={6} columns={5} />
+                                  </div>
+                                  <div className="lg:col-span-4">
+                                    <SkeletonChart />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                </div>
                               </div>
                             ) : !isAnalyticsDataAvailable() ? (
                               <div className="flex flex-col items-center justify-center py-12">
@@ -2391,9 +2405,11 @@ function ShareHolderProposal() {
                           <StandardizedTable.Cell isHeader width="8%" className="text-center">
                             Details
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="8%" className="text-center">
-                            Actions
-                          </StandardizedTable.Cell>
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            <StandardizedTable.Cell isHeader width="8%" className="text-center">
+                              Actions
+                            </StandardizedTable.Cell>
+                          )}
                         </StandardizedTable.Header>
 
                         <Table.Tbody>
@@ -2536,42 +2552,40 @@ function ShareHolderProposal() {
                                     </div>
                                   </StandardizedTable.Cell>
 
-                                  <StandardizedTable.Cell className="text-center">
-                                    <div className="flex gap-3 justify-center">
-                                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                        <>
-                                          <Tippy
-                                            content="Edit"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
-                                              onClick={() =>
-                                                onEditProposalClickHandler(
-                                                  noAction,
-                                                  "edit"
-                                                )
-                                              }
-                                              icon="PenLine"
-                                              className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                            />
-                                          </Tippy>
-                                          <Tippy
-                                            content="Delete"
-                                            options={{ theme: "light" }}
-                                          >
-                                            <Lucide
-                                              onClick={() => {
-                                                setProposalToDelete(noAction);
-                                                setIsDeleteModalOpen(true);
-                                              }}
-                                              icon="Trash2"
-                                              className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                            />
-                                          </Tippy>
-                                        </>
-                                      )}
-                                    </div>
-                                  </StandardizedTable.Cell>
+                                  {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                    <StandardizedTable.Cell className="text-center">
+                                      <div className="flex gap-3 justify-center">
+                                        <Tippy
+                                          content="Edit"
+                                          options={{ theme: "light" }}
+                                        >
+                                          <Lucide
+                                            onClick={() =>
+                                              onEditProposalClickHandler(
+                                                noAction,
+                                                "edit"
+                                              )
+                                            }
+                                            icon="PenLine"
+                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
+                                          />
+                                        </Tippy>
+                                        <Tippy
+                                          content="Delete"
+                                          options={{ theme: "light" }}
+                                        >
+                                          <Lucide
+                                            onClick={() => {
+                                              setProposalToDelete(noAction);
+                                              setIsDeleteModalOpen(true);
+                                            }}
+                                            icon="Trash2"
+                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
+                                          />
+                                        </Tippy>
+                                      </div>
+                                    </StandardizedTable.Cell>
+                                  )}
                                 </StandardizedTable.Row>
                               )
                             )}
@@ -2644,12 +2658,21 @@ function ShareHolderProposal() {
                           {/* Content */}
                           <div>
                             {loading ? (
-                              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                                <LoadingIcon
-                                  color="#800000"
-                                  icon="three-dots"
-                                  className="w-16 h-16"
-                                />
+                              <div className="p-5 mt-3.5 box bg-white space-y-6">
+                                <SkeletonText lines={1} className="max-w-[160px]" height="h-6" />
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                                  <div className="lg:col-span-8">
+                                    <SkeletonTable rows={6} columns={5} />
+                                  </div>
+                                  <div className="lg:col-span-4">
+                                    <SkeletonChart />
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                  <SkeletonCard hasImage={false} lines={6} />
+                                </div>
                               </div>
                             ) : !isAnalyticsDataAvailable() ? (
                               <div className="flex flex-col items-center justify-center py-12">
@@ -2724,9 +2747,11 @@ function ShareHolderProposal() {
                           <StandardizedTable.Cell isHeader width="10%" className="text-center">
                             Details
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="10%" className="text-center">
-                            Actions
-                          </StandardizedTable.Cell>
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            <StandardizedTable.Cell isHeader width="10%" className="text-center">
+                              Actions
+                            </StandardizedTable.Cell>
+                          )}
                         </StandardizedTable.Header>
 
                         <Table.Tbody>
@@ -2777,41 +2802,39 @@ function ShareHolderProposal() {
                                   </div>
                                 </StandardizedTable.Cell>
 
-                                <StandardizedTable.Cell className="text-center">
-                                  <div className="flex gap-3 justify-center">
-                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                      <>
-                                        <Tippy
-                                          content="Edit"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() => {
-                                              onEditNoActionClickHandler(
-                                                noAction
-                                              );
-                                            }}
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                          />
-                                        </Tippy>
-                                        <Tippy
-                                          content="Delete"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() => {
-                                              setProposalToDelete(noAction);
-                                              setIsDeleteModalOpen(true);
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                          />
-                                        </Tippy>
-                                      </>
-                                    )}
-                                  </div>
-                                </StandardizedTable.Cell>
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                  <StandardizedTable.Cell className="text-center">
+                                    <div className="flex gap-3 justify-center">
+                                      <Tippy
+                                        content="Edit"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            onEditNoActionClickHandler(
+                                              noAction
+                                            );
+                                          }}
+                                          icon="PenLine"
+                                          className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
+                                        />
+                                      </Tippy>
+                                      <Tippy
+                                        content="Delete"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            setProposalToDelete(noAction);
+                                            setIsDeleteModalOpen(true);
+                                          }}
+                                          icon="Trash2"
+                                          className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
+                                        />
+                                      </Tippy>
+                                    </div>
+                                  </StandardizedTable.Cell>
+                                )}
                               </StandardizedTable.Row>
                             ))}
                         </Table.Tbody>
@@ -2876,9 +2899,11 @@ function ShareHolderProposal() {
                           <StandardizedTable.Cell isHeader width="15%" className="text-center">
                             Details
                           </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="15%" className="text-center">
-                            Actions
-                          </StandardizedTable.Cell>
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            <StandardizedTable.Cell isHeader width="15%" className="text-center">
+                              Actions
+                            </StandardizedTable.Cell>
+                          )}
                         </StandardizedTable.Header>
 
                         <Table.Tbody>
@@ -2923,41 +2948,39 @@ function ShareHolderProposal() {
                                   </div>
                                 </StandardizedTable.Cell>
 
-                                <StandardizedTable.Cell className="text-center">
-                                  <div className="flex gap-3 justify-center">
-                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                      <>
-                                        <Tippy
-                                          content="Edit"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() =>
-                                              onEditWithdrawnClickHandler(
-                                                noAction
-                                              )
-                                            }
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                          />
-                                        </Tippy>
-                                        <Tippy
-                                          content="Delete"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() => {
-                                              setProposalToDelete(noAction);
-                                              setIsDeleteModalOpen(true);
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                          />
-                                        </Tippy>
-                                      </>
-                                    )}
-                                  </div>
-                                </StandardizedTable.Cell>
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                  <StandardizedTable.Cell className="text-center">
+                                    <div className="flex gap-3 justify-center">
+                                      <Tippy
+                                        content="Edit"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() =>
+                                            onEditWithdrawnClickHandler(
+                                              noAction
+                                            )
+                                          }
+                                          icon="PenLine"
+                                          className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
+                                        />
+                                      </Tippy>
+                                      <Tippy
+                                        content="Delete"
+                                        options={{ theme: "light" }}
+                                      >
+                                        <Lucide
+                                          onClick={() => {
+                                            setProposalToDelete(noAction);
+                                            setIsDeleteModalOpen(true);
+                                          }}
+                                          icon="Trash2"
+                                          className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
+                                        />
+                                      </Tippy>
+                                    </div>
+                                  </StandardizedTable.Cell>
+                                )}
                               </StandardizedTable.Row>
                             ))}
                         </Table.Tbody>

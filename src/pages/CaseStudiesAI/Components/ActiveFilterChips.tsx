@@ -4,12 +4,13 @@ interface ActiveFilterChipsProps {
   selectedAiInstitutionIds: number[];
   selectedAiThemes: string[];
   selectedAiYears: number[];
+  selectedAiMarkets: string[];
   activeAiFilterOrder: Array<{
-    type: "investor" | "theme" | "year";
+    type: "investor" | "theme" | "year" | "market";
     value: number | string;
   }>;
   aiFiltersData: any;
-  toggleAiFilter: (type: "investor" | "theme" | "year", value: any) => void;
+  toggleAiFilter: (type: "investor" | "theme" | "year" | "market", value: any) => void;
   onClearAll: () => void;
 }
 
@@ -17,6 +18,7 @@ const ActiveFilterChips: React.FC<ActiveFilterChipsProps> = ({
   selectedAiInstitutionIds,
   selectedAiThemes,
   selectedAiYears,
+  selectedAiMarkets,
   activeAiFilterOrder,
   aiFiltersData,
   toggleAiFilter,
@@ -25,7 +27,8 @@ const ActiveFilterChips: React.FC<ActiveFilterChipsProps> = ({
   if (
     selectedAiInstitutionIds.length === 0 &&
     selectedAiThemes.length === 0 &&
-    selectedAiYears.length === 0
+    selectedAiYears.length === 0 &&
+    selectedAiMarkets.length === 0
   ) {
     return null;
   }
@@ -70,6 +73,25 @@ const ActiveFilterChips: React.FC<ActiveFilterChipsProps> = ({
                 <button
                   onClick={() => toggleAiFilter("theme", theme)}
                   className="ml-1 hover:text-blue-400"
+                >
+                  ✕
+                </button>
+              </span>
+            );
+          }
+
+          if (filter.type === "market") {
+            const market = String(filter.value);
+
+            return (
+              <span
+                key={`market-${market}`}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold border border-green-100"
+              >
+                {market}
+                <button
+                  onClick={() => toggleAiFilter("market", market)}
+                  className="ml-1 hover:text-green-400"
                 >
                   ✕
                 </button>

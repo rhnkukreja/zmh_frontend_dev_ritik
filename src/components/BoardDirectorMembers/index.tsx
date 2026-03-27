@@ -26,7 +26,11 @@ const BoardDirectorMembers = () => {
           <div className="p-5 mt-3.5 box ">
             <h1 className="text-lg font-bold mb-2">Board Director Members</h1>
 
-            <TableWrapper isLoading={getBoardDirectorMembersLoading}>
+            <TableWrapper 
+              isLoading={getBoardDirectorMembersLoading}
+              rows={5}
+              columns={6}
+            >
               <div className="overflow-auto max-h-[600px]">
                 <Table>
                   <Table.Thead>

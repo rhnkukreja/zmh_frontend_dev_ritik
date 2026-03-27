@@ -24,6 +24,7 @@ import AddNewCaseStudies from "../CaseStudies/Components/AddEditCaseStudies";
 
 import CaseStudyCard from "./Components/CaseStudyCard";
 import InvestorModal from "./Components/InvestorModal";
+import MarketModal from "./Components/MarketModal";
 
 // Hook
 import { useAiCaseStudies } from "../../hooks/useAiCaseStudies";
@@ -66,12 +67,16 @@ function CaseStudiesAI() {
         setSelectedAiYears,
         selectedAiCompanyIds,
         setSelectedAiCompanyIds,
+        selectedAiMarkets,
+        setSelectedAiMarkets,
         isAllInvestorsSelected,
         setIsAllInvestorsSelected,
         isAllThemesSelected,
         setIsAllThemesSelected,
         isAllYearsSelected,
         setIsAllYearsSelected,
+        isAllMarketsSelected,
+        setIsAllMarketsSelected,
         aiSearchTerm,
         setAiSearchTerm,
         aiTopics,
@@ -88,12 +93,18 @@ function CaseStudiesAI() {
         setIsInvestorModalOpen,
         investorSearch,
         setInvestorSearch,
+        isMarketModalOpen,
+        setIsMarketModalOpen,
+        marketSearch,
+        setMarketSearch,
         toggleAiFilter,
         isAiFilterSelected,
         toggleAllInvestors,
         toggleAllThemes,
         toggleAllYears,
+        toggleAllMarkets,
         handleAiAnalysis,
+        handleClearAnalysis,
         handleAiPageChange,
         handleAiNextPage,
         handleAiPreviousPage
@@ -117,10 +128,11 @@ function CaseStudiesAI() {
         (state) => state.authentiction
     );
 
-    // Handle institution_id and year from URL params (from Investor Insight)
+    // Handle institution_id, year, and market from URL params (from Investor Insight)
     useEffect(() => {
         const institutionIdParam = searchParams.get('institution_id');
         const yearParam = searchParams.get('year');
+        const marketParam = searchParams.get('market');
         
         if (institutionIdParam) {
             const institutionId = parseInt(institutionIdParam, 10);
@@ -134,6 +146,10 @@ function CaseStudiesAI() {
             if (!isNaN(year) && !selectedAiYears.includes(year)) {
                 setSelectedAiYears([year]);
             }
+        }
+        
+        if (marketParam && !selectedAiMarkets.includes(marketParam)) {
+            setSelectedAiMarkets([marketParam]);
         }
     }, [searchParams]);
 
@@ -286,20 +302,24 @@ function CaseStudiesAI() {
             <div className="grid grid-cols-12 gap-y-10 gap-x-6">
                 <div className="col-span-12">
                     {/* Sticky Header OUTSIDE scrollable content */}
-                    <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
+                    {/* <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
                         <div className="bg-white px-4 h-full min-h-[64px] flex flex-col md:flex-row items-center">
                             <h1 className="text-xl font-bold flex items-center gap-2">
                                 Case Studies AI
                             </h1>
                         </div>
-                    </div>
+                    </div> */}
                     {/* Scrollable Content BELOW sticky header */}
-                    <div className="mt-3.5 relative">
+                    <div className="mt-1 relative">
                         <div className="flex flex-col box box--stacked bg-white p-5">
+                            <h1 className="text-2xl font-bold mb-6 text-gray-800">
+                                Case Studies AI
+                            </h1>
                             <ActiveFilterChips
                                 selectedAiInstitutionIds={selectedAiInstitutionIds}
                                 selectedAiThemes={selectedAiThemes}
                                 selectedAiYears={selectedAiYears}
+                                selectedAiMarkets={selectedAiMarkets}
                                 activeAiFilterOrder={activeAiFilterOrder}
                                 aiFiltersData={aiFiltersData}
                                 toggleAiFilter={toggleAiFilter}
@@ -307,6 +327,7 @@ function CaseStudiesAI() {
                                     setSelectedAiInstitutionIds([]);
                                     setSelectedAiThemes([]);
                                     setSelectedAiYears([]);
+                                    setSelectedAiMarkets([]);
                                 }}
                             />
 
@@ -323,13 +344,18 @@ function CaseStudiesAI() {
                                     toggleAllInvestors={toggleAllInvestors}
                                     toggleAllThemes={toggleAllThemes}
                                     toggleAllYears={toggleAllYears}
+                                    toggleAllMarkets={toggleAllMarkets}
                                     setInvestorSearch={setInvestorSearch}
                                     setIsInvestorModalOpen={setIsInvestorModalOpen}
+                                    setMarketSearch={setMarketSearch}
+                                    setIsMarketModalOpen={setIsMarketModalOpen}
                                     isAllThemesSelected={isAllThemesSelected}
                                     isAllYearsSelected={isAllYearsSelected}
+                                    isAllMarketsSelected={isAllMarketsSelected}
                                     selectedAiInstitutionIds={selectedAiInstitutionIds}
                                     selectedAiThemes={selectedAiThemes}
                                     selectedAiYears={selectedAiYears}
+                                    selectedAiMarkets={selectedAiMarkets}
                                 />
 
                                 {/* MAIN CONTENT: Analyzer + Case Studies */}
@@ -340,6 +366,7 @@ function CaseStudiesAI() {
                                         aiSearchTerm={aiSearchTerm}
                                         setAiSearchTerm={setAiSearchTerm}
                                         handleAiAnalysis={handleAiAnalysis}
+                                        handleClearAnalysis={handleClearAnalysis}
                                         isAiTopicsLoading={isAiTopicsLoading}
                                         aiTopics={aiTopics}
                                         isAiLoading={isAiLoading}
@@ -452,6 +479,17 @@ function CaseStudiesAI() {
                 setInvestorSearch={setInvestorSearch}
                 selectedAiInstitutionIds={selectedAiInstitutionIds}
                 setSelectedAiInstitutionIds={setSelectedAiInstitutionIds}
+                aiFiltersData={aiFiltersData}
+            />
+
+            {/* ===== ALL MARKETS MODAL ===== */}
+            <MarketModal
+                isOpen={isMarketModalOpen}
+                onClose={() => setIsMarketModalOpen(false)}
+                marketSearch={marketSearch}
+                setMarketSearch={setMarketSearch}
+                selectedAiMarkets={selectedAiMarkets}
+                setSelectedAiMarkets={setSelectedAiMarkets}
                 aiFiltersData={aiFiltersData}
             />
         </>

@@ -450,7 +450,11 @@ const EngagementQuestionsDialog: React.FC<EngagementQuestionsDialogProps> = ({ d
                                 {/* Engagement Questions Card */}
                                 <div className="bg-white dark:bg-darkmode-800 p-6 rounded-lg shadow-lg mt-8">
                                     <h2 className="text-lg font-semibold mb-2">Engagement Questions</h2>
-                                    <TableWrapper isLoading={loading}>
+                                    <TableWrapper
+                                        isLoading={loading}
+                                        rows={6}
+                                        columns={3}
+                                    >
                                         <div className="overflow-auto max-h-[400px]">
                                             <Table>
                                                 <Table.Thead>

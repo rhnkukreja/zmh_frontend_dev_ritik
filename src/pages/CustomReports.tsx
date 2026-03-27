@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import TableWrapper from "../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import { SkeletonTable } from "@/components/Base/Skeletons";
 import { FaDownload, FaTimes } from "react-icons/fa";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
@@ -288,18 +288,21 @@ const CustomReports = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
+        <div className="p-5 mt-3.5 box bg-white">
+          <SkeletonTable
+            rows={8}
+            columns={Math.max(2, selectedTickers.length * 2)}
           />
         </div>
       )}
 
       {/* Single Combined Table */}
       {!loading && ownershipData.length > 0 && (
-        <TableWrapper isLoading={loading}>
+        <TableWrapper
+          isLoading={loading}
+          rows={8}
+          columns={Math.max(2, selectedTickers.length * 2)}
+        >
           <div className="overflow-x-auto max-h-[650px] overflow-y-scroll">
             <Table className="table_ownership w-full min-w-[600px]">
               <Table.Thead className="sticky top-0 z-10">

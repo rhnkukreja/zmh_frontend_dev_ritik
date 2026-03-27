@@ -79,12 +79,12 @@ const initialState: any = {
       pathname: "/case-studies",
       title: "Case Studies",
     },
-    {
-      icon: "FileSearch",
-      pathname: "/case-studies-ai",
-      title: "Case Studies AI",
-      isAdmin: true,
-    },
+    // {
+    //   icon: "FileSearch",
+    //   pathname: "/case-studies-ai",
+    //   title: "Case Studies AI",
+    //   isAdmin: true,
+    // },
     // {
     //   icon: "MessageCircle",
     //   pathname: "/engagement-question",
@@ -95,11 +95,11 @@ const initialState: any = {
       pathname: "/engagement-detail",
       title: "Engagement Details",
     },
-    {
-      icon: "FileText",
-      pathname: "/voting-guidelines",
-      title: "Voting Guidelines",
-    },
+    // {
+    //   icon: "FileText",
+    //   pathname: "/voting-guidelines",
+    //   title: "Voting Guidelines",
+    // },
     {
       icon: "Hand",
       pathname: "/shareholder-proposal",

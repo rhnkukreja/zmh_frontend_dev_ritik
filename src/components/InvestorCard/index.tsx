@@ -29,7 +29,7 @@ import { createDynamicURL, downloadCSV } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "../Base/Tippy";
 import clsx from "clsx";
-import LoadingIcon from "../Base/LoadingIcon";
+import { SkeletonTable } from "@/components/Base/Skeletons";
 import Button from "../Base/Button";
 import { ChevronLeft } from "lucide-react";
 
@@ -328,7 +328,11 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                 <div className="grid gap-6 grid-cols-1">
                   {/* Investor Table */}
                   <div className="col-span-1">
-                    <TableWrapper isLoading={investorCardLoading}>
+                    <TableWrapper
+                      isLoading={investorCardLoading}
+                      rows={6}
+                      columns={8}
+                    >
                       <div
                         className={clsx([
                           locationPathName === "/" &&
@@ -559,8 +563,8 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                             {dashboard?.percent_ownership}%
                                           </div>
                                         </Table.Td>
-                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                          <div className="whitespace-nowrap ">
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[180px]">
+                                          <div className="px-2">
                                             {dashboard.proxy_advisor_influence ||
                                               "-"}
                                           </div>
@@ -754,12 +758,8 @@ const index = ({ onLoaded }: InvestorCardProps) => {
       )}
 
       {dashboardDataList?.length === 0 && investorCardLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
+        <div className="p-5 mt-3.5 box bg-white">
+          <SkeletonTable rows={6} columns={8} />
         </div>
       )}
 

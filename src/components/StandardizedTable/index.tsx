@@ -10,6 +10,8 @@ interface StandardizedTableProps {
   children: React.ReactNode;
   className?: string;
   maxHeight?: string;
+  skeletonRows?: number;
+  skeletonCols?: number;
 }
 
 interface StandardizedTableHeaderProps {
@@ -37,9 +39,21 @@ const StandardizedTable: React.FC<StandardizedTableProps> & {
   Row: React.FC<StandardizedTableRowProps>;
   Cell: React.FC<StandardizedTableCellProps>;
   LoadingSkeleton: React.FC<{ rows?: number; cols?: number }>;
-} = ({ isLoading = false, children, className = "", maxHeight = "60vh" }) => {
+} = ({
+  isLoading = false,
+  children,
+  className = "",
+  maxHeight = "60vh",
+  skeletonRows = 8,
+  skeletonCols = 6,
+}) => {
+
   return (
-    <TableWrapper isLoading={isLoading}>
+    <TableWrapper
+      isLoading={isLoading}
+      rows={skeletonRows}
+      columns={skeletonCols}
+    >
       <div className={clsx("overflow-x-auto overflow-y-scroll bg-white rounded-md", `max-h-[${maxHeight}]`)}>
         <Table className={clsx("w-full", className)}>
           {children}

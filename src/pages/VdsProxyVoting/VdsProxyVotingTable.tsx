@@ -19,7 +19,6 @@ import {
   setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
-import LoadingIcon from "../../components/Base/LoadingIcon";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
@@ -137,6 +136,11 @@ const VdsProxyVotingTable = () => {
 
   const [filter, setFilter] = useState<any>([]);
   const [meetingDate, setMeetingDate] = useState('');
+
+  const emptyStateAnimationStyle: React.CSSProperties = {
+    animationDelay: "120ms",
+    animationFillMode: "both",
+  };
 
   const { handleSubmit, control, reset } = useForm<any>({
     defaultValues: {
@@ -549,6 +553,8 @@ const VdsProxyVotingTable = () => {
 
                   <TableWrapper
                     isLoading={vdsProxyLoading}
+                    rows={8}
+                    columns={vdsProxyDetails?.vds_report_headers?.length || 8}
                   >
                     <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                       <Table className="table_2 w-full">
@@ -728,20 +734,13 @@ const VdsProxyVotingTable = () => {
                       </Table>
                     </div>
 
-                    {!vdsProxyDetails && vdsProxyLoading && (
-                      <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <LoadingIcon
-                          color="#800000"
-                          icon="three-dots"
-                          className="w-16 h-16"
-                        />
-                      </div>
-                    )}
-
                     {/* Handle both cases: empty array or undefined/null vdsProxyDetails */}
                     {((vdsProxyDetails?.vds_report?.length === 0) || 
                       (!vdsProxyDetails && !vdsProxyLoading)) && (
-                        <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                        <div
+                          className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+                          style={emptyStateAnimationStyle}
+                        >
                           <div className="text-center text-slate-500 dark:text-slate-400">
                             <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
                             <h3 className="text-lg font-medium mb-2">Top 20 Proxy Records Not Found</h3>
@@ -853,6 +852,8 @@ const VdsProxyVotingTable = () => {
 
                   <TableWrapper
                     isLoading={vdsProxyAllInvestorLoading}
+                    rows={8}
+                    columns={vdsProxyAllInvestorDetails?.vds_report_headers?.length || 8}
                   >
                     <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                       <Table className="table_3 w-full">
@@ -1037,7 +1038,10 @@ const VdsProxyVotingTable = () => {
                   {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
                     (!vdsProxyAllInvestorDetails && !vdsProxyAllInvestorLoading)) &&
                     filter?.length === 0 && (
-                      <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                      <div
+                        className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+                        style={emptyStateAnimationStyle}
+                      >
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
                           <h3 className="text-lg font-medium mb-2">No Top 10 Proxy Records Available</h3>
@@ -1050,7 +1054,10 @@ const VdsProxyVotingTable = () => {
                   {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
                     (!vdsProxyAllInvestorDetails && !vdsProxyAllInvestorLoading)) &&
                     filter?.length > 0 && (
-                      <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                      <div
+                        className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+                        style={emptyStateAnimationStyle}
+                      >
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
                           <h3 className="text-lg font-medium mb-2">No Proxy Records Available</h3>

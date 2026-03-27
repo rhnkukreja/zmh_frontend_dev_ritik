@@ -407,7 +407,11 @@ function Main() {
               </h2>
             )}
             <div className="px-5">
-              <TableWrapper isLoading={loading}>
+              <TableWrapper
+                isLoading={loading}
+                rows={6}
+                columns={7}
+              >
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
                     <Table.Thead>
@@ -690,11 +694,11 @@ function Main() {
                         </Table.Tr>
                       )}
                     </Table.Tbody>
-                    {institutions?.length === 0 && (
+                    {/* {institutions?.length === 0 && (
                       <div className="w-full">
                         <h1 className="mt-3">No Records Found..</h1>
                       </div>
-                    )}
+                    )} */}
                   </Table>
                 </div>
               </TableWrapper>
