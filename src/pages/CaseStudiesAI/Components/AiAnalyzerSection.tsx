@@ -34,7 +34,7 @@ const AiAnalyzerSection: React.FC<AiAnalyzerSectionProps> = ({
             <Lucide icon="Zap" className="fill-current" />
           </div>
           <h2 className="text-2xl font-bold text-slate-800">
-            AI Investor Stance Analyzer
+            AI Summary
           </h2>
         </div>
 

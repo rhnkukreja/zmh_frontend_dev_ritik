@@ -18,7 +18,7 @@ const AiResponseCard: React.FC<AiResponseCardProps> = ({
       <div className="bg-slate-50/50 border-b p-5 flex items-center justify-between">
         <h3 className="text-xl font-bold text-slate-800">{aiResponse?.title}</h3>
         <span className="bg-primary text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-          AI Summary
+          Key Stats
         </span>
       </div>
 
