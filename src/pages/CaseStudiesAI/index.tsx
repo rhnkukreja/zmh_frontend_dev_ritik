@@ -302,16 +302,19 @@ function CaseStudiesAI() {
             <div className="grid grid-cols-12 gap-y-10 gap-x-6">
                 <div className="col-span-12">
                     {/* Sticky Header OUTSIDE scrollable content */}
-                    <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
+                    {/* <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
                         <div className="bg-white px-4 h-full min-h-[64px] flex flex-col md:flex-row items-center">
                             <h1 className="text-xl font-bold flex items-center gap-2">
                                 Case Studies AI
                             </h1>
                         </div>
-                    </div>
+                    </div> */}
                     {/* Scrollable Content BELOW sticky header */}
-                    <div className="mt-3.5 relative">
+                    <div className="mt-1 relative">
                         <div className="flex flex-col box box--stacked bg-white p-5">
+                            <h1 className="text-2xl font-bold mb-6 text-gray-800">
+                                Case Studies AI
+                            </h1>
                             <ActiveFilterChips
                                 selectedAiInstitutionIds={selectedAiInstitutionIds}
                                 selectedAiThemes={selectedAiThemes}

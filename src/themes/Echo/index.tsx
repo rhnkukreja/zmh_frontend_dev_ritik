@@ -52,6 +52,7 @@ import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
 import VotingDataBanner from "./components/VotingDataBanner";
+import InvestorProfileTour from "./components/InvestorProfileTour";
 import GetHelp from "@/components/Help";
 import { resetInvestorProfiles } from "@/stores/investersProfileSlice";
 import { resetCompany } from "@/stores/companySlice";
@@ -611,6 +612,7 @@ function Main() {
                         }
                         setFormattedMenu([...formattedMenu]);
                       }}
+                      id={menu.title === "Investor Profile" ? "investor-profile-menu-link" : undefined}
                     >
                       <Tippy content={menu.title} options={{ theme: "light" }}>
                         {menu.title !== "Shareholder Proposals" && (
@@ -947,6 +949,7 @@ function Main() {
                 <div className="flex items-center gap-1 ml-auto">
                   {/* Your existing layout container */}
                   <VotingDataBanner />
+                  <InvestorProfileTour compactMenu={compactMenu} />
                   {/* User Guide Button */}
                   <a
                     className="px-3 py-1.5 bg-red-100 rounded-full flex items-center justify-center transition-colors hover:bg-red-200"
