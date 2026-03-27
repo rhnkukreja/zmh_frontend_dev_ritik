@@ -187,8 +187,8 @@ const InvestorOverview: React.FC = () => {
 
   const handleCaseStudiesClick = () => {
     if (stats?.institution_id) {
-      // Open Case Studies AI in new tab with institution_id, year, and market filters
-      window.open(`/case-studies-ai?institution_id=${stats.institution_id}&year=${selectedYear}&market=USA`, '_blank');
+      // Open Case Studies Overview tab in new tab with institution_id, year, and market filters
+      window.open(`/case-studies?tab=overview&institution_id=${stats.institution_id}&year=${selectedYear}&market=USA`, '_blank');
     }
   };
 

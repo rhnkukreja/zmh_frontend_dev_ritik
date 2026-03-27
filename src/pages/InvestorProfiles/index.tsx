@@ -780,8 +780,9 @@ function Main() {
       
       {pdfVisible && (
         <PdfViewer
-          pdfUrl={pdfUrl}
-          pdfTitle={pdfTitle}
+          currentPdfDoc={pdfUrl}
+          currentPdfName={pdfTitle}
+          pdfVisible={pdfVisible}
           setPdfVisible={setPdfVisible}
         />
       )}
