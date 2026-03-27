@@ -95,11 +95,11 @@ const initialState: any = {
       pathname: "/engagement-detail",
       title: "Engagement Details",
     },
-    {
-      icon: "FileText",
-      pathname: "/voting-guidelines",
-      title: "Voting Guidelines",
-    },
+    // {
+    //   icon: "FileText",
+    //   pathname: "/voting-guidelines",
+    //   title: "Voting Guidelines",
+    // },
     {
       icon: "Hand",
       pathname: "/shareholder-proposal",

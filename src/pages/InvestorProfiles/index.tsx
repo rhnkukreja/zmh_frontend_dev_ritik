@@ -32,6 +32,7 @@ import MultiSearchBar from "@/components/MultiSearch";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
+import PdfViewer from "@/components/PdfView";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
@@ -68,6 +69,9 @@ function Main() {
   const [selectedVotingGuidelines, setSelectedVotingGuidelines] = useState<any>(null);
   const [keyChangesModalOpen, setKeyChangesModalOpen] = useState<boolean>(false);
   const [selectedKeyChanges, setSelectedKeyChanges] = useState<any>(null);
+  const [pdfVisible, setPdfVisible] = useState<boolean>(false);
+  const [pdfUrl, setPdfUrl] = useState<string>("");
+  const [pdfTitle, setPdfTitle] = useState<string>("");
   const { user } = useAppSelector((state) => state.authentiction);
 
   const { handleSubmit, control, reset, setValue, watch } =
@@ -145,9 +149,15 @@ function Main() {
   };
 
   const gotoDetailPage = (investorProfileId: number | null | undefined) => {
-    if (!investorProfileId) return;
-    const data = { currentPage: page };
-    navigate(`/investor-profile/${tab}/${investorProfileId}`, { state: data });
+    if (investorProfileId) {
+      navigate(`/investor-profile/investor/${investorProfileId}`);
+    }
+  };
+
+  const handleOverboardingPoliciesClick = () => {
+    setPdfUrl('https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2025.pdf');
+    setPdfTitle('Key Overboarding Policies');
+    setPdfVisible(true);
   };
 
   const handleKeyChangesClick = (profile: InvestersProfile) => {
@@ -233,6 +243,20 @@ function Main() {
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
               <div className="flex items-center gap-3">
+                <a
+                  className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
+                  onClick={handleOverboardingPoliciesClick}
+                >
+                  <div className="flex items-center justify-center">
+                    <Lucide
+                      icon="File"
+                      className="stroke-[2] w-4 h-4 text-white"
+                    />
+                    <span className="ml-2 font-semibold hidden xl:flex">
+                      Key Overboarding Policies
+                    </span>
+                  </div>
+                </a>
                 <AIAssistantButton 
                   label="AI Assistant Voting Guideline"
                   href="/ai-assistant/voting-guidelines"
@@ -324,7 +348,7 @@ function Main() {
                         Investor Profile
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
-                        Key Changes
+                        Key Voting Guidelines Changes
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
                         Voting Guidelines
@@ -624,7 +648,7 @@ function Main() {
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold">{selectedKeyChanges?.institution_name}</h2>
                     <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
-                      <span>Key Changes</span>
+                      <span>Key Voting Guidelines Changes</span>
                     </div>
                   </div>
                   <button
@@ -753,6 +777,14 @@ function Main() {
           )}
         </div>
       </div >
+      
+      {pdfVisible && (
+        <PdfViewer
+          pdfUrl={pdfUrl}
+          pdfTitle={pdfTitle}
+          setPdfVisible={setPdfVisible}
+        />
+      )}
     </>
   );
 }
