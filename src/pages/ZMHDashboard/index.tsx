@@ -140,9 +140,16 @@ function Main() {
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
 
+  // Check if we already have this company in cache to avoid initial loading flash
+  useEffect(() => {
+    if (companyGlobalSearchTicker && resultsCacheRef.current[companyGlobalSearchTicker]) {
+      dispatch(loadFromCache(companyGlobalSearchTicker));
+    }
+  }, [companyGlobalSearchTicker, dispatch]);
+
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
-  }, [isCompanySelected]);
+  }, [isCompanySelected, dispatch]);
 
   // useEffect(() => {
   //   // Use board_name if available, otherwise fallback to company name

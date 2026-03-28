@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
+import { institutionStatsService } from "@/services/institutionStats";
 import {
   BoardDirectorMembers,
   Filer,
@@ -101,6 +102,8 @@ interface CompanySliceState {
   companyOverviewGPTLoading: boolean;
   resultsCache: Record<string, any>;
   modulesCount: any | null;
+  institutionStats: any | null;
+  institutionStatsLoading: boolean;
 }
 
 const initialState: CompanySliceState = {
@@ -130,6 +133,8 @@ const initialState: CompanySliceState = {
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
+  institutionStats: null,
+  institutionStatsLoading: false,
   instituteName: null,
   percent: "",
   notificationDetails: [],
@@ -205,6 +210,13 @@ export const fetchAGMSummaryDashboard = createAsyncThunk<
   string
 >(`${name}/fetchAGMSummaryDashboard`, async (url: string) => {
   return await dashboardService.fetchAGMSummaryDashboard(url);
+});
+
+export const fetchInstitutionStats = createAsyncThunk<
+  any,
+  { institutionId: number; year?: number }
+>(`${name}/fetchInstitutionStats`, async ({ institutionId, year }) => {
+  return await institutionStatsService.getInstitutionStats(institutionId, year);
 });
 
 export const fetchAGMProxyContestDashboard = createAsyncThunk<
@@ -429,6 +441,7 @@ const companySlice = createSlice({
         companyOverviewData: state.companyOverviewData,
         boardDirectorMembers: state.boardDirectorMembers,
         modulesCount: state.modulesCount,
+        institutionStats: state.institutionStats,
         timestamp: Date.now(),
       };
     },
@@ -443,10 +456,12 @@ const companySlice = createSlice({
         state.companyOverviewData = cached.companyOverviewData;
         state.boardDirectorMembers = cached.boardDirectorMembers;
         state.modulesCount = cached.modulesCount;
+        state.institutionStats = cached.institutionStats;
         state.loading = false;
         state.investorCardLoading = false;
         state.companyOverviewLoading = false;
         state.getBoardDirectorMembersLoading = false;
+        state.institutionStatsLoading = false;
       }
     },
 
@@ -869,6 +884,21 @@ const companySlice = createSlice({
         state.companyOverviewGPTLoading = false;
         state.companyOverviewGPTData = null; // Clear data on error
         state.error = action.error.message || "Failed to fetch company overview GPT";
+      })
+
+      // Institution Stats
+      .addCase(fetchInstitutionStats.pending, (state) => {
+        state.institutionStatsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchInstitutionStats.fulfilled, (state, action) => {
+        state.institutionStatsLoading = false;
+        state.institutionStats = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchInstitutionStats.rejected, (state, action) => {
+        state.institutionStatsLoading = false;
+        state.error = action.error.message || "Failed to fetch institution stats";
       });
   },
 });
