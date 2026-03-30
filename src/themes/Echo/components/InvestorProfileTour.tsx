@@ -20,7 +20,7 @@ const InvestorProfileTour = ({ compactMenu }: InvestorProfileTourProps) => {
     if (isVisible) {
       const timer = setTimeout(() => {
         closeTour();
-      }, 5000);
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [isVisible]);

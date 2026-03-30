@@ -243,6 +243,22 @@ function Main() {
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
               <div className="flex items-center gap-3">
+                {(user?.user_type === 'Admin' || user?.user_type === 'Analyst') && (
+                  <a
+                    className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
+                    onClick={() => setAddNewInvesterModalVisible(true)}
+                  >
+                    <div className="flex items-center justify-center">
+                      <Lucide
+                        icon="Plus"
+                        className="stroke-[2] w-4 h-4 text-white"
+                      />
+                      <span className="ml-2 font-semibold hidden xl:flex">
+                        Add New Investor Profile
+                      </span>
+                    </div>
+                  </a>
+                )}
                 <a
                   className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
                   onClick={handleOverboardingPoliciesClick}

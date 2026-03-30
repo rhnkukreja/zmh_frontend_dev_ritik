@@ -181,7 +181,7 @@ const index = ({ onLoaded }: InvestorCardProps) => {
 
   const redirectCaseStudy = (institution_name: string) => {
     // window.open(`/case-studies`, "_blank");
-    navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
+    navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}&tab=specific`);
   };
 
   const openEngagementQuestionsDialog = (dashboard: CompanyDashboard) => {
