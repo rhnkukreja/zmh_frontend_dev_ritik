@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import parse from 'html-react-parser';
 
-import LoadingIcon from '@/components/Base/LoadingIcon';
+// import LoadingIcon from '@/components/Base/LoadingIcon';
 import EngagementPriorities from './EngagementPriorities';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { fetchInstitutionStats } from '@/stores/dashboardSlice';
