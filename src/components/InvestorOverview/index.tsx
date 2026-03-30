@@ -263,7 +263,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
 
       {/* THREE CARDS / TABS SECTION */}
       {/* Added top-[80px] to clear your main header. Kept original mt-4 mb-6 for spacing. */}
-      <div ref={tabBarRef} className="sticky top-[220px] z-[40] bg-slate-50 py-3 pb-5 flex flex-wrap justify-start gap-5 mb-4 mt-4 border-b border-slate-200 pl-4">
+      <div ref={tabBarRef} className="sticky top-[219px] z-[40] bg-white py-3 pb-5 flex flex-wrap justify-start gap-5 mb-4 mt-4 border-b border-slate-200 pl-4">
         {/* Voting Rationale */}
         <button
           onClick={() => setActiveInsightTab('voting_rationale')}
