@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Target, List, ChevronDown, ChevronUp, CheckCircle2, RefreshCw } from 'lucide-react';
 import parse, { domToReact, Element, HTMLReactParserOptions } from 'html-react-parser';
 import { AI_CHATBOT_API_BASE } from "../../pages/AIChatbot/api";
@@ -20,6 +20,28 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('takeaways');
   const [expandedInvestors, setExpandedInvestors] = useState<Record<number, boolean>>({});
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+
+  // Find real scroll parent and ensure sticky works within it
+  const subTabRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!subTabRef.current) return;
+    let scrollParent: HTMLElement | null = null;
+    let el: HTMLElement | null = subTabRef.current.parentElement;
+    while (el && el !== document.documentElement) {
+      const overflowY = window.getComputedStyle(el).overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        scrollParent = el;
+        break;
+      }
+      el = el.parentElement;
+    }
+    if (!scrollParent) return;
+    const original = scrollParent.style.overflowY;
+    scrollParent.style.overflowY = 'scroll';
+    return () => {
+      if (scrollParent) scrollParent.style.overflowY = original;
+    };
+  }, []);
 
   // 1. GET ENDPOINT INTEGRATION: Fetch from S3 on component load
   useEffect(() => {
@@ -119,14 +141,24 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
             return '';
           };
           const rawText = getRawText(domNode);
-          const isSection = /^\s*\d+\./.test(rawText);
+          
+          // UPDATED REGEX: Catches numbers (1, 1., 1), 1-), hyphens (-), and bullets (•, *)
+          const prefixRegex = /^\s*(?:\d+[\.\)\-]*|-|•|\*)\s*/;
+          
+          const isSection = prefixRegex.test(rawText);
 
           if (isSection) {
+            // Strip the leading number/symbol and remove any trailing colons
+            const cleanText = rawText
+              .replace(prefixRegex, '') 
+              .replace(/:\s*$/, '')     
+              .trim();
+
             return (
               <div className="mt-6 first:mt-0 mb-3 pb-2 border-b border-slate-200 flex items-center gap-2.5">
                 <div className="w-1 h-5 bg-[#981b1e] rounded-full flex-shrink-0" />
                 <p className="font-bold text-[14.5px] text-slate-900 tracking-tight">
-                  {domToReact(domNode.children as any, options)}
+                  {cleanText}
                 </p>
               </div>
             );
@@ -180,14 +212,6 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
     <div className="rounded-xl border border-slate-200 bg-white p-8 min-h-[400px] shadow-sm">
       {/* Header and Action Buttons */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          {saveSuccess && (
-            <span className="text-sm font-medium text-emerald-600 flex items-center gap-1.5 transition-opacity duration-300">
-              <CheckCircle2 className="w-4 h-4" />
-              Successfully saved to S3
-            </span>
-          )}
-        </div>
         
         {/* <button
           onClick={handleCreateEngagement}
@@ -226,13 +250,15 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
         <div>
 
           {/* Sub-Tabs Navigation */}
-          <div className="flex items-center gap-8 mb-8 border-b border-slate-200 pl-5">
+          {/* UPDATE THIS DIV: Added sticky positioning, z-index, and a background color so text doesn't overlap when scrolling */}
+          <div ref={subTabRef} className="sticky top-[296px] z-[30] bg-white pt-3 pb-3 flex items-center gap-8 border-b border-slate-200">
+            {/* Key Themes */}
             <button
               onClick={() => setActiveSubTab('takeaways')}
-              className={`pb-4 text-[15px] font-bold transition-all duration-200 border-b-2 flex items-center gap-2.5 ${
+              className={`relative pb-4 text-[15px] font-bold transition-all duration-200 flex items-center gap-2 ${
                 activeSubTab === 'takeaways'
-                  ? 'border-[#f26522] text-slate-900'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                  ? 'text-slate-900'
+                  : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               {activeSubTab === 'takeaways' ? (
@@ -240,24 +266,38 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
               ) : (
                 <CheckCircle2 className="w-5 h-5 text-slate-400" />
               )}
-              Key Themes
+              <span>Key Themes</span>
+
+              {activeSubTab === 'takeaways' && (
+                <span className="absolute left-0 bottom-0 h-[2px] w-[calc(100%+20px)] bg-[#981b1e] rounded-full"></span>
+              )}
             </button>
+
+            {/* Investor-Level Details */}
             <button
               onClick={() => setActiveSubTab('breakdown')}
-              className={`pb-4 text-[15px] font-bold transition-all duration-200 border-b-2 flex items-center gap-1 ${
+              className={`relative pb-4 text-[15px] font-bold transition-all duration-200 flex items-center gap-2 ${
                 activeSubTab === 'breakdown'
-                  ? 'border-slate-800 text-slate-900'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
+                  ? 'text-slate-900'
+                  : 'text-slate-400 hover:text-slate-600'
               }`}
             >
-              <List className={`w-5 h-5 ${activeSubTab === 'breakdown' ? 'text-slate-800' : 'text-slate-400'}`} />
-              Investor-Level Details
+              <List
+                className={`w-5 h-5 ${
+                  activeSubTab === 'breakdown' ? 'text-[#981b1e]' : 'text-slate-400'
+                }`}
+              />
+              <span>Investor-Level Details</span>
+
+              {activeSubTab === 'breakdown' && (
+                <span className="absolute left-0 bottom-0 h-[2px] w-full bg-[#981b1e] rounded-full"></span>
+              )}
             </button>
           </div>
 
           {/* TAB 1: KEY TAKEAWAYS GRID */}
           {activeSubTab === 'takeaways' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500 mt-6">
               {processedTakeaways.map((takeaway: any, index: number) => {
                 const title = takeaway.theme || takeaway.title || "Key Takeaway";
                 const description = takeaway.description || takeaway.summary || "";
@@ -281,8 +321,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
                 return (
                   <div 
                     key={index} 
-                    // FIXED HERE: Added `h-fit` so the card stops stretching to match other cards in the row!
-                    className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group relative overflow-hidden h-fit"
+                    className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group relative overflow-hidden"
                   >
                     <div className="p-6 flex-1 flex flex-col">
                       <div className="flex justify-between items-start mb-3 gap-4">
@@ -292,7 +331,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
                       </div>
                       <div className={`w-full h-1 ${palette.bg} opacity-80 mb-4 rounded-full`}></div>
                       
-                      <p className="text-[14px] text-slate-600 leading-relaxed flex-1">
+                      <p className="text-[14px] text-slate-600 leading-relaxed">
                         {description}
                       </p>
 
@@ -336,7 +375,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
 
           {/* TAB 2: INVESTOR PRIORITIES BREAKDOWN */}
           {activeSubTab === 'breakdown' && (
-            <div className="flex flex-col gap-4 animate-in fade-in duration-500">
+            <div className="flex flex-col gap-4 animate-in fade-in duration-500 mt-6">
               {engagementData.raw_data?.map((item: any, idx: number) => {
                 const isExpanded = expandedInvestors[idx] === true;
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { institutionStatsService } from '@/services/institutionStats';
-import { SkeletonCard, SkeletonTable, SkeletonText } from '@/components/Base/Skeletons';
+import LoadingIcon from '@/components/Base/LoadingIcon';
 import TomSelect from '@/components/Base/TomSelect';
 import { 
   BarChart3, 
@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import parse from 'html-react-parser';
 
-import LoadingIcon from '@/components/Base/LoadingIcon';
-import EngagementPriorities from './EngagementPriorities';
+import EngagementPriorities from './EngagementPriorities'; 
+import ReportingExpectations from './ReportingExpectations';
 
 interface InvestorOption {
   id: number;
@@ -91,6 +91,39 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   
   // Get user type from localStorage for Admin check
   const userType = localStorage.getItem('userType');
+
+  // STICKY FIX:
+  // Find the nearest ancestor that is actually scrolling (has overflow auto/scroll)
+  // and ensure it is set to overflow-y: scroll so position:sticky works within it.
+  // Also set overflow-y: visible on any ancestor between this component and the scroller
+  // so the sticky bar is not clipped.
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!tabBarRef.current) return;
+
+    // Walk up to find the real scroll container
+    let scrollParent: HTMLElement | null = null;
+    let el: HTMLElement | null = tabBarRef.current.parentElement;
+    while (el && el !== document.documentElement) {
+      const style = window.getComputedStyle(el);
+      const overflowY = style.overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        scrollParent = el;
+        break;
+      }
+      el = el.parentElement;
+    }
+
+    if (!scrollParent) return;
+
+    // Ensure the scroll parent clips correctly for sticky
+    const original = scrollParent.style.overflowY;
+    scrollParent.style.overflowY = 'scroll';
+
+    return () => {
+      if (scrollParent) scrollParent.style.overflowY = original;
+    };
+  }, []);
 
   // Load investor dropdown on mount
   useEffect(() => {
@@ -203,8 +236,8 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
 
   const handleCaseStudiesClick = () => {
     if (stats?.institution_id) {
-      // Open Case Studies Overview tab in new tab with institution_id, year, and market filters
-      window.open(`/case-studies?tab=overview&institution_id=${stats.institution_id}&year=${selectedYear}&market=USA`, '_blank');
+      // Open Case Studies AI in new tab with institution_id and year filters
+      window.open(`/case-studies-ai?institution_id=${stats.institution_id}&year=${selectedYear}`, '_blank');
     }
   };
 
@@ -233,8 +266,8 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
       `}</style>
 
       {/* THREE CARDS / TABS SECTION */}
-      <div className="flex flex-wrap justify-start gap-5 mb-6 mt-4">
-        
+      {/* Added top-[80px] to clear your main header. Kept original mt-4 mb-6 for spacing. */}
+      <div ref={tabBarRef} className="sticky top-[220px] z-[40] bg-slate-50 py-3 pb-5 flex flex-wrap justify-start gap-5 mb-4 mt-4 border-b border-slate-200 pl-4">
         {/* Voting Rationale */}
         <button
           onClick={() => setActiveInsightTab('voting_rationale')}
@@ -248,19 +281,24 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
         </button>
 
         {/* Engagement Priorities */}
-        <button
-          onClick={() => setActiveInsightTab('engagement_priorities')}
-          className={`px-6 py-2.5 rounded-lg flex items-center justify-center transition-all duration-200 whitespace-nowrap ${
-            activeInsightTab === 'engagement_priorities'
-              ? 'bg-white border-2 border-[#981b1e] shadow-sm text-[#981b1e]'
-              : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'
-          }`}
-        >
-          <span className="font-bold text-[14px]">Engagement Priorities</span>
-        </button>
+
+          <button
+            onClick={() => setActiveInsightTab('engagement_priorities')}
+            className={`relative px-6 py-2.5 rounded-lg flex items-center justify-center transition-all duration-200 whitespace-nowrap ${
+              activeInsightTab === 'engagement_priorities'
+                ? 'bg-white border-2 border-[#981b1e] shadow-sm text-[#981b1e]'
+                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'
+            }`}
+          >
+            <span className="font-bold text-[14px]">Engagement Priorities</span>
+
+            {/* BETA Badge */}
+            <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+              BETA
+            </span>
+          </button>
 
       </div>  
-
 
       {/* ------------------------------------------------------------------------- */}
       {/* CSS HIDING RENDER: VOTING RATIONALE                                      */}
@@ -297,7 +335,6 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                     ))}
                   </TomSelect>
                 </div>
-
 
                 <div className="w-full sm:w-56">
                   <label className="block text-[15px] font-medium text-slate-700 mb-2">
