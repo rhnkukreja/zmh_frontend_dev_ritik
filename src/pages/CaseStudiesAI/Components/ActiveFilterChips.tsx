@@ -34,8 +34,8 @@ const ActiveFilterChips: React.FC<ActiveFilterChipsProps> = ({
   }
 
   return (
-    <div className="px-5 pb-6 border-b">
-      <p className="font-bold text-slate-800 text-xl mb-4">Active Filters</p>
+    <div className="px-5 pb-6 border-b flex items-center gap-4">
+      <p className="font-bold text-slate-800 text-xl">Active Filters: </p>
       <div className="flex flex-wrap gap-1.5">
         {activeAiFilterOrder.map((filter) => {
           if (filter.type === "investor") {
