@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { dashboardService } from "@/services/dashboard";
+import { institutionStatsService } from "@/services/institutionStats";
 import {
   BoardDirectorMembers,
   Filer,
@@ -99,6 +100,10 @@ interface CompanySliceState {
   companyOverviewLoading: boolean;
   companyOverviewGPTData: any;
   companyOverviewGPTLoading: boolean;
+  resultsCache: Record<string, any>;
+  modulesCount: any | null;
+  institutionStats: any | null;
+  institutionStatsLoading: boolean;
 }
 
 const initialState: CompanySliceState = {
@@ -128,6 +133,8 @@ const initialState: CompanySliceState = {
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
+  institutionStats: null,
+  institutionStatsLoading: false,
   instituteName: null,
   percent: "",
   notificationDetails: [],
@@ -157,6 +164,8 @@ const initialState: CompanySliceState = {
   companyOverviewGPTLoading: false,
   graphQLBoardDataLoading: false,
   graphQLBoardData: null,
+  resultsCache: {},
+  modulesCount: null,
 
   // {
   //   nominees: [],
@@ -201,6 +210,13 @@ export const fetchAGMSummaryDashboard = createAsyncThunk<
   string
 >(`${name}/fetchAGMSummaryDashboard`, async (url: string) => {
   return await dashboardService.fetchAGMSummaryDashboard(url);
+});
+
+export const fetchInstitutionStats = createAsyncThunk<
+  any,
+  { institutionId: number; year?: number }
+>(`${name}/fetchInstitutionStats`, async ({ institutionId, year }) => {
+  return await institutionStatsService.getInstitutionStats(institutionId, year);
 });
 
 export const fetchAGMProxyContestDashboard = createAsyncThunk<
@@ -399,21 +415,58 @@ const companySlice = createSlice({
     clearVotingRationale(state) {
       state.votingRationale = [];
     },
-    
+
     setVotingRationaleTop20(state, action: PayloadAction<any[]>) {
       state.votingRationaleTop20 = action.payload;
     },
-    
+
     setVotingRationaleAllInvestors(state, action: PayloadAction<any[]>) {
       state.votingRationaleAllInvestors = action.payload;
     },
-    
+
     clearVotingRationaleTop20(state) {
       state.votingRationaleTop20 = [];
     },
-    
+
     clearVotingRationaleAllInvestors(state) {
       state.votingRationaleAllInvestors = [];
+    },
+
+    saveToCache(state, action: PayloadAction<string>) {
+      const ticker = action.payload;
+      state.resultsCache[ticker] = {
+        dashboardDataList: state.dashboardDataList,
+        dashboardData: state.dashboardData,
+        agmSummaryDetails: state.agmSummaryDetails,
+        companyOverviewData: state.companyOverviewData,
+        boardDirectorMembers: state.boardDirectorMembers,
+        modulesCount: state.modulesCount,
+        institutionStats: state.institutionStats,
+        timestamp: Date.now(),
+      };
+    },
+
+    loadFromCache(state, action: PayloadAction<string>) {
+      const ticker = action.payload;
+      const cached = state.resultsCache[ticker];
+      if (cached) {
+        state.dashboardDataList = cached.dashboardDataList;
+        state.dashboardData = cached.dashboardData;
+        state.agmSummaryDetails = cached.agmSummaryDetails;
+        state.companyOverviewData = cached.companyOverviewData;
+        state.boardDirectorMembers = cached.boardDirectorMembers;
+        state.modulesCount = cached.modulesCount;
+        state.institutionStats = cached.institutionStats;
+        state.loading = false;
+        state.investorCardLoading = false;
+        state.companyOverviewLoading = false;
+        state.getBoardDirectorMembersLoading = false;
+        state.institutionStatsLoading = false;
+      }
+    },
+
+    setModulesCount(state, action: PayloadAction<any>) {
+      state.modulesCount = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -831,6 +884,21 @@ const companySlice = createSlice({
         state.companyOverviewGPTLoading = false;
         state.companyOverviewGPTData = null; // Clear data on error
         state.error = action.error.message || "Failed to fetch company overview GPT";
+      })
+
+      // Institution Stats
+      .addCase(fetchInstitutionStats.pending, (state) => {
+        state.institutionStatsLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchInstitutionStats.fulfilled, (state, action) => {
+        state.institutionStatsLoading = false;
+        state.institutionStats = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchInstitutionStats.rejected, (state, action) => {
+        state.institutionStatsLoading = false;
+        state.error = action.error.message || "Failed to fetch institution stats";
       });
   },
 });
@@ -845,10 +913,12 @@ export const {
   setProxyContestInvestorFilter,
   setProxyTopFilter,
   // setVotingRationalePage,
-  // resetVotingRationalePage,
   clearVotingRationale,
   setVotingRationaleTop20,
   setVotingRationaleAllInvestors,
   clearVotingRationaleTop20,
   clearVotingRationaleAllInvestors,
+  saveToCache,
+  loadFromCache,
+  setModulesCount,
 } = companySlice.actions;

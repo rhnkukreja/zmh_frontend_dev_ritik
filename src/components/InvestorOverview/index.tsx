@@ -16,6 +16,9 @@ import parse from 'html-react-parser';
 
 import LoadingIcon from '@/components/Base/LoadingIcon';
 import EngagementPriorities from './EngagementPriorities';
+import { useAppDispatch, useAppSelector } from '@/stores/hooks';
+import { fetchInstitutionStats } from '@/stores/dashboardSlice';
+import { RootState } from '@/stores/store';
 
 interface InvestorOption {
   id: number;
@@ -83,8 +86,8 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   const [selectedInvestor, setSelectedInvestor] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [selectedBucket, setSelectedBucket] = useState<BucketKey>('election_of_directors');
-  const [stats, setStats] = useState<StatsData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
+  const { institutionStats: stats, institutionStatsLoading: loading, error: reduxError } = useAppSelector((state: RootState) => state.dashboard);
   const [error, setError] = useState<string | null>(null);
   const [showReasonsModal, setShowReasonsModal] = useState(false);
   const [modalReasons, setModalReasons] = useState<Array<ReasonItem>>([]);
@@ -117,21 +120,15 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   useEffect(() => {
     if (!selectedInvestor) return;
 
-    const loadStats = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await institutionStatsService.getInstitutionStats(selectedInvestor, selectedYear);
-        setStats(data);
-      } catch (err: any) {
-        setError(err?.response?.data?.error || 'Failed to load statistics');
-        console.error('Error loading stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadStats();
-  }, [selectedInvestor, selectedYear]);
+    // Check if current stats in Redux already match our needs
+    const statsMatch = stats && 
+                       stats.institution_id === selectedInvestor && 
+                       Number(stats.year) === Number(selectedYear);
+
+    if (!statsMatch) {
+      dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
+    }
+  }, [selectedInvestor, selectedYear, stats, dispatch]);
 
   const bucketData = stats?.buckets[selectedBucket];
 

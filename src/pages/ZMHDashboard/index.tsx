@@ -11,6 +11,9 @@ import {
   getBoardDirectorMembers,
   setPage,
   setTempSearch,
+  saveToCache,
+  loadFromCache,
+  setModulesCount,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -67,8 +70,13 @@ function Main() {
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab || 'company-overview'
   );
-  // Modules count state
-  const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
+  // Modules count state from Redux
+  const { resultsCache, modulesCount } = useAppSelector((state: RootState) => state.dashboard);
+  const resultsCacheRef = useRef(resultsCache);
+
+  useEffect(() => {
+    resultsCacheRef.current = resultsCache;
+  }, [resultsCache]);
 
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
@@ -132,9 +140,16 @@ function Main() {
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
 
+  // Check if we already have this company in cache to avoid initial loading flash
+  useEffect(() => {
+    if (companyGlobalSearchTicker && resultsCacheRef.current[companyGlobalSearchTicker]) {
+      dispatch(loadFromCache(companyGlobalSearchTicker));
+    }
+  }, [companyGlobalSearchTicker, dispatch]);
+
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
-  }, [isCompanySelected]);
+  }, [isCompanySelected, dispatch]);
 
   // useEffect(() => {
   //   // Use board_name if available, otherwise fallback to company name
@@ -155,15 +170,18 @@ function Main() {
           const response = await dashboardService.getModulesCount({
             global_search: companyGlobalSearchName
           });
-          setModulesCount(response.result);
+          dispatch(setModulesCount(response.result));
+          dispatch(saveToCache(companyGlobalSearchTicker || ""));
         } catch (error) {
           console.error('Error fetching modules count:', error);
         }
       }
     };
 
-    fetchModulesCount();
-  }, [companyGlobalSearchName]);
+    if (!resultsCacheRef.current[companyGlobalSearchTicker || ""]) {
+      fetchModulesCount();
+    }
+  }, [companyGlobalSearchName, companyGlobalSearchTicker, dispatch]);
 
   const fetchCompanySearchData = useCallback(
     async (source: "initial" | "manual" | "online" | "focus" = "initial") => {
@@ -171,6 +189,17 @@ function Main() {
 
       if (source !== "initial") {
         setIsRetryingCompanyData(true);
+      }
+
+      // Check cache first
+      if (resultsCacheRef.current[companyGlobalSearchTicker || ""]) {
+        const cached = resultsCacheRef.current[companyGlobalSearchTicker || ""];
+        // If cache is less than 30 minutes old, use it
+        if (Date.now() - cached.timestamp < 30 * 60 * 1000) {
+          dispatch(loadFromCache(companyGlobalSearchTicker));
+          setIsRetryingCompanyData(false);
+          return;
+        }
       }
 
       const requests: Promise<any>[] = [
@@ -210,7 +239,8 @@ function Main() {
 
       if (hasSuccess) {
         setCompanyFetchError(null);
-        dispatch(setTempSearch(companyGlobalSearchTicker));
+        dispatch(setTempSearch(companyGlobalSearchTicker || ""));
+        dispatch(saveToCache(companyGlobalSearchTicker || ""));
       } else {
         setCompanyFetchError(
           "Company Search data could not be loaded. Please retry."

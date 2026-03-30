@@ -112,7 +112,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   useEffect(() => {
     // Only handle year changes, not initial fetch (dashboard handles that)
-    if (yearFromQuery && agmSummaryDetails) {
+    if (yearFromQuery && agmSummaryDetails && agmSummaryDetails.Year?.toString() !== yearFromQuery.toString()) {
       const yearParam = yearFromQuery;
       setSelectedYear(yearParam);
       const url = createDynamicURL(
@@ -121,7 +121,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       );
       dispatch(fetchAGMSummaryDashboard(url));
     }
-  }, [yearFromQuery]);
+  }, [yearFromQuery, agmSummaryDetails, companyGlobalSearchTicker, dispatch]);
 
   useEffect(() => {
     setHasLoadingStarted(false);
@@ -133,13 +133,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       setHasLoadingStarted(true);
     }
   }, [loading]);
-
-  useEffect(() => {
-    if (onLoaded && hasLoadingStarted && !loading && !hasNotifiedLoaded) {
-      onLoaded();
-      setHasNotifiedLoaded(true);
-    }
-  }, [onLoaded, hasLoadingStarted, loading, hasNotifiedLoaded]);
 
   useEffect(() => {
     const hasData = Boolean(
@@ -154,6 +147,13 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [onLoaded, loading, hasNotifiedLoaded, agmSummaryDetails]);
 
+  useEffect(() => {
+    if (onLoaded && hasLoadingStarted && !loading && !hasNotifiedLoaded) {
+      onLoaded();
+      setHasNotifiedLoaded(true);
+    }
+  }, [onLoaded, hasLoadingStarted, loading, hasNotifiedLoaded]);
+
   // Handle year query parameter changes
   useEffect(() => {
     if (yearFromQuery && yearFromQuery !== selectedYear) {
@@ -163,15 +163,20 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   useEffect(() => {
     if (selectedYear) {
-      dispatch(
-        fetchAGMSummaryDashboard(
-          createDynamicURL(
-            `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker, year: selectedYear }
+      // Check if we already have data for this year in Redux
+      const isAlreadyLoaded = agmSummaryDetails && agmSummaryDetails.Year?.toString() === selectedYear.toString();
+
+      if (!isAlreadyLoaded) {
+        dispatch(
+          fetchAGMSummaryDashboard(
+            createDynamicURL(
+              `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker, year: selectedYear }
+            )
           )
-        )
-      );
+        );
+      }
     }
-  }, [selectedYear])
+  }, [selectedYear, agmSummaryDetails, companyGlobalSearchTicker, dispatch])
 
 
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
