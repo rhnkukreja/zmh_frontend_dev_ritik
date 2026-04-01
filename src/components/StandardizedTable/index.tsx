@@ -31,6 +31,7 @@ interface StandardizedTableCellProps {
   className?: string;
   width?: string;
   isHeader?: boolean;
+  colSpan?: number;
 }
 
 const StandardizedTable: React.FC<StandardizedTableProps> & {
@@ -124,21 +125,19 @@ const StandardizedTableCell: React.FC<StandardizedTableCellProps> = ({
   children,
   className = "",
   width,
-  isHeader = false
+  isHeader = false,
+  colSpan,
 }) => {
   const baseClasses = isHeader
     ? "py-2 px-3 font-medium text-white h-[40px]"
     : "py-2 px-3 text-gray-700";
-  
-  const fontStyle = { fontSize: '14px' };
+
+  const fontStyle = { fontSize: "14px" };
 
   const style = width ? { width, ...fontStyle } : fontStyle;
 
   return (
-    <Table.Td
-      className={clsx(baseClasses, className)}
-      style={style}
-    >
+    <Table.Td className={clsx(baseClasses, className)} style={style} colSpan={colSpan}>
       {children}
     </Table.Td>
   );
