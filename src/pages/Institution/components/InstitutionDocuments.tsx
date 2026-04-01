@@ -97,8 +97,8 @@ const InstitutionDocuments = () => {
   // 🌟 NEW: Array of regenerating sections to handle batches
   const [regeneratingSections, setRegeneratingSections] = useState<string[]>([]);
 
-  const [processingDocs, setProcessingDocs] = useState<{ document_name: string; institution_id: string }[]>([]);
-
+  const [processingDocs, setProcessingDocs] = useState<{ id?: number; document_name: string; institution_id: string }[]>([]);
+  
   const [loadingText, setLoadingText] = useState("Processing...");
 
   // Local State for the new FastAPI Profile call
@@ -144,7 +144,7 @@ const InstitutionDocuments = () => {
         { headers: { "ngrok-skip-browser-warning": "69420" } }
       );
       
-      console.log("🟢 VERIFIED VIA FUZZY MATCH:", res.data.verified_docs);
+      {/*console.log("🟢 VERIFIED VIA FUZZY MATCH:", res.data.verified_docs);*/}
       setVerifiedDocs(res.data.verified_docs || {});
     } catch (e) {
       console.error("Bulk verification check failed", e);
@@ -229,8 +229,8 @@ const InstitutionDocuments = () => {
   const handleManualUpload = async (doc: InstitutionDocument) => {
     setUploadConfirmModal({ open: false, doc: null });
     if (!params.id) return;
-    setProcessingDocs(prev => [...prev, { document_name: doc.name || "", institution_id: params.id! }]);
-  try {
+    setProcessingDocs(prev => [...prev, { id: doc.id, document_name: doc.name || "", institution_id: params.id! }]);
+    try {
       await axios.post(`${AI_CHATBOT_API_BASE}/api/upload`, {
         institution_id: params.id,
         document_name: doc.name || "",
@@ -238,11 +238,12 @@ const InstitutionDocuments = () => {
         year: String(doc.year || ""),
         month: "", tags: "",
         priority: doc.priority || "Medium",
-        file_name: doc.name || ""
+        file_name: doc.name || "",
+        link: doc.link || ""  // 👈 NEW: Send the exact link to the backend
       }, { headers: { "ngrok-skip-browser-warning": "69420" } });
       toast.success(`Processing started for: ${doc.name}`);
     } catch (e) {
-      setProcessingDocs(prev => prev.filter(p => p.document_name !== doc.name));
+      setProcessingDocs(prev => prev.filter(p => p.id !== doc.id));
       toast.error("Failed to start processing.");
     }
   };
@@ -433,12 +434,12 @@ const InstitutionDocuments = () => {
             institution_id: Number(params.id), 
             documents: docPayload // <--- THIS IS THE CRITICAL FIX
           }, 
-          { headers: { "Content-Type": "application/json" }, timeout: 120000 }
+          { headers: { "Content-Type": "application/json" }, timeout: 600000 }
         );
       }
         else {
         response = await axios.post(`${AI_CHATBOT_API_BASE}/api/compare-updates`, 
-          { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 120000 }
+          { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 600000 }
         );
       }
 
@@ -515,7 +516,7 @@ const InstitutionDocuments = () => {
             "Content-Type": "application/json",
             "ngrok-skip-browser-warning": "true" // 🌟 CRITICAL: Bypasses Ngrok's HTML warning block
           }, 
-          timeout: 120000 
+          timeout: 600000 
         }
       );
 
@@ -611,11 +612,7 @@ const InstitutionDocuments = () => {
           
           {selectedRows.length > 0 && <div className="mb-3 flex justify-end"><Button variant="danger" onClick={() => setConfirmModal({ open: true, type: 'bulk-delete', ids: selectedRows })} disabled={bulkActionLoading}>Move Selected to Trash ({selectedRows.length})</Button></div>}
 
-          <TableWrapper
-            isLoading={documentsLoading}
-            rows={8}
-            columns={13}
-          >
+          <TableWrapper isLoading={documentsLoading}>
             <Table>
               <Table.Thead>
                 <Table.Tr>
@@ -634,8 +631,8 @@ const InstitutionDocuments = () => {
                 {documentsToDisplay?.length > 0 ? documentsToDisplay.map((doc: InstitutionDocument) => {
                   
                   const rawName = doc.name || "";
-                  const isProcessing = processingDocs.some(p => p.document_name?.toLowerCase() === rawName.toLowerCase());
-                  const isVerified = rawName ? verifiedDocs[rawName] : false;
+                  const isProcessing = processingDocs.some(p => (p.id && p.id === doc.id) ||   (!p.id && p.document_name?.toLowerCase() === rawName.toLowerCase()));
+                  const isVerified = doc.link ? verifiedDocs[safeDecode(doc.link)] ?? verifiedDocs[doc.link] ?? false : false;
 
                   return (
                     <Table.Tr key={doc.id}>

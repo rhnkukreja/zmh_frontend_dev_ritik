@@ -26,6 +26,7 @@ import AIAssistantButton from "@/components/Base/AIAssistantButton";
 import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
+import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
@@ -58,6 +59,8 @@ function Main() {
   } = useAppSelector((state) => state.investersProfile);
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [addNewVotingGuidelineVisible, setAddNewVotingGuidelineVisible] =
     useState<boolean>(false);
   const [tab, setTab] = useState<"investor" | "equity">("investor");
   const [searchTerms, setSearchTerms] = useState<string[]>(
@@ -255,6 +258,22 @@ function Main() {
                       />
                       <span className="ml-2 font-semibold hidden xl:flex">
                         Add New Investor Profile
+                      </span>
+                    </div>
+                  </a>
+                )}
+                {(user?.user_type === 'Admin' || user?.user_type === 'Analyst') && (
+                  <a
+                    className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
+                    onClick={() => setAddNewVotingGuidelineVisible(true)}
+                  >
+                    <div className="flex items-center justify-center">
+                      <Lucide
+                        icon="PenLine"
+                        className="stroke-[2] w-4 h-4 text-white"
+                      />
+                      <span className="ml-2 font-semibold hidden xl:flex">
+                        Add Voting Guidelines
                       </span>
                     </div>
                   </a>
@@ -800,6 +819,14 @@ function Main() {
           currentPdfName={pdfTitle}
           pdfVisible={pdfVisible}
           setPdfVisible={setPdfVisible}
+        />
+      )}
+
+      {addNewVotingGuidelineVisible && (
+        <AddEditPolicyGuideline
+          addNewProxyVotingGuidelineVisible={addNewVotingGuidelineVisible}
+          setAddNewProxyVotingGuidelineVisible={setAddNewVotingGuidelineVisible}
+          selectedProxyVotingGuideline={null}
         />
       )}
     </>
