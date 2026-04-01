@@ -1,6 +1,5 @@
 import React from "react";
 import Table from "@/components/Base/Table";
-import TableWrapper from "@/components/TableWrapper";
 import clsx from "clsx";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -47,37 +46,54 @@ const StandardizedTable: React.FC<StandardizedTableProps> & {
   skeletonRows = 8,
   skeletonCols = 6,
 }) => {
+  // Extract header component to display it even during loading
+  const header = React.Children.toArray(children).find(
+    (child) =>
+      React.isValidElement(child) &&
+      (child.type === StandardizedTableHeader ||
+        (child.type as any).displayName === "StandardizedTableHeader")
+  );
 
   return (
-    <TableWrapper
-      isLoading={isLoading}
-      rows={skeletonRows}
-      columns={skeletonCols}
+    <div
+      className={clsx(
+        "overflow-x-auto overflow-y-scroll bg-white rounded-md border border-slate-200 shadow-sm",
+        className
+      )}
+      style={{ maxHeight }}
     >
-      <div className={clsx("overflow-x-auto overflow-y-scroll bg-white rounded-md", `max-h-[${maxHeight}]`)}>
-        <Table className={clsx("w-full", className)}>
-          {children}
-        </Table>
-      </div>
-    </TableWrapper>
+      <Table className="w-full border-collapse">
+        {isLoading ? (
+          <>
+            {header}
+            <StandardizedTable.LoadingSkeleton
+              rows={skeletonRows}
+              cols={skeletonCols}
+            />
+          </>
+        ) : (
+          children
+        )}
+      </Table>
+    </div>
   );
 };
 
 const StandardizedTableHeader: React.FC<StandardizedTableHeaderProps> = ({
   children,
-  className = ""
+  className = "",
 }) => {
   return (
     <Table.Thead>
-      <Table.Tr className={clsx(
-        "bg-primary text-white text-sm",
-        className
-      )}>
+      <Table.Tr
+        className={clsx("bg-primary text-white text-sm sticky top-0 z-10", className)}
+      >
         {children}
       </Table.Tr>
     </Table.Thead>
   );
 };
+StandardizedTableHeader.displayName = "StandardizedTableHeader";
 
 const StandardizedTableRow: React.FC<StandardizedTableRowProps> = ({
   children,
@@ -130,15 +146,27 @@ const StandardizedTableCell: React.FC<StandardizedTableCellProps> = ({
 
 const LoadingSkeleton: React.FC<{ rows?: number; cols?: number }> = ({
   rows = 8,
-  cols = 6
+  cols = 6,
 }) => {
   return (
     <Table.Tbody>
       {Array.from({ length: rows }).map((_, i) => (
-        <Table.Tr key={i} className="animate-pulse">
+        <Table.Tr
+          key={i}
+          className={clsx(
+            "border-b border-slate-100",
+            i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+          )}
+        >
           {Array.from({ length: cols }).map((_, j) => (
-            <Table.Td key={j}>
-              <Skeleton height={24} />
+            <Table.Td key={j} className="py-4 px-3">
+              <div
+                className="h-4 bg-gray-200 rounded animate-pulse"
+                style={{
+                  width: `${60 + (Math.sin(i + j) * 20 + 20)}%`, // Varied widths for realistic look
+                  opacity: 0.5,
+                }}
+              />
             </Table.Td>
           ))}
         </Table.Tr>
