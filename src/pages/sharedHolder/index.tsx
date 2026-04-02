@@ -2307,21 +2307,41 @@ function ShareHolderProposal() {
                           {/* Content */}
                           <div>
                             {loadingAnalytics ? (
-                              <div className="p-5 mt-3.5 box bg-white space-y-6">
-                                <SkeletonText lines={1} className="max-w-[160px]" height="h-6" />
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                                  <div className="lg:col-span-8">
-                                    <SkeletonTable rows={6} columns={5} />
-                                  </div>
-                                  <div className="lg:col-span-4">
-                                    <SkeletonChart />
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <SkeletonCard hasImage={false} lines={6} />
-                                  <SkeletonCard hasImage={false} lines={6} />
-                                  <SkeletonCard hasImage={false} lines={6} />
-                                </div>
+                              <div className="p-5 mt-3.5 space-y-8">
+                                {activeTab === "shareholders" ? (
+                                  <>
+                                    {/* Shareholder Analytics Skeleton */}
+                                    <div className={`grid grid-cols-1 ${tab !== "proposal" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-6`}>
+                                      <SkeletonChart type="bar" className="h-[350px]" />
+                                      <SkeletonChart type="pie" className="h-[350px]" />
+                                      {tab !== "proposal" && <SkeletonChart type="pie" className="h-[350px]" />}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                      {[1, 2, 3, 4].map((idx) => (
+                                        <div key={idx} className="rounded-2xl shadow-lg bg-white p-4 border border-gray-100">
+                                          <SkeletonText lines={1} className="mb-4 w-32" />
+                                          <SkeletonTable rows={2} columns={2} />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    {/* Proponent Analytics Skeleton */}
+                                    <div className="space-y-6">
+                                      <SkeletonText lines={1} className="w-1/4" />
+                                      <div className="grid grid-cols-12 gap-6">
+                                        <div className="col-span-12 lg:col-span-8">
+                                          <SkeletonTable rows={10} columns={6} className="bg-white p-4 rounded-2xl shadow-lg border border-gray-100" />
+                                        </div>
+                                        <div className="col-span-12 lg:col-span-4">
+                                          <SkeletonChart type="pie" className="h-[400px]" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             ) : !isAnalyticsDataAvailable() ? (
                               <div className="flex flex-col items-center justify-center py-12">
@@ -2370,7 +2390,12 @@ function ShareHolderProposal() {
                           </div>
                         </Tippy>
                       </div>
-                      <StandardizedTable isLoading={loading} maxHeight="400px">
+                      <StandardizedTable
+                        isLoading={loading}
+                        maxHeight="400px"
+                        skeletonCols={isAllCompanySelected ? 10 : 9}
+                        skeletonRows={10}
+                      >
                         <StandardizedTable.Header>
                           <StandardizedTable.Cell isHeader width="8%">
                             Proxy Year
@@ -2658,20 +2683,22 @@ function ShareHolderProposal() {
                           {/* Content */}
                           <div>
                             {loading ? (
-                              <div className="p-5 mt-3.5 box bg-white space-y-6">
-                                <SkeletonText lines={1} className="max-w-[160px]" height="h-6" />
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                                  <div className="lg:col-span-8">
-                                    <SkeletonTable rows={6} columns={5} />
-                                  </div>
-                                  <div className="lg:col-span-4">
-                                    <SkeletonChart />
-                                  </div>
+                              <div className="p-5 mt-3.5 space-y-8">                                
+                                {/* Top Charts Skeleton */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                  <SkeletonChart type="bar" className="h-[350px]" />
+                                  <SkeletonChart type="pie" className="h-[350px]" />
+                                  <SkeletonChart type="pie" className="h-[350px]" />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <SkeletonCard hasImage={false} lines={6} />
-                                  <SkeletonCard hasImage={false} lines={6} />
-                                  <SkeletonCard hasImage={false} lines={6} />
+
+                                {/* Bottom Tables Skeleton */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                  {[1, 2, 3, 4].map((idx) => (
+                                    <div key={idx} className="rounded-2xl shadow-lg bg-white p-4 border border-gray-100">
+                                      <SkeletonText lines={1} className="mb-4 w-32" />
+                                      <SkeletonTable rows={2} columns={2} />
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             ) : !isAnalyticsDataAvailable() ? (
@@ -2722,7 +2749,12 @@ function ShareHolderProposal() {
                           </div>
                         </Tippy>
                       </div>
-                      <StandardizedTable isLoading={loading} maxHeight="400px">
+                      <StandardizedTable
+                        isLoading={loading}
+                        maxHeight="400px"
+                        skeletonCols={isAllCompanySelected ? 8 : 7}
+                        skeletonRows={10}
+                      >
                         <StandardizedTable.Header>
                           <StandardizedTable.Cell isHeader width="10%">
                             Proxy Year

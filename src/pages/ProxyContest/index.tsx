@@ -1,5 +1,5 @@
-import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
+import StandardizedTable from "@/components/StandardizedTable";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { baseURL } from "@/constant";
@@ -20,6 +20,7 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { FaBuilding, FaCalendarAlt, FaTimes, FaSearch } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 import { Popover } from "@/components/Base/Headless";
+import TableWrapper from "@/components/TableWrapper";
 
 const index = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const index = () => {
   // Table states
   const [proxyContestCompanies, setProxyContestCompanies] = useState<any[]>([]);
   const [proxyContestLoading, setProxyContestLoading] =
-    useState<boolean>(false);
+    useState<boolean>(true);
   const [proxyContestPage, setProxyContestPage] = useState<number>(1);
   const [proxyContestTotal, setProxyContestTotal] = useState<number>(0);
   const pageSize = 30;
@@ -562,92 +563,40 @@ const index = () => {
 
         <div>
             <>
-              <TableWrapper
+              <StandardizedTable
                 isLoading={proxyContestLoading}
-                skeleton={
-                  <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
-                    <Table>
-                      <Table.Thead>
-                        <Table.Tr className="bg-primary text-white text-sm">
-                          <Table.Td className="px-4 py-2 font-semibold">
-                            <div className="h-5 w-14 rounded bg-white/35 animate-pulse" />
-                          </Table.Td>
-                          <Table.Td className="px-4 py-2 font-semibold">
-                            <div className="h-5 w-28 rounded bg-white/35 animate-pulse" />
-                          </Table.Td>
-                          <Table.Td className="px-4 py-2 font-semibold">
-                            <div className="h-5 w-24 rounded bg-white/35 animate-pulse" />
-                          </Table.Td>
-                          <Table.Td className="px-4 py-2 font-semibold">
-                            <div className="h-5 w-16 rounded bg-white/35 animate-pulse" />
-                          </Table.Td>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {Array.from({ length: 12 }).map((_, idx) => (
-                          <Table.Tr
-                            key={`proxy-contest-skeleton-${idx}`}
-                            className={`[&_td]:last:border-b-0 ${
-                              idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                            }`}
-                          >
-                            <Table.Td className="py-2 border-dashed">
-                              <div className="inline-block h-6 w-11 rounded-full bg-slate-200 animate-pulse" />
-                            </Table.Td>
-                            <Table.Td className="py-2 border-dashed">
-                              <div className="h-5 w-[72%] rounded-md bg-slate-200 animate-pulse" />
-                            </Table.Td>
-                            <Table.Td className="py-2 border-dashed">
-                              <div className="inline-block h-6 w-28 rounded-full bg-slate-200 animate-pulse" />
-                            </Table.Td>
-                            <Table.Td className="py-2 border-dashed">
-                              <div className="flex gap-2">
-                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
-                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
-                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
-                                <div className="w-8 h-8 rounded-full bg-slate-200 animate-pulse" />
-                              </div>
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </div>
-                }
+                skeletonCols={4}
+                skeletonRows={12}
+                maxHeight="80vh"
               >
-                <div className="overflow-x-auto min-h-[70vh] max-h-[80vh] overflow-y-scroll">
-                  <Table>
-                    <Table.Thead>
-                      <Table.Tr className="bg-primary text-white text-sm">
-                        <Table.Td className="px-4 py-2 font-semibold">
-                          Year
-                        </Table.Td>
-                        <Table.Td className="px-4 py-2 font-semibold">
-                          Company Name
-                        </Table.Td>
-                        <Table.Td className="px-4 py-2 font-semibold">
-                          Meeting Date
-                        </Table.Td>
-                        <Table.Td className="px-4 py-2 font-semibold">
-                          Actions
-                        </Table.Td>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {proxyContestCompanies?.length > 0 ? (
-                        proxyContestCompanies.map((company, index) => (
-                          <Table.Tr
-                            key={`${company.company_id}-${index}`}
-                            className={`[&_td]:last:border-b-0 ${
-                              index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                            } hover:bg-gray-100 transition-colors`}
-                          >
-                            <Table.Td className="py-2 border-dashed">
-                              <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                {company.year}
-                              </span>
-                            </Table.Td>
-                            <Table.Td className="py-2 border-dashed">
+                <StandardizedTable.Header>
+                  <StandardizedTable.Cell isHeader width="10%">
+                    Year
+                  </StandardizedTable.Cell>
+                  <StandardizedTable.Cell isHeader width="40%">
+                    Company Name
+                  </StandardizedTable.Cell>
+                  <StandardizedTable.Cell isHeader width="25%">
+                    Meeting Date
+                  </StandardizedTable.Cell>
+                  <StandardizedTable.Cell isHeader width="25%">
+                    Actions
+                  </StandardizedTable.Cell>
+                </StandardizedTable.Header>
+
+                <Table.Tbody>
+                  {proxyContestCompanies?.length > 0 ? (
+                    proxyContestCompanies.map((company, index) => (
+                      <StandardizedTable.Row
+                        key={`${company.company_id}-${index}`}
+                        index={index}
+                      >
+                        <StandardizedTable.Cell>
+                          <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                            {company.year}
+                          </span>
+                        </StandardizedTable.Cell>
+                        <StandardizedTable.Cell>
                               <div
                                 className="font-semibold cursor-pointer hover:underline transition-colors"
                                 onClick={() => {
@@ -665,17 +614,17 @@ const index = () => {
                                   );
                                 }}
                               >
-                                {company.company_name}
-                              </div>
-                            </Table.Td>
-                            <Table.Td className="py-2 border-dashed">
-                              {company.meeting_date && (
-                                <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
-                                  {company.meeting_date}
-                                </span>
-                              )}
-                            </Table.Td>
-                            <Table.Td className="py-2 border-dashed">
+                              {company.company_name}
+                            </div>
+                        </StandardizedTable.Cell>
+                        <StandardizedTable.Cell>
+                          {company.meeting_date && (
+                            <span className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                              {company.meeting_date}
+                            </span>
+                          )}
+                        </StandardizedTable.Cell>
+                        <StandardizedTable.Cell>
                               <div className="flex gap-2">
                                 {/* Documents Icon */}
                                 {company.is_documents ? (
@@ -810,27 +759,25 @@ const index = () => {
                                                                     </div>
                                                                 )} */}
                               </div>
-                            </Table.Td>
-                          </Table.Tr>
+                        </StandardizedTable.Cell>
+                      </StandardizedTable.Row>
                         ))
-                      ) : (
-                        <Table.Tr>
-                          <Table.Td
-                            colSpan={4}
-                            className="text-center py-10 text-gray-400 text-lg font-semibold"
-                          >
-                            <Lucide
-                              icon="Search"
-                              className="mx-auto mb-2 text-4xl text-primary/60"
-                            />
-                            No Proxy Contest Companies available.
-                          </Table.Td>
-                        </Table.Tr>
-                      )}
-                    </Table.Tbody>
-                  </Table>
-                </div>
-              </TableWrapper>
+                  ) : (
+                    <StandardizedTable.Row>
+                      <StandardizedTable.Cell
+                        colSpan={4}
+                        className="text-center py-10 text-gray-400 text-lg font-semibold"
+                      >
+                        <Lucide
+                          icon="Search"
+                          className="mx-auto mb-2 text-4xl text-primary/60"
+                        />
+                        No Proxy Contest Companies available.
+                      </StandardizedTable.Cell>
+                    </StandardizedTable.Row>
+                  )}
+                </Table.Tbody>
+              </StandardizedTable>
 
               {proxyContestTotal > pageSize && (
                 <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
@@ -885,8 +832,32 @@ const index = () => {
 
             <div className="p-4 overflow-y-auto max-h-[calc(80vh-80px)]">
               {modalLoading ? (
-                <div className="flex items-center justify-center h-40">
-                  <LoadingIcon icon="three-dots" className="w-8 h-8" />
+                <div className="space-y-4 p-4 animate-pulse">
+                  {modalType === "documents" ? (
+                    <>
+                      <div className="h-6 bg-gray-200 rounded w-1/3 mb-6" />
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-16 bg-gray-100 rounded-lg flex items-center justify-between p-3"
+                        >
+                          <div className="h-4 bg-gray-200 rounded w-1/2" />
+                          <div className="h-4 bg-gray-200 rounded w-16" />
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="p-4 bg-white rounded-lg border">
+                      <div className="h-8 bg-gray-200 rounded-t w-full mb-4" />
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="flex gap-4 py-3 border-b">
+                          <div className="h-4 bg-gray-100 rounded flex-1" />
+                          <div className="h-4 bg-gray-100 rounded flex-1" />
+                          <div className="h-4 bg-gray-100 rounded flex-1" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div>
