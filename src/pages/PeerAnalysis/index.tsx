@@ -28,12 +28,6 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
-import {
-  SkeletonCard,
-  SkeletonChart,
-  SkeletonTable,
-  SkeletonText,
-} from "@/components/Base/Skeletons";
 
 import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormSwitch } from "@/components/Base/Form";
@@ -1022,22 +1016,15 @@ function PeerAnalysis() {
 
               {isViewAnalysis && (
                 loading ? (
-                  <div className="p-5 mt-3.5 box bg-white space-y-6">
-                    <SkeletonText lines={1} className="max-w-[180px]" height="h-6" />
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                      <div className="lg:col-span-8">
-                        <SkeletonTable rows={6} columns={5} />
-                      </div>
-                      <div className="lg:col-span-4">
-                        <SkeletonChart />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <SkeletonCard hasImage={false} lines={6} />
-                      <SkeletonCard hasImage={false} lines={6} />
-                      <SkeletonCard hasImage={false} lines={6} />
-                    </div>
-                  </div>
+                  <ChartComponent 
+                    investorData={investorData} 
+                    pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} 
+                    handleSearch={handleSearch} 
+                    topEngagementTopics={topEngagementTopics}
+                    onDocumentClick={handleDocumentClick}
+                    isAllCompanySelected={isAllCompanySelected}
+                    isLoading={true}
+                  />
                 ) : peerAnalysisData?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Lucide
@@ -1054,6 +1041,7 @@ function PeerAnalysis() {
                     topEngagementTopics={topEngagementTopics}
                     onDocumentClick={handleDocumentClick}
                     isAllCompanySelected={isAllCompanySelected}
+                    isLoading={false}
                   />
                 )
               )}
@@ -1076,6 +1064,77 @@ function PeerAnalysis() {
               <div className="px-5">
                 <TableWrapper
                   isLoading={loading}
+                  skeleton={
+                    <div className="overflow-auto max-h-[400px] rounded-lg">
+                      <Table>
+                        <Table.Thead>
+                          <Table.Tr className="bg-primary text-white">
+                            <Table.Td className="py-3 px-4 text-center font-medium border-0 w-[70px]" style={{ fontSize: "14px" }}>
+                              Year
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[220px]" style={{ fontSize: "14px" }}>
+                              Institution
+                            </Table.Td>
+                            {isAllCompanySelected && (
+                              <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{ fontSize: "14px" }}>
+                                Company
+                              </Table.Td>
+                            )}
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[80px]" style={{ fontSize: "14px" }}>
+                              Country
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[90px]" style={{ fontSize: "14px" }}>
+                              Sector
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{ fontSize: "14px" }}>
+                              Environmental
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{ fontSize: "14px" }}>
+                              Social
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{ fontSize: "14px" }}>
+                              Governance
+                            </Table.Td>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <Table.Tr
+                              key={`engagement-details-skeleton-${index}`}
+                              className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}`}
+                            >
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[70px] text-center">
+                                <span className="inline-block h-6 w-11 rounded-full bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[220px] text-wrap">
+                                <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              {isAllCompanySelected && (
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-wrap">
+                                  <div className="h-4 w-[72%] rounded bg-slate-200 animate-pulse" />
+                                </Table.Td>
+                              )}
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[80px] text-wrap">
+                                <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[90px] text-wrap">
+                                <div className="h-4 w-[72%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap">
+                                <div className="h-4 w-[85%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap">
+                                <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap">
+                                <div className="h-4 w-[80%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </div>
+                  }
                   rows={6}
                   columns={isAllCompanySelected ? 8 : 7}
                 >

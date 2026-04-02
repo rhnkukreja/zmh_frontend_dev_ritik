@@ -23,10 +23,7 @@ import {
   FileText,
   Download,
 } from "lucide-react";
-import LoadingIcon from "@/components/Base/LoadingIcon";
 import { useAppSelector } from "@/stores/hooks";
-import SkeletonWrapper from "@/components/Base/SkeletonWrapper";
-import { SkeletonCard, SkeletonText } from "@/components/Base/Skeletons";
 import { RootState } from "@/stores/store";
 import pdfMake from "pdfmake/build/pdfmake";
 
@@ -1276,12 +1273,124 @@ export default function CompanyOverviewGPT() {
   return (
     <>
       {companyOverviewGPTLoading ? (
-        <div className="bg-white p-6 mt-3.5 border rounded-md space-y-6">
-          <SkeletonCard hasImage={true} lines={2} />
-          <div className="grid md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} hasImage={false} lines={3} />
-            ))}
+        <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
+          <div className="mx-auto space-y-6">
+            <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h1 className="mt-2 text-xl font-bold tracking-tight">
+                  Key Governance & Investor Summary
+                </h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" className="gap-2" disabled>
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              </div>
+            </header>
+
+            <div className="grid gap-6 md:grid-cols-12">
+              <Card className="rounded-2xl shadow-sm md:col-span-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-[15px] text-slate-900">
+                    <div className="h-5 w-40 rounded bg-slate-200 animate-pulse" />
+                  </CardTitle>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="rounded-full" variant="outline">
+                      As of <span className="inline-block h-4 w-24 rounded bg-slate-200 animate-pulse ml-2" />
+                    </Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="rounded-xl border bg-white p-3">
+                    <SectionHeader
+                      title="Share Price Takeaway"
+                      icon={<BarChart3 className="h-4 w-4" />}
+                    />
+                    <div className="mt-3 space-y-2">
+                      <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                      <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
+                      <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border bg-white p-3">
+                    <SectionHeader
+                      title="Proxy Advisor Influence"
+                      icon={<ShieldCheck className="h-4 w-4" />}
+                    />
+                    <div className="mt-3 space-y-2">
+                      <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
+                      <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {Array.from({ length: 3 }).map((_, idx) => (
+                        <div
+                          key={`proxy-bucket-skeleton-${idx}`}
+                          className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                        >
+                          <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                          <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="space-y-6 md:col-span-8">
+                <CollapsibleCard title="Board of Directors" iconKey="board" defaultOpen>
+                  <div className="space-y-2">
+                    <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+                  </div>
+                </CollapsibleCard>
+
+                <CollapsibleCard title="Executive Compensation (Say-on-Pay)" iconKey="sop" defaultOpen>
+                  <div className="space-y-2">
+                    <div className="h-4 w-[95%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[87%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[80%] rounded bg-slate-200 animate-pulse" />
+                  </div>
+                </CollapsibleCard>
+
+                <CollapsibleCard title="Auditor Ratification" iconKey="auditor" defaultOpen>
+                  <div className="space-y-2">
+                    <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                  </div>
+                </CollapsibleCard>
+
+                <CollapsibleCard title="Shareholder Proposals" iconKey="sp" defaultOpen>
+                  <div className="space-y-2">
+                    <div className="h-4 w-[94%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[86%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[76%] rounded bg-slate-200 animate-pulse" />
+                  </div>
+                </CollapsibleCard>
+
+                <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg" defaultOpen>
+                  <div className="space-y-2">
+                    <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                    <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
+                  </div>
+                  <div className="mt-4 grid gap-3">
+                    {Array.from({ length: 2 }).map((_, idx) => (
+                      <div key={`esg-card-skeleton-${idx}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div className="h-4 w-32 rounded bg-slate-200 animate-pulse mb-2" />
+                        <div className="space-y-2">
+                          <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
+                          <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CollapsibleCard>
+              </div>
+            </div>
           </div>
         </div>
       ) : !companyGlobalSearchId ? (
