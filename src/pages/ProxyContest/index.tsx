@@ -745,19 +745,19 @@ const index = () => {
 
                                 {/* Proxy Voting Icon */}
                                 {/* {company.is_voting ? (
-                                                                    <Tippy content="Proxy Voting (Top 5)" options={{ theme: "light" }}>
-                                                                        <div
-                                                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
-                                                                            onClick={() => handleIconClick({ ...company, year: company.year }, 'proxy_voting')}
-                                                                        >
-                                                                            <Lucide icon="Vote" className="w-4 h-4" />
-                                                                        </div>
-                                                                    </Tippy>
-                                                                ) : (
-                                                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
-                                                                        <Lucide icon="Vote" className="w-4 h-4" />
-                                                                    </div>
-                                                                )} */}
+                                    <Tippy content="Proxy Voting (Top 5)" options={{ theme: "light" }}>
+                                        <div
+                                            className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                            onClick={() => handleIconClick({ ...company, year: company.year }, 'proxy_voting')}
+                                        >
+                                            <Lucide icon="Vote" className="w-4 h-4" />
+                                        </div>
+                                    </Tippy>
+                                ) : (
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-50 text-gray-300 cursor-not-allowed">
+                                        <Lucide icon="Vote" className="w-4 h-4" />
+                                    </div>
+                                )} */}
                               </div>
                         </StandardizedTable.Cell>
                       </StandardizedTable.Row>
