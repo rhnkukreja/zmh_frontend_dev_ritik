@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { institutionStatsService } from '@/services/institutionStats';
-import LoadingIcon from '@/components/Base/LoadingIcon';
 import TomSelect from '@/components/Base/TomSelect';
 import { 
   BarChart3, 
@@ -310,7 +309,9 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                     <label className="block text-[15px] font-medium text-slate-700">
                       Investor
                     </label>
-                    {stats?.data_coverage && (
+                    {loading ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-200 animate-pulse h-6 w-24" />
+                    ) : stats?.data_coverage && (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white">
                         {formatCoverage(stats.data_coverage)}
                       </span>
@@ -352,7 +353,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
             </div>
 
             {/* Sub-Tabs for Buckets */}
-            {stats && !loading && (
+            {(stats || loading) && (
               <div className="mb-5 border-b border-slate-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
@@ -389,7 +390,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                   </div>
                   
                   {/* FIX 1: Case Studies Button - uses derived showCaseStudiesButton boolean */}
-                  {showCaseStudiesButton && (
+                  {showCaseStudiesButton && !loading && (
                     <button
                       onClick={handleCaseStudiesClick}
                       className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 flex items-center gap-2 text-[14px] font-semibold shadow-sm mr-2"
@@ -406,8 +407,112 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
 
           {/* Loading State */}
           {loading && (
-            <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
-              <LoadingIcon color="#800000" icon="three-dots" className="w-16 h-16" />
+            <div className="px-5 pb-5">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-5 rounded-lg border border-blue-200">
+                  <h3 className="text-[15px] font-medium text-blue-700 mb-2">Total Votes</h3>
+                  <div className="h-9 w-28 rounded bg-blue-200/80 animate-pulse mb-2" />
+                  <div className="h-4 w-[82%] rounded bg-blue-200/70 animate-pulse" />
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-green-100 p-5 rounded-lg border border-green-200">
+                  <h3 className="text-[15px] font-medium text-green-700 mb-2">Companies</h3>
+                  <div className="h-9 w-24 rounded bg-green-200/80 animate-pulse mb-2" />
+                  <div className="h-4 w-[70%] rounded bg-green-200/70 animate-pulse" />
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-5 rounded-lg border border-purple-200">
+                  <h3 className="text-[15px] font-medium text-purple-700 mb-2">Rationales</h3>
+                  <div className="h-9 w-24 rounded bg-purple-200/80 animate-pulse mb-2" />
+                  <div className="h-4 w-[88%] rounded bg-purple-200/70 animate-pulse" />
+                </div>
+              </div>
+
+              {/* High-level Summary */}
+              <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900">High-level summary</h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 w-[98%] rounded bg-slate-200 animate-pulse" />
+                  <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
+                  <div className="h-4 w-[95%] rounded bg-slate-200 animate-pulse" />
+                  <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                </div>
+              </div>
+
+              {/* Top Stated Reasons */}
+              <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900">Top stated reasons</h3>
+                </div>
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <div key={`overview-reason-skeleton-${idx}`} className="space-y-2">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-8 rounded bg-slate-200 animate-pulse" />
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                        <div className="bg-slate-300 h-2.5 rounded-full animate-pulse" style={{ width: `${75 - idx * 10}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vote Type Breakdown */}
+              <div className="bg-white border border-slate-200 rounded-lg p-5 mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                    <PieChart className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900">Vote type breakdown</h3>
+                </div>
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, idx) => (
+                    <div key={`overview-vote-type-skeleton-${idx}`} className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 w-40 rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-16 rounded bg-slate-200 animate-pulse" />
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                        <div className="bg-slate-300 h-2.5 rounded-full animate-pulse" style={{ width: `${68 - idx * 12}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Monthly Distribution */}
+              <div className="bg-white border border-slate-200 rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900">Monthly distribution</h3>
+                </div>
+                <div className="space-y-3">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <div key={`overview-monthly-skeleton-${idx}`} className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-20 rounded bg-slate-200 animate-pulse" />
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                        <div className="bg-slate-300 h-2.5 rounded-full animate-pulse" style={{ width: `${80 - idx * 8}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
