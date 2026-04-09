@@ -169,6 +169,11 @@ const initialState: any = {
       title: "Podcasts",
     },
     {
+      icon: "Newspaper",
+      pathname: "/newsletter",
+      title: "Newsletter",
+    },
+    {
       icon: "BarChart2",
       pathname: "/custom-reports",
       title: "Custom Reports",

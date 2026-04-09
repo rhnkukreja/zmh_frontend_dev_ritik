@@ -109,6 +109,7 @@ import ComparePage from "../pages/AIChatbot/ComparePage";
 import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
 import { ChatProvider } from "../pages/AIChatbot/ChatContext";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
+import Newsletter from "@/pages/Newsletter";
 
 
 import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
@@ -526,6 +527,11 @@ function Router() {
           path: "/notes",
           element: <Notes />,
           data: { titleName: "Notes - ZMH Analytics" },
+        },
+        {
+          path: "/newsletter",
+          element: <Newsletter />,
+          data: { titleName: "Newsletter - ZMH Analytics" },
         },
         {
           path: "npx-details",
