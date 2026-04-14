@@ -35,6 +35,7 @@ import AddDocumentModal from "./components/AddDocumentModal";
 import AddNewCaseStudies from "@/pages/CaseStudies/Components/AddEditCaseStudies";
 import AddEngagementDetailsModal from "@/pages/PeerAnalysis/components/AddEngagementDetailsModal";
 import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
+import AddNewInvesterProfile from "@/pages/InvestorProfiles/components/AddNewInvester";
 
 interface InstituteFilter {
   region: string[];
@@ -94,6 +95,10 @@ function Main() {
     useState<boolean>(false);
   const [selectedInstitutionForProxyGuideline, setSelectedInstitutionForProxyGuideline] =
     useState<Institutions | null>(null);
+  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [selectedInstitutionIdForProfile, setSelectedInstitutionIdForProfile] =
+    useState<number | null>(null);
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -410,7 +415,7 @@ function Main() {
               <TableWrapper
                 isLoading={loading}
                 rows={6}
-                columns={7}
+                columns={8}
               >
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
@@ -418,6 +423,9 @@ function Main() {
                       <Table.Tr>
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Institution
+                        </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Investor Profile
                         </Table.Td>
                         {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap  border-slate-200/80 text-slate-500">
                         Active
@@ -475,6 +483,24 @@ function Main() {
                                 </div>
                               </div>
                             </Table.Td>
+                            <Table.Td className="py-2 bg-white border-slate-200/80 min-w-[140px]">
+                              {(user?.user_type === "Analyst" ||
+                                user?.user_type === "Admin") && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedInstitutionIdForProfile(institution.id);
+                                    setAddNewInvesterModalVisible(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                                >
+                                  Add Investor Profile
+                                </button>
+                              )}
+                              {user?.user_type !== "Analyst" &&
+                                user?.user_type !== "Admin" && (
+                                  <span className="text-slate-400 text-sm">-</span>
+                                )}
+                            </Table.Td>
                             {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {institution?.active === true ? (
                               <div className="flex items-center justify-center text-xs font-medium rounded-md text-success bg-success/10 border  px-1.5 py-1 mr-auto sm:mr-0">
@@ -516,7 +542,7 @@ function Main() {
                             {/* <Table.Td className="py-2  bg-white border-slate-200/80">
                               {institution.investor_type}
                             </Table.Td> */}
-                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                            <Table.Td className="py-2  bg-white border-slate-200/80 min-w-[130px]">
                               {(user?.user_type === "Analyst" ||
                                 user?.user_type === "Admin") && (
                                 <button
@@ -761,6 +787,13 @@ function Main() {
             selectedProxyVotingGuideline={{
               institution: selectedInstitutionForProxyGuideline.id,
             } as any}
+          />
+        )}
+        {addNewInvesterModalVisible && (
+          <AddNewInvesterProfile
+            addNewInvesterModalVisible={addNewInvesterModalVisible}
+            setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
+            preselectedInstitutionId={selectedInstitutionIdForProfile}
           />
         )}
       </div>
