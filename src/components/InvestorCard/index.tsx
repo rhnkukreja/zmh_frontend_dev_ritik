@@ -55,7 +55,6 @@ const index = ({ onLoaded }: InvestorCardProps) => {
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
-
   const navigate = useNavigate();
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
@@ -492,10 +491,15 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                                 <Tippy
                                                   content="Investor Profile"
                                                   options={{ theme: "light" }}
-                                                  className="w-5 h-5"
                                                   onClick={() =>
                                                     navigate(
-                                                      `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
+                                                      `/investor-profile/investor/${dashboard?.investor_profile_id}`,
+                                                      { 
+                                                        state: { 
+                                                          from: location.pathname,
+                                                          fromState: location.state 
+                                                        } 
+                                                      }
                                                     )
                                                   }
                                                 >

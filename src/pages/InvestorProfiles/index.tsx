@@ -18,7 +18,7 @@ import {
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Table from "@/components/Base/Table";
 import { Dialog } from "@/components/Base/Headless";
 import AIAssistantButton from "@/components/Base/AIAssistantButton";
@@ -48,6 +48,7 @@ interface InvestorProfileFilter {
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     loading,
     investersProfile,
@@ -153,7 +154,12 @@ function Main() {
 
   const gotoDetailPage = (investorProfileId: number | null | undefined) => {
     if (investorProfileId) {
-      navigate(`/investor-profile/investor/${investorProfileId}`);
+      navigate(`/investor-profile/investor/${investorProfileId}`, {
+        state: { 
+          from: location.pathname,
+          fromState: location.state 
+        },
+      });
     }
   };
 
@@ -173,10 +179,13 @@ function Main() {
     }
   };
 
-  const handleDocumentsClick = (institutionId: number | null | undefined) => {
-    if (institutionId) {
-      window.open(`/investor-company-details/${institutionId}`, '_blank');
-    }
+  const handleDocumentsClick = (institutionId: string) => {
+    navigate(`/investor-company-details/${institutionId}`, {
+      state: { 
+        from: location.pathname,
+        fromState: location.state 
+      },
+    });
   };
 
   const handleVotingGuidelinesClick = (profile: InvestersProfile) => {
@@ -432,7 +441,7 @@ function Main() {
                             <Lucide
                               onClick={() => {
                                 if (profile.is_document) {
-                                  handleDocumentsClick(profile.id);
+                                  handleDocumentsClick(String(profile.id));
                                 }
                               }}
                               icon="FileText"

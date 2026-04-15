@@ -19,7 +19,7 @@ import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Institutions } from "@/types/institutions";
 import { AddEditInstitution } from "./components/CreateAndEditInstitution";
 import TomSelect from "@/components/Base/TomSelect";
@@ -44,6 +44,7 @@ interface InstituteFilter {
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     institutions,
     loading,
@@ -525,7 +526,12 @@ function Main() {
                               <Table.Td className="py-2  bg-white border-slate-200/80">
                                 <button
                                   onClick={() => {
-                                    window.open(`/investor-company-details/${institution.id}`, '_blank');
+                                    navigate(`/investor-company-details/${institution.id}`, {
+                                      state: { 
+                                        from: location.pathname,
+                                        fromState: location.state 
+                                      },
+                                    });
                                   }}
                                   className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
                                   title="View Document Tab"
@@ -617,7 +623,12 @@ function Main() {
                                   >
                                     <Lucide
                                       onClick={() => {
-                                        navigate(`/institution/${institution?.id}/documents`);
+                                        navigate(`/institution/${institution?.id}/documents`, {
+                                          state: { 
+                                            from: location.pathname,
+                                            fromState: location.state 
+                                          },
+                                        });
                                       }}
                                       icon="FileText"
                                       className="w-4 h-4 stroke-[1.3] cursor-pointer"

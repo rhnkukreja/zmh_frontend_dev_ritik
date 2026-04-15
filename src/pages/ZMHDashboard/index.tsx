@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyByName,
@@ -64,12 +64,13 @@ function Main() {
 
   // Check if user is admin
   const isAdmin = user?.user_type === 'Admin';
-
+  const navigate = useNavigate();
   // Active tab state - default based on user role
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab || 'company-overview'
   );
+
   // Modules count state from Redux
   const { resultsCache, modulesCount } = useAppSelector((state: RootState) => state.dashboard);
   const resultsCacheRef = useRef(resultsCache);
@@ -81,6 +82,15 @@ function Main() {
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
+
+  // Manual tab change handler to sync state to history safely (no loops)
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    navigate(location.pathname, { 
+      state: { ...location.state, activeTab: tab }, 
+      replace: true 
+    });
+  };
 
   // Handle generate report
   const handleGenerateReport = () => {
@@ -339,7 +349,7 @@ function Main() {
             <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
               {/* Company Overview - All Users */}
               <button
-                onClick={() => setActiveTab('company-overview')}
+                onClick={() => handleTabChange('company-overview')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'company-overview'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
@@ -367,7 +377,7 @@ function Main() {
               {/* Investor Insight - All Users */}
               <div className="relative">
                 <button
-                  onClick={() => setActiveTab('investor-overview')}
+                  onClick={() => handleTabChange('investor-overview')}
                   className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
                       ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -383,7 +393,7 @@ function Main() {
     
               {/* Ownership - All Users */}
               <button
-                onClick={() => setActiveTab('ownership')}
+                onClick={() => handleTabChange('ownership')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -397,7 +407,7 @@ function Main() {
 
               {/* Shareholder Meeting Results - All Users */}
               <button
-                onClick={() => setActiveTab('shareholder-meeting-results')}
+                onClick={() => handleTabChange('shareholder-meeting-results')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'shareholder-meeting-results'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'

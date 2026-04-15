@@ -14,13 +14,15 @@ import { fetchInvestorProfileDetails } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigationHistory } from "@/hooks/useNavigationHistory";
 import { SkeletonCard, SkeletonTable, SkeletonText } from "@/components/Base/Skeletons";
 import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
 
 const index = () => {
   const location = useLocation();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { handleBack } = useNavigationHistory();
   const dispatch: AppDispatch = useAppDispatch();
   const { investorProfileLoading, investorProfileDetails } = useAppSelector(
     (state) => state.dashboard
@@ -48,7 +50,7 @@ const index = () => {
       {location.pathname !== "/" && (
         <div className="bg-white border-b border-slate-200 px-6 py-4">
           <Button
-            onClick={() => navigate("/voting-guidelines")}
+            onClick={() => handleBack()}
             className="flex items-center gap-2 text-slate-700 hover:text-primary hover:bg-slate-100 border border-slate-300 bg-white"
           >
             <ChevronLeft size={18} strokeWidth={2} />
