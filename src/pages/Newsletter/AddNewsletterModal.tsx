@@ -51,8 +51,19 @@ const AddNewsletterModal = ({
   }, []);
 
   // Initialize form when modal opens or editData changes
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
+      setIsInitialized(false);
+      return;
+    }
+
+    if (
+      !isInitialized &&
+      dynamicCategories.length > 0 &&
+      dynamicMonths.length > 0
+    ) {
       if (editData) {
         setFormData({
           type: editData.category || "",
@@ -62,14 +73,29 @@ const AddNewsletterModal = ({
         });
       } else {
         setFormData({
-          type: defaultCategory || dynamicCategories[0]?.value || "",
-          month: dynamicMonths[0]?.value || "",
+          type:
+            defaultCategory ||
+            dynamicCategories[0]?.value ||
+            "",
+          month:
+            dynamicMonths[0]?.value ||
+            "",
           year: "2024",
           file: null,
         });
       }
+
+      setIsInitialized(true);
     }
-  }, [isOpen, editData, dynamicCategories, dynamicMonths, defaultCategory]);
+
+  }, [
+    isOpen,
+    editData,
+    dynamicCategories,
+    dynamicMonths,
+    defaultCategory,
+    isInitialized,
+  ]);
 
   const handleSubmit = async () => {
     // File is optional in Edit mode
@@ -85,7 +111,7 @@ const AddNewsletterModal = ({
       data.append("year", formData.year);
       data.append("month", formData.month);
       data.append("category", formData.type);
-      
+
       if (formData.file) {
         data.append("pdf_file", formData.file);
       }
@@ -97,7 +123,7 @@ const AddNewsletterModal = ({
         await newsletterService.addNewsletter(data);
         toast.success("Document added successfully!");
       }
-      
+
       onSuccess && onSuccess();
       setFormData({
         type: "",
@@ -107,8 +133,8 @@ const AddNewsletterModal = ({
       });
       setIsOpen(false);
     } catch (error) {
-       console.error("Error uploading document:", error);
-       // Error toast is handled by axios interceptor
+      console.error("Error uploading document:", error);
+      // Error toast is handled by axios interceptor
     } finally {
       setIsLoading(false);
     }
@@ -142,8 +168,11 @@ const AddNewsletterModal = ({
               <TomSelect
                 id="doc-type"
                 value={formData.type}
-                onChange={(e) =>
-                  setFormData({ ...formData, type: e.target.value })
+                onChange={(e: any) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    type: e.target.value,
+                  }))
                 }
                 className="w-full"
                 options={{
@@ -169,15 +198,18 @@ const AddNewsletterModal = ({
                 <TomSelect
                   id="doc-month"
                   value={formData.month}
-                  onChange={(e) =>
-                    setFormData({ ...formData, month: e.target.value })
+                  onChange={(e: any) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      month: e.target.value,
+                    }))
                   }
                   className="w-full"
                   options={{
                     placeholder: "Select Month",
                   }}
                 >
-                    {(Array.isArray(dynamicMonths) ? dynamicMonths : []).map((m, idx) => (
+                  {(Array.isArray(dynamicMonths) ? dynamicMonths : []).map((m, idx) => (
                     <option key={m?.value || idx} value={m?.value || ""}>
                       {typeof m?.label === 'string' ? m.label : String(m?.label || m || "")}
                     </option>
@@ -194,8 +226,11 @@ const AddNewsletterModal = ({
                 <TomSelect
                   id="doc-year"
                   value={formData.year}
-                  onChange={(e) =>
-                    setFormData({ ...formData, year: e.target.value })
+                  onChange={(e: any) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      year: e.target.value,
+                    }))
                   }
                   className="w-full"
                   options={{
