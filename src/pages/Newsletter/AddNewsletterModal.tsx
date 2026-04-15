@@ -1,18 +1,27 @@
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { Dialog } from "@/components/Base/Headless";
 import { FormLabel } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import TomSelect from "@/components/Base/TomSelect";
+import { newsletterService } from "@/services/newsletter";
+import { toast } from "react-toastify";
+import { Brief } from "./BriefCard";
 
 interface AddNewsletterModalProps {
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
+  editData?: Brief;
+  onSuccess?: () => void;
+  defaultCategory?: string;
 }
 
 const AddNewsletterModal = ({
   isOpen,
   setIsOpen,
+  editData,
+  onSuccess,
+  defaultCategory,
 }: AddNewsletterModalProps) => {
   const [formData, setFormData] = useState({
     type: "",
@@ -21,26 +30,89 @@ const AddNewsletterModal = ({
     file: null as File | null,
   });
 
-  const handleSubmit = () => {
-    // Handle submission logic later
-    console.log("Submitting:", formData);
-    setIsOpen(false);
-  };
+  const [isLoading, setIsLoading] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState<{ value: string; label: string }[]>([]);
+  const [dynamicMonths, setDynamicMonths] = useState<{ value: string; label: string }[]>([]);
 
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        const [categories, months] = await Promise.all([
+          newsletterService.getCategories(),
+          newsletterService.getMonths(),
+        ]);
+        setDynamicCategories(categories);
+        setDynamicMonths(months);
+      } catch (error) {
+        console.error("Error fetching dropdowns:", error);
+      }
+    };
+    fetchDropdowns();
+  }, []);
+
+  // Initialize form when modal opens or editData changes
+  useEffect(() => {
+    if (isOpen) {
+      if (editData) {
+        setFormData({
+          type: editData.category || "",
+          month: editData.month || "",
+          year: editData.year || "2024",
+          file: null,
+        });
+      } else {
+        setFormData({
+          type: defaultCategory || dynamicCategories[0]?.value || "",
+          month: dynamicMonths[0]?.value || "",
+          year: "2024",
+          file: null,
+        });
+      }
+    }
+  }, [isOpen, editData, dynamicCategories, dynamicMonths, defaultCategory]);
+
+  const handleSubmit = async () => {
+    // File is optional in Edit mode
+    const isEdit = !!editData;
+    if (!formData.type || !formData.month || !formData.year || (!isEdit && !formData.file)) {
+      toast.error("Please fill all fields and upload a document.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const data = new FormData();
+      data.append("year", formData.year);
+      data.append("month", formData.month);
+      data.append("category", formData.type);
+      
+      if (formData.file) {
+        data.append("pdf_file", formData.file);
+      }
+
+      if (isEdit) {
+        await newsletterService.updateNewsletter(editData.id!, data);
+        toast.success("Document updated successfully!");
+      } else {
+        await newsletterService.addNewsletter(data);
+        toast.success("Document added successfully!");
+      }
+      
+      onSuccess && onSuccess();
+      setFormData({
+        type: "",
+        month: "",
+        year: "",
+        file: null,
+      });
+      setIsOpen(false);
+    } catch (error) {
+       console.error("Error uploading document:", error);
+       // Error toast is handled by axios interceptor
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const years = Array.from({ length: 7 }, (_, i) => (2024 + i).toString());
 
@@ -49,7 +121,7 @@ const AddNewsletterModal = ({
       <Dialog.Panel>
         <Dialog.Title className="flex justify-between items-center px-6 py-4 border-b border-slate-200/60 dark:border-darkmode-400">
           <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Add New Document
+            {editData ? "Edit Document" : "Add New Document"}
           </h2>
           <button
             onClick={() => setIsOpen(false)}
@@ -78,9 +150,11 @@ const AddNewsletterModal = ({
                   placeholder: "Select Document Type",
                 }}
               >
-                <option value="Sustainability">The Sustainability Brief</option>
-                <option value="Proposal">Shareholder Proposal Brief</option>
-                <option value="Activism">Monthly Activism Overview</option>
+                {(Array.isArray(dynamicCategories) ? dynamicCategories : []).map((cat, idx) => (
+                  <option key={cat?.value || idx} value={cat?.value || ""}>
+                    {typeof cat?.label === 'string' ? cat.label : String(cat?.label || cat || "")}
+                  </option>
+                ))}
               </TomSelect>
             </div>
 
@@ -103,9 +177,9 @@ const AddNewsletterModal = ({
                     placeholder: "Select Month",
                   }}
                 >
-                  {months.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
+                    {(Array.isArray(dynamicMonths) ? dynamicMonths : []).map((m, idx) => (
+                    <option key={m?.value || idx} value={m?.value || ""}>
+                      {typeof m?.label === 'string' ? m.label : String(m?.label || m || "")}
                     </option>
                   ))}
                 </TomSelect>
@@ -187,6 +261,7 @@ const AddNewsletterModal = ({
               variant="outline-secondary"
               onClick={() => setIsOpen(false)}
               className="px-8 rounded-xl"
+              disabled={isLoading}
             >
               Cancel
             </Button>
@@ -194,8 +269,16 @@ const AddNewsletterModal = ({
               variant="primary"
               onClick={handleSubmit}
               className="px-8 rounded-xl shadow-lg shadow-primary/20 transform hover:scale-105 transition-all duration-200"
+              disabled={isLoading}
             >
-              Save Document
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Lucide icon="Loader2" className="w-4 h-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : (
+                "Save Document"
+              )}
             </Button>
           </div>
         </Dialog.Description>

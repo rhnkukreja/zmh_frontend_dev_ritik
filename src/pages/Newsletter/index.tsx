@@ -9,10 +9,22 @@ import AddNewsletterModal from "./AddNewsletterModal";
 
 const Newsletter: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const categories = [
+    "The Sustainability Brief",
+    "Shareholder Proposal Brief",
+    "Monthly Activism Overview",
+  ];
+
+  const handleSuccess = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   return (
     <div className="container m-auto h-[calc(100vh-70px)] flex flex-col my-[-35px] pb-[30px]">
-      <Tab.Group>
+      <Tab.Group onChange={setActiveTab}>
         {/* Professional Header - Exact Dashboard Style */}
         <div className="w-full sticky z-30 transition-all duration-300 ease-in-out bg-white dark:bg-darkmode-600 shadow-md rounded-xl mt-8 border border-gray-200 dark:border-darkmode-400">
           <div className="bg-gradient-to-r from-white to-gray-50 dark:from-darkmode-600 dark:to-darkmode-700 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
@@ -58,17 +70,16 @@ const Newsletter: React.FC = () => {
           </div>
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 mt-6 transition-all duration-500">
           <Tab.Panels>
             <Tab.Panel className="focus:outline-none outline-none">
-              <SustainabilityBrief />
+              <SustainabilityBrief refreshTrigger={refreshTrigger} />
             </Tab.Panel>
             <Tab.Panel className="focus:outline-none outline-none">
-              <ProposalBrief />
+              <ProposalBrief refreshTrigger={refreshTrigger} />
             </Tab.Panel>
             <Tab.Panel className="focus:outline-none outline-none">
-              <ActivismOverview />
+              <ActivismOverview refreshTrigger={refreshTrigger} />
             </Tab.Panel>
           </Tab.Panels>
         </div>
@@ -78,6 +89,8 @@ const Newsletter: React.FC = () => {
       <AddNewsletterModal
         isOpen={isAddModalOpen}
         setIsOpen={setIsAddModalOpen}
+        defaultCategory={categories[activeTab]}
+        onSuccess={handleSuccess}
       />
     </div>
   );
