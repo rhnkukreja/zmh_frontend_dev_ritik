@@ -19,7 +19,8 @@ const multipartFormDataUrls = [
   "/company/",
   // "/institute_documents/", // Only add specific upload endpoints here
   "proxy_voting_guidelines_pdf_summary_data_upload",
-  "/peer_analysis_excel_upload/"
+  "/peer_analysis_excel_upload/",
+  "/api/newsletter/"
 ];
 
 const isNotMultipartFormDataUrls = [

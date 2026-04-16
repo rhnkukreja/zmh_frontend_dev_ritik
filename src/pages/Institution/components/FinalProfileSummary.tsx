@@ -1,10 +1,12 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigationHistory } from "@/hooks/useNavigationHistory";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 
 const FinalProfileSummary = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { handleBack } = useNavigationHistory();
   
   // 🌟 Retrieve BOTH the heavily edited new profile AND the old DB profile for comparison
   const { profile, oldProfile, investorName } = location.state || {};
@@ -14,7 +16,7 @@ const FinalProfileSummary = () => {
       <div className="p-8 text-center text-gray-500">
         No profile data found. Please complete the review process first.
         <br/>
-        <button onClick={() => navigate(-1)} className="mt-4 text-[#901639] underline">Go Back</button>
+        <button onClick={() => handleBack()} className="mt-4 text-[#901639] underline">Go Back</button>
       </div>
     );
   }
@@ -142,7 +144,7 @@ const FinalProfileSummary = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-8 animate-in fade-in duration-500">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-bold text-[#901639] hover:underline mb-6">
+      <button onClick={() => handleBack()} className="flex items-center gap-2 text-sm font-bold text-[#901639] hover:underline mb-6">
         <ArrowLeft size={16} /> Back to Documents
       </button>
 

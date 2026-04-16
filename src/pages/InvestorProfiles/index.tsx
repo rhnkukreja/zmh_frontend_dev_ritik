@@ -18,7 +18,7 @@ import {
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Table from "@/components/Base/Table";
 import { Dialog } from "@/components/Base/Headless";
 import AIAssistantButton from "@/components/Base/AIAssistantButton";
@@ -48,6 +48,7 @@ interface InvestorProfileFilter {
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     loading,
     investersProfile,
@@ -153,7 +154,12 @@ function Main() {
 
   const gotoDetailPage = (investorProfileId: number | null | undefined) => {
     if (investorProfileId) {
-      navigate(`/investor-profile/investor/${investorProfileId}`);
+      navigate(`/investor-profile/investor/${investorProfileId}`, {
+        state: { 
+          from: location.pathname,
+          fromState: location.state 
+        },
+      });
     }
   };
 
@@ -173,10 +179,13 @@ function Main() {
     }
   };
 
-  const handleDocumentsClick = (institutionId: number | null | undefined) => {
-    if (institutionId) {
-      window.open(`/investor-company-details/${institutionId}`, '_blank');
-    }
+  const handleDocumentsClick = (institutionId: string) => {
+    navigate(`/investor-company-details/${institutionId}`, {
+      state: { 
+        from: location.pathname,
+        fromState: location.state 
+      },
+    });
   };
 
   const handleVotingGuidelinesClick = (profile: InvestersProfile) => {
@@ -246,38 +255,6 @@ function Main() {
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
               <div className="flex items-center gap-3">
-                {(user?.user_type === 'Admin' || user?.user_type === 'Analyst') && (
-                  <a
-                    className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
-                    onClick={() => setAddNewInvesterModalVisible(true)}
-                  >
-                    <div className="flex items-center justify-center">
-                      <Lucide
-                        icon="Plus"
-                        className="stroke-[2] w-4 h-4 text-white"
-                      />
-                      <span className="ml-2 font-semibold hidden xl:flex">
-                        Add New Investor Profile
-                      </span>
-                    </div>
-                  </a>
-                )}
-                {(user?.user_type === 'Admin' || user?.user_type === 'Analyst') && (
-                  <a
-                    className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
-                    onClick={() => setAddNewVotingGuidelineVisible(true)}
-                  >
-                    <div className="flex items-center justify-center">
-                      <Lucide
-                        icon="PenLine"
-                        className="stroke-[2] w-4 h-4 text-white"
-                      />
-                      <span className="ml-2 font-semibold hidden xl:flex">
-                        Add Voting Guidelines
-                      </span>
-                    </div>
-                  </a>
-                )}
                 <a
                   className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
                   onClick={handleOverboardingPoliciesClick}
@@ -464,7 +441,7 @@ function Main() {
                             <Lucide
                               onClick={() => {
                                 if (profile.is_document) {
-                                  handleDocumentsClick(profile.id);
+                                  handleDocumentsClick(String(profile.id));
                                 }
                               }}
                               icon="FileText"
