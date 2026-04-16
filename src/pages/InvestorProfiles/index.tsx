@@ -164,7 +164,7 @@ function Main() {
   };
 
   const handleOverboardingPoliciesClick = () => {
-    setPdfUrl('https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2025.pdf');
+    setPdfUrl('https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2026.pdf');
     setPdfTitle('Key Overboarding Policies');
     setPdfVisible(true);
   };

@@ -180,8 +180,8 @@ type ESGInvestor = {
 type CompanyReport = {
   company: string;
   ticker: string;
-  asOf: string;
-  sharePriceTakeaway: string;
+  asOf?: string;
+  sharePriceTakeaway?: string;
   esg?: {
     themeSummary?: string;
     investors: ESGInvestor[];
@@ -810,12 +810,16 @@ function buildPlainText(report: CompanyReport) {
 function transformApiDataToReport(apiData: any): CompanyReport | null {
   if (!apiData) return null;
 
+  // Initialize report with only required fields - optional sections will be added only if they exist in API
   const report: CompanyReport = {
     company: apiData.company?.name || "",
-    ticker: apiData.company?.ticker || "",
-    asOf: apiData.report_metadata?.data_as_of || "",
-    sharePriceTakeaway: ""
+    ticker: apiData.company?.ticker || ""
   };
+
+  // Add asOf only if it exists
+  if (apiData.report_metadata?.data_as_of) {
+    report.asOf = apiData.report_metadata.data_as_of;
+  }
 
   // Helper to robustly split rationale blocks, even if embedded as a single string
   function splitRationaleLines(paragraph: string): string[] {
@@ -858,33 +862,47 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
     return rationales;
   }
 
-  // Process sections from API
+  // Process sections from API - only add sections that exist in the API response
   apiData.sections?.forEach((section: any) => {
     switch (section.id) {
       case "share_price_performance":
-        report.sharePriceTakeaway = section.paragraphs?.join(" ") || "";
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          // Filter out "not available" messages
+          const validParagraphs = section.paragraphs.filter((p: string) => 
+            !p.toLowerCase().includes('data is not available') &&
+            !p.toLowerCase().includes('not available')
+          );
+          const content = validParagraphs.join(" ").trim();
+          if (content) {
+            report.sharePriceTakeaway = content;
+          }
+        }
         break;
 
       case "engagement":
-        report.esg = {
-          themeSummary: section.paragraphs?.[0] || "",
-          investors: section.institutions?.map((inst: any) => ({
-            name: inst.institution,
-            env: inst.environmental ? [inst.environmental] : undefined,
-            soc: inst.social ? [inst.social] : undefined,
-            gov: inst.governance ? [inst.governance] : undefined,
-          })) || [],
-        };
+        if (section.paragraphs || section.institutions) {
+          report.esg = {
+            themeSummary: section.paragraphs?.[0] || "",
+            investors: section.institutions?.map((inst: any) => ({
+              name: inst.institution,
+              env: inst.environmental ? [inst.environmental] : undefined,
+              soc: inst.social ? [inst.social] : undefined,
+              gov: inst.governance ? [inst.governance] : undefined,
+            })) || [],
+          };
+        }
         break;
 
       case "proxy_advisor_influence":
-        report.proxy = {
-          summary: section.paragraphs?.[0] || "",
-          buckets: section.paragraphs?.slice(1).map((p: string) => {
-            const match = p.match(/(.+?):\s*([\d.]+)%/);
-            return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
-          }).filter(Boolean) || [],
-        };
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          report.proxy = {
+            summary: section.paragraphs[0] || "",
+            buckets: section.paragraphs.slice(1).map((p: string) => {
+              const match = p.match(/(.+?):\s*([\d.]+)%/);
+              return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
+            }).filter(Boolean) || [],
+          };
+        }
         break;
 
       case "board_of_directors":
@@ -895,18 +913,20 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.board = {
-          headlineBullets: boardParagraphs,
-          lowestSupport: section.lowest_support?.map((ls: any) =>
-            `${ls.nominee} – ${ls.support_pct}%`
-          ),
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (boardParagraphs.length > 0 || section.lowest_support || section.voting_rationales) {
+          report.board = {
+            headlineBullets: boardParagraphs,
+            lowestSupport: section.lowest_support?.map((ls: any) =>
+              `${ls.nominee} – ${ls.support_pct}%`
+            ),
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "say_on_pay":
@@ -916,15 +936,17 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.sop = {
-          headlineBullets: sopParagraphs,
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal || '',
-            notes: r.notes
-          })) || [],
-        };
+        if (sopParagraphs.length > 0 || section.voting_rationales) {
+          report.sop = {
+            headlineBullets: sopParagraphs,
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal || '',
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "voting_rationale":
@@ -963,23 +985,27 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         break;
 
       case "auditor_ratification":
-        report.auditor = {
-          headlineBullets: section.paragraphs || [],
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (section.paragraphs?.length > 0 || section.voting_rationales) {
+          report.auditor = {
+            headlineBullets: section.paragraphs || [],
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "shareholder_proposals":
-        report.shareholderProposals = {
-          headlineBullets: section.paragraphs || [],
-          selected: section.selected_support_levels || [],
-          proposalVotes: section.shareholder_proposal_votes || [],
-        };
+        if (section.paragraphs?.length > 0 || section.selected_support_levels || section.shareholder_proposal_votes) {
+          report.shareholderProposals = {
+            headlineBullets: section.paragraphs || [],
+            selected: section.selected_support_levels || [],
+            proposalVotes: section.shareholder_proposal_votes || [],
+          };
+        }
         break;
     }
   });
@@ -1681,23 +1707,27 @@ export default function CompanyOverview() {
                             {r.company}
                           </CardTitle>
 
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge className="rounded-full" variant="outline">
-                              As of {r.asOf}
-                            </Badge>
-                          </div>
+                          {r.sharePriceTakeaway && r.asOf && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge className="rounded-full" variant="outline">
+                                As of {r.asOf}
+                              </Badge>
+                            </div>
+                          )}
                         </CardHeader>
 
                         <CardContent className="space-y-4">
-                          <div className="rounded-xl border bg-white p-3">
-                            <SectionHeader
-                              title="Share Price Takeaway"
-                              icon={<BarChart3 className="h-4 w-4" />}
-                            />
-                            <p className="mt-3 text-[15px] text-slate-700">
-                              {r.sharePriceTakeaway}
-                            </p>
-                          </div>
+                          {r.sharePriceTakeaway && (
+                            <div className="rounded-xl border bg-white p-3">
+                              <SectionHeader
+                                title="Share Price Takeaway"
+                                icon={<BarChart3 className="h-4 w-4" />}
+                              />
+                              <p className="mt-3 text-[15px] text-slate-700">
+                                {r.sharePriceTakeaway}
+                              </p>
+                            </div>
+                          )}
 
                           {r.proxy ? (
                             <div className="rounded-xl border bg-white p-3">
