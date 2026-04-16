@@ -45,8 +45,7 @@ const BriefCard: React.FC<BriefCardProps> = ({ brief, onEdit, onDelete, onView }
           
           <div className="flex-1 flex flex-col justify-center py-4">
             <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
-              {/* TODO: Have to add title here */}
-              {brief.month + " " + brief.year} 
+              {brief.title} 
             </h3>
             <div className="mt-2 h-0.5 w-12 bg-primary/40 rounded-full"></div>
             <p className="text-[14px] text-slate-500 mt-4 leading-relaxed line-clamp-3">
