@@ -2,15 +2,20 @@ import React, { useState } from "react";
 import { Tab } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
-import SustainabilityBrief from "./SustainabilityBrief";
-import ProposalBrief from "./ProposalBrief";
-import ActivismOverview from "./ActivismOverview";
-import AddNewsletterModal from "./AddNewsletterModal";
+import SustainabilityBrief from "./components/SustainabilityBrief";
+import ProposalBrief from "./components/ProposalBrief";
+import ActivismOverview from "./components/ActivismOverview";
+import AddNewsletterModal from "./components/AddNewsletterModal";
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 
 const Newsletter: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const { user } = useAppSelector((state: RootState) => state.authentiction);
+  const isAdmin = user?.user_type === 'Admin';
 
   const categories = [
     "The Sustainability Brief",
@@ -57,16 +62,18 @@ const Newsletter: React.FC = () => {
               </Tab.List>
             </div>
 
-            <div className="hidden lg:block">
-              <Button
-                variant="primary"
-                className="flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all duration-200 font-bold"
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                <Lucide icon="Plus" className="w-4 h-4" />
-                Add Document
-              </Button>
-            </div>
+            {isAdmin && (
+              <div className="hidden lg:block">
+                <Button
+                  variant="primary"
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all duration-200 font-bold"
+                  onClick={() => setIsAddModalOpen(true)}
+                >
+                  <Lucide icon="Plus" className="w-4 h-4" />
+                  Add Document
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
