@@ -26,7 +26,7 @@ const Newsletter: React.FC = () => {
     <div className="container m-auto h-[calc(100vh-70px)] flex flex-col my-[-35px] pb-[30px]">
       <Tab.Group onChange={setActiveTab}>
         {/* Professional Header - Exact Dashboard Style */}
-        <div className="w-full sticky z-30 transition-all duration-300 ease-in-out bg-white dark:bg-darkmode-600 shadow-md rounded-xl mt-8 border border-gray-200 dark:border-darkmode-400">
+        <div className="w-full sticky top-[140px] z-[30] transition-all duration-300 ease-in-out bg-white dark:bg-darkmode-600 shadow-md rounded-xl mt-8 border border-gray-200 dark:border-darkmode-400">
           <div className="bg-gradient-to-r from-white to-gray-50 dark:from-darkmode-600 dark:to-darkmode-700 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
             <div className="bg-white dark:bg-darkmode-800 rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200 dark:border-darkmode-400">
               <Tab.List

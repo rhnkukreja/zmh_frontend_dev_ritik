@@ -21,11 +21,6 @@ interface BriefCardProps {
 const BriefCard: React.FC<BriefCardProps> = ({ brief, onEdit, onDelete, onView }) => {
   return (
     <div className="flex flex-col gap-4 group/brief relative">
-      {/* Date Header */}
-      <div className="text-base font-bold text-slate-800 dark:text-slate-300 ml-1">
-        {brief.date}
-      </div>
-
       {/* Main Card Body */}
       <div 
         className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-darkmode-400 bg-white dark:bg-darkmode-600 shadow-sm transition-all duration-300 group-hover/brief:shadow-xl group-hover/brief:-translate-y-2 aspect-[1.4/1] cursor-pointer"
@@ -45,8 +40,7 @@ const BriefCard: React.FC<BriefCardProps> = ({ brief, onEdit, onDelete, onView }
           
           <div className="flex-1 flex flex-col justify-center py-4">
             <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
-              {/* TODO: Have to add title here */}
-              {brief.month + " " + brief.year} 
+              {brief.date} 
             </h3>
             <div className="mt-2 h-0.5 w-12 bg-primary/40 rounded-full"></div>
             <p className="text-[14px] text-slate-500 mt-4 leading-relaxed line-clamp-3">

@@ -864,6 +864,9 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
   // Process sections from API - only add sections that exist in the API response
   apiData.sections?.forEach((section: any) => {
+    // Skip sections where has_data is explicitly false
+    if (section.has_data === false) return;
+    
     switch (section.id) {
       case "share_price_performance":
         if (section.paragraphs && section.paragraphs.length > 0) {
