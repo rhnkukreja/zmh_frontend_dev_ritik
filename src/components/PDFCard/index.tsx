@@ -113,7 +113,8 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full">
       <div className="bg-gradient-to-r from-primary to-primary/90 px-6 py-4 flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Documents</h2>
-        <Button
+        {/* Temporarily disabled */}
+        {/* <Button
           onClick={() =>
             navigate(`/investor-profile/investor/${id}`, {
               state: { 
@@ -125,7 +126,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
           className="bg-white/20 hover:bg-white/30 text-white border-white/30 text-sm"
         >
           View Full Profile
-        </Button>
+        </Button> */}
       </div>
 
       <div className="p-6 max-h-[500px] overflow-y-auto">

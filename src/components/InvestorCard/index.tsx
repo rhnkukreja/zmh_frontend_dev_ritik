@@ -463,13 +463,16 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                                 </sup>
                                               )}
                                               <h1
-                                                onClick={() =>
-                                                  dashboard?.institution_id &&
-                                                  window.open(
-                                                    `/investor-company-details/${dashboard?.institution_id}`,
-                                                    "_blank"
-                                                  )
-                                                }
+                                                onClick={() => {
+                                                  if (dashboard?.is_doc && dashboard?.institution_id) {
+                                                    navigate(`/investor-company-details/${dashboard?.institution_id}`, {
+                                                      state: {
+                                                        from: location.pathname,
+                                                        fromState: location.state
+                                                      }
+                                                    });
+                                                  }
+                                                }}
                                                 className={clsx([
                                                   "cell whitespace-nowrap capitalize text-wrap font-semibold",
                                                   dashboard?.is_doc &&
