@@ -472,7 +472,7 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                                 }
                                                 className={clsx([
                                                   "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                  dashboard?.institution_id &&
+                                                  dashboard?.is_doc &&
                                                   "cursor-pointer underline",
                                                 ])}
                                               >

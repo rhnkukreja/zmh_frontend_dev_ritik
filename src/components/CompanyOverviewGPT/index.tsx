@@ -609,6 +609,9 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
   // Process sections from API
   apiData.sections?.forEach((section: any) => {
+    // Skip sections where has_data is explicitly false
+    if (section.has_data === false) return;
+
     switch (section.id) {
       case "share_price_performance":
         report.sharePriceTakeaway = section.paragraphs?.join(" ") || "";
