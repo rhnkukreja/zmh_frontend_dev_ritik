@@ -18,7 +18,7 @@ import {
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { InvestersProfile } from "@/types/investerProfiles";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Table from "@/components/Base/Table";
 import { Dialog } from "@/components/Base/Headless";
 import AIAssistantButton from "@/components/Base/AIAssistantButton";
@@ -26,6 +26,7 @@ import AIAssistantButton from "@/components/Base/AIAssistantButton";
 import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
+import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
 import Tippy from "@/components/Base/Tippy";
 import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
@@ -47,6 +48,7 @@ interface InvestorProfileFilter {
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     loading,
     investersProfile,
@@ -58,6 +60,8 @@ function Main() {
   } = useAppSelector((state) => state.investersProfile);
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [addNewVotingGuidelineVisible, setAddNewVotingGuidelineVisible] =
     useState<boolean>(false);
   const [tab, setTab] = useState<"investor" | "equity">("investor");
   const [searchTerms, setSearchTerms] = useState<string[]>(
@@ -150,12 +154,17 @@ function Main() {
 
   const gotoDetailPage = (investorProfileId: number | null | undefined) => {
     if (investorProfileId) {
-      navigate(`/investor-profile/investor/${investorProfileId}`);
+      navigate(`/investor-profile/investor/${investorProfileId}`, {
+        state: { 
+          from: location.pathname,
+          fromState: location.state 
+        },
+      });
     }
   };
 
   const handleOverboardingPoliciesClick = () => {
-    setPdfUrl('https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2025.pdf');
+    setPdfUrl('https://zmh-official-website-media-bucket.s3.us-east-2.amazonaws.com/ZMH_Overboarding_Document/Overboarding+Policy+for+Top+Investors+2026.pdf');
     setPdfTitle('Key Overboarding Policies');
     setPdfVisible(true);
   };
@@ -170,10 +179,13 @@ function Main() {
     }
   };
 
-  const handleDocumentsClick = (institutionId: number | null | undefined) => {
-    if (institutionId) {
-      window.open(`/investor-company-details/${institutionId}`, '_blank');
-    }
+  const handleDocumentsClick = (institutionId: string) => {
+    navigate(`/investor-company-details/${institutionId}`, {
+      state: { 
+        from: location.pathname,
+        fromState: location.state 
+      },
+    });
   };
 
   const handleVotingGuidelinesClick = (profile: InvestersProfile) => {
@@ -243,22 +255,6 @@ function Main() {
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
               <div className="flex items-center gap-3">
-                {(user?.user_type === 'Admin' || user?.user_type === 'Analyst') && (
-                  <a
-                    className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
-                    onClick={() => setAddNewInvesterModalVisible(true)}
-                  >
-                    <div className="flex items-center justify-center">
-                      <Lucide
-                        icon="Plus"
-                        className="stroke-[2] w-4 h-4 text-white"
-                      />
-                      <span className="ml-2 font-semibold hidden xl:flex">
-                        Add New Investor Profile
-                      </span>
-                    </div>
-                  </a>
-                )}
                 <a
                   className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
                   onClick={handleOverboardingPoliciesClick}
@@ -445,7 +441,7 @@ function Main() {
                             <Lucide
                               onClick={() => {
                                 if (profile.is_document) {
-                                  handleDocumentsClick(profile.id);
+                                  handleDocumentsClick(String(profile.id));
                                 }
                               }}
                               icon="FileText"
@@ -800,6 +796,14 @@ function Main() {
           currentPdfName={pdfTitle}
           pdfVisible={pdfVisible}
           setPdfVisible={setPdfVisible}
+        />
+      )}
+
+      {addNewVotingGuidelineVisible && (
+        <AddEditPolicyGuideline
+          addNewProxyVotingGuidelineVisible={addNewVotingGuidelineVisible}
+          setAddNewProxyVotingGuidelineVisible={setAddNewVotingGuidelineVisible}
+          selectedProxyVotingGuideline={null}
         />
       )}
     </>

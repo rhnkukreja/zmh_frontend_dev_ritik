@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigationHistory } from "@/hooks/useNavigationHistory";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchInstitutionDocuments, getSingleInstitution } from "@/stores/institutionSlice";
 import { AppDispatch } from "@/stores/store";
@@ -57,6 +58,8 @@ const InstitutionDocuments = () => {
   const params = useParams();
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { handleBack } = useNavigationHistory();
 
   const hasVerifiedDocs = useRef<string | null>(null);
 
@@ -76,7 +79,10 @@ const InstitutionDocuments = () => {
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   // NO MORE LOCAL STORAGE. Checklists start empty every load.
-  const [profileMode, setProfileMode] = useState<ProfileMode>(null);
+  const [profileMode, setProfileMode] = useState<ProfileMode>(
+    location.state?.profileMode || null
+  );
+
   const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>([]);
 
   const [pendingModeSwitch, setPendingModeSwitch] = useState<ProfileMode>(null);
@@ -332,7 +338,17 @@ const InstitutionDocuments = () => {
       setIsSyncingSummary(false);
       toast.success("Investor Profile updated successfully!");
       if (params.id) dispatch(fetchInstitutionDocuments(Number(params.id)));
-      navigate(`/final-summary/${params.id}`, { state: { profile: updatedProfile, oldProfile: fullDbProfileState || currentProfile, investorName: singleInstitution?.institution, usedDocuments, profileMode: profileMode === 'voting' ? 'update' : profileMode }});
+      navigate(`/final-summary/${params.id}`, {
+        state: {
+          profile: updatedProfile,
+          oldProfile: fullDbProfileState || currentProfile,
+          investorName: singleInstitution?.institution,
+          usedDocuments,
+          profileMode: profileMode === "voting" ? "update" : profileMode,
+          from: location.pathname,
+          fromState: location.state,
+        },
+      });
     }, 3500);
   };
 
@@ -341,7 +357,14 @@ const InstitutionDocuments = () => {
     if (profileMode !== null && pendingLinkOps.length > 0) {
       setPendingModeSwitch(mode); setModeSwitchConfirmOpen(true); return;
     }
-    setProfileMode(mode); setPendingLinkOps([]);
+    setProfileMode(mode); 
+    setPendingLinkOps([]);
+    
+    // Sync to history state safely (manual update on click)
+    navigate(location.pathname, { 
+      state: { ...location.state, profileMode: mode }, 
+      replace: true 
+    });
   };
 
   const handleLinkToProfile = (document: InstitutionDocument, section: ProfileSection, isCurrentlyLinked: boolean) => {
@@ -571,7 +594,7 @@ const InstitutionDocuments = () => {
         </div>
       )}
 
-      <Button onClick={() => navigate(`/institution`)} variant="primary" className="bg-theme-2 border-bg-theme-2 mb-4"><ChevronLeft className="text-white" size={18} strokeWidth={1.5} /> Back</Button>
+      <Button onClick={() => handleBack("/institution")} variant="primary" className="bg-theme-2 border-bg-theme-2 mb-4"><ChevronLeft className="text-white" size={18} strokeWidth={1.5} /> Back</Button>
 
       <div className="box box--stacked">
         <div className="p-5 border-b border-slate-200/80 flex flex-col md:flex-row md:items-start md:justify-between gap-3">
@@ -683,7 +706,16 @@ const InstitutionDocuments = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
             <div className="mb-4 text-lg font-semibold">Switching modes will reset your changes. Continue?</div>
-            <div className="flex justify-end gap-2"><Button variant="outline-secondary" onClick={() => { setModeSwitchConfirmOpen(false); setPendingModeSwitch(null); }}>Cancel</Button><Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => { setProfileMode(pendingModeSwitch); setPendingLinkOps([]); setModeSwitchConfirmOpen(false); }}>Continue</Button></div>
+            <div className="flex justify-end gap-2"><Button variant="outline-secondary" onClick={() => { setModeSwitchConfirmOpen(false); setPendingModeSwitch(null); }}>Cancel</Button><Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => { 
+              setProfileMode(pendingModeSwitch); 
+              setPendingLinkOps([]); 
+              setModeSwitchConfirmOpen(false); 
+              // Sync to history state safely
+              navigate(location.pathname, { 
+                state: { ...location.state, profileMode: pendingModeSwitch }, 
+                replace: true 
+              });
+            }}>Continue</Button></div>
           </div>
         </div>
       )}

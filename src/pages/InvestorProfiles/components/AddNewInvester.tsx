@@ -29,11 +29,13 @@ import Error from "@/components/Error";
 interface AddNewInvesterProfileProps {
   addNewInvesterModalVisible: boolean;
   setAddNewInvesterModalVisible: (visible: boolean) => void;
+  preselectedInstitutionId?: number | null;
 }
 
 const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
   addNewInvesterModalVisible,
   setAddNewInvesterModalVisible,
+  preselectedInstitutionId,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
@@ -41,8 +43,30 @@ const AddNewInvesterProfile: React.FC<AddNewInvesterProfileProps> = ({
   const {
     handleSubmit,
     control,
+    reset,
     formState: { errors },
-  } = useForm<AddNewInvesterType>();
+  } = useForm<AddNewInvesterType>({
+    defaultValues: {
+      institution: preselectedInstitutionId ? preselectedInstitutionId.toString() : "",
+      active: "true",
+    },
+  });
+
+  useEffect(() => {
+    if (addNewInvesterModalVisible) {
+      reset({
+        institution: preselectedInstitutionId ? preselectedInstitutionId.toString() : "",
+        active: "true",
+        summary: "",
+        engagement_priorities: "",
+        voting_guidelines: "",
+        reporting_expectations: "",
+        esg_integration_process: "",
+        references: "",
+      });
+      setKeyContactsFile(null);
+    }
+  }, [addNewInvesterModalVisible, preselectedInstitutionId, reset]);
 
   const [keyContactsFile, setKeyContactsFile] = useState<any>(null);
   const [showRequiredStateErrors, setShowRequiredStateErrors] =

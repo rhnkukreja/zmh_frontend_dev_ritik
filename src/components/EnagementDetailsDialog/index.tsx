@@ -19,6 +19,7 @@ interface ChartComponentProps {
     topEngagementTopics: TopEngagementTopics;
     onDocumentClick?: (institutionName: string) => void;
     isAllCompanySelected: boolean;
+    isLoading?: boolean;
 }
 
 const COLORS = ["#00C49F", "#FF6F00", "#0088FE"];
@@ -56,12 +57,113 @@ const formatEngagementValue = (value: any): JSX.Element | string => {
 };
 
 
-const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics, onDocumentClick, isAllCompanySelected }) => {
+const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartDataPeerAnalysis, handleSearch, topEngagementTopics, onDocumentClick, isAllCompanySelected, isLoading = false }) => {
     const isInvestorDataAvailable = investorData && investorData.length > 0;
 
     if (!investorData) {
         <h2 className="text-xl font-semibold mb-4">No Analytics available</h2>
         return
+    }
+
+    if (isLoading) {
+        return (
+            <div className="relative bg-white p-6 rounded-lg shadow-lg w-full max-w-7xl flex flex-col mb-10">
+                <h2 className="text-xl font-semibold mb-4">Analytics</h2>
+
+                <div className="flex gap-6 rounded-lg">
+                    <div>
+                        <div className="w-5/5 overflow-auto max-h-80 rounded-lg">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-primary text-white">
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
+                                            {isAllCompanySelected ? "No of unique companies" : "No of Engagements"}
+                                        </th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Environmental</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Social</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Governance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Array.from({ length: 6 }).map((_, index) => (
+                                        <tr key={`engagement-chart-skeleton-row-${index}`} className="border-b border-slate-200 dark:border-slate-600">
+                                            <td className="py-2 px-3 text-left">
+                                                <div className="h-4 w-[85%] rounded bg-slate-200 animate-pulse" />
+                                            </td>
+                                            <td className="py-2 px-3 text-center">
+                                                <div className="h-4 w-10 rounded bg-slate-200 animate-pulse mx-auto" />
+                                            </td>
+                                            <td className="py-2 px-3 text-center">
+                                                <div className="h-4 w-8 rounded bg-slate-200 animate-pulse mx-auto" />
+                                            </td>
+                                            <td className="py-2 px-3 text-center">
+                                                <div className="h-4 w-8 rounded bg-slate-200 animate-pulse mx-auto" />
+                                            </td>
+                                            <td className="py-2 px-3 text-center">
+                                                <div className="h-4 w-8 rounded bg-slate-200 animate-pulse mx-auto" />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="mt-4 text-xs text-gray-500 italic space-y-1">
+                            <div>*Investor does not disclose engagement details</div>
+                            <div className="flex items-center gap-1">
+                                <Lucide icon="Info" className="w-3 h-3" />
+                                <span>Only shows the latest engagement report</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="w-6/12 rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                        <div className="h-[260px] flex items-center justify-center">
+                            <div className="relative w-44 h-44">
+                                <div className="absolute inset-0 rounded-full border-[20px] border-slate-200 animate-pulse" />
+                                <div className="absolute inset-[28%] rounded-full bg-white" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                    {[
+                        "Governance",
+                        "Environmental",
+                        "Social",
+                    ].map((title) => (
+                        <div key={`engagement-topic-skeleton-${title}`} className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
+                            <h3 className="text-md font-semibold mb-2" style={{ fontSize: '14px' }}>{title}</h3>
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-primary text-white">
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
+                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Array.from({ length: 5 }).map((_, index) => (
+                                        <tr key={`engagement-topic-row-${title}-${index}`} className="border-b border-slate-200 dark:border-slate-600">
+                                            <td className="py-2 px-3 font-medium" style={{ fontSize: '14px' }}>
+                                                <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
+                                            </td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
+                                                <div className="h-4 w-10 rounded bg-slate-200 animate-pulse mx-auto" />
+                                            </td>
+                                            <td className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
+                                                <div className="h-4 w-12 rounded bg-slate-200 animate-pulse mx-auto" />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
     }
 
     const filteredPieChartData = pieChartDataPeerAnalysis.filter(entry => entry.total > 0);

@@ -2,7 +2,7 @@ import TableWrapper from "../TableWrapper";
 import Table from "@/components/Base/Table";
 import documentImage from "../../assets/images/zmh-images/document (2).png";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Button from "../Base/Button";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
@@ -21,6 +21,7 @@ interface ChildProps {
 const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch: AppDispatch = useAppDispatch();
   const handleDownload = async (pdfUrl: string) => {
     // Create a link element
@@ -112,14 +113,20 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full">
       <div className="bg-gradient-to-r from-primary to-primary/90 px-6 py-4 flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Documents</h2>
-        <Button
+        {/* Temporarily disabled */}
+        {/* <Button
           onClick={() =>
-            window.open(`/investor-profile/investor/${id}`, "_blank")
+            navigate(`/investor-profile/investor/${id}`, {
+              state: { 
+                from: location.pathname,
+                fromState: location.state 
+              },
+            })
           }
           className="bg-white/20 hover:bg-white/30 text-white border-white/30 text-sm"
         >
           View Full Profile
-        </Button>
+        </Button> */}
       </div>
 
       <div className="p-6 max-h-[500px] overflow-y-auto">

@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import _ from "lodash";
 import Button from "@/components/Base/Button";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigationHistory } from "@/hooks/useNavigationHistory";
 import { AppDispatch, RootState } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -149,6 +150,7 @@ function Main() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const navigate = useNavigate();
+  const { handleBack } = useNavigationHistory();
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -333,11 +335,12 @@ function Main() {
 
   const backToPreviousPage = () => {
     if (from) {
-      // navigate(`/?ticker=${companyGlobalSearchTicker}`);
-      navigate(`/`, { state: { activeTab: 'ownership' } });
+      // If we came from the dashboard with a specific 'from' flag, handle it.
+      // However, check if handleBack can handle it if we passed state.
+      // Since Dashboard was updated to pass state, handleBack should work.
+      handleBack("/");
     } else {
-      dispatch(setPage(currentPage));
-      navigate(`/investor-profile`);
+      handleBack(`/investor-company-details/${params.id}`);
     }
   };
 

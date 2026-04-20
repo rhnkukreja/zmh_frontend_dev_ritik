@@ -29,7 +29,6 @@ import { createDynamicURL, downloadCSV } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "../Base/Tippy";
 import clsx from "clsx";
-import { SkeletonTable } from "@/components/Base/Skeletons";
 import Button from "../Base/Button";
 import { ChevronLeft } from "lucide-react";
 
@@ -56,7 +55,6 @@ const index = ({ onLoaded }: InvestorCardProps) => {
   const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
-
   const navigate = useNavigate();
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
@@ -181,7 +179,7 @@ const index = ({ onLoaded }: InvestorCardProps) => {
 
   const redirectCaseStudy = (institution_name: string) => {
     // window.open(`/case-studies`, "_blank");
-    navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}&tab=specific`);
+    navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
   };
 
   const openEngagementQuestionsDialog = (dashboard: CompanyDashboard) => {
@@ -465,16 +463,19 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                                 </sup>
                                               )}
                                               <h1
-                                                onClick={() =>
-                                                  dashboard?.institution_id &&
-                                                  window.open(
-                                                    `/investor-company-details/${dashboard?.institution_id}`,
-                                                    "_blank"
-                                                  )
-                                                }
+                                                onClick={() => {
+                                                  if (dashboard?.is_doc && dashboard?.institution_id) {
+                                                    navigate(`/investor-company-details/${dashboard?.institution_id}`, {
+                                                      state: {
+                                                        from: location.pathname,
+                                                        fromState: location.state
+                                                      }
+                                                    });
+                                                  }
+                                                }}
                                                 className={clsx([
                                                   "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                  dashboard?.institution_id &&
+                                                  dashboard?.is_doc &&
                                                   "cursor-pointer underline",
                                                 ])}
                                               >
@@ -493,10 +494,15 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                                 <Tippy
                                                   content="Investor Profile"
                                                   options={{ theme: "light" }}
-                                                  className="w-5 h-5"
                                                   onClick={() =>
                                                     navigate(
-                                                      `/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`
+                                                      `/investor-profile/investor/${dashboard?.investor_profile_id}`,
+                                                      { 
+                                                        state: { 
+                                                          from: location.pathname,
+                                                          fromState: location.state 
+                                                        } 
+                                                      }
                                                     )
                                                   }
                                                 >
@@ -759,7 +765,115 @@ const index = ({ onLoaded }: InvestorCardProps) => {
 
       {dashboardDataList?.length === 0 && investorCardLoading && (
         <div className="p-5 mt-3.5 box bg-white">
-          <SkeletonTable rows={6} columns={8} />
+          <div className="w-full">
+            <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3 gap-3">
+              <div className="flex items-center">
+                <h1 className="text-xl font-bold flex items-center gap-2 flex-wrap">
+                  Top
+                  <span className="inline-block h-6 w-12 rounded bg-slate-200 animate-pulse" />
+                  Investors
+                  <span className="text-lg font-bold inline-flex items-center gap-2">
+                    (
+                    <span className="inline-block h-5 w-20 rounded bg-slate-200 animate-pulse" />
+                    of shares outstanding)
+                  </span>
+                </h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <img alt="flag-icon" src={flagIcon} />
+                <h4 className="font-semibold mr-4">
+                  History of Schedule 13D Filing
+                </h4>
+                <div className="box p-[5px] opacity-60">
+                  <img alt="download-icon" src={downloadIcon} />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <div className="mb-4 flex gap-2">
+                <div className="h-8 w-20 rounded-[0.6rem] bg-slate-200 animate-pulse" />
+                <div className="h-8 w-20 rounded-[0.6rem] bg-slate-200 animate-pulse" />
+              </div>
+
+              <div
+                className={clsx([
+                  locationPathName === "/" && "max-h-[600px]",
+                  "max-h-[60vh] overflow-y-scroll"
+                ])}
+              >
+                <Table className="table w-full">
+                  <Table.Thead>
+                    <Table.Tr className="row">
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">No.</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Shareholder</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Ownership</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Proxy Advisory Influence</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">UN PRI Signatory</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Engaged with Company</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Engagement Topic</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Voted Against Directors</Table.Td>
+                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Voted Against Say on Pay</Table.Td>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {Array.from({ length: 6 }).map((_, rowIdx) => (
+                      <Table.Tr key={`investor-loading-row-${rowIdx}`} className="row [&_td]:last:border-b-0">
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-4 w-6 rounded bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-4 w-44 rounded bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-4 w-16 rounded bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-4 w-32 rounded bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                        <Table.Td className="cell py-2 h-[50px] border-dashed">
+                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </div>
+
+              <footer className="mt-4 border-t border-dashed border-slate-300 pt-3">
+                <div className="text-[13px] text-slate-500 flex flex-wrap justify-between gap-3">
+                  <div className="flex flex-col gap-2">
+                    <span className="!pt-3 flex items-center">
+                      <sup className="cursor-pointer" style={{ fontSize: "0.8em" }}>1</sup>
+                      <p id="footnote">Source: Whalewisdom. Data as of <span className="inline-block h-4 w-24 rounded bg-slate-200 animate-pulse ml-1" /></p>
+                    </span>
+                    <span className="!pt-3 flex items-center ">
+                      <sup className="cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>2</sup>
+                      <p id="footnote">As disclosed by the investor in the last three years.</p>
+                    </span>
+                  </div>
+                  <div>
+                    <span className="!pt-3 flex items-center relative justify-end">
+                      <sup className="cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>*</sup>
+                      <p id="footnote" className="">Not in ZMH coverage universe.</p>
+                    </span>
+                  </div>
+                </div>
+              </footer>
+            </div>
+          </div>
         </div>
       )}
 

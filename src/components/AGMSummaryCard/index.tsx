@@ -4,7 +4,7 @@ import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import Tippy from "../Base/Tippy";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -15,7 +15,6 @@ import {
 import { baseURL } from "@/constant";
 import { axiosInstance } from "@/services";
 import { AppDispatch } from "@/stores/store";
-import { SkeletonTable } from "@/components/Base/Skeletons";
 import { dashboardService } from "@/services/dashboard";
 import { Tab } from "@/components/Base/Headless";
 import { Dialog } from "@/components/Base/Headless";
@@ -34,6 +33,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
+  const lastRequestedYearRef = useRef<string>("");
 
   const { finhub, companyGlobalSearchId } = useAppSelector((state) => state.authentiction);
 
@@ -112,12 +112,24 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   useEffect(() => {
     // Only handle year changes, not initial fetch (dashboard handles that)
-    if (yearFromQuery && agmSummaryDetails && agmSummaryDetails.Year?.toString() !== yearFromQuery.toString()) {
-      const yearParam = yearFromQuery;
-      setSelectedYear(yearParam);
+    if (!yearFromQuery || !companyGlobalSearchTicker) {
+      return;
+    }
+
+    const nextYear = yearFromQuery.toString();
+    const currentYear = agmSummaryDetails?.Year?.toString();
+    const requestKey = `${companyGlobalSearchTicker}:${nextYear}`;
+
+    if (lastRequestedYearRef.current === requestKey) {
+      return;
+    }
+
+    if (currentYear !== nextYear) {
+      lastRequestedYearRef.current = requestKey;
+      setSelectedYear(nextYear);
       const url = createDynamicURL(
         `${baseURL}/voting_report_8k/`,
-        { ticker: companyGlobalSearchTicker, ...(yearParam && { year: yearParam }) }
+        { ticker: companyGlobalSearchTicker, ...(nextYear && { year: nextYear }) }
       );
       dispatch(fetchAGMSummaryDashboard(url));
     }
@@ -126,6 +138,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   useEffect(() => {
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
+    lastRequestedYearRef.current = "";
   }, [companyGlobalSearchTicker, yearFromQuery]);
 
   useEffect(() => {
@@ -165,8 +178,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     if (selectedYear) {
       // Check if we already have data for this year in Redux
       const isAlreadyLoaded = agmSummaryDetails && agmSummaryDetails.Year?.toString() === selectedYear.toString();
+      const requestKey = `${companyGlobalSearchTicker}:${selectedYear.toString()}`;
 
-      if (!isAlreadyLoaded) {
+      if (!isAlreadyLoaded && lastRequestedYearRef.current !== requestKey) {
+        lastRequestedYearRef.current = requestKey;
         dispatch(
           fetchAGMSummaryDashboard(
             createDynamicURL(
@@ -935,7 +950,146 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
       {!agmSummaryDetails && loading && (
         <div className="p-5 mt-3.5 box bg-white">
-          <SkeletonTable rows={4} columns={5} />
+          <div className="w-full">
+            <div className="flex justify-between items-center xs:flex-col md:flex-row py-3 gap-4">
+              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
+                <span>
+                  <h1 className="text-lg font-bold">Shareholder Meeting Summary</h1>
+                  <p className="italic flex items-center gap-2">
+                    <span>Meeting Date:</span>
+                    <span className="inline-block h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                  </p>
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
+                <div className="flex justify-between items-center gap-2">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <span>*Quorum:</span>
+                    <span className="inline-block h-4 w-20 rounded bg-slate-200 animate-pulse" />
+                  </h4>
+                </div>
+                <div className="box p-[5px] opacity-70">
+                  <img alt="download-icon" src={downloadIcon} />
+                </div>
+                {locationPathName === "/" && (
+                  <div className="box p-2 opacity-70">
+                    <img alt="tab-icon" src={tabIcon} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <Tab.Group selectedIndex={0} defaultIndex={0}>
+                <Tab.List variant="boxed-tabs" className="w-[100px] border-none bg-transparent">
+                  {[1, 2].map((tab) => (
+                    <Tab key={tab} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem]">
+                      <Tab.Button
+                        className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10"
+                        as="button"
+                      >
+                        <span className="inline-block h-4 w-12 rounded bg-slate-200 animate-pulse" />
+                      </Tab.Button>
+                    </Tab>
+                  ))}
+                </Tab.List>
+              </Tab.Group>
+            </div>
+
+            <div className="mt-5">
+              <div className={clsx([locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}>
+                <Table className="table_2 w-full">
+                  <Table.Thead className="sticky top-0 z-10">
+                    <Table.Tr className="row_2">
+                      {Array.from({ length: 5 }).map((_, idx) => (
+                        <Table.Td
+                          key={`agm-loading-head-1-${idx}`}
+                          className={clsx([
+                            "cell_2 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[130px] text-left",
+                            idx === 0 && "w-[200px]",
+                          ])}
+                        >
+                          <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                      ))}
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {Array.from({ length: 4 }).map((_, rowIdx) => (
+                      <Table.Tr key={`agm-loading-row-1-${rowIdx}`} className="row_2 [&_td]:last:border-b-0">
+                        {Array.from({ length: 5 }).map((__, cellIdx) => (
+                          <Table.Td
+                            key={`agm-loading-cell-1-${rowIdx}-${cellIdx}`}
+                            className={clsx([
+                              "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left",
+                              cellIdx === 0 && "w-[200px]",
+                            ])}
+                          >
+                            <div className={clsx([
+                              "h-4 rounded bg-slate-200 animate-pulse",
+                              cellIdx === 0 ? "w-[85%]" : "w-[60%]",
+                            ])} />
+                          </Table.Td>
+                        ))}
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </div>
+
+              <br />
+
+              <div className={clsx([locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}>
+                <Table className="table_3 w-full">
+                  <Table.Thead className="sticky top-0 z-10">
+                    <Table.Tr className="row_3">
+                      {Array.from({ length: 5 }).map((_, idx) => (
+                        <Table.Td
+                          key={`agm-loading-head-2-${idx}`}
+                          className={clsx([
+                            "cell_3 py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[140px] text-left",
+                            idx === 0 && "w-[220px]",
+                          ])}
+                        >
+                          <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                        </Table.Td>
+                      ))}
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {Array.from({ length: 4 }).map((_, rowIdx) => (
+                      <Table.Tr key={`agm-loading-row-2-${rowIdx}`} className="row_3 [&_td]:last:border-b-0">
+                        {Array.from({ length: 5 }).map((__, cellIdx) => (
+                          <Table.Td
+                            key={`agm-loading-cell-2-${rowIdx}-${cellIdx}`}
+                            className={clsx([
+                              "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-left",
+                              cellIdx === 0 && "w-[220px]",
+                            ])}
+                          >
+                            <div className={clsx([
+                              "h-4 rounded bg-slate-200 animate-pulse",
+                              cellIdx === 0 ? "w-[85%]" : "w-[60%]",
+                            ])} />
+                          </Table.Td>
+                        ))}
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </div>
+
+              <footer className="!pt-3 flex items-start flex-col">
+                <span className="!pt-3 flex items-center p-2">
+                  <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>*</sup>
+                  <p id="footnote " className="">
+                    [(For + Against or Withhold + Abstain)/Shares Outstanding] (Based on Class A shares only for dual-class companies)
+                  </p>
+                </span>
+              </footer>
+            </div>
+          </div>
         </div>
       )}
 

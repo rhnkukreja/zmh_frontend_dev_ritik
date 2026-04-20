@@ -33,6 +33,7 @@ export type CompanyDashboard = {
   investor_profile_id: number;
   case_studies_id: number;
   institution_id: number;
+  is_doc: boolean;
   unpri_signatory: boolean;
   voted_against_say_on_pay: any;
   voted_against_directors_message?: string;
