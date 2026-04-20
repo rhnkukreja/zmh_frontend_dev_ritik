@@ -135,6 +135,16 @@ const DetailShareHolder = () => {
       </div>
     );
   };
+
+  const formatMultilineText = (text?: string) => {
+    if (!text) return "-";
+
+    return text
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\r\n/g, "\n");
+  };
+
   console.log(getSingleShareHolder ,"getSingleShareHolder")
   return (
     <>
@@ -353,7 +363,9 @@ const DetailShareHolder = () => {
                         <h3 className="font-semibold min-w-[150px] mb-2">
                           Proposal Text 
                         </h3>
-                        <p>{getSingleShareHolder.proposal_text}</p>
+                        <p className="whitespace-pre-line break-words">
+                          {formatMultilineText(getSingleShareHolder.proposal_text)}
+                        </p>
                       </div>
                     )}
                 </div>
@@ -428,7 +440,9 @@ const DetailShareHolder = () => {
                         <h3 className="font-semibold min-w-[150px] mb-2">
                           Proposal Text
                         </h3>
-                        <p>{getSingleShareHolder.proposal_text}</p>
+                        <p className="whitespace-pre-line break-words">
+                          {formatMultilineText(getSingleShareHolder.proposal_text)}
+                        </p>
                       </div>
                     )}
                 </div>
