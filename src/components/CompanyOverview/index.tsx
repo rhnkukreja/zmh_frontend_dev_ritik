@@ -11,10 +11,11 @@ import {
   BarChart2,
   Download,
 } from "lucide-react";
-import { SkeletonCard, SkeletonText } from "@/components/Base/Skeletons";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import pdfMake from "pdfmake/build/pdfmake";
+import CompensationTab from './CompensationTab';
 
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(" ");
@@ -1000,6 +1001,8 @@ export default function CompanyOverview() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation'>('investor_summary');
+
   // Transform API data to UI format
   const apiReport = useMemo(() => {
     return transformApiDataToReport(companyOverviewData);
@@ -1502,14 +1505,12 @@ export default function CompanyOverview() {
   return (
     <>
       {companyOverviewLoading ? (
-        <div className="bg-white p-6 mt-3.5 border rounded-md space-y-5">
-          <SkeletonText lines={2} className="mb-2" />
-          <SkeletonCard hasImage={true} lines={2} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SkeletonCard hasImage={false} lines={4} />
-            <SkeletonCard hasImage={false} lines={4} />
-          </div>
-          <SkeletonText lines={5} />
+        <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
         </div>
       ) : !companyGlobalSearchId ? (
         <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 text-center">
@@ -1521,32 +1522,61 @@ export default function CompanyOverview() {
           <p className="text-gray-500 text-[15px] font-medium">Search for a company to view its overview</p>
         </div>
       ) : (
+        <>
+          {/* STICKY COMPANY OVERVIEW TABS */}
+        {/* Note: You may need to adjust "top-[180px]" up or down depending on the exact pixel height of your main header */}
+        <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-3 mb-3 bg-slate-50/100 backdrop-blur-md">
+          <button
+            onClick={() => setActiveOverviewTab('investor_summary')}
+            className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${
+              activeOverviewTab === 'investor_summary'
+                ? 'border-primary text-primary bg-white'
+                : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+            }`}
+          >
+            Summary
+          </button>
+
+          <button
+            onClick={() => setActiveOverviewTab('compensation')}
+            className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${
+              activeOverviewTab === 'compensation'
+                ? 'border-primary text-primary bg-white'
+                : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+            }`}
+          >
+            Compensation
+          </button>
+        </div>
+
+
         <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
           <div className="mx-auto space-y-6">
-            <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h1 className="mt-2 text-xl font-bold tracking-tight">
-                  Key Governance & Investor Summary
-                </h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => {
-                    if (filtered.length > 0) {
-                      generatePDF(filtered[0]);
-                    }
-                  }}
-                  disabled={loading ? true : (filtered.length === 0 || companyOverviewLoading)}
-                >
-                  <Download className="h-4 w-4" />
-                  {loading ? "Downloading..." : "Download PDF"}
-                </Button>
-              </div>
-            </header>
-
-
+            {/* ONLY SHOW HEADER ON INVESTOR SUMMARY TAB */}
+            {activeOverviewTab === 'investor_summary' && (
+              <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h1 className="mt-2 text-xl font-bold tracking-tight">
+                    Key Governance & Investor Summary
+                  </h1>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => {
+                      if (filtered.length > 0) {
+                        generatePDF(filtered[0]);
+                      }
+                    }}
+                    disabled={loading ? true : (filtered.length === 0 || companyOverviewLoading)}
+                  >
+                    <Download className="h-4 w-4" />
+                    {loading ? "Downloading..." : "Download PDF"}
+                  </Button>
+                </div>
+              </header>
+            )}
 
             {filtered.length === 0 ? (
 
@@ -1559,153 +1589,165 @@ export default function CompanyOverview() {
               </Card>
 
             ) : (
+              <>
+                {/* INVESTOR SUMMARY VIEW */}
+                {activeOverviewTab === 'investor_summary' && (
+                  <Tabs defaultValue={filtered[0].ticker} className="w-full">
+                    {filtered.map((r) => (
+                      <TabsContent key={r.ticker} value={r.ticker} className="mt-4">
+                        <div className="grid gap-6 md:grid-cols-12">
+                          {/* Left column: headline */}
+                          <Card className="rounded-2xl shadow-sm md:col-span-4">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-[15px] text-slate-900">
+                                {r.company}
+                              </CardTitle>
 
-              <Tabs defaultValue={filtered[0].ticker} className="w-full">
-                {filtered.map((r) => (
-                  <TabsContent key={r.ticker} value={r.ticker} className="mt-4">
-                    <div className="grid gap-6 md:grid-cols-12">
-                      {/* Left column: headline */}
-                      <Card className="rounded-2xl shadow-sm md:col-span-4">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-[15px] text-slate-900">
-                            {r.company}
-                          </CardTitle>
-
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge className="rounded-full" variant="outline">
-                              As of {r.asOf}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-
-                        <CardContent className="space-y-4">
-                          <div className="rounded-xl border bg-white p-3">
-                            <SectionHeader
-                              title="Share Price Takeaway"
-                              icon={<BarChart3 className="h-4 w-4" />}
-                            />
-                            <p className="mt-3 text-[15px] text-slate-700">
-                              {r.sharePriceTakeaway}
-                            </p>
-                          </div>
-
-                          {r.proxy ? (
-                            <div className="rounded-xl border bg-white p-3">
-                              <SectionHeader
-                                title="Proxy Advisor Influence"
-                                icon={<ShieldCheck className="h-4 w-4" />}
-                              />
-                              <p className="mt-3 text-[15px] text-slate-700">{r.proxy.summary}</p>
-                              <div className="mt-3 space-y-2">
-                                {r.proxy.buckets
-                                  .filter((b) => b.pct > 0)
-                                  .map((b, i) => (
-                                    <div
-                                      key={i}
-                                      className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
-                                    >
-                                      <div className="text-[15px] text-slate-700">{b.label}</div>
-                                      <span
-                                        className={`rounded-full border px-2 py-0.5 text-[15px] font-semibold ${pctPill(
-                                          b.pct
-                                        )}`}
-                                      >
-                                        {b.pct.toFixed(2)}%
-                                      </span>
-                                    </div>
-                                  ))}
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge className="rounded-full" variant="outline">
+                                  As of {r.asOf}
+                                </Badge>
                               </div>
-                            </div>
-                          ) : null}
-                        </CardContent>
-                      </Card>
+                            </CardHeader>
 
-                      {/* Right column: sections */}
-                      <div className="space-y-6 md:col-span-8">
-                        {r.board ? (
-                          <CollapsibleCard title="Board of Directors" iconKey="board">
-                            <BulletList items={r.board.headlineBullets} />
-                            {r.board.lowestSupport?.length ? (
-                              <>
-                                <Separator className="my-4" />
-                                <div className="text-[15px] font-semibold text-slate-500">
-                                  Lowest support
+                            <CardContent className="space-y-4">
+                              <div className="rounded-xl border bg-white p-3">
+                                <SectionHeader
+                                  title="Share Price Takeaway"
+                                  icon={<BarChart3 className="h-4 w-4" />}
+                                />
+                                <p className="mt-3 text-[15px] text-slate-700">
+                                  {r.sharePriceTakeaway}
+                                </p>
+                              </div>
+
+                              {r.proxy ? (
+                                <div className="rounded-xl border bg-white p-3">
+                                  <SectionHeader
+                                    title="Proxy Advisor Influence"
+                                    icon={<ShieldCheck className="h-4 w-4" />}
+                                  />
+                                  <p className="mt-3 text-[15px] text-slate-700">{r.proxy.summary}</p>
+                                  <div className="mt-3 space-y-2">
+                                    {r.proxy.buckets
+                                      .filter((b) => b.pct > 0)
+                                      .map((b, i) => (
+                                        <div
+                                          key={i}
+                                          className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                                        >
+                                          <div className="text-[15px] text-slate-700">{b.label}</div>
+                                          <span
+                                            className={`rounded-full border px-2 py-0.5 text-[15px] font-semibold ${pctPill(
+                                              b.pct
+                                            )}`}
+                                          >
+                                            {b.pct.toFixed(2)}%
+                                          </span>
+                                        </div>
+                                      ))}
+                                  </div>
                                 </div>
-                                <BulletList items={r.board.lowestSupport} />
-                              </>
+                              ) : null}
+                            </CardContent>
+                          </Card>
+
+                          {/* Right column: sections */}
+                          <div className="space-y-6 md:col-span-8">
+                            {r.board ? (
+                              <CollapsibleCard title="Board of Directors" iconKey="board">
+                                <BulletList items={r.board.headlineBullets} />
+                                {r.board.lowestSupport?.length ? (
+                                  <>
+                                    <Separator className="my-4" />
+                                    <div className="text-[15px] font-semibold text-slate-500">
+                                      Lowest support
+                                    </div>
+                                    <BulletList items={r.board.lowestSupport} />
+                                  </>
+                                ) : null}
+                                <RationaleList items={r.board.rationales} />
+                              </CollapsibleCard>
                             ) : null}
-                            <RationaleList items={r.board.rationales} />
-                          </CollapsibleCard>
-                        ) : null}
 
-                        {r.sop ? (
-                          <CollapsibleCard
-                            title="Executive Compensation (Say-on-Pay)"
-                            iconKey="sop"
-                          >
-                            <BulletList items={r.sop.headlineBullets} />
-                            <RationaleList items={r.sop.rationales} summary={r.sop.rationaleSummary} />
-                          </CollapsibleCard>
-                        ) : null}
+                            {r.sop ? (
+                              <CollapsibleCard
+                                title="Executive Compensation (Say-on-Pay)"
+                                iconKey="sop"
+                              >
+                                <BulletList items={r.sop.headlineBullets} />
+                                <RationaleList items={r.sop.rationales} summary={r.sop.rationaleSummary} />
+                              </CollapsibleCard>
+                            ) : null}
 
-                        {r.auditor ? (
-                          <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
-                            <BulletList items={r.auditor.headlineBullets} />
-                            <RationaleList items={r.auditor.rationales} />
-                          </CollapsibleCard>
-                        ) : null}
+                            {r.auditor ? (
+                              <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
+                                <BulletList items={r.auditor.headlineBullets} />
+                                <RationaleList items={r.auditor.rationales} />
+                              </CollapsibleCard>
+                            ) : null}
 
-                        {r.shareholderProposals ? (
-                          <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
-                            <BulletList items={r.shareholderProposals.headlineBullets} />
-                            {r.shareholderProposals.proposalVotes?.length ? (
-                              <>
-                                <Separator className="my-4" />
-                                <div className="text-[15px] font-semibold text-slate-500 mb-3">
-                                  Proposal Details with Top Investor Votes
+                            {r.shareholderProposals ? (
+                              <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
+                                <BulletList items={r.shareholderProposals.headlineBullets} />
+                                {r.shareholderProposals.proposalVotes?.length ? (
+                                  <>
+                                    <Separator className="my-4" />
+                                    <div className="text-[15px] font-semibold text-slate-500 mb-3">
+                                      Proposal Details with Top Investor Votes
+                                    </div>
+                                    <ProposalVotesList proposals={r.shareholderProposals.proposalVotes} />
+                                  </>
+                                ) : r.shareholderProposals.selected?.length ? (
+                                  <>
+                                    <Separator className="my-4" />
+                                    <div className="text-[15px] font-semibold text-slate-500 mb-3">
+                                      Selected proposal results
+                                    </div>
+                                    <ProposalList items={r.shareholderProposals.selected} />
+                                  </>
+                                ) : null}
+                              </CollapsibleCard>
+                            ) : null}
+
+                            {r.esg ? (
+                              <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
+                                {r.esg.themeSummary ? (
+                                  <p className="text-[15px] text-slate-700">
+                                    {r.esg.themeSummary}
+                                  </p>
+                                ) : null}
+                                <div className="mt-4 grid gap-3">
+                                  {r.esg.investors.map((inv, idx) => (
+                                    <ESGInvestorBlock key={idx} inv={inv} />
+                                  ))}
                                 </div>
-                                <ProposalVotesList proposals={r.shareholderProposals.proposalVotes} />
-                              </>
-                            ) : r.shareholderProposals.selected?.length ? (
-                              <>
-                                <Separator className="my-4" />
-                                <div className="text-[15px] font-semibold text-slate-500 mb-3">
-                                  Selected proposal results
-                                </div>
-                                <ProposalList items={r.shareholderProposals.selected} />
-                              </>
+                              </CollapsibleCard>
                             ) : null}
-                          </CollapsibleCard>
-                        ) : null}
+                          </div>
+                        </div>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                )}
 
-                        {r.esg ? (
-                          <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
-                            {r.esg.themeSummary ? (
-                              <p className="text-[15px] text-slate-700">
-                                {r.esg.themeSummary}
-                              </p>
-                            ) : null}
-                            <div className="mt-4 grid gap-3">
-                              {r.esg.investors.map((inv, idx) => (
-                                <ESGInvestorBlock key={idx} inv={inv} />
-                              ))}
-                            </div>
-                          </CollapsibleCard>
-                        ) : null}
-                      </div>
-                    </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
+               
+               
+               
+               
+               
+                {/* COMPENSATION VIEW */}
+{activeOverviewTab === 'compensation' && (
+  <div className="mt-4">
+    <CompensationTab ticker={filtered[0]?.ticker || ""} />
+  </div>
+)}
+              </>
             )}
-
-            {/* <footer className="pt-2 text-xs text-slate-500">
-              Tip: Replace <span className="font-mono">sampleCompany</span> with your saved reports (AAPL, AMZN, MSFT, etc.) to generate a multi-company dashboard.
-            </footer> */}
           </div>
         </div>
+        </>
       )}
     </>
   );
 }
-

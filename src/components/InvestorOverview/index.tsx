@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { institutionStatsService } from '@/services/institutionStats';
-import LoadingIcon from '@/components/Base/LoadingIcon';
 import TomSelect from '@/components/Base/TomSelect';
 import { 
   BarChart3, 
