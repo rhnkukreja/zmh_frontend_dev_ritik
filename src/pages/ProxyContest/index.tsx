@@ -13,6 +13,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import CPagination from "@/components/Pagination";
 import CaseProxyModal from "./CaseProxyModal";
+import ProxyContextModal from "./ProxyContextModal";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import PdfViewer from "@/components/PdfView";
 import { getProxyContestDropdownValues } from "@/services/proxyContestDropdown";
@@ -34,6 +35,8 @@ const index = () => {
   const [caseProxyModalVisible, setCaseProxyModalVisible] =
     useState<boolean>(false);
   const [caseProxyModalData, setCaseProxyModalData] = useState<any>(null);
+  const [proxyContextModalOpen, setProxyContextModalOpen] =
+    useState<boolean>(false);
 
   // Table states
   const [proxyContestCompanies, setProxyContestCompanies] = useState<any[]>([]);
@@ -53,9 +56,11 @@ const index = () => {
   const [modalLoading, setModalLoading] = useState<boolean>(false);
 
   // Get global company from Redux store
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
+  const isAdminOrAnalyst =
+    user?.user_type === "Admin" || user?.user_type === "Analyst";
 
   // Filter states
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
@@ -364,6 +369,14 @@ const index = () => {
               )}
 
               <div className="flex items-center gap-2">
+                {isAdminOrAnalyst && (
+                  <Button
+                    variant="primary"
+                    onClick={() => setProxyContextModalOpen(true)}
+                  >
+                    Add Proxy Contest
+                  </Button>
+                )}
                 {/* Voting Data button beside filter button */}
                 <Button
                   variant="outline-primary"
@@ -799,6 +812,11 @@ const index = () => {
         caseProxyModalVisible={caseProxyModalVisible}
         setCaseProxyModalVisible={setCaseProxyModalVisible}
         caseProxyModalData={caseProxyModalData}
+      />
+
+      <ProxyContextModal
+        open={proxyContextModalOpen}
+        onClose={() => setProxyContextModalOpen(false)}
       />
 
       {/* PDF Viewer */}
