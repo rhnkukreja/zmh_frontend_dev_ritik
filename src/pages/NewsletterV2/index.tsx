@@ -4,18 +4,19 @@ import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
 import SustainabilityBrief from "./components/SustainabilityBrief";
 import ProposalBrief from "./components/ProposalBrief";
-import ActivismOverview from "./components/ActivismOverview";
-import AddNewsletterModal from "./components/AddNewsletterModal";
+import MonthlyActivismOverview from "./components/MonthlyActivismOverview";
+import AddNewsletterModal from "@/pages/Newsletter/components/AddNewsletterModal";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 
-const Newsletter: React.FC = () => {
+const NewsletterV2: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdminOrAnalyst = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
+  const isAdminOrAnalyst =
+    user?.user_type === "Admin" || user?.user_type === "Analyst";
 
   const categories = [
     "The Sustainability Brief",
@@ -24,13 +25,12 @@ const Newsletter: React.FC = () => {
   ];
 
   const handleSuccess = () => {
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   return (
     <div className="container m-auto h-[calc(100vh-70px)] flex flex-col my-[-35px] pb-[30px]">
       <Tab.Group onChange={setActiveTab}>
-        {/* Professional Header - Exact Dashboard Style */}
         <div className="w-full sticky top-[140px] z-[30] transition-all duration-300 ease-in-out bg-white dark:bg-darkmode-600 shadow-md rounded-xl mt-8 border border-gray-200 dark:border-darkmode-400">
           <div className="bg-gradient-to-r from-white to-gray-50 dark:from-darkmode-600 dark:to-darkmode-700 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
             <div className="bg-white dark:bg-darkmode-800 rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200 dark:border-darkmode-400">
@@ -86,13 +86,12 @@ const Newsletter: React.FC = () => {
               <ProposalBrief refreshTrigger={refreshTrigger} />
             </Tab.Panel>
             <Tab.Panel className="focus:outline-none outline-none">
-              <ActivismOverview refreshTrigger={refreshTrigger} />
+              <MonthlyActivismOverview refreshTrigger={refreshTrigger} />
             </Tab.Panel>
           </Tab.Panels>
         </div>
       </Tab.Group>
 
-      {/* Add Document Modal */}
       <AddNewsletterModal
         isOpen={isAddModalOpen}
         setIsOpen={setIsAddModalOpen}
@@ -103,4 +102,4 @@ const Newsletter: React.FC = () => {
   );
 };
 
-export default Newsletter;
+export default NewsletterV2;

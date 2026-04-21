@@ -7,6 +7,8 @@ import { toast } from "react-toastify";
 import AddNewsletterModal from "./AddNewsletterModal";
 import PDFViewerModal from "./PDFViewerModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 
 interface NewsletterSectionProps {
   category: string;
@@ -26,6 +28,8 @@ const NewsletterSection: React.FC<NewsletterSectionProps> = ({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedBrief, setSelectedBrief] = useState<Brief | undefined>();
+  const { user } = useAppSelector((state: RootState) => state.authentiction);
+  const canEditOrDelete = user?.user_type === "Admin" || user?.user_type === "Analyst";
   
   const fetchBriefs = async () => {
     setIsLoading(true);
@@ -119,8 +123,8 @@ const NewsletterSection: React.FC<NewsletterSectionProps> = ({
                <BriefCard
                  key={brief.id || idx}
                  brief={brief}
-                 onDelete={() => handleDeleteClick(brief)}
-                 onEdit={handleEdit}
+                 onDelete={canEditOrDelete ? () => handleDeleteClick(brief) : undefined}
+                 onEdit={canEditOrDelete ? handleEdit : undefined}
                  onView={handleView}
                />
              ))}

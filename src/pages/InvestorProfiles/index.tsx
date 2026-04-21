@@ -398,8 +398,16 @@ function Main() {
                         <Table.Tr key={profile.id} className="intro-x">
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
                             <span
-                              onClick={() => gotoDetailPage(profile.investor_profile_id)}
-                              className="font-semibold text-[0.94rem] cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => {
+                                if (profile.investor_profile_id) {
+                                  gotoDetailPage(profile.investor_profile_id);
+                                }
+                              }}
+                              className={`font-semibold text-[0.94rem] transition-colors ${
+                                profile.investor_profile_id
+                                  ? "cursor-pointer hover:text-primary"
+                                  : "cursor-default"
+                              }`}
                             >
                               {profile.institution || profile.institution_name}
                             </span>

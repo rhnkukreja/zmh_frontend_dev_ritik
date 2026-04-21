@@ -174,6 +174,12 @@ const initialState: any = {
       title: "Newsletter",
     },
     {
+      icon: "Newspaper",
+      pathname: "/newsletter-new",
+      title: "Newsletter New",
+      isAdmin: true,
+    },
+    {
       icon: "BarChart2",
       pathname: "/custom-reports",
       title: "Custom Reports",

@@ -110,6 +110,7 @@ import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
 import { ChatProvider } from "../pages/AIChatbot/ChatContext";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import Newsletter from "@/pages/Newsletter";
+import NewsletterV2 from "@/pages/NewsletterV2";
 
 
 import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
@@ -532,6 +533,11 @@ function Router() {
           path: "/newsletter",
           element: <Newsletter />,
           data: { titleName: "Newsletter - ZMH Analytics" },
+        },
+        {
+          path: "/newsletter-new",
+          element: <NewsletterV2 />,
+          data: { titleName: "Newsletter New - ZMH Analytics" },
         },
         {
           path: "npx-details",

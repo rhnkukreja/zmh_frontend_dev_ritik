@@ -6,6 +6,7 @@ export interface Brief {
   title: string;
   date: string;
   url: string;
+  thumbnailUrl?: string;
   month?: string;
   year?: string;
   category?: string;
@@ -18,32 +19,32 @@ interface BriefCardProps {
   onView?: (brief: Brief) => void;
 }
 
-const BriefCard: React.FC<BriefCardProps> = ({ brief, onEdit, onDelete, onView }) => {
+const BriefCard: React.FC<BriefCardProps> = ({
+  brief,
+  onEdit,
+  onDelete,
+  onView,
+}) => {
   const canEdit = typeof onEdit === "function";
   const canDelete = typeof onDelete === "function";
 
   return (
     <div className="flex flex-col gap-4 group/brief relative">
-      {/* Main Card Body */}
-      <div 
+      <div
         className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-darkmode-400 bg-white dark:bg-darkmode-600 shadow-sm transition-all duration-300 group-hover/brief:shadow-xl group-hover/brief:-translate-y-2 aspect-[1.4/1] cursor-pointer"
         onClick={() => onView && onView(brief)}
       >
-        
-        {/* Document Content */}
-        <div 
-          className="absolute inset-0 z-0 flex flex-col p-6 border-l-[6px] border-primary"
-        >
+        <div className="absolute inset-0 z-0 flex flex-col p-6 border-l-[6px] border-primary">
           <div className="flex justify-between items-start">
             <div className="text-[10px] font-bold text-primary tracking-widest uppercase">
               ZMH Advisors
             </div>
             <Lucide icon="FileText" className="w-5 h-5 text-slate-300" />
           </div>
-          
+
           <div className="flex-1 flex flex-col justify-center py-4">
             <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
-              {brief.date} 
+              {brief.date}
             </h3>
             <div className="mt-2 h-0.5 w-12 bg-primary/40 rounded-full"></div>
             <p className="text-[14px] text-slate-500 mt-4 leading-relaxed line-clamp-3">
@@ -51,7 +52,7 @@ const BriefCard: React.FC<BriefCardProps> = ({ brief, onEdit, onDelete, onView }
               Data-driven insights for the modern investor.
             </p>
           </div>
-          
+
           <div className="mt-auto flex items-center justify-between text-[12px] text-slate-600 border-t border-slate-100 dark:border-darkmode-400 pt-3">
             <span>Data as of {brief.date}</span>
             <span className="text-primary font-bold group-hover/brief:underline">
@@ -60,16 +61,12 @@ const BriefCard: React.FC<BriefCardProps> = ({ brief, onEdit, onDelete, onView }
           </div>
         </div>
 
-        {/* Hover Overlay Visual (Optional) */}
-        <div 
-          className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brief:opacity-100 transition-opacity duration-300 pointer-events-none"
-        />
+        <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover/brief:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-        {/* Action Buttons (Highest Z-Index) */}
         {(canEdit || canDelete) && (
           <div className="absolute top-4 right-6 flex items-center gap-2 z-[100]">
             {canEdit && (
-              <button 
+              <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
@@ -83,7 +80,7 @@ const BriefCard: React.FC<BriefCardProps> = ({ brief, onEdit, onDelete, onView }
               </button>
             )}
             {canDelete && (
-              <button 
+              <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
