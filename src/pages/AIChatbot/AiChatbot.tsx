@@ -117,11 +117,11 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto bg-white">
-          <div className="max-w-7xl mx-auto animate-in fade-in duration-500 px-4">
-            <Outlet /> 
-          </div>
-        </div>
+          <div className="flex-1 overflow-auto bg-white">
+        <div className="w-full animate-in fade-in duration-500 px-28">
+          <Outlet /> 
+        </div>  
+      </div>
       </main>
     </div>
   );
