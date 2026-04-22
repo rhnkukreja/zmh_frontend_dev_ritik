@@ -16,16 +16,45 @@ interface CompanyOption {
 
 interface ProxyContextModalProps {
   open: boolean;
+  mode?: "add" | "edit";
+  initialData?: ProxyContextInitialData | null;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
+interface ProxyContextInitialData {
+  company?: CompanyOption;
+  documents?: Array<{
+    id?: number;
+    year: string;
+    keyword: string;
+    documentName: string;
+    existingDocumentUrl?: string;
+  }>;
+  advisory?: {
+    iss?: {
+      id?: number;
+      management?: boolean;
+      activist?: boolean;
+      split?: boolean;
+    };
+    gl?: {
+      id?: number;
+      management?: boolean;
+      activist?: boolean;
+      split?: boolean;
+    };
+  };
+}
+
 interface ExtraDocumentUI {
   id: number;
+  docId?: number;
   year: string;
   keyword: string;
   documentName: string;
   documentFile: File | null;
+  existingDocumentUrl?: string;
 }
 
 interface DocumentFieldsSectionProps {
@@ -35,6 +64,7 @@ interface DocumentFieldsSectionProps {
   keyword: string;
   documentName: string;
   documentFile: File | null;
+  existingDocumentUrl?: string;
   onYearChange: (value: string) => void;
   onKeywordChange: (value: string) => void;
   onDocumentNameChange: (value: string) => void;
@@ -51,6 +81,7 @@ const DocumentFieldsSection = ({
   keyword,
   documentName,
   documentFile,
+  existingDocumentUrl,
   onYearChange,
   onKeywordChange,
   onDocumentNameChange,
@@ -165,7 +196,7 @@ const DocumentFieldsSection = ({
 
                 onDocumentFileChange(file);
               }}
-              required
+              required={!existingDocumentUrl}
               className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:px-3 file:py-1.5 hover:file:bg-primary/20"
             />
             <p className="text-xs text-slate-500 mt-2">
@@ -176,6 +207,16 @@ const DocumentFieldsSection = ({
                 Selected: {documentFile.name}
               </p>
             )}
+            {!documentFile && existingDocumentUrl && (
+              <a
+                href={existingDocumentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex mt-1 text-xs text-primary hover:underline"
+              >
+                Existing PDF attached
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -183,7 +224,7 @@ const DocumentFieldsSection = ({
   );
 };
 
-const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps) => {
+const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, onSuccess }: ProxyContextModalProps) => {
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -197,16 +238,20 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
   const [keyword, setKeyword] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [existingDocumentUrl, setExistingDocumentUrl] = useState("");
+  const [primaryDocId, setPrimaryDocId] = useState<number | undefined>();
   const [extraDocuments, setExtraDocuments] = useState<ExtraDocumentUI[]>([]);
   const extraDocumentIdRef = useRef(1);
 
   const [iss, setIss] = useState({
+    id: undefined as number | undefined,
     management: false,
     activist: false,
     split: false,
   });
 
   const [gl, setGl] = useState({
+    id: undefined as number | undefined,
     management: false,
     activist: false,
     split: false,
@@ -216,30 +261,55 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
     () => [
       {
         id: 0,
+        docId: primaryDocId,
         year,
         keyword,
         documentName,
         documentFile,
+        existingDocumentUrl,
       },
       ...extraDocuments,
     ],
-    [year, keyword, documentName, documentFile, extraDocuments]
+    [year, keyword, documentName, documentFile, existingDocumentUrl, extraDocuments, primaryDocId]
   );
 
   const canSubmit = useMemo(() => {
-    const hasValidDocuments = allDocumentEntries.every(
-      (entry) =>
-        entry.year &&
-        entry.keyword &&
-        entry.documentName.trim() &&
-        entry.documentFile
-    );
+    if (!selectedCompany?.id) return false;
 
-    return Boolean(
-      selectedCompany?.id &&
-        hasValidDocuments
-    );
-  }, [selectedCompany, allDocumentEntries]);
+    // In edit mode with no documents (empty documentName and no existingDocumentUrl)
+    const hasNoPrimaryDoc = !documentName.trim() && !existingDocumentUrl;
+    if (mode === "edit" && hasNoPrimaryDoc && extraDocuments.length === 0) {
+      // Allow submit for advisory-only updates (no documents at all)
+      return true;
+    }
+
+    // Validate documents: 
+    // - NEW documents require: year, keyword, documentName, AND (file OR existingUrl)
+    // - EXISTING documents need: year, keyword, AND (existingUrl OR file)
+    //   (documentName can be empty if already exists in DB)
+    const hasValidDocuments = allDocumentEntries.every((entry) => {
+      const isExistingDoc = Boolean(entry.existingDocumentUrl || entry.docId);
+      
+      if (isExistingDoc) {
+        // Existing document: require year, keyword, and existing url (documentName optional)
+        return (
+          entry.year &&
+          entry.keyword &&
+          (entry.documentFile || entry.existingDocumentUrl)
+        );
+      } else {
+        // New document: require all fields
+        return (
+          entry.year &&
+          entry.keyword &&
+          entry.documentName.trim() &&
+          (entry.documentFile || entry.existingDocumentUrl)
+        );
+      }
+    });
+
+    return hasValidDocuments;
+  }, [selectedCompany, allDocumentEntries, documentName, existingDocumentUrl, extraDocuments, mode]);
 
   useEffect(() => {
     if (!open) return;
@@ -248,10 +318,72 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
       try {
         setDropdownLoading(true);
         const data = await proxyContextService.getDropdowns();
-        setYears(data.years || []);
-        setKeywords(data.keywords || []);
-        setYear((prev) => prev || data?.years?.[0] || "");
-        setKeyword((prev) => prev || data?.keywords?.[0] || "");
+        const fetchedYears = data.years || [];
+        const fetchedKeywords = data.keywords || [];
+        setYears(fetchedYears);
+        setKeywords(fetchedKeywords);
+
+        if (mode === "edit" && initialData) {
+          if (initialData.company?.id && initialData.company?.name) {
+            setSelectedCompany(initialData.company);
+            setCompanySelectValue({
+              value: initialData.company.id,
+              label: initialData.company.name,
+            });
+          }
+
+          const docs = Array.isArray(initialData.documents)
+            ? initialData.documents.filter(Boolean)
+            : [];
+
+          if (docs.length > 0) {
+            const firstDoc = docs[0];
+            setYear(firstDoc.year || fetchedYears[0] || "");
+            setKeyword(firstDoc.keyword || fetchedKeywords[0] || "");
+            setDocumentName(firstDoc.documentName || "");
+            setDocumentFile(null);
+            setExistingDocumentUrl(firstDoc.existingDocumentUrl || "");
+            setPrimaryDocId(firstDoc.id);
+
+            const restDocs = docs.slice(1).map((doc, index) => ({
+              id: index + 1,
+              docId: doc.id,
+              year: doc.year || fetchedYears[0] || "",
+              keyword: doc.keyword || fetchedKeywords[0] || "",
+              documentName: doc.documentName || "",
+              documentFile: null,
+              existingDocumentUrl: doc.existingDocumentUrl || "",
+            }));
+            setExtraDocuments(restDocs);
+            extraDocumentIdRef.current = restDocs.length + 1;
+          } else {
+            // No documents exist - initialize with dropdown defaults for adding new ones
+            setYear(fetchedYears[0] || "");
+            setKeyword(fetchedKeywords[0] || "");
+            setDocumentName("");
+            setDocumentFile(null);
+            setExistingDocumentUrl("");
+            setPrimaryDocId(undefined);
+            setExtraDocuments([]);
+            extraDocumentIdRef.current = 1;
+          }
+
+          setIss({
+            id: initialData.advisory?.iss?.id,
+            management: Boolean(initialData.advisory?.iss?.management),
+            activist: Boolean(initialData.advisory?.iss?.activist),
+            split: Boolean(initialData.advisory?.iss?.split),
+          });
+          setGl({
+            id: initialData.advisory?.gl?.id,
+            management: Boolean(initialData.advisory?.gl?.management),
+            activist: Boolean(initialData.advisory?.gl?.activist),
+            split: Boolean(initialData.advisory?.gl?.split),
+          });
+        } else {
+          setYear((prev) => prev || fetchedYears[0] || "");
+          setKeyword((prev) => prev || fetchedKeywords[0] || "");
+        }
       } catch (error) {
         console.error("Error fetching proxy context dropdowns:", error);
       } finally {
@@ -260,7 +392,7 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
     };
 
     init();
-  }, [open]);
+  }, [open, mode, initialData]);
 
   useEffect(() => {
     if (!open) {
@@ -270,10 +402,12 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
       setKeyword("");
       setDocumentName("");
       setDocumentFile(null);
+      setExistingDocumentUrl("");
+      setPrimaryDocId(undefined);
       setExtraDocuments([]);
       extraDocumentIdRef.current = 1;
-      setIss({ management: false, activist: false, split: false });
-      setGl({ management: false, activist: false, split: false });
+      setIss({ id: undefined, management: false, activist: false, split: false });
+      setGl({ id: undefined, management: false, activist: false, split: false });
     }
   }, [open]);
 
@@ -286,6 +420,7 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
         keyword: keywords[0] || "",
         documentName: "",
         documentFile: null,
+        existingDocumentUrl: "",
       },
     ]);
   };
@@ -309,60 +444,129 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
   };
 
   const handleSubmit = async () => {
-    const hasInvalidDocument = allDocumentEntries.some(
-      (entry) =>
-        !entry.year ||
-        !entry.keyword ||
-        !entry.documentName.trim() ||
-        !entry.documentFile
-    );
-
-    if (!selectedCompany?.id || hasInvalidDocument) {
-      toast.error("Please fill all required fields including document name and document file.");
+    if (!selectedCompany?.id) {
+      toast.error("Please select a company.");
       return;
+    }
+
+    // In edit mode with no documents, allow advisory-only updates
+    const hasNoPrimaryDoc = !documentName.trim() && !existingDocumentUrl;
+    const isAdvisoryOnlyEdit = mode === "edit" && hasNoPrimaryDoc && extraDocuments.length === 0;
+
+    if (!isAdvisoryOnlyEdit) {
+      // Validate documents if not advisory-only
+      const hasInvalidDocument = allDocumentEntries.some((entry) => {
+        const isExistingDoc = Boolean(entry.existingDocumentUrl || entry.docId);
+        
+        if (isExistingDoc) {
+          // Existing document: require year, keyword, and existing url
+          return !(
+            entry.year &&
+            entry.keyword &&
+            (entry.documentFile || entry.existingDocumentUrl)
+          );
+        } else {
+          // New document: require all fields including documentName
+          return !(
+            entry.year &&
+            entry.keyword &&
+            entry.documentName.trim() &&
+            (entry.documentFile || entry.existingDocumentUrl)
+          );
+        }
+      });
+
+      if (hasInvalidDocument) {
+        toast.error("Please fill all required fields for documents.");
+        return;
+      }
     }
 
     try {
       setSubmitting(true);
 
-      for (const entry of allDocumentEntries) {
-        const pressReleaseFormData = new FormData();
-        pressReleaseFormData.append("company_id", String(selectedCompany.id));
-        pressReleaseFormData.append("keyword", entry.keyword);
-        pressReleaseFormData.append("year", String(Number(entry.year)));
-        pressReleaseFormData.append("document_name", entry.documentName.trim());
-        pressReleaseFormData.append("document", entry.documentFile as File);
+      // Process documents: POST for new, PUT for existing updates, skip if unchanged
+      // Skip document processing for advisory-only updates
+      if (!isAdvisoryOnlyEdit) {
+        for (const entry of allDocumentEntries) {
+          // Only process if file changed or document doesn't exist yet
+          if (!entry.documentFile && !entry.docId) {
+            // New document without file - skip (validation already caught this)
+            continue;
+          }
 
-        await proxyContextService.createPressReleasePresentation(pressReleaseFormData);
+          if (entry.documentFile) {
+            // File was selected - either create new or update existing
+            const pressReleaseFormData = new FormData();
+            pressReleaseFormData.append("company_id", String(selectedCompany.id));
+            pressReleaseFormData.append("keyword", entry.keyword);
+            pressReleaseFormData.append("year", String(Number(entry.year)));
+            pressReleaseFormData.append("document_name", entry.documentName.trim());
+            pressReleaseFormData.append("document", entry.documentFile as File);
+
+            if (entry.docId) {
+              // Update existing document
+              await proxyContextService.updatePressReleasePresentation(entry.docId, pressReleaseFormData);
+            } else {
+              // Create new document
+              await proxyContextService.createPressReleasePresentation(pressReleaseFormData);
+            }
+          }
+          // If no new file and docId exists, keep the existing document unchanged
+        }
       }
 
-      const sharedPayload = {
+      // Process advisory recommendations: PUT for existing, POST for new
+      const issPayload = {
         company_id: selectedCompany.id,
         company_tent: selectedCompany.name,
         year: Number(year),
-      };
-
-      await proxyContextService.createProxyAdvisoryRecommendation({
-        ...sharedPayload,
-        type: "ISS",
+        type: "ISS" as const,
         management: iss.management,
         activist: iss.activist,
         split: iss.split,
-      });
+      };
 
-      await proxyContextService.createProxyAdvisoryRecommendation({
-        ...sharedPayload,
-        type: "GL",
+      if (iss.id) {
+        // Update existing ISS recommendation
+        await proxyContextService.updateProxyAdvisoryRecommendation(iss.id, {
+          management: iss.management,
+          activist: iss.activist,
+          split: iss.split,
+        });
+      } else if (!isAdvisoryOnlyEdit) {
+        // Only create new if not in advisory-only mode
+        await proxyContextService.createProxyAdvisoryRecommendation(issPayload);
+      }
+
+      const glPayload = {
+        company_id: selectedCompany.id,
+        company_tent: selectedCompany.name,
+        year: Number(year),
+        type: "GL" as const,
         management: gl.management,
         activist: gl.activist,
         split: gl.split,
-      });
+      };
 
-      toast.success("Proxy context added successfully.");
+      if (gl.id) {
+        // Update existing GL recommendation
+        await proxyContextService.updateProxyAdvisoryRecommendation(gl.id, {
+          management: gl.management,
+          activist: gl.activist,
+          split: gl.split,
+        });
+      } else if (!isAdvisoryOnlyEdit) {
+        // Only create new if not in advisory-only mode
+        await proxyContextService.createProxyAdvisoryRecommendation(glPayload);
+      }
+
+      toast.success(mode === "edit" ? "Proxy context updated successfully." : "Proxy context added successfully.");
       onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Error submitting proxy context:", error);
+      toast.error("Failed to submit proxy context. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -378,7 +582,9 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
       <Dialog.Panel className="rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xl">
         <Dialog.Title className="flex justify-between items-center px-6 py-4 border-b border-slate-200/70 bg-gradient-to-r from-slate-50 to-white">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800">Add Proxy Contest</h2>
+            <h2 className="text-xl font-semibold text-slate-800">
+              {mode === "edit" ? "Edit Proxy Contest" : "Add Proxy Contest"}
+            </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Submit document and proxy advisory recommendations in one flow.
             </p>
@@ -454,10 +660,14 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
                       keyword={keyword}
                       documentName={documentName}
                       documentFile={documentFile}
+                      existingDocumentUrl={existingDocumentUrl}
                       onYearChange={setYear}
                       onKeywordChange={setKeyword}
                       onDocumentNameChange={setDocumentName}
-                      onDocumentFileChange={setDocumentFile}
+                      onDocumentFileChange={(file) => {
+                        setDocumentFile(file);
+                        if (file) setExistingDocumentUrl("");
+                      }}
                       onScrollToNote={handleScrollToDocNameNote}
                     />
 
@@ -471,6 +681,7 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
                         keyword={doc.keyword}
                         documentName={doc.documentName}
                         documentFile={doc.documentFile}
+                        existingDocumentUrl={doc.existingDocumentUrl}
                         onYearChange={(value) =>
                           handleExtraDocumentChange(doc.id, { year: value })
                         }
@@ -481,7 +692,10 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
                           handleExtraDocumentChange(doc.id, { documentName: value })
                         }
                         onDocumentFileChange={(file) =>
-                          handleExtraDocumentChange(doc.id, { documentFile: file })
+                          handleExtraDocumentChange(doc.id, {
+                            documentFile: file,
+                            existingDocumentUrl: file ? "" : doc.existingDocumentUrl,
+                          })
                         }
                         onScrollToNote={handleScrollToDocNameNote}
                         onRemove={() => handleRemoveExtraDocument(doc.id)}
