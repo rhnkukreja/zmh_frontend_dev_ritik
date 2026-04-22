@@ -20,7 +20,7 @@ interface ProxyContextModalProps {
   onSuccess?: () => void;
 }
 
-const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps) => {
+const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps) => {
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -437,4 +437,4 @@ const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
   );
 };
 
-export default ProxyContextModal;
+export default ProxyContestModal;

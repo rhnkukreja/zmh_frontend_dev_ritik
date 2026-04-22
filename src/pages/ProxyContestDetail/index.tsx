@@ -14,7 +14,7 @@ import { baseURL } from "@/constant";
 import axios from "axios";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
-import CaseProxyModal from "../ProxyContest/CaseProxyModal";
+import CaseProxyModal from "../ProxyContest/components/CaseProxyModal";
 import PdfViewer from "@/components/PdfView";
 
 const ProxyContestDetail = () => {
