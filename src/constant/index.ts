@@ -1,7 +1,4 @@
-// export const baseURL = `https://api.zmhadvisors.com`;
-export const baseURL = `https://api-dev.zmhadvisors.com`;
-// export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
-// export const baseURL = `http://127.0.0.1:8000`;
+export { apiBaseURL as baseURL } from '@/config/environment';
 
 export const PAGE_SIZE = 10;
 export const characterColors: {
