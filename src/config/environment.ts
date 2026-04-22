@@ -7,4 +7,5 @@ if (environment === 'production') {
 }
 
 export const apiBaseURL: string = import.meta.env.VITE_API_BASE_URL || 'https://api.zmhadvisors.com';
+
 export { environment };
