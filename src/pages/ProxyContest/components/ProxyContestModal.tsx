@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/Base/Headless";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
@@ -20,6 +20,169 @@ interface ProxyContextModalProps {
   onSuccess?: () => void;
 }
 
+interface ExtraDocumentUI {
+  id: number;
+  year: string;
+  keyword: string;
+  documentName: string;
+  documentFile: File | null;
+}
+
+interface DocumentFieldsSectionProps {
+  years: string[];
+  keywords: string[];
+  year: string;
+  keyword: string;
+  documentName: string;
+  documentFile: File | null;
+  onYearChange: (value: string) => void;
+  onKeywordChange: (value: string) => void;
+  onDocumentNameChange: (value: string) => void;
+  onDocumentFileChange: (file: File | null) => void;
+  onScrollToNote: () => void;
+  onRemove?: () => void;
+  title?: string;
+}
+
+const DocumentFieldsSection = ({
+  years,
+  keywords,
+  year,
+  keyword,
+  documentName,
+  documentFile,
+  onYearChange,
+  onKeywordChange,
+  onDocumentNameChange,
+  onDocumentFileChange,
+  onScrollToNote,
+  onRemove,
+  title,
+}: DocumentFieldsSectionProps) => {
+  return (
+    <div className="rounded-lg border border-slate-300 bg-white p-3.5">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-semibold text-slate-700">{title || "Document"}</p>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="inline-flex items-center gap-1.5 rounded-md border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+          >
+            <Lucide icon="Trash2" className="h-3.5 w-3.5" />
+            Remove
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Year <span className="text-rose-600">*</span>
+          </label>
+          <TomSelect
+            value={year}
+            onChange={(e) => onYearChange(e.target.value)}
+            className="mt-1 w-full"
+            options={{
+              placeholder: "Dropdown",
+            }}
+          >
+            {years.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </TomSelect>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Keyword <span className="text-rose-600">*</span>
+          </label>
+          <TomSelect
+            value={keyword}
+            onChange={(e) => onKeywordChange(e.target.value)}
+            className="mt-1 w-full"
+            options={{
+              placeholder: "Dropdown",
+            }}
+          >
+            {keywords.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </TomSelect>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Document Name <span className="text-rose-600">*</span>
+            <button
+              type="button"
+              onClick={onScrollToNote}
+              className="align-super ml-1 text-[11px] text-primary hover:underline"
+              aria-label="View document name format note"
+            >
+              [1]
+            </button>
+          </label>
+          <FormInput
+            value={documentName}
+            onChange={(e) => onDocumentNameChange(e.target.value)}
+            placeholder="Enter Document Name"
+            required
+            className="mt-1"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Upload Doc <span className="text-rose-600">*</span>
+          </label>
+          <div className="mt-1 rounded-lg border border-dashed border-slate-300 bg-white p-3">
+            <input
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                if (!file) {
+                  onDocumentFileChange(null);
+                  return;
+                }
+
+                const isPdf =
+                  file.type === "application/pdf" ||
+                  file.name.toLowerCase().endsWith(".pdf");
+
+                if (!isPdf) {
+                  toast.error("Only PDF files are allowed.");
+                  e.currentTarget.value = "";
+                  onDocumentFileChange(null);
+                  return;
+                }
+
+                onDocumentFileChange(file);
+              }}
+              required
+              className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:px-3 file:py-1.5 hover:file:bg-primary/20"
+            />
+            <p className="text-xs text-slate-500 mt-2">
+              Required: Upload PDF document only.
+            </p>
+            {documentFile && (
+              <p className="text-xs text-emerald-700 mt-1 font-medium">
+                Selected: {documentFile.name}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps) => {
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -34,6 +197,8 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
   const [keyword, setKeyword] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [extraDocuments, setExtraDocuments] = useState<ExtraDocumentUI[]>([]);
+  const extraDocumentIdRef = useRef(1);
 
   const [iss, setIss] = useState({
     management: false,
@@ -47,15 +212,34 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
     split: false,
   });
 
+  const allDocumentEntries = useMemo(
+    () => [
+      {
+        id: 0,
+        year,
+        keyword,
+        documentName,
+        documentFile,
+      },
+      ...extraDocuments,
+    ],
+    [year, keyword, documentName, documentFile, extraDocuments]
+  );
+
   const canSubmit = useMemo(() => {
+    const hasValidDocuments = allDocumentEntries.every(
+      (entry) =>
+        entry.year &&
+        entry.keyword &&
+        entry.documentName.trim() &&
+        entry.documentFile
+    );
+
     return Boolean(
       selectedCompany?.id &&
-        keyword &&
-        year &&
-        documentName.trim() &&
-        documentFile
+        hasValidDocuments
     );
-  }, [selectedCompany, keyword, year, documentName, documentFile]);
+  }, [selectedCompany, allDocumentEntries]);
 
   useEffect(() => {
     if (!open) return;
@@ -86,10 +270,38 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
       setKeyword("");
       setDocumentName("");
       setDocumentFile(null);
+      setExtraDocuments([]);
+      extraDocumentIdRef.current = 1;
       setIss({ management: false, activist: false, split: false });
       setGl({ management: false, activist: false, split: false });
     }
   }, [open]);
+
+  const handleAddMoreDocuments = () => {
+    setExtraDocuments((prev) => [
+      ...prev,
+      {
+        id: extraDocumentIdRef.current++,
+        year: years[0] || "",
+        keyword: keywords[0] || "",
+        documentName: "",
+        documentFile: null,
+      },
+    ]);
+  };
+
+  const handleRemoveExtraDocument = (id: number) => {
+    setExtraDocuments((prev) => prev.filter((doc) => doc.id !== id));
+  };
+
+  const handleExtraDocumentChange = (
+    id: number,
+    updates: Partial<Omit<ExtraDocumentUI, "id">>
+  ) => {
+    setExtraDocuments((prev) =>
+      prev.map((doc) => (doc.id === id ? { ...doc, ...updates } : doc))
+    );
+  };
 
   const handleClose = () => {
     if (submitting) return;
@@ -97,7 +309,15 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
   };
 
   const handleSubmit = async () => {
-    if (!selectedCompany?.id || !keyword || !year || !documentName.trim() || !documentFile) {
+    const hasInvalidDocument = allDocumentEntries.some(
+      (entry) =>
+        !entry.year ||
+        !entry.keyword ||
+        !entry.documentName.trim() ||
+        !entry.documentFile
+    );
+
+    if (!selectedCompany?.id || hasInvalidDocument) {
       toast.error("Please fill all required fields including document name and document file.");
       return;
     }
@@ -105,14 +325,16 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
     try {
       setSubmitting(true);
 
-      const pressReleaseFormData = new FormData();
-      pressReleaseFormData.append("company_id", String(selectedCompany.id));
-      pressReleaseFormData.append("keyword", keyword);
-      pressReleaseFormData.append("year", String(Number(year)));
-      pressReleaseFormData.append("document_name", documentName.trim());
-      pressReleaseFormData.append("document", documentFile);
+      for (const entry of allDocumentEntries) {
+        const pressReleaseFormData = new FormData();
+        pressReleaseFormData.append("company_id", String(selectedCompany.id));
+        pressReleaseFormData.append("keyword", entry.keyword);
+        pressReleaseFormData.append("year", String(Number(entry.year)));
+        pressReleaseFormData.append("document_name", entry.documentName.trim());
+        pressReleaseFormData.append("document", entry.documentFile as File);
 
-      await proxyContextService.createPressReleasePresentation(pressReleaseFormData);
+        await proxyContextService.createPressReleasePresentation(pressReleaseFormData);
+      }
 
       const sharedPayload = {
         company_id: selectedCompany.id,
@@ -156,7 +378,7 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
       <Dialog.Panel className="rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xl">
         <Dialog.Title className="flex justify-between items-center px-6 py-4 border-b border-slate-200/70 bg-gradient-to-r from-slate-50 to-white">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800">Add Proxy Context</h2>
+            <h2 className="text-xl font-semibold text-slate-800">Add Proxy Contest</h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Submit document and proxy advisory recommendations in one flow.
             </p>
@@ -223,87 +445,56 @@ const ProxyContestModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Keyword <span className="text-rose-600">*</span>
-                    </label>
-                    <TomSelect
-                      value={keyword}
-                      onChange={(e) => setKeyword(e.target.value)}
-                      className="mt-1 w-full"
-                      options={{
-                        placeholder: "Select Keyword",
-                      }}
-                    >
-                      {keywords.map((value) => (
-                        <option key={value} value={value}>
-                          {value}
-                        </option>
-                      ))}
-                    </TomSelect>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Year <span className="text-rose-600">*</span>
-                    </label>
-                    <TomSelect
-                      value={year}
-                      onChange={(e) => setYear(e.target.value)}
-                      className="mt-1 w-full"
-                      options={{
-                        placeholder: "Select year",
-                      }}
-                    >
-                      {years.map((value) => (
-                        <option key={value} value={value}>
-                          {value}
-                        </option>
-                      ))}
-                    </TomSelect>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Document Name <span className="text-rose-600">*</span>
-                      <button
-                        type="button"
-                        onClick={handleScrollToDocNameNote}
-                        className="align-super ml-1 text-[11px] text-primary hover:underline"
-                        aria-label="View document name format note"
-                      >
-                        [1]
-                      </button>
-                    </label>
-                    <FormInput
-                      value={documentName}
-                      onChange={(e) => setDocumentName(e.target.value)}
-                      placeholder="Enter Document Name"
-                      required
-                      className="mt-1"
+                  <div className="md:col-span-2 space-y-3">
+                    <DocumentFieldsSection
+                      title="Document 1"
+                      years={years}
+                      keywords={keywords}
+                      year={year}
+                      keyword={keyword}
+                      documentName={documentName}
+                      documentFile={documentFile}
+                      onYearChange={setYear}
+                      onKeywordChange={setKeyword}
+                      onDocumentNameChange={setDocumentName}
+                      onDocumentFileChange={setDocumentFile}
+                      onScrollToNote={handleScrollToDocNameNote}
                     />
-                  </div>
 
-                  <div className="md:col-span-2">
-                    <label className="text-sm font-medium text-slate-700">
-                      Upload Doc <span className="text-rose-600">*</span>
-                    </label>
-                    <div className="mt-1 rounded-lg border border-dashed border-slate-300 bg-white p-3">
-                      <input
-                        type="file"
-                        onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
-                        required
-                        className="w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:px-3 file:py-1.5 hover:file:bg-primary/20"
+                    {extraDocuments.map((doc, index) => (
+                      <DocumentFieldsSection
+                        key={doc.id}
+                        title={`Document ${index + 2}`}
+                        years={years}
+                        keywords={keywords}
+                        year={doc.year}
+                        keyword={doc.keyword}
+                        documentName={doc.documentName}
+                        documentFile={doc.documentFile}
+                        onYearChange={(value) =>
+                          handleExtraDocumentChange(doc.id, { year: value })
+                        }
+                        onKeywordChange={(value) =>
+                          handleExtraDocumentChange(doc.id, { keyword: value })
+                        }
+                        onDocumentNameChange={(value) =>
+                          handleExtraDocumentChange(doc.id, { documentName: value })
+                        }
+                        onDocumentFileChange={(file) =>
+                          handleExtraDocumentChange(doc.id, { documentFile: file })
+                        }
+                        onScrollToNote={handleScrollToDocNameNote}
+                        onRemove={() => handleRemoveExtraDocument(doc.id)}
                       />
-                      <p className="text-xs text-slate-500 mt-2">
-                        Required: Upload PDF, DOCX, or supported document format.
-                      </p>
-                      {documentFile && (
-                        <p className="text-xs text-emerald-700 mt-1 font-medium">
-                          Selected: {documentFile.name}
-                        </p>
-                      )}
-                    </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={handleAddMoreDocuments}
+                      className="w-full rounded-lg border border-dashed border-slate-400 bg-slate-50 px-4 py-3 text-base font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      Add more documents
+                    </button>
                   </div>
                 </div>
 
