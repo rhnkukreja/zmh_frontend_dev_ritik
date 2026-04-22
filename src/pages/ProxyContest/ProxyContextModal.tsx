@@ -3,6 +3,9 @@ import { Dialog } from "@/components/Base/Headless";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import TomSelect from "@/components/Base/TomSelect";
+import CompanySelect from "@/components/ReactSelectAsync";
+import { FormCheck, FormInput } from "@/components/Base/Form";
 import { proxyContextService } from "@/services/proxyContext";
 import { toast } from "react-toastify";
 
@@ -17,21 +20,18 @@ interface ProxyContextModalProps {
   onSuccess?: () => void;
 }
 
-const HARDCODED_YEAR = "2025";
-const HARDCODED_KEYWORD = "Press Release";
-
 const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps) => {
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const [companyQuery, setCompanyQuery] = useState("");
-  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
-  const [companyResults, setCompanyResults] = useState<CompanyOption[]>([]);
-  const [companyLoading, setCompanyLoading] = useState(false);
-  const [showCompanyList, setShowCompanyList] = useState(false);
+  const [years, setYears] = useState<string[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
 
-  const [year, setYear] = useState(HARDCODED_YEAR);
-  const [keyword, setKeyword] = useState(HARDCODED_KEYWORD);
+  const [companySelectValue, setCompanySelectValue] = useState<any>("");
+  const [selectedCompany, setSelectedCompany] = useState<CompanyOption | null>(null);
+
+  const [year, setYear] = useState("");
+  const [keyword, setKeyword] = useState("");
   const [documentName, setDocumentName] = useState("");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
 
@@ -63,12 +63,11 @@ const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
     const init = async () => {
       try {
         setDropdownLoading(true);
-        setYear(HARDCODED_YEAR);
-        setKeyword(HARDCODED_KEYWORD);
-
-        // Load initial company list
-        const defaultCompanies = await proxyContextService.searchCompanies("a");
-        setCompanyResults(defaultCompanies.results || []);
+        const data = await proxyContextService.getDropdowns();
+        setYears(data.years || []);
+        setKeywords(data.keywords || []);
+        setYear((prev) => prev || data?.years?.[0] || "");
+        setKeyword((prev) => prev || data?.keywords?.[0] || "");
       } catch (error) {
         console.error("Error fetching proxy context dropdowns:", error);
       } finally {
@@ -81,40 +80,16 @@ const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
 
   useEffect(() => {
     if (!open) {
-      setCompanyQuery("");
+      setCompanySelectValue("");
       setSelectedCompany(null);
-      setCompanyResults([]);
-      setShowCompanyList(false);
       setYear("");
       setKeyword("");
       setDocumentName("");
       setDocumentFile(null);
       setIss({ management: false, activist: false, split: false });
       setGl({ management: false, activist: false, split: false });
-      return;
     }
-
-    // If no query and company list should be shown on focus, load default companies
-    if (!companyQuery?.trim()) {
-      setCompanyResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        setCompanyLoading(true);
-        const response = await proxyContextService.searchCompanies(companyQuery.trim());
-        setCompanyResults(response.results || []);
-      } catch (error) {
-        console.error("Error searching company:", error);
-        setCompanyResults([]);
-      } finally {
-        setCompanyLoading(false);
-      }
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [companyQuery, open]);
+  }, [open]);
 
   const handleClose = () => {
     if (submitting) return;
@@ -211,68 +186,81 @@ const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="relative">
+                  <div>
                     <label className="text-sm font-medium text-slate-700">
                       Company <span className="text-rose-600">*</span>
                     </label>
-                    <input
-                      value={companyQuery}
-                      onChange={(e) => {
-                        setCompanyQuery(e.target.value);
-                        setSelectedCompany(null);
-                        setShowCompanyList(true);
-                      }}
-                      onFocus={() => setShowCompanyList(true)}
+                    <div className="mt-1">
+                      <CompanySelect
+                        value={companySelectValue || ""}
+                        isClearable={true}
                       placeholder="Search Company"
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
-                    />
+                        onChange={(value: any) => {
+                          if (!value) {
+                            setCompanySelectValue("");
+                            setSelectedCompany(null);
+                            return;
+                          }
 
-                    {showCompanyList && !selectedCompany?.id && (
-                      <div className="absolute z-30 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg max-h-52 overflow-auto">
-                        {companyLoading ? (
-                          <div className="p-2 text-xs text-slate-500">Searching...</div>
-                        ) : companyResults.length > 0 ? (
-                          companyResults.map((item) => (
-                            <button
-                              key={item.id}
-                              type="button"
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0"
-                              onClick={() => {
-                                setSelectedCompany(item);
-                                setCompanyQuery(item.name);
-                                setShowCompanyList(false);
-                              }}
-                            >
-                              {item.name}
-                            </button>
-                          ))
-                        ) : (
-                          <div className="p-2 text-xs text-slate-500">No company found</div>
-                        )}
-                      </div>
-                    )}
+                          const option = Array.isArray(value) ? value[0] : value;
+                          if (!option) {
+                            setCompanySelectValue("");
+                            setSelectedCompany(null);
+                            return;
+                          }
+
+                          const optionId = Number(option?.value || option?.company?.id);
+                          const optionName = option?.label || option?.company?.name || "";
+
+                          setCompanySelectValue(option);
+                          if (optionId && optionName) {
+                            setSelectedCompany({ id: optionId, name: optionName });
+                          } else {
+                            setSelectedCompany(null);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="text-sm font-medium text-slate-700">
                       Keyword <span className="text-rose-600">*</span>
                     </label>
-                    <input
+                    <TomSelect
                       value={keyword}
-                      readOnly
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
-                    />
+                      onChange={(e) => setKeyword(e.target.value)}
+                      className="mt-1 w-full"
+                      options={{
+                        placeholder: "Select Keyword",
+                      }}
+                    >
+                      {keywords.map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </TomSelect>
                   </div>
 
                   <div>
                     <label className="text-sm font-medium text-slate-700">
                       Year <span className="text-rose-600">*</span>
                     </label>
-                    <input
+                    <TomSelect
                       value={year}
-                      readOnly
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
-                    />
+                      onChange={(e) => setYear(e.target.value)}
+                      className="mt-1 w-full"
+                      options={{
+                        placeholder: "Select year",
+                      }}
+                    >
+                      {years.map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </TomSelect>
                   </div>
 
                   <div>
@@ -287,12 +275,12 @@ const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
                         [1]
                       </button>
                     </label>
-                    <input
+                    <FormInput
                       value={documentName}
                       onChange={(e) => setDocumentName(e.target.value)}
                       placeholder="Enter Document Name"
                       required
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
+                      className="mt-1"
                     />
                   </div>
 
@@ -344,66 +332,90 @@ const ProxyContextModal = ({ open, onClose, onSuccess }: ProxyContextModalProps)
                   <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5">
                     <h4 className="font-medium mb-3 text-slate-700">For ISS</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <label className="inline-flex items-center gap-2 text-sm rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={iss.management}
-                          onChange={(e) => setIss((prev) => ({ ...prev, management: e.target.checked }))}
-                          className="accent-primary"
-                        />
-                        Management
-                      </label>
-                      <label className="inline-flex items-center gap-2 text-sm rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={iss.activist}
-                          onChange={(e) => setIss((prev) => ({ ...prev, activist: e.target.checked }))}
-                          className="accent-primary"
-                        />
-                        Activist
-                      </label>
-                      <label className="inline-flex items-center gap-2 text-sm rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={iss.split}
-                          onChange={(e) => setIss((prev) => ({ ...prev, split: e.target.checked }))}
-                          className="accent-primary"
-                        />
-                        Split
-                      </label>
+                      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors">
+                        <FormCheck>
+                          <FormCheck.Input
+                            id="iss-management"
+                            type="checkbox"
+                            checked={iss.management}
+                            onChange={(e) => setIss((prev) => ({ ...prev, management: e.target.checked }))}
+                          />
+                          <FormCheck.Label htmlFor="iss-management" className="text-sm text-slate-700">
+                            Management
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </div>
+                      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors">
+                        <FormCheck>
+                          <FormCheck.Input
+                            id="iss-activist"
+                            type="checkbox"
+                            checked={iss.activist}
+                            onChange={(e) => setIss((prev) => ({ ...prev, activist: e.target.checked }))}
+                          />
+                          <FormCheck.Label htmlFor="iss-activist" className="text-sm text-slate-700">
+                            Activist
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </div>
+                      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors">
+                        <FormCheck>
+                          <FormCheck.Input
+                            id="iss-split"
+                            type="checkbox"
+                            checked={iss.split}
+                            onChange={(e) => setIss((prev) => ({ ...prev, split: e.target.checked }))}
+                          />
+                          <FormCheck.Label htmlFor="iss-split" className="text-sm text-slate-700">
+                            Split
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </div>
                     </div>
                   </div>
 
                   <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3.5">
                     <h4 className="font-medium mb-3 text-slate-700">For GL</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <label className="inline-flex items-center gap-2 text-sm rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={gl.management}
-                          onChange={(e) => setGl((prev) => ({ ...prev, management: e.target.checked }))}
-                          className="accent-primary"
-                        />
-                        Management
-                      </label>
-                      <label className="inline-flex items-center gap-2 text-sm rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={gl.activist}
-                          onChange={(e) => setGl((prev) => ({ ...prev, activist: e.target.checked }))}
-                          className="accent-primary"
-                        />
-                        Activist
-                      </label>
-                      <label className="inline-flex items-center gap-2 text-sm rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={gl.split}
-                          onChange={(e) => setGl((prev) => ({ ...prev, split: e.target.checked }))}
-                          className="accent-primary"
-                        />
-                        Split
-                      </label>
+                      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors">
+                        <FormCheck>
+                          <FormCheck.Input
+                            id="gl-management"
+                            type="checkbox"
+                            checked={gl.management}
+                            onChange={(e) => setGl((prev) => ({ ...prev, management: e.target.checked }))}
+                          />
+                          <FormCheck.Label htmlFor="gl-management" className="text-sm text-slate-700">
+                            Management
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </div>
+                      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors">
+                        <FormCheck>
+                          <FormCheck.Input
+                            id="gl-activist"
+                            type="checkbox"
+                            checked={gl.activist}
+                            onChange={(e) => setGl((prev) => ({ ...prev, activist: e.target.checked }))}
+                          />
+                          <FormCheck.Label htmlFor="gl-activist" className="text-sm text-slate-700">
+                            Activist
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </div>
+                      <div className="rounded-md border border-slate-200 bg-white px-3 py-2 hover:border-primary/40 transition-colors">
+                        <FormCheck>
+                          <FormCheck.Input
+                            id="gl-split"
+                            type="checkbox"
+                            checked={gl.split}
+                            onChange={(e) => setGl((prev) => ({ ...prev, split: e.target.checked }))}
+                          />
+                          <FormCheck.Label htmlFor="gl-split" className="text-sm text-slate-700">
+                            Split
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </div>
                     </div>
                   </div>
                 </div>
