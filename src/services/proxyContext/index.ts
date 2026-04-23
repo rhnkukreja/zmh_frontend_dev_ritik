@@ -77,6 +77,35 @@ class ProxyContextService {
 		);
 		return response.data;
 	}
+
+	public async updatePressReleasePresentation(
+		id: number,
+		data: FormData
+	): Promise<any> {
+		const response = await axiosInstance.put(
+			`/proxy_contest/press_release_presentation/${id}/`,
+			data
+		);
+		return response.data;
+	}
+
+	public async updateProxyAdvisoryRecommendation(
+		id: number,
+		payload: Partial<ProxyAdvisoryPayload>
+	): Promise<any> {
+		const response = await axiosInstance.put(
+			`/proxy_contest/proxy_advisory_firm_recommendation/${id}/`,
+			payload
+		);
+		return response.data;
+	}
+
+	public async deletePressReleasePresentation(id: number): Promise<any> {
+		const response = await axiosInstance.delete(
+			`/proxy_contest/press_release_presentation/${id}/`
+		);
+		return response.data;
+	}
 }
 
 export const proxyContextService = new ProxyContextService();

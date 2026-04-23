@@ -12,8 +12,8 @@ import { RootState } from "@/stores/store";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import CPagination from "@/components/Pagination";
-import CaseProxyModal from "./CaseProxyModal";
-import ProxyContextModal from "./ProxyContextModal";
+import CaseProxyModal from "./components/CaseProxyModal";
+import ProxyContextModal from "./components/ProxyContestModal";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import PdfViewer from "@/components/PdfView";
 import { getProxyContestDropdownValues } from "@/services/proxyContestDropdown";
@@ -37,6 +37,9 @@ const index = () => {
   const [caseProxyModalData, setCaseProxyModalData] = useState<any>(null);
   const [proxyContextModalOpen, setProxyContextModalOpen] =
     useState<boolean>(false);
+  const [proxyContextModalMode, setProxyContextModalMode] =
+    useState<"add" | "edit">("add");
+  const [proxyContextInitialData, setProxyContextInitialData] = useState<any>(null);
 
   // Table states
   const [proxyContestCompanies, setProxyContestCompanies] = useState<any[]>([]);
@@ -178,6 +181,124 @@ const index = () => {
   const handleProxyContestPageChange = (newPage: number) => {
     setProxyContestPage(newPage);
     fetchProxyContestCompanies(newPage, allApplyFilter);
+  };
+
+  const normalizeBoolean = (value: any) => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value === 1;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      return ["true", "1", "yes", "y"].includes(normalized);
+    }
+    return false;
+  };
+
+  const openAddProxyContextModal = () => {
+    setProxyContextModalMode("add");
+    setProxyContextInitialData(null);
+    setProxyContextModalOpen(true);
+  };
+
+  const openEditProxyContextModal = async (company: any) => {
+    try {
+      const companyNameRaw = company?.company_name || "";
+      if (!companyNameRaw) {
+        toast.error("Unable to open edit modal: company name missing.");
+        return;
+      }
+
+      const companyName = encodeURIComponent(companyNameRaw);
+      const response = await fetch(
+        `${baseURL}/activism_tables/?company_name=${companyName}`,
+        {
+          headers: {
+            Authorization: `JWT ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const selectedYear = String(company?.year || "");
+
+      const presentations = Array.isArray(data?.Activism_Presentation)
+        ? data.Activism_Presentation
+        : [];
+      const pressReleases = Array.isArray(data?.Activism_Press_Release)
+        ? data.Activism_Press_Release
+        : [];
+
+      const mappedDocuments = [
+        ...presentations.map((item: any) => ({
+          id: item?.id,
+          year: String(item?.year || selectedYear || ""),
+          keyword: String(item?.keyword || "Presentation"),
+          documentName: String(item?.document_name || ""),
+          existingDocumentUrl: String(item?.document_url || ""),
+        })),
+        ...pressReleases.map((item: any) => ({
+          id: item?.id,
+          year: String(item?.year || selectedYear || ""),
+          keyword: String(item?.keyword || "Press Release"),
+          documentName: String(item?.document_name || ""),
+          existingDocumentUrl: String(item?.document_url || ""),
+        })),
+      ];
+
+      const documentsForYear = selectedYear
+        ? mappedDocuments.filter((item) => !item.year || item.year === selectedYear)
+        : mappedDocuments;
+
+      const recommendationRows = Array.isArray(data?.Activism_ISS_GL)
+        ? data.Activism_ISS_GL
+        : [];
+
+      const issRow = recommendationRows.find(
+        (row: any) => String(row?.type || "").toUpperCase() === "ISS"
+      );
+      const glRow = recommendationRows.find(
+        (row: any) => String(row?.type || "").toUpperCase() === "GL"
+      );
+
+      const initialData = {
+        company: {
+          id: Number(company?.company_id || company?.id || 0),
+          name: companyNameRaw,
+        },
+        documents: documentsForYear.length > 0 ? documentsForYear : [],
+        advisory: {
+          iss: {
+            id: issRow?.id,
+            management: normalizeBoolean(issRow?.management),
+            activist: normalizeBoolean(issRow?.activist),
+            split: normalizeBoolean(issRow?.split),
+          },
+          gl: {
+            id: glRow?.id,
+            management: normalizeBoolean(glRow?.management),
+            activist: normalizeBoolean(glRow?.activist),
+            split: normalizeBoolean(glRow?.split),
+          },
+        },
+      };
+
+      console.groupCollapsed("[ProxyContest][Edit Prefill] Initial details fetched");
+      console.log("Selected row company:", company);
+      console.log("Raw activism_tables response:", data);
+      console.log("Mapped modal initialData:", initialData);
+      console.groupEnd();
+
+      setProxyContextModalMode("edit");
+      setProxyContextInitialData(initialData);
+      setProxyContextModalOpen(true);
+    } catch (error) {
+      console.error("Error opening edit proxy context modal:", error);
+      toast.error("Failed to load proxy context details for edit.");
+    }
   };
 
   // Helper functions for filters
@@ -372,7 +493,7 @@ const index = () => {
                 {isAdminOrAnalyst && (
                   <Button
                     variant="primary"
-                    onClick={() => setProxyContextModalOpen(true)}
+                    onClick={openAddProxyContextModal}
                   >
                     Add Proxy Contest
                   </Button>
@@ -756,6 +877,23 @@ const index = () => {
                                   </div>
                                 )}
 
+                                {isAdminOrAnalyst && (
+                                  <Tippy
+                                    content="Edit Proxy Contest"
+                                    options={{ theme: "light" }}
+                                  >
+                                    <div
+                                      className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200"
+                                      onClick={() => openEditProxyContextModal(company)}
+                                    >
+                                      <Lucide
+                                        icon="Pencil"
+                                        className="w-4 h-4"
+                                      />
+                                    </div>
+                                  </Tippy>
+                                )}
+
                                 {/* Proxy Voting Icon */}
                                 {/* {company.is_voting ? (
                                     <Tippy content="Proxy Voting (Top 5)" options={{ theme: "light" }}>
@@ -816,7 +954,13 @@ const index = () => {
 
       <ProxyContextModal
         open={proxyContextModalOpen}
-        onClose={() => setProxyContextModalOpen(false)}
+        mode={proxyContextModalMode}
+        initialData={proxyContextInitialData}
+        onClose={() => {
+          setProxyContextModalOpen(false);
+          setProxyContextModalMode("add");
+          setProxyContextInitialData(null);
+        }}
       />
 
       {/* PDF Viewer */}
