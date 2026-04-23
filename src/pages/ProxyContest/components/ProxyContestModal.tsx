@@ -29,6 +29,9 @@ interface ProxyContextInitialData {
     year: string;
     keyword: string;
     documentName: string;
+    documentDate?: string;
+    activistName?: string;
+    isCompanyActivist?: "company" | "activist";
     existingDocumentUrl?: string;
   }>;
   advisory?: {
@@ -52,7 +55,8 @@ interface ExtraDocumentUI {
   docId?: number;
   year: string;
   keyword: string;
-  documentName: string;
+  documentDate: string;
+  isCompanyActivist: "company" | "activist";
   documentFile: File | null;
   existingDocumentUrl?: string;
 }
@@ -62,12 +66,14 @@ interface DocumentFieldsSectionProps {
   keywords: string[];
   year: string;
   keyword: string;
-  documentName: string;
+  documentDate: string;
+  isCompanyActivist: "company" | "activist";
   documentFile: File | null;
   existingDocumentUrl?: string;
   onYearChange: (value: string) => void;
   onKeywordChange: (value: string) => void;
-  onDocumentNameChange: (value: string) => void;
+  onDocumentDateChange: (value: string) => void;
+  onIsCompanyActivistChange: (value: "company" | "activist") => void;
   onDocumentFileChange: (file: File | null) => void;
   onScrollToNote: () => void;
   onRemove?: () => void;
@@ -79,17 +85,23 @@ const DocumentFieldsSection = ({
   keywords,
   year,
   keyword,
-  documentName,
+  documentDate,
+  isCompanyActivist,
   documentFile,
   existingDocumentUrl,
   onYearChange,
   onKeywordChange,
-  onDocumentNameChange,
+  onDocumentDateChange,
+  onIsCompanyActivistChange,
   onDocumentFileChange,
   onScrollToNote,
   onRemove,
   title,
 }: DocumentFieldsSectionProps) => {
+  const radioGroupName = `company-or-activist-${(title || "document")
+    .replace(/\s+/g, "-")
+    .toLowerCase()}`;
+
   return (
     <div className="rounded-lg border border-slate-300 bg-white p-3.5">
       <div className="mb-3 flex items-center justify-between">
@@ -107,7 +119,7 @@ const DocumentFieldsSection = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+        {/* <div>
           <label className="text-sm font-medium text-slate-700">
             Year <span className="text-rose-600">*</span>
           </label>
@@ -125,7 +137,7 @@ const DocumentFieldsSection = ({
               </option>
             ))}
           </TomSelect>
-        </div>
+        </div> */}
 
         <div>
           <label className="text-sm font-medium text-slate-700">
@@ -149,7 +161,7 @@ const DocumentFieldsSection = ({
 
         <div>
           <label className="text-sm font-medium text-slate-700">
-            Document Name <span className="text-rose-600">*</span>
+            Document Date <span className="text-rose-600">*</span>
             <button
               type="button"
               onClick={onScrollToNote}
@@ -160,12 +172,42 @@ const DocumentFieldsSection = ({
             </button>
           </label>
           <FormInput
-            value={documentName}
-            onChange={(e) => onDocumentNameChange(e.target.value)}
-            placeholder="Enter Document Name"
+            value={documentDate}
+            onChange={(e) => onDocumentDateChange(e.target.value)}
+            placeholder="Enter Document Date (DDMMYYYY)"
             required
             className="mt-1"
           />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">
+            Company/Activist <span className="text-rose-600">*</span>
+          </label>
+          <div className="mt-2 flex flex-wrap items-center gap-5">
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name={radioGroupName}
+                value="company"
+                className="h-4 w-4 accent-primary"
+                checked={isCompanyActivist === "company"}
+                onChange={() => onIsCompanyActivistChange("company")}
+              />
+              <span className="text-sm text-slate-700">Company</span>
+            </label>
+            <label className="inline-flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name={radioGroupName}
+                value="activist"
+                className="h-4 w-4 accent-primary"
+                checked={isCompanyActivist === "activist"}
+                onChange={() => onIsCompanyActivistChange("activist")}
+              />
+              <span className="text-sm text-slate-700">Activist</span>
+            </label>
+          </div>
         </div>
 
         <div>
@@ -236,7 +278,9 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
 
   const [year, setYear] = useState("");
   const [keyword, setKeyword] = useState("");
-  const [documentName, setDocumentName] = useState("");
+  const [activistName, setActivistName] = useState("");
+  const [documentDate, setDocumentDate] = useState("");
+  const [isCompanyActivist, setIsCompanyActivist] = useState<"company" | "activist">("company");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [existingDocumentUrl, setExistingDocumentUrl] = useState("");
   const [primaryDocId, setPrimaryDocId] = useState<number | undefined>();
@@ -264,20 +308,21 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
         docId: primaryDocId,
         year,
         keyword,
-        documentName,
+        documentDate,
+        isCompanyActivist,
         documentFile,
         existingDocumentUrl,
       },
       ...extraDocuments,
     ],
-    [year, keyword, documentName, documentFile, existingDocumentUrl, extraDocuments, primaryDocId]
+    [year, keyword, documentDate, isCompanyActivist, documentFile, existingDocumentUrl, extraDocuments, primaryDocId]
   );
 
   const canSubmit = useMemo(() => {
     if (!selectedCompany?.id) return false;
 
     // In edit mode with no documents (empty documentName and no existingDocumentUrl)
-    const hasNoPrimaryDoc = !documentName.trim() && !existingDocumentUrl;
+    const hasNoPrimaryDoc = !documentDate.trim() && !existingDocumentUrl;
     if (mode === "edit" && hasNoPrimaryDoc && extraDocuments.length === 0) {
       // Allow submit for advisory-only updates (no documents at all)
       return true;
@@ -289,12 +334,13 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
     //   (documentName can be empty if already exists in DB)
     const hasValidDocuments = allDocumentEntries.every((entry) => {
       const isExistingDoc = Boolean(entry.existingDocumentUrl || entry.docId);
-      
+
       if (isExistingDoc) {
         // Existing document: require year, keyword, and existing url (documentName optional)
         return (
           entry.year &&
           entry.keyword &&
+          entry.documentDate.trim() &&
           (entry.documentFile || entry.existingDocumentUrl)
         );
       } else {
@@ -302,14 +348,14 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
         return (
           entry.year &&
           entry.keyword &&
-          entry.documentName.trim() &&
+          entry.documentDate.trim() &&
           (entry.documentFile || entry.existingDocumentUrl)
         );
       }
     });
 
     return hasValidDocuments;
-  }, [selectedCompany, allDocumentEntries, documentName, existingDocumentUrl, extraDocuments, mode]);
+  }, [selectedCompany, allDocumentEntries, documentDate, existingDocumentUrl, extraDocuments, mode]);
 
   useEffect(() => {
     if (!open) return;
@@ -340,7 +386,9 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             const firstDoc = docs[0];
             setYear(firstDoc.year || fetchedYears[0] || "");
             setKeyword(firstDoc.keyword || fetchedKeywords[0] || "");
-            setDocumentName(firstDoc.documentName || "");
+            setActivistName(firstDoc.activistName || "");
+            setDocumentDate(firstDoc.documentDate || firstDoc.documentName || "");
+            setIsCompanyActivist(firstDoc.isCompanyActivist || "company");
             setDocumentFile(null);
             setExistingDocumentUrl(firstDoc.existingDocumentUrl || "");
             setPrimaryDocId(firstDoc.id);
@@ -350,7 +398,8 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
               docId: doc.id,
               year: doc.year || fetchedYears[0] || "",
               keyword: doc.keyword || fetchedKeywords[0] || "",
-              documentName: doc.documentName || "",
+              documentDate: doc.documentDate || doc.documentName || "",
+              isCompanyActivist: doc.isCompanyActivist || "company",
               documentFile: null,
               existingDocumentUrl: doc.existingDocumentUrl || "",
             }));
@@ -360,7 +409,9 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             // No documents exist - initialize with dropdown defaults for adding new ones
             setYear(fetchedYears[0] || "");
             setKeyword(fetchedKeywords[0] || "");
-            setDocumentName("");
+            setActivistName("");
+            setDocumentDate("");
+            setIsCompanyActivist("company");
             setDocumentFile(null);
             setExistingDocumentUrl("");
             setPrimaryDocId(undefined);
@@ -400,7 +451,9 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
       setSelectedCompany(null);
       setYear("");
       setKeyword("");
-      setDocumentName("");
+      setActivistName("");
+      setDocumentDate("");
+      setIsCompanyActivist("company");
       setDocumentFile(null);
       setExistingDocumentUrl("");
       setPrimaryDocId(undefined);
@@ -418,7 +471,8 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
         id: extraDocumentIdRef.current++,
         year: years[0] || "",
         keyword: keywords[0] || "",
-        documentName: "",
+        documentDate: "",
+        isCompanyActivist: "company",
         documentFile: null,
         existingDocumentUrl: "",
       },
@@ -450,19 +504,20 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
     }
 
     // In edit mode with no documents, allow advisory-only updates
-    const hasNoPrimaryDoc = !documentName.trim() && !existingDocumentUrl;
+    const hasNoPrimaryDoc = !documentDate.trim() && !existingDocumentUrl;
     const isAdvisoryOnlyEdit = mode === "edit" && hasNoPrimaryDoc && extraDocuments.length === 0;
 
     if (!isAdvisoryOnlyEdit) {
       // Validate documents if not advisory-only
       const hasInvalidDocument = allDocumentEntries.some((entry) => {
         const isExistingDoc = Boolean(entry.existingDocumentUrl || entry.docId);
-        
+
         if (isExistingDoc) {
           // Existing document: require year, keyword, and existing url
           return !(
             entry.year &&
             entry.keyword &&
+            entry.documentDate.trim() &&
             (entry.documentFile || entry.existingDocumentUrl)
           );
         } else {
@@ -470,7 +525,7 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
           return !(
             entry.year &&
             entry.keyword &&
-            entry.documentName.trim() &&
+            entry.documentDate.trim() &&
             (entry.documentFile || entry.existingDocumentUrl)
           );
         }
@@ -501,7 +556,9 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             pressReleaseFormData.append("company_id", String(selectedCompany.id));
             pressReleaseFormData.append("keyword", entry.keyword);
             pressReleaseFormData.append("year", String(Number(entry.year)));
-            pressReleaseFormData.append("document_name", entry.documentName.trim());
+            pressReleaseFormData.append("activist_name", activistName.trim());
+            pressReleaseFormData.append("document_date", entry.documentDate.trim());
+            pressReleaseFormData.append("is_company_activist", entry.isCompanyActivist);
             pressReleaseFormData.append("document", entry.documentFile as File);
 
             if (entry.docId) {
@@ -622,7 +679,7 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                       <CompanySelect
                         value={companySelectValue || ""}
                         isClearable={true}
-                      placeholder="Search Company"
+                        placeholder="Search Company"
                         onChange={(value: any) => {
                           if (!value) {
                             setCompanySelectValue("");
@@ -650,6 +707,38 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                       />
                     </div>
                   </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Year <span className="text-rose-600">*</span>
+                    </label>
+                    <TomSelect
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      className="mt-1 w-full"
+                      options={{
+                        placeholder: "Dropdown",
+                      }}
+                    >
+                      {years.map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </TomSelect>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Activist Name <span className="text-rose-600">*</span>
+                    </label>
+                    <FormInput
+                      value={activistName}
+                      onChange={(e) => setActivistName(e.target.value)}
+                      placeholder="Enter Activist Name"
+                      required
+                      className="mt-1"
+                    />
+                  </div>
 
                   <div className="md:col-span-2 space-y-3">
                     <DocumentFieldsSection
@@ -658,12 +747,14 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                       keywords={keywords}
                       year={year}
                       keyword={keyword}
-                      documentName={documentName}
+                      documentDate={documentDate}
+                      isCompanyActivist={isCompanyActivist}
                       documentFile={documentFile}
                       existingDocumentUrl={existingDocumentUrl}
                       onYearChange={setYear}
                       onKeywordChange={setKeyword}
-                      onDocumentNameChange={setDocumentName}
+                      onDocumentDateChange={setDocumentDate}
+                      onIsCompanyActivistChange={setIsCompanyActivist}
                       onDocumentFileChange={(file) => {
                         setDocumentFile(file);
                         if (file) setExistingDocumentUrl("");
@@ -679,7 +770,8 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                         keywords={keywords}
                         year={doc.year}
                         keyword={doc.keyword}
-                        documentName={doc.documentName}
+                        documentDate={doc.documentDate}
+                        isCompanyActivist={doc.isCompanyActivist}
                         documentFile={doc.documentFile}
                         existingDocumentUrl={doc.existingDocumentUrl}
                         onYearChange={(value) =>
@@ -688,8 +780,11 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                         onKeywordChange={(value) =>
                           handleExtraDocumentChange(doc.id, { keyword: value })
                         }
-                        onDocumentNameChange={(value) =>
-                          handleExtraDocumentChange(doc.id, { documentName: value })
+                        onDocumentDateChange={(value) =>
+                          handleExtraDocumentChange(doc.id, { documentDate: value })
+                        }
+                        onIsCompanyActivistChange={(value) =>
+                          handleExtraDocumentChange(doc.id, { isCompanyActivist: value })
                         }
                         onDocumentFileChange={(file) =>
                           handleExtraDocumentChange(doc.id, {
@@ -717,14 +812,14 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                   className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3"
                 >
                   <p className="text-xs font-semibold text-amber-900">
-                    [1] Document Name Format Examples
+                    [1] Document Date Format Examples
                   </p>
                   <p className="text-xs text-amber-800 mt-1">
+                    Document Date must be in DDMMYYYY format (e.g. 25112025, which is 25 Nov 25).
+                  </p>
+                  {/* <p className="text-xs text-amber-800 mt-1">
                     For Press Release: 2025_Cannae Holdings_25 Nov 25_Activist Press Release_GL_Carronade
-                  </p>
-                  <p className="text-xs text-amber-800 mt-1">
-                    For Presentation: 2025_Cannae Holdings_24 Nov 25_Activist Presentation_Carronade (Rebuttal)
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
