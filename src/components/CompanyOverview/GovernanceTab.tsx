@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { governanceService } from "@/services/governance";
 import { CorporateGovernanceData, CorporateGovernanceDataWithDocs, DocumentItem, GovernanceRow } from "@/types/governance";
-import { ExternalLink, FileText, X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 
 type GovernanceTabProps = {
   ticker: string;
@@ -71,38 +71,53 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
 }
 function FilingLink({
   label,
-  date,
+  dateItems,
   onViewClick,
   iconType = "default",
 }: {
   label: string;
-  date?: string;
+  dateItems?: Array<{ date?: string; link?: string }>;
   onViewClick: () => void;
   iconType?: "coi" | "bylaws" | "default";
 }) {
+  const items = dateItems && dateItems.length > 0 ? dateItems : [{ date: undefined, link: undefined }];
+
   return (
-    <div
-      className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-200 last:border-b-0"
-      onClick={onViewClick}
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-          <FileText className="h-4 w-4 text-blue-600" />
-        </div>
-        <div>
-          <p className="text-[14px] font-medium text-slate-900">{label}</p>
-          {date && (
-            <p className="text-[12px] text-slate-500">Filed: {date}</p>
-          )}
+    <div className="grid grid-cols-12 items-center rounded-2xl border border-slate-300 px-4 py-3.5">
+      <div className="col-span-4">
+        <p className="text-[14px] font-medium text-slate-900">{label}</p>
+      </div>
+
+      <div className="col-span-5 flex justify-center">
+        <div className="flex flex-wrap items-center justify-center gap-1 text-[13px]">
+          {items.map((item, idx) => (
+            <React.Fragment key={`${label}-${idx}`}>
+              {item.date && item.link ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary hover:underline"
+                >
+                  {item.date}
+                </a>
+              ) : (
+                <span className="text-slate-400">-</span>
+              )}
+              {idx < items.length - 1 && <span className="mx-1 text-slate-400">|</span>}
+            </React.Fragment>
+          ))}
         </div>
       </div>
-      <button
-        onClick={(e) => { e.stopPropagation(); onViewClick(); }}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 text-[13px] text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0"
-      >
-        View
-        <ExternalLink className="h-3.5 w-3.5" />
-      </button>
+
+      <div className="col-span-3 flex justify-end">
+        <button
+          onClick={onViewClick}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-400 text-[13px] font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+        >
+          View
+        </button>
+      </div>
     </div>
   );
 }
@@ -356,27 +371,7 @@ export default function GovernanceTab({
   return (
     <>
       <div className="space-y-6">
-        {/* Filing Links Section */}
-        {((governanceData?.certificate_of_incorporation?.length ?? 0) > 0 || (governanceData?.bylaws?.length ?? 0) > 0) && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-slate-900">Official Documents</h3>
-              {(governanceData?.certificate_of_incorporation?.length ?? 0) > 0 && (
-                <FilingLink
-                  label="Certificate of Incorporation"
-                  onViewClick={() => setModalType("coi")}
-                />
-              )}
-              {(governanceData?.bylaws?.length ?? 0) > 0 && (
-                <FilingLink
-                  label="Bylaws"
-                  onViewClick={() => setModalType("bylaws")}
-                />
-              )}
-            </div>
-          </div>
-        )}
-
+        
         {/* Governance Sections */}
         {Object.entries(data.profile).map(([sectionTitle, rows]) => (
           <div
@@ -390,6 +385,35 @@ export default function GovernanceTab({
           </div>
         ))}
       </div>
+
+      {/* Filing Links Section */}
+        {((governanceData?.certificate_of_incorporation?.length ?? 0) > 0 || (governanceData?.bylaws?.length ?? 0) > 0) && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm mt-6">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-900">Documents</h3>
+              {(governanceData?.certificate_of_incorporation?.length ?? 0) > 0 && (
+                <FilingLink
+                  label="Certificate of Incorporation"
+                  dateItems={coiDocuments.map((item) => ({
+                    date: item.date,
+                    link: item.link,
+                  }))}
+                  onViewClick={() => setModalType("coi")}
+                />
+              )}
+              {(governanceData?.bylaws?.length ?? 0) > 0 && (
+                <FilingLink
+                  label="Bylaws"
+                  dateItems={bylawsDocuments.map((item) => ({
+                    date: item.date,
+                    link: item.link,
+                  }))}
+                  onViewClick={() => setModalType("bylaws")}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
       {/* Documents Modal */}
       <DocumentsModal
