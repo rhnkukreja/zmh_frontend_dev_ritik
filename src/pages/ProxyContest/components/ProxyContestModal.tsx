@@ -75,7 +75,6 @@ interface DocumentFieldsSectionProps {
   onDocumentDateChange: (value: string) => void;
   onIsCompanyActivistChange: (value: "company" | "activist") => void;
   onDocumentFileChange: (file: File | null) => void;
-  onScrollToNote: () => void;
   onRemove?: () => void;
   title?: string;
 }
@@ -94,13 +93,33 @@ const DocumentFieldsSection = ({
   onDocumentDateChange,
   onIsCompanyActivistChange,
   onDocumentFileChange,
-  onScrollToNote,
   onRemove,
   title,
 }: DocumentFieldsSectionProps) => {
   const radioGroupName = `company-or-activist-${(title || "document")
     .replace(/\s+/g, "-")
     .toLowerCase()}`;
+
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [rawDate, setRawDate] = useState("");
+
+  useEffect(() => {
+    if (documentDate) {
+      const monthMap: Record<string, string> = {
+        Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+        Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+      };
+      const parts = documentDate.trim().split(" ");
+      if (parts.length === 3) {
+        const day = parts[0].padStart(2, "0");
+        const month = monthMap[parts[1]] || "";
+        const yr = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+        if (day && month && yr) setRawDate(`${yr}-${month}-${day}`);
+      }
+    } else {
+      setRawDate("");
+    }
+  }, []);
 
   return (
     <div className="rounded-lg border border-slate-300 bg-white p-3.5">
@@ -162,22 +181,51 @@ const DocumentFieldsSection = ({
         <div>
           <label className="text-sm font-medium text-slate-700">
             Document Date <span className="text-rose-600">*</span>
-            <button
-              type="button"
-              onClick={onScrollToNote}
-              className="align-super ml-1 text-[11px] text-primary hover:underline"
-              aria-label="View document name format note"
-            >
-              [1]
-            </button>
           </label>
-          <FormInput
-            value={documentDate}
-            onChange={(e) => onDocumentDateChange(e.target.value)}
-            placeholder="Enter Document Date (DDMMYYYY)"
-            required
-            className="mt-1"
-          />
+          <div 
+            className="relative mt-1 cursor-pointer" 
+            onClick={() => {
+              dateInputRef.current?.showPicker?.();
+            }}
+          >
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 z-10">
+              <Lucide icon="Calendar" className="h-4 w-4 text-slate-400" />
+            </div>
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={rawDate}
+              onChange={(e) => {
+                const iso = e.target.value;
+                setRawDate(iso);
+                if (!iso) {
+                  onDocumentDateChange("");
+                  return;
+                }
+                const d = new Date(iso);
+                const day = d.getUTCDate();
+                const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+                const year = String(d.getUTCFullYear()).slice(-2);
+                const formatted = `${day} ${month} ${year}`;
+                console.log("[Document Date] Formatted value to be sent in payload:", formatted);
+                onDocumentDateChange(formatted);
+              }}
+              required
+              className="w-full rounded-md border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 shadow-sm transition-colors hover:border-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [color-scheme:light] cursor-pointer"
+            />
+          </div>
+          {rawDate && (
+            <p className="mt-1.5 text-xs text-slate-500 flex items-center gap-1">
+              <Lucide icon="Check" className="h-3 w-3 text-emerald-500" />
+              Will be saved as: <span className="font-medium text-slate-700">{(() => {
+                const d = new Date(rawDate);
+                const day = d.getUTCDate();
+                const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+                const year = String(d.getUTCFullYear()).slice(-2);
+                return `${day} ${month} ${year}`;
+              })()}</span>
+            </p>
+          )}
         </div>
 
         <div>
@@ -629,11 +677,6 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
     }
   };
 
-  const handleScrollToDocNameNote = () => {
-    const note = document.getElementById("doc-name-format-note");
-    note?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   return (
     <Dialog size="xl" open={open} onClose={handleClose}>
       <Dialog.Panel className="rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xl">
@@ -759,7 +802,6 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                         setDocumentFile(file);
                         if (file) setExistingDocumentUrl("");
                       }}
-                      onScrollToNote={handleScrollToDocNameNote}
                     />
 
                     {extraDocuments.map((doc, index) => (
@@ -792,7 +834,6 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                             existingDocumentUrl: file ? "" : doc.existingDocumentUrl,
                           })
                         }
-                        onScrollToNote={handleScrollToDocNameNote}
                         onRemove={() => handleRemoveExtraDocument(doc.id)}
                       />
                     ))}
@@ -807,20 +848,6 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                   </div>
                 </div>
 
-                <div
-                  id="doc-name-format-note"
-                  className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3"
-                >
-                  <p className="text-xs font-semibold text-amber-900">
-                    [1] Document Date Format Examples
-                  </p>
-                  <p className="text-xs text-amber-800 mt-1">
-                    Document Date must be in DDMMYYYY format (e.g. 25112025, which is 25 Nov 25).
-                  </p>
-                  {/* <p className="text-xs text-amber-800 mt-1">
-                    For Press Release: 2025_Cannae Holdings_25 Nov 25_Activist Press Release_GL_Carronade
-                  </p> */}
-                </div>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-5">
