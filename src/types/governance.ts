@@ -13,3 +13,19 @@ export type CorporateGovernanceData = {
   bylaws_filing_date?: string;
   profile: Record<string, GovernanceRow[]>;
 };
+
+export type DocumentItem = {
+  name: string;
+  date?: string;
+  link?: string;
+};
+
+export type GovernanceDocument = {
+  proxy_link?: string;
+  filing_date?: string;
+};
+
+export type CorporateGovernanceDataWithDocs = CorporateGovernanceData & {
+  certificate_of_incorporation?: GovernanceDocument[];
+  bylaws?: GovernanceDocument[];
+};

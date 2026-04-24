@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { governanceService } from "@/services/governance";
-import { CorporateGovernanceData, GovernanceRow } from "@/types/governance";
-import { ExternalLink, X } from "lucide-react";
+import { CorporateGovernanceData, CorporateGovernanceDataWithDocs, DocumentItem, GovernanceRow } from "@/types/governance";
+import { ExternalLink, FileText, X } from "lucide-react";
 
 type GovernanceTabProps = {
   ticker: string;
@@ -71,17 +71,34 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
 }
 function FilingLink({
   label,
+  date,
   onViewClick,
+  iconType = "default",
 }: {
   label: string;
+  date?: string;
   onViewClick: () => void;
+  iconType?: "coi" | "bylaws" | "default";
 }) {
   return (
-    <div className="flex items-center justify-between ps-2 py-2 hover:bg-slate-100 hover:cursor-pointer border-b border-slate-200 rounded " onClick={onViewClick}>
-      <div className="text-[15px] font-semibold text-slate-900 hover:text-red-800">{label}</div>
+    <div
+      className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-200 last:border-b-0"
+      onClick={onViewClick}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+          <FileText className="h-4 w-4 text-blue-600" />
+        </div>
+        <div>
+          <p className="text-[14px] font-medium text-slate-900">{label}</p>
+          {date && (
+            <p className="text-[12px] text-slate-500">Filed: {date}</p>
+          )}
+        </div>
+      </div>
       <button
-        onClick={onViewClick}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded text-[13px] font-medium border border-primary text-primary hover:bg-primary/5 transition-colors"
+        onClick={(e) => { e.stopPropagation(); onViewClick(); }}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 text-[13px] text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0"
       >
         View
         <ExternalLink className="h-3.5 w-3.5" />
@@ -90,11 +107,6 @@ function FilingLink({
   );
 }
 
-type DocumentItem = {
-  name: string;
-  date?: string;
-  link?: string;
-};
 
 function DocumentsModal({
   isOpen,
@@ -112,7 +124,7 @@ function DocumentsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50"   style={{ zIndex: 99999 }}>
       <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl mx-4">
         {/* Header */}
         <div className="border-b border-slate-200 bg-gradient-to-r from-primary to-primary px-6 py-4 flex items-center justify-between rounded-t-2xl">
@@ -137,11 +149,11 @@ function DocumentsModal({
                   <th className="px-4 py-3 text-left text-[13px] font-semibold text-slate-900 uppercase tracking-wide">
                     Date
                   </th>
-                  <th className="px-4 py-3 text-left text-[13px] font-semibold text-slate-900 uppercase tracking-wide">
+                  {/* <th className="px-4 py-3 text-left text-[13px] font-semibold text-slate-900 uppercase tracking-wide">
                     Document
-                  </th>
+                  </th> */}
                   <th className="px-4 py-3 text-right text-[13px] font-semibold text-slate-900 uppercase tracking-wide">
-                    Action
+                    Document
                   </th>
                 </tr>
               </thead>
@@ -154,9 +166,9 @@ function DocumentsModal({
                     <td className="px-4 py-3 text-[14px] text-slate-600">
                       {doc.date || "–"}
                     </td>
-                    <td className="px-4 py-3 text-[14px] font-medium text-slate-900">
+                    {/* <td className="px-4 py-3 text-[14px] font-medium text-slate-900">
                       {doc.name}
-                    </td>
+                    </td> */}
                     <td className="px-4 py-3 text-right">
                       {doc.link ? (
                         <a
@@ -264,8 +276,8 @@ export default function GovernanceTab({
       } catch (err: any) {
         setError(
           err.response?.data?.message ||
-            err.message ||
-            "Failed to load governance data"
+          err.message ||
+          "Failed to load governance data"
         );
         console.error("Governance data fetch error:", err);
       } finally {
@@ -276,25 +288,23 @@ export default function GovernanceTab({
     fetchGovernanceData();
   }, [companyId]);
 
-  const coiDocuments: DocumentItem[] = data?.coi_link
-    ? [
-        {
-          name: "Certificate of Incorporation",
-          date: data.coi_filing_date,
-          link: data.coi_link,
-        },
-      ]
-    : [];
+  const governanceData = data as CorporateGovernanceDataWithDocs | null;
 
-  const bylawsDocuments: DocumentItem[] = data?.bylaws_link
-    ? [
-        {
-          name: "Bylaws",
-          date: data.bylaws_filing_date,
-          link: data.bylaws_link,
-        },
-      ]
-    : [];
+  const coiDocuments: DocumentItem[] = (governanceData?.certificate_of_incorporation ?? []).map(
+    (item) => ({
+      name: `Certificate of Incorporation`,
+      date: item.filing_date,
+      link: item.proxy_link,
+    })
+  );
+
+  const bylawsDocuments: DocumentItem[] = (governanceData?.bylaws ?? []).map(
+    (item) => ({
+      name: `Bylaws`,
+      date: item.filing_date,
+      link: item.proxy_link,
+    })
+  );
 
   const getModalDocuments = () => {
     if (modalType === "coi") return coiDocuments;
@@ -347,17 +357,17 @@ export default function GovernanceTab({
     <>
       <div className="space-y-6">
         {/* Filing Links Section */}
-        {(data.coi_link || data.bylaws_link) && (
+        {((governanceData?.certificate_of_incorporation?.length ?? 0) > 0 || (governanceData?.bylaws?.length ?? 0) > 0) && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-slate-900">Governance Documents</h3>
-              {data.coi_link && (
+              <h3 className="text-lg font-semibold text-slate-900">Official Documents</h3>
+              {(governanceData?.certificate_of_incorporation?.length ?? 0) > 0 && (
                 <FilingLink
                   label="Certificate of Incorporation"
                   onViewClick={() => setModalType("coi")}
                 />
               )}
-              {data.bylaws_link && (
+              {(governanceData?.bylaws?.length ?? 0) > 0 && (
                 <FilingLink
                   label="Bylaws"
                   onViewClick={() => setModalType("bylaws")}
