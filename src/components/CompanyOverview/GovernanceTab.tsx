@@ -18,9 +18,10 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <table className="w-full" style={{ tableLayout: "fixed" }}>
         <colgroup>
-          <col style={{ width: "35%" }} />
+          <col style={{ width: "30%" }} />
           <col style={{ width: "10%" }} />
-          <col style={{ width: "55%" }} />
+          <col style={{ width: "40%" }} />
+          <col style={{ width: "10%" }} />
         </colgroup>
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
@@ -32,6 +33,9 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
             </th>
             <th className="px-4 py-3 text-left text-[14px] font-semibold text-slate-900">
               Key Provisions
+            </th>
+            <th className="px-4 py-3 text-left text-[14px] font-semibold text-slate-900">
+              Source
             </th>
           </tr>
         </thead>
@@ -61,6 +65,7 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
                 <td className="px-4 py-3 text-[14px] text-slate-700 break-words">
                   {row["Key Provisions"]}
                 </td>
+                <td className="text-center">-</td>
               </tr>
             );
           })}
