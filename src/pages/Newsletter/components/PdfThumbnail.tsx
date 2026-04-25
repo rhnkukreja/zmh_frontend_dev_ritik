@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import Lucide from "@/components/Base/Lucide";
 import { axiosInstance } from "@/services";
@@ -7,10 +7,7 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
 // Set worker source
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.js",
-  import.meta.url
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface PdfThumbnailProps {
   fileUrl: string;
@@ -18,11 +15,33 @@ interface PdfThumbnailProps {
   width?: number;
 }
 
-const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width = 300 }) => {
+const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("Preview not available");
-  const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [autoWidth, setAutoWidth] = useState(300);
+  const pdfBlobUrlRef = useRef<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (!containerRef.current || typeof width === "number") return;
+      const nextWidth = Math.max(220, Math.floor(containerRef.current.clientWidth * 0.92));
+      setAutoWidth(nextWidth);
+    };
+
+    updateWidth();
+
+    if (typeof width === "number" || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    const observer = new ResizeObserver(() => updateWidth());
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    return () => observer.disconnect();
+  }, [width]);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,7 +52,11 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width = 3
           setError(true);
           setErrorMessage("Invalid document URL");
           setLoading(false);
-          setPdfData(null);
+          if (pdfBlobUrlRef.current) {
+            URL.revokeObjectURL(pdfBlobUrlRef.current);
+            pdfBlobUrlRef.current = null;
+          }
+          setPdfBlobUrl(null);
         }
         return;
       }
@@ -79,9 +102,14 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width = 3
           return;
         }
 
-        const bytes = new Uint8Array(arrayBuffer);
+        const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+        const objectUrl = URL.createObjectURL(blob);
 
-        setPdfData(bytes);
+        if (pdfBlobUrlRef.current) {
+          URL.revokeObjectURL(pdfBlobUrlRef.current);
+        }
+        pdfBlobUrlRef.current = objectUrl;
+        setPdfBlobUrl(objectUrl);
       } catch (err) {
         console.error("PDF Fetch Error:", err);
 
@@ -96,7 +124,11 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width = 3
           setErrorMessage("Unable to load PDF preview");
         }
         setLoading(false);
-        setPdfData(null);
+        if (pdfBlobUrlRef.current) {
+          URL.revokeObjectURL(pdfBlobUrlRef.current);
+          pdfBlobUrlRef.current = null;
+        }
+        setPdfBlobUrl(null);
       }
     };
 
@@ -104,6 +136,10 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width = 3
 
     return () => {
       isMounted = false;
+      if (pdfBlobUrlRef.current) {
+        URL.revokeObjectURL(pdfBlobUrlRef.current);
+        pdfBlobUrlRef.current = null;
+      }
     };
   }, [fileUrl]);
 
@@ -127,10 +163,10 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width = 3
         </div>
       )}
 
-      <div className="min-h-[400px] flex items-center justify-center pointer-events-none">
-        {pdfData && !error ? (
+      <div ref={containerRef} className="min-h-[400px] flex items-center justify-center pointer-events-none">
+        {pdfBlobUrl && !error ? (
           <Document
-            file={{ data: pdfData }}
+            file={pdfBlobUrl}
             onLoadSuccess={() => {
               setLoading(false);
               setError(false);
@@ -149,7 +185,7 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width = 3
           >
             <Page
               pageNumber={1}
-              width={width}
+              width={typeof width === "number" ? width : autoWidth}
               renderTextLayer={false}
               renderAnnotationLayer={false}
               className="shadow-[0_0_15px_rgba(0,0,0,0.1)]"
