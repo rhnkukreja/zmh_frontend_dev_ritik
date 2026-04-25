@@ -529,15 +529,15 @@ function Router() {
           element: <Notes />,
           data: { titleName: "Notes - ZMH Analytics" },
         },
+        // {
+        //   path: "/newsletter-old",
+        //   element: <Newsletter />,
+        //   data: { titleName: "Newsletter Old - ZMH Analytics" },
+        // },
         {
           path: "/newsletter",
-          element: <Newsletter />,
-          data: { titleName: "Newsletter - ZMH Analytics" },
-        },
-        {
-          path: "/newsletter-new",
           element: <NewsletterV2 />,
-          data: { titleName: "Newsletter New - ZMH Analytics" },
+          data: { titleName: "Newsletter - ZMH Analytics" },
         },
         {
           path: "npx-details",

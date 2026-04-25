@@ -168,16 +168,15 @@ const initialState: any = {
       pathname: "#",
       title: "Podcasts",
     },
+    // {
+    //   icon: "Newspaper",
+    //   pathname: "/newsletter-old",
+    //   title: "Newsletter Old",
+    // },
     {
       icon: "Newspaper",
       pathname: "/newsletter",
       title: "Newsletter",
-    },
-    {
-      icon: "Newspaper",
-      pathname: "/newsletter-new",
-      title: "Newsletter New",
-      isAdmin: true,
     },
     {
       icon: "BarChart2",

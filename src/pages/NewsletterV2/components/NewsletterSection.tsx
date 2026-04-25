@@ -141,8 +141,8 @@ const NewsletterSection: React.FC<NewsletterSectionProps> = ({
 
         {isLoading ? (
           <div className="flex flex-col lg:flex-row gap-8">
-            <div className="w-full lg:w-1/3 h-[400px] rounded-2xl bg-slate-100 dark:bg-darkmode-400 animate-pulse border border-slate-200 dark:border-darkmode-300" />
-            <div className="w-full lg:w-2/3 h-[400px] rounded-2xl bg-slate-100 dark:bg-darkmode-400 animate-pulse border border-slate-200 dark:border-darkmode-300" />
+            <div className="w-full lg:w-1/3 h-[280px] rounded-2xl bg-slate-100 dark:bg-darkmode-400 animate-pulse border border-slate-200 dark:border-darkmode-300" />
+            <div className="w-full lg:w-2/3 h-[280px] rounded-2xl bg-slate-100 dark:bg-darkmode-400 animate-pulse border border-slate-200 dark:border-darkmode-300" />
           </div>
         ) : briefs.length > 0 ? (
           <div className="flex flex-col lg:flex-row gap-8 items-start">

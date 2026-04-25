@@ -163,7 +163,7 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width }) 
         </div>
       )}
 
-      <div ref={containerRef} className="min-h-[400px] flex items-center justify-center pointer-events-none">
+      <div ref={containerRef} className="h-[280px] flex items-center justify-center pointer-events-none overflow-hidden">
         {pdfBlobUrl && !error ? (
           <Document
             file={pdfBlobUrl}
@@ -186,9 +186,10 @@ const PdfThumbnail: React.FC<PdfThumbnailProps> = ({ fileUrl, onClick, width }) 
             <Page
               pageNumber={1}
               width={typeof width === "number" ? width : autoWidth}
+              height={280}
               renderTextLayer={false}
               renderAnnotationLayer={false}
-              className="shadow-[0_0_15px_rgba(0,0,0,0.1)]"
+              className="shadow-[0_0_15px_rgba(0,0,0,0.1)] max-h-[280px] object-contain"
             />
           </Document>
         ) : null}
