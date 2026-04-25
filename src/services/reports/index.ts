@@ -1,4 +1,5 @@
 import { axiosInstance } from "../index";
+import { CompanyReportData } from "@/types/companyReport";
 
 export interface OwnershipData {
   filer_id: number;
@@ -44,6 +45,27 @@ class ReportsService {
       return filteredData;
     } catch (error) {
       console.error("Error fetching ownership data:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a comprehensive company report
+   * @param ticker - Company ticker symbol
+   * @returns Company report data
+   */
+  public async generateCompanyReport(ticker: string): Promise<CompanyReportData> {
+    try {
+      const normalizedTicker = ticker.toUpperCase();
+      const timestamp = new Date().getTime();
+      
+      const response = await axiosInstance.get(
+        `/company_report/?ticker=${encodeURIComponent(normalizedTicker)}`
+      );
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error generating company report:", error);
       throw error;
     }
   }

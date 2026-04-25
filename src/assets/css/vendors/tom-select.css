@@ -22,7 +22,27 @@
             padding: theme("spacing.2") theme("spacing.3");
             input {
                 font-size: inherit;
+                /* Remove blue selection highlight */
+                &::selection {
+                    background-color: transparent;
+                }
+                &::-moz-selection {
+                    background-color: transparent;
+                }
             }
+            /* Remove blue selection highlight from control */
+            &::selection {
+                background-color: transparent;
+            }
+            &::-moz-selection {
+                background-color: transparent;
+            }
+        }
+        /* Remove focus blue border */
+        &:focus-within,
+        &.focus {
+            border-color: theme("colors.gray.300") !important;
+            box-shadow: 0 0 0 1px theme("colors.gray.300") !important;
         }
     }
     &.ts-wrapper.disabled {

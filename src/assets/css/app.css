@@ -74,6 +74,43 @@
   font-weight: 600 !important;
 }
 
+.app-toast {
+  border-radius: 10px !important;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15) !important;
+  padding: 12px 14px !important;
+  min-height: 52px !important;
+  animation: toast-fade 3s ease both;
+}
+
+.app-toast-body {
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+.Toastify__toast--success.app-toast {
+  background: #ecfdf3 !important;
+  color: #166534 !important;
+  border-left: 6px solid #22c55e !important;
+}
+
+.Toastify__toast--error.app-toast {
+  background: #fef2f2 !important;
+  color: #991b1b !important;
+  border-left: 6px solid #ef4444 !important;
+}
+
+@keyframes toast-fade {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 table {
   border-collapse: collapse;
   width: 100%;
@@ -81,6 +118,14 @@ table {
 
 body {
   background-color: #0000000d;
+}
+
+.company-name-wrapper {
+  min-width: 0; /* Allow flex items to shrink below content size */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .sticky-table {
@@ -378,6 +423,154 @@ option[data-label="*"] {
   z-index: 1000 !important;
 }
 
+/* Fix for blue selection highlighting in all select components */
+.select__input input,
+.select__input,
+.react-select input,
+.react-select__input input,
+.react-select__input,
+.basic-multi-select input,
+.basic-multi-select .select__input input,
+.basic-multi-select .select__input,
+.select__control input,
+.select__control,
+input[class*="select"],
+div[class*="select"] input,
+.css-* input {
+  caret-color: #374151 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.select__input input::selection,
+.select__input::selection,
+.react-select input::selection,
+.react-select__input input::selection,
+.react-select__input::selection,
+.basic-multi-select input::selection,
+.basic-multi-select .select__input input::selection,
+.basic-multi-select .select__input::selection,
+.select__control input::selection,
+.select__control::selection,
+input[class*="select"]::selection,
+div[class*="select"] input::selection,
+.css-* input::selection {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+.select__input input::-moz-selection,
+.select__input::-moz-selection,
+.react-select input::-moz-selection,
+.react-select__input input::-moz-selection,
+.react-select__input::-moz-selection,
+.basic-multi-select input::-moz-selection,
+.basic-multi-select .select__input input::-moz-selection,
+.basic-multi-select .select__input::-moz-selection,
+.select__control input::-moz-selection,
+.select__control::-moz-selection,
+input[class*="select"]::-moz-selection,
+div[class*="select"] input::-moz-selection,
+.css-* input::-moz-selection {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+/* Remove blue focus outline and background from select components */
+.select__control:focus,
+.select__control:focus-within,
+.react-select__control:focus,
+.react-select__control:focus-within,
+.basic-multi-select .select__control:focus,
+.basic-multi-select .select__control:focus-within,
+div[class*="control"]:focus,
+div[class*="control"]:focus-within {
+  border-color: #d1d5db !important;
+  box-shadow: 0 0 0 1px #d1d5db !important;
+  outline: none !important;
+}
+
+/* Specifically target react-select generated CSS classes */
+[class*="css-"][class*="control"]:focus-within,
+[class*="css-"][class*="Input"],
+[class*="css-"][class*="input"] {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Remove text selection highlighting globally for react-select */
+.css-* {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+.css-* input {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Enhanced React Select Blue Highlight Prevention */
+[class*="react-select"] *,
+[class*="css-"] *,
+div[class*="react-select"] *,
+div[class*="css-"] *,
+*[class*="react-select__input-container"] *,
+*[class*="react-select__value-container"] * {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Prevent blue outline on focus for all react-select elements */
+[class*="react-select"] *:focus,
+[class*="css-"] *:focus,
+div[class*="react-select"] *:focus,
+div[class*="css-"] *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+/* Target the actual input field that gets focus */
+[class*="css-"][class*="Input"] input,
+[class*="css-"][class*="input"] input,
+div[class*="css-"] input[type="text"],
+div[class*="react-select"] input[type="text"] {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  caret-color: #374151 !important;
+}
+
+/* Override any inline styles that might cause blue selection */
+[style*="outline"],
+[style*="box-shadow"] {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Target positioned elements (often where the typing input appears) */
+div[style*="position: absolute"] input,
+div[style*="position: relative"] input,
+div[style*="opacity: 1"] input {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
 /*
  |--------------------------------------------------------------------------
  | TailwindCSS Directives
@@ -394,3 +587,63 @@ option[data-label="*"] {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Selective React Select blue highlight elimination */
+/* Only target the actual text input, not the control container */
+div[class*="react-select__input"] input:focus,
+div[class*="css-"][class*="Input"] input:focus,
+[class*="react-select__value-container"] input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Ensure control borders stay intact */
+div[class*="react-select__control"],
+div[class*="css-"][class*="control"],
+.select__control,
+.basic-multi-select .select__control {
+  border: 1px solid #d1d5db !important;
+}
+
+/* Focused control should maintain border but change color */
+div[class*="react-select__control"]:focus-within,
+div[class*="css-"][class*="control"]:focus-within,
+.select__control:focus-within,
+.basic-multi-select .select__control:focus-within {
+  border: 1px solid #d1d5db !important;
+  box-shadow: 0 0 0 1px #d1d5db !important;
+  outline: none !important;
+}
+
+div[class*="react-select__menu"],
+div[class*="css-"][class*="menu"],
+.select__menu {
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Ensure checkboxes in MultiSelect maintain their styling */
+.basic-multi-select input[type="checkbox"] {
+  outline: none !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+  appearance: checkbox !important;
+  -webkit-appearance: checkbox !important;
+  -moz-appearance: checkbox !important;
+}
+
+.basic-multi-select input[type="checkbox"]:focus {
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+/* Remove blue highlight only from text inputs, not controls */
+input[type="text"][class*="react-select"]:focus,
+input[type="text"][class*="css-"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}

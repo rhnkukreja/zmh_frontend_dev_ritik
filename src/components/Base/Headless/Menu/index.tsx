@@ -7,7 +7,9 @@ function Menu({
   children,
   className,
   ...props
-}: ExtractProps<typeof HeadlessMenu>) {
+}: ExtractProps<typeof HeadlessMenu> & {
+  className?: string;
+}) {
   return (
     <HeadlessMenu
       as="div"
@@ -44,6 +46,7 @@ Menu.Items = ({
   placement = "bottom-end",
   ...props
 }: ExtractProps<typeof HeadlessMenu.Items> & {
+  className?: string;
   placement?:
     | "top-start"
     | "top"
@@ -104,7 +107,9 @@ Menu.Item = ({
   children,
   className,
   ...props
-}: ExtractProps<typeof HeadlessMenu.Item>) => {
+}: ExtractProps<typeof HeadlessMenu.Item> & {
+  className?: string;
+}) => {
   return (
     <HeadlessMenu.Item
       as="a"

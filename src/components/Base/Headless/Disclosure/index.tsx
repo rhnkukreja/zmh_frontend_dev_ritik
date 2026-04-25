@@ -40,6 +40,7 @@ function Disclosure({
   ...props
 }: ExtractProps<typeof HeadlessDisclosure> & {
   key?: number;
+  className?: string;
 }) {
   const group = useContext(groupContext);
 
@@ -124,8 +125,12 @@ Disclosure.Group = <C extends React.ElementType = "div">({
 Disclosure.Button = ({
   children,
   className,
+  onClick,
   ...props
-}: ExtractProps<typeof HeadlessDisclosure.Button>) => {
+}: ExtractProps<typeof HeadlessDisclosure.Button> & {
+  className?: string;
+  onClick?: (event: React.MouseEvent) => void;
+}) => {
   const disclosure = useContext(disclosureContext);
   const group = useContext(groupContext);
 
@@ -141,12 +146,20 @@ Disclosure.Button = ({
         disclosure.open && "text-primary dark:text-slate-300",
         className,
       ])}
-      onClick={() => {
-        group.setSelectedIndex(disclosure.key);
-      }}
       {...props}
     >
-      {children}
+      {({ open }) => (
+        <div
+          onClick={(event) => {
+            group.setSelectedIndex(disclosure.key);
+            if (onClick) {
+              onClick(event);
+            }
+          }}
+        >
+          {typeof children === 'function' ? children({ open }) : children}
+        </div>
+      )}
     </HeadlessDisclosure.Button>
   );
 };
@@ -155,7 +168,9 @@ Disclosure.Panel = ({
   children,
   className,
   ...props
-}: ExtractProps<typeof HeadlessDisclosure.Panel>) => {
+}: ExtractProps<typeof HeadlessDisclosure.Panel> & {
+  className?: string;
+}) => {
   return (
     <Transition
       as={Fragment}

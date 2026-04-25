@@ -254,7 +254,7 @@ function Main() {
         >
           <div className="flex items-center justify-between m-3">
           <Bot className="w-5 h-5" />
-          <span className="ml-3 font-bold">AI Assistant</span></div>
+          <span className="ml-3 font-bold">AI Assistant (Beta)</span></div>
         </div> */}
 
 

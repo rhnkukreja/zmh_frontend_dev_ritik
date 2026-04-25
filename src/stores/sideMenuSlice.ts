@@ -1,15 +1,16 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "./store";
-import { icons } from "@/components/Base/Lucide";
+import { AppIconName } from "@/components/Base/Lucide";
 
 export interface Menu {
-  icon: keyof typeof icons;
+  icon: AppIconName;
   title: string;
   badge?: number;
   pathname?: string;
   subMenu?: Menu[];
   ignore?: boolean;
   isAdmin?: boolean;
+  isAnalyst?: boolean;
   selectPathName?: string;
 }
 
@@ -79,6 +80,12 @@ const initialState: any = {
       title: "Case Studies",
     },
     // {
+    //   icon: "FileSearch",
+    //   pathname: "/case-studies-ai",
+    //   title: "Case Studies AI",
+    //   isAdmin: true,
+    // },
+    // {
     //   icon: "MessageCircle",
     //   pathname: "/engagement-question",
     //   title: "Engagement Question",
@@ -88,11 +95,11 @@ const initialState: any = {
       pathname: "/engagement-detail",
       title: "Engagement Details",
     },
-    {
-      icon: "FileText",
-      pathname: "/voting-guidelines",
-      title: "Voting Guidelines",
-    },
+    // {
+    //   icon: "FileText",
+    //   pathname: "/voting-guidelines",
+    //   title: "Voting Guidelines",
+    // },
     {
       icon: "Hand",
       pathname: "/shareholder-proposal",
@@ -132,34 +139,55 @@ const initialState: any = {
     // "Additional",
     "Admin",
     {
-      icon: "School",
+      icon: "ShieldUser",
       pathname: "/institution",
-      title: "Institutions",
+      title: "Admin Panel",
+      isAnalyst: true,
       isAdmin: true,
     },
     {
       icon: "Building",
       pathname: "/company",
       title: "Company",
-      isAdmin: true,
+      isAnalyst: true,
     },
     {
       icon: "User",
       pathname: "/user-details",
       title: "User Detail",
+      isAnalyst: true,
+    },
+    {
+      icon: "Users",
+      pathname: "/user-management",
+      title: "User Management",
       isAdmin: true,
+    },
+    {
+      icon: "Headphones",
+      pathname: "#",
+      title: "Podcasts",
+    },
+    // {
+    //   icon: "Newspaper",
+    //   pathname: "/newsletter-old",
+    //   title: "Newsletter Old",
+    // },
+    {
+      icon: "Newspaper",
+      pathname: "/newsletter",
+      title: "Newsletter",
+    },
+    {
+      icon: "BarChart2",
+      pathname: "/custom-reports",
+      title: "Custom Reports",
     },
     {
       icon: "Mail",
       pathname: "#",
       title: "Email Alert",
     },
-
-      {
-        icon: "BarChart2",
-        pathname: "/custom-reports",
-        title: "Custom Reports",
-      },
     {
       icon: "FileText",
       pathname: "/notes",

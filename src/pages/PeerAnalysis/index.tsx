@@ -28,7 +28,6 @@ import { commonService } from "@/services/common";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
 import Lucide from "@/components/Base/Lucide";
-import LoadingIcon from "@/components/Base/LoadingIcon";
 
 import { Popover } from "@/components/Base/Headless";
 import { FormCheck, FormSwitch } from "@/components/Base/Form";
@@ -46,6 +45,7 @@ import Pill from "@/components/Pill";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
+import AddEngagementDetailsModal from "./components/AddEngagementDetailsModal";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -62,6 +62,8 @@ function PeerAnalysis() {
   const dispatch: AppDispatch = useAppDispatch();
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [addEngagementDetailsModalVisible, setAddEngagementDetailsModalVisible] =
     useState<boolean>(false);
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
@@ -175,28 +177,6 @@ function PeerAnalysis() {
       return;
     }
 
-    // if (isAllCompanySelected === true && filters?.global_search.length > 0) {
-
-    //     const { institution_name, global_search, ...restFilters } = filters;
-    //     const dynamicURL = createDynamicURL(
-    //       `${baseURL}/peer_analysis/`,
-    //       restFilters,
-    //       undefined,
-    //       page
-    //     );
-    //     dispatch(fetchPeerAnalysis(dynamicURL));
-
-    //     setFiltersLength(
-    //       countValidFilters(
-    //         isAllCompanySelected === false
-    //           ? restFilters
-    //           : { ...restFilters }
-    //       )
-    //     );
-    //     setSelectedChipFilters(generateFilterChips(restFilters));
-    //     console.log("inner one")
-    //     return;
-    // }
     const { global_search, ...restFilters } = filters;
     const dynamicURL = createDynamicURL(
       `${baseURL}/peer_analysis/`,
@@ -216,7 +196,6 @@ function PeerAnalysis() {
     );
     setSelectedChipFilters(generateFilterChips(chipFilters));
   }, [page, filters]);
-
 
 
   const handleNextPage = () => {
@@ -387,9 +366,16 @@ function PeerAnalysis() {
       setSelectedInstitution([""]);
       setSearchTerms([]);
       
-      // Set default filters for "View All" mode
-      setValue("year", [new Date().getFullYear().toString()]);
+      // Get sector from current peerAnalysisData (from global search)
+      const sectorFromData = peerAnalysisData?.[0]?.company_sector;
+      const sectorFilter = sectorFromData ? [sectorFromData] : [];
+      
+      // Set default filters for "View All" mode - current year and previous year
+      const currentYear = new Date().getFullYear();
+      const defaultYears = [(currentYear - 1).toString(), currentYear.toString()];
+      setValue("year", defaultYears);
       setValue("country", ["USA"]);
+      setValue("sector", sectorFilter);
       
       // Clear filter chips and count
       setSelectedChipFilters([]);
@@ -398,10 +384,10 @@ function PeerAnalysis() {
       // Reset Redux state with only the default filters
       dispatch(
         setAllFilters({
-          year: [new Date().getFullYear()],
+          year: defaultYears,
           country: ["USA"],
           category: [],
-          sector: [],
+          sector: sectorFilter,
           index: undefined,
           institution_name: [],
           global_search: [],
@@ -475,6 +461,10 @@ function PeerAnalysis() {
       serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
     });
   };
+
+  const handleDocumentClick = (institutionName: string) => {
+  console.log("Clicked:", institutionName);
+};
   return (
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -482,7 +472,7 @@ function PeerAnalysis() {
           {/* Sticky Header OUTSIDE scrollable content */}
           <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
             {isAllCompanySelected === true ? (
-              <h1 className="text-lg font-bold flex items-center gap-2">
+              <h1 className="font-semibold text-lg">
                 All Engagement Details
               </h1>
             ) : (
@@ -529,12 +519,9 @@ function PeerAnalysis() {
                       placeholder: "Select Institution", closeAfterSelect: true,
                       render: {
                         option: (data: any, escape: any) => {
-                          // text-red-600
-                          // ${escape(data.value)} ${data.label ? '*' : ''}
                           return `
-                            <div class="p-2 ${data.label ? '' : 'font-bold'}">
-                              ${escape(data.value)} 
-                              <span class=" ${data.label ? 'text-black font-bold' : ''}">${data.label ? '*' : ''}<span/>
+                            <div class="p-2">
+                              ${escape(data.value)}
                             </div>
                           `;
                         }
@@ -555,18 +542,8 @@ function PeerAnalysis() {
                               <option
                                 key={inst?.institution_name}
                                 value={inst?.institution_name}
-                                disabled={inst?.label}
-                                data-label={inst?.label ? "*" : ""}
-                                className={inst?.label ? "" : ""}
-                                onClick={() => {
-                                  inst?.label ?
-                                    window.scrollBy({
-                                      top: 350,
-                                      behavior: "smooth",
-                                    }) : "";
-                                }}
                               >
-                                {inst?.institution_name} {inst?.label ? "*" : ""}
+                                {inst?.institution_name}
                               </option>
                             );
                           }
@@ -617,6 +594,17 @@ function PeerAnalysis() {
                     />
                     <FormSwitch.Label htmlFor="view-analysis-switch"></FormSwitch.Label>
                   </FormSwitch> */}
+                  {/* Add Engagement Details btn is disabled for now */}
+                  {/* {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                    <Button
+                      onClick={() => setAddEngagementDetailsModalVisible(true)}
+                      variant="primary"
+                      className="bg-theme-2 border-bg-theme-2"
+                    >
+                      <Lucide icon="Plus" className="stroke-[1.3] w-4 h-4 mr-2" />
+                      Add Engagement Details
+                    </Button>
+                  )} */}
                   <button
                     onClick={() => {
                       const element = document.querySelector('#data-listing');
@@ -983,7 +971,6 @@ function PeerAnalysis() {
                                   const selectedValues = selectedOptions.map((option) => option.value);
                                   field.onChange(selectedValues);
                                   dispatch(setFilter({ key: "sector", value: selectedValues }));
-
                                 }}
                                 selectedOption={field.value || []}
                               />
@@ -1029,13 +1016,15 @@ function PeerAnalysis() {
 
               {isViewAnalysis && (
                 loading ? (
-                  <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                    <LoadingIcon
-                      color="#800000"
-                      icon="three-dots"
-                      className="w-16 h-16"
-                    />
-                  </div>
+                  <ChartComponent 
+                    investorData={investorData} 
+                    pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} 
+                    handleSearch={handleSearch} 
+                    topEngagementTopics={topEngagementTopics}
+                    onDocumentClick={handleDocumentClick}
+                    isAllCompanySelected={isAllCompanySelected}
+                    isLoading={true}
+                  />
                 ) : peerAnalysisData?.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Lucide
@@ -1045,7 +1034,15 @@ function PeerAnalysis() {
                     <div className="text-lg font-medium">No Analytics found</div>
                   </div>
                 ) : (
-                  <ChartComponent investorData={investorData} pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} handleSearch={handleSearch} topEngagementTopics={topEngagementTopics} />
+                  <ChartComponent 
+                    investorData={investorData} 
+                    pieChartDataPeerAnalysis={pieChartDataPeerAnalysis} 
+                    handleSearch={handleSearch} 
+                    topEngagementTopics={topEngagementTopics}
+                    onDocumentClick={handleDocumentClick}
+                    isAllCompanySelected={isAllCompanySelected}
+                    isLoading={false}
+                  />
                 )
               )}
 
@@ -1065,15 +1062,90 @@ function PeerAnalysis() {
                 </Tippy>
               </div>
               <div className="px-5">
-                <TableWrapper isLoading={loading}>
+                <TableWrapper
+                  isLoading={loading}
+                  skeleton={
+                    <div className="overflow-auto max-h-[400px] rounded-lg">
+                      <Table>
+                        <Table.Thead>
+                          <Table.Tr className="bg-primary text-white">
+                            <Table.Td className="py-3 px-4 text-center font-medium border-0 w-[70px]" style={{ fontSize: "14px" }}>
+                              Year
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[220px]" style={{ fontSize: "14px" }}>
+                              Institution
+                            </Table.Td>
+                            {isAllCompanySelected && (
+                              <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{ fontSize: "14px" }}>
+                                Company
+                              </Table.Td>
+                            )}
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[80px]" style={{ fontSize: "14px" }}>
+                              Country
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[90px]" style={{ fontSize: "14px" }}>
+                              Sector
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{ fontSize: "14px" }}>
+                              Environmental
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{ fontSize: "14px" }}>
+                              Social
+                            </Table.Td>
+                            <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{ fontSize: "14px" }}>
+                              Governance
+                            </Table.Td>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <Table.Tr
+                              key={`engagement-details-skeleton-${index}`}
+                              className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? "bg-white" : "bg-slate-50/70"}`}
+                            >
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[70px] text-center">
+                                <span className="inline-block h-6 w-11 rounded-full bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[220px] text-wrap">
+                                <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              {isAllCompanySelected && (
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-wrap">
+                                  <div className="h-4 w-[72%] rounded bg-slate-200 animate-pulse" />
+                                </Table.Td>
+                              )}
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[80px] text-wrap">
+                                <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[90px] text-wrap">
+                                <div className="h-4 w-[72%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap">
+                                <div className="h-4 w-[85%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap">
+                                <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap">
+                                <div className="h-4 w-[80%] rounded bg-slate-200 animate-pulse" />
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </div>
+                  }
+                  rows={6}
+                  columns={isAllCompanySelected ? 8 : 7}
+                >
                   <div className="overflow-auto max-h-[400px] rounded-lg">
                     <Table>
                       <Table.Thead>
                         <Table.Tr className="bg-primary text-white">
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-center font-medium border-0 w-[70px]" style={{fontSize: '14px'}}>
                             Year
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[220px]" style={{fontSize: '14px'}}>
                             Institution
                           </Table.Td>
                           {isAllCompanySelected && (
@@ -1081,19 +1153,19 @@ function PeerAnalysis() {
                               Company
                             </Table.Td>
                           )}
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[80px]" style={{fontSize: '14px'}}>
                             Country
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[90px]" style={{fontSize: '14px'}}>
                             Sector
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
                             Environmental
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
                             Social
                           </Table.Td>
-                          <Table.Td className="py-3 px-4 text-left font-medium border-0" style={{fontSize: '14px'}}>
+                          <Table.Td className="py-3 px-4 text-left font-medium border-0 w-[180px]" style={{fontSize: '14px'}}>
                             Governance
                           </Table.Td>
                         </Table.Tr>
@@ -1103,36 +1175,36 @@ function PeerAnalysis() {
                         {peerAnalysisData?.length > 0 &&
                           peerAnalysisData?.map((peer: TypesPeerAnalysis, index) => (
                             <Table.Tr key={peer?.id} className={`[&_td]:last:border-b-0 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/70'} transition-all hover:bg-primary/5 cursor-pointer`}>
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[70px] text-center">
                                 <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                                   {peer?.year}
                                 </span>
                               </Table.Td>
-                              <Table.Td className="border-dashed">
-                                <p className="font-medium text-wrap w-[150px]">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[220px] text-wrap">
+                                <p className="font-medium text-wrap">
                                   {peer?.institution_name}
                                 </p>
                               </Table.Td>
 
                               {isAllCompanySelected && (
-                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
+                                <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium">
                                   {peer?.company_name}
                                 </Table.Td>
                               )}
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[80px] text-wrap font-medium">
                                 {peer?.company_country}
                               </Table.Td>
 
-                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[90px] text-wrap font-medium">
                                 {peer?.company_sector}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap font-medium">
                                 {peer?.env_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[100px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap font-medium">
                                 {peer?.soc_list}
                               </Table.Td>
-                              <Table.Td className="py-2  border-dashed dark:bg-darkmode-600 w-[200px] text-wrap font-medium">
+                              <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[180px] text-wrap font-medium">
                                 {peer?.gov_list}
                               </Table.Td>
                             </Table.Tr>
@@ -1170,18 +1242,6 @@ function PeerAnalysis() {
                 />
 
                 <footer className="!pt-3 flex items-start flex-col">
-                  <span className="!pt-3 flex items-center relative">
-                    <sup
-                      className="bold-sup cursor-pointer ml-1"
-                      style={{ fontSize: "0.8em" }}
-                    >
-                      *
-                    </sup>
-                    <p id="footnote" className="">
-                      Investor does not disclose engagement details. (SSGA and Dimensional does not disclose engagement topics)
-                    </p>
-
-                  </span>
                 </footer>
 
 
@@ -1200,6 +1260,13 @@ function PeerAnalysis() {
             <AddNewInvesterProfile
               addNewInvesterModalVisible={addNewInvesterModalVisible}
               setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
+            />
+          )}
+
+          {addEngagementDetailsModalVisible && (
+            <AddEngagementDetailsModal
+              visible={addEngagementDetailsModalVisible}
+              setVisible={setAddEngagementDetailsModalVisible}
             />
           )}
         </div>

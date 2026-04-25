@@ -23,6 +23,7 @@ import {
   setFinhub,
 } from "@/stores/authenticationSlice";
 import { toast } from "react-toastify";
+import { commonService } from "@/services/common";
 
 interface LoginFormInputs {
   email: string;
@@ -86,8 +87,26 @@ const Main: React.FC = () => {
           })
         );
         // toast.success("Logged In Successfully!");
-      }
-      if (response?.finnhub) {
+        
+        // Fetch complete finnhub data including sec_filing via saveSearch API
+        try {
+          const saveSearchResponse = await commonService.saveSearches({
+            module: "Global Search",
+            id: response.company_id,
+            company: response.company_name,
+          });
+          if (saveSearchResponse?.finnhub) {
+            dispatch(setFinhub(saveSearchResponse.finnhub));
+          } else if (response?.finnhub) {
+            dispatch(setFinhub(response.finnhub));
+          }
+        } catch {
+          // Fallback to login response finnhub if saveSearch fails
+          if (response?.finnhub) {
+            dispatch(setFinhub(response.finnhub));
+          }
+        }
+      } else if (response?.finnhub) {
         dispatch(setFinhub(response?.finnhub));
       }
 
@@ -173,12 +192,6 @@ const Main: React.FC = () => {
                 {formView === "login" ? "Sign In" :
                   formView === "sendOtp" ? "Reset Password" : "Enter Verification Code"}
               </div>
-              {formView === "login" && <div className="mt-2.5 text-slate-600">
-                Don't have an account?
-                <Link className="ml-2 font-medium text-primary" to="/register">
-                  Sign Up
-                </Link>
-              </div>}
               {formView === "resetPassword" && <div className="mt-2.5 text-slate-600">
                 {/* Verification code sent to your email */}
 

@@ -227,7 +227,7 @@ function CompanyList() {
               </Tippy>
             </div>
 
-            {user?.user_type === "Admin" && (
+            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
               <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
                 <Button
                   onClick={() => {
@@ -346,7 +346,11 @@ function CompanyList() {
               </div>
             </div>
             <div className=" px-5">
-              <TableWrapper isLoading={loading}>
+              <TableWrapper
+                isLoading={loading}
+                rows={8}
+                columns={6}
+              >
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
                     <Table.Thead>

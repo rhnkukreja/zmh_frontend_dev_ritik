@@ -2,6 +2,21 @@ import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
 import React, { useState, useEffect, createRef, useRef } from "react";
+import type { MouseEvent } from "react";
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'gen-search-widget': {
+        configid?: string;
+        location?: string;
+        triggerid?: string;
+        alwaysOpened?: boolean;
+        children?: React.ReactNode;
+      };
+    }
+  }
+}
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { selectSideMenu } from "@/stores/sideMenuSlice";
 import {
@@ -31,17 +46,19 @@ import { BellRing, FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
-import aiIcon from "@/assets/images/zmh-images/ai-Icon.png";
 import notificationIcon2 from "@/assets/images/zmh-images/side-bell.png";
+import AIAssistantButton from "@/components/Base/AIAssistantButton";
 import sideBarIcon from "@/assets/images/zmh-images/Group 1597887028.png";
 import Tippy from "@/components/Base/Tippy";
 import CountryInfoHeader from "./components/countryHeader";
 import VotingDataBanner from "./components/VotingDataBanner";
+import InvestorProfileTour from "./components/InvestorProfileTour";
 import GetHelp from "@/components/Help";
 import { resetInvestorProfiles } from "@/stores/investersProfileSlice";
 import { resetCompany } from "@/stores/companySlice";
 import { resetInstitution } from "@/stores/institutionSlice";
 import { resetShareholderProposal } from "@/stores/shareholderProposalSlice";
+import { toast } from "react-toastify";
 import { resetProxyVotingGuidelines } from "@/stores/proxyVotingGuidelineSlice";
 import { resetEngagementQuestions } from "@/stores/engagementQuestionSlice";
 import { resetPeerAnalysis } from "@/stores/peerAnalysisSlice";
@@ -56,6 +73,7 @@ import { dashboardService } from "@/services/dashboard";
 import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
+import SearchWidgetIframe from "@/components/SearchWidget";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -99,6 +117,7 @@ function Main() {
   const sideMenu = () => nestedMenu(sideMenuStore, location);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
+  const isCompanyReportPage = location.pathname.startsWith("/company-report");
 
   const [topBarActive, setTopBarActive] = useState(false);
 
@@ -111,8 +130,10 @@ function Main() {
   const [helpFormVisible, setHelpFormVisible] = useState<boolean>(false);
   const [whatsNewFormVisible, setWhatsNewFormVisible] =
     useState<boolean>(false);
+  const [podcastModalVisible, setPodcastModalVisible] =
+    useState<boolean>(false);
 
-  const toggleCompactMenu = (event: React.MouseEvent) => {
+  const toggleCompactMenu = (event: MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
@@ -145,6 +166,31 @@ function Main() {
     window.onresize = () => {
       compactLayout();
     };
+
+    // Fix table border issues
+    const fixTableStyles = () => {
+      if (!document.getElementById('table-border-fix')) {
+        const style = document.createElement('style');
+        style.id = 'table-border-fix';
+        style.textContent = `
+          table td, table th {
+            border: none !important;
+            border-bottom: 1px solid #e5e7eb !important;
+          }
+          .cell_2, .cell_3 {
+            border: none !important;
+            border-bottom: 1px solid #e5e7eb !important;
+          }
+          .table_2 td, .table_3 td {
+            border: none !important;
+            border-bottom: 1px solid #e5e7eb !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    };
+
+    fixTableStyles();
   }, [sideMenuStore, location]);
 
   window.onscroll = () => {
@@ -156,7 +202,7 @@ function Main() {
     }
   };
 
-  const handleToggleMenu = (event: React.MouseEvent) => {
+  const handleToggleMenu = (event: MouseEvent) => {
     event.preventDefault();
     setCompactMenu(!compactMenu);
   };
@@ -179,6 +225,24 @@ function Main() {
     setBasicModalPreview(false);
     setIsFrameLoading(true);
     setIsError(false);
+  };
+
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
+
+  const handleCopyQuestion = async (question: string) => {
+    try {
+      await navigator.clipboard.writeText(question);
+      setCopiedMessage("Copied to clipboard");
+      setTimeout(() => {
+        setCopiedMessage(null);
+      }, 3000);
+    } catch (error) {
+      console.error("Failed to copy text: ", error);
+      setCopiedMessage("Failed to copy");
+      setTimeout(() => {
+        setCopiedMessage(null);
+      }, 3000);
+    }
   };
 
   const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
@@ -244,7 +308,7 @@ function Main() {
   };
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: Event) => {
       if (
         tooltipRef.current &&
         !tooltipRef.current.contains(e.target as Node) &&
@@ -413,7 +477,11 @@ function Main() {
   };
 
 
-  return (
+  return isCompanyReportPage ? (
+    <div>
+      <Outlet />
+    </div>
+  ) : (
     <div
       className={clsx([
         "echo group  h-full",
@@ -507,9 +575,9 @@ function Main() {
               {formattedMenu.map((menu, menuKey) =>
                 typeof menu == "string" ? (
                   <li className="side-menu__divider" key={menuKey}>
-                    {user.user_type === "Admin" ? (
+                    {user.user_type === "Analyst" ? (
                       <>{menu}</>
-                    ) : user.user_type !== "Admin" && menu === "Admin" ? (
+                    ) : user.user_type !== "Analyst" && menu === "Admin" ? (
                       <>{ }</>
                     ) : (
                       <>{menu}</>
@@ -527,12 +595,14 @@ function Main() {
                             menu.activeDropdown,
                         },
                       ])}
-                      onClick={(event: React.MouseEvent) => {
+                      onClick={(event: MouseEvent) => {
                         event.preventDefault();
                         if (menu.title === "Help") {
                           setHelpFormVisible(true);
                         } else if (menu.title === "Email Alert") {
                           setWhatsNewFormVisible(true);
+                        } else if (menu.title === "Podcasts") {
+                          setPodcastModalVisible(true);
                         } else if (menu.title === "Company Search") {
                           // menu.pathname = `/?ticker=${companyGlobalSearchTicker}`
                           // menu.selectPathName = `/?ticker=${companyGlobalSearchTicker}`;
@@ -542,6 +612,7 @@ function Main() {
                         }
                         setFormattedMenu([...formattedMenu]);
                       }}
+                      id={menu.title === "Investor Profile" ? "investor-profile-menu-link" : undefined}
                     >
                       <Tippy content={menu.title} options={{ theme: "light" }}>
                         {menu.title !== "Shareholder Proposals" && (
@@ -549,7 +620,10 @@ function Main() {
                             <span className="relative">
                               <Lucide
                                 icon={menu?.icon}
-                                className="side-menu__link__icon side-menu__link--active"
+                                className={clsx(
+                                  "side-menu__link__icon side-menu__link--active",
+                                  menu.title === "Admin Panel" && "w-6 h-6"
+                                )}
                               />
                               {menu.title === "Proxy Contest" &&
                                 modulesData?.proxy_contest && (
@@ -663,7 +737,7 @@ function Main() {
                                     subMenu.activeDropdown,
                                 },
                               ])}
-                              onClick={(event: React.MouseEvent) => {
+                              onClick={(event: MouseEvent) => {
                                 event.preventDefault();
                                 linkTo(
                                   subMenu,
@@ -725,7 +799,7 @@ function Main() {
                                               lastSubMenu.activeDropdown,
                                           },
                                         ])}
-                                        onClick={(event: React.MouseEvent) => {
+                                        onClick={(event: MouseEvent) => {
                                           event.preventDefault();
                                           linkTo(
                                             lastSubMenu,
@@ -826,8 +900,9 @@ function Main() {
                   "/engagement-question",
                   "/custom-reports",
                   "/voting-guidelines",
-                ]?.includes(location.pathname) || 
-                location.pathname.startsWith("/proxy-contest-detail/") ? (
+                ]?.includes(location.pathname) ||
+                  location.pathname.startsWith("/proxy-contest-detail/") ||
+                  location.pathname.startsWith("/investor-profile/") ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
                     {location.pathname.includes("/notes") &&
@@ -855,19 +930,13 @@ function Main() {
                   </div>
                 )}
 
-                {/* BEGIN: AI Assistant - Always Visible */}
-                <a
-                  href=""
-                  className="px-2 py-1.5 ml-2 bg-gradient-to-b from-[#9F1239] to-[#000000CC] border border-white text-white rounded-md flex items-center justify-center hidden md:flex"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    setBasicModalPreview(true);
-                  }}
-                >
-                  <img src={aiIcon} alt="ai icon" className="w-4 h-4" />
-                  <span className="ml-2 text-sm font-medium hidden xl:flex">AI Assistant</span>
-                </a>
-                {/* END: AI Assistant - Always Visible */}
+                {/* BEGIN: AI Assistant - Open /ai-assistant in new tab */}
+                <AIAssistantButton 
+                  href="/ai-assistant"
+                  className="ml-2 hidden md:flex border-4 hover:border-transparent"
+                  size="md"
+                />
+                {/* END: AI Assistant - Open /ai-assistant in new tab */}
               </>
 
               <QuickSearch
@@ -878,10 +947,9 @@ function Main() {
               {/* BEGIN: Notification & User Menu */}
               <div className="flex items-center flex-1">
                 <div className="flex items-center gap-1 ml-auto">
-
-                  
                   {/* Your existing layout container */}
-                  <VotingDataBanner /> {/* Add the banner component here */}
+                  <VotingDataBanner />
+                  <InvestorProfileTour compactMenu={compactMenu} />
                   {/* User Guide Button */}
                   <a
                     className="px-3 py-1.5 bg-red-100 rounded-full flex items-center justify-center transition-colors hover:bg-red-200"
@@ -1109,15 +1177,21 @@ function Main() {
                       <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
                     </Menu.Item> */}
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("login");
-                        dispatch(logout());
-                        persistor.purge();
-                      }}
-                    >
-                      <Lucide icon="Power" className="w-4 h-4 mr-2" />
-                      Logout
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                            } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            navigate("/login");
+                            dispatch(logout());
+                            persistor.purge();
+                          }}
+                        >
+                          <Lucide icon="Power" className="w-4 h-4 mr-2" />
+                          Logout
+                        </button>
+                      )}
                     </Menu.Item>
                   </Menu.Items>
                 </Menu>
@@ -1204,51 +1278,123 @@ function Main() {
         />
       )}
 
-      <Dialog size="2xl" open={basicModalPreview} onClose={handleCloseModal}>
-        <Dialog.Panel className="p-10 text-center h-full">
+      <Dialog size={"2xl"} open={basicModalPreview} onClose={handleCloseModal} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+        <div className="fixed inset-0 flex items-center justify-center p-2">
+          <Dialog.Panel className="relative bg-white rounded-lg shadow-xl p-8 w-[90vw] h-[70vh] flex flex-col overflow-hidden">
+            <Dialog.Title className="mb-3 relative">
+              <div>
+                <h2 className="text-lg font-semibold text-left">AI Assistant (Beta)</h2>
+                <p className="text-xs text-gray-500 mt-1">AI Assistant can make mistakes. Verify important info.</p>
+              </div>
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-0 right-0 mt-0 mr-0 cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-colors"
+                aria-label="Close modal"
+              >
+                <Lucide icon="X" className="w-6 h-6 text-slate-400" />
+              </button>
+            </Dialog.Title>
+
+            <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
+              {/* Left Section - AI Assistant (65% width) */}
+              <div className="w-[65%] flex flex-col min-h-0">
+                <div className="w-full flex-1 border border-gray-200 rounded-lg overflow-hidden relative">
+                  <SearchWidgetIframe />
+                </div>
+              </div>
+
+              {/* Right Section - Logo and Recommended Questions (35% width) */}
+              <div className="w-[35%] flex flex-col min-h-0">
+                {/* ZMH Logo */}
+                <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-2 mb-3">
+                  <img
+                    src={logo}
+                    alt="ZMH Analytics Logo"
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
+
+                {/* Recommended Questions */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-semibold text-left text-gray-800">Recommended Questions</h3>
+                    {copiedMessage && (
+                      <div className="flex items-center text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded-md transition-all duration-500 ease-in-out transform animate-in fade-in slide-in-from-right-2">
+                        <Lucide icon="Info" className="w-2 h-2 mr-1" />
+                        <span className="text-xs">{copiedMessage}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => handleCopyQuestion("What does Vanguard say about overboarding?")}
+                      className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
+                    >
+                      <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
+                        What does Vanguard say about overboarding?
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => handleCopyQuestion("What are Blackrock's engagement priorities?")}
+                      className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
+                    >
+                      <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
+                        What are Blackrock's engagement priorities?
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => handleCopyQuestion("What type of climate proposals does State Street support?")}
+                      className="w-full text-left p-2 bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-colors group"
+                    >
+                      <span className="text-primary text-xs group-hover:text-primary/80 line-clamp-2">
+                        What type of climate proposals does State Street support?
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+
+      {/* Podcast Modal */}
+      <Dialog size="xl" open={podcastModalVisible} onClose={() => setPodcastModalVisible(false)}>
+        <Dialog.Panel className="p-6">
           <Dialog.Title>
-            {/* <h2 className="mr-auto text-xl font-semibold">Add New Shareholder No Action</h2> */}
-            <div
-              onClick={handleCloseModal}
-              className="absolute top-0 right-0 mt-5 mr-5 cursor-pointer"
-            >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            <div className="flex items-center justify-between w-[100%]">
+              <h2 className="text-xl font-semibold">Podcasts</h2>
+              <div
+                onClick={() => setPodcastModalVisible(false)}
+                className="cursor-pointer"
+              >
+                <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+              </div>
             </div>
           </Dialog.Title>
-          {/* <Dialog.Description > */}
-          <div className="relative w-full h-full">
-            {isFrameLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white">
-                <LoadingIcon
-                  color="#800000"
-                  icon="three-dots"
-                  className="w-16 h-16"
-                />
-              </div>
-            )}
-
-            {isError && !isFrameLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-red-100 text-red-600">
-                <p>
-                  Failed to load the embedded content. Please try again later.
-                </p>
-              </div>
-            )}
-
-            <iframe
-              className={`w-full h-full ${isFrameLoading || isError ? "hidden" : ""
-                }`}
-              src="https://app.korra.ai/zmhdashboard/Global-Search-Engine-V2"
-              title="Embedded Dashboard"
-              onLoad={handleLoad}
-              onError={handleError}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-          {/* </Dialog.Description> */}
+          <Dialog.Description>
+            <div className="mt-4">
+              <iframe
+                src="https://player.rss.com/the-deep-dive-podcast/?theme=light&v=2"
+                title="The Deep Dive Podcast"
+                width="100%"
+                height="393px"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                scrolling="no"
+              >
+                <a href="https://rss.com/podcasts/the-deep-dive-podcast/">The Deep Dive Podcast</a>
+              </iframe>
+            </div>
+          </Dialog.Description>
         </Dialog.Panel>
       </Dialog>
+
+
 
       {/* AI Bot Modal & Button */}
     </div>

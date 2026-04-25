@@ -345,7 +345,7 @@ function Main() {
               ) : (
                 <div className="font-semibold text-xl">Engagement Questions</div>
               )}
-              {user?.user_type === "Admin" && (
+              {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                 <div className="flex justify-end">
                   <Button
                     onClick={() => {
@@ -618,7 +618,11 @@ function Main() {
             )}
             <div className=" xl:overflow-auto px-5 ">
 
-              <TableWrapper isLoading={loading}>
+              <TableWrapper
+                isLoading={loading}
+                rows={6}
+                columns={5}
+              >
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
                     <Table.Thead>
@@ -744,7 +748,7 @@ function Main() {
                                             />
                                           </Tippy>
 
-                                          {user?.user_type === "Admin" && (
+                                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                             <Tippy
                                               content="Edit"
                                               options={{

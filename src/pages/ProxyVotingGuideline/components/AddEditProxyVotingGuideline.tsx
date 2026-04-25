@@ -26,6 +26,7 @@ interface PolicyGuidelineFormData {
   sub_category: string;
   section: string;
   policy_guidelines: string;
+  policy_type: string;
   active: boolean;
 }
 
@@ -40,6 +41,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
   setAddNewProxyVotingGuidelineVisible,
   selectedProxyVotingGuideline,
 }) => {
+  const isEditMode = Boolean(selectedProxyVotingGuideline?.id);
   const instituteSelectRef = useRef<any>(null);
   // const categorySelectRef = useRef<any>(null);
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
@@ -51,6 +53,17 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
   const [guideLinePdf, setGuideLinePdf] = useState<any>(null);
   const [showRequiredStateErrors, setShowRequiredStateErrors] =
     useState<boolean>(false);
+
+  useEffect(() => {
+    if (selectedProxyVotingGuideline?.voting_guidelines_pdf) {
+      setGuideLinePdf({
+        name: selectedProxyVotingGuideline.voting_guidelines_pdf.split('/').pop(),
+        url: selectedProxyVotingGuideline.voting_guidelines_pdf,
+      });
+    } else {
+      setGuideLinePdf(null);
+    }
+  }, [selectedProxyVotingGuideline]);
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
@@ -105,6 +118,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
       // section: selectedProxyVotingGuideline?.section || "",
       // policy_guidelines:
       //   selectedProxyVotingGuideline?.policy_guidelines || "",
+      policy_type: selectedProxyVotingGuideline?.policy_type || "",
       active: selectedProxyVotingGuideline?.active,
     },
   });
@@ -117,6 +131,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
     };
 
     if (!guideLinePdf) {
+      setShowRequiredStateErrors(true);
       return;
     } else {
       setShowRequiredStateErrors(false);
@@ -125,12 +140,15 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
     for (const [key, value] of Object.entries(transformedData)) {
       formData.append(key, value as any);
     }
-    formData.append("voting_guidelines_pdf", guideLinePdf);
+    
+    if (!guideLinePdf?.url) {
+      formData.append("voting_guidelines_pdf", guideLinePdf);
+    }
 
     try {
       let response;
 
-      if (selectedProxyVotingGuideline) {
+      if (isEditMode) {
         response = await dispatch(
           addEditProxyVotingGuideline({
             id: selectedProxyVotingGuideline?.id,
@@ -149,7 +167,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
 
       if (response?.results?.id) {
         toast.success(
-          selectedProxyVotingGuideline
+          isEditMode
             ? "Policy Guideline updated successfully"
             : "Policy Guideline saved successfully"
         );
@@ -185,7 +203,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
         <form onSubmit={handleSubmit(onSubmit, onError)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
-              {selectedProxyVotingGuideline
+              {isEditMode
                 ? "Edit Policy Guideline"
                 : "Add New Policy Guideline"}
             </h2>
@@ -300,6 +318,75 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                 )}
               </div>
 
+              <div className="w-full">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  Policy Type
+                </FormCheck.Label>
+                <Controller
+                  name="policy_type"
+                  control={control}
+                  render={({ field }) => (
+                    <FormInput placeholder="Enter Policy Type" {...field} />
+                  )}
+                />
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                  Active
+                </FormCheck.Label>
+                <div className="flex flex-col sm:flex-row">
+                  <Controller
+                    name="active"
+                    control={control}
+                    rules={{
+                      required: "Please select whether Active is true or false",
+                    }}
+                    render={({ field }) => (
+                      <>
+                        <FormCheck className="flex items-center mr-2">
+                          <FormCheck.Input
+                            id="radio-switch-4"
+                            type="radio"
+                            {...field}
+                            value="true"
+                            checked={field.value === true}
+                            onChange={() => field.onChange(true)}
+                          />
+                          <FormCheck.Label
+                            htmlFor="radio-switch-4"
+                            className="ml-2"
+                          >
+                            True
+                          </FormCheck.Label>
+                        </FormCheck>
+                        <FormCheck className="flex items-center mt-2 sm:mt-0">
+                          <FormCheck.Input
+                            id="radio-switch-5"
+                            type="radio"
+                            {...field}
+                            value="false"
+                            checked={field.value === false}
+                            onChange={() => field.onChange(false)}
+                          />
+                          <FormCheck.Label
+                            htmlFor="radio-switch-5"
+                            className="ml-2"
+                          >
+                            False
+                          </FormCheck.Label>
+                        </FormCheck>
+                      </>
+                    )}
+                  />
+                </div>
+                {errors.active && (
+                  <Error className="max-w-[100%] mt-6">
+                    {errors.active.message}
+                  </Error>
+                )}
+              </div>
+
               {/* <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Section
@@ -329,7 +416,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                 />
               </div> */}
 
-              <div className="mb-10">
+              <div className="w-full col-span-2">
                 <label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Voting Guidelines Pdf
                 </label>
@@ -389,62 +476,6 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                     </Error>
                   )}
                 </div>
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
-                  Active
-                </FormCheck.Label>
-                <div className="flex flex-col sm:flex-row">
-                  <Controller
-                    name="active"
-                    control={control}
-                    rules={{
-                      required: "Please select whether Active is true or false",
-                    }}
-                    render={({ field }) => (
-                      <>
-                        <FormCheck className="flex items-center mr-2">
-                          <FormCheck.Input
-                            id="radio-switch-4"
-                            type="radio"
-                            {...field}
-                            value="true"
-                            checked={field.value === true}
-                            onChange={() => field.onChange(true)}
-                          />
-                          <FormCheck.Label
-                            htmlFor="radio-switch-4"
-                            className="ml-2"
-                          >
-                            True
-                          </FormCheck.Label>
-                        </FormCheck>
-                        <FormCheck className="flex items-center mt-2 sm:mt-0">
-                          <FormCheck.Input
-                            id="radio-switch-5"
-                            type="radio"
-                            {...field}
-                            value="false"
-                            checked={field.value === false}
-                            onChange={() => field.onChange(false)}
-                          />
-                          <FormCheck.Label
-                            htmlFor="radio-switch-5"
-                            className="ml-2"
-                          >
-                            False
-                          </FormCheck.Label>
-                        </FormCheck>
-                      </>
-                    )}
-                  />
-                </div>
-                {errors.active && (
-                  <Error className="max-w-[100%] mt-6">
-                    {errors.active.message}
-                  </Error>
-                )}
               </div>
             </div>
           </Dialog.Description>

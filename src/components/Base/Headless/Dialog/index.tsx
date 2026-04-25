@@ -26,6 +26,7 @@ function Dialog({
 }: ExtractProps<typeof HeadlessDialog> & {
   size?: Size;
   staticBackdrop?: boolean;
+  className?: string;
 }) {
   const focusElement = useRef<HTMLElement | null>(null);
   const [zoom, setZoom] = useState(false);
@@ -69,6 +70,7 @@ Dialog.Panel = ({
   ...props
 }: ExtractProps<typeof HeadlessDialog.Panel> & {
   size?: Size;
+  className?: string;
 }) => {
   const dialog = useContext(dialogContext);
   return (
@@ -119,7 +121,9 @@ Dialog.Title = ({
   className,
   as = "div",
   ...props
-}: ExtractProps<typeof HeadlessDialog.Title>) => {
+}: ExtractProps<typeof HeadlessDialog.Title> & {
+  className?: string;
+}) => {
   return (
     <HeadlessDialog.Title
       as={as}
@@ -139,7 +143,9 @@ Dialog.Description = ({
   className,
   as = "div",
   ...props
-}: ExtractProps<typeof HeadlessDialog.Description>) => {
+}: ExtractProps<typeof HeadlessDialog.Description> & {
+  className?: string;
+}) => {
   return (
     <HeadlessDialog.Description
       as={as}

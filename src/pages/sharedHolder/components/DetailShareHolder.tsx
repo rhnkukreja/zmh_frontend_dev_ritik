@@ -12,6 +12,8 @@ import dayjs from "dayjs";
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { convertToTitleCase } from "@/utils/helper";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
@@ -94,6 +96,21 @@ const DetailShareHolder = () => {
     }
   };
 
+  const onApproveProposalClickHandler = async () => {
+    try {
+      await shareHolderProposalService.updateNewShareHolder(
+        params.id!,
+        { approved: true }
+      );
+      toast.success("Shareholder Proposal Approved Successfully");
+      // Refresh the data
+      dispatch(getSingleShareHolderData({ url: url!, id: Number(params.id!) }));
+    } catch (error) {
+      console.error("Error approving proposal:", error);
+      toast.error("Failed to approve proposal. Please try again.");
+    }
+  };
+
   const itemSeparator = ({ item }) => {
     const separateItems = (item: any) => {
       return item.split(",").map((url) => url.trim());
@@ -118,6 +135,16 @@ const DetailShareHolder = () => {
       </div>
     );
   };
+
+  const formatMultilineText = (text?: string) => {
+    if (!text) return "-";
+
+    return text
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\r\n/g, "\n");
+  };
+
   console.log(getSingleShareHolder ,"getSingleShareHolder")
   return (
     <>
@@ -137,21 +164,39 @@ const DetailShareHolder = () => {
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
           <h1 className="text-xl font-semibold">{headingTitle}</h1>
 
-          {user?.user_type === "Admin" && (
-            <Tippy content="Edit" options={{ theme: "light" }}>
-              <div className="cursor-pointer box p-2">
-                <Lucide
-                  onClick={() =>
-                    onEditProposalClickHandler(
-                      getSingleShareHolder,
-                      headingTitle
-                    )
-                  }
-                  icon="PenLine"
-                  className="w-4 h-4 mr-1.5 stroke-[1.3] text-red-700 "
-                />
-              </div>
-            </Tippy>
+          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+            <div className="flex items-center gap-2">
+              {headingTitle === "Shareholder Proposal Details" && (
+                <Tippy content={getSingleShareHolder?.approved ? "Already Approved" : "Approve"} options={{ theme: "light" }}>
+                  <Button
+                    onClick={onApproveProposalClickHandler}
+                    variant="primary"
+                    disabled={getSingleShareHolder?.approved}
+                    className={`text-white px-4 py-1.5 text-sm ${
+                      getSingleShareHolder?.approved 
+                        ? "bg-transparent text-red-900 cursor-not-allowed" 
+                        : "cursor-pointer"
+                    }`}
+                  >
+                    {getSingleShareHolder?.approved ? "Approved" : "Approve"}
+                  </Button>
+                </Tippy>
+              )}
+              <Tippy content="Edit" options={{ theme: "light" }}>
+                <div className="cursor-pointer box p-2">
+                  <Lucide
+                    onClick={() =>
+                      onEditProposalClickHandler(
+                        getSingleShareHolder,
+                        headingTitle
+                      )
+                    }
+                    icon="PenLine"
+                    className="w-4 h-4 mr-1.5 stroke-[1.3] text-red-700 "
+                  />
+                </div>
+              </Tippy>
+            </div>
           )}
         </div>
 
@@ -165,7 +210,7 @@ const DetailShareHolder = () => {
                   {getSingleShareHolder?.year && (
                     <div>
                       <h3 className="font-semibold min-w-[150px] mb-2">Proxy Year</h3>
-                      <p> {getSingleShareHolder?.proxy_season ?? getSingleShareHolder?.year}</p>
+                      <p> {getSingleShareHolder?.proxy_season || "-"}</p>
                     </div>
                   )}
                   {getSingleShareHolder?.proponent_name && (
@@ -318,7 +363,9 @@ const DetailShareHolder = () => {
                         <h3 className="font-semibold min-w-[150px] mb-2">
                           Proposal Text 
                         </h3>
-                        <p>{getSingleShareHolder.proposal_text}</p>
+                        <p className="whitespace-pre-line break-words">
+                          {formatMultilineText(getSingleShareHolder.proposal_text)}
+                        </p>
                       </div>
                     )}
                 </div>
@@ -393,7 +440,9 @@ const DetailShareHolder = () => {
                         <h3 className="font-semibold min-w-[150px] mb-2">
                           Proposal Text
                         </h3>
-                        <p>{getSingleShareHolder.proposal_text}</p>
+                        <p className="whitespace-pre-line break-words">
+                          {formatMultilineText(getSingleShareHolder.proposal_text)}
+                        </p>
                       </div>
                     )}
                 </div>

@@ -212,36 +212,59 @@ const getPageNumbers = (totalCounts: number, perPageCount = PAGE_SIZE): number =
   return Math.ceil(totalCounts / perPageCount);
 };
 
-function createDynamicURL<T extends Record<string, string | string[]>>(
+function createDynamicURL<T extends Record<string, string | string[] | any>>(
   baseURL: string,
   filters?: T,
-  extraPrams?: Record<string, string | string[]> | undefined,
+  extraPrams?: Record<string, string | string[] | any> | undefined,
   page?: number
 ): string {
   const queryParams = new URLSearchParams();
+  
+  // Helper function to handle parameter formatting consistently
+  const addParamToQuery = (key: string, value: any) => {
+    // If already stringified JSON, add directly
+    if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
+      queryParams.append(key, value);
+    } 
+    // If array, stringify it
+    else if (Array.isArray(value)) {
+      if (value.length > 0) {
+        queryParams.append(key, JSON.stringify(value));
+      }
+    } 
+    // For other values
+    else if (value !== null && value !== undefined && value !== "" && value !== " ") {
+      queryParams.append(key, value.toString());
+    }
+  };
+
+  // Always ensure we have a year parameter in NPX-related API calls
+  const isNPXRequest = 
+    baseURL.includes('/npx/') || 
+    baseURL.includes('get_npx_dropdown_values') || 
+    baseURL.includes('npx') || 
+    baseURL.includes('NPX');
+
+  if (isNPXRequest && !filters?.year && !extraPrams?.year) {
+    // Get year from URL or use default
+    const urlParams = new URLSearchParams(window.location.search);
+    const yearParam = urlParams.get('year') || '2024';
+    
+    // Add year parameter explicitly
+    queryParams.append('year', yearParam);
+  }
+
+  // Add extra params first
   if (extraPrams) {
     for (const key in extraPrams) {
-      const value = extraPrams[key];
-      if (Array.isArray(value)) {
-        if (value.length > 0) {
-          queryParams.append(key, JSON.stringify(value));
-        }
-      } else if (value !== null && value !== undefined && value !== "") {
-        queryParams.append(key, value);
-      }
+      addParamToQuery(key, extraPrams[key]);
     }
   }
 
+  // Then add filters
   if (filters) {
     for (const key in filters) {
-      const value = filters[key];
-      if (Array.isArray(value)) {
-        if (value.length > 0) {
-          queryParams.append(key, JSON.stringify(value));
-        }
-      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
-        queryParams.append(key, value);
-      }
+      addParamToQuery(key, filters[key]);
     }
   }
 
@@ -267,11 +290,13 @@ function bytesToMB(bytes: number): number {
 
 const getYearRange = (range: number): string[] => {
   const now = new Date().getUTCFullYear();
-  return Array(now - (now - range))
+  const endYear = now + 1; // Include 2026
+  return Array(endYear - (endYear - range))
     .fill("")
-    .map((v, idx) => now - idx)
+    .map((v, idx) => endYear - idx)
     .map(String);
 };
+
 
 const formatedDate = (dateString: string): string => {
   const parsedDate = dayjs(dateString, "D MMM, YYYY");
@@ -310,23 +335,53 @@ const getCustomRelativeDate = (dateStr: string): string => {
 
 const filterMenu = (menuItems: (string | FormattedMenu)[]) => {
   const userType = localStorage.getItem("userType")?.toLowerCase() || "";
+  const isAdmin = userType === "admin";
+  const isAnalyst = userType === "analyst";
+  
   const filteredMenuItems = menuItems.filter((item, index, arr) => {
-    if (userType !== "admin") {
-      if (typeof item === "string" && item.toLowerCase() === "Additional") {
-        let i = index + 1;
-        while (
-          i < arr.length &&
-          typeof arr[i] === "object" &&
-          (arr[i] as FormattedMenu).isAdmin === true
-        ) {
-          i++;
+    // Handle section headers like "Admin"
+    if (typeof item === "string" && item.toLowerCase() === "admin") {
+      // Check if there are any visible items after this header
+      let i = index + 1;
+      let hasVisibleItems = false;
+      while (i < arr.length && typeof arr[i] === "object") {
+        const menuItem = arr[i] as FormattedMenu;
+        // Admin can see isAdmin items only
+        if (isAdmin && menuItem.isAdmin && !menuItem.isAnalyst) {
+          hasVisibleItems = true;
+          break;
         }
-        return false;
+        // Analyst can see isAnalyst items only
+        if (isAnalyst && menuItem.isAnalyst && !menuItem.isAdmin) {
+          hasVisibleItems = true;
+          break;
+        }
+        // Regular items
+        if (!menuItem.isAdmin && !menuItem.isAnalyst) {
+          hasVisibleItems = true;
+          break;
+        }
+        i++;
       }
-      if (typeof item === "object" && item.isAdmin) {
-        return false;
+      return hasVisibleItems;
+    }
+    
+    // Handle menu items
+    if (typeof item === "object") {
+      // If item is admin-only (has isAdmin but NOT isAnalyst)
+      if (item.isAdmin && !item.isAnalyst) {
+        return isAdmin;
+      }
+      // If item is analyst-only (has isAnalyst but NOT isAdmin)
+      if (item.isAnalyst && !item.isAdmin) {
+        return isAnalyst;
+      }
+      // If item has both flags, it's visible to both
+      if (item.isAdmin && item.isAnalyst) {
+        return isAdmin || isAnalyst;
       }
     }
+    
     return true;
   });
 
@@ -408,9 +463,11 @@ function countIndividualFilters(filters: FilterObject): number {
 
 function generateFilterChips(filters: Record<string, any>) {
   const mapping: Record<string, string> = {
+    global_search: "Company",
     company_name: "Company",
     company_names: "Company",
     institution_name: "Institution",
+    institution_name_raw: "Institution",
     fund_name: "Fund",
     year: "Year",
     vote: "Vote",
@@ -432,11 +489,13 @@ function generateFilterChips(filters: Record<string, any>) {
     market: "Country",
     sector: "Sector",
     region: "Region",
+    anti_category: "Proposal Screen",
   };
 
   // Define the order of filters as they appear in the UI
   const filterOrder = [
     'institution_name',    // First row
+    'institution_name_raw',
     'fund_name',
     'vote_category',
     'proposal',            // Second row
@@ -451,8 +510,10 @@ function generateFilterChips(filters: Record<string, any>) {
     'proponent_type',
     'vote_type',
     // Additional filters that might not be in the main form
+    'global_search',
     'company_name', 'company_names',
     'category',
+    'anti_category',
     'proposal_keyword'
   ];
 
@@ -462,7 +523,18 @@ function generateFilterChips(filters: Record<string, any>) {
   filterOrder.forEach(filterKey => {
     if (filters[filterKey] && filters[filterKey].length !== 0 && filters[filterKey] !== "") {
       const value = filters[filterKey];
-      if (Array.isArray(value)) {
+      
+      // Special handling for proposal_keyword - create separate chips for each keyword
+      if (filterKey === 'proposal_keyword' && Array.isArray(value) && value.length > 0) {
+        value.forEach((keyword) => {
+          const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
+          sortedChips.push({
+            key: filterKey,
+            label: `${mapping[filterKey] || filterKey}: ${keywordValue}`,
+            value: keyword,
+          });
+        });
+      } else if (Array.isArray(value)) {
         value.forEach((v) => {
           sortedChips.push({
             key: filterKey,
@@ -489,7 +561,17 @@ function generateFilterChips(filters: Record<string, any>) {
       value !== ""
     )
     .forEach(([key, value]) => {
-      if (Array.isArray(value)) {
+      // Special handling for proposal_keyword - create separate chips for each keyword
+      if (key === 'proposal_keyword' && Array.isArray(value) && value.length > 0) {
+        value.forEach((keyword) => {
+          const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
+          sortedChips.push({
+            key,
+            label: `${mapping[key] || key}: ${keywordValue}`,
+            value: keyword,
+          });
+        });
+      } else if (Array.isArray(value)) {
         value.forEach((v) => {
           sortedChips.push({
             key,
@@ -515,7 +597,7 @@ function convertToTitleCase(str: string): string {
   }
   if (str == "global_search" || str == "company_name" || str == "company_names") {
     return "Company"
-  } else if (str == "institution_name") {
+  } else if (str == "institution_name" || str == "institution_name_raw") {
     return "Institution"
   }
   else if (str == "date_range") {

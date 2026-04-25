@@ -16,13 +16,15 @@ interface LinkProps
   extends React.PropsWithChildren,
     React.ComponentPropsWithoutRef<"li"> {
   active?: boolean;
+  onClick?: () => void;
 }
 
-Pagination.Link = ({ className, active, children }: LinkProps) => {
+Pagination.Link = ({ className, active, children, onClick, ...rest }: LinkProps) => {
   return (
-    <li className="flex-1 sm:flex-initial">
+    <li className="flex-1 sm:flex-initial" {...rest}>
       <Button
         as="a"
+        onClick={onClick}
         className={twMerge([
           "min-w-0 sm:min-w-[40px] font-normal flex items-center justify-center text-slate-800 sm:mr-2 dark:text-slate-300 px-1 sm:px-3",
           active &&

@@ -5,7 +5,7 @@ import {
   createDynamicURL,
   downloadCSV,
 } from "@/utils/helper";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -19,7 +19,6 @@ import {
   setTabs,
 } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
-import LoadingIcon from "../../components/Base/LoadingIcon";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
 import { ChevronLeft } from "lucide-react";
@@ -28,14 +27,82 @@ import Lucide from "@/components/Base/Lucide";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 
 import { Tooltip } from "react-tooltip";
-import { Tab } from "@/components/Base/Headless";
+import { Tab, Dialog } from "@/components/Base/Headless";
 import { FaCheckCircle } from "react-icons/fa";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 import { dashboardService } from "@/services/dashboard";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import VotingRationale from "./VotingRationale";
+
+// Cache utility types and constants
+interface CacheData {
+  data: any;
+  timestamp: number;
+  expiryMinutes: number;
+}
+
+interface CacheKey {
+  type: 'top20' | 'allInvestors';
+  company: string;
+  year: string;
+  filters?: string;
+}
+
+// Cache utility functions
+const generateCacheKey = (keyObj: CacheKey): string => {
+  const { type, company, year, filters } = keyObj;
+  return `vds_proxy_${type}_${company}_${year}${filters ? `_${filters}` : ''}`;
+};
+
+const getCachedData = (cacheKey: string, expiryMinutes: number = 30): any | null => {
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) return null;
+
+    const cacheData: CacheData = JSON.parse(cached);
+    const now = Date.now();
+    const expiryTime = cacheData.timestamp + (cacheData.expiryMinutes * 60 * 1000);
+
+    if (now > expiryTime) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+
+    return cacheData.data;
+  } catch (error) {
+    console.warn('Failed to read cache:', error);
+    return null;
+  }
+};
+
+const setCachedData = (cacheKey: string, data: any, expiryMinutes: number = 30): void => {
+  try {
+    const cacheData: CacheData = {
+      data,
+      timestamp: Date.now(),
+      expiryMinutes
+    };
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+  } catch (error) {
+    console.warn('Failed to set cache:', error);
+  }
+};
+
+const clearCacheForCompany = (company: string): void => {
+  try {
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith(`vds_proxy_`) && key.includes(`_${company}_`)) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    console.warn('Failed to clear company cache:', error);
+  }
+};
 
 const VdsProxyVotingTable = () => {
   const navigate = useNavigate();
@@ -49,6 +116,14 @@ const VdsProxyVotingTable = () => {
     tab,
   } = useAppSelector((state) => state.dashboard);
   const [searchParams] = useSearchParams();
+  
+  // Ref to track last API call parameters to prevent duplicates
+  const lastApiCallRef = useRef<{
+    company: string;
+    year: string;
+    tab: string;
+    filter: string;
+  } | null>(null);
 
   const {
     companyGlobalSearchName,
@@ -60,9 +135,12 @@ const VdsProxyVotingTable = () => {
   const yearTicker = searchParams.get("year")!;
 
   const [filter, setFilter] = useState<any>([]);
-  const [top20Loaded, setTop20Loaded] = useState<boolean>(false);
-  const [allInvestorsLoaded, setAllInvestorsLoaded] = useState<boolean>(false);
-  const [lastFilterState, setLastFilterState] = useState<string>("");
+  const [meetingDate, setMeetingDate] = useState('');
+
+  const emptyStateAnimationStyle: React.CSSProperties = {
+    animationDelay: "120ms",
+    animationFillMode: "both",
+  };
 
   const { handleSubmit, control, reset } = useForm<any>({
     defaultValues: {
@@ -70,148 +148,162 @@ const VdsProxyVotingTable = () => {
     },
   });
 
-  useEffect(() => {
-    if (tab === "Top-20" && isCompanySelected && !top20Loaded) {
-      dispatch(
-        fetchVdsProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
-          )
-        )
-      );
-      // Also fetch voting rationale for Top-20 tab (no institution_name parameter)
-      dispatch(
-        getProxyVotingRationaleTop20(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-          })
-        )
-      );
-      setTop20Loaded(true);
+  // Clean data loading function for Top-20 tab
+  const loadTop20Data = useCallback(() => {
+    if (!companyGlobalSearchTicker || !yearTicker) return;
+
+    // Check if we've already made this exact API call
+    const currentCall = {
+      company: companyGlobalSearchTicker,
+      year: yearTicker,
+      tab: 'Top-20',
+      filter: ''
+    };
+
+    if (lastApiCallRef.current && 
+        lastApiCallRef.current.company === currentCall.company &&
+        lastApiCallRef.current.year === currentCall.year &&
+        lastApiCallRef.current.tab === currentCall.tab &&
+        lastApiCallRef.current.filter === currentCall.filter) {
+      console.log('⏭️ Skipping duplicate Top-20 API call for:', companyGlobalSearchTicker, yearTicker);
+      return;
     }
 
-    if (companyGlobalSearchTicker && vdsProxyDetails?.length === 0 && !top20Loaded) {
-      dispatch(
-        fetchVdsProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
-          )
-        )
-      );
-      // Also fetch voting rationale for initial load (no institution_name parameter)
-      dispatch(
-        getProxyVotingRationaleTop20(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-          })
-        )
-      );
-      setTop20Loaded(true);
-    }
-  }, [companyGlobalSearchTicker, searchTicker, tab]);
-
-  // Reset the flags when company changes
-  useEffect(() => {
-    setTop20Loaded(false);
-    setAllInvestorsLoaded(false);
-    setLastFilterState("");
-  }, [companyGlobalSearchTicker]);
-
-  useEffect(() => {
-    const currentFilterState = filter?.length > 0 ? JSON.stringify(filter) : "empty";
+    console.log('🚀 Loading Top-20 data for:', companyGlobalSearchTicker, yearTicker);
     
-    if (tab === "All-Investor" && isCompanySelected) {
-      if (filter?.length > 0) {
-        dispatch(
-          fetchVdsProxyAllInvestor(
-            createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: filter,
-            })
-          )
-        );
-        dispatch(
-          getProxyVotingRationaleAllInvestors(
-            createDynamicURL(`/vds_proxy_voting_rationale/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: filter,
-            })
-          )
-        );
-        setLastFilterState(currentFilterState);
-      } else if (!allInvestorsLoaded) {
-        // Default to "Top 10" when no institution is selected and not already loaded
-        dispatch(
-          fetchVdsProxyAllInvestor(
-            createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: "Top 10",
-            })
-          )
-        );
-        dispatch(
-          getProxyVotingRationaleAllInvestors(
-            createDynamicURL(`/vds_proxy_voting_rationale/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: "Top 10",
-            })
-          )
-        );
-        setAllInvestorsLoaded(true);
-        setLastFilterState(currentFilterState);
-      }
-      dispatch(setIsCompanySelected(false));
-    } else if (filter?.length > 0 && lastFilterState !== currentFilterState) {
-      dispatch(
-        fetchVdsProxyAllInvestor(
-          createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: filter,
-          })
+    // Update the ref to track this API call
+    lastApiCallRef.current = currentCall;
+    
+    // Load data from API
+    const fetchPromise = dispatch(
+      fetchVdsProxyDashboard(
+        createDynamicURL(
+          `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
         )
-      );
+      )
+    );
 
-      dispatch(
-        getProxyVotingRationaleAllInvestors(
-          createDynamicURL(`/vds_proxy_voting_rationale/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: filter,
-          })
-        )
-      );
-      setLastFilterState(currentFilterState);
-    } else if (filter?.length === 0 && !allInvestorsLoaded && lastFilterState !== currentFilterState) {
-      // Default to "Top 10" when no institution is selected and not already loaded
-      dispatch(
-        fetchVdsProxyAllInvestor(
-          createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-            ticker: companyGlobalSearchTicker,
-            year: yearTicker!,
-            institution_name: "Top 10",
-          })
-        )
-      );
-        dispatch(
-          getProxyVotingRationaleAllInvestors(
-            createDynamicURL(`/vds_proxy_voting_rationale/`, {
-              ticker: companyGlobalSearchTicker,
-              year: yearTicker!,
-              institution_name: "Top 10",
-            })
-          )
-        );
-      setAllInvestorsLoaded(true);
-      setLastFilterState(currentFilterState);
+    const rationalePromise = dispatch(
+      getProxyVotingRationaleTop20(
+        createDynamicURL(`/vds_proxy_voting_rationale/`, {
+          ticker: companyGlobalSearchTicker,
+          year: yearTicker,
+        })
+      )
+    );
+
+    // Cache the results when both API calls complete
+    const cacheKey = generateCacheKey({
+      type: 'top20',
+      company: companyGlobalSearchTicker,
+      year: yearTicker
+    });
+
+    Promise.all([fetchPromise, rationalePromise]).then(([fetchResult, rationaleResult]) => {
+      if (fetchResult.payload || rationaleResult.payload) {
+        setCachedData(cacheKey, {
+          vdsData: fetchResult.payload,
+          rationaleData: rationaleResult.payload
+        });
+      }
+    }).catch(error => {
+      console.warn('Failed to cache Top-20 data:', error);
+    });
+  }, [companyGlobalSearchTicker, yearTicker, dispatch]);
+
+  // Clean data loading function for All-Investor tab
+  const loadAllInvestorData = useCallback(() => {
+    if (!companyGlobalSearchTicker || !yearTicker) return;
+
+    const filterString = filter?.length > 0 ? JSON.stringify(filter.sort()) : '';
+    const institutionName = filter?.length > 0 ? filter : "Top 10";
+    
+    // Check if we've already made this exact API call
+    const currentCall = {
+      company: companyGlobalSearchTicker,
+      year: yearTicker,
+      tab: 'All-Investor',
+      filter: filterString
+    };
+
+    if (lastApiCallRef.current && 
+        lastApiCallRef.current.company === currentCall.company &&
+        lastApiCallRef.current.year === currentCall.year &&
+        lastApiCallRef.current.tab === currentCall.tab &&
+        lastApiCallRef.current.filter === currentCall.filter) {
+      console.log('⏭️ Skipping duplicate All-Investor API call for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
+      return;
     }
-  }, [filter, tab, companyGlobalSearchTicker]);
+    
+    console.log('🚀 Loading All-Investor data for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
+
+    // Update the ref to track this API call
+    lastApiCallRef.current = currentCall;
+
+    // Load data from API
+    const fetchPromise = dispatch(
+      fetchVdsProxyAllInvestor(
+        createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
+          ticker: companyGlobalSearchTicker,
+          year: yearTicker,
+          institution_name: institutionName,
+        })
+      )
+    );
+
+    const rationalePromise = dispatch(
+      getProxyVotingRationaleAllInvestors(
+        createDynamicURL(`/vds_proxy_voting_rationale/`, {
+          ticker: companyGlobalSearchTicker,
+          year: yearTicker,
+          institution_name: institutionName,
+        })
+      )
+    );
+
+    // Cache the results when both API calls complete
+    const cacheKey = generateCacheKey({
+      type: 'allInvestors',
+      company: companyGlobalSearchTicker,
+      year: yearTicker,
+      filters: filterString
+    });
+
+    Promise.all([fetchPromise, rationalePromise]).then(([fetchResult, rationaleResult]) => {
+      if (fetchResult.payload || rationaleResult.payload) {
+        setCachedData(cacheKey, {
+          vdsData: fetchResult.payload,
+          rationaleData: rationaleResult.payload
+        });
+      }
+    }).catch(error => {
+      console.warn('Failed to cache All-Investor data:', error);
+    });
+  }, [companyGlobalSearchTicker, yearTicker, filter, dispatch]);
+
+  // Single effect to handle data loading - prevents duplicate API calls
+  useEffect(() => {
+    if (!companyGlobalSearchTicker || !yearTicker) return;
+
+    console.log('📊 Loading data for:', companyGlobalSearchTicker, yearTicker, 'tab:', tab);
+    
+    // Load data based on current tab
+    if (tab === "Top-20") {
+      loadTop20Data();
+    } else if (tab === "All-Investor") {
+      loadAllInvestorData();
+    }
+  }, [companyGlobalSearchTicker, yearTicker, tab, loadTop20Data, loadAllInvestorData]);
+
+  // Separate effect to clear cache only when company changes (not year or tab)
+  useEffect(() => {
+    if (companyGlobalSearchTicker) {
+      console.log('🧹 Company changed, clearing cache and API call tracking for:', companyGlobalSearchTicker);
+      clearCacheForCompany(companyGlobalSearchTicker);
+      // Reset API call tracking when company changes
+      lastApiCallRef.current = null;
+    }
+  }, [companyGlobalSearchTicker]);
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -293,8 +385,6 @@ const VdsProxyVotingTable = () => {
       .join(", ");
     return resultString;
   };
-  const [meetingDate, setMeetingDate] = useState('');
-
 
   const [apiDropdownOptions, setApiDropdownOptions] = useState<any>([]);
 
@@ -327,8 +417,16 @@ const VdsProxyVotingTable = () => {
 
   const onFilterClear = () => {
     setFilter([]);
-    setAllInvestorsLoaded(false);
-    setLastFilterState("");
+    // Clear cache for All-Investor data to force reload with empty filter
+    if (companyGlobalSearchTicker && yearTicker) {
+      const allInvestorCacheKey = generateCacheKey({
+        type: 'allInvestors',
+        company: companyGlobalSearchTicker,
+        year: yearTicker,
+        filters: JSON.stringify(filter.sort())
+      });
+      localStorage.removeItem(allInvestorCacheKey);
+    }
     dispatch(clearVotingRationale());
     reset();
   };
@@ -340,20 +438,45 @@ const VdsProxyVotingTable = () => {
 
   return (
     <>
-      <Button
-        onClick={() => {
-          navigate("/");
-        }}
-        variant="primary"
-        className="bg-theme-2 border-bg-theme-2 mb-1"
-      >
-        <ChevronLeft
-          className="group-[.mode--light]:text-white text-white"
-          size={18}
-          strokeWidth={1.5}
-        />
-        Back
-      </Button>
+      <div className="flex justify-between items-center mb-1">
+        <Button
+          onClick={() => {
+            navigate("/", {
+              state: {
+                activeTab: "shareholder-meeting-results"
+              }
+            });
+          }}
+          variant="primary"
+          className="bg-theme-2 border-bg-theme-2"
+        >
+          <ChevronLeft
+            className="group-[.mode--light]:text-white text-white"
+            size={18}
+            strokeWidth={1.5}
+          />
+          Back
+        </Button>
+        
+        <Button
+          onClick={() => {
+            const votingRationaleSection = document.querySelector('[data-voting-rationale]');
+            if (votingRationaleSection) {
+              votingRationaleSection.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+              });
+            }
+          }}
+          className="px-5 py-2 rounded flex gap-2 items-center border border-primary text-primary"
+        >
+          <span>Voting Rationale</span>
+          <Lucide 
+            icon="ChevronDown" 
+            className="w-4 h-4" 
+          />
+        </Button>
+      </div>
 
       <div className="p-5 mt-1 box">
         <div className="w-full">
@@ -393,7 +516,9 @@ const VdsProxyVotingTable = () => {
                 <Tab.Panel className="leading-relaxed">
                   <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
                    <span>
-                   <h1 className="text-lg font-bold">Proxy Voting</h1>
+                   <div className="flex items-center gap-2">
+                     <h1 className="text-lg font-bold">Proxy Voting</h1>
+                   </div>
                    {
                          meetingDate &&
                         <p className=" italic"> Meeting Date: {meetingDate} </p>
@@ -426,7 +551,11 @@ const VdsProxyVotingTable = () => {
                       )}
                   </div>
 
-                  <TableWrapper>
+                  <TableWrapper
+                    isLoading={vdsProxyLoading}
+                    rows={8}
+                    columns={vdsProxyDetails?.vds_report_headers?.length || 8}
+                  >
                     <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                       <Table className="table_2 w-full">
                         <Table.Thead className="sticky top-50 z-10">
@@ -437,7 +566,7 @@ const VdsProxyVotingTable = () => {
                                   <Table.Td
                                     key={headerIndex}
                                     className={clsx([
-                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                      "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] text-left",
                                       "sticky top-0",
                                       headerIndex === 0 &&
                                         "sticky left-0 bg-header z-[5000] ",
@@ -501,23 +630,25 @@ const VdsProxyVotingTable = () => {
                                             >
                                               {vdsProxy[vdsHeader?.field]
                                                 ?.vote === "Split Vote" ? (
-                                                <Tippy
-                                                  content={
-                                                    isObject(
-                                                      vdsProxy[vdsHeader?.field]
-                                                    ) &&
-                                                    getSplitContents(
-                                                      vdsProxy[vdsHeader?.field]
-                                                        ?.split_vote_counts
-                                                    )
-                                                  }
-                                                  options={{ theme: "light" }}
-                                                >
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
-                                                </Tippy>
+                                                <div className="flex items-center">
+                                                  <span className="for">
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
+                                                  <div
+                                                    data-tooltip-id="my-tooltip-data-html"
+                                                    data-tooltip-html={
+                                                      isObject(vdsProxy[vdsHeader?.field]) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                      )
+                                                    }
+                                                  >
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    />
+                                                  </div>
+                                                </div>
                                               ) : (
                                                 <span className="for ">
                                                   {
@@ -566,39 +697,33 @@ const VdsProxyVotingTable = () => {
                                                 ?.vote !== "Split Vote"
                                                 ? vdsProxy[vdsHeader?.field]
                                                     ?.vote
-                                                : ""}
+                                                : (
+                                                  <div className="flex items-center">
+                                                    <span className="for">
+                                                      {vdsProxy[vdsHeader?.field]?.vote}
+                                                    </span>
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={
+                                                        isObject(vdsProxy[vdsHeader?.field]) &&
+                                                        getSplitContents(
+                                                          vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                        )
+                                                      }
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                )}
                                             </h1>
                                           ) : (
                                             <h1 className="check ">
                                               {vdsProxy[vdsHeader?.field]}
                                             </h1>
                                           )}
-
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null &&
-                                            vdsProxy[vdsHeader?.field]?.vote ===
-                                              "Split Vote" && (
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  getSplitContents(
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.split_vote_counts
-                                                  )
-                                                }
-                                                options={{ theme: "light" }}
-                                              >
-                                                {
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                }
-                                              </Tippy>
-                                            )}
                                         </Table.Td>
                                       )
                                     )}
@@ -609,27 +734,29 @@ const VdsProxyVotingTable = () => {
                       </Table>
                     </div>
 
-                    {!vdsProxyDetails && vdsProxyLoading && (
-                      <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                        <LoadingIcon
-                          color="#800000"
-                          icon="three-dots"
-                          className="w-16 h-16"
-                        />
-                      </div>
-                    )}
-
-                    {vdsProxyDetails?.vds_report?.length === 0 &&
-                      !vdsProxyLoading && (
-                        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                          <h1 className="font-semibold">
-                            Top 20 Proxy Records Not Found..
-                          </h1>
+                    {/* Handle both cases: empty array or undefined/null vdsProxyDetails */}
+                    {((vdsProxyDetails?.vds_report?.length === 0) || 
+                      (!vdsProxyDetails && !vdsProxyLoading)) && (
+                        <div
+                          className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+                          style={emptyStateAnimationStyle}
+                        >
+                          <div className="text-center text-slate-500 dark:text-slate-400">
+                            <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
+                            <h3 className="text-lg font-medium mb-2">Top 20 Proxy Records Not Found</h3>
+                            <p className="text-sm">Proxy voting data may not be available for this company or time period.</p>
+                          </div>
                         </div>
                       )}
                   </TableWrapper>
 
-                  <VotingRationale meetingDate={meetingDate} tabType="top20"/>
+                  <div data-voting-rationale>
+                    <VotingRationale 
+                      meetingDate={meetingDate} 
+                      tabType="top20"
+                      parentLoading={vdsProxyLoading} // Pass parent loading state
+                    />
+                  </div>
                 </Tab.Panel>
                 
                 <Tab.Panel className="leading-relaxed">
@@ -638,7 +765,7 @@ const VdsProxyVotingTable = () => {
                       <div className="flex items-end gap-4">
                         <div className="w-4/12">
                           <div className="text-left text-slate-600 dark:text-slate-400 flex justify-between mb-2">
-                            <span className="font-medium text-sm">Check the dropdown below for more options.</span>
+                            <span className="font-medium text-sm">Use the dropdown below to view more Institutions.</span>
                           </div>
                         
 
@@ -695,9 +822,11 @@ const VdsProxyVotingTable = () => {
                   </div>
                   <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
                     <div>
-                      <h1 className="text-lg font-bold">
-                        Proxy Voting
-                      </h1>
+                      <div className="flex items-center gap-2">
+                        <h1 className="text-lg font-bold">
+                          Proxy Voting
+                        </h1>
+                      </div>
                       {
                          meetingDate &&
                         <p className="text-sm italic text-slate-600 dark:text-slate-400 mt-1"> Meeting Date: {meetingDate} </p>
@@ -723,6 +852,8 @@ const VdsProxyVotingTable = () => {
 
                   <TableWrapper
                     isLoading={vdsProxyAllInvestorLoading}
+                    rows={8}
+                    columns={vdsProxyAllInvestorDetails?.vds_report_headers?.length || 8}
                   >
                     <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
                       <Table className="table_3 w-full">
@@ -735,7 +866,7 @@ const VdsProxyVotingTable = () => {
                                   <Table.Td
                                     key={headerIndex}
                                     className={clsx([
-                                      "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]  text-left",
+                                      "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] text-left",
                                       "sticky top-0", // Ensure the header remains sticky at the top
                                       headerIndex === 0 &&
                                         "sticky left-0 bg-header z-[5000] ", // Fix first column
@@ -799,23 +930,25 @@ const VdsProxyVotingTable = () => {
                                             >
                                               {vdsProxy[vdsHeader?.field]
                                                 ?.vote === "Split Vote" ? (
-                                                <Tippy
-                                                  content={
-                                                    isObject(
-                                                      vdsProxy[vdsHeader?.field]
-                                                    ) &&
-                                                    getSplitContents(
-                                                      vdsProxy[vdsHeader?.field]
-                                                        ?.split_vote_counts
-                                                    )
-                                                  }
-                                                  options={{ theme: "light" }}
-                                                >
-                                                  {
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.vote
-                                                  }
-                                                </Tippy>
+                                                <div className="flex items-center">
+                                                  <span className="for">
+                                                    {vdsProxy[vdsHeader?.field]?.vote}
+                                                  </span>
+                                                  <div
+                                                    data-tooltip-id="my-tooltip-data-html"
+                                                    data-tooltip-html={
+                                                      isObject(vdsProxy[vdsHeader?.field]) &&
+                                                      getSplitContents(
+                                                        vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                      )
+                                                    }
+                                                  >
+                                                    <Lucide
+                                                      icon="Info"
+                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                    />
+                                                  </div>
+                                                </div>
                                               ) : (
                                                 <span className="for">
                                                   {
@@ -864,39 +997,33 @@ const VdsProxyVotingTable = () => {
                                                 ?.vote !== "Split Vote"
                                                 ? vdsProxy[vdsHeader?.field]
                                                     ?.vote
-                                                : ""}
+                                                : (
+                                                  <div className="flex items-center">
+                                                    <span className="for">
+                                                      {vdsProxy[vdsHeader?.field]?.vote}
+                                                    </span>
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={
+                                                        isObject(vdsProxy[vdsHeader?.field]) &&
+                                                        getSplitContents(
+                                                          vdsProxy[vdsHeader?.field]?.split_vote_counts
+                                                        )
+                                                      }
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  </div>
+                                                )}
                                             </h1>
                                           ) : (
                                             <h1 className="check">
                                               {vdsProxy[vdsHeader?.field]}
                                             </h1>
                                           )}
-
-                                          {isObject(
-                                            vdsProxy[vdsHeader?.field]
-                                          ) &&
-                                            vdsProxy[vdsHeader?.field]
-                                              ?.notes === null &&
-                                            vdsProxy[vdsHeader?.field]?.vote ===
-                                              "Split Vote" && (
-                                              <Tippy
-                                                content={
-                                                  isObject(
-                                                    vdsProxy[vdsHeader?.field]
-                                                  ) &&
-                                                  getSplitContents(
-                                                    vdsProxy[vdsHeader?.field]
-                                                      ?.split_vote_counts
-                                                  )
-                                                }
-                                                options={{ theme: "light" }}
-                                              >
-                                                {
-                                                  vdsProxy[vdsHeader?.field]
-                                                    ?.vote
-                                                }
-                                              </Tippy>
-                                            )}
                                         </Table.Td>
                                       )
                                     )}
@@ -907,9 +1034,14 @@ const VdsProxyVotingTable = () => {
                       </Table>
                     </div>
                   </TableWrapper>
-                  {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length === 0 && !vdsProxyAllInvestorLoading && (
-                      <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                  {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
+                  {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
+                    (!vdsProxyAllInvestorDetails && !vdsProxyAllInvestorLoading)) &&
+                    filter?.length === 0 && (
+                      <div
+                        className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+                        style={emptyStateAnimationStyle}
+                      >
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
                           <h3 className="text-lg font-medium mb-2">No Top 10 Proxy Records Available</h3>
@@ -918,18 +1050,30 @@ const VdsProxyVotingTable = () => {
                       </div>
                     )}
 
-                  {vdsProxyAllInvestorDetails?.vds_report?.length === 0 &&
-                    filter?.length > 0 && !vdsProxyAllInvestorLoading && (
-                      <div className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400">
+                  {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
+                  {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||
+                    (!vdsProxyAllInvestorDetails && !vdsProxyAllInvestorLoading)) &&
+                    filter?.length > 0 && (
+                      <div
+                        className="h-60 p-6 mt-4 box bg-white dark:bg-darkmode-600 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkmode-400 animate-fade-in"
+                        style={emptyStateAnimationStyle}
+                      >
                         <div className="text-center text-slate-500 dark:text-slate-400">
                           <FaCheckCircle className="mx-auto mb-3 text-5xl text-slate-300 dark:text-slate-600" />
-                          <h3 className="text-lg font-medium mb-2">No VDS Records Available</h3>
+                          <h3 className="text-lg font-medium mb-2">No Proxy Records Available</h3>
                           <p className="text-sm">Try adjusting your filters or selecting different institutions.</p>
                         </div>
                       </div>
                     )}
 
-                  <VotingRationale meetingDate={meetingDate} filter={filter} tabType="allInvestors" />
+                  <div data-voting-rationale>
+                    <VotingRationale 
+                      meetingDate={meetingDate} 
+                      filter={filter} 
+                      tabType="allInvestors"
+                      parentLoading={vdsProxyAllInvestorLoading} // Pass parent loading state
+                    />
+                  </div>
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>
@@ -949,6 +1093,7 @@ const VdsProxyVotingTable = () => {
           cursor: "pointer"
         }}
       />
+
     </>
   );
 };

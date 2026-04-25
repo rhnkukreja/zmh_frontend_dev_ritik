@@ -26,12 +26,16 @@ interface VdsEuropeanSlice {
   count: number;
   page: number;
   filters: VdsEuropeanFilters;
+  // Flag to track if data has been loaded
+  dataLoaded: boolean;
   // Analytics state
   analytics: any;
   analyticsLoading: boolean;
   analyticsError: string | null;
   analyticsPage: number;
   analyticsFilters: any;
+  // Flag to track if analytics data has been loaded
+  analyticsDataLoaded: boolean;
 }
 
 const initialState: VdsEuropeanSlice = {
@@ -47,12 +51,16 @@ const initialState: VdsEuropeanSlice = {
     region: [],
   },
   count: 0,
+  // Flag to track if data has been loaded
+  dataLoaded: false,
   // Analytics state
   analytics: {},
   analyticsLoading: false,
   analyticsError: null,
   analyticsPage: 1,
   analyticsFilters: {},
+  // Flag to track if analytics data has been loaded
+  analyticsDataLoaded: false,
 };
 
 export const fetchVdsEuropeans = createAsyncThunk<
@@ -103,6 +111,7 @@ const VdsEuropeanSlice = createSlice({
     resetVdsEuropeans(state) {
       state.filters = initialState.filters;
       state.page = 1;
+      state.dataLoaded = false; // Reset dataLoaded flag
     },
 
     setAnalyticsPage(state, action: PayloadAction<number>) {
@@ -116,6 +125,13 @@ const VdsEuropeanSlice = createSlice({
     },
     resetAnalyticsFilters(state) {
       state.analyticsFilters = {};
+    },
+    // New actions to reset data loaded flags
+    resetDataLoaded(state) {
+      state.dataLoaded = false;
+    },
+    resetAnalyticsDataLoaded(state) {
+      state.analyticsDataLoaded = false;
     },
   },
   extraReducers: (builder) => {
@@ -138,7 +154,7 @@ const VdsEuropeanSlice = createSlice({
           state.totalVdsEuropeans = action.payload.count;
           state.totalPages = getPageNumbers(action.payload.count, 20);
           state.count = action.payload.count;
-
+          state.dataLoaded = true; // Set dataLoaded flag to true
         }
       )
       .addCase(fetchVdsEuropeans.rejected, (state, action) => {
@@ -153,6 +169,7 @@ const VdsEuropeanSlice = createSlice({
       .addCase(fetchVdsEuropeanAnalytics.fulfilled, (state, action) => {
         state.analyticsLoading = false;
         state.analytics = action.payload.response;
+        state.analyticsDataLoaded = true; // Set analyticsDataLoaded flag to true
       })
       .addCase(fetchVdsEuropeanAnalytics.rejected, (state, action) => {
         state.analyticsLoading = false;
@@ -167,6 +184,8 @@ export const {
   resetPage,
   setFilter,
   resetFilter,
+  resetDataLoaded,
+  resetAnalyticsDataLoaded,
   setAllFilters,
   resetVdsEuropeans,
   setAnalyticsPage,

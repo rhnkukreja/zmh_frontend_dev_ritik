@@ -2,7 +2,7 @@ import TableWrapper from "../TableWrapper";
 import Table from "@/components/Base/Table";
 import documentImage from "../../assets/images/zmh-images/document (2).png";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Button from "../Base/Button";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
@@ -21,6 +21,7 @@ interface ChildProps {
 const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch: AppDispatch = useAppDispatch();
   const handleDownload = async (pdfUrl: string) => {
     // Create a link element
@@ -99,7 +100,7 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
         dispatch(
           fetchInvestorProfileDetails(
             createDynamicURL(
-              `${baseURL}/investor_profile_detail_page/?investor_profile_id=${id}&global_search=${companyGlobalSearchName}`
+              `${baseURL}/investor_profile_detail_page/?institution_id=${id}`
             )
           )
         );
@@ -109,22 +110,26 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
   };
 
   return (
-    <div className="p-5 mt-3.5 box ">
-      <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
-        <h1 className="text-lg font-bold">Documents</h1>
-
-        <Button
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden h-full">
+      <div className="bg-gradient-to-r from-primary to-primary/90 px-6 py-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-white">Documents</h2>
+        {/* Temporarily disabled */}
+        {/* <Button
           onClick={() =>
-            window.open(`/investor-profile/investor/${id}`, "_blank")
+            navigate(`/investor-profile/investor/${id}`, {
+              state: { 
+                from: location.pathname,
+                fromState: location.state 
+              },
+            })
           }
-          variant="primary"
-          className="bg-theme-2 border-bg-theme-2"
+          className="bg-white/20 hover:bg-white/30 text-white border-white/30 text-sm"
         >
-          Profile
-        </Button>
+          View Full Profile
+        </Button> */}
       </div>
 
-      <div className="w-full h-[380px] pr-6 overflow-y-scroll">
+      <div className="p-6 max-h-[500px] overflow-y-auto">
         <TableWrapper isLoading={false}>
           <div>
             <Table className="table">

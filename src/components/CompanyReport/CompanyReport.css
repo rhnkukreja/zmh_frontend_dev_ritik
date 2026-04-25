@@ -1,0 +1,291 @@
+/* Company Report PDF Styles */
+
+/* Page break utilities */
+.page-break-inside-avoid {
+  page-break-inside: avoid;
+}
+
+.page-break-before {
+  page-break-before: always;
+}
+
+.page-break-after {
+  page-break-after: always;
+}
+
+/* Report content styling */
+.report-content {
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.report-content h1,
+.report-content h2,
+.report-content h3,
+.report-content h4 {
+  font-family: inherit;
+  margin-bottom: 0.5rem;
+}
+
+.report-content .report-header {
+  margin-bottom: 1.5rem;
+}
+
+.report-content .report-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Info card styling */
+.report-content .info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Table styling for report */
+.report-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.report-content table th,
+.report-content table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.report-content table th {
+  background-color: #f9fafb;
+  color: #6b7280;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+ .report-content .tippy-box[data-theme~='light'] {
+   background-color: #ffffff;
+   color: #111827;
+   border: 1px solid #e5e7eb;
+ }
+
+ .report-content .tippy-arrow {
+   color: #ffffff;
+ }
+
+.report-content table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.report-content table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Section header */
+.report-content section > h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 2px solid #800000;
+  padding-bottom: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+/* Badge styling */
+.report-content .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.report-content .badge-positive {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.report-content .badge-negative {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.report-content .badge-neutral {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Print-specific styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 10mm;
+  }
+
+  .exclude-from-pdf {
+    display: none !important;
+  }
+  
+  .report-content {
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+  }
+  
+  /* Section headings should never break from their content */
+  .report-content h2,
+  .report-content h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Keep sections together when possible */
+  .report-content section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  
+  /* Table handling */
+  .report-content table {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+  
+  /* Never break table rows */
+  .report-content tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: auto;
+  }
+  
+  /* Never break table cells */
+  .report-content td,
+  .report-content th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  .report-content thead {
+    display: table-header-group;
+  }
+  
+  .report-content tfoot {
+    display: table-footer-group;
+  }
+
+  /* Ensure charts and images don't break */
+  .report-content img,
+  .report-content svg,
+  .recharts-wrapper {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
+
+/* PDF Generation - Force sections to stay together */
+.report-content section {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Charts container - prevent breaking */
+.report-content .recharts-wrapper,
+.report-content .recharts-responsive-container {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+ .report-content .recharts-wrapper,
+ .report-content .recharts-responsive-container,
+ .report-content .recharts-surface {
+   overflow: visible !important;
+ }
+
+/* Tables - prevent row breaking */
+.report-content table {
+  break-inside: auto;
+  table-layout: auto;
+}
+
+.report-content table td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.report-content tbody tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Card sections should stay together */
+.report-content .bg-white.border,
+.report-content .bg-gray-50.rounded-xl {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* Progress bar styling */
+.report-content .progress-bar {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background-color: #f3f4f6;
+  overflow: hidden;
+}
+
+.report-content .progress-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Topic badges for ESG */
+.report-content .topic-e {
+  background-color: #05703E;
+  color: white;
+}
+
+.report-content .topic-s {
+  background-color: #F5A623;
+  color: white;
+}
+
+.report-content .topic-g {
+  background-color: #115096;
+  color: white;
+}
+
+/* Vote indicators */
+.report-content .vote-for {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.report-content .vote-against {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.report-content .vote-abstain {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.report-content table tbody tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-content table td {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.report-content h2,
+.report-content h3 {
+  break-after: avoid;
+  page-break-after: avoid;
+}

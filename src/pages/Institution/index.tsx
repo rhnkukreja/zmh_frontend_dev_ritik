@@ -19,7 +19,7 @@ import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { countValidFilters, createDynamicURL, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Institutions } from "@/types/institutions";
 import { AddEditInstitution } from "./components/CreateAndEditInstitution";
 import TomSelect from "@/components/Base/TomSelect";
@@ -31,6 +31,11 @@ import { setSavedSearch } from "@/stores/authenticationSlice";
 import { Controller, useForm } from "react-hook-form";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import FilterChips from "@/components/FilterChips";
+import AddDocumentModal from "./components/AddDocumentModal";
+import AddNewCaseStudies from "@/pages/CaseStudies/Components/AddEditCaseStudies";
+import AddEngagementDetailsModal from "@/pages/PeerAnalysis/components/AddEngagementDetailsModal";
+import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
+import AddNewInvesterProfile from "@/pages/InvestorProfiles/components/AddNewInvester";
 
 interface InstituteFilter {
   region: string[];
@@ -39,6 +44,7 @@ interface InstituteFilter {
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     institutions,
     loading,
@@ -73,6 +79,27 @@ function Main() {
     useState<Institutions | null>(null);
   const [addEditInstitutionVisible, setAddEditInstitutionVisible] =
     useState<boolean>(false);
+  const [addDocumentModalVisible, setAddDocumentModalVisible] =
+    useState<boolean>(false);
+  const [selectedInstitutionForDoc, setSelectedInstitutionForDoc] =
+    useState<Institutions | null>(null);
+  const [addNewCaseStudyModalVisible, setAddNewCaseStudyModalVisible] =
+    useState<boolean>(false);
+  const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
+    null
+  );
+  const [addEngagementModalVisible, setAddEngagementModalVisible] =
+    useState<boolean>(false);
+  const [selectedInstitutionForEngagement, setSelectedInstitutionForEngagement] =
+    useState<Institutions | null>(null);
+  const [addProxyVotingGuidelineModalVisible, setAddProxyVotingGuidelineModalVisible] =
+    useState<boolean>(false);
+  const [selectedInstitutionForProxyGuideline, setSelectedInstitutionForProxyGuideline] =
+    useState<Institutions | null>(null);
+  const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
+    useState<boolean>(false);
+  const [selectedInstitutionIdForProfile, setSelectedInstitutionIdForProfile] =
+    useState<number | null>(null);
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -192,8 +219,8 @@ function Main() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="flex flex-col md:h-10 gap-y-3 md:items-center md:flex-row">
-          <div className="font-semibold text-xl ">Institutions</div>
-          {user?.user_type === "Admin" && (
+          <div className="font-semibold text-xl ">Admin Panel</div>
+          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
               <Button
                 onClick={() => {
@@ -248,10 +275,10 @@ function Main() {
                   </Button>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto">
+              <div className="flex flex-wrap items-start gap-2 sm:ml-auto">
                 {user?.saved_search?.["Institution"] !== undefined && (
                   <div className="hover:bg-slate-50 ">
-                    <Button onClick={getSavedSearches}>Previous Search</Button>
+                    <Button className="h-10 whitespace-nowrap" onClick={getSavedSearches}>Previous Search</Button>
                   </div>
                 )}
 
@@ -261,7 +288,7 @@ function Main() {
                   onClick={() => {
                     onFilterClear();
                   }}
-                  className="w-full sm:w-auto flex items-center gap-2"
+                  className="h-10 px-4 whitespace-nowrap"
                 >
                   Clear
                 </Button>
@@ -269,18 +296,18 @@ function Main() {
                 <Button
                   variant="primary"
                   onClick={handleSubmit(onSubmit)}
-                  className="w-full sm:w-auto flex items-center gap-2"
+                  className="h-10 px-4 whitespace-nowrap"
                 >
                   Apply
                 </Button>
 
-                <Popover className="inline-block">
+                <Popover className="relative inline-block">
                   {({ close }) => (
                     <>
                       <Popover.Button
                         as={Button}
                         variant="outline-secondary"
-                        className="w-full sm:w-auto"
+                        className="h-10 px-4 whitespace-nowrap"
                       >
                         <Lucide
                           icon="ArrowDownWideNarrow"
@@ -291,47 +318,44 @@ function Main() {
                           {filtersLength}
                         </div>
                       </Popover.Button>
-                      <Popover.Panel placement="bottom-end">
+                      <Popover.Panel placement="bottom-end" className="min-w-[280px]">
                         <form onSubmit={handleSubmit(onSubmit)}>
-                          <div className="p-2">
+                          <div className="p-3 space-y-3">
                             {/* Filter Content */}
-                            <div className="mb-4">
+                            <div>
                               <h4 className="text-base font-semibold text-slate-700">Filters</h4>
                             </div>
 
                             <div>
-                              <div className="w-full  my-2">
-                                <div className="text-left text-slate-500 flex justify-between mb-1">
-                                <span className="font-semibold">Region</span>
+                              <div className="w-full">
+                                <div className="text-left text-slate-500 flex justify-between items-center mb-2">
+                                  <span className="text-sm font-semibold text-slate-700">Region</span>
                                   {institutionFilterOptions?.region?.length >
                                     0 && (
-                                    <div>
-                                      <FormCheck className="mr-2">
-                                        <FormCheck.Label>
-                                          Select All
-                                        </FormCheck.Label>
-                                        <FormCheck.Input
-                                          className="ml-1"
-                                          id={`region`}
-                                          checked={
-                                            institutionFilterOptions.region
-                                              .length ===
-                                            watch("region")?.length
+                                    <FormCheck className="flex items-center gap-1 text-xs">
+                                      <FormCheck.Input
+                                        id={`region`}
+                                        checked={
+                                          institutionFilterOptions.region
+                                            .length ===
+                                          watch("region")?.length
+                                        }
+                                        type="checkbox"
+                                        onChange={(e) => {
+                                          if (e.target.checked === true) {
+                                            setValue(
+                                              "region",
+                                              institutionFilterOptions.region
+                                            );
+                                          } else {
+                                            setValue("region", []);
                                           }
-                                          type="checkbox"
-                                          onChange={(e) => {
-                                            if (e.target.checked === true) {
-                                              setValue(
-                                                "region",
-                                                institutionFilterOptions.region
-                                              );
-                                            } else {
-                                              setValue("region", []);
-                                            }
-                                          }}
-                                        />
-                                      </FormCheck>
-                                    </div>
+                                        }}
+                                      />
+                                      <FormCheck.Label className="text-xs mb-0">
+                                        Select All
+                                      </FormCheck.Label>
+                                    </FormCheck>
                                   )}
                                 </div>
                                 <Controller
@@ -346,7 +370,7 @@ function Main() {
                                       options={{
                                         placeholder: "Select Region",
                                       }}
-                                      className="w-full"
+                                      className="w-full text-sm"
                                       multiple
                                     >
                                       <>
@@ -389,7 +413,11 @@ function Main() {
               </h2>
             )}
             <div className="px-5">
-              <TableWrapper isLoading={loading}>
+              <TableWrapper
+                isLoading={loading}
+                rows={6}
+                columns={8}
+              >
                 <div className="overflow-auto max-h-[400px]">
                   <Table>
                     <Table.Thead>
@@ -397,28 +425,49 @@ function Main() {
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Institution
                         </Table.Td>
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Investor Profile
+                        </Table.Td>
                         {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap  border-slate-200/80 text-slate-500">
                         Active
                       </Table.Td> */}
 
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Region
+                          Document Tab
                         </Table.Td>
-                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                        {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Investor Type
-                        </Table.Td>
+                        </Table.Td> */}
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Add New Case Studies
+                        </Table.Td>
+                        {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Whale Wisdom Filer
+                        </Table.Td> */}
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Add Engagement Details
+                        </Table.Td>
+                        {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Proxy Advisory Influence
+                        </Table.Td> */}
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Add New Proxy Voting Guideline
                         </Table.Td>
                         <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
-                          Created At
+                          Add Documents
+                        </Table.Td>
+                        {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          UN PRI Signatory
+                        </Table.Td> */}
+                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                          Edit Institution
                         </Table.Td>
                         {/* <Table.Td className="py-2 font-medium bg-slate-50 text-nowrap border-slate-200/80 text-slate-500">
                         Updated At
                       </Table.Td> */}
-                        <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
+                        {/* <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2]">
                           Details
-                        </Table.Td>
+                        </Table.Td> */}
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -426,39 +475,32 @@ function Main() {
                         institutions?.map((institution: Institutions) => (
                           <Table.Tr key={institution.id}>
                             <Table.Td className="py-2 bg-white text-slate-700 border-slate-200/80">
-                              <div className="flex items-center">
-                                {institution?.logo_url ? (
-                                  <>
-                                    <div className="w-8 h-8 image-fit zoom-in object-contain !cursor-default">
-                                      <img
-                                        alt="ZMH Analytics"
-                                        className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                        src={institution?.logo_url}
-                                      />
-                                    </div>
-                                  </>
-                                ) : (
-                                  <div className=" flex justify-center items-center w-8 h-8 border rounded-full bg-primary/5 border-primary/10">
-                                    <img
-                                      alt="ZMH Analytics"
-                                      className="rounded-full object-contain shadow-[0px_0px_0px_2px_#fff,_1px_1px_5px_rgba(0,0,0,0.32)] dark:shadow-[0px_0px_0px_2px_#3f4865,_1px_1px_5px_rgba(0,0,0,0.32)]"
-                                      src={investorIcon}
-                                    />
-                                    <a
-                                      href=""
-                                      className="absolute bottom-0 right-0 flex items-center justify-center rounded-full  w-7 h-7"
-                                    ></a>
-                                  </div>
-                                )}
-                                <div className="ml-4">
-                                  <p className="font-medium whitespace-nowrap">
-                                    {institution?.institution}
-                                  </p>
-                                  <div className="text-slate-500 text-xs whitespace-nowrap mt-0.5">
-                                    {institution?.email}
-                                  </div>
+                              <div className="ml-4">
+                                <p className="font-medium whitespace-nowrap">
+                                  {institution?.institution}
+                                </p>
+                                <div className="text-slate-500 text-xs whitespace-nowrap mt-0.5">
+                                  {institution?.email}
                                 </div>
                               </div>
+                            </Table.Td>
+                            <Table.Td className="py-2 bg-white border-slate-200/80 min-w-[140px]">
+                              {(user?.user_type === "Analyst" ||
+                                user?.user_type === "Admin") && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedInstitutionIdForProfile(institution.id);
+                                    setAddNewInvesterModalVisible(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                                >
+                                  Add Investor Profile
+                                </button>
+                              )}
+                              {user?.user_type !== "Analyst" &&
+                                user?.user_type !== "Admin" && (
+                                  <span className="text-slate-400 text-sm">-</span>
+                                )}
                             </Table.Td>
                             {/* <Table.Td className="py-2  border-dashed dark:bg-darkmode-600">
                             {institution?.active === true ? (
@@ -472,54 +514,146 @@ function Main() {
                             )}
                           </Table.Td> */}
 
-                            {institution?.region && (
+                            {/* Region Column - Commented Out */}
+                            {/* {institution?.region && (
                               <Table.Td className="py-2  bg-white border-slate-200/80">
                                 {institution?.region}
                               </Table.Td>
+                            )} */}
+
+                            {/* Document Tab Column */}
+                            {institution?.id && (
+                              <Table.Td className="py-2  bg-white border-slate-200/80">
+                                <button
+                                  onClick={() => {
+                                    navigate(`/investor-company-details/${institution.id}`, {
+                                      state: { 
+                                        from: location.pathname,
+                                        fromState: location.state 
+                                      },
+                                    });
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                                  title="View Document Tab"
+                                >
+                                  View Documents
+                                </button>
+                              </Table.Td>
                             )}
-                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                            {!institution?.investor_profile_id && (
+                              <Table.Td className="py-2  bg-white border-slate-200/80">
+                                <span className="text-slate-400 text-sm">-</span>
+                              </Table.Td>
+                            )}
+                            {/* <Table.Td className="py-2  bg-white border-slate-200/80">
                               {institution.investor_type}
+                            </Table.Td> */}
+                            <Table.Td className="py-2  bg-white border-slate-200/80 min-w-[130px]">
+                              {(user?.user_type === "Analyst" ||
+                                user?.user_type === "Admin") && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedCaseStudies({
+                                      institution: institution?.id,
+                                      institution_name: institution?.institution,
+                                    });
+                                    setAddNewCaseStudyModalVisible(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                                >
+                                  Add Case Study
+                                </button>
+                              )}
+                              {user?.user_type !== "Analyst" &&
+                                user?.user_type !== "Admin" && (
+                                  <span className="text-slate-400 text-sm">-</span>
+                                )}
+                            </Table.Td>
+                            {/* <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {institution?.whale_wisdom_filer_id}
+                            </Table.Td> */}
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {(user?.user_type === "Analyst" ||
+                                user?.user_type === "Admin") && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedInstitutionForEngagement(institution);
+                                    setAddEngagementModalVisible(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                                >
+                                  Add Engagement
+                                </button>
+                              )}
+                              {user?.user_type !== "Analyst" &&
+                                user?.user_type !== "Admin" && (
+                                  <span className="text-slate-400 text-sm">-</span>
+                                )}
+                            </Table.Td>
+                            {/* <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {institution?.proxy_advisor_influence || "-"}
+                            </Table.Td> */}
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {(user?.user_type === "Analyst" ||
+                                user?.user_type === "Admin") && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedInstitutionForProxyGuideline(institution);
+                                    setAddProxyVotingGuidelineModalVisible(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-sm font-medium"
+                                >
+                                  Add Guideline
+                                </button>
+                              )}
+                              {user?.user_type !== "Analyst" &&
+                                user?.user_type !== "Admin" && (
+                                  <span className="text-slate-400 text-sm">-</span>
+                                )}
                             </Table.Td>
                             <Table.Td className="py-2  bg-white border-slate-200/80">
-                              {institution?.whale_wisdom_filer_id}
-                            </Table.Td>
-                            <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
-                              <p className="text-gray-500">
-                                {institution?.date_created}
-                                {/* {dayjs(institution?.date_created).format(
-                                "MMMM , YYYY"
-                              )} */}
-                              </p>
+                              <div className="flex justify-center items-center">
+                                {(user?.user_type === "Analyst" ||
+                                  user?.user_type === "Admin") && (
+                                  <Tippy
+                                    content="Add/Edit Documents"
+                                    options={{
+                                      theme: "light",
+                                    }}
+                                  >
+                                    <Lucide
+                                      onClick={() => {
+                                        navigate(`/institution/${institution?.id}/documents`, {
+                                          state: { 
+                                            from: location.pathname,
+                                            fromState: location.state 
+                                          },
+                                        });
+                                      }}
+                                      icon="FileText"
+                                      className="w-4 h-4 stroke-[1.3] cursor-pointer"
+                                    />
+                                  </Tippy>
+                                )}
+                                {user?.user_type !== "Analyst" &&
+                                  user?.user_type !== "Admin" && (
+                                    <span className="text-slate-400 text-sm">-</span>
+                                  )}
+                              </div>
                             </Table.Td>
                             {/* <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
-                            <p className="text-gray-500">
-                              {institution?.date_updated}
-                              
-                            </p>
-                          </Table.Td> */}
-
-                            <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
-                              <div className="flex gap-3 ">
-                                <Tippy
-                                  content="See Details"
-                                  options={{
-                                    theme: "light",
-                                  }}
-                                >
-                                  <Lucide
-                                    onClick={() => {
-                                      navigate(
-                                        `/institution/${institution?.id}`
-                                      );
-                                    }}
-                                    icon="Eye"
-                                    className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                  />
-                                </Tippy>
-
-                                {user?.user_type === "Admin" && (
+                              {institution?.unpri_signatory ? (
+                                <span className="text-green-600 font-medium">Yes</span>
+                              ) : (
+                                <span className="text-gray-500">No</span>
+                              )}
+                            </Table.Td> */}
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              <div className="flex justify-center items-center">
+                                {(user?.user_type === "Analyst" ||
+                                  user?.user_type === "Admin") && (
                                   <Tippy
-                                    content="Edit"
+                                    content="Add/Edit Institution"
                                     options={{
                                       theme: "light",
                                     }}
@@ -529,18 +663,67 @@ function Main() {
                                         onEditClickHandler(institution);
                                       }}
                                       icon="PenLine"
-                                      className="w-4 h-4 mr-1.5 stroke-[1.3]"
+                                      className="w-4 h-4 stroke-[1.3] cursor-pointer"
                                     />
                                   </Tippy>
                                 )}
+                                {user?.user_type !== "Analyst" &&
+                                  user?.user_type !== "Admin" && (
+                                    <span className="text-slate-400 text-sm">-</span>
+                                  )}
                               </div>
                             </Table.Td>
+                            {/* <Table.Td className="py-2  bg-white text-nowrap border-slate-200/80">
+                            <p className="text-gray-500">
+                              {institution?.date_updated}
+                              
+                            </p>
+                          </Table.Td> */}
+
+                            {/* <Table.Td className=" py-2 w-20 relative  box shadow-[5px_3px_5px_#00000005] first:border-l last:border-r first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] rounded-l-none rounded-r-none border-x-0 dark:bg-darkmode-600">
+                              <div className="flex gap-3 ">
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                  <>
+                                    <Tippy
+                                      content="Add/Edit Document"
+                                      options={{
+                                        theme: "light",
+                                      }}
+                                    >
+                                      <Lucide
+                                        onClick={() => {
+                                          navigate(
+                                            `/institution/${institution?.id}/documents`
+                                          );
+                                        }}
+                                        icon="FileText"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                      />
+                                    </Tippy>
+                                    <Tippy
+                                      content="Add/Edit Institution"
+                                      options={{
+                                        theme: "light",
+                                      }}
+                                    >
+                                      <Lucide
+                                        onClick={() => {
+                                          onEditClickHandler(institution);
+                                        }}
+                                        icon="PenLine"
+                                        className="w-4 h-4 mr-1.5 stroke-[1.3] cursor-pointer"
+                                      />
+                                    </Tippy>
+                                  </>
+                                )}
+                              </div>
+                            </Table.Td> */}
                           </Table.Tr>
                         ))
                       ) : (
                         <Table.Tr>
                           <Table.Td
-                            colSpan={7}
+                            colSpan={8}
                             className="py-10 text-center text-slate-500"
                           >
                             No institutions found.
@@ -548,11 +731,11 @@ function Main() {
                         </Table.Tr>
                       )}
                     </Table.Tbody>
-                    {institutions?.length === 0 && (
+                    {/* {institutions?.length === 0 && (
                       <div className="w-full">
                         <h1 className="mt-3">No Records Found..</h1>
                       </div>
-                    )}
+                    )} */}
                   </Table>
                 </div>
               </TableWrapper>
@@ -573,6 +756,55 @@ function Main() {
             addEditInstitutionVisible={addEditInstitutionVisible}
             setAddEditInstitutionVisible={setAddEditInstitutionVisible}
             selectedInstitution={selectedInstitution}
+          />
+        )}
+
+        {addDocumentModalVisible && selectedInstitutionForDoc && (
+          <AddDocumentModal
+            visible={addDocumentModalVisible}
+            setVisible={setAddDocumentModalVisible}
+            institutionId={selectedInstitutionForDoc?.id}
+            institutionName={selectedInstitutionForDoc?.institution}
+          />
+        )}
+        {addNewCaseStudyModalVisible && (
+          <AddNewCaseStudies
+            addNewCaseStudyModalVisible={addNewCaseStudyModalVisible}
+            setAddNewCaseStudyModalVisible={setAddNewCaseStudyModalVisible}
+            selectedCaseStudies={selectedCaseStudies}
+          />
+        )}
+        {addEngagementModalVisible && (
+          <AddEngagementDetailsModal
+            visible={addEngagementModalVisible}
+            setVisible={setAddEngagementModalVisible}
+            preselectedInstitution={
+              selectedInstitutionForEngagement
+                ? {
+                    id: selectedInstitutionForEngagement.id,
+                    name: selectedInstitutionForEngagement.institution,
+                  }
+                : undefined
+            }
+            onSuccess={() => {
+              setAddEngagementModalVisible(false);
+            }}
+          />
+        )}
+        {addProxyVotingGuidelineModalVisible && selectedInstitutionForProxyGuideline && (
+          <AddEditPolicyGuideline
+            addNewProxyVotingGuidelineVisible={addProxyVotingGuidelineModalVisible}
+            setAddNewProxyVotingGuidelineVisible={setAddProxyVotingGuidelineModalVisible}
+            selectedProxyVotingGuideline={{
+              institution: selectedInstitutionForProxyGuideline.id,
+            } as any}
+          />
+        )}
+        {addNewInvesterModalVisible && (
+          <AddNewInvesterProfile
+            addNewInvesterModalVisible={addNewInvesterModalVisible}
+            setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
+            preselectedInstitutionId={selectedInstitutionIdForProfile}
           />
         )}
       </div>

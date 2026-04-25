@@ -26,6 +26,7 @@ function Tab({
 }: Omit<
   ExtractProps<typeof HeadlessTab> & {
     fullWidth?: boolean;
+    className?: string;
   },
   "ref"
 >) {
@@ -137,6 +138,7 @@ Tab.List = ({
   ...props
 }: ExtractProps<typeof HeadlessTab.List> & {
   variant?: Variant;
+  className?: string;
 }) => {
   return (
     <listContext.Provider
@@ -166,7 +168,9 @@ Tab.Panels = ({
   children,
   className,
   ...props
-}: ExtractProps<typeof HeadlessTab.Panels>) => {
+}: ExtractProps<typeof HeadlessTab.Panels> & {
+  className?: string;
+}) => {
   return (
     <HeadlessTab.Panels as="div" className={className} {...props}>
       {children}

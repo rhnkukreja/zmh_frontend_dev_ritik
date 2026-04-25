@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TableWrapper from "../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
-import LoadingIcon from "@/components/Base/LoadingIcon";
+import { SkeletonTable } from "@/components/Base/Skeletons";
 import { FaDownload, FaTimes } from "react-icons/fa";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
@@ -57,6 +57,8 @@ const CustomReports = () => {
   const [ownershipData, setOwnershipData] = useState<CompanyOwnership[]>(getInitialOwnershipData());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [tableExpanded, setTableExpanded] = useState<boolean>(false);
+  const companySearchCache = useRef<Record<string, any[]>>({});
 
   // Update selected tickers when global company changes, but only on initial load or when empty
   useEffect(() => {
@@ -149,15 +151,12 @@ const CustomReports = () => {
       // Merge with existing tickers, keeping global company ticker if it exists
       const allTickers = [...new Set([...selectedTickers, ...newTickers])]; // Remove duplicates
       const finalTickers = allTickers.slice(0, 5); // Limit to 5 companies
-      
       setSelectedTickers(finalTickers);
-      // Save to localStorage
       saveTickersToLocalStorage(finalTickers);
     } else {
       // Only clear if global company ticker is not present
       const defaultTickers = companyGlobalSearchTicker ? [companyGlobalSearchTicker] : [];
       setSelectedTickers(defaultTickers);
-      // Save to localStorage
       saveTickersToLocalStorage(defaultTickers);
     }
   };
@@ -206,23 +205,19 @@ const CustomReports = () => {
   return (
     <div className="box p-5 mt-3.5">
       <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-center mb-4">
-        <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 can be selected)</h1>
+        <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 companies can be selected)</h1>
         <div className="flex items-center gap-2">
-          <Tippy content="Download Excel" options={{ theme: "light" }}>
-            <div
-              className="box p-[5px] cursor-pointer"
-              onClick={() => !loading && handleDownload()}
-            >
-              {loading ? (
-                <Lucide
-                  icon="Loader"
-                  className="w-6 h-7 stroke-[1.3] animate-spin"
-                />
-              ) : (
+          {/* Download icon only visible when not loading and data exists */}
+          {!loading && ownershipData.length > 0 && (
+            <Tippy content="Download Excel" options={{ theme: "light" }}>
+              <div
+                className="box p-[5px] cursor-pointer"
+                onClick={handleDownload}
+              >
                 <img alt="download-icon" src={downloadIcon} />
-              )}
-            </div>
-          </Tippy>
+              </div>
+            </Tippy>
+          )}
         </div>
       </div>
 
@@ -250,10 +245,8 @@ const CustomReports = () => {
             variant="outline-secondary"
             onClick={() => {
               const defaultTickers = companyGlobalSearchTicker ? [companyGlobalSearchTicker] : [];
-              // Just clear selections without triggering API call
               setSelectedTickers(defaultTickers);
               saveTickersToLocalStorage(defaultTickers);
-              // Also clear any displayed data and errors
               setOwnershipData([]);
               localStorage.removeItem('customReports_ownershipData');
               setError("");
@@ -262,6 +255,7 @@ const CustomReports = () => {
           >
             Clear
           </Button>
+
         </div>
 
         {/* Selected Tickers */}
@@ -294,20 +288,23 @@ const CustomReports = () => {
 
       {/* Loading State */}
       {loading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
+        <div className="p-5 mt-3.5 box bg-white">
+          <SkeletonTable
+            rows={8}
+            columns={Math.max(2, selectedTickers.length * 2)}
           />
         </div>
       )}
 
       {/* Single Combined Table */}
       {!loading && ownershipData.length > 0 && (
-        <TableWrapper isLoading={loading}>
-          <div className="overflow-x-auto max-h-[400px] overflow-y-scroll">
-            <Table className="table_ownership w-full">
+        <TableWrapper
+          isLoading={loading}
+          rows={8}
+          columns={Math.max(2, selectedTickers.length * 2)}
+        >
+          <div className="overflow-x-auto max-h-[650px] overflow-y-scroll">
+            <Table className="table_ownership w-full min-w-[600px]">
               <Table.Thead className="sticky top-0 z-10">
                 <Table.Tr className="row_ownership">
                   {/* Only show columns for companies that match currently selected tickers */}
@@ -356,7 +353,7 @@ const CustomReports = () => {
                               </h1>
                             </Table.Td>
                             <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[140px] text-center">
-                              <h1 className={parseFloat(inv.percent_ownership) < 1 ? "whitespace-nowrap flex items-center justify-center" : ""}>
+                              <h1>
                                 {inv.percent_ownership}%
                               </h1>
                             </Table.Td>

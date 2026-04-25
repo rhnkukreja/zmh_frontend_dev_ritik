@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -14,7 +14,7 @@ import { baseURL } from "@/constant";
 import axios from "axios";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
-import CaseProxyModal from "../ProxyContest/CaseProxyModal";
+import CaseProxyModal from "../ProxyContest/components/CaseProxyModal";
 import PdfViewer from "@/components/PdfView";
 
 const ProxyContestDetail = () => {
@@ -39,6 +39,8 @@ const ProxyContestDetail = () => {
     const [meetingDetailsData, setMeetingDetailsData] = useState<any>(null);
     const [caseStudiesData, setCaseStudiesData] = useState<any[]>([]);
     const [proxyAdvisoryData, setProxyAdvisoryData] = useState<any[]>([]);
+    const [proxyVotingData, setProxyVotingData] = useState<any>(null);
+    const [resolvedYear, setResolvedYear] = useState<string>(company?.year || year || "");
 
     // Modal states
     const [caseProxyModalVisible, setCaseProxyModalVisible] = useState<boolean>(false);
@@ -53,13 +55,15 @@ const ProxyContestDetail = () => {
     };
 
     // Create a custom axios instance without global error interceptor
-    const customAxios = axios.create({
-        baseURL: baseURL,
-        headers: {
-            'Authorization': `JWT ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-        }
-    });
+    const customAxios = useMemo(() => {
+        return axios.create({
+            baseURL: baseURL,
+            headers: {
+                'Authorization': `JWT ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json',
+            }
+        });
+    }, []);
 
     // Fetch all data
     const fetchAllData = async () => {
@@ -71,11 +75,19 @@ const ProxyContestDetail = () => {
         setLoading(true);
 
         const companyName = encodeURIComponent(company.company_name);
+        const yearForActivismTables = resolvedYear || company.year;
+        const encodedYearParam = yearForActivismTables
+            ? encodeURIComponent(JSON.stringify([String(yearForActivismTables)]))
+            : "";
 
         // Create a promise array for all API calls
         const apiCalls = [
             // Fetch Documents (Activism Tables)
-            customAxios.get(`/activism_tables/?company_name=${companyName}`)
+            customAxios.get(
+                `/activism_tables/?company_name=${companyName}${
+                    encodedYearParam ? `&year=${encodedYearParam}` : ""
+                }`
+            )
                 .then(response => {
                     setDocumentsData(response.data);
                     setProxyAdvisoryData(response.data?.Activism_ISS_GL || []);
@@ -104,6 +116,16 @@ const ProxyContestDetail = () => {
                 .catch(error => {
                     console.log("Case studies API error - this is normal if no data exists");
                     setCaseStudiesData([]);
+                }),
+
+            // Fetch Proxy Voting Data
+            customAxios.get(`/vds_proxy_voting/?year=${company.year}&company_name=[%27${encodeURIComponent(company.company_name)}%27]&top=true`)
+                .then(response => {
+                    setProxyVotingData(response.data);
+                })
+                .catch(error => {
+                    console.log("Proxy voting API error - this is normal if no data exists");
+                    setProxyVotingData(null);
                 })
         ];
 
@@ -118,8 +140,35 @@ const ProxyContestDetail = () => {
     };
 
     useEffect(() => {
+        const fetchYearIfMissing = async () => {
+            if (resolvedYear || !companyId) return;
+
+            try {
+                const pageSize = 200;
+                let url: string | null = `/api/proxy-contest-companies/?page=1&page_size=${pageSize}`;
+                const targetId = Number(companyId);
+
+                while (url) {
+                    const res = await customAxios.get(url);
+                    const results = Array.isArray(res?.data?.results) ? res.data.results : [];
+                    const match = results.find((r: any) => r?.company_id === targetId);
+                    if (match?.year) {
+                        setResolvedYear(String(match.year));
+                        return;
+                    }
+                    url = typeof res?.data?.next === "string" ? res.data.next.replace(baseURL, "") : null;
+                }
+            } catch (e) {
+                console.error("Failed to resolve proxy contest year:", e);
+            }
+        };
+
+        fetchYearIfMissing();
+    }, [companyId, resolvedYear]);
+
+    useEffect(() => {
         fetchAllData();
-    }, [company?.company_name]);
+    }, [company?.company_name, resolvedYear]);
 
     if (!company) {
         return (
@@ -512,7 +561,7 @@ const ProxyContestDetail = () => {
                                     {/* Company Information */}
                                     {meetingDetailsData.company && meetingDetailsData.company.length > 0 && (
                                         <div>
-                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                            <h3 className="mb-3 border-b border-gray-200 pb-2">
                                                 Company Information
                                             </h3>
                                             <div className="bg-gray-50 p-4 rounded-lg">
@@ -533,7 +582,7 @@ const ProxyContestDetail = () => {
                                     {/* Nominees Section */}
                                     {meetingDetailsData.nominees && meetingDetailsData.nominees.length > 0 && (
                                         <div>
-                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                            <h3 className="mb-3 border-b border-gray-200 pb-2">
                                                 Nominees
                                             </h3>
                                             <TableWrapper>
@@ -568,7 +617,7 @@ const ProxyContestDetail = () => {
                                     {/* Proposals Section */}
                                     {meetingDetailsData.proposals && meetingDetailsData.proposals.length > 0 && (
                                         <div>
-                                            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">
+                                            <h3 className="mb-3 border-b border-gray-200 pb-2">
                                                 Proposals
                                             </h3>
                                             <TableWrapper>
@@ -602,6 +651,85 @@ const ProxyContestDetail = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Proxy Voting (Top 5) */}
+                        {/* {proxyVotingData && proxyVotingData.vds_report && proxyVotingData.vds_report.length > 0 && (
+                            <div className="box p-5 mt-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-lg font-bold">Proxy Voting (Top 5)</h2>
+                                </div>
+
+                                <TableWrapper>
+                                    <div className="overflow-x-auto">
+                                        <Table>
+                                            <Table.Thead>
+                                                <Table.Tr>
+                                                    {proxyVotingData.vds_report_headers?.map((header: any, index: number) => (
+                                                        <Table.Td key={index} className={`py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 ${index === 0 ? 'min-w-[80px]' : index === 1 ? 'min-w-[300px]' : 'min-w-[150px]'}`}>
+                                                            {header.header}
+                                                        </Table.Td>
+                                                    ))}
+                                                </Table.Tr>
+                                            </Table.Thead>
+                                            <Table.Tbody>
+                                                {proxyVotingData.vds_report.map((item: any, rowIndex: number) => (
+                                                    <Table.Tr key={rowIndex} className="[&_td]:last:border-b-0 hover:bg-gray-50">
+                                                        {proxyVotingData.vds_report_headers?.map((header: any, colIndex: number) => (
+                                                            <Table.Td key={colIndex} className={`py-2 border-dashed text-sm ${colIndex === 0 ? 'min-w-[80px]' : colIndex === 1 ? 'min-w-[300px]' : 'min-w-[150px]'}`}>
+                                                                {colIndex === 0 ? (
+                                                                    // Proposal number column
+                                                                    <span className="inline-block px-2 py-1 rounded bg-gray-100 text-gray-800 text-xs font-medium">
+                                                                        {item[header.field] || 'N/A'}
+                                                                    </span>
+                                                                ) : colIndex === 1 ? (
+                                                                    // Proposal title column
+                                                                    <div className="text-left">
+                                                                        <span className="text-gray-900 font-medium text-sm">
+                                                                            {item[header.field] || 'N/A'}
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    // Institution vote columns
+                                                                    <div className="text-left">
+                                                                        {item[header.field] ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className={`text-sm ${item[header.field].vote === 'Withhold' || item[header.field].vote === 'Against'
+                                                                                        ? 'text-red-700 font-semibold '
+                                                                                        : 'text-gray-900'
+                                                                                    }`}>
+                                                                                    {item[header.field].vote || 'N/A'}
+                                                                                </span>
+                                                                                {item[header.field].notes && (
+                                                                                    <Tippy
+                                                                                        content={item[header.field].notes}
+                                                                                        options={{ theme: "light", placement: "top" }}
+                                                                                    >
+                                                                                        <div className="inline-flex items-center justify-center w-4 h-4 rounded-full cursor-help">
+                                                                                            <Lucide icon="Info" className="w-4 h-4 text-blue-800" />
+                                                                                        </div>
+                                                                                    </Tippy>
+                                                                                )}
+                                                                                {item[header.field].vote === 'Split Vote' && item[header.field].split_vote_counts && (
+                                                                                    <div className="text-xs text-gray-600 ml-2">
+                                                                                        (For: {item[header.field].split_vote_counts.for} | Against: {item[header.field].split_vote_counts.against})
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="text-gray-400 text-sm">N/A</span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </Table.Td>
+                                                        ))}
+                                                    </Table.Tr>
+                                                ))}
+                                            </Table.Tbody>
+                                        </Table>
+                                    </div>
+                                </TableWrapper>
+                            </div>
+                        )} */}
 
 
 

@@ -159,7 +159,7 @@ const DetailCaseStudies = () => {
               {singleCaseStudy?.voting_details && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Details</h3>
-                  <p>{singleCaseStudy?.voting_details}</p>
+                  <p className="whitespace-pre-line">{singleCaseStudy?.voting_details}</p>
                 </div>
               )}
             </div>
@@ -198,6 +198,49 @@ const DetailCaseStudies = () => {
                 )}
               </div>
             </div>
+
+            {/* References Section */}
+            {singleCaseStudy?.primary_source_link && 
+             Array.isArray(singleCaseStudy.primary_source_link) && 
+             singleCaseStudy.primary_source_link.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="font-semibold min-w-[150px] mb-2">References</h3>
+                <div className="space-y-2">
+                  {singleCaseStudy.primary_source_link.map((link: string, index: number) => {
+                    // Extract filename from URL
+                    // Example: "https://.../.../33_US%20Voting%20Policy.pdf" -> "US Voting Policy"
+                    const getDocumentName = (url: string) => {
+                      try {
+                        const parts = url.split('/');
+                        const filename = parts[parts.length - 1];
+                        // Decode URL encoding and remove file extension
+                        const decoded = decodeURIComponent(filename);
+                        // Remove number prefix (e.g., "33_") and file extension
+                        const nameWithoutPrefix = decoded.replace(/^\d+_/, '');
+                        const nameWithoutExt = nameWithoutPrefix.replace(/\.[^/.]+$/, '');
+                        return nameWithoutExt;
+                      } catch (error) {
+                        return url;
+                      }
+                    };
+
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        <Lucide icon="FileText" className="w-4 h-4 text-gray-500" />
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {getDocumentName(link)}
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

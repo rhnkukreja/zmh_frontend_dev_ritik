@@ -11,6 +11,7 @@ import {
   getDateWithoutTime,
 } from "@/utils/helper";
 import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { baseURL } from "@/constant";
@@ -27,6 +28,7 @@ import CompanySelect from "@/components/ReactSelectAsync";
 import Litepicker from "@/components/Base/Litepicker";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
 import { caseStudiesService } from "@/services/caseStudies";
+import { InstitutionDocumentSelector } from "@/components/InstitutionDocumentSelector";
 interface AddNewCaseStudiesProps {
   addNewCaseStudyModalVisible: boolean;
   setAddNewCaseStudyModalVisible: (visible: boolean) => void;
@@ -52,6 +54,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     handleSubmit,
     control,
     watch,
+    reset,
     formState: { errors },
   } = useForm<any>({
     defaultValues: {
@@ -60,7 +63,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         label: selectedCaseStudies?.company_name,
       }: null,
       // company: null,
-      institution: selectedCaseStudies?.institution,
+      institution: selectedCaseStudies?.institution ? String(selectedCaseStudies.institution) : "",
       caspio_company_name: selectedCaseStudies?.caspio_company_name,
       caspio_company_ticker: selectedCaseStudies?.caspio_company_ticker,
       region: selectedCaseStudies?.region,
@@ -81,8 +84,12 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       year: selectedCaseStudies?.year?.toString(),
       meeting_date: getDateWithoutTime(selectedCaseStudies?.meeting_date) || "",
       primary_source: selectedCaseStudies?.primary_source,
-      primary_source_link: selectedCaseStudies?.primary_source_link,
-      page_reference: selectedCaseStudies?.page_reference,
+      primary_source_link: Array.isArray(selectedCaseStudies?.primary_source_link)
+        ? selectedCaseStudies?.primary_source_link
+        : selectedCaseStudies?.primary_source_link
+        ? [selectedCaseStudies?.primary_source_link]
+        : [],
+      page_reference: selectedCaseStudies?.page_reference || "",
       approval_status: selectedCaseStudies?.approval_status,
       investment_type:
         selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
@@ -107,6 +114,8 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   const esgTheme = watch("esg_themes");
   const watchCompany = watch("company");
   const watchCaspioCompanyName = watch("caspio_company_name");
+  const watchInstitution = watch("institution");
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchDropdownValues = async (params: { themes: string[] }) => {
@@ -133,7 +142,108 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     }
   }, [esgTheme]);
 
+  useEffect(() => {
+    if (watchInstitution) {
+      setSelectedInstitutionId(Number(watchInstitution));
+      return;
+    }
+
+    setSelectedInstitutionId(null);
+  }, [watchInstitution]);
+
+  // Reset form when editing (when modal opens with selectedCaseStudies data)
+  useEffect(() => {
+    if (selectedCaseStudies && addNewCaseStudyModalVisible) {
+      console.log('🔄 Resetting form with selectedCaseStudies:', {
+        primary_source: selectedCaseStudies?.primary_source,
+        approval_status: selectedCaseStudies?.approval_status,
+        esg_category: selectedCaseStudies?.esg_category,
+      });
+      
+      const formValues = {
+        company: selectedCaseStudies?.company ? {
+          value: selectedCaseStudies?.company,
+          label: selectedCaseStudies?.company_name,
+        } : null,
+        institution: selectedCaseStudies?.institution ? String(selectedCaseStudies.institution) : "",
+        caspio_company_name: selectedCaseStudies?.caspio_company_name || "",
+        caspio_company_ticker: selectedCaseStudies?.caspio_company_ticker || "",
+        region: selectedCaseStudies?.region || "",
+        market: selectedCaseStudies?.market || "",
+        industry: selectedCaseStudies?.industry || "",
+        esg_themes: selectedCaseStudies?.esg_themes
+          ? selectedCaseStudies?.esg_themes?.split(",")
+          : isProxyContestContext ? ["Proxy Contest/M&A"] : [],
+        engagement_details: selectedCaseStudies?.engagement_details || "",
+        proposal_type: selectedCaseStudies?.proposal_type || "",
+        resolution_engagement_topic: selectedCaseStudies?.resolution_engagement_topic || "",
+        vote: selectedCaseStudies?.vote || "  ",
+        voting_rationale: selectedCaseStudies?.voting_rationale || "",
+        voting_details: selectedCaseStudies?.voting_details || "",
+        urls_def14: selectedCaseStudies?.urls_def14 || "",
+        urls_8k: selectedCaseStudies?.urls_8k || "",
+        year: selectedCaseStudies?.year?.toString() || "",
+        meeting_date: getDateWithoutTime(selectedCaseStudies?.meeting_date) || "",
+        primary_source: selectedCaseStudies?.primary_source || "",
+        primary_source_link: Array.isArray(selectedCaseStudies?.primary_source_link)
+          ? selectedCaseStudies?.primary_source_link
+          : selectedCaseStudies?.primary_source_link
+          ? [selectedCaseStudies?.primary_source_link]
+          : [],
+        page_reference: selectedCaseStudies?.page_reference || "",
+        approval_status: selectedCaseStudies?.approval_status || "",
+        investment_type: selectedCaseStudies?.investment_type || holdingTypesDropdown[0] || "",
+        esg_category: selectedCaseStudies?.esg_category
+          ? selectedCaseStudies?.esg_category?.split(",")
+          : [],
+      };
+      
+      console.log('📝 Form values being set:', {
+        primary_source: formValues.primary_source,
+        approval_status: formValues.approval_status,
+        esg_category: formValues.esg_category,
+      });
+      
+      reset(formValues);
+    } else if (!selectedCaseStudies && addNewCaseStudyModalVisible) {
+      // Reset to empty form when adding new case study
+      reset({
+        company: null,
+        institution: "",
+        caspio_company_name: "",
+        caspio_company_ticker: "",
+        region: "",
+        market: "",
+        industry: "",
+        esg_themes: isProxyContestContext ? ["Proxy Contest/M&A"] : [],
+        engagement_details: "",
+        proposal_type: "",
+        resolution_engagement_topic: "",
+        vote: "  ",
+        voting_rationale: "",
+        voting_details: "",
+        urls_def14: "",
+        urls_8k: "",
+        year: "",
+        meeting_date: "",
+        primary_source: "",
+        primary_source_link: [],
+        page_reference: "",
+        approval_status: "",
+        investment_type: holdingTypesDropdown[0] || "",
+        esg_category: [],
+      });
+    }
+  }, [selectedCaseStudies, addNewCaseStudyModalVisible, reset, isProxyContestContext]);
+
   const onSubmit = async (data: any) => {
+    console.log('🔍 Form Data Debug:', {
+      primary_source_link_raw: data.primary_source_link,
+      primary_source_link_is_array: Array.isArray(data.primary_source_link),
+      primary_source_link_length: data.primary_source_link?.length,
+      meeting_date_raw: data.meeting_date,
+    });
+    
     console.log('🔍 ESG Themes Debug:', {
       isProxyContestContext,
       pathname: location.pathname,
@@ -146,6 +256,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
       company: data?.company?.value ?? selectedCaseStudies?.company,
+      primary_source_link: Array.isArray(data?.primary_source_link)
+        ? data.primary_source_link.filter(link => link && link.trim() !== '')
+        : data?.primary_source_link
+        ? [data.primary_source_link]
+        : [],
 
       esg_themes:
         Array.isArray(data.esg_themes) && data.esg_themes.length > 0
@@ -159,12 +274,21 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
       vote: data?.vote === "  " ? null : data?.vote,
       investment_type:
         data?.investment_type === "  " ? null : data?.investment_type,
-      meeting_date: formatedDate(data?.meeting_date),
+      meeting_date: data?.meeting_date 
+        ? (selectedCaseStudies?.id 
+            ? dayjs(data.meeting_date).format('YYYY-MM-DDTHH:mm:ss') 
+            : dayjs(data.meeting_date).format('YYYY-MM-DD'))
+        : null,
     };
+
+    console.log('📤 Transformed Data:', {
+      primary_source_link: transformedData.primary_source_link,
+      meeting_date: transformedData.meeting_date,
+    });
 
     try {
       let response;
-      if (selectedCaseStudies) {
+      if (selectedCaseStudies?.id) {
         response = await dispatch(
           addEditNewCaseStudies({
             id: selectedCaseStudies?.id!,
@@ -179,7 +303,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
 
       if (response.results?.id) {
         toast.success(
-          selectedCaseStudies
+          selectedCaseStudies?.id
             ? "CaseStudies Proposal Updated"
             : "New Case Studies Proposal Added"
         );
@@ -212,7 +336,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
         <form onSubmit={handleSubmit(onSubmit)}>
           <Dialog.Title>
             <h2 className="mr-auto text-xl font-semibold">
-              {selectedCaseStudies
+              {selectedCaseStudies?.id
                 ? "Edit Case Studies"
                 : "Add New Case Studies"}
             </h2>
@@ -703,9 +827,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     control={control}
                     render={({ field, fieldState: { error } }) => (
                       <>
-                        <FormInput
-                          placeholder="Enter Primary Source Link"
-                          {...field}
+                        <InstitutionDocumentSelector
+                          institutionId={selectedInstitutionId}
+                          onChange={(links) => field.onChange(links)}
+                          selectedDocuments={field.value || []}
+                          placeholder="Select Primary Source Documents"
                         />
                         {error && (
                           <Error className="text-red-600 mt-2">
@@ -716,7 +842,6 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     )}
                   />
                 </div>
-
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Page Reference
@@ -742,7 +867,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+              <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     URL def14

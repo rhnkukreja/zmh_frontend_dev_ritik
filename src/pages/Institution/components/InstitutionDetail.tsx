@@ -114,6 +114,14 @@ const DetailInstitution = () => {
                   ) || "N/A"}
                 </p>
               </div>
+              <div className="flex flex-col">
+                <h2 className="text-md font-medium text-gray-700 mb-1">
+                  Created At
+                </h2>
+                <p className="text-gray-500">
+                  {singleInstitution?.date_created || "N/A"}
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col">

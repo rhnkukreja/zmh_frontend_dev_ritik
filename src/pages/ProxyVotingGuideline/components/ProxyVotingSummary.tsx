@@ -109,7 +109,7 @@ function ProxyVotingSummary() {
   const handleSearch = (searchTerms: string[]) => {
     dispatch(
       setFilter({
-        key: "institution_name",
+        key: "institution_name_raw",
         value: searchTerms,
       })
     );
@@ -470,7 +470,11 @@ function ProxyVotingSummary() {
               </div>
               
               <div className="overflow-auto xl:overflow-visible px-5">
-                <TableWrapper isLoading={summaryLoading}>
+                <TableWrapper
+                  isLoading={summaryLoading}
+                  rows={6}
+                  columns={4}
+                >
                   <div className="overflow-auto max-h-[400px]">
                     <Table>
                       <Table.Thead>

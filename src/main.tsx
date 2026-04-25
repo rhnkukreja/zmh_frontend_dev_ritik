@@ -33,7 +33,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           <ToastContainer
             position="top-right"
             autoClose={3000}
-            hideProgressBar={false}
+            limit={3}
+            hideProgressBar={true}
             newestOnTop={false}
             closeOnClick
             rtl={false}
@@ -41,6 +42,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             draggable
             pauseOnHover
             theme="light"
+            toastClassName="app-toast"
+            bodyClassName="app-toast-body"
           />
 
           <Router />

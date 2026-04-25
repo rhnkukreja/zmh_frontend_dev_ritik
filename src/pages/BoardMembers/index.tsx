@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
-import { getGraphQLBoardData } from "@/stores/dashboardSlice";
+// import { getGraphQLBoardData } from "@/stores/dashboardSlice";
 import TableWrapper from "@/components/TableWrapper";
 import Table from "@/components/Base/Table";
 
@@ -15,11 +15,11 @@ function BoardMembers() {
   const { graphQLBoardData, graphQLBoardDataLoading } =
     useAppSelector((state) => state.dashboard);
 
-  useEffect(() => {
-    if (companyGlobalSearchName) {
-      dispatch(getGraphQLBoardData(companyGlobalSearchName));
-    }
-  }, [companyGlobalSearchName, dispatch]);
+  // useEffect(() => {
+  //   if (companyGlobalSearchName) {
+  //     dispatch(getGraphQLBoardData(companyGlobalSearchName));
+  //   }
+  // }, [companyGlobalSearchName, dispatch]);
 
   return (
     <>

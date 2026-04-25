@@ -1,7 +1,4 @@
-export const baseURL = `https://api.zmhadvisors.com`;
-// export const baseURL = `https://api-dev.zmhadvisors.com`;
-// export const baseURL = `https://zmh-backend-2498c1b50991.herokuapp.com`;
-// export const baseURL = `http://127.0.0.1:8000`;
+export { apiBaseURL as baseURL } from '@/config/environment';
 
 export const PAGE_SIZE = 10;
 export const characterColors: {
@@ -46,7 +43,6 @@ export const investorProfileEditableSectionsInvestors = {
     type: "investor",
   },
   voting_guidelines: { value: "Voting Guidelines", type: "investor" },
-  references: { value: "References", type: "investor" },
 };
 export const investorProfileEditableSectionsEquity = {
   equity_firm_name: { value: "Equity Firm Name", type: "equity" },
@@ -67,7 +63,7 @@ export const no_header_company = [
 ];
 export const proponent_type = ["shareholder", "management"];
 export const meeting_type = ["Proxy Contest", "Annual", "Special"];
-export const proposal_type = ["elect directors", "say on pay", "auditor"];
+export const proposal_type = ["elect directors", "say on pay", "auditor", "shareholder"];
 export const proposal_keywords = {
   "elect directors": ["elect director", "elect"],
   "say on pay": ["executive compensation", "named executive compensation", "compensation"],

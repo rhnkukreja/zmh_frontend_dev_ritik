@@ -33,6 +33,7 @@ import { realTimeService } from "@/services/realTimeData";
 import Litepicker from "@/components/Base/Litepicker";
 import SummaryModal from "./components/ViewSummaryModal";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 
 
 
@@ -733,20 +734,12 @@ const index = () => {
                   <Controller
                     name="keyword"
                     control={control}
-                    defaultValue=""
+                    defaultValue={[]}
                     render={({ field }) => (
-                      <FormInput
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleSubmit(onSubmit)();
-                          }
-                        }}
-                        value={field.value?.toString() || ""}
+                      <CreatableInputSelect
+                        placeholder="Type and press Enter to add keywords"
+                        value={field.value || []}
                         onChange={field.onChange}
-                        type="text"
-                        className="mt-1"
-                        placeholder="Search Keyword"
                       />
                     )}
                   />
@@ -794,7 +787,11 @@ const index = () => {
 
         {isViewAnalysis && (
           <div className="mb-20">
-            <TableWrapper isLoading={allApplyFilter && isAnalyticsLoading}>
+            <TableWrapper
+              isLoading={allApplyFilter && isAnalyticsLoading}
+              rows={6}
+              columns={6}
+            >
               <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                 <Table>
                   <Table.Thead>
@@ -895,7 +892,11 @@ const index = () => {
               <>
                 <div className="">
                   <div>
-                    <TableWrapper isLoading={allApplyFilter && loading}>
+                    <TableWrapper
+                      isLoading={allApplyFilter && loading}
+                      rows={8}
+                      columns={10}
+                    >
                       <div className="overflow-x-auto max-h-[60vh] overflow-y-auto relative">
                         <Table>
                           <Table.Thead className="relative">
@@ -991,7 +992,7 @@ const index = () => {
                                                   className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"
                                                   style={{ width: "5%" }}
                                                 >
-                                                  Proposal No.
+                                                  Proposal No
                                                 </Table.Td>
                                                 <Table.Td
                                                   className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2]"

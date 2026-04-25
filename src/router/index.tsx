@@ -66,6 +66,7 @@ import EngagementQuestion from "../pages/EngagementQuestion";
 import ProxyVotingGuideline from "../pages/ProxyVotingGuideline";
 import DetailEngagementQuesion from "../pages/EngagementQuestion/DetailEngagementQuestion";
 import DetailInstitutions from "../pages/Institution/components/InstitutionDetail";
+import InstitutionDocuments from "../pages/Institution/components/InstitutionDocuments";
 import DetailCompany from "../pages/Company/component/CompanyDetail";
 import ZMHDashboard from "../pages/ZMHDashboard";
 import BoardMembers from "../pages/BoardMembers";
@@ -78,6 +79,7 @@ import React, { useEffect } from "react";
 import CompanyList from "@/pages/Company";
 import SharedHolder from "@/pages/sharedHolder";
 import PeerAnalysis from "@/pages/PeerAnalysis";
+import AISearchOnly from "../pages/AISearchOnly";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
@@ -89,12 +91,31 @@ import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
 import NPXDetails from "@/pages/NPX";
+// import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import ProxyContest from "@/pages/ProxyContest";
 import ProxyContestDetail from "@/pages/ProxyContestDetail";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
 import VdsEuropean from "@/pages/vdsEuropean";
 import RealTimeData from "@/pages/RealTimeData";
 import CustomReports from "../pages/CustomReports";
+import VotingRationalePage from "@/pages/VotingRationalePage";
+import UserManagement from "@/pages/UserManagement";
+import CompanyReportPage from "@/pages/CompanyReport";
+
+
+import AiChatbot from "../pages/AIChatbot/AiChatbot";
+import QAPage from "../pages/AIChatbot/QAPage";
+import ComparePage from "../pages/AIChatbot/ComparePage";
+import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
+import { ChatProvider } from "../pages/AIChatbot/ChatContext";
+import NPXAnalyticsPage from "@/pages/NPXAnalytics";
+import Newsletter from "@/pages/Newsletter";
+import NewsletterV2 from "@/pages/NewsletterV2";
+
+
+import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
+import CaseStudiesAI from "@/pages/CaseStudiesAI";
+
 
 function Router() {
   const TitleManager = () => {
@@ -103,9 +124,27 @@ function Router() {
     useEffect(() => {
       const parentRoute = routes.find((route: any) => route.path === "/");
       const slicePathName = location.pathname?.split("/")[1];
-      const childRoute = parentRoute?.children?.find((route: any) =>
+      let childRoute = parentRoute?.children?.find((route: any) =>
         route.path.includes(slicePathName)
       );
+
+      // Also resolve titles for top-level route groups with children (e.g. ai-assistant/*)
+      if (!childRoute) {
+        const normalizedPath = location.pathname.replace(/^\//, "");
+        const routeGroup = routes.find(
+          (route: any) =>
+            Array.isArray(route?.children) &&
+            route.children.some((child: any) =>
+              normalizedPath === child?.path || normalizedPath.startsWith(`${child?.path}/`)
+            )
+        );
+
+        childRoute = routeGroup?.children?.find(
+          (child: any) =>
+            normalizedPath === child?.path || normalizedPath.startsWith(`${child?.path}/`)
+        );
+      }
+
       document.title = childRoute?.data?.titleName || "ZMH Analytics";
     }, [location.pathname]);
 
@@ -405,6 +444,11 @@ function Router() {
           data: { titleName: "institution Detail - ZMH Analytics" },
         },
         {
+          path: "institution/:id/documents",
+          element: <InstitutionDocuments />,
+          data: { titleName: "Institution Documents - ZMH Analytics" },
+        },
+        {
           path: "shareholder-proposal",
           element: <SharedHolder />,
           data: { titleName: "Shareholder Proposal - ZMH Analytics" },
@@ -430,9 +474,19 @@ function Router() {
           data: { titleName: "Case Studies Detail - ZMH Analytics" },
         },
         {
+          path: "case-studies-ai",
+          element: <CaseStudiesAI />,
+          data: { titleName: "Case Studies AI - ZMH Analytics" },
+        },
+        {
           path: "investor-details",
           element: <InvestorCardDetails />,
           data: { titleName: "Investor Detail - ZMH Analytics" },
+        },
+        {
+          path: "company-report",
+          element: <CompanyReportPage />,
+          data: { titleName: "Company Report" },
         },
         {
           path: "summary-details",
@@ -448,6 +502,11 @@ function Router() {
           path: "vds-proxy-details",
           element: <VdsProxyVoting />,
           data: { titleName: "Proxy Voting - ZMH Analytics" },
+        },
+        {
+          path: "voting-rationale",
+          element: <VotingRationalePage />,
+          data: { titleName: "Voting Rationale - ZMH Analytics" },
         },
         {
           path: "investor-company-details/:id",
@@ -470,10 +529,25 @@ function Router() {
           element: <Notes />,
           data: { titleName: "Notes - ZMH Analytics" },
         },
+        // {
+        //   path: "/newsletter-old",
+        //   element: <Newsletter />,
+        //   data: { titleName: "Newsletter Old - ZMH Analytics" },
+        // },
+        {
+          path: "/newsletter",
+          element: <NewsletterV2 />,
+          data: { titleName: "Newsletter - ZMH Analytics" },
+        },
         {
           path: "npx-details",
           element: <NPXDetails />,
           data: { titleName: "N-PX - ZMH Analytics" },
+        },
+        {
+          path: "npx-analytics",
+          element: <NPXAnalyticsPage />,
+          data: { titleName: "N-PX Analytics - ZMH Analytics" },
         },
         {
           path: "proxy-contest",
@@ -500,12 +574,20 @@ function Router() {
           element: <RealTimeData />,
           data: { titleName: "2025 Shareholder Meetings - ZMH Analytics" },
         },
-        
+        {
+          path: "user-management",
+          element: <UserManagement />,
+          data: { titleName: "User Management - ZMH Analytics" },
+        }        
       ],
     },
     {
       path: "/landing-page",
       element: <LandingPage />,
+    },
+    {
+      path: "/ai-search",
+      element: <AISearchOnly />,
     },
     {
       path: "login",
@@ -515,6 +597,29 @@ function Router() {
       path: "register",
       element: <Register />,
     },
+    {
+      path: "final-summary/:id",
+      element: <FinalProfileSummary/>,
+    },
+    {
+      element: <ChatProvider><AiChatbot /></ChatProvider>,      
+      children: [
+    {
+      path: "ai-assistant",
+      element: <QAPage />,
+      data: { titleName: "AI Assistant - ZMH Analytics" },
+    },
+    {
+      path: "ai-assistant/compare-documents",
+      element: <ComparePage />,
+      data: { titleName: "AI Assistant - ZMH Analytics" },
+    },
+    {
+      path: "ai-assistant/voting-guidelines",
+      element: <VotingGuidelinesPage />,
+      data: { titleName: "AI Assistant - ZMH Analytics" },
+    }]
+  }
   ];
 
   return useRoutes(routes);

@@ -219,56 +219,98 @@ function Main() {
                     <img alt="ZMH Analytics" src={users.fakeUsers()[0].photo} />
                   </Menu.Button>
                   <Menu.Items className="w-56 mt-1">
-                    <Menu.Item
-                      onClick={() => {
-                        setSwitchAccount(true);
-                      }}
-                    >
-                      <Lucide icon="ToggleLeft" className="w-4 h-4 mr-2" />
-                      Switch Account
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            setSwitchAccount(true);
+                          }}
+                        >
+                          <Lucide icon="ToggleLeft" className="w-4 h-4 mr-2" />
+                          Switch Account
+                        </button>
+                      )}
                     </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("settings?page=connected-services");
-                      }}
-                    >
-                      <Lucide icon="Settings" className="w-4 h-4 mr-2" />
-                      Connected Services
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            navigate("settings?page=connected-services");
+                          }}
+                        >
+                          <Lucide icon="Settings" className="w-4 h-4 mr-2" />
+                          Connected Services
+                        </button>
+                      )}
                     </Menu.Item>
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("settings?page=email-settings");
-                      }}
-                    >
-                      <Lucide icon="Inbox" className="w-4 h-4 mr-2" />
-                      Email Settings
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            navigate("settings?page=email-settings");
+                          }}
+                        >
+                          <Lucide icon="Inbox" className="w-4 h-4 mr-2" />
+                          Email Settings
+                        </button>
+                      )}
                     </Menu.Item>
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("settings?page=security");
-                      }}
-                    >
-                      <Lucide icon="Lock" className="w-4 h-4 mr-2" />
-                      Reset Password
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            navigate("settings?page=security");
+                          }}
+                        >
+                          <Lucide icon="Lock" className="w-4 h-4 mr-2" />
+                          Reset Password
+                        </button>
+                      )}
                     </Menu.Item>
                     <Menu.Divider />
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("settings");
-                      }}
-                    >
-                      <Lucide icon="Users" className="w-4 h-4 mr-2" />
-                      Profile Info
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            navigate("settings");
+                          }}
+                        >
+                          <Lucide icon="Users" className="w-4 h-4 mr-2" />
+                          Profile Info
+                        </button>
+                      )}
                     </Menu.Item>
-                    <Menu.Item
-                      onClick={() => {
-                        navigate("login");
-                        dispatch(logout());
-                      }}
-                    >
-                      <Lucide icon="Power" className="w-4 h-4 mr-2" />
-                      Logout
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={() => {
+                            navigate("/login");
+                            dispatch(logout());
+                          }}
+                        >
+                          <Lucide icon="Power" className="w-4 h-4 mr-2" />
+                          Logout
+                        </button>
+                      )}
                     </Menu.Item>
                   </Menu.Items>
                 </Menu>

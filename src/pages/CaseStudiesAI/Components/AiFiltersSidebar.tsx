@@ -1,0 +1,454 @@
+import React from "react";
+import Lucide from "@/components/Base/Lucide";
+import SkeletonText from "@/components/Base/Skeletons/SkeletonText";
+import clsx from "clsx";
+
+interface AiFiltersSidebarProps {
+  isAiFiltersLoading: boolean;
+  aiFiltersData: any;
+  isAllInvestorsSelected: boolean;
+  toggleAiFilter: (type: "investor" | "theme" | "year" | "market", value: any) => void;
+  isAiFilterSelected: (
+    type: "investor" | "theme" | "year" | "market",
+    value: any
+  ) => boolean;
+  toggleAllInvestors: () => void;
+  toggleAllThemes: () => void;
+  toggleAllYears: () => void;
+  toggleAllMarkets: () => void;
+  setInvestorSearch: (val: string) => void;
+  setIsInvestorModalOpen: (val: boolean) => void;
+  setMarketSearch: (val: string) => void;
+  setIsMarketModalOpen: (val: boolean) => void;
+  isAllThemesSelected: boolean;
+  isAllYearsSelected: boolean;
+  isAllMarketsSelected: boolean;
+  selectedAiInstitutionIds: number[];
+  selectedAiThemes: string[];
+  selectedAiYears: number[];
+  selectedAiMarkets: string[];
+}
+
+const AiFiltersSidebar: React.FC<AiFiltersSidebarProps> = ({
+  isAiFiltersLoading,
+  aiFiltersData,
+  isAllInvestorsSelected,
+  toggleAiFilter,
+  isAiFilterSelected,
+  toggleAllInvestors,
+  toggleAllThemes,
+  toggleAllYears,
+  toggleAllMarkets,
+  setInvestorSearch,
+  selectedAiInstitutionIds,
+  selectedAiThemes,
+  selectedAiYears,
+  selectedAiMarkets,
+  setIsInvestorModalOpen,
+  setMarketSearch,
+  setIsMarketModalOpen,
+  isAllThemesSelected,
+  isAllYearsSelected,
+  isAllMarketsSelected,
+}) => {
+  return (
+    <div className="col-span-12 md:col-span-4 xl:col-span-3 mb-6 md:mb-0">
+      <style>{`
+        .ai-filters-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(226, 232, 240, 0.3) transparent;
+        }
+        .ai-filters-scroll::-webkit-scrollbar {
+          width: 4px;
+        }
+        .ai-filters-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .ai-filters-scroll::-webkit-scrollbar-thumb {
+          background: rgba(226, 232, 240, 0.4);
+          border-radius: 4px;
+        }
+        .ai-filters-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(203, 213, 225, 0.6);
+        }
+      `}</style>
+      <div
+        className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 sticky overflow-y-auto ai-filters-scroll"
+        style={{ top: "6.5rem", maxHeight: "calc(100vh - 8rem)" }}
+      >
+        <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2">
+          <Lucide icon="Filter" className="w-5 h-5 text-primary" />
+          AI Filters
+        </h3>
+
+        {isAiFiltersLoading ? (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <SkeletonText key={`year-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <SkeletonText key={`investor-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <SkeletonText lines={1} className="mb-3" height="h-3" />
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <SkeletonText key={`theme-skeleton-${idx}`} lines={1} height="h-9" />
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : aiFiltersData ? (
+          <div className="space-y-6">
+            {/* MARKETS / COUNTRIES */}
+            <div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                  Markets
+                </h4>
+                <span
+                  className="text-xs font-semibold text-primary cursor-pointer hover:underline"
+                  onClick={() => {
+                    setMarketSearch("");
+                    setIsMarketModalOpen(true);
+                  }}
+                >
+                  See more
+                </span>
+              </div>
+              <div className="space-y-1 mt-3">
+                {/* All Markets */}
+                <div
+                  onClick={toggleAllMarkets}
+                  className={clsx(
+                    "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
+                    selectedAiMarkets.length === 0
+                      ? "bg-primary/10 border-primary/30"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={clsx(
+                        "text-sm font-semibold",
+                        selectedAiMarkets.length === 0 ? "text-primary" : "text-slate-600"
+                      )}
+                    >
+                      {aiFiltersData?.markets?.all_markets?.label || "All Markets"}
+                    </span>
+                  </div>
+                  <span
+                    className={clsx(
+                      "text-xs font-mono px-2 py-0.5 rounded-full border",
+                      selectedAiMarkets.length === 0
+                        ? "bg-white text-primary border-primary/20"
+                        : "bg-slate-100 text-slate-500 border-transparent"
+                    )}
+                  >
+                    {aiFiltersData?.markets?.all_markets?.count || 0}
+                  </span>
+                </div>
+
+                {/* Top 3 Markets */}
+                {aiFiltersData?.markets?.breakdown?.slice(0, 3).map((market: any, idx: number) => (
+                  <div
+                    key={idx}
+                    onClick={() => toggleAiFilter("market", market.name)}
+                    className={clsx(
+                      "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors group border",
+                      isAiFilterSelected("market", market.name)
+                        ? "bg-primary/10 border-primary/30"
+                        : "hover:bg-slate-50 border-transparent"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={clsx(
+                          "text-sm font-medium line-clamp-1",
+                          isAiFilterSelected("market", market.name)
+                            ? "text-primary font-bold"
+                            : "text-slate-600 group-hover:text-slate-800"
+                        )}
+                      >
+                        {market.name}
+                      </span>
+                    </div>
+                    <span
+                      className={clsx(
+                        "text-xs font-mono px-2 py-0.5 rounded-full border",
+                        isAiFilterSelected("market", market.name)
+                          ? "bg-white text-primary border-primary/20"
+                          : "bg-slate-100 text-slate-500 border-transparent"
+                      )}
+                    >
+                      {market.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* YEARS */}
+            <div>
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 border-t border-slate-100 pt-4">
+                Year
+              </h4>
+              <div className="space-y-1">
+                {/* All Years */}
+                <div
+                  onClick={toggleAllYears}
+                  className={clsx(
+                    "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
+                    selectedAiYears.length === 0
+                      ? "bg-primary/10 border-primary/30"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={clsx(
+                        "text-sm font-semibold",
+                        selectedAiYears.length === 0 ? "text-primary" : "text-slate-600"
+                      )}
+                    >
+                      {aiFiltersData?.years?.all_years?.label || "All Years"}
+                    </span>
+                  </div>
+                  <span
+                    className={clsx(
+                      "text-xs font-mono px-2 py-0.5 rounded-full border",
+                      selectedAiYears.length === 0
+                        ? "bg-white text-primary border-primary/20"
+                        : "bg-slate-100 text-slate-500 border-transparent"
+                    )}
+                  >
+                    {aiFiltersData?.years?.all_years?.count || 0}
+                  </span>
+                </div>
+
+                {/* Individual Years */}
+                {aiFiltersData?.years?.individual?.map(
+                  (yearData: any, idx: number) => (
+                    <div
+                      key={idx}
+                      onClick={() => toggleAiFilter("year", yearData.year)}
+                      className={clsx(
+                        "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors group border",
+                        isAiFilterSelected("year", yearData.year)
+                          ? "bg-primary/10 border-primary/30"
+                          : "hover:bg-slate-50 border-transparent"
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          "text-sm font-medium",
+                          isAiFilterSelected("year", yearData.year)
+                            ? "text-primary font-bold"
+                            : "text-slate-600 group-hover:text-slate-800"
+                        )}
+                      >
+                        {yearData.year}
+                      </span>
+                      <span
+                        className={clsx(
+                          "text-xs font-mono px-2 py-0.5 rounded-full border",
+                          isAiFilterSelected("year", yearData.year)
+                            ? "bg-white text-primary border-primary/20"
+                            : "bg-slate-100 text-slate-500 border-transparent"
+                        )}
+                      >
+                        {yearData.count}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* INVESTORS / INSTITUTIONS */}
+            <div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] border-t border-slate-100 pt-4">
+                  Investors
+                </h4>
+                <span
+                  className="text-xs font-semibold text-primary cursor-pointer hover:underline"
+                  onClick={() => {
+                    setInvestorSearch("");
+                    setIsInvestorModalOpen(true);
+                  }}
+                >
+                  See more
+                </span>
+              </div>
+              <div className="space-y-1 mt-3">
+                {/* All Investors */}
+                <div
+                  onClick={toggleAllInvestors}
+                  className={clsx(
+                    "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
+                    selectedAiInstitutionIds.length === 0
+                      ? "bg-primary/10 border-primary/30"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={clsx(
+                        "text-sm font-semibold",
+                        selectedAiInstitutionIds.length === 0 ? "text-primary" : "text-slate-600"
+                      )}
+                    >
+                      {aiFiltersData?.investors?.all_investors?.label ||
+                        "All Investors"}
+                    </span>
+                  </div>
+                  <span
+                    className={clsx(
+                      "text-xs font-mono px-2 py-0.5 rounded-full border",
+                      selectedAiInstitutionIds.length === 0
+                        ? "bg-white text-primary border-primary/20"
+                        : "bg-slate-100 text-slate-500 border-transparent"
+                    )}
+                  >
+                    {aiFiltersData?.investors?.all_investors?.count || 0}
+                  </span>
+                </div>
+
+                {/* Top 5 Investors */}
+                {aiFiltersData?.investors?.top_5?.map((inv: any, idx: number) => (
+                  <div
+                    key={idx}
+                    onClick={() => toggleAiFilter("investor", inv.id)}
+                    className={clsx(
+                      "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors group border",
+                      isAiFilterSelected("investor", inv.id)
+                        ? "bg-primary/10 border-primary/30"
+                        : "hover:bg-slate-50 border-transparent"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                        <span
+                          className={clsx(
+                            "text-sm font-medium line-clamp-1",
+                            isAiFilterSelected("investor", inv.id)
+                              ? "text-primary font-bold"
+                              : "text-slate-600 group-hover:text-slate-800"
+                          )}
+                        >
+                          {inv.name}
+                        </span>
+                    </div>
+                    <span
+                      className={clsx(
+                        "text-xs font-mono px-2 py-0.5 rounded-full border",
+                        isAiFilterSelected("investor", inv.id)
+                          ? "bg-white text-primary border-primary/20"
+                          : "bg-slate-100 text-slate-500 border-transparent"
+                      )}
+                    >
+                      {inv.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* THEMES */}
+            <div>
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 border-t border-slate-100 pt-4">
+                Themes
+              </h4>
+              <div className="space-y-1">
+                {/* All Themes */}
+                <div
+                  onClick={toggleAllThemes}
+                  className={clsx(
+                    "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors border",
+                    selectedAiThemes.length === 0
+                      ? "bg-primary/10 border-primary/30"
+                      : "bg-white border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={clsx(
+                        "text-sm font-semibold",
+                        selectedAiThemes.length === 0 ? "text-primary" : "text-slate-600"
+                      )}
+                    >
+                      {aiFiltersData?.themes?.all_themes?.label || "All Themes"}
+                    </span>
+                  </div>
+                  <span
+                    className={clsx(
+                      "text-xs font-mono px-2 py-0.5 rounded-full border",
+                      selectedAiThemes.length === 0
+                        ? "bg-white text-primary border-primary/20"
+                        : "bg-slate-100 text-slate-500 border-transparent"
+                    )}
+                  >
+                    {aiFiltersData?.themes?.all_themes?.count || 0}
+                  </span>
+                </div>
+
+                {/* Theme Breakdown */}
+                {aiFiltersData?.themes?.breakdown?.map(
+                  (theme: any, idx: number) => (
+                    <div
+                      key={idx}
+                      onClick={() => toggleAiFilter("theme", theme.name)}
+                      className={clsx(
+                        "flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors group border",
+                        isAiFilterSelected("theme", theme.name)
+                          ? "bg-primary/10 border-primary/30"
+                          : "hover:bg-slate-50 border-transparent"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                          <span
+                            className={clsx(
+                              "text-sm font-medium line-clamp-1",
+                              isAiFilterSelected("theme", theme.name)
+                                ? "text-primary font-bold"
+                                : "text-slate-600 group-hover:text-slate-800"
+                            )}
+                          >
+                            {theme.name}
+                          </span>
+                      </div>
+                      <span
+                        className={clsx(
+                          "text-xs font-mono px-2 py-0.5 rounded-full border",
+                          isAiFilterSelected("theme", theme.name)
+                            ? "bg-white text-primary border-primary/20"
+                            : "bg-slate-100 text-slate-500 border-transparent"
+                        )}
+                      >
+                        {theme.count}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+export default AiFiltersSidebar;

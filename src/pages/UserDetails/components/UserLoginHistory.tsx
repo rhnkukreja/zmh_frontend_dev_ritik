@@ -368,7 +368,11 @@ const loginHistoryLoginHistory = () => {
               </div>
             </div> */}
                         <div className="overflow-auto px-5 mt-5 ">
-                            <TableWrapper isLoading={loading}>
+                          <TableWrapper
+                            isLoading={loading}
+                            rows={6}
+                            columns={5}
+                          >
                                 <div className="overflow-auto max-h-[400px]">
                                     <Table>
                                         <Table.Thead>

@@ -452,21 +452,57 @@ function Main() {
                     />
                   </Menu.Button>
                   <Menu.Items className="w-40">
-                    <Menu.Item onClick={onExportCsv}>
-                      <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />{" "}
-                      Export CSV
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={onExportCsv}
+                        >
+                          <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />{" "}
+                          Export CSV
+                        </button>
+                      )}
                     </Menu.Item>
-                    <Menu.Item onClick={onExportJson}>
-                      <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />
-                      Export JSON
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={onExportJson}
+                        >
+                          <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />
+                          Export JSON
+                        </button>
+                      )}
                     </Menu.Item>
-                    <Menu.Item onClick={onExportXlsx}>
-                      <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />
-                      Export XLSX
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={onExportXlsx}
+                        >
+                          <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />
+                          Export XLSX
+                        </button>
+                      )}
                     </Menu.Item>
-                    <Menu.Item onClick={onExportHtml}>
-                      <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />
-                      Export HTML
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                          onClick={onExportHtml}
+                        >
+                          <Lucide icon="FileCheck2" className="w-4 h-4 mr-2" />
+                          Export HTML
+                        </button>
+                      )}
                     </Menu.Item>
                   </Menu.Items>
                 </Menu>

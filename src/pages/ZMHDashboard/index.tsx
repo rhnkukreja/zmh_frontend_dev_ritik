@@ -1,13 +1,19 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyByName,
   fetchCompanyDashboard,
+  fetchCompanyOverview,
+  fetchCompanyOverviewGPT,
+  fetchAGMSummaryDashboard,
   getBoardDirectorMembers,
-  getGraphQLBoardData,
   setPage,
+  setTempSearch,
+  saveToCache,
+  loadFromCache,
+  setModulesCount,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -17,6 +23,9 @@ import { baseURL } from "@/constant";
 import InvestorCard from "@/components/InvestorCard";
 import CaseStudiesCard from "@/components/CaseStudiesCard";
 import AGMSummaryCard from "@/components/AGMSummaryCard";
+import CompanyOverview from "@/components/CompanyOverview";
+import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
+import InvestorOverview from "@/components/InvestorOverview";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -25,13 +34,70 @@ import Table from "@/components/Base/Table";
 import { dashboardService } from "@/services/dashboard";
 import useCompanySearch from "@/hooks/useCompanySearch";
 import { CompanyData } from "@/types/company";
+import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
+import Lucide from "@/components/Base/Lucide";
+import Tippy from "@/components/Base/Tippy";
+import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-react";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
 
-  // Active tab state
-  const [activeTab, setActiveTab] = useState('ownership');
+  const { user } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleHeaderHeightChange = (event: CustomEvent) => {
+      const height = event.detail.height;
+      setHeaderHeight(height);
+    };
+    window.addEventListener('headerHeightChange' as any, handleHeaderHeightChange);
+    return () => {
+      window.removeEventListener('headerHeightChange' as any, handleHeaderHeightChange);
+    };
+  }, []);
+
+
+  // Check if user is admin
+  const isAdmin = user?.user_type === 'Admin';
+  const navigate = useNavigate();
+  // Active tab state - default based on user role
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab || 'company-overview'
+  );
+
+  // Modules count state from Redux
+  const { resultsCache, modulesCount } = useAppSelector((state: RootState) => state.dashboard);
+  const resultsCacheRef = useRef(resultsCache);
+
+  useEffect(() => {
+    resultsCacheRef.current = resultsCache;
+  }, [resultsCache]);
+
+  // Loading states for both components
+  const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
+  const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
+
+  // Manual tab change handler to sync state to history safely (no loops)
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    navigate(location.pathname, { 
+      state: { ...location.state, activeTab: tab }, 
+      replace: true 
+    });
+  };
+
+  // Handle generate report
+  const handleGenerateReport = () => {
+    if (companyGlobalSearchTicker) {
+      window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
+    }
+  };
 
   // Format date function - Month and Year only
   const formatDate = (dateString: string) => {
@@ -72,72 +138,170 @@ function Main() {
     }
   };
 
-  const { isCompanySelected } = useAppSelector(
+  const { isCompanySelected, companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, companyGlobalSearchId } = useAppSelector(
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
-
-  const { companyGlobalSearchName, companyGlobalSearchBoardName, companyGlobalSearchTicker, user } = useAppSelector(
-    (state: RootState) => state.authentiction
-  );
+  const [companyFetchError, setCompanyFetchError] = useState<string | null>(null);
+  const [isRetryingCompanyData, setIsRetryingCompanyData] = useState(false);
 
   const { companySearchAndUpdate } = useCompanySearch();
-  const { tempSearch, graphQLBoardData, graphQLBoardDataLoading } =
+  const { graphQLBoardData, graphQLBoardDataLoading } =
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
 
+  // Check if we already have this company in cache to avoid initial loading flash
+  useEffect(() => {
+    if (companyGlobalSearchTicker && resultsCacheRef.current[companyGlobalSearchTicker]) {
+      dispatch(loadFromCache(companyGlobalSearchTicker));
+    }
+  }, [companyGlobalSearchTicker, dispatch]);
+
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
-  }, [isCompanySelected]);
+  }, [isCompanySelected, dispatch]);
 
+  // useEffect(() => {
+  //   // Use board_name if available, otherwise fallback to company name
+  //   const searchValue = companyGlobalSearchBoardName || companyGlobalSearchName;
+  //   if (searchValue) {
+  //     // Clean the search value by removing "Class A", "Class B", etc.
+  //     const cleanSearchValue = searchValue.replace(/\s+(Class\s+[A-Z]|Common\s+Stock).*$/i, '').trim();
+  //     console.log('Making API call with clean search value:', cleanSearchValue);
+  //     dispatch(getGraphQLBoardData(cleanSearchValue));
+  //   }
+  // }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
+
+  // Fetch modules count when company changes
   useEffect(() => {
-    // Use board_name if available, otherwise fallback to company name
-    const searchValue = companyGlobalSearchBoardName || companyGlobalSearchName;
-    if (searchValue) {
-      // Clean the search value by removing "Class A", "Class B", etc.
-      const cleanSearchValue = searchValue.replace(/\s+(Class\s+[A-Z]|Common\s+Stock).*$/i, '').trim();
-      console.log('Making API call with clean search value:', cleanSearchValue);
-      dispatch(getGraphQLBoardData(cleanSearchValue));
-    }
-  }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
-
-  // Scroll-based tab update
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = [
-        { id: 'ownership', tab: 'ownership' },
-        { id: 'shareholder-meeting-results', tab: 'shareholder-meeting-results' },
-        { id: 'board-composition', tab: 'board-composition' }
-      ];
-
-      const scrollPosition = window.scrollY + 250; // Increased offset for sticky header
-
-      // Check from bottom to top to get the most visible section
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const section = document.getElementById(sections[i].id);
-        if (section) {
-          const sectionTop = section.offsetTop;
-          const sectionBottom = sectionTop + section.offsetHeight;
-
-          // If scroll position is within this section
-          if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
-            setActiveTab(sections[i].tab);
-            break;
-          }
-          // If we're past all sections, activate the last one
-          else if (i === sections.length - 1 && scrollPosition >= sectionTop) {
-            setActiveTab(sections[i].tab);
-            break;
-          }
+    const fetchModulesCount = async () => {
+      if (companyGlobalSearchName) {
+        try {
+          const response = await dashboardService.getModulesCount({
+            global_search: companyGlobalSearchName
+          });
+          dispatch(setModulesCount(response.result));
+          dispatch(saveToCache(companyGlobalSearchTicker || ""));
+        } catch (error) {
+          console.error('Error fetching modules count:', error);
         }
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    // Initial check on mount
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    if (!resultsCacheRef.current[companyGlobalSearchTicker || ""]) {
+      fetchModulesCount();
+    }
+  }, [companyGlobalSearchName, companyGlobalSearchTicker, dispatch]);
+
+  const fetchCompanySearchData = useCallback(
+    async (source: "initial" | "manual" | "online" | "focus" = "initial") => {
+      if (!companyGlobalSearchTicker || !companyGlobalSearchId) return;
+
+      if (source !== "initial") {
+        setIsRetryingCompanyData(true);
+      }
+
+      // Check cache first
+      if (resultsCacheRef.current[companyGlobalSearchTicker || ""]) {
+        const cached = resultsCacheRef.current[companyGlobalSearchTicker || ""];
+        // If cache is less than 30 minutes old, use it
+        if (Date.now() - cached.timestamp < 30 * 60 * 1000) {
+          dispatch(loadFromCache(companyGlobalSearchTicker));
+          setIsRetryingCompanyData(false);
+          return;
+        }
+      }
+
+      const requests: Promise<any>[] = [
+        dispatch(
+          fetchCompanyDashboard(
+            createDynamicURL(
+              `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+            )
+          )
+        ).unwrap(),
+        dispatch(
+          fetchCompanyOverview(
+            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
+          )
+        ).unwrap(),
+        dispatch(
+          fetchAGMSummaryDashboard(
+            createDynamicURL(`${baseURL}/voting_report_8k/`, {
+              ticker: companyGlobalSearchTicker,
+            })
+          )
+        ).unwrap(),
+      ];
+
+      if (isAdmin) {
+        requests.push(
+          dispatch(
+            fetchCompanyOverviewGPT(
+              `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
+            )
+          ).unwrap()
+        );
+      }
+
+      const results = await Promise.allSettled(requests);
+      const hasSuccess = results.some((r) => r.status === "fulfilled");
+
+      if (hasSuccess) {
+        setCompanyFetchError(null);
+        dispatch(setTempSearch(companyGlobalSearchTicker || ""));
+        dispatch(saveToCache(companyGlobalSearchTicker || ""));
+      } else {
+        setCompanyFetchError(
+          "Company Search data could not be loaded. Please retry."
+        );
+      }
+
+      if (source !== "initial") {
+        setIsRetryingCompanyData(false);
+      }
+    },
+    [
+      companyGlobalSearchTicker,
+      companyGlobalSearchId,
+      dispatch,
+      isAdmin,
+    ]
+  );
+
+  // Initial/company-change fetch
+  useEffect(() => {
+    fetchCompanySearchData("initial");
+  }, [fetchCompanySearchData]);
+
+  // Auto-refetch once connection is restored.
+  useEffect(() => {
+    const handleOnline = () => {
+      fetchCompanySearchData("online");
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [fetchCompanySearchData]);
+
+  // Refetch when user returns to this tab after an error.
+  useEffect(() => {
+    const handleFocusOrVisible = () => {
+      if (document.visibilityState === "visible" && navigator.onLine && companyFetchError) {
+        fetchCompanySearchData("focus");
+      }
+    };
+
+    window.addEventListener("focus", handleFocusOrVisible);
+    document.addEventListener("visibilitychange", handleFocusOrVisible);
+
+    return () => {
+      window.removeEventListener("focus", handleFocusOrVisible);
+      document.removeEventListener("visibilitychange", handleFocusOrVisible);
+    };
+  }, [companyFetchError, fetchCompanySearchData]);
+
+  // No scroll-based tab update - tabs now show/hide content instead
 
 
   if (window.clarity && user?.user_id) {
@@ -146,6 +310,8 @@ function Main() {
       name: user.first_name,
     });
   }
+
+  console.log("modulesCount:", modulesCount)
 
 
   // useEffect(() => {
@@ -176,77 +342,163 @@ function Main() {
 
   return (
     <>
-      <section >
+      <section>
         {/* Tabs - Top Level Navigation */}
-        <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: "8.3rem" }}>
-          <div className="bg-white mb-4 flex flex-col md:flex-row items-center justify-between">
-            <div className="border-b border-gray-200 w-full">
-              <nav className="grid grid-cols-3 w-full">
+        <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
+          <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+            <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
+              {/* Company Overview - All Users */}
+              <button
+                onClick={() => handleTabChange('company-overview')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
+                  activeTab === 'company-overview'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                Company Overview
+              </button>
+
+              {/* Company Overview GPT - Admin Only */}
+              {/* {isAdmin && (
                 <button
-                  onClick={() => {
-                    setActiveTab('ownership');
-                    const element = document.getElementById('ownership');
-                    if (element) {
-                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
-                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'ownership'
-                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  onClick={() => setActiveTab('company-overview-gpt')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                 >
-                  Ownership
+                  <Building2 className="w-4 h-4" />
+                  Company Overview
                 </button>
+              )} */}
+
+              {/* Investor Insight - All Users */}
+              <div className="relative">
                 <button
-                  onClick={() => {
-                    setActiveTab('shareholder-meeting-results');
-                    const element = document.getElementById('shareholder-meeting-results');
-                    if (element) {
-                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
-                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'shareholder-meeting-results'
-                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  onClick={() => handleTabChange('investor-overview')}
+                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                 >
-                  Shareholder Meeting Results
+                  <BarChart3 className="w-4 h-4" />
+                  Investor Insight
                 </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('board-composition');
-                    const element = document.getElementById('board-composition');
-                    if (element) {
-                      const offsetTop = element.offsetTop - 200; // Increased offset for better spacing
-                      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-                    }
-                  }}
-                  className={`flex-1 py-4 px-6 border-b-2 font-medium text-sm text-center transition-all duration-200 ${activeTab === 'board-composition'
-                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
-                    : 'border-transparent bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                >
-                  Board Composition (Beta)
-                </button>
-              </nav>
+                {/* <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                  BETA
+                </span> */}
+              </div>
+    
+              {/* Ownership - All Users */}
+              <button
+                onClick={() => handleTabChange('ownership')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                <Users className="w-4 h-4" />
+                Ownership
+              </button>
+
+              
+
+              {/* Shareholder Meeting Results - All Users */}
+              <button
+                onClick={() => handleTabChange('shareholder-meeting-results')}
+                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'shareholder-meeting-results'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+              >
+                <Vote className="w-4 h-4" />
+                Shareholder Meeting Results
+              </button>
             </div>
+            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
+              <div className="flex items-center gap-2">
+                {/* {companyFetchError && (
+                  <button
+                    type="button"
+                    onClick={() => fetchCompanySearchData("manual")}
+                    disabled={isRetryingCompanyData}
+                    className="px-5 py-2.5 text-[#9f1239] font-semibold text-sm rounded-full transition-all duration-200 shadow-md flex items-center gap-2 border border-[#9f1239] hover:bg-[#9f1239] hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Lucide icon="RotateCw" className="w-4 h-4" />
+                    {isRetryingCompanyData ? "Retrying..." : "Retry Data"}
+                  </button>
+                )} */}
+                <button
+                  className="px-6 py-2.5 text-primary font-semibold text-sm rounded-full hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary"
+                  onClick={handleGenerateReport}
+                >
+                  <FileText className="w-4 h-4" />
+                  Generate Report
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
+        {companyFetchError ? (
+          <div className="min-h-[58vh] flex items-center justify-center px-6">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-sm text-slate-600">{companyFetchError}</p>
+              <button
+                type="button"
+                onClick={() => fetchCompanySearchData("manual")}
+                disabled={isRetryingCompanyData}
+                className="px-5 py-2 text-sm font-semibold rounded-full border border-[#9f1239] text-[#9f1239] hover:bg-[#9f1239] hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isRetryingCompanyData ? "Retrying..." : "Retry"}
+              </button>
+              <span className="text-xs text-slate-500">Auto-retry on reconnect is enabled.</span>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          <div id="ownership" className="col-span-12 xl:col-span-12">
-            <InvestorCard />
-          </div>
+          {activeTab === 'company-overview' && (
+            <div id="company-overview" className="col-span-12 xl:col-span-12">
+              <CompanyOverview />
+            </div>
+          )}
 
-          {/* <BoardDirectorMembers /> */}
+          {activeTab === 'company-overview-gpt' && isAdmin && (
+            <div id="company-overview-gpt" className="col-span-12 xl:col-span-12">
+              <CompanyOverviewGPT />
+            </div>
+          )}
 
-          <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
-            <AGMSummaryCard companyGlobalSearchTicker={companyGlobalSearchTicker} companyGlobalSearchName={companyGlobalSearchName} isMeetingModal={false} />
-          </div>
+          {activeTab === 'ownership' && (
+            <div id="ownership" className="col-span-12 xl:col-span-12">
+              <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
+            </div>
+          )}
 
-          <div id="board-composition" className="col-span-12 xl:col-span-12">
+          {activeTab === 'investor-overview' && (
+            <div id="investor-overview" className="col-span-12 xl:col-span-12">
+              {/* Combine the name and ticker to format it exactly how your backend expects it! */}
+              <InvestorOverview companyTicker={`${companyGlobalSearchName} (${companyGlobalSearchTicker})`} />
+            </div>
+          )}
+
+          {activeTab === 'shareholder-meeting-results' && (
+            <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
+              <AGMSummaryCard
+                companyGlobalSearchTicker={companyGlobalSearchTicker}
+                companyGlobalSearchName={companyGlobalSearchName}
+                isMeetingModal={false}
+                proxyContest={modulesCount?.proxy_contest || false}
+                proxyContest2024={modulesCount?.proxy_contest_2024 || false}
+                proxyContest2025={modulesCount?.proxy_contest_2025 || false}
+                onLoaded={() => setIsMeetingLoaded(true)}
+              />
+            </div>
+          )}
+
+          {/* <div id="board-composition" className="col-span-12 xl:col-span-12">
             <div className="p-5 mt-3.5 box">
               <div className="w-full">
                 <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
@@ -257,7 +509,6 @@ function Main() {
                   </div>
                 </div>
 
-                {/* Board Composition Section */}
                 <div id="board-composition" className="mt-5">
                   <TableWrapper isLoading={graphQLBoardDataLoading}>
                     <div>
@@ -269,6 +520,9 @@ function Main() {
                             </Table.Td>
                             <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[150px] text-left">
                               Title
+                            </Table.Td>
+                            <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[100px] text-left">
+                              Age
                             </Table.Td>
                             <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[130px] text-left">
                               Start Date
@@ -287,11 +541,10 @@ function Main() {
                             console.log('Board Items:', boardItems);
 
                             if (boardItems && boardItems.length > 0) {
-                              // Filter out members with end dates or without start dates, and sort by tenure (highest to lowest)
                               const activeMembers = boardItems
                                 .filter((member: any) =>
-                                  !member.endDate?.displayDate && // Hide members with end dates
-                                  member.startDate?.displayDate   // Hide members without start dates
+                                  !member.endDate?.displayDate &&
+                                  member.startDate?.displayDate 
                                 )
                                 .map((member: any) => ({
                                   ...member,
@@ -306,7 +559,7 @@ function Main() {
                                     return Math.floor(diffInMonths / 12);
                                   })()
                                 }))
-                                .sort((a: any, b: any) => b.tenureValue - a.tenureValue); // Sort highest to lowest
+                                .sort((a: any, b: any) => b.tenureValue - a.tenureValue);
 
                               return activeMembers.map((member: any, index: number) => (
                                 <Table.Tr key={index} className="[&_td]:last:border-b-0">
@@ -316,11 +569,21 @@ function Main() {
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left">
                                     <h1>{member.title || '-'}</h1>
                                   </Table.Td>
+                                  <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[100px] text-left">
+                                    <h1>{member.person?.age}</h1>
+                                  </Table.Td>
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[130px] text-left">
                                     <h1>{formatDate(member.startDate?.displayDate) || '-'}</h1>
                                   </Table.Td>
                                   <Table.Td className="py-2 border-dashed dark:bg-darkmode-600 w-[130px] text-center">
-                                    <h1>{calculateTenure(member.startDate?.displayDate, member.endDate?.displayDate)}</h1>
+                                    <h1 className={(() => {
+                                      const tenure = calculateTenure(member.startDate?.displayDate, member.endDate?.displayDate);
+                                      const tenureMatch = tenure.match(/(\d+)\s+year/);
+                                      const years = tenureMatch ? parseInt(tenureMatch[1]) : 0;
+                                      return years > 10 ? "text-red-700 font-semibold" : "";
+                                    })()}>
+                                      {calculateTenure(member.startDate?.displayDate, member.endDate?.displayDate)}
+                                    </h1>
                                   </Table.Td>
                                 </Table.Tr>
                               ));
@@ -343,19 +606,19 @@ function Main() {
                     </div>
                   </TableWrapper>
 
-                  {/* Source at bottom of table */}
                   <div className="mt-3">
                     <p className="text-sm italic text-gray-500">Source: Altrata</p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* <div className="col-span-12 xl:col-span-12">
             <CaseStudiesCard />
           </div> */}
         </div>
+        )}
       </section>
       {/* </>
       } */}

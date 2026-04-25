@@ -102,7 +102,7 @@ useEffect(() => {
               {title} 
             </h4>
           <div>
-            {user?.user_type === "Admin" && (
+            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
               <>
                 {isEditing === true ? (
                   <Button
@@ -152,7 +152,7 @@ useEffect(() => {
               <div ref={editorRef}>
                 <p className="hidden">Edit</p>
              <div>
-                <ClassicEditor  value={value} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled ={user?.user_type !== "Admin" || !isEditing} />
+                <ClassicEditor  value={value} onChange={setValue}  hideToolbar={user?.user_type !== "Analyst"} disabled ={user?.user_type !== "Analyst" || !isEditing} />
               </div>
               </div>
               <div className="flex justify-end mt-4">
@@ -180,7 +180,7 @@ useEffect(() => {
               {renderHtml ? (
                 <div className="flex flex-col px-4 py-3">
                 <div className="html-link">
-                  <ClassicEditor value={renderHtml} onChange={setValue}  hideToolbar={user?.user_type !== "Admin"} disabled = {user?.user_type !== "Admin" || !isEditing}  />
+                  <ClassicEditor value={renderHtml} onChange={setValue}  hideToolbar={user?.user_type !== "Analyst"} disabled = {user?.user_type !== "Analyst" || !isEditing}  />
                 </div>
                 </div>
               ):null}

@@ -5,6 +5,12 @@ export interface KeyContact {
   designation: string;
 }
 
+export interface VotingGuidelineDoc {
+  year: string;
+  link: string;
+  policy_type: string | null;
+}
+
 export interface EngagementPriorities {
   climateChange: string;
   corporateGovernance: string;
@@ -34,12 +40,12 @@ export interface ESGIntegrationProcess {
 
 export interface InvestersProfile {
   id: number;
-  institution: number | null;
-  institution_name: string | null;
+  institution: string | null;
+  institution_id: string | null;
+  institution_name?: string | null;
   active: boolean;
   engagement_priorities: string | null;
   voting_guidelines_summary: string | null;
-  // voting_guidelines_link: string | null;
   voting_guidelines: string | null;
   reporting_expectations: string | null;
   esg_integration_process: string | null;
@@ -56,6 +62,21 @@ export interface InvestersProfile {
   equity_firm_name?: string | null;
   specific_expectations?: string | null;
   institution_logo_url?: string;
+  logo_url?: string;
+  investor_profile_id?: number | null;
+  proxy_voting_key_changes?: string | null;
+  proxy_voting_guidelines_link?: string | null;
+  is_document?: boolean;
+  voting_guideline_docs?: VotingGuidelineDoc[];
+  whale_wisdom_filer_id?: number;
+  uploaded_time_caspio?: string;
+  logo_file?: string | null;
+  region?: string;
+  unpri_signatory?: boolean;
+  proxy_advisor_influence?: string;
+  investor_type?: string;
+  contact?: string | null;
+  email?: string | null;
 }
 
 export type AddNewInvesterType = {

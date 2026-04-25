@@ -219,72 +219,67 @@ const ShareHolderProposalAnalyticsComponent: React.FC<
                     Yearly Trend
                 </h3>
                 {isDataAvailable(yearlySummary) ? (
-                  yearlySummary.length === 1 ? (
-                  <Pill text={`${formatNumberWithCommas(yearlySummary[0].count)} ${yearlySummary[0].count === 1 ? 'Proposal' : 'Proposals'}`} />
-                     
-                    
-                  ) : (
-                    <ResponsiveContainer width="100%" height={250}>
-                      <ComposedChart
-                        data={
-                          tab == "proposal"
-                            ? [...yearlySummary?.filter((item) => item[chartKey] >= 2022)]
-                            : [...yearlySummary?.filter((item) => item[chartKey] >= 2022)].reverse()
-                        }
-                        margin={{ top: 50, right: 20, left: 0, bottom: 0 }}
-                      >
-                        <XAxis dataKey={chartKey} dy={12} height={40} tick={{fontSize: 12}} />
+                  <ResponsiveContainer width="100%" height={250}>
+                    <ComposedChart
+                      data={
+                        tab == "proposal"
+                          ? [...yearlySummary?.filter((item) => item[chartKey] >= 2022)]
+                          : [...yearlySummary?.filter((item) => item[chartKey] >= 2022)].reverse()
+                      }
+                      margin={{ top: 50, right: 20, left: 0, bottom: 0 }}
+                    >
+                      <XAxis dataKey={chartKey} dy={12} height={40} tick={{fontSize: 12}} />
+                      <YAxis
+                        yAxisId="left"
+                        label={{
+                          value: "Count",
+                          angle: -90,
+                          position: "insideLeft",
+                          style: {fontSize: '12px'}
+                        }}
+                        tick={{fontSize: 12}}
+                        domain={[
+                          0,
+                          (dataMax) =>
+                            isAllCompanySelected ? dataMax + 150 : dataMax + 5,
+                        ]}
+                      />
+                      {tab == "proposal" && (
                         <YAxis
-                          yAxisId="left"
-                          label={{
-                            value: "Count",
-                            angle: -90,
-                            position: "insideLeft",
-                            style: {fontSize: '12px'}
-                          }}
+                          yAxisId="right"
+                          orientation="right"
+                          label={{ angle: 90, position: "insideRight", style: {fontSize: '12px'} }}
                           tick={{fontSize: 12}}
-                          domain={[
-                            0,
-                            (dataMax) =>
-                              isAllCompanySelected ? dataMax + 150 : dataMax + 5,
-                          ]}
+                          domain={[0, 60]}
+                          tickFormatter={(value) => `${value.toFixed(1)}%`}
                         />
-                        {tab == "proposal" && (
-                          <YAxis
-                            yAxisId="right"
-                            orientation="right"
-                            label={{ angle: 90, position: "insideRight", style: {fontSize: '12px'} }}
-                            tick={{fontSize: 12}}
-                            domain={[0, 60]}
-                            tickFormatter={(value) => `${value.toFixed(1)}%`}
-                          />
-                        )}
-                        <Bar
-                          yAxisId="left"
+                      )}
+                      <Bar
+                        yAxisId="left"
+                        dataKey="count"
+                        fill="#FF6F00"
+                        name="Proposals"
+                        barSize={yearlySummary.length === 1 ? 60 : undefined}
+                      >
+                        <LabelList
                           dataKey="count"
-                          fill="#FF6F00"
-                          name="Proposals"
-                        >
-                          <LabelList
-                            dataKey="count"
-                            content={CountAndPercentLabel}
-                          />
-                        </Bar>
-                        {tab == "proposal" && (
-                          <Line
-                            yAxisId="right"
-                            type="monotone"
-                            dataKey="avg_support"
-                            stroke="#007bff"
-                            strokeWidth={2}
-                            dot={{ r: 4 }}
-                            name="Avg. Support (%)"
-                          />
-                        )}
-                        {tab == "proposal" && <Legend wrapperStyle={{fontSize: '12px'}} />}
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  )
+                          content={CountAndPercentLabel}
+                        />
+                      </Bar>
+                      {tab == "proposal" && (
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="avg_support"
+                          stroke="#007bff"
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                          name="Avg. Support (%)"
+                        />
+                      )}
+                      {tab == "proposal" && <Legend wrapperStyle={{fontSize: '12px'}} />}
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 ) : (
                   <p className="text-gray-500">No data available</p>
                 )}
