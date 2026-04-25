@@ -993,7 +993,7 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 }
 
 export default function CompanyOverview() {
-  const { companyGlobalSearchId } = useAppSelector(
+  const { companyGlobalSearchId, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -1005,6 +1005,8 @@ export default function CompanyOverview() {
   const [loading, setLoading] = useState(false);
 
   const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
+
+  const canViewRestrictedTabs = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {
@@ -1528,37 +1530,39 @@ export default function CompanyOverview() {
         <>
           {/* STICKY COMPANY OVERVIEW TABS */}
           {/* Note: You may need to adjust "top-[180px]" up or down depending on the exact pixel height of your main header */}
-          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white backdrop-blur-md ps-6 shadow-lg">
-            <button
-              onClick={() => setActiveOverviewTab('investor_summary')}
-              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
-                  ? 'border-primary text-primary bg-white'
-                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
-            >
-              Summary
-            </button>
+          {canViewRestrictedTabs && (
+            <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white backdrop-blur-md ps-6 shadow-lg">
+              <button
+                onClick={() => setActiveOverviewTab('investor_summary')}
+                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
+                    ? 'border-primary text-primary bg-white'
+                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+              >
+                Summary
+              </button>
 
-            <button
-              onClick={() => setActiveOverviewTab('governance')}
-              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'governance'
-                  ? 'border-primary text-primary bg-white'
-                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
-            >
-              Governance Profile
-            </button>
+              <button
+                onClick={() => setActiveOverviewTab('governance')}
+                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'governance'
+                    ? 'border-primary text-primary bg-white'
+                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+              >
+                Governance Profile
+              </button>
 
-            <button
-              onClick={() => setActiveOverviewTab('compensation')}
-              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
-                  ? 'border-primary text-primary bg-white'
-                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
-            >
-              Compensation
-            </button>
-          </div>
+              <button
+                onClick={() => setActiveOverviewTab('compensation')}
+                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
+                    ? 'border-primary text-primary bg-white'
+                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+              >
+                Compensation
+              </button>
+            </div>
+          )}
 
 
           <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
