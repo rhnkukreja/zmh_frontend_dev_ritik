@@ -199,6 +199,26 @@ class DashboardService {
     return response.data;
   }
 
+  public async getCompanyOverviewYears(companyId: number | string): Promise<number[]> {
+    const response = await axiosInstance.get(
+      `${baseURL}/company_report/key_findings/years/?company_id=${companyId}`
+    );
+
+    const rawYears = Array.isArray(response.data)
+      ? response.data
+      : response.data?.years ?? response.data?.result ?? [];
+
+    if (!Array.isArray(rawYears)) {
+      return [];
+    }
+
+    const years = rawYears
+      .map((year: unknown) => Number(year))
+      .filter((year: number) => Number.isFinite(year));
+
+    return Array.from(new Set(years)).sort((a, b) => b - a);
+  }
+
   public async fetchCaseStudiesTopProxyContext(url: string): Promise<{
     count: number;
     results: any[];

@@ -13,8 +13,11 @@ import {
 } from "lucide-react";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
-import { useAppSelector } from "@/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
+import { fetchCompanyOverview, fetchCompanyOverviewGPT } from "@/stores/dashboardSlice";
+import { dashboardService } from "@/services/dashboard";
+import { baseURL } from "@/constant";
 import pdfMake from "pdfmake/build/pdfmake";
 import CompensationTab from './CompensationTab';
 
@@ -993,6 +996,8 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 }
 
 export default function CompanyOverview() {
+  const dispatch = useAppDispatch();
+
   const { companyGlobalSearchId, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
@@ -1003,10 +1008,71 @@ export default function CompanyOverview() {
 
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [yearsLoading, setYearsLoading] = useState(false);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
 
   const canViewRestrictedTabs = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadYears = async () => {
+      if (!companyGlobalSearchId) {
+        setAvailableYears([]);
+        setSelectedYear(null);
+        return;
+      }
+
+      setYearsLoading(true);
+      try {
+        const years = await dashboardService.getCompanyOverviewYears(companyGlobalSearchId);
+        if (!isMounted) return;
+
+        setAvailableYears(years);
+        setSelectedYear((currentYear) => {
+          if (currentYear && years.includes(currentYear)) return currentYear;
+          return years[0] ?? null;
+        });
+      } catch (error) {
+        console.error("Failed to load company overview years:", error);
+        if (isMounted) {
+          setAvailableYears([]);
+          setSelectedYear(null);
+        }
+      } finally {
+        if (isMounted) {
+          setYearsLoading(false);
+        }
+      }
+    };
+
+    loadYears();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [companyGlobalSearchId]);
+
+  useEffect(() => {
+    if (!companyGlobalSearchId || !selectedYear) return;
+
+    dispatch(
+      fetchCompanyOverview(
+        `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
+      )
+    );
+
+    if (canViewRestrictedTabs) {
+      dispatch(
+        fetchCompanyOverviewGPT(
+          `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
+        )
+      );
+    }
+  }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs]);
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {
@@ -1571,6 +1637,38 @@ export default function CompanyOverview() {
               {activeOverviewTab === 'investor_summary' && (
                 <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
+                    {(yearsLoading || availableYears.length > 0) && (
+                      <div className="mb-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {yearsLoading
+                            ? [0, 1].map((index) => (
+                              <span
+                                key={`year-loading-${index}`}
+                                className="inline-block h-10 w-20 animate-pulse rounded-xl bg-slate-200"
+                              />
+                            ))
+                            : availableYears.map((year) => {
+                              const isActiveYear = selectedYear === year;
+                              return (
+                                <button
+                                  key={year}
+                                  type="button"
+                                  onClick={() => setSelectedYear(year)}
+                                  className={cx(
+                                    "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
+                                    isActiveYear
+                                      ? "border-[#b01217] bg-[#b01217] text-white"
+                                      : "border-[#d9c2c8] bg-[#f3e7eb] text-[#b05b72] hover:bg-[#efdde3]"
+                                  )}
+                                  aria-pressed={isActiveYear}
+                                >
+                                  {year}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
                     <h1 className="mt-2 text-xl font-bold tracking-tight">
                       Key Governance & Investor Summary
                     </h1>
