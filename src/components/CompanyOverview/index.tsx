@@ -869,31 +869,46 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
   // Process sections from API
   apiData.sections?.forEach((section: any) => {
+    if (section.has_data === false) return;
+
     switch (section.id) {
       case "share_price_performance":
-        report.sharePriceTakeaway = section.paragraphs?.join(" ") || "";
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          const validParagraphs = section.paragraphs.filter((p: string) =>
+            !p.toLowerCase().includes("data is not available") &&
+            !p.toLowerCase().includes("not available")
+          );
+          const content = validParagraphs.join(" ").trim();
+          if (content) {
+            report.sharePriceTakeaway = content;
+          }
+        }
         break;
 
       case "engagement":
-        report.esg = {
-          themeSummary: section.paragraphs?.[0] || "",
-          investors: section.institutions?.map((inst: any) => ({
-            name: inst.institution,
-            env: inst.environmental ? [inst.environmental] : undefined,
-            soc: inst.social ? [inst.social] : undefined,
-            gov: inst.governance ? [inst.governance] : undefined,
-          })) || [],
-        };
+        if (section.paragraphs || section.institutions) {
+          report.esg = {
+            themeSummary: section.paragraphs?.[0] || "",
+            investors: section.institutions?.map((inst: any) => ({
+              name: inst.institution,
+              env: inst.environmental ? [inst.environmental] : undefined,
+              soc: inst.social ? [inst.social] : undefined,
+              gov: inst.governance ? [inst.governance] : undefined,
+            })) || [],
+          };
+        }
         break;
 
       case "proxy_advisor_influence":
-        report.proxy = {
-          summary: section.paragraphs?.[0] || "",
-          buckets: section.paragraphs?.slice(1).map((p: string) => {
-            const match = p.match(/(.+?):\s*([\d.]+)%/);
-            return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
-          }).filter(Boolean) || [],
-        };
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          report.proxy = {
+            summary: section.paragraphs[0] || "",
+            buckets: section.paragraphs.slice(1).map((p: string) => {
+              const match = p.match(/(.+?):\s*([\d.]+)%/);
+              return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
+            }).filter(Boolean) || [],
+          };
+        }
         break;
 
       case "board_of_directors":
@@ -904,18 +919,20 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.board = {
-          headlineBullets: boardParagraphs,
-          lowestSupport: section.lowest_support?.map((ls: any) =>
-            `${ls.nominee} – ${ls.support_pct}%`
-          ),
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (boardParagraphs.length > 0 || section.lowest_support || section.voting_rationales) {
+          report.board = {
+            headlineBullets: boardParagraphs,
+            lowestSupport: section.lowest_support?.map((ls: any) =>
+              `${ls.nominee} – ${ls.support_pct}%`
+            ),
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "say_on_pay":
@@ -925,15 +942,17 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.sop = {
-          headlineBullets: sopParagraphs,
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal || '',
-            notes: r.notes
-          })) || [],
-        };
+        if (sopParagraphs.length > 0 || section.voting_rationales) {
+          report.sop = {
+            headlineBullets: sopParagraphs,
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal || '',
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "voting_rationale":
@@ -972,27 +991,31 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         break;
 
       case "auditor_ratification":
-        report.auditor = {
-          headlineBullets: section.paragraphs || [],
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (section.paragraphs?.length > 0 || section.voting_rationales) {
+          report.auditor = {
+            headlineBullets: section.paragraphs || [],
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "shareholder_proposals":
-        report.shareholderProposals = {
-          headlineBullets: section.paragraphs || [],
-          selected: section.selected_support_levels || [],
-          proposalVotes: section.shareholder_proposal_votes || [],
-        };
+        if (section.paragraphs?.length > 0 || section.selected_support_levels || section.shareholder_proposal_votes) {
+          report.shareholderProposals = {
+            headlineBullets: section.paragraphs || [],
+            selected: section.selected_support_levels || [],
+            proposalVotes: section.shareholder_proposal_votes || [],
+          };
+        }
         break;
     }
   });
-
+  
   return report;
 }
 
@@ -1594,11 +1617,13 @@ export default function CompanyOverview() {
     });
   }, [reports, query]);
 
+  const isOverviewLoading = yearsLoading || companyOverviewLoading;
+
 
 
   return (
     <>
-      {companyOverviewLoading ? (
+      {isOverviewLoading ? (
         <>
           {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
           {canViewRestrictedTabs && (
@@ -1850,7 +1875,7 @@ export default function CompanyOverview() {
                           generatePDF(filtered[0]);
                         }
                       }}
-                      disabled={loading ? true : (filtered.length === 0 || companyOverviewLoading)}
+                      disabled={loading ? true : (filtered.length === 0 || isOverviewLoading)}
                     >
                       <Download className="h-4 w-4" />
                       {loading ? "Downloading..." : "Download PDF"}
@@ -1884,23 +1909,28 @@ export default function CompanyOverview() {
                                   {r.company}
                                 </CardTitle>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge className="rounded-full" variant="outline">
-                                    As of {r.asOf}
-                                  </Badge>
-                                </div>
+                                {r.sharePriceTakeaway && r.asOf && (
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge className="rounded-full" variant="outline">
+                                      As of {r.asOf}
+                                    </Badge>
+                                  </div>                                  
+                                  )}
                               </CardHeader>
 
+
                               <CardContent className="space-y-4">
-                                <div className="rounded-xl border bg-white p-3">
-                                  <SectionHeader
-                                    title="Share Price Takeaway"
-                                    icon={<BarChart3 className="h-4 w-4" />}
-                                  />
-                                  <p className="mt-3 text-[15px] text-slate-700">
-                                    {r.sharePriceTakeaway}
-                                  </p>
-                                </div>
+                                {r.sharePriceTakeaway && (
+                                  <div className="rounded-xl border bg-white p-3">
+                                    <SectionHeader
+                                      title="Share Price Takeaway"
+                                      icon={<BarChart3 className="h-4 w-4" />}
+                                    />
+                                    <p className="mt-3 text-[15px] text-slate-700">
+                                      {r.sharePriceTakeaway}
+                                    </p>
+                                  </div>
+                                )}
 
                                 {r.proxy ? (
                                   <div className="rounded-xl border bg-white p-3">
