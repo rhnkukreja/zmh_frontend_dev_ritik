@@ -777,6 +777,10 @@ export default function CompanyOverviewGPT() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    setQuery("");
+  }, [companyGlobalSearchId]);
+
   // Transform API data to UI format
   const apiReport = useMemo(() => {
     return transformApiDataToReport(companyOverviewGPTData);

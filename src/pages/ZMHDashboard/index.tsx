@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyByName,
@@ -64,12 +64,9 @@ function Main() {
 
   // Check if user is admin
   const isAdmin = user?.user_type === 'Admin';
-  const navigate = useNavigate();
-  // Active tab state - default based on user role
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState(
-    location.state?.activeTab || 'company-overview'
-  );
+  const [activeTab, setActiveTab] = useState(() => {
+    return sessionStorage.getItem("zmh_dashboard_active_tab") || "company-overview";
+  });
 
   // Modules count state from Redux
   const { resultsCache, modulesCount } = useAppSelector((state: RootState) => state.dashboard);
@@ -83,14 +80,14 @@ function Main() {
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
 
-  // Manual tab change handler to sync state to history safely (no loops)
+  // Keep tab selection local to avoid route-state updates that refresh shell layout
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    navigate(location.pathname, { 
-      state: { ...location.state, activeTab: tab }, 
-      replace: true 
-    });
   };
+
+  useEffect(() => {
+    sessionStorage.setItem("zmh_dashboard_active_tab", activeTab);
+  }, [activeTab]);
 
   // Handle generate report
   const handleGenerateReport = () => {
@@ -363,7 +360,7 @@ function Main() {
               {/* Company Overview GPT - Admin Only */}
               {/* {isAdmin && (
                 <button
-                  onClick={() => setActiveTab('company-overview-gpt')}
+                  onClick={() => handleTabChange('company-overview-gpt')}
                   className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
                       ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -372,7 +369,7 @@ function Main() {
                   <Building2 className="w-4 h-4" />
                   Company Overview
                 </button>
-              )} */}
+                  onClick={() => handleTabChange('investor-overview')}
 
               {/* Investor Insight - All Users */}
               <div className="relative">
@@ -459,44 +456,51 @@ function Main() {
           </div>
         ) : (
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          {activeTab === 'company-overview' && (
-            <div id="company-overview" className="col-span-12 xl:col-span-12">
-              <CompanyOverview />
-            </div>
-          )}
+          <div
+            id="company-overview"
+            className={`col-span-12 xl:col-span-12 ${activeTab === 'company-overview' ? '' : 'hidden'}`}
+          >
+            <CompanyOverview />
+          </div>
 
-          {activeTab === 'company-overview-gpt' && isAdmin && (
-            <div id="company-overview-gpt" className="col-span-12 xl:col-span-12">
+          {isAdmin && (
+            <div
+              id="company-overview-gpt"
+              className={`col-span-12 xl:col-span-12 ${activeTab === 'company-overview-gpt' ? '' : 'hidden'}`}
+            >
               <CompanyOverviewGPT />
             </div>
           )}
 
-          {activeTab === 'ownership' && (
-            <div id="ownership" className="col-span-12 xl:col-span-12">
-              <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
-            </div>
-          )}
+          <div
+            id="ownership"
+            className={`col-span-12 xl:col-span-12 ${activeTab === 'ownership' ? '' : 'hidden'}`}
+          >
+            <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
+          </div>
 
-          {activeTab === 'investor-overview' && (
-            <div id="investor-overview" className="col-span-12 xl:col-span-12">
-              {/* Combine the name and ticker to format it exactly how your backend expects it! */}
-              <InvestorOverview companyTicker={`${companyGlobalSearchName} (${companyGlobalSearchTicker})`} />
-            </div>
-          )}
+          <div
+            id="investor-overview"
+            className={`col-span-12 xl:col-span-12 ${activeTab === 'investor-overview' ? '' : 'hidden'}`}
+          >
+            {/* Combine the name and ticker to format it exactly how your backend expects it! */}
+            <InvestorOverview companyTicker={`${companyGlobalSearchName} (${companyGlobalSearchTicker})`} />
+          </div>
 
-          {activeTab === 'shareholder-meeting-results' && (
-            <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
-              <AGMSummaryCard
-                companyGlobalSearchTicker={companyGlobalSearchTicker}
-                companyGlobalSearchName={companyGlobalSearchName}
-                isMeetingModal={false}
-                proxyContest={modulesCount?.proxy_contest || false}
-                proxyContest2024={modulesCount?.proxy_contest_2024 || false}
-                proxyContest2025={modulesCount?.proxy_contest_2025 || false}
-                onLoaded={() => setIsMeetingLoaded(true)}
-              />
-            </div>
-          )}
+          <div
+            id="shareholder-meeting-results"
+            className={`col-span-12 xl:col-span-12 ${activeTab === 'shareholder-meeting-results' ? '' : 'hidden'}`}
+          >
+            <AGMSummaryCard
+              companyGlobalSearchTicker={companyGlobalSearchTicker}
+              companyGlobalSearchName={companyGlobalSearchName}
+              isMeetingModal={false}
+              proxyContest={modulesCount?.proxy_contest || false}
+              proxyContest2024={modulesCount?.proxy_contest_2024 || false}
+              proxyContest2025={modulesCount?.proxy_contest_2025 || false}
+              onLoaded={() => setIsMeetingLoaded(true)}
+            />
+          </div>
 
           {/* <div id="board-composition" className="col-span-12 xl:col-span-12">
             <div className="p-5 mt-3.5 box">

@@ -90,6 +90,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   const [error, setError] = useState<string | null>(null);
   const [showReasonsModal, setShowReasonsModal] = useState(false);
   const [modalReasons, setModalReasons] = useState<Array<ReasonItem>>([]);
+  const companyTickerRef = useRef(companyTicker);
 
   // FIX 1: Read userType into state so it's reactive and reliable
   const [userType, setUserType] = useState<string | null>(() => localStorage.getItem('userType'));
@@ -161,6 +162,18 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
       dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
     }
   }, [selectedInvestor, selectedYear, stats, dispatch]);
+
+  useEffect(() => {
+    if (companyTickerRef.current === companyTicker) {
+      return;
+    }
+
+    companyTickerRef.current = companyTicker;
+    setSelectedInvestor(null);
+    setSelectedYear(2025);
+    setSelectedBucket('election_of_directors');
+    setError(null);
+  }, [companyTicker]);
 
   const bucketData = stats?.buckets[selectedBucket];
 

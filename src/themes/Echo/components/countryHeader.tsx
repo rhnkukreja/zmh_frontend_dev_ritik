@@ -20,11 +20,10 @@ const CountryInfoHeader = () => {
   const location = useLocation();
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
-
-  // Hide on user-management and institution routes
-  if (location.pathname === "/user-management" || location.pathname === "/institution" || location.pathname.startsWith("/institution/")) {
-    return null;
-  }
+  const shouldHideOnRoute =
+    location.pathname === "/user-management" ||
+    location.pathname === "/institution" ||
+    location.pathname.startsWith("/institution/");
 
   const [isChartOpen, setIsChartOpen] = useState(false);
   const [isTableOpen, setIsTableOpen] = useState(false);
@@ -190,6 +189,10 @@ const CountryInfoHeader = () => {
 
     fetchSharePrice(symbolsToFetch);
   };
+
+  if (shouldHideOnRoute) {
+    return null;
+  }
 
   return (
     <div ref={headerRef} className="bg-gradient-to-r from-white via-gray-50 to-white shadow-md rounded-xl p-4 mb-5 border border-gray-200">

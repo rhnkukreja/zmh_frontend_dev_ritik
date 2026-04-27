@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -20,6 +20,7 @@ import { dashboardService } from "@/services/dashboard";
 import { baseURL } from "@/constant";
 import pdfMake from "pdfmake/build/pdfmake";
 import CompensationTab from './CompensationTab';
+import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(" ");
@@ -1016,31 +1017,53 @@ export default function CompanyOverview() {
 
   const canViewRestrictedTabs = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
 
+  const handleCompanySwitch = useCallback(() => {
+    setAvailableYears([]);
+    setSelectedYear(null);
+    setActiveOverviewTab('investor_summary');
+    setQuery('');
+  }, []);
+
+  const handleYearSwitch = useCallback((year: number | null) => {
+    setSelectedYear(year);
+    setActiveOverviewTab('investor_summary');
+  }, []);
+
+  const cacheInvalidationOptions = useMemo(() => ({
+    onCompanyChange: (oldId: number | undefined, newId: number) => {
+      console.log(`💾 Company changed cache invalidation: ${oldId} → ${newId}`);
+      handleCompanySwitch();
+    },
+    onYearChange: (oldYear: number | undefined, newYear: number) => {
+      console.log(`💾 Year changed cache invalidation: ${oldYear} → ${newYear}`);
+    },
+  }), [handleCompanySwitch]);
+
+  // Setup cache invalidation on company/year changes
+  useCacheInvalidation(companyGlobalSearchId, selectedYear, cacheInvalidationOptions);
+
   useEffect(() => {
     let isMounted = true;
 
     const loadYears = async () => {
       if (!companyGlobalSearchId) {
-        setAvailableYears([]);
-        setSelectedYear(null);
+        handleCompanySwitch();
         return;
       }
 
+      handleCompanySwitch();
       setYearsLoading(true);
       try {
         const years = await dashboardService.getCompanyOverviewYears(companyGlobalSearchId);
         if (!isMounted) return;
 
         setAvailableYears(years);
-        setSelectedYear((currentYear) => {
-          if (currentYear && years.includes(currentYear)) return currentYear;
-          return years[0] ?? null;
-        });
+        const nextYear = years[0] ?? null;
+        handleYearSwitch(nextYear);
       } catch (error) {
         console.error("Failed to load company overview years:", error);
         if (isMounted) {
-          setAvailableYears([]);
-          setSelectedYear(null);
+          handleCompanySwitch();
         }
       } finally {
         if (isMounted) {
@@ -1634,7 +1657,7 @@ export default function CompanyOverview() {
                                 <button
                                   key={year}
                                   type="button"
-                                  onClick={() => setSelectedYear(year)}
+                                  onClick={() => handleYearSwitch(year)}
                                   className={cx(
                                     "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
                                     isActiveYear
@@ -1802,7 +1825,7 @@ export default function CompanyOverview() {
                                   className={cx(
                                     "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
                                     isActiveYear
-                                      ? "border-[#b01217] bg-[#b01217] text-white"
+                                      ? "border-red-800 bg-red-800 text-white"
                                       : "border-[#d9c2c8] bg-[#f3e7eb] text-[#b05b72] hover:bg-[#efdde3]"
                                   )}
                                   aria-pressed={isActiveYear}

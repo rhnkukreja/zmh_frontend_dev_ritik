@@ -853,10 +853,10 @@ const companySlice = createSlice({
       //     action.error.message || "Failed to fetch GraphQL board data";
       // });
 
-      // Company Overview
+      // Company Overview - SWR Pattern: Keep previous data while revalidating
       .addCase(fetchCompanyOverview.pending, (state) => {
         state.companyOverviewLoading = true;
-        state.companyOverviewData = null; // Clear old data to prevent stale data display
+        // DO NOT clear data - keep previous data visible (SWR pattern)
         state.error = null;
       })
       .addCase(fetchCompanyOverview.fulfilled, (state, action) => {
@@ -866,14 +866,17 @@ const companySlice = createSlice({
       })
       .addCase(fetchCompanyOverview.rejected, (state, action) => {
         state.companyOverviewLoading = false;
-        state.companyOverviewData = null; // Clear data on error
+        // Only clear data on error, not on revalidation
+        if (!state.companyOverviewData) {
+          state.companyOverviewData = null;
+        }
         state.error = action.error.message || "Failed to fetch company overview";
       })
 
-      // Company Overview GPT
+      // Company Overview GPT - SWR Pattern: Keep previous data while revalidating
       .addCase(fetchCompanyOverviewGPT.pending, (state) => {
         state.companyOverviewGPTLoading = true;
-        state.companyOverviewGPTData = null; // Clear old data to prevent stale data display
+        // DO NOT clear data - keep previous data visible (SWR pattern)
         state.error = null;
       })
       .addCase(fetchCompanyOverviewGPT.fulfilled, (state, action) => {
@@ -883,7 +886,10 @@ const companySlice = createSlice({
       })
       .addCase(fetchCompanyOverviewGPT.rejected, (state, action) => {
         state.companyOverviewGPTLoading = false;
-        state.companyOverviewGPTData = null; // Clear data on error
+        // Only clear data on error, not on revalidation
+        if (!state.companyOverviewGPTData) {
+          state.companyOverviewGPTData = null;
+        }
         state.error = action.error.message || "Failed to fetch company overview GPT";
       })
 
