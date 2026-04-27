@@ -114,7 +114,7 @@ function FilingLink({
         <p className="text-[14px] font-medium text-slate-900">{label}</p>
       </div>
 
-      <div className="col-span-5 flex justify-center">
+      <div className="col-span-5 flex justify-left">
         <div className="flex flex-wrap items-center justify-center gap-1 text-[13px]">
           {items.map((item, idx) => (
             <React.Fragment key={`${label}-${idx}`}>

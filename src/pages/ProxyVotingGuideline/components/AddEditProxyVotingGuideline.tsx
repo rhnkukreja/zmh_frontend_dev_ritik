@@ -319,9 +319,10 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
               </div>
 
               <div className="w-full">
-                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
+                <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-1 text-left">
                   Policy Type
                 </FormCheck.Label>
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-2 inline-block">⚠ Only enter if active / passive policy, otherwise leave blank</p>
                 <Controller
                   name="policy_type"
                   control={control}
