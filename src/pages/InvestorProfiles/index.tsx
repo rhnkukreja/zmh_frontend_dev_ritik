@@ -394,8 +394,11 @@ function Main() {
                         ))}
                       </>
                     ) : investersProfile?.length > 0 ? (
-                      investersProfile.map((profile: InvestersProfile) => (
-                        <Table.Tr key={profile.id} className="intro-x">
+                      investersProfile.map((profile: InvestersProfile, index: number) => (
+                        <Table.Tr
+                          key={`${profile.institution_id || "no-inst"}-${profile.investor_profile_id || "no-profile"}-${profile.institution || profile.institution_name || "unknown"}-${index}`}
+                          className="intro-x"
+                        >
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
                             <span
                               onClick={() => {
