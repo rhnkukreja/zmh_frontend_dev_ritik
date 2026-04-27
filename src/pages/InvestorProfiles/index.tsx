@@ -190,6 +190,11 @@ function Main() {
 
   const handleVotingGuidelinesClick = (profile: InvestersProfile) => {
     if (profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0) {
+      if (profile.voting_guideline_docs.length === 1) {
+        window.open(profile.voting_guideline_docs[0].link, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
       setSelectedVotingGuidelines({
         institution_name: profile.institution || profile.institution_name,
         docs: profile.voting_guideline_docs
