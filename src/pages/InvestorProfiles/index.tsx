@@ -350,22 +350,29 @@ function Main() {
               )}
 
               <div className="overflow-auto xl:overflow-visible px-5">
-                <Table className="border-spacing-y-[10px] border-separate -mt-2">
+                <Table className="w-full table-fixed border-spacing-y-[10px] border-separate -mt-2">
+                  <colgroup>
+                    <col className="w-[40%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                  </colgroup>
                   <Table.Thead className="bg-[#ab123d] sticky top-0 z-10">
                     <Table.Tr>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 whitespace-nowrap first:rounded-l-md">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 first:rounded-l-md">
                         Institution
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
                         Investor Profile
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
                         Key Voting Guidelines Changes
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
                         Voting Guidelines
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap last:rounded-r-md">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal last:rounded-r-md">
                         All Documents
                       </Table.Td>
                     </Table.Tr>
