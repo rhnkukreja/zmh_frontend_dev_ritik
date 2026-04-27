@@ -4,8 +4,37 @@ import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 import { baseURL } from "@/constant";
+import { dashboardCacheManager } from "@/utils/cacheManager";
+import { getDashboardCacheStrategyForUrl } from "@/utils/dashboardCacheStrategy";
 
 class DashboardService {
+  private async fetchWithCache<T>(url: string): Promise<T> {
+    const cacheKey = dashboardCacheManager.generateKey(url);
+    const strategy = getDashboardCacheStrategyForUrl(url);
+
+    const cached = dashboardCacheManager.get(cacheKey);
+    if (cached) {
+      return cached as T;
+    }
+
+    const inFlightPromise = dashboardCacheManager.getInFlightPromise(cacheKey);
+    if (inFlightPromise) {
+      return inFlightPromise as Promise<T>;
+    }
+
+    const requestPromise = axiosInstance.get(url).then((response) => {
+      const data = response.data as T;
+      dashboardCacheManager.set(cacheKey, data, {
+        ttl: strategy.ttl,
+        tags: strategy.tags,
+      });
+      return data;
+    });
+
+    dashboardCacheManager.trackRequest(cacheKey, requestPromise);
+    return requestPromise;
+  }
+
   public async fetchCompanyByName(companyName?: string, exactUrl?: string, arrayKeyName?: string, currentFilters?: any): Promise<{
     results: CompanyData[];
   }> {
@@ -181,30 +210,46 @@ class DashboardService {
   public async fetchCompanyDashboard(url: string): Promise<{
     results: any;
   }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
   public async fetchAGMSummaryDashboard(
     url: string
   ): Promise<{ results: any }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
   public async getCompanyOverview(url: string): Promise<any> {
-    const response = await axiosInstance.get(url);
-    return response.data;
+    return await this.fetchWithCache<any>(url);
+  }
+
+  public async getCompanyOverviewYears(companyId: number | string): Promise<number[]> {
+    const url = `${baseURL}/company_report/key_findings/years/?company_id=${companyId}`;
+    const response = await this.fetchWithCache<any>(url);
+
+    const rawYears = Array.isArray(response)
+      ? response
+      : response?.years ?? response?.result ?? [];
+
+    if (!Array.isArray(rawYears)) {
+      return [];
+    }
+
+    const years = rawYears
+      .map((year: unknown) => Number(year))
+      .filter((year: number) => Number.isFinite(year));
+
+    return Array.from(new Set(years)).sort((a, b) => b - a);
   }
 
   public async fetchCaseStudiesTopProxyContext(url: string): Promise<{
     count: number;
     results: any[];
   }> {
-    const response = await axiosInstance.get(url);
-    const { count, results } = response.data;
+    const response = await this.fetchWithCache<{ count: number; results: any[] }>(url);
+    const { count, results } = response;
     return {
       count,
       results,
@@ -212,38 +257,33 @@ class DashboardService {
   }
 
   public async fetchCaseStudyDashboard(url: string): Promise<{ results: any }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
   public async fetchVdsProxyDashboard(url: string): Promise<{ results: any }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
   public async fetchProxyContestReleaseDashboard(
     url: string
   ): Promise<{ results: any }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
   public async fetchProxyTopFiveContestDashboard(
     url: string
   ): Promise<{ results: any }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
   public async fetchVdsProxyAllInvestor(
     url: string
   ): Promise<{ results: any }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
@@ -262,24 +302,23 @@ class DashboardService {
     }
 
     console.log("NPX Dashboard API call:", finalUrl);
-    const response = await axiosInstance.get(finalUrl);
-    const { results, count } = response.data;
+    const response = await this.fetchWithCache<{ results: any; count: number }>(finalUrl);
+    const { results, count } = response;
     return { results, count };
   }
 
   public async fetchInvestorProfileDetails(
     url: string
   ): Promise<{ results: any }> {
-    const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = await this.fetchWithCache<any>(url);
     return { results };
   }
 
   public async fetchWhatNewNotification(
     url: string
   ): Promise<{ results: any; count: number }> {
-    const response = await axiosInstance.get(url);
-    const { results, count } = response.data;
+    const response = await this.fetchWithCache<{ results: any; count: number }>(url);
+    const { results, count } = response;
     return { results, count };
   }
 

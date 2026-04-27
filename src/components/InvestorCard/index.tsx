@@ -86,10 +86,8 @@ const index = ({ onLoaded }: InvestorCardProps) => {
   }, []);
 
   useEffect(() => {
-    // Reset year when company changes
-    if (companyGlobalSearchTicker !== tempSearch) {
-      setSelectedYear("");
-    }
+    setSelectedYear("");
+    setSelectedIndex(0);
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
   }, [companyGlobalSearchTicker, searchTicker, tempSearch]);
