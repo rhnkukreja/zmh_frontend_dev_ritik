@@ -869,31 +869,46 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
   // Process sections from API
   apiData.sections?.forEach((section: any) => {
+    if (section.has_data === false) return;
+
     switch (section.id) {
       case "share_price_performance":
-        report.sharePriceTakeaway = section.paragraphs?.join(" ") || "";
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          const validParagraphs = section.paragraphs.filter((p: string) =>
+            !p.toLowerCase().includes("data is not available") &&
+            !p.toLowerCase().includes("not available")
+          );
+          const content = validParagraphs.join(" ").trim();
+          if (content) {
+            report.sharePriceTakeaway = content;
+          }
+        }
         break;
 
       case "engagement":
-        report.esg = {
-          themeSummary: section.paragraphs?.[0] || "",
-          investors: section.institutions?.map((inst: any) => ({
-            name: inst.institution,
-            env: inst.environmental ? [inst.environmental] : undefined,
-            soc: inst.social ? [inst.social] : undefined,
-            gov: inst.governance ? [inst.governance] : undefined,
-          })) || [],
-        };
+        if (section.paragraphs || section.institutions) {
+          report.esg = {
+            themeSummary: section.paragraphs?.[0] || "",
+            investors: section.institutions?.map((inst: any) => ({
+              name: inst.institution,
+              env: inst.environmental ? [inst.environmental] : undefined,
+              soc: inst.social ? [inst.social] : undefined,
+              gov: inst.governance ? [inst.governance] : undefined,
+            })) || [],
+          };
+        }
         break;
 
       case "proxy_advisor_influence":
-        report.proxy = {
-          summary: section.paragraphs?.[0] || "",
-          buckets: section.paragraphs?.slice(1).map((p: string) => {
-            const match = p.match(/(.+?):\s*([\d.]+)%/);
-            return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
-          }).filter(Boolean) || [],
-        };
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          report.proxy = {
+            summary: section.paragraphs[0] || "",
+            buckets: section.paragraphs.slice(1).map((p: string) => {
+              const match = p.match(/(.+?):\s*([\d.]+)%/);
+              return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
+            }).filter(Boolean) || [],
+          };
+        }
         break;
 
       case "board_of_directors":
@@ -904,18 +919,20 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.board = {
-          headlineBullets: boardParagraphs,
-          lowestSupport: section.lowest_support?.map((ls: any) =>
-            `${ls.nominee} – ${ls.support_pct}%`
-          ),
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (boardParagraphs.length > 0 || section.lowest_support || section.voting_rationales) {
+          report.board = {
+            headlineBullets: boardParagraphs,
+            lowestSupport: section.lowest_support?.map((ls: any) =>
+              `${ls.nominee} – ${ls.support_pct}%`
+            ),
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "say_on_pay":
@@ -925,15 +942,17 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.sop = {
-          headlineBullets: sopParagraphs,
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal || '',
-            notes: r.notes
-          })) || [],
-        };
+        if (sopParagraphs.length > 0 || section.voting_rationales) {
+          report.sop = {
+            headlineBullets: sopParagraphs,
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal || '',
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "voting_rationale":
@@ -972,23 +991,27 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         break;
 
       case "auditor_ratification":
-        report.auditor = {
-          headlineBullets: section.paragraphs || [],
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (section.paragraphs?.length > 0 || section.voting_rationales) {
+          report.auditor = {
+            headlineBullets: section.paragraphs || [],
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "shareholder_proposals":
-        report.shareholderProposals = {
-          headlineBullets: section.paragraphs || [],
-          selected: section.selected_support_levels || [],
-          proposalVotes: section.shareholder_proposal_votes || [],
-        };
+        if (section.paragraphs?.length > 0 || section.selected_support_levels || section.shareholder_proposal_votes) {
+          report.shareholderProposals = {
+            headlineBullets: section.paragraphs || [],
+            selected: section.selected_support_levels || [],
+            proposalVotes: section.shareholder_proposal_votes || [],
+          };
+        }
         break;
     }
   });
@@ -1594,11 +1617,13 @@ export default function CompanyOverview() {
     });
   }, [reports, query]);
 
+  const isOverviewLoading = yearsLoading || companyOverviewLoading;
+
 
 
   return (
     <>
-      {companyOverviewLoading ? (
+      {isOverviewLoading ? (
         <>
           {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
           {canViewRestrictedTabs && (
@@ -1637,12 +1662,14 @@ export default function CompanyOverview() {
 
           <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
             <div className="mx-auto space-y-6">
-              {/* STATIC HEADER - Always visible during loading */}
               {activeOverviewTab === 'investor_summary' && (
                 <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
+                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
+                      Key Governance & Investor Summary
+                    </h1>
                     {(yearsLoading || availableYears.length > 0) && (
-                      <div className="mb-2">
+                      <div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {yearsLoading
                             ? [0, 1].map((index) => (
@@ -1673,9 +1700,6 @@ export default function CompanyOverview() {
                         </div>
                       </div>
                     )}
-                    <h1 className="mt-2 text-xl font-bold tracking-tight">
-                      Key Governance & Investor Summary
-                    </h1>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -1690,64 +1714,164 @@ export default function CompanyOverview() {
                 </header>
               )}
 
-              {/* SKELETON LOADING - Only for fetched content */}
-              <div className="grid gap-6 md:grid-cols-12">
-                {/* Left column skeleton */}
-                <div className="rounded-2xl shadow-sm md:col-span-4 bg-white border border-gray-200 p-6 space-y-4">
-                  <div>
-                    <div className="h-5 w-48 animate-pulse rounded bg-slate-200 mb-2" />
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="h-6 w-32 animate-pulse rounded-full bg-slate-200" />
-                    </div>
-                  </div>
+              {activeOverviewTab === 'investor_summary' ? (
+                <div className="grid gap-6 md:grid-cols-12">
+                  <Card className="rounded-2xl shadow-sm md:col-span-4">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[15px] text-slate-900">
+                        <div className="h-5 w-44 animate-pulse rounded bg-slate-200" />
+                      </CardTitle>
 
-                  {/* Share Price Takeaway skeleton */}
-                  <div className="rounded-xl border bg-white p-3 space-y-2">
-                    <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
-                    <div className="mt-3 space-y-2">
-                      <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
-                      <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
-                      <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
-                    </div>
-                  </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className="rounded-full" variant="outline">
+                          <span className="h-4 w-14 animate-pulse rounded bg-slate-200" />
+                        </Badge>
+                      </div>
+                    </CardHeader>
 
-                  {/* Proxy Advisor Influence skeleton */}
-                  <div className="rounded-xl border bg-white p-3 space-y-2">
-                    <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
-                    <div className="mt-3 space-y-2">
-                      <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
-                      <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      {Array.from({ length: 3 }).map((_, idx) => (
-                        <div
-                          key={`proxy-bucket-skeleton-${idx}`}
-                          className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
-                        >
-                          <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                          <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                    <CardContent className="space-y-4">
+                      <div className="rounded-xl border bg-white p-3">
+                        <SectionHeader
+                          title="Share Price Takeaway"
+                          icon={<BarChart3 className="h-4 w-4" />}
+                        />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-4 w-[96%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
                         </div>
-                      ))}
-                    </div>
+                      </div>
+
+                      <div className="rounded-xl border bg-white p-3">
+                        <SectionHeader
+                          title="Proxy Advisor Influence"
+                          icon={<ShieldCheck className="h-4 w-4" />}
+                        />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {Array.from({ length: 3 }).map((_, idx) => (
+                            <div
+                              key={`proxy-bucket-skeleton-${idx}`}
+                              className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                            >
+                              <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                              <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-6 md:col-span-8">
+                    <CollapsibleCard title="Board of Directors" iconKey="board" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[84%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[76%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[72%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard
+                      title="Executive Compensation (Say-on-Pay)"
+                      iconKey="sop"
+                      defaultOpen
+                    >
+                      <div className="space-y-2">
+                        <div className="h-4 w-[86%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-36 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[80%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard title="Auditor Ratification" iconKey="auditor" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard title="Shareholder Proposals" iconKey="sp" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[90%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[78%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
                   </div>
                 </div>
-
-                {/* Right column skeleton */}
-                <div className="space-y-6 md:col-span-8">
-                  {Array.from({ length: 4 }).map((_, idx) => (
-                    <div key={`section-skeleton-${idx}`} className="rounded-xl border bg-white overflow-hidden">
-                      <div className="flex items-center justify-between border-b px-4 py-4">
-                        <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
-                        <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
-                        <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+              ) : (
+                <div className="grid gap-6 md:grid-cols-12">
+                  <div className="rounded-2xl shadow-sm md:col-span-4 bg-white border border-gray-200 p-6 space-y-4">
+                    <div>
+                      <div className="h-5 w-48 animate-pulse rounded bg-slate-200 mb-2" />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="h-6 w-32 animate-pulse rounded-full bg-slate-200" />
                       </div>
                     </div>
-                  ))}
+                    <div className="rounded-xl border bg-white p-3 space-y-2">
+                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="rounded-xl border bg-white p-3 space-y-2">
+                      <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {Array.from({ length: 3 }).map((_, idx) => (
+                          <div
+                            key={`proxy-bucket-skeleton-${idx}`}
+                            className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                          >
+                            <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                            <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 md:col-span-8">
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <div key={`section-skeleton-${idx}`} className="rounded-xl border bg-white overflow-hidden">
+                        <div className="flex items-center justify-between border-b px-4 py-4">
+                          <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                          <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
+                          <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </>
@@ -1805,8 +1929,11 @@ export default function CompanyOverview() {
               {activeOverviewTab === 'investor_summary' && (
                 <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
+                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
+                      Key Governance & Investor Summary
+                    </h1>
                     {(yearsLoading || availableYears.length > 0) && (
-                      <div className="mb-2">
+                      <div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {yearsLoading
                             ? [0, 1].map((index) => (
@@ -1837,9 +1964,6 @@ export default function CompanyOverview() {
                         </div>
                       </div>
                     )}
-                    <h1 className="mt-2 text-xl font-bold tracking-tight">
-                      Key Governance & Investor Summary
-                    </h1>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -1850,7 +1974,7 @@ export default function CompanyOverview() {
                           generatePDF(filtered[0]);
                         }
                       }}
-                      disabled={loading ? true : (filtered.length === 0 || companyOverviewLoading)}
+                      disabled={loading ? true : (filtered.length === 0 || isOverviewLoading)}
                     >
                       <Download className="h-4 w-4" />
                       {loading ? "Downloading..." : "Download PDF"}
@@ -1884,23 +2008,28 @@ export default function CompanyOverview() {
                                   {r.company}
                                 </CardTitle>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge className="rounded-full" variant="outline">
-                                    As of {r.asOf}
-                                  </Badge>
-                                </div>
+                                {r.sharePriceTakeaway && r.asOf && (
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge className="rounded-full" variant="outline">
+                                      As of {r.asOf}
+                                    </Badge>
+                                  </div>                                  
+                                  )}
                               </CardHeader>
 
+
                               <CardContent className="space-y-4">
-                                <div className="rounded-xl border bg-white p-3">
-                                  <SectionHeader
-                                    title="Share Price Takeaway"
-                                    icon={<BarChart3 className="h-4 w-4" />}
-                                  />
-                                  <p className="mt-3 text-[15px] text-slate-700">
-                                    {r.sharePriceTakeaway}
-                                  </p>
-                                </div>
+                                {r.sharePriceTakeaway && (
+                                  <div className="rounded-xl border bg-white p-3">
+                                    <SectionHeader
+                                      title="Share Price Takeaway"
+                                      icon={<BarChart3 className="h-4 w-4" />}
+                                    />
+                                    <p className="mt-3 text-[15px] text-slate-700">
+                                      {r.sharePriceTakeaway}
+                                    </p>
+                                  </div>
+                                )}
 
                                 {r.proxy ? (
                                   <div className="rounded-xl border bg-white p-3">

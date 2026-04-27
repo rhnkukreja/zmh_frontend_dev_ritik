@@ -1,4 +1,9 @@
 export type GovernanceRow = {
+  Font?: string;
+  Source?: {
+    link?: string;
+    name?: string;
+  };
   Category: string;
   "Yes/No": string | boolean;
   "Key Provisions": string;
