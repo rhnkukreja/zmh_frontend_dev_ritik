@@ -1015,7 +1015,7 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         break;
     }
   });
-  
+
   return report;
 }
 
@@ -1662,12 +1662,14 @@ export default function CompanyOverview() {
 
           <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
             <div className="mx-auto space-y-6">
-              {/* STATIC HEADER - Always visible during loading */}
               {activeOverviewTab === 'investor_summary' && (
                 <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
+                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
+                      Key Governance & Investor Summary
+                    </h1>
                     {(yearsLoading || availableYears.length > 0) && (
-                      <div className="mb-2">
+                      <div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {yearsLoading
                             ? [0, 1].map((index) => (
@@ -1698,9 +1700,6 @@ export default function CompanyOverview() {
                         </div>
                       </div>
                     )}
-                    <h1 className="mt-2 text-xl font-bold tracking-tight">
-                      Key Governance & Investor Summary
-                    </h1>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -1715,64 +1714,164 @@ export default function CompanyOverview() {
                 </header>
               )}
 
-              {/* SKELETON LOADING - Only for fetched content */}
-              <div className="grid gap-6 md:grid-cols-12">
-                {/* Left column skeleton */}
-                <div className="rounded-2xl shadow-sm md:col-span-4 bg-white border border-gray-200 p-6 space-y-4">
-                  <div>
-                    <div className="h-5 w-48 animate-pulse rounded bg-slate-200 mb-2" />
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="h-6 w-32 animate-pulse rounded-full bg-slate-200" />
-                    </div>
-                  </div>
+              {activeOverviewTab === 'investor_summary' ? (
+                <div className="grid gap-6 md:grid-cols-12">
+                  <Card className="rounded-2xl shadow-sm md:col-span-4">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[15px] text-slate-900">
+                        <div className="h-5 w-44 animate-pulse rounded bg-slate-200" />
+                      </CardTitle>
 
-                  {/* Share Price Takeaway skeleton */}
-                  <div className="rounded-xl border bg-white p-3 space-y-2">
-                    <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
-                    <div className="mt-3 space-y-2">
-                      <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
-                      <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
-                      <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
-                    </div>
-                  </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className="rounded-full" variant="outline">
+                          <span className="h-4 w-14 animate-pulse rounded bg-slate-200" />
+                        </Badge>
+                      </div>
+                    </CardHeader>
 
-                  {/* Proxy Advisor Influence skeleton */}
-                  <div className="rounded-xl border bg-white p-3 space-y-2">
-                    <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
-                    <div className="mt-3 space-y-2">
-                      <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
-                      <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
-                    </div>
-                    <div className="mt-3 space-y-2">
-                      {Array.from({ length: 3 }).map((_, idx) => (
-                        <div
-                          key={`proxy-bucket-skeleton-${idx}`}
-                          className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
-                        >
-                          <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                          <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                    <CardContent className="space-y-4">
+                      <div className="rounded-xl border bg-white p-3">
+                        <SectionHeader
+                          title="Share Price Takeaway"
+                          icon={<BarChart3 className="h-4 w-4" />}
+                        />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-4 w-[96%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
                         </div>
-                      ))}
-                    </div>
+                      </div>
+
+                      <div className="rounded-xl border bg-white p-3">
+                        <SectionHeader
+                          title="Proxy Advisor Influence"
+                          icon={<ShieldCheck className="h-4 w-4" />}
+                        />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {Array.from({ length: 3 }).map((_, idx) => (
+                            <div
+                              key={`proxy-bucket-skeleton-${idx}`}
+                              className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                            >
+                              <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                              <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-6 md:col-span-8">
+                    <CollapsibleCard title="Board of Directors" iconKey="board" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[84%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[76%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[72%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard
+                      title="Executive Compensation (Say-on-Pay)"
+                      iconKey="sop"
+                      defaultOpen
+                    >
+                      <div className="space-y-2">
+                        <div className="h-4 w-[86%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-36 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[80%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard title="Auditor Ratification" iconKey="auditor" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard title="Shareholder Proposals" iconKey="sp" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[90%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[78%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
                   </div>
                 </div>
-
-                {/* Right column skeleton */}
-                <div className="space-y-6 md:col-span-8">
-                  {Array.from({ length: 4 }).map((_, idx) => (
-                    <div key={`section-skeleton-${idx}`} className="rounded-xl border bg-white overflow-hidden">
-                      <div className="flex items-center justify-between border-b px-4 py-4">
-                        <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
-                        <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
-                        <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+              ) : (
+                <div className="grid gap-6 md:grid-cols-12">
+                  <div className="rounded-2xl shadow-sm md:col-span-4 bg-white border border-gray-200 p-6 space-y-4">
+                    <div>
+                      <div className="h-5 w-48 animate-pulse rounded bg-slate-200 mb-2" />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="h-6 w-32 animate-pulse rounded-full bg-slate-200" />
                       </div>
                     </div>
-                  ))}
+                    <div className="rounded-xl border bg-white p-3 space-y-2">
+                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="rounded-xl border bg-white p-3 space-y-2">
+                      <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {Array.from({ length: 3 }).map((_, idx) => (
+                          <div
+                            key={`proxy-bucket-skeleton-${idx}`}
+                            className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                          >
+                            <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                            <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 md:col-span-8">
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <div key={`section-skeleton-${idx}`} className="rounded-xl border bg-white overflow-hidden">
+                        <div className="flex items-center justify-between border-b px-4 py-4">
+                          <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                          <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
+                          <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </>
@@ -1830,8 +1929,11 @@ export default function CompanyOverview() {
               {activeOverviewTab === 'investor_summary' && (
                 <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
+                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
+                      Key Governance & Investor Summary
+                    </h1>
                     {(yearsLoading || availableYears.length > 0) && (
-                      <div className="mb-2">
+                      <div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {yearsLoading
                             ? [0, 1].map((index) => (
@@ -1862,9 +1964,6 @@ export default function CompanyOverview() {
                         </div>
                       </div>
                     )}
-                    <h1 className="mt-2 text-xl font-bold tracking-tight">
-                      Key Governance & Investor Summary
-                    </h1>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
