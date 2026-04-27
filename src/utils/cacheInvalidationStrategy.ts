@@ -17,8 +17,8 @@ interface InvalidationRule {
 const INVALIDATION_RULES: InvalidationRule[] = [
   {
     pattern: /\/company_report\/key_findings\//,
-    triggers: ['company', 'year'],
-    description: 'Key findings (depends on company and year)',
+    triggers: ['company'],
+    description: 'Key findings (invalidate on company change, keep year cache)',
   },
   {
     pattern: /\/company_report\/key_findings\/years\//,

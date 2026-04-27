@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -1035,6 +1035,7 @@ export default function CompanyOverview() {
   const [yearsLoading, setYearsLoading] = useState(false);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const lastRequestedYearRef = useRef<string>("");
 
   const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
 
@@ -1045,6 +1046,7 @@ export default function CompanyOverview() {
     setSelectedYear(null);
     setActiveOverviewTab('investor_summary');
     setQuery('');
+    lastRequestedYearRef.current = "";
   }, []);
 
   const handleYearSwitch = useCallback((year: number | null) => {
@@ -1104,6 +1106,12 @@ export default function CompanyOverview() {
 
   useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
+
+    const requestKey = `${companyGlobalSearchId}:${selectedYear}`;
+    if (lastRequestedYearRef.current === requestKey) {
+      return;
+    }
+    lastRequestedYearRef.current = requestKey;
 
     dispatch(
       fetchCompanyOverview(
@@ -1618,12 +1626,13 @@ export default function CompanyOverview() {
   }, [reports, query]);
 
   const isOverviewLoading = yearsLoading || companyOverviewLoading;
+  const shouldShowInitialOverviewLoading = yearsLoading || (companyOverviewLoading && reports.length === 0);
 
 
 
   return (
     <>
-      {isOverviewLoading ? (
+      {shouldShowInitialOverviewLoading ? (
         <>
           {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
           {canViewRestrictedTabs && (
@@ -1966,6 +1975,9 @@ export default function CompanyOverview() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    {companyOverviewLoading && !yearsLoading ? (
+                      <span className="text-[13px] font-medium text-slate-500">Updating...</span>
+                    ) : null}
                     <Button
                       variant="outline"
                       className="gap-2"
