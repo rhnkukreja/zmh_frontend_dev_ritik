@@ -138,12 +138,30 @@ const CompensationTab: React.FC<CompensationTabProps> = ({ ticker }) => {
         }))
         .filter(m => m.s.c !== undefined && m.e.c !== undefined);
 
-      const aoa: string[][] = [];
+      const aoa: any[][] = []; // Changed to any[][] to accept numbers
       for (let r = 0; r < numRows; r++) {
-        const rowArr: string[] = [];
+        const rowArr: any[] = [];
         for (let newC = 0; newC < newMaxCol; newC++) {
           const oldC = colMap[newC];
-          rowArr.push(grid[`${r},${oldC}`] ?? "");
+          let cellValue: any = grid[`${r},${oldC}`] ?? "";
+
+          if (typeof cellValue === 'string') {
+            // 1. Remove dollar signs, commas, and spaces
+            const cleanedValue = cellValue.replace(/[\$,\s]/g, '');
+            
+            // 2. Handle accounting negative formats like "(1234)" -> "-1234"
+            let testValue = cleanedValue;
+            if (testValue.startsWith('(') && testValue.endsWith(')')) {
+              testValue = '-' + testValue.slice(1, -1);
+            }
+
+            // 3. If the resulting string is a valid number, convert it
+            if (testValue !== '' && !isNaN(Number(testValue))) {
+              cellValue = Number(testValue);
+            }
+          }
+
+          rowArr.push(cellValue);
         }
         aoa.push(rowArr);
       }

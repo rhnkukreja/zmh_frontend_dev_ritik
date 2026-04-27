@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { useNavigationHistory } from "@/hooks/useNavigationHistory";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchInstitutionDocuments, getSingleInstitution } from "@/stores/institutionSlice";
 import { AppDispatch } from "@/stores/store";
@@ -19,10 +18,12 @@ import axios from "axios";
 import DraftReviewModal, { RegenerateTarget } from "./DraftReviewModal";
 
 import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
-
+import { Dialog } from "@/components/Base/Headless";
+import Lucide from "@/components/Base/Lucide";
+import { baseURL } from "@/constant";
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
-type ProfileMode = "create" | "update"  | "voting" | null;
+type ProfileMode = "create" | "update" | "voting" | "preview" | null;
 
 const SECTIONS: ProfileSection[] = ["summary", "engagement_priorities", "reporting_expectation", "esg_integration", "voting_guidelines"];
 const SECTION_COLS: { key: ProfileSection; label: string }[] = [
@@ -58,8 +59,6 @@ const InstitutionDocuments = () => {
   const params = useParams();
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { handleBack } = useNavigationHistory();
 
   const hasVerifiedDocs = useRef<string | null>(null);
 
@@ -79,10 +78,7 @@ const InstitutionDocuments = () => {
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   // NO MORE LOCAL STORAGE. Checklists start empty every load.
-  const [profileMode, setProfileMode] = useState<ProfileMode>(
-    location.state?.profileMode || null
-  );
-
+  const [profileMode, setProfileMode] = useState<ProfileMode>(null);
   const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>([]);
 
   const [pendingModeSwitch, setPendingModeSwitch] = useState<ProfileMode>(null);
@@ -118,13 +114,76 @@ const InstitutionDocuments = () => {
   const filteredDocuments = institutionDocuments?.filter((doc) => !doc.is_deleted) || [];
   const documentsToDisplay = showTrash ? trashedDocuments : institutionDocuments;
 
-  // FastAPI call to replace the 404 Django call
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDropdownOpen]);
+
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  // --- NEW: ROBUST PREVIEW FUNCTION ---
+  const handlePreviewExistingProfile = async () => {
+    if (!singleInstitution?.institution) return;
+
+    setPreviewModalOpen(true);
+    setIsPreviewLoading(true);
+    setPreviewData(null);
+
+    try {
+      // Safely extract token from localStorage (Check your app's exact key: "token", "access", or "access_token")
+      const token = localStorage.getItem("token") || localStorage.getItem("access") || localStorage.getItem("access_token");
+
+      const listRes = await axios.get(
+        `${baseURL}/investor_profile/?institution_name=${encodeURIComponent(
+          singleInstitution.institution
+        )}`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "", // Ensure this matches DRF (Bearer vs JWT)
+          }
+        }
+      );
+
+      // Catch Django's silent 200 OK error payload
+      if (listRes.data && listRes.data.Error) {
+        throw new Error(listRes.data.Error);
+      }
+
+      const profiles = Array.isArray(listRes.data)
+        ? listRes.data
+        : listRes.data?.results || [];
+
+      const profile = profiles[0];
+
+      if (!profile) {
+        toast.info("No profile found.");
+      } else {
+        setPreviewData(profile);
+      }
+
+    } catch (error: any) {
+      console.error("❌ PREVIEW ERROR:", error);
+      toast.error(`Failed to load profile: ${error.message || "Network Error"}`);
+      setPreviewModalOpen(false);
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
   const fetchProfileData = async () => {
     if (!params.id) return;
     try {
-      const res = await axios.get(`${AI_CHATBOT_API_BASE}/investor-profile/${params.id}`, {
-        headers: { "ngrok-skip-browser-warning": "69420" }
-      });
+      const res = await axios.get(`${AI_CHATBOT_API_BASE}/investor_profile/${params.id}`);
       if (res.data.status === "success" && res.data.sections) {
         setFastApiProfile(res.data.sections);
       }
@@ -140,14 +199,9 @@ const InstitutionDocuments = () => {
     
     try {
       const documentNames = docs.map(d => d.name).filter(Boolean) as string[];
-      
-      // ✅ Must be .post() to /check-all-documents-status
-      const res = await axios.post(`${AI_CHATBOT_API_BASE}/check-all-documents-status`, 
-        { 
-          investor_id: instId,
-          document_names: documentNames
-        },
-        { headers: { "ngrok-skip-browser-warning": "69420" } }
+      const res = await axios.post(
+        `${AI_CHATBOT_API_BASE}/check-all-documents-status`,
+        { investor_id: instId, document_names: documentNames }
       );
       
       {/*console.log("🟢 VERIFIED VIA FUZZY MATCH:", res.data.verified_docs);*/}
@@ -184,7 +238,7 @@ const InstitutionDocuments = () => {
   useEffect(() => {
     if (params.id) {
       dispatch(getSingleInstitution(Number(params.id)));
-      dispatch(fetchInstitutionDocuments(Number(params.id))); 
+      dispatch(fetchInstitutionDocuments(Number(params.id)));
       fetchProfileData(); 
     }
   }, [params.id, dispatch]);
@@ -208,8 +262,7 @@ const InstitutionDocuments = () => {
         processingDocs.map(async (doc) => {
           try {
             const res = await axios.get(`${AI_CHATBOT_API_BASE}/api/upload/status`, {
-              params: { document_name: doc.document_name, institution_id: doc.institution_id },
-              headers: { "ngrok-skip-browser-warning": "69420" },
+              params: { document_name: doc.document_name, institution_id: doc.institution_id }
             });
             return { doc, status: res.data.status };
           } catch {
@@ -217,11 +270,7 @@ const InstitutionDocuments = () => {
           }
         })
       );
-
-      const stillProcessing = resolved
-        .filter(({ status }) => status === "queued" || status === "processing")
-        .map(({ doc }) => doc);
-
+      const stillProcessing = resolved.filter(({ status }) => status === "queued" || status === "processing").map(({ doc }) => doc);
       const justFinished = resolved.filter(({ status }) => status === "done");
       if (justFinished.length > 0) dispatch(fetchInstitutionDocuments(Number(params.id)));
 
@@ -238,15 +287,9 @@ const InstitutionDocuments = () => {
     setProcessingDocs(prev => [...prev, { id: doc.id, document_name: doc.name || "", institution_id: params.id! }]);
     try {
       await axios.post(`${AI_CHATBOT_API_BASE}/api/upload`, {
-        institution_id: params.id,
-        document_name: doc.name || "",
-        document_type: doc.document_type || "Stewardship Report",
-        year: String(doc.year || ""),
-        month: "", tags: "",
-        priority: doc.priority || "Medium",
-        file_name: doc.name || "",
-        link: doc.link || ""  // 👈 NEW: Send the exact link to the backend
-      }, { headers: { "ngrok-skip-browser-warning": "69420" } });
+        institution_id: params.id, document_name: doc.name || "", document_type: doc.document_type || "Stewardship Report",
+        year: String(doc.year || ""), month: "", tags: "", priority: doc.priority || "Medium", file_name: doc.name || "", link: doc.link || ""
+      });
       toast.success(`Processing started for: ${doc.name}`);
     } catch (e) {
       setProcessingDocs(prev => prev.filter(p => p.id !== doc.id));
@@ -312,25 +355,12 @@ const InstitutionDocuments = () => {
   const handleApproveAll = async (updatedDrafts: any[]) => {
     const baseProfile = fullDbProfileState || currentProfile;
     const updatedProfile = { ...baseProfile, sections: { ...(baseProfile?.sections || {}) } };
-
-    if (profileMode === 'create') {
-      Object.keys(updatedProfile.sections).forEach(key => { updatedProfile.sections[key] = ""; });
-    }
-
-    updatedDrafts.forEach(draft => {
-      if (draft.proposed_content !== undefined && draft.proposed_content !== null) {
-        updatedProfile.sections[draft.section] = draft.proposed_content;
-      }
-    });
-
+    if (profileMode === 'create') Object.keys(updatedProfile.sections).forEach(key => { updatedProfile.sections[key] = ""; });
+    updatedDrafts.forEach(draft => { if (draft.proposed_content !== undefined && draft.proposed_content !== null) updatedProfile.sections[draft.section] = draft.proposed_content; });
     setCurrentProfile(updatedProfile);
     setPendingDrafts([]);
     setIsSyncingSummary(true);
-
-    const usedDocuments = lastDocsToSubmit.map(doc => ({
-      name: doc.name, year: doc.year, sections: SECTIONS.filter(section => isCheckedForSection(doc, section)).map(s => s.replace(/_/g, " "))
-    }));
-
+    const usedDocuments = lastDocsToSubmit.map(doc => ({ name: doc.name, year: doc.year, sections: SECTIONS.filter(section => isCheckedForSection(doc, section)).map(s => s.replace(/_/g, " ")) }));
     setProfileMode(null);
     setPendingLinkOps([]);
 
@@ -338,33 +368,14 @@ const InstitutionDocuments = () => {
       setIsSyncingSummary(false);
       toast.success("Investor Profile updated successfully!");
       if (params.id) dispatch(fetchInstitutionDocuments(Number(params.id)));
-      navigate(`/final-summary/${params.id}`, {
-        state: {
-          profile: updatedProfile,
-          oldProfile: fullDbProfileState || currentProfile,
-          investorName: singleInstitution?.institution,
-          usedDocuments,
-          profileMode: profileMode === "voting" ? "update" : profileMode,
-          from: location.pathname,
-          fromState: location.state,
-        },
-      });
+      navigate(`/final-summary/${params.id}`, { state: { profile: updatedProfile, oldProfile: fullDbProfileState || currentProfile, investorName: singleInstitution?.institution, usedDocuments, profileMode: profileMode === 'voting' ? 'update' : profileMode }});
     }, 3500);
   };
 
   const handleActivateMode = (mode: ProfileMode) => {
     if (profileMode === mode) return;
-    if (profileMode !== null && pendingLinkOps.length > 0) {
-      setPendingModeSwitch(mode); setModeSwitchConfirmOpen(true); return;
-    }
-    setProfileMode(mode); 
-    setPendingLinkOps([]);
-    
-    // Sync to history state safely (manual update on click)
-    navigate(location.pathname, { 
-      state: { ...location.state, profileMode: mode }, 
-      replace: true 
-    });
+    if (profileMode !== null && pendingLinkOps.length > 0) { setPendingModeSwitch(mode); setModeSwitchConfirmOpen(true); return; }
+    setProfileMode(mode); setPendingLinkOps([]);
   };
 
   const handleLinkToProfile = (document: InstitutionDocument, section: ProfileSection, isCurrentlyLinked: boolean) => {
@@ -375,59 +386,38 @@ const InstitutionDocuments = () => {
     });
   };
 
-  const hasSubmittableOps = profileMode === 'create'
-    ? filteredDocuments.some(doc => SECTIONS.some(s => isCheckedForSection(doc, s)))
-    : pendingLinkOps.length > 0;
+  const hasSubmittableOps = profileMode === 'create' ? filteredDocuments.some(doc => SECTIONS.some(s => isCheckedForSection(doc, s))) : pendingLinkOps.length > 0;
 
   const handleBulkLinkToProfile = async () => {
     if (!params.id) return;
     setLinkingInProgress({ bulk: true });
-
-    const targetSections = profileMode === 'create'
-      ? new Set(SECTIONS)
-      : new Set(pendingLinkOps.map(op => op.section));
-
-    const docsToSubmit = filteredDocuments.filter(doc =>
-      Array.from(targetSections).some(s => isCheckedForSection(doc, s as ProfileSection))
-    );
+    const targetSections = profileMode === 'create' ? new Set(SECTIONS) : new Set(pendingLinkOps.map(op => op.section));
+    const docsToSubmit = filteredDocuments.filter(doc => Array.from(targetSections).some(s => isCheckedForSection(doc, s as ProfileSection)));
     setLastDocsToSubmit(docsToSubmit);
 
     const requestedBackendSections = new Set<string>();
-    const docLinksAcc: Record<string, string[]> = {
-      summary_link: [], engagement_priorities_link: [], reporting_expectation_link: [], esg_integration_link: [], voting_guidelines_link: []
-    };
-
+    const docLinksAcc: Record<string, string[]> = { summary_link: [], engagement_priorities_link: [], reporting_expectation_link: [], esg_integration_link: [], voting_guidelines_link: [] };
     const payload = docsToSubmit.map((doc) => {
       const activeSections = new Set(SECTIONS.filter(s => isCheckedForSection(doc, s) && targetSections.has(s)));
       
       activeSections.forEach(s => {
         const backendKey = s === "reporting_expectation" ? "reporting_expectations" : s === "esg_integration" ? "esg_integration_process" : s;
         requestedBackendSections.add(backendKey);
-        
-        if (doc.link) {
-           const linkKey = s === "reporting_expectation" ? "reporting_expectation_link" : `${s}_link`;
-           if (docLinksAcc[linkKey]) docLinksAcc[linkKey].push(doc.link);
-        }
+        if (doc.link) { const linkKey = s === "reporting_expectation" ? "reporting_expectation_link" : `${s}_link`; if (docLinksAcc[linkKey]) docLinksAcc[linkKey].push(doc.link); }
       });
-      
-      return {
-        name: doc.name ?? "", year: doc.year ? String(doc.year) : null, priority: doc.priority ?? "Low",
-        sum: activeSections.has("summary"), eng: activeSections.has("engagement_priorities"), rep: activeSections.has("reporting_expectation"), esg: activeSections.has("esg_integration"), vote: activeSections.has("voting_guidelines"),
-      };
+      return { name: doc.name ?? "", year: doc.year ? String(doc.year) : null, priority: doc.priority ?? "Low", sum: activeSections.has("summary"), eng: activeSections.has("engagement_priorities"), rep: activeSections.has("reporting_expectation"), esg: activeSections.has("esg_integration"), vote: activeSections.has("voting_guidelines") };
     });
 
     setLastApiPayload(payload);
 
     const finalLinks: Record<string, string> = {};
-    Object.entries(docLinksAcc).forEach(([k, urls]) => {
-       if (urls.length > 0) finalLinks[k] = urls.join(", ");
-    });
+    Object.entries(docLinksAcc).forEach(([k, urls]) => { if (urls.length > 0) finalLinks[k] = urls.join(", "); });
     setLastDocumentLinks(finalLinks);
 
     const operations: any[] = [];
     if (profileMode === 'update' || profileMode === 'voting') {
       const groupedOps: Record<string, { document_id: number, sections: ProfileSection[], action: "link" | "unlink" }> = {};
-    pendingLinkOps.forEach(op => {
+      pendingLinkOps.forEach(op => {
         const key = `${op.document_id}-${op.action}`;
         if (!groupedOps[key]) groupedOps[key] = { document_id: op.document_id, sections: [], action: op.action };
         groupedOps[key].sections.push(op.section);
@@ -443,27 +433,10 @@ const InstitutionDocuments = () => {
     try {
       let response;
       if (profileMode === 'voting') {
-        
-        // 1. Create the array of objects the backend expects
-        const docPayload = docsToSubmit.map(doc => ({
-           name: doc.name || "",
-           year: doc.year ? Number(doc.year) : null
-        })).filter(d => d.name !== "");
-
-        // 2. Send docPayload instead of documentNames
-        response = await axios.post(`${AI_CHATBOT_API_BASE}/ai/compre-votingguideline`, 
-          { 
-            investor_name: singleInstitution?.institution || "Unknown", 
-            institution_id: Number(params.id), 
-            documents: docPayload // <--- THIS IS THE CRITICAL FIX
-          }, 
-          { headers: { "Content-Type": "application/json" }, timeout: 600000 }
-        );
-      }
-        else {
-        response = await axios.post(`${AI_CHATBOT_API_BASE}/api/compare-updates`, 
-          { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 600000 }
-        );
+        const docPayload = docsToSubmit.map(doc => ({ name: doc.name || "", year: doc.year ? Number(doc.year) : null })).filter(d => d.name !== "");
+        response = await axios.post(`${AI_CHATBOT_API_BASE}/ai/compre-votingguideline`, { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: docPayload }, { headers: { "Content-Type": "application/json" }, timeout: 600000 });
+      } else {
+        response = await axios.post(`${AI_CHATBOT_API_BASE}/api/compare-updates`, { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: payload, mode: profileMode }, { headers: { "Content-Type": "application/json" }, timeout: 600000 });
       }
 
       const comparisons = response.data?.comparisons || {};
@@ -473,9 +446,7 @@ const InstitutionDocuments = () => {
       Object.keys(comparisons).forEach((sectionKey) => {
         const item = comparisons[sectionKey];
         realProfileSections[sectionKey] = stripHtml(item.old_content);
-        if (requestedBackendSections.has(sectionKey) && (profileMode === 'create' || stripHtml(item.new_content) !== realProfileSections[sectionKey])) {
-          realDrafts.push({ section: sectionKey, status: "draft_ready", proposed_content: stripHtml(item.new_content) });
-        }
+        if (requestedBackendSections.has(sectionKey) && (profileMode === 'create' || stripHtml(item.new_content) !== realProfileSections[sectionKey])) realDrafts.push({ section: sectionKey, status: "draft_ready", proposed_content: stripHtml(item.new_content) });
       });
 
       const fullDbSections: Record<string, string> = {};
@@ -493,56 +464,13 @@ const InstitutionDocuments = () => {
 
   // 🌟 NEW: Advanced Batch-Capable Regeneration Logic
   const handleRegenerateTargets = async (targets: RegenerateTarget[]): Promise<boolean> => {
-    // 1. Log the attempt to ensure the button click registered
-    console.log("🚀 Regenerate initiated with targets:", targets);
-
-    // 2. Prevent Silent Failures - Alert the user if data is missing
-    if (!params.id || !lastApiPayload || targets.length === 0) {
-      console.error("🛑 Request aborted on Frontend. Missing Data:", { 
-        id: params.id, 
-        payload: lastApiPayload, 
-        targets 
-      });
-      toast.error("Cannot regenerate: Missing institution ID or document payload.");
-      return false;
-    }
-    
+    if (!params.id || !lastApiPayload || targets.length === 0) { toast.error("Cannot regenerate: Missing institution ID or document payload."); return false; }
     const sectionsToUpdate = targets.map(t => t.section);
     setRegeneratingSections(sectionsToUpdate);
-
-    const sectionToShortCode: Record<string, string> = {
-      summary: "sum",
-      engagement_priorities: "eng",
-      reporting_expectation: "rep",
-      esg_integration: "esg",
-      voting_guidelines: "vote",
-    };
-
-    const regeneratePayload = {
-      investor_name: singleInstitution?.institution || "Unknown",
-      institution_id: Number(params.id),
-      documents: lastApiPayload,
-      mode: profileMode === 'voting' ? 'update' : (profileMode || "update"),
-      regenerate_targets: targets.map(t => ({
-        category: sectionToShortCode[t.section] || t.section,
-        custom_prompt: t.customPrompt,
-        rejected_draft: t.rejectedDraft
-      }))
-    };
-
+    const sectionToShortCode: Record<string, string> = { summary: "sum", engagement_priorities: "eng", reporting_expectation: "rep", esg_integration: "esg", voting_guidelines: "vote" };
+    const regeneratePayload = { investor_name: singleInstitution?.institution || "Unknown", institution_id: Number(params.id), documents: lastApiPayload, mode: profileMode === 'voting' ? 'update' : (profileMode || "update"), regenerate_targets: targets.map(t => ({ category: sectionToShortCode[t.section] || t.section, custom_prompt: t.customPrompt, rejected_draft: t.rejectedDraft })) };
     try {
-      const response = await axios.post(
-        `${AI_CHATBOT_API_BASE}/api/regenerate-updates`, 
-        regeneratePayload, 
-        { 
-          headers: { 
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true" // 🌟 CRITICAL: Bypasses Ngrok's HTML warning block
-          }, 
-          timeout: 600000 
-        }
-      );
-
+      const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/regenerate-updates`, regeneratePayload, { headers: { "Content-Type": "application/json" }, timeout: 600000 });
       const comparisons = response.data?.comparisons || {};
       let updatedCount = 0;
 
@@ -551,40 +479,20 @@ const InstitutionDocuments = () => {
         
         const shortCategory = sectionToShortCode[draft.section] || draft.section;
         const item = comparisons[draft.section] || comparisons[shortCategory];
-
-        if (item && item.new_content) {
-          updatedCount++;
-          return { ...draft, proposed_content: stripHtml(item.new_content) };
-        }
+        if (item && item.new_content) { updatedCount++; return { ...draft, proposed_content: stripHtml(item.new_content) }; }
         return draft;
       }));
-
-      if (updatedCount > 0) toast.success(`${updatedCount} section(s) regenerated successfully!`);
-      else toast.info("No changes generated for the selected sections.");
-      
+      if (updatedCount > 0) toast.success(`${updatedCount} section(s) regenerated successfully!`); else toast.info("No changes generated for the selected sections.");
       return true; 
     } catch (error: any) {
-      // 3. Expose the EXACT error coming from the server or Ngrok
-      const errorMsg = error.response?.data?.detail || error.response?.statusText || error.message;
-      console.error("❌ Regenerate API Error:", error.response?.data || error);
-      toast.error(`Regeneration failed: ${errorMsg}`);
+      toast.error(`Regeneration failed: ${error.response?.data?.detail || error.response?.statusText || error.message}`);
       return false; 
     } finally {
       setRegeneratingSections([]);
     }
   };
 
-  // FAST-API PROFILE MAPPING
-  const fullDbProfile = fastApiProfile ? { 
-    investor_id: String(params.id), 
-    sections: {
-      summary: stripHtml(fastApiProfile.summary || ""), 
-      engagement_priorities: stripHtml(fastApiProfile.engagement_priorities || ""), 
-      reporting_expectations: stripHtml(fastApiProfile.reporting_expectations || ""), 
-      esg_integration_process: stripHtml(fastApiProfile.esg_integration_process || ""), 
-      voting_guidelines: stripHtml(fastApiProfile.voting_guidelines || ""),
-    }
-  } : null; 
+  const fullDbProfile = fastApiProfile ? { investor_id: String(params.id), sections: { summary: stripHtml(fastApiProfile.summary || ""), engagement_priorities: stripHtml(fastApiProfile.engagement_priorities || ""), reporting_expectations: stripHtml(fastApiProfile.reporting_expectations || ""), esg_integration_process: stripHtml(fastApiProfile.esg_integration_process || ""), voting_guidelines: stripHtml(fastApiProfile.voting_guidelines || "") } } : null; 
 
   return (
     <>
@@ -594,7 +502,7 @@ const InstitutionDocuments = () => {
         </div>
       )}
 
-      <Button onClick={() => handleBack("/institution")} variant="primary" className="bg-theme-2 border-bg-theme-2 mb-4"><ChevronLeft className="text-white" size={18} strokeWidth={1.5} /> Back</Button>
+      <Button onClick={() => navigate(`/institution`)} variant="primary" className="bg-theme-2 border-bg-theme-2 mb-4"><ChevronLeft className="text-white" size={18} strokeWidth={1.5} /> Back</Button>
 
       <div className="box box--stacked">
         <div className="p-5 border-b border-slate-200/80 flex flex-col md:flex-row md:items-start md:justify-between gap-3">
@@ -609,11 +517,61 @@ const InstitutionDocuments = () => {
             </div>
             {isAnalystOrAdmin && !showTrash && (
               <div className="flex items-center gap-2">
+                <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={handlePreviewExistingProfile} disabled={linkingInProgress.bulk}>Preview Existing Profile</Button>
                 <Button variant={profileMode === 'voting' ? "primary" : "outline-secondary"} className={profileMode === 'voting' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('voting')} disabled={linkingInProgress.bulk}>Voting Guideline</Button>
-                <Button variant={profileMode === 'update' ? "primary" : "outline-secondary"} className={profileMode === 'update' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('update')} disabled={linkingInProgress.bulk}>Update Existing Profile</Button>
-                <Button variant={profileMode === 'create' ? "primary" : "outline-secondary"} className={profileMode === 'create' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('create')} disabled={linkingInProgress.bulk}>Create New Profile</Button>
+                <div className="relative" ref={dropdownRef}>
+                  <Button variant={(profileMode === 'create' || profileMode === 'update') ? "primary" : "outline-secondary"} className={(profileMode === 'create' || profileMode === 'update') ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => setIsDropdownOpen(!isDropdownOpen)} disabled={linkingInProgress.bulk}>{profileMode === 'create' ? 'Create New Profile ▼' : profileMode === 'update' ? 'Update Existing Profile ▼' : 'Create/Update Profile ▼'}</Button>
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex flex-col overflow-hidden">
+                      <button className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 hover:text-theme-2 transition-colors" onClick={() => { handleActivateMode('create'); setIsDropdownOpen(false); }}>Create New Profile</button>
+                      <button className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 hover:text-theme-2 transition-colors border-t border-gray-100" onClick={() => { handleActivateMode('update'); setIsDropdownOpen(false); }}>Update Existing Profile</button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
+
+            {/* --- PREVIEW EXISTING PROFILE MODAL --- */}
+            {previewModalOpen && (
+              <Dialog size="lg" open={previewModalOpen} onClose={() => setPreviewModalOpen(false)}>
+                <Dialog.Panel className="p-6">
+                  <div className="flex justify-between items-center mb-4 border-b pb-3">
+                    <h2 className="text-xl font-semibold">Existing Investor Profile</h2>
+                    <button onClick={() => setPreviewModalOpen(false)} className="text-slate-400 hover:text-slate-600"><Lucide icon="X" className="w-5 h-5" /></button>
+                  </div>
+                  <div className="min-h-[200px] flex flex-col">
+                    {isPreviewLoading && (
+                      <div className="flex flex-col items-center justify-center flex-grow">
+                        <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+                        <p className="text-slate-500">Checking for existing profile...</p>
+                      </div>
+                    )}
+                    {!isPreviewLoading && !previewData && (
+                      <div className="flex flex-col items-center justify-center flex-grow text-center p-10">
+                        <Lucide icon="FileQuestion" className="w-12 h-12 text-slate-300 mb-3" />
+                        <h3 className="text-lg font-medium text-slate-700">No Profile Found</h3>
+                        <p className="text-slate-500 mt-1">There is no previous investor profile present for this institution.</p>
+                      </div>
+                    )}
+                    {!isPreviewLoading && previewData && (
+                      <>
+                        <div className="space-y-5 overflow-y-auto max-h-[70vh] pr-2">
+                          {previewData.summary && (<div><h4 className="font-semibold text-slate-800 text-md">Summary</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.summary }}/></div>)}
+                          {previewData.engagement_priorities && (<div><h4 className="font-semibold text-slate-800 text-md">Engagement Priorities</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.engagement_priorities }}/></div>)}
+                          {previewData.reporting_expectations && (<div><h4 className="font-semibold text-slate-800 text-md">Reporting Expectations</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.reporting_expectations }}/></div>)}
+                          {previewData.esg_integration_process && (<div><h4 className="font-semibold text-slate-800 text-md">ESG Integration Process</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.esg_integration_process }}/></div>)}
+                          {previewData.voting_guidelines && (<div><h4 className="font-semibold text-slate-800 text-md">Voting Guidelines</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.voting_guidelines }}/></div>)}
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                          <Button variant="outline-secondary" onClick={() => setPreviewModalOpen(false)}>Close</Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </Dialog.Panel>
+              </Dialog>
+            )}
+
             {profileMode && (
               <div className="flex justify-end gap-2">
                 <Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => setLinkConfirmOpen(true)} disabled={linkingInProgress.bulk || !hasSubmittableOps}>Submit</Button>
@@ -654,7 +612,7 @@ const InstitutionDocuments = () => {
                 {documentsToDisplay?.length > 0 ? documentsToDisplay.map((doc: InstitutionDocument) => {
                   
                   const rawName = doc.name || "";
-                  const isProcessing = processingDocs.some(p => (p.id && p.id === doc.id) ||   (!p.id && p.document_name?.toLowerCase() === rawName.toLowerCase()));
+                  const isProcessing = processingDocs.some(p => (p.id && p.id === doc.id) || (!p.id && p.document_name?.toLowerCase() === rawName.toLowerCase()));
                   const isVerified = doc.link ? verifiedDocs[safeDecode(doc.link)] ?? verifiedDocs[doc.link] ?? false : false;
 
                   return (
@@ -706,16 +664,7 @@ const InstitutionDocuments = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-lg shadow-lg p-6 min-w-[320px]">
             <div className="mb-4 text-lg font-semibold">Switching modes will reset your changes. Continue?</div>
-            <div className="flex justify-end gap-2"><Button variant="outline-secondary" onClick={() => { setModeSwitchConfirmOpen(false); setPendingModeSwitch(null); }}>Cancel</Button><Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => { 
-              setProfileMode(pendingModeSwitch); 
-              setPendingLinkOps([]); 
-              setModeSwitchConfirmOpen(false); 
-              // Sync to history state safely
-              navigate(location.pathname, { 
-                state: { ...location.state, profileMode: pendingModeSwitch }, 
-                replace: true 
-              });
-            }}>Continue</Button></div>
+            <div className="flex justify-end gap-2"><Button variant="outline-secondary" onClick={() => { setModeSwitchConfirmOpen(false); setPendingModeSwitch(null); }}>Cancel</Button><Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => { setProfileMode(pendingModeSwitch); setPendingLinkOps([]); setModeSwitchConfirmOpen(false); }}>Continue</Button></div>
           </div>
         </div>
       )}
