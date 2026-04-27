@@ -74,7 +74,7 @@ function Main() {
     window.onresize = () => {
       compactLayout();
     };
-  }, [sideMenuStore, location]);
+  }, [sideMenuStore, location.pathname]);
 
   return (
     <div

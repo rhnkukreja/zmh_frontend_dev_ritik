@@ -190,6 +190,11 @@ function Main() {
 
   const handleVotingGuidelinesClick = (profile: InvestersProfile) => {
     if (profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0) {
+      if (profile.voting_guideline_docs.length === 1) {
+        window.open(profile.voting_guideline_docs[0].link, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
       setSelectedVotingGuidelines({
         institution_name: profile.institution || profile.institution_name,
         docs: profile.voting_guideline_docs
@@ -350,22 +355,29 @@ function Main() {
               )}
 
               <div className="overflow-auto xl:overflow-visible px-5">
-                <Table className="border-spacing-y-[10px] border-separate -mt-2">
+                <Table className="w-full table-fixed border-spacing-y-[10px] border-separate -mt-2">
+                  <colgroup>
+                    <col className="w-[40%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                  </colgroup>
                   <Table.Thead className="bg-[#ab123d] sticky top-0 z-10">
                     <Table.Tr>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 whitespace-nowrap first:rounded-l-md">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 first:rounded-l-md">
                         Institution
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
                         Investor Profile
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
                         Key Voting Guidelines Changes
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
                         Voting Guidelines
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-nowrap last:rounded-r-md">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal last:rounded-r-md">
                         All Documents
                       </Table.Td>
                     </Table.Tr>
@@ -394,8 +406,11 @@ function Main() {
                         ))}
                       </>
                     ) : investersProfile?.length > 0 ? (
-                      investersProfile.map((profile: InvestersProfile) => (
-                        <Table.Tr key={profile.id} className="intro-x">
+                      investersProfile.map((profile: InvestersProfile, index: number) => (
+                        <Table.Tr
+                          key={`${profile.institution_id || "no-inst"}-${profile.investor_profile_id || "no-profile"}-${profile.institution || profile.institution_name || "unknown"}-${index}`}
+                          className="intro-x"
+                        >
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
                             <span
                               onClick={() => {

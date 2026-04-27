@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -13,10 +13,14 @@ import {
 } from "lucide-react";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
-import { useAppSelector } from "@/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
+import { fetchCompanyOverview, fetchCompanyOverviewGPT } from "@/stores/dashboardSlice";
+import { dashboardService } from "@/services/dashboard";
+import { baseURL } from "@/constant";
 import pdfMake from "pdfmake/build/pdfmake";
 import CompensationTab from './CompensationTab';
+import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(" ");
@@ -865,31 +869,46 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 
   // Process sections from API
   apiData.sections?.forEach((section: any) => {
+    if (section.has_data === false) return;
+
     switch (section.id) {
       case "share_price_performance":
-        report.sharePriceTakeaway = section.paragraphs?.join(" ") || "";
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          const validParagraphs = section.paragraphs.filter((p: string) =>
+            !p.toLowerCase().includes("data is not available") &&
+            !p.toLowerCase().includes("not available")
+          );
+          const content = validParagraphs.join(" ").trim();
+          if (content) {
+            report.sharePriceTakeaway = content;
+          }
+        }
         break;
 
       case "engagement":
-        report.esg = {
-          themeSummary: section.paragraphs?.[0] || "",
-          investors: section.institutions?.map((inst: any) => ({
-            name: inst.institution,
-            env: inst.environmental ? [inst.environmental] : undefined,
-            soc: inst.social ? [inst.social] : undefined,
-            gov: inst.governance ? [inst.governance] : undefined,
-          })) || [],
-        };
+        if (section.paragraphs || section.institutions) {
+          report.esg = {
+            themeSummary: section.paragraphs?.[0] || "",
+            investors: section.institutions?.map((inst: any) => ({
+              name: inst.institution,
+              env: inst.environmental ? [inst.environmental] : undefined,
+              soc: inst.social ? [inst.social] : undefined,
+              gov: inst.governance ? [inst.governance] : undefined,
+            })) || [],
+          };
+        }
         break;
 
       case "proxy_advisor_influence":
-        report.proxy = {
-          summary: section.paragraphs?.[0] || "",
-          buckets: section.paragraphs?.slice(1).map((p: string) => {
-            const match = p.match(/(.+?):\s*([\d.]+)%/);
-            return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
-          }).filter(Boolean) || [],
-        };
+        if (section.paragraphs && section.paragraphs.length > 0) {
+          report.proxy = {
+            summary: section.paragraphs[0] || "",
+            buckets: section.paragraphs.slice(1).map((p: string) => {
+              const match = p.match(/(.+?):\s*([\d.]+)%/);
+              return match ? { label: match[1], pct: parseFloat(match[2]) } : null;
+            }).filter(Boolean) || [],
+          };
+        }
         break;
 
       case "board_of_directors":
@@ -900,18 +919,20 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.board = {
-          headlineBullets: boardParagraphs,
-          lowestSupport: section.lowest_support?.map((ls: any) =>
-            `${ls.nominee} – ${ls.support_pct}%`
-          ),
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (boardParagraphs.length > 0 || section.lowest_support || section.voting_rationales) {
+          report.board = {
+            headlineBullets: boardParagraphs,
+            lowestSupport: section.lowest_support?.map((ls: any) =>
+              `${ls.nominee} – ${ls.support_pct}%`
+            ),
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "say_on_pay":
@@ -921,15 +942,17 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
           !p.toLowerCase().includes('voting rationale')
         );
 
-        report.sop = {
-          headlineBullets: sopParagraphs,
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal || '',
-            notes: r.notes
-          })) || [],
-        };
+        if (sopParagraphs.length > 0 || section.voting_rationales) {
+          report.sop = {
+            headlineBullets: sopParagraphs,
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal || '',
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "voting_rationale":
@@ -968,23 +991,27 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         break;
 
       case "auditor_ratification":
-        report.auditor = {
-          headlineBullets: section.paragraphs || [],
-          rationales: section.voting_rationales?.map((r: any) => ({
-            investor: r.investor,
-            vote: r.vote,
-            proposal: r.proposal,
-            notes: r.notes
-          })) || [],
-        };
+        if (section.paragraphs?.length > 0 || section.voting_rationales) {
+          report.auditor = {
+            headlineBullets: section.paragraphs || [],
+            rationales: section.voting_rationales?.map((r: any) => ({
+              investor: r.investor,
+              vote: r.vote,
+              proposal: r.proposal,
+              notes: r.notes
+            })) || [],
+          };
+        }
         break;
 
       case "shareholder_proposals":
-        report.shareholderProposals = {
-          headlineBullets: section.paragraphs || [],
-          selected: section.selected_support_levels || [],
-          proposalVotes: section.shareholder_proposal_votes || [],
-        };
+        if (section.paragraphs?.length > 0 || section.selected_support_levels || section.shareholder_proposal_votes) {
+          report.shareholderProposals = {
+            headlineBullets: section.paragraphs || [],
+            selected: section.selected_support_levels || [],
+            proposalVotes: section.shareholder_proposal_votes || [],
+          };
+        }
         break;
     }
   });
@@ -993,6 +1020,8 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
 }
 
 export default function CompanyOverview() {
+  const dispatch = useAppDispatch();
+
   const { companyGlobalSearchId, user } = useAppSelector(
     (state: RootState) => state.authentiction
   );
@@ -1003,10 +1032,93 @@ export default function CompanyOverview() {
 
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [yearsLoading, setYearsLoading] = useState(false);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
 
   const canViewRestrictedTabs = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
+
+  const handleCompanySwitch = useCallback(() => {
+    setAvailableYears([]);
+    setSelectedYear(null);
+    setActiveOverviewTab('investor_summary');
+    setQuery('');
+  }, []);
+
+  const handleYearSwitch = useCallback((year: number | null) => {
+    setSelectedYear(year);
+    setActiveOverviewTab('investor_summary');
+  }, []);
+
+  const cacheInvalidationOptions = useMemo(() => ({
+    onCompanyChange: (oldId: number | undefined, newId: number) => {
+      console.log(`💾 Company changed cache invalidation: ${oldId} → ${newId}`);
+      handleCompanySwitch();
+    },
+    onYearChange: (oldYear: number | undefined, newYear: number) => {
+      console.log(`💾 Year changed cache invalidation: ${oldYear} → ${newYear}`);
+    },
+  }), [handleCompanySwitch]);
+
+  // Setup cache invalidation on company/year changes
+  useCacheInvalidation(companyGlobalSearchId, selectedYear, cacheInvalidationOptions);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadYears = async () => {
+      if (!companyGlobalSearchId) {
+        handleCompanySwitch();
+        return;
+      }
+
+      handleCompanySwitch();
+      setYearsLoading(true);
+      try {
+        const years = await dashboardService.getCompanyOverviewYears(companyGlobalSearchId);
+        if (!isMounted) return;
+
+        setAvailableYears(years);
+        const nextYear = years[0] ?? null;
+        handleYearSwitch(nextYear);
+      } catch (error) {
+        console.error("Failed to load company overview years:", error);
+        if (isMounted) {
+          handleCompanySwitch();
+        }
+      } finally {
+        if (isMounted) {
+          setYearsLoading(false);
+        }
+      }
+    };
+
+    loadYears();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [companyGlobalSearchId]);
+
+  useEffect(() => {
+    if (!companyGlobalSearchId || !selectedYear) return;
+
+    dispatch(
+      fetchCompanyOverview(
+        `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
+      )
+    );
+
+    if (canViewRestrictedTabs) {
+      dispatch(
+        fetchCompanyOverviewGPT(
+          `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
+        )
+      );
+    }
+  }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs]);
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {
@@ -1505,18 +1617,264 @@ export default function CompanyOverview() {
     });
   }, [reports, query]);
 
+  const isOverviewLoading = yearsLoading || companyOverviewLoading;
+
 
 
   return (
     <>
-      {companyOverviewLoading ? (
-        <div className="flex items-center justify-center bg-white p-10 mt-3.5 border rounded-md">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
+      {isOverviewLoading ? (
+        <>
+          {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
+          {canViewRestrictedTabs && (
+            <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white backdrop-blur-md ps-6 shadow-lg">
+              <button
+                onClick={() => setActiveOverviewTab('investor_summary')}
+                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
+                    ? 'border-primary text-primary bg-white'
+                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+              >
+                Summary
+              </button>
+
+              <button
+                onClick={() => setActiveOverviewTab('governance')}
+                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'governance'
+                    ? 'border-primary text-primary bg-white'
+                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+              >
+                Governance Profile
+              </button>
+
+              <button
+                onClick={() => setActiveOverviewTab('compensation')}
+                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
+                    ? 'border-primary text-primary bg-white'
+                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                  }`}
+              >
+                Compensation
+              </button>
+            </div>
+          )}
+
+          <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
+            <div className="mx-auto space-y-6">
+              {activeOverviewTab === 'investor_summary' && (
+                <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
+                      Key Governance & Investor Summary
+                    </h1>
+                    {(yearsLoading || availableYears.length > 0) && (
+                      <div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {yearsLoading
+                            ? [0, 1].map((index) => (
+                              <span
+                                key={`year-loading-${index}`}
+                                className="inline-block h-10 w-20 animate-pulse rounded-xl bg-slate-200"
+                              />
+                            ))
+                            : availableYears.map((year) => {
+                              const isActiveYear = selectedYear === year;
+                              return (
+                                <button
+                                  key={year}
+                                  type="button"
+                                  onClick={() => handleYearSwitch(year)}
+                                  className={cx(
+                                    "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
+                                    isActiveYear
+                                      ? "border-[#b01217] bg-[#b01217] text-white"
+                                      : "border-[#d9c2c8] bg-[#f3e7eb] text-[#b05b72] hover:bg-[#efdde3]"
+                                  )}
+                                  aria-pressed={isActiveYear}
+                                >
+                                  {year}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="gap-2"
+                      disabled
+                    >
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </Button>
+                  </div>
+                </header>
+              )}
+
+              {activeOverviewTab === 'investor_summary' ? (
+                <div className="grid gap-6 md:grid-cols-12">
+                  <Card className="rounded-2xl shadow-sm md:col-span-4">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-[15px] text-slate-900">
+                        <div className="h-5 w-44 animate-pulse rounded bg-slate-200" />
+                      </CardTitle>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className="rounded-full" variant="outline">
+                          <span className="h-4 w-14 animate-pulse rounded bg-slate-200" />
+                        </Badge>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-4">
+                      <div className="rounded-xl border bg-white p-3">
+                        <SectionHeader
+                          title="Share Price Takeaway"
+                          icon={<BarChart3 className="h-4 w-4" />}
+                        />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-4 w-[96%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border bg-white p-3">
+                        <SectionHeader
+                          title="Proxy Advisor Influence"
+                          icon={<ShieldCheck className="h-4 w-4" />}
+                        />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+                          <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {Array.from({ length: 3 }).map((_, idx) => (
+                            <div
+                              key={`proxy-bucket-skeleton-${idx}`}
+                              className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                            >
+                              <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                              <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-6 md:col-span-8">
+                    <CollapsibleCard title="Board of Directors" iconKey="board" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[84%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[76%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[72%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard
+                      title="Executive Compensation (Say-on-Pay)"
+                      iconKey="sop"
+                      defaultOpen
+                    >
+                      <div className="space-y-2">
+                        <div className="h-4 w-[86%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-36 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[80%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard title="Auditor Ratification" iconKey="auditor" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+
+                    <CollapsibleCard title="Shareholder Proposals" iconKey="sp" defaultOpen>
+                      <div className="space-y-2">
+                        <div className="h-4 w-[90%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+                      <div className="space-y-2 mt-3">
+                        <div className="h-4 w-[78%] animate-pulse rounded bg-slate-200" />
+                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
+                      </div>
+                    </CollapsibleCard>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-12">
+                  <div className="rounded-2xl shadow-sm md:col-span-4 bg-white border border-gray-200 p-6 space-y-4">
+                    <div>
+                      <div className="h-5 w-48 animate-pulse rounded bg-slate-200 mb-2" />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="h-6 w-32 animate-pulse rounded-full bg-slate-200" />
+                      </div>
+                    </div>
+                    <div className="rounded-xl border bg-white p-3 space-y-2">
+                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="rounded-xl border bg-white p-3 space-y-2">
+                      <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
+                        <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {Array.from({ length: 3 }).map((_, idx) => (
+                          <div
+                            key={`proxy-bucket-skeleton-${idx}`}
+                            className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
+                          >
+                            <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                            <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 md:col-span-8">
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <div key={`section-skeleton-${idx}`} className="rounded-xl border bg-white overflow-hidden">
+                        <div className="flex items-center justify-between border-b px-4 py-4">
+                          <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
+                        </div>
+                        <div className="p-4 space-y-3">
+                          <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
+                          <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
+                          <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       ) : !companyGlobalSearchId ? (
         <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 text-center">
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -1571,9 +1929,41 @@ export default function CompanyOverview() {
               {activeOverviewTab === 'investor_summary' && (
                 <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <h1 className="mt-2 text-xl font-bold tracking-tight">
+                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
                       Key Governance & Investor Summary
                     </h1>
+                    {(yearsLoading || availableYears.length > 0) && (
+                      <div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {yearsLoading
+                            ? [0, 1].map((index) => (
+                              <span
+                                key={`year-loading-${index}`}
+                                className="inline-block h-10 w-20 animate-pulse rounded-xl bg-slate-200"
+                              />
+                            ))
+                            : availableYears.map((year) => {
+                              const isActiveYear = selectedYear === year;
+                              return (
+                                <button
+                                  key={year}
+                                  type="button"
+                                  onClick={() => setSelectedYear(year)}
+                                  className={cx(
+                                    "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
+                                    isActiveYear
+                                      ? "border-red-800 bg-red-800 text-white"
+                                      : "border-[#d9c2c8] bg-[#f3e7eb] text-[#b05b72] hover:bg-[#efdde3]"
+                                  )}
+                                  aria-pressed={isActiveYear}
+                                >
+                                  {year}
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -1584,7 +1974,7 @@ export default function CompanyOverview() {
                           generatePDF(filtered[0]);
                         }
                       }}
-                      disabled={loading ? true : (filtered.length === 0 || companyOverviewLoading)}
+                      disabled={loading ? true : (filtered.length === 0 || isOverviewLoading)}
                     >
                       <Download className="h-4 w-4" />
                       {loading ? "Downloading..." : "Download PDF"}
@@ -1618,23 +2008,28 @@ export default function CompanyOverview() {
                                   {r.company}
                                 </CardTitle>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge className="rounded-full" variant="outline">
-                                    As of {r.asOf}
-                                  </Badge>
-                                </div>
+                                {r.sharePriceTakeaway && r.asOf && (
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge className="rounded-full" variant="outline">
+                                      As of {r.asOf}
+                                    </Badge>
+                                  </div>                                  
+                                  )}
                               </CardHeader>
 
+
                               <CardContent className="space-y-4">
-                                <div className="rounded-xl border bg-white p-3">
-                                  <SectionHeader
-                                    title="Share Price Takeaway"
-                                    icon={<BarChart3 className="h-4 w-4" />}
-                                  />
-                                  <p className="mt-3 text-[15px] text-slate-700">
-                                    {r.sharePriceTakeaway}
-                                  </p>
-                                </div>
+                                {r.sharePriceTakeaway && (
+                                  <div className="rounded-xl border bg-white p-3">
+                                    <SectionHeader
+                                      title="Share Price Takeaway"
+                                      icon={<BarChart3 className="h-4 w-4" />}
+                                    />
+                                    <p className="mt-3 text-[15px] text-slate-700">
+                                      {r.sharePriceTakeaway}
+                                    </p>
+                                  </div>
+                                )}
 
                                 {r.proxy ? (
                                   <div className="rounded-xl border bg-white p-3">

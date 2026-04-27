@@ -44,6 +44,11 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
             const yesNo = row["Yes/No"];
             const isYes = typeof yesNo === "boolean" ? yesNo : yesNo?.toLowerCase() === "yes";
             const isNo = typeof yesNo === "boolean" ? !yesNo : yesNo?.toLowerCase() === "no";
+            const fontTone = (row.Font || "").toLowerCase();
+            const yesNoColorClass =
+              fontTone === "red" ? "text-red-700 font-semibold" : "text-slate-900 font-medium";
+            const sourceName = row.Source?.name;
+            const sourceLink = row.Source?.link;
 
             return (
               <tr
@@ -53,7 +58,7 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
                 <td className="px-4 py-3 text-[14px] text-slate-900 font-medium">
                   {row.Category}
                 </td>
-                <td className="px-4 py-3 text-[14px] text-slate-700">
+                <td className={`px-4 py-3 text-[14px] ${yesNoColorClass}`}>
                   {isYes ? (
                     <span>Yes</span>
                   ) : isNo ? (
@@ -65,7 +70,23 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
                 <td className="px-4 py-3 text-[14px] text-slate-700 break-words">
                   {row["Key Provisions"]}
                 </td>
-                <td className="text-center">-</td>
+                <td className="px-4 py-3 text-[14px] text-slate-700">
+                  {sourceName && sourceLink ? (
+                    <a
+                      href={sourceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                    >
+                      {sourceName}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : sourceName ? (
+                    <span>{sourceName}</span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </td>
               </tr>
             );
           })}
@@ -93,7 +114,7 @@ function FilingLink({
         <p className="text-[14px] font-medium text-slate-900">{label}</p>
       </div>
 
-      <div className="col-span-5 flex justify-center">
+      <div className="col-span-5 flex justify-left">
         <div className="flex flex-wrap items-center justify-center gap-1 text-[13px]">
           {items.map((item, idx) => (
             <React.Fragment key={`${label}-${idx}`}>

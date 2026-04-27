@@ -50,14 +50,23 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     yearFromQuery || ""
   );
 
+  const resetCompanyScopedState = useCallback(() => {
+    setSelectedYear(yearFromQuery || "");
+    setHasLoadingStarted(false);
+    setHasNotifiedLoaded(false);
+    lastRequestedYearRef.current = "";
+  }, [yearFromQuery]);
+
   // Ensure selectedYear is set to a valid year on first load, but only after agmSummaryDetails loads
   useEffect(() => {
+    resetCompanyScopedState();
+
     if (agmSummaryDetails?.Year && selectedYear !== agmSummaryDetails.Year.toString()) {
       setSelectedYear(agmSummaryDetails.Year.toString());
     } else if (!selectedYear && agmSummaryDetails?.total_year?.length > 0) {
       setSelectedYear(agmSummaryDetails.total_year[0].toString());
     }
-  }, [agmSummaryDetails]);
+  }, [agmSummaryDetails, resetCompanyScopedState]);
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");

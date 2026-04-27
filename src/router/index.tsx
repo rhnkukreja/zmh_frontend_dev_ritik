@@ -116,6 +116,8 @@ import NewsletterV2 from "@/pages/NewsletterV2";
 import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
 import CaseStudiesAI from "@/pages/CaseStudiesAI";
 
+const ProtectedLayout = withAuth(Layout);
+
 
 function Router() {
   const TitleManager = () => {
@@ -156,7 +158,7 @@ function Router() {
   const routes: any = [
     {
       path: "/",
-      element: React.createElement(withAuth(Layout)),
+      element: <ProtectedLayout />,
       children: [
         {
           path: "/",
