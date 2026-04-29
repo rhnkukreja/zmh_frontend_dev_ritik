@@ -1036,6 +1036,7 @@ export default function CompanyOverview() {
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const lastRequestedYearRef = useRef<string>("");
+  const isCompanyYearsLoadingRef = useRef(false);
 
   const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
 
@@ -1072,10 +1073,12 @@ export default function CompanyOverview() {
 
     const loadYears = async () => {
       if (!companyGlobalSearchId) {
+        isCompanyYearsLoadingRef.current = false;
         handleCompanySwitch();
         return;
       }
 
+      isCompanyYearsLoadingRef.current = true;
       handleCompanySwitch();
       setYearsLoading(true);
       try {
@@ -1094,6 +1097,7 @@ export default function CompanyOverview() {
         if (isMounted) {
           setYearsLoading(false);
         }
+        isCompanyYearsLoadingRef.current = false;
       }
     };
 
@@ -1106,6 +1110,8 @@ export default function CompanyOverview() {
 
   useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
+    if (isCompanyYearsLoadingRef.current) return;
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) return;
 
     const requestKey = `${companyGlobalSearchId}:${selectedYear}`;
     if (lastRequestedYearRef.current === requestKey) {
@@ -1626,7 +1632,7 @@ export default function CompanyOverview() {
   }, [reports, query]);
 
   const isOverviewLoading = yearsLoading || companyOverviewLoading;
-  const shouldShowInitialOverviewLoading = yearsLoading || (companyOverviewLoading && reports.length === 0);
+  const shouldShowInitialOverviewLoading = isOverviewLoading;
 
 
 

@@ -243,6 +243,15 @@ function Main() {
       updatedFilters[removeKey] = "";
     }
 
+    // Clear searchTerms if institution filter is being removed
+    if (removeKey === "institution_name") {
+      setSearchTerms(
+        Array.isArray(updatedFilters[removeKey])
+          ? updatedFilters[removeKey]
+          : []
+      );
+    }
+
     setValue(removeKey, updatedFilters[removeKey]);
     Object.entries(updatedFilters).forEach(([key, value]) => {
       dispatch(setFilter({ key: key as any, value }));
