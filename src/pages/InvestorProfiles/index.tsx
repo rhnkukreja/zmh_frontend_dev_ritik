@@ -378,7 +378,7 @@ function Main() {
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 first:rounded-l-md">
                         Institution
                       </Table.Td>
-                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 whitespace-normal">
                         Proxy Advisory Influence
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
@@ -400,8 +400,8 @@ function Main() {
                             <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
                               <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[80%]" />
                             </Table.Td>
-                            <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                              <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[60%] mx-auto" />
+                            <Table.Td className="py-4 px-4 bg-white shadow-md">
+                              <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[60%]" />
                             </Table.Td>
                             <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
                               <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
@@ -437,14 +437,10 @@ function Main() {
                               {profile.institution || profile.institution_name}
                             </span>
                           </Table.Td>
-                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                            {profile.proxy_advisor_influence ? (
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary whitespace-nowrap">
-                                {profile.proxy_advisor_influence}
-                              </span>
-                            ) : (
-                              <span className="text-slate-300 text-xs">—</span>
-                            )}
+                          <Table.Td className="py-4 px-4 bg-white shadow-md">
+                            <span className="text-slate-600 text-sm font-medium">
+                              {profile.proxy_advisor_influence || '—'}
+                            </span>
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
                             <Lucide

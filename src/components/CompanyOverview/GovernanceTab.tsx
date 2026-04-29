@@ -388,7 +388,7 @@ export default function GovernanceTab({
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-center">
         <p className="text-[15px] text-slate-600">
-          No governance data available for {ticker}.
+          Governance data in processing
         </p>
       </div>
     );
