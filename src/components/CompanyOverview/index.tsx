@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -1035,16 +1035,20 @@ export default function CompanyOverview() {
   const [yearsLoading, setYearsLoading] = useState(false);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const lastRequestedYearRef = useRef<string>("");
+  const isCompanyYearsLoadingRef = useRef(false);
 
   const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
 
   const canViewRestrictedTabs = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
+  const canViewCompensation = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
 
   const handleCompanySwitch = useCallback(() => {
     setAvailableYears([]);
     setSelectedYear(null);
     setActiveOverviewTab('investor_summary');
     setQuery('');
+    lastRequestedYearRef.current = "";
   }, []);
 
   const handleYearSwitch = useCallback((year: number | null) => {
@@ -1070,10 +1074,12 @@ export default function CompanyOverview() {
 
     const loadYears = async () => {
       if (!companyGlobalSearchId) {
+        isCompanyYearsLoadingRef.current = false;
         handleCompanySwitch();
         return;
       }
 
+      isCompanyYearsLoadingRef.current = true;
       handleCompanySwitch();
       setYearsLoading(true);
       try {
@@ -1092,6 +1098,7 @@ export default function CompanyOverview() {
         if (isMounted) {
           setYearsLoading(false);
         }
+        isCompanyYearsLoadingRef.current = false;
       }
     };
 
@@ -1104,6 +1111,14 @@ export default function CompanyOverview() {
 
   useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
+    if (isCompanyYearsLoadingRef.current) return;
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) return;
+
+    const requestKey = `${companyGlobalSearchId}:${selectedYear}`;
+    if (lastRequestedYearRef.current === requestKey) {
+      return;
+    }
+    lastRequestedYearRef.current = requestKey;
 
     dispatch(
       fetchCompanyOverview(
@@ -1618,36 +1633,42 @@ export default function CompanyOverview() {
   }, [reports, query]);
 
   const isOverviewLoading = yearsLoading || companyOverviewLoading;
+  const shouldShowInitialOverviewLoading = isOverviewLoading;
 
 
 
   return (
     <>
-      {isOverviewLoading ? (
+      {shouldShowInitialOverviewLoading ? (
         <>
           {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
-          {canViewRestrictedTabs && (
-            <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white backdrop-blur-md ps-6 shadow-lg">
-              <button
-                onClick={() => setActiveOverviewTab('investor_summary')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Summary
-              </button>
+          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full relative">
+            <div className="pointer-events-none absolute inset-x-0 -top-4 h-4 bg-white" />
+            <div className="pointer-events-none absolute inset-x-0 -bottom-3 h-3 bg-white" />
+            <button
+              onClick={() => setActiveOverviewTab('investor_summary')}
+              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              Summary
+            </button>
 
-              <button
-                onClick={() => setActiveOverviewTab('governance')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'governance'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Governance Profile
-              </button>
+            <button
+              onClick={() => setActiveOverviewTab('governance')}
+              className={`relative flex items-center justify-center gap-2 rounded-lg border px-5 py-2 text-[14px] font-semibold transition-colors ${activeOverviewTab === 'governance'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              <span>Governance Profile</span>
+              <span className="pointer-events-none absolute -top-2 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[8px] font-bold uppercase tracking-[0.14em] text-white shadow-sm animate-pulse">
+                BETA
+              </span>
+            </button>
 
+            {canViewCompensation && (
               <button
                 onClick={() => setActiveOverviewTab('compensation')}
                 className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
@@ -1657,8 +1678,8 @@ export default function CompanyOverview() {
               >
                 Compensation
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
             <div className="mx-auto space-y-6">
@@ -1888,28 +1909,33 @@ export default function CompanyOverview() {
         <>
           {/* STICKY COMPANY OVERVIEW TABS */}
           {/* Note: You may need to adjust "top-[180px]" up or down depending on the exact pixel height of your main header */}
-          {canViewRestrictedTabs && (
-            <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white backdrop-blur-md ps-6 shadow-lg">
-              <button
-                onClick={() => setActiveOverviewTab('investor_summary')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Summary
-              </button>
+          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full relative">
+            <div className="pointer-events-none absolute inset-x-0 -top-4 h-4 bg-white" />
+            <div className="pointer-events-none absolute inset-x-0 -bottom-3 h-3 bg-white" />
+            <button
+              onClick={() => setActiveOverviewTab('investor_summary')}
+              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              Summary
+            </button>
 
-              <button
-                onClick={() => setActiveOverviewTab('governance')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'governance'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Governance Profile
-              </button>
+            <button
+              onClick={() => setActiveOverviewTab('governance')}
+              className={`relative flex items-center justify-center gap-2 rounded-lg border px-5 py-2 text-[14px] font-semibold transition-colors ${activeOverviewTab === 'governance'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              <span>Governance Profile</span>
+              <span className="pointer-events-none absolute -top-2 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[8px] font-bold uppercase tracking-[0.14em] text-white shadow-sm animate-pulse">
+                BETA
+              </span>
+            </button>
 
+            {canViewCompensation && (
               <button
                 onClick={() => setActiveOverviewTab('compensation')}
                 className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
@@ -1919,8 +1945,8 @@ export default function CompanyOverview() {
               >
                 Compensation
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
 
           <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
@@ -1966,6 +1992,9 @@ export default function CompanyOverview() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    {companyOverviewLoading && !yearsLoading ? (
+                      <span className="text-[13px] font-medium text-slate-500">Updating...</span>
+                    ) : null}
                     <Button
                       variant="outline"
                       className="gap-2"

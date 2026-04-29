@@ -40,7 +40,6 @@ const categories = [
   "Climate Related",
   "Proxy Voting Stats",
   "Voting Choice",
-  "Voting guidelines",
   "Company Specific Engagement Stats",
   "Stewardship Report",
   "ESG Integration",

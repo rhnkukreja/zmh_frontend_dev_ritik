@@ -119,7 +119,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
       // policy_guidelines:
       //   selectedProxyVotingGuideline?.policy_guidelines || "",
       policy_type: selectedProxyVotingGuideline?.policy_type || "",
-      active: selectedProxyVotingGuideline?.active,
+      active: selectedProxyVotingGuideline?.active ?? true,
     },
   });
 
@@ -128,6 +128,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
     const transformedData = {
       ...data,
       institution: data.institution ? Number(data.institution) : null,
+      active: typeof data.active === 'undefined' ? true : data.active,
     };
 
     if (!guideLinePdf) {
@@ -332,7 +333,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                 />
               </div>
 
-              <div className="w-full">
+              {/* <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
                   Active
                 </FormCheck.Label>
@@ -386,7 +387,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
                     {errors.active.message}
                   </Error>
                 )}
-              </div>
+              </div> */}
 
               {/* <div className="w-full">
                 <FormCheck.Label className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left">
