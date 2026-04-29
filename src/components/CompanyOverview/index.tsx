@@ -1663,7 +1663,7 @@ export default function CompanyOverview() {
                 }`}
             >
               <span>Governance Profile</span>
-              <span className="pointer-events-none absolute -top-1.5 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[7px] font-bold uppercase tracking-[0.2em] text-white shadow-sm animate-pulse">
+              <span className="pointer-events-none absolute -top-2 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[8px] font-bold uppercase tracking-[0.14em] text-white shadow-sm animate-pulse">
                 BETA
               </span>
             </button>
@@ -1930,7 +1930,7 @@ export default function CompanyOverview() {
                 }`}
             >
               <span>Governance Profile</span>
-              <span className="pointer-events-none absolute -top-1.5 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[7px] font-bold uppercase tracking-[0.2em] text-white shadow-sm animate-pulse">
+              <span className="pointer-events-none absolute -top-2 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[8px] font-bold uppercase tracking-[0.14em] text-white shadow-sm animate-pulse">
                 BETA
               </span>
             </button>
