@@ -1642,9 +1642,7 @@ export default function CompanyOverview() {
       {shouldShowInitialOverviewLoading ? (
         <>
           {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
-          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full relative">
-            <div className="pointer-events-none absolute inset-x-0 -top-4 h-4 bg-white" />
-            <div className="pointer-events-none absolute inset-x-0 -bottom-3 h-3 bg-white" />
+          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
             <button
               onClick={() => setActiveOverviewTab('investor_summary')}
               className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
@@ -1909,9 +1907,7 @@ export default function CompanyOverview() {
         <>
           {/* STICKY COMPANY OVERVIEW TABS */}
           {/* Note: You may need to adjust "top-[180px]" up or down depending on the exact pixel height of your main header */}
-          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full relative">
-            <div className="pointer-events-none absolute inset-x-0 -top-4 h-4 bg-white" />
-            <div className="pointer-events-none absolute inset-x-0 -bottom-3 h-3 bg-white" />
+          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
             <button
               onClick={() => setActiveOverviewTab('investor_summary')}
               className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
