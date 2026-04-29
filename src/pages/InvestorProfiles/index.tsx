@@ -190,14 +190,15 @@ function Main() {
 
   const handleVotingGuidelinesClick = (profile: InvestersProfile) => {
     if (profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0) {
-      if (profile.voting_guideline_docs.length === 1) {
+      if (profile.voting_guideline_docs.length === 1 && !profile.proxy_voting_key_changes) {
         window.open(profile.voting_guideline_docs[0].link, '_blank', 'noopener,noreferrer');
         return;
       }
 
       setSelectedVotingGuidelines({
         institution_name: profile.institution || profile.institution_name,
-        docs: profile.voting_guideline_docs
+        docs: profile.voting_guideline_docs,
+        key_changes: profile.proxy_voting_key_changes
       });
       setVotingGuidelinesModalOpen(true);
     }
@@ -366,8 +367,8 @@ function Main() {
               <div className="overflow-auto xl:overflow-visible px-5">
                 <Table className="w-full table-fixed border-spacing-y-[10px] border-separate -mt-2">
                   <colgroup>
-                    <col className="w-[40%]" />
-                    <col className="w-[15%]" />
+                    <col className="w-[35%]" />
+                    <col className="w-[20%]" />
                     <col className="w-[15%]" />
                     <col className="w-[15%]" />
                     <col className="w-[15%]" />
@@ -378,10 +379,10 @@ function Main() {
                         Institution
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
-                        Investor Profile
+                        Proxy Advisory Influence
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
-                        Key Voting Guidelines Changes
+                        Investor Profile
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal">
                         Voting Guidelines
@@ -400,7 +401,7 @@ function Main() {
                               <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[80%]" />
                             </Table.Td>
                             <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+                              <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[60%] mx-auto" />
                             </Table.Td>
                             <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
                               <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
@@ -437,22 +438,20 @@ function Main() {
                             </span>
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+                            {profile.proxy_advisor_influence ? (
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary whitespace-nowrap">
+                                {profile.proxy_advisor_influence}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 text-xs">—</span>
+                            )}
+                          </Table.Td>
+                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
                             <Lucide
                               onClick={() => gotoDetailPage(profile.investor_profile_id)}
                               icon="Briefcase"
                               className={`w-4 h-4 stroke-[1.3] mx-auto ${
                                 profile.investor_profile_id
-                                  ? 'cursor-pointer hover:text-primary'
-                                  : 'opacity-30 cursor-not-allowed'
-                              }`}
-                            />
-                          </Table.Td>
-                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                            <Lucide
-                              onClick={() => handleKeyChangesClick(profile)}
-                              icon="GitCompare"
-                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
-                                profile.proxy_voting_key_changes
                                   ? 'cursor-pointer hover:text-primary'
                                   : 'opacity-30 cursor-not-allowed'
                               }`}
@@ -488,7 +487,7 @@ function Main() {
                       ))
                     ) : (
                       <Table.Tr>
-                        <Table.Td colSpan={5} className="py-12 text-center bg-white shadow-md rounded-md">
+                        <Table.Td colSpan={5} className="py-12 text-center bg-white shadow-md rounded-md"> 
                           <div className="flex flex-col items-center justify-center">
                             <Lucide icon="FileSearch" className="w-12 h-12 text-gray-300 mb-2" />
                             <div className="text-lg font-medium">No data found</div>
@@ -740,7 +739,7 @@ function Main() {
 
           {votingGuidelinesModalOpen && (
             <Dialog
-              size="lg"
+              size="xl"
               open={votingGuidelinesModalOpen}
               onClose={() => {
                 setVotingGuidelinesModalOpen(false);
@@ -748,22 +747,43 @@ function Main() {
               }}
             >
               <Dialog.Panel>
-                <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
-                  <div className="flex-1">
-                    <h2 className="text-2xl font-bold">{selectedVotingGuidelines?.institution_name}</h2>
-                    <div className="flex items-center gap-2 mt-1 opacity-90 text-sm">
-                      <span>Voting Guidelines</span>
+                <Dialog.Title className="bg-primary px-7 py-5 !text-white rounded-t-lg relative">
+                  <div className="flex items-center gap-4 pr-48">
+                    <div className="w-11 h-11 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+                      <Lucide icon="ScrollText" className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold leading-tight">{selectedVotingGuidelines?.institution_name}</h2>
+                      <p className="text-white/80 text-sm mt-1">Voting Guidelines</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      setVotingGuidelinesModalOpen(false);
-                      setSelectedVotingGuidelines(null);
-                    }}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                  >
-                    <Lucide icon="X" className="w-5 h-5" />
-                  </button>
+                  <div className="absolute top-5 right-7 flex items-center gap-2.5">
+                    {selectedVotingGuidelines?.key_changes && (
+                      <button
+                        onClick={() => {
+                          setSelectedKeyChanges({
+                            institution_name: selectedVotingGuidelines?.institution_name,
+                            key_changes: selectedVotingGuidelines?.key_changes
+                          });
+                          setVotingGuidelinesModalOpen(false);
+                          setKeyChangesModalOpen(true);
+                        }}
+                        className="flex items-center gap-2 bg-white hover:bg-white/95 text-primary font-semibold text-sm px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg whitespace-nowrap"
+                      >
+                        <Lucide icon="GitCompare" className="w-4 h-4" />
+                        Key Changes
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setVotingGuidelinesModalOpen(false);
+                        setSelectedVotingGuidelines(null);
+                      }}
+                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    >
+                      <Lucide icon="X" className="w-5 h-5" />
+                    </button>
+                  </div>
                 </Dialog.Title>
                 <Dialog.Description className="p-0">
                   <div className="overflow-auto max-h-[70vh]">
