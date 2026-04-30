@@ -1047,14 +1047,12 @@ export default function CompanyOverview() {
   const handleCompanySwitch = useCallback(() => {
     setAvailableYears([]);
     setSelectedYear(null);
-    setActiveOverviewTab('investor_summary');
     setQuery('');
     lastRequestedYearRef.current = "";
   }, []);
 
   const handleYearSwitch = useCallback((year: number | null) => {
     setSelectedYear(year);
-    setActiveOverviewTab('investor_summary');
   }, []);
 
   const cacheInvalidationOptions = useMemo(() => ({
@@ -1636,6 +1634,59 @@ export default function CompanyOverview() {
   const isOverviewLoading = yearsLoading || companyOverviewLoading;
   const shouldShowInitialOverviewLoading = isOverviewLoading;
 
+  const renderActiveOverviewContent = () => {
+    if (activeOverviewTab === 'investor_summary') {
+      return (
+        <CompanyOverviewSummaryTab
+          filtered={filtered}
+          yearsLoading={yearsLoading}
+          availableYears={availableYears}
+          selectedYear={selectedYear}
+          onYearSwitch={handleYearSwitch}
+          onDownloadPdf={generatePDF}
+          downloadLoading={loading}
+          companyOverviewLoading={companyOverviewLoading}
+        />
+      );
+    }
+
+    if (activeOverviewTab === 'governance') {
+      return (
+        <div className="mt-4">
+          <GovernanceTab
+            key={`gov-${companyGlobalSearchId ?? 'none'}`}
+            companyId={companyGlobalSearchId}
+          />
+        </div>
+      );
+    }
+
+    if (activeOverviewTab === 'compensation') {
+      const activeTicker = filtered[0]?.ticker || "";
+
+      if (!activeTicker) {
+        return (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
+            <div className="mt-4 space-y-3">
+              <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+              <div className="h-4 w-[78%] animate-pulse rounded bg-slate-200" />
+              <div className="h-4 w-[86%] animate-pulse rounded bg-slate-200" />
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="mt-4">
+          <CompensationTab key={`comp-${activeTicker || 'none'}`} ticker={activeTicker} />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
 
 
   return (
@@ -1662,7 +1713,7 @@ export default function CompanyOverview() {
                 }`}
             >
               <span>Governance Profile</span>
-              <span className="pointer-events-none absolute -top-2 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[8px] font-bold uppercase tracking-[0.14em] text-white shadow-sm animate-pulse">
+              <span className="pointer-events-none absolute -top-2 -right-3 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
                 BETA
               </span>
             </button>
@@ -1679,16 +1730,9 @@ export default function CompanyOverview() {
               </button>
             )}
           </div>
-          <CompanyOverviewSummaryTab
-            filtered={filtered}
-            yearsLoading={yearsLoading}
-            availableYears={availableYears}
-            selectedYear={selectedYear}
-            onYearSwitch={handleYearSwitch}
-            onDownloadPdf={generatePDF}
-            downloadLoading={loading}
-            companyOverviewLoading={companyOverviewLoading}
-          />
+          <div className="mx-auto space-y-6">
+            {renderActiveOverviewContent()}
+          </div>
         </>
       ) : !companyGlobalSearchId ? (
         <div className="p-8 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center py-20 text-center">
@@ -1722,7 +1766,7 @@ export default function CompanyOverview() {
                 }`}
             >
               <span>Governance Profile</span>
-              <span className="pointer-events-none absolute -top-2 -right-1 inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[8px] font-bold uppercase tracking-[0.14em] text-white shadow-sm animate-pulse">
+              <span className="pointer-events-none absolute -top-2 -right-3 text-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
                 BETA
               </span>
             </button>
@@ -1742,50 +1786,15 @@ export default function CompanyOverview() {
 
 
           <div className="mx-auto space-y-6">
-              {/* ONLY SHOW HEADER ON INVESTOR SUMMARY TAB */}
-              {filtered.length === 0 ? (
-
-                <Card className="rounded-2xl">
-
-                  <CardContent className="py-10 text-center text-[15px] text-slate-600">
-                    No matches. Try a different search term.
-                  </CardContent>
-
-                </Card>
-
-              ) : (
-                <>
-                  {/* INVESTOR SUMMARY VIEW */}
-                  {activeOverviewTab === 'investor_summary' && (
-                    <CompanyOverviewSummaryTab
-                      filtered={filtered}
-                      yearsLoading={yearsLoading}
-                      availableYears={availableYears}
-                      selectedYear={selectedYear}
-                      onYearSwitch={handleYearSwitch}
-                      onDownloadPdf={generatePDF}
-                      downloadLoading={loading}
-                      companyOverviewLoading={companyOverviewLoading}
-                    />
-                  )}
-
-                  {/* COMPENSATION VIEW */}
-                  {activeOverviewTab === 'compensation' && (
-                    <div className="mt-4">
-                      <CompensationTab ticker={filtered[0]?.ticker || ""} />
-                    </div>
-                  )}
-
-                  {activeOverviewTab === 'governance' && (
-                    <div className="mt-4">
-                      <GovernanceTab 
-                        ticker={filtered[0]?.ticker || ""} 
-                        companyId={companyGlobalSearchId}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
+            {activeOverviewTab === 'investor_summary' && filtered.length === 0 ? (
+              <Card className="rounded-2xl">
+                <CardContent className="py-10 text-center text-[15px] text-slate-600">
+                  No matches. Try a different search term.
+                </CardContent>
+              </Card>
+            ) : (
+              renderActiveOverviewContent()
+            )}
           </div>
         </>
       )}
