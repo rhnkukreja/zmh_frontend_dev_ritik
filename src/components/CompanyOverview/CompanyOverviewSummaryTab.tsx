@@ -516,10 +516,10 @@ export default function CompanyOverviewSummaryTab({
                             type="button"
                             onClick={() => onYearSwitch(year)}
                             className={cx(
-                              "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
+                              "w-24 whitespace-nowrap rounded-[0.6rem] font-medium cursor-pointer border transition-colors px-2 py-1.5",
                               isActiveYear
-                                ? "border-[#b01217] bg-[#b01217] text-white"
-                                : "border-[#d9c2c8] bg-[#f3e7eb] text-[#b05b72] hover:bg-[#efdde3]"
+                                ? "border-primary bg-red-800 text-white font-semibold"
+                                : "text-primary bg-primary/10 border-primary/10 hover:bg-primary/20"
                             )}
                             aria-pressed={isActiveYear}
                           >
