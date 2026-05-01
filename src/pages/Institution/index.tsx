@@ -522,8 +522,8 @@ function Main() {
                             )} */}
 
                             {/* Document Tab Column */}
-                            {institution?.id && (
-                              <Table.Td className="py-2  bg-white border-slate-200/80">
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {institution?.id ? (
                                 <button
                                   onClick={() => {
                                     navigate(`/investor-company-details/${institution.id}`, {
@@ -538,13 +538,10 @@ function Main() {
                                 >
                                   View Documents
                                 </button>
-                              </Table.Td>
-                            )}
-                            {!institution?.investor_profile_id && (
-                              <Table.Td className="py-2  bg-white border-slate-200/80">
+                              ) : (
                                 <span className="text-slate-400 text-sm">-</span>
-                              </Table.Td>
-                            )}
+                              )}
+                            </Table.Td>
                             {/* <Table.Td className="py-2  bg-white border-slate-200/80">
                               {institution.investor_type}
                             </Table.Td> */}

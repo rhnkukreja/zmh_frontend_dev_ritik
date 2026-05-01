@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
 
@@ -6,33 +6,67 @@ interface CompensationTabProps {
   ticker: string;
 }
 
+const compensationDataCache = new Map<string, any | null>();
+
 const CompensationTab: React.FC<CompensationTabProps> = ({ ticker }) => {
   const [secData, setSecData] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const isActiveRef = useRef(true);
 
   useEffect(() => {
-    if (ticker) {
-      fetchCompensationData();
+    isActiveRef.current = true;
+
+    if (!ticker) {
+      setLoading(false);
+      setError(null);
+      setSecData(null);
+      return;
     }
+
+    if (compensationDataCache.has(ticker)) {
+      setSecData(compensationDataCache.get(ticker));
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    fetchCompensationData(ticker);
+
+    return () => {
+      isActiveRef.current = false;
+    };
   }, [ticker]);
 
-  const fetchCompensationData = async () => {
+  const fetchCompensationData = async (currentTicker: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${AI_CHATBOT_API_BASE}/api/compensation/${ticker}`);
+      const response = await axios.get(`${AI_CHATBOT_API_BASE}/api/compensation/${currentTicker}`);
       
       if (response.data.status === "success") {
+        compensationDataCache.set(currentTicker, response.data.data);
+
+        if (!isActiveRef.current) return;
+
         setSecData(response.data.data);
       } else if (response.data.status === "not_found") {
+        compensationDataCache.set(currentTicker, null);
+
+        if (!isActiveRef.current) return;
+
         setSecData(null); 
       }
     } catch (err) {
+      if (!isActiveRef.current) return;
+
       console.error(err);
       setError("Failed to fetch data from the server.");
+    } finally {
+      if (isActiveRef.current) {
+        setLoading(false);
+      }
     }
-    setLoading(false);
   };
 
   // NEW: Smooth scroll function for the Table of Contents hyperlinks

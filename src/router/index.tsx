@@ -117,6 +117,7 @@ import FinalProfileSummary from "../pages/Institution/components/FinalProfileSum
 import CaseStudiesAI from "@/pages/CaseStudiesAI";
 
 const ProtectedLayout = withAuth(Layout);
+const ProtectedAiChatbot = withAuth(() => <ChatProvider><AiChatbot /></ChatProvider>);
 
 
 function Router() {
@@ -580,7 +581,27 @@ function Router() {
           path: "user-management",
           element: <UserManagement />,
           data: { titleName: "User Management - ZMH Analytics" },
-        }        
+        },
+      ],
+    },
+    {
+      element: <ProtectedAiChatbot />,
+      children: [
+        {
+          path: "ai-assistant",
+          element: <QAPage />,
+          data: { titleName: "AI Assistant - ZMH Analytics" },
+        },
+        {
+          path: "ai-assistant/compare-documents",
+          element: <ComparePage />,
+          data: { titleName: "AI Assistant - ZMH Analytics" },
+        },
+        {
+          path: "ai-assistant/voting-guidelines",
+          element: <VotingGuidelinesPage />,
+          data: { titleName: "AI Assistant - ZMH Analytics" },
+        },
       ],
     },
     {
@@ -603,25 +624,6 @@ function Router() {
       path: "final-summary/:id",
       element: <FinalProfileSummary/>,
     },
-    {
-      element: <ChatProvider><AiChatbot /></ChatProvider>,      
-      children: [
-    {
-      path: "ai-assistant",
-      element: <QAPage />,
-      data: { titleName: "AI Assistant - ZMH Analytics" },
-    },
-    {
-      path: "ai-assistant/compare-documents",
-      element: <ComparePage />,
-      data: { titleName: "AI Assistant - ZMH Analytics" },
-    },
-    {
-      path: "ai-assistant/voting-guidelines",
-      element: <VotingGuidelinesPage />,
-      data: { titleName: "AI Assistant - ZMH Analytics" },
-    }]
-  }
   ];
 
   return useRoutes(routes);
