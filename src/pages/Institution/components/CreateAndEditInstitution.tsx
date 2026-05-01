@@ -28,6 +28,7 @@ interface InstitutionFormData {
   investor_type: string;
   contact?: string;
   email?: string;
+  contact_email?: string;
   whale_wisdom_filer_id: string;
   proxy_advisor_influence?: string;
   unpri_signatory?: boolean;
@@ -47,6 +48,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const dispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.institutions);
+  const { user } = useAppSelector((state) => state.authentiction);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [proxyAdvisoryOptions, setProxyAdvisoryOptions] = useState<string[]>(
     selectedInstitution?.proxy_advisor_influence
@@ -70,6 +72,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       investor_type: selectedInstitution?.investor_type || "Investor",
       // contact: selectedInstitution?.contact!,
       // email: selectedInstitution?.email!,
+      contact_email: selectedInstitution?.contact_email || user?.email || "",
       whale_wisdom_filer_id: selectedInstitution?.whale_wisdom_filer_id?.toString() || "",
       proxy_advisor_influence: selectedInstitution?.proxy_advisor_influence || "",
       unpri_signatory: selectedInstitution?.unpri_signatory || false,
@@ -203,7 +206,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Institution Name
+                  Institution Name <span className="text-red-500">*</span>
                 </FormCheck.Label>
                 <Controller
                   name="institution"
@@ -225,7 +228,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
 
               <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Region
+                  Region <span className="text-red-500">*</span>
                 </FormCheck.Label>
 
                 <Controller
@@ -299,7 +302,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
 
               <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Investor Type
+                  Investor Type <span className="text-red-500">*</span>
                 </FormCheck.Label>
                 <Controller
                   name="investor_type"
@@ -341,9 +344,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 <Controller
                   name="whale_wisdom_filer_id"
                   control={control}
-                  rules={{ 
-                    required: watchedInvestorType === "Investor" ? "Whale Wisdom Filer Id is required" : false 
-                  }}
+                  rules={{}}
                   render={({ field }) => (
                     <FormInput
                       placeholder="Enter Whale Wisdom Filer Id"
@@ -356,6 +357,23 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     {errors.whale_wisdom_filer_id.message}
                   </Error>
                 )}
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Contact Email
+                </FormCheck.Label>
+                <Controller
+                  name="contact_email"
+                  control={control}
+                  render={({ field }) => (
+                    <FormInput
+                      placeholder="Enter Contact Email"
+                      type="email"
+                      {...field}
+                    />
+                  )}
+                />
               </div>
 
               <div className="w-full">
