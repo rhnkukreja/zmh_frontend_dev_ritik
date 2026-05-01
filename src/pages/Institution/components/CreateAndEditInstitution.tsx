@@ -48,7 +48,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   const dropzoneSingleRef = useRef<DropzoneElement>(null);
   const dispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.institutions);
-  const { user } = useAppSelector((state) => state.authentiction);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [proxyAdvisoryOptions, setProxyAdvisoryOptions] = useState<string[]>(
     selectedInstitution?.proxy_advisor_influence
@@ -59,8 +58,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   const {
     control,
     handleSubmit,
-    // getValues,
-    // setValue,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<InstitutionFormData>({
@@ -72,7 +70,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       investor_type: selectedInstitution?.investor_type || "Investor",
       // contact: selectedInstitution?.contact!,
       // email: selectedInstitution?.email!,
-      contact_email: selectedInstitution?.contact_email || user?.email || "",
+      contact_email: selectedInstitution?.contact_email || "",
       whale_wisdom_filer_id: selectedInstitution?.whale_wisdom_filer_id?.toString() || "",
       proxy_advisor_influence: selectedInstitution?.proxy_advisor_influence || "",
       unpri_signatory: selectedInstitution?.unpri_signatory || false,
@@ -80,6 +78,16 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   });
 
   const watchedInvestorType = watch("investor_type");
+
+  useEffect(() => {
+    if (selectedInstitution?.id) {
+      dispatch(getSingleInstitution(selectedInstitution.id)).then((action: any) => {
+        if (action.payload?.results?.contact_email) {
+          setValue("contact_email", action.payload.results.contact_email);
+        }
+      });
+    }
+  }, [selectedInstitution?.id]);
 
   useEffect(() => {
     const elDropzoneSingleRef = dropzoneSingleRef.current;
