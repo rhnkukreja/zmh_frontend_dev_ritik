@@ -724,7 +724,7 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                     </sup>
                     <p id="footnote" className="">
                       Source: Whalewisdom. Data as of{" "}
-                      {activeYear === "2024" ? "December 31, 2024" : todayDate}
+                      {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.data_as_of || todayDate}
                     </p>
                   </span>
                   <span className="!pt-3 flex items-center ">
