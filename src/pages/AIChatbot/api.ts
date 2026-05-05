@@ -13,7 +13,7 @@ const CURRENT_ENV: EnvType = Environment.PRODUCTION;
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
-  [Environment.PRODUCTION]: 'https://zmh-chatbot.duckdns.org', // Your Backend URL
+  [Environment.PRODUCTION]: 'https://api-chatbot.zmhadvisors.com',
 };
 
 // Helper function to get the current Base URL
