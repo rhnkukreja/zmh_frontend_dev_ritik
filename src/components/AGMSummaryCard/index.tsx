@@ -607,19 +607,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   return (
     <>
-      {/* RENDER STATE: LOADING */}
-      {agmRequestStatus === 'loading' && (
-        <div className="mt-3.5">
-          <TableWrapper 
-            isLoading={true}
-            rows={4}
-            columns={5}
-          >
-            <div />
-          </TableWrapper>
-        </div>
-      )}
-
       {/* RENDER STATE: ERROR */}
       {agmRequestStatus === 'error' && (
         <div className="p-5 mt-3.5 box bg-white">
@@ -646,7 +633,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       {agmRequestStatus === 'success' && !agmHasData && (
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
             <h1 className="font-semibold">
-              AGM Summary Has Not Been Released
+              No Shareholder Meetings Found for: {companyGlobalSearchName ? companyGlobalSearchName : companyGlobalSearchTicker}.
             </h1>
         </div>
       )}
