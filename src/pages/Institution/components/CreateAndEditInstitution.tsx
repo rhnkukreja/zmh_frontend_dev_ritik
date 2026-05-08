@@ -39,6 +39,14 @@ interface AddEditInstitutionProps {
   selectedInstitution: Institutions | null;
 }
 
+// NEW: Interface for the Whale Wisdom Filer response
+interface WhaleWisdomFiler {
+  id: string | number;
+  name: string;
+  cik: string;
+  link: string;
+}
+
 export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   addEditInstitutionVisible,
   setAddEditInstitutionVisible,
@@ -48,17 +56,23 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   const dispatch = useAppDispatch();
   const { loading, page } = useAppSelector((state) => state.institutions);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isGeneratingId, setIsGeneratingId] = useState(false);
   const [proxyAdvisoryOptions, setProxyAdvisoryOptions] = useState<string[]>(
     selectedInstitution?.proxy_advisor_influence
       ? selectedInstitution.proxy_advisor_influence.split(", ").map(s => s.trim())
       : []
   );
 
+  // NEW: States for the Filer Selection Modal
+  const [filerOptions, setFilerOptions] = useState<WhaleWisdomFiler[]>([]);
+  const [showFilerModal, setShowFilerModal] = useState(false);
+  const [selectedFilerId, setSelectedFilerId] = useState<string>("");
+
   const {
     control,
     handleSubmit,
-    // getValues,
-    // setValue,
+    getValues,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<InstitutionFormData>({
@@ -117,6 +131,63 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       };
     }
   }, [dropzoneSingleRef.current, addEditInstitutionVisible, logoFile]);
+
+  const handleGenerateWhaleWisdomId = async () => {
+    const currentInstitutionName = getValues("institution");
+
+    if (!currentInstitutionName) {
+      toast.error("Please enter an Institution Name first.");
+      return;
+    }
+
+    setIsGeneratingId(true);
+    
+    
+    try {
+      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
+
+      const response = await fetch(`${baseURL}/institute/generate-filer-id/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : "", 
+        },
+        body: JSON.stringify({ institution_name: currentInstitutionName }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.filers && data.filers.length > 0) {
+        setFilerOptions(data.filers);
+        setSelectedFilerId(""); // Reset selection
+        setShowFilerModal(true); // Open Modal
+      } else {
+        toast.error(data.error || "Could not generate Filer ID.");
+      }
+    } catch (error) {
+      toast.error("An error occurred while communicating with the server.");
+    } finally {
+      setIsGeneratingId(false);
+    }
+  };
+
+  const confirmFilerSelection = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent accidental form submission
+    
+    if (!selectedFilerId) {
+      toast.error("Please select a Filer ID from the list.");
+      return;
+    }
+
+    // Auto-fill the main form field
+    setValue("whale_wisdom_filer_id", selectedFilerId, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    
+    setShowFilerModal(false); // Close the popup
+    toast.success("Filer ID Added successfully!");
+  };
 
   const onSubmit = async (data: InstitutionFormData) => {
     const transformedData = {
@@ -181,83 +252,89 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   };
 
   return (
-    <Dialog
-      size="xl"
-      open={addEditInstitutionVisible}
-      onClose={() => setAddEditInstitutionVisible(false)}
-    >
-      <Dialog.Panel>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Dialog.Title>
-            <h2 className="text-xl font-semibold">
-              {selectedInstitution ? "Edit Institution" : "Add New Institution"}
-            </h2>
-            <div
-              onClick={() => setAddEditInstitutionVisible(false)}
-              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
-            >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-            </div>
-          </Dialog.Title>
-          <Dialog.Description className="px-6 py-4 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Institution Name
-                </FormCheck.Label>
-                <Controller
-                  name="institution"
-                  control={control}
-                  rules={{ required: "Institution Name is required" }}
-                  render={({ field, fieldState: { error } }) => (
-                    <>
-                      <FormInput
-                        placeholder="Enter Institution Name"
-                        {...field}
-                      />
-                      {error && (
-                        <Error className="text-red-600 ">{error.message}</Error>
-                      )}
-                    </>
-                  )}
-                />
+    <>
+      <Dialog
+        size="xl"
+        open={addEditInstitutionVisible}
+        onClose={() => {
+          // FIX: Do not allow this modal to close if the Filer Table is currently open!
+          if (!showFilerModal) {
+            setAddEditInstitutionVisible(false);
+          }
+        }}
+      >
+        <Dialog.Panel>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Dialog.Title>
+              <h2 className="text-xl font-semibold">
+                {selectedInstitution ? "Edit Institution" : "Add New Institution"}
+              </h2>
+              <div
+                onClick={() => setAddEditInstitutionVisible(false)}
+                className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+              >
+                <Lucide icon="X" className="w-8 h-8 text-slate-400" />
               </div>
+            </Dialog.Title>
+            <Dialog.Description className="px-6 py-4 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Institution Name <span className="text-red-500">*</span>
+                  </FormCheck.Label>
+                  <Controller
+                    name="institution"
+                    control={control}
+                    rules={{ required: "Institution Name is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <FormInput
+                          placeholder="Enter Institution Name"
+                          {...field}
+                        />
+                        {error && (
+                          <Error className="text-red-600 ">{error.message}</Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
 
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Region
-                </FormCheck.Label>
+                <div className="w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Region <span className="text-red-500">*</span>
+                  </FormCheck.Label>
 
-                <Controller
-                  name="region"
-                  control={control}
-                  defaultValue="North America"
-                  rules={{ required: "Region is required" }}
-                  render={({ field, fieldState: { error } }) => (
-                    <>
-                      <TomSelect
-                        value={field.value}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                        }}
-                        options={{
-                          placeholder: "Select Region",
-                        }}
-                        className="w-full text-left"
-                      >
-                        <option value="North America">North America</option>
-                        <option value="EMEA">EMEA</option>
-                        <option value="APAC">APAC</option>
-                      </TomSelect>
-                      {error && (
-                        <Error className="text-red-600 mt-2">
-                          {error.message}
-                        </Error>
-                      )}
-                    </>
-                  )}
-                />
-              </div>
+                  <Controller
+                    name="region"
+                    control={control}
+                    defaultValue="North America"
+                    rules={{ required: "Region is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <>
+                        <TomSelect
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                          }}
+                          options={{
+                            placeholder: "Select Region",
+                          }}
+                          className="w-full text-left"
+                        >
+                          <option value="North America">North America</option>
+                          <option value="EMEA">EMEA</option>
+                          <option value="APAC">APAC</option>
+                        </TomSelect>
+                        {error && (
+                          <Error className="text-red-600 mt-2">
+                            {error.message}
+                          </Error>
+                        )}
+                      </>
+                    )}
+                  />
+                </div>
 
               {/* <div className="w-full">
                 <FormCheck.Label
@@ -297,120 +374,154 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 </div>
               </div> */}
 
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Investor Type
-                </FormCheck.Label>
-                <Controller
-                  name="investor_type"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Type of Investor is required" }}
-                  render={({ field }) => (
-                    <TomSelect
-                      {...field}
-                      value={field.value?.toString() || ""}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                      }}
-                      options={{
-                        placeholder: "Select Investor Type",
-                      }}
-                      className="w-full text-left"
-                    >
-                      <option value="" disabled selected>
-                        Select Type
-                      </option>
-                      <option value="Investor">Investor</option>
-                      <option value="Proponent">Proponent</option>
-                    </TomSelect>
-                  )}
-                />
-
-                {errors.investor_type && (
-                  <Error className="max-w-[100%] ">
-                    {errors.investor_type.message}
-                  </Error>
-                )}
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Whale Wisdom Filer Id
-                </FormCheck.Label>
-                <Controller
-                  name="whale_wisdom_filer_id"
-                  control={control}
-                  rules={{ 
-                    required: watchedInvestorType === "Investor" ? "Whale Wisdom Filer Id is required" : false 
-                  }}
-                  render={({ field }) => (
-                    <FormInput
-                      placeholder="Enter Whale Wisdom Filer Id"
-                      {...field}
-                    />
-                  )}
-                />
-                {errors.whale_wisdom_filer_id && (
-                  <Error className="max-w-[100%] ">
-                    {errors.whale_wisdom_filer_id.message}
-                  </Error>
-                )}
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Proxy Advisory Influence
-                </FormCheck.Label>
-                <div className="flex flex-col gap-2">
-                  {["Internal", "ISS", "GL", "Typically does not vote proxies"].map((option) => (
-                    <FormCheck key={option} className="flex items-center">
-                      <FormCheck.Input
-                        id={`proxy_${option}`}
-                        type="checkbox"
-                        checked={proxyAdvisoryOptions.includes(option)}
+                <div className="w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Investor Type <span className="text-red-500">*</span>
+                  </FormCheck.Label>
+                  <Controller
+                    name="investor_type"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Type of Investor is required" }}
+                    render={({ field }) => (
+                      <TomSelect
+                        {...field}
+                        value={field.value?.toString() || ""}
                         onChange={(e) => {
-                          if (e.target.checked) {
-                            setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
-                          } else {
-                            setProxyAdvisoryOptions(
-                              proxyAdvisoryOptions.filter((item) => item !== option)
-                            );
-                          }
+                          field.onChange(e.target.value);
                         }}
-                      />
-                      <FormCheck.Label htmlFor={`proxy_${option}`} className="ml-2">
-                        {option}
-                      </FormCheck.Label>
-                    </FormCheck>
-                  ))}
-                </div>
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  UN PRI Signatory
-                </FormCheck.Label>
-                <Controller
-                  name="unpri_signatory"
-                  control={control}
-                  render={({ field }) => (
-                    <FormCheck className="flex items-center">
-                      <FormCheck.Input
-                        id="unpri_signatory"
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                      />
-                      <FormCheck.Label
-                        htmlFor="unpri_signatory"
-                        className="ml-2"
+                        options={{
+                          placeholder: "Select Investor Type",
+                        }}
+                        className="w-full text-left"
                       >
-                        Yes
-                      </FormCheck.Label>
-                    </FormCheck>
+                        <option value="" disabled selected>
+                          Select Type
+                        </option>
+                        <option value="Investor">Investor</option>
+                        <option value="Proponent">Proponent</option>
+                      </TomSelect>
+                    )}
+                  />
+
+                  {errors.investor_type && (
+                    <Error className="max-w-[100%] ">
+                      {errors.investor_type.message}
+                    </Error>
                   )}
-                />
+                </div>
+
+                <div className="w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Whale Wisdom Filer Id
+                  </FormCheck.Label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Controller
+                        name="whale_wisdom_filer_id"
+                        control={control}
+                        rules={{ 
+                          required: watchedInvestorType === "Investor" ? "Whale Wisdom Filer Id is required" : false 
+                        }}
+                        render={({ field }) => (
+                          <FormInput
+                            placeholder="Enter Whale Wisdom Filer Id"
+                            {...field}
+                          />
+                        )}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      className="w-auto whitespace-nowrap"
+                      onClick={handleGenerateWhaleWisdomId}
+                      disabled={isGeneratingId}
+                    >
+                      {isGeneratingId ? (
+                        <Lucide icon="Loader" className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Lucide icon="Zap" className="w-4 h-4 mr-2" />
+                      )}
+                      Generate ID
+                    </Button>
+                  </div>
+                  {errors.whale_wisdom_filer_id && (
+                    <Error className="max-w-[100%] mt-1">
+                      {errors.whale_wisdom_filer_id.message}
+                    </Error>
+                  )}
+                </div>
+
+                {/* Row 3 */}
+                <div className="w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Contact Email
+                  </FormCheck.Label>
+                  <Controller
+                    name="email"
+                    control={control}
+                    render={({ field }) => (
+                      <FormInput placeholder="Enter Contact Email" {...field} />
+                    )}
+                  />
+                </div>
+
+                <div className="w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    Proxy Advisory Influence
+                  </FormCheck.Label>
+                  <div className="flex flex-col gap-2">
+                    {["Internal", "ISS", "GL", "Typically does not vote proxies"].map((option) => (
+                      <FormCheck key={option} className="flex items-center">
+                        <FormCheck.Input
+                          id={`proxy_${option}`}
+                          type="checkbox"
+                          checked={proxyAdvisoryOptions.includes(option)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
+                            } else {
+                              setProxyAdvisoryOptions(
+                                proxyAdvisoryOptions.filter((item) => item !== option)
+                              );
+                            }
+                          }}
+                        />
+                        <FormCheck.Label htmlFor={`proxy_${option}`} className="ml-2">
+                          {option}
+                        </FormCheck.Label>
+                      </FormCheck>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Row 4 */}
+                <div className="w-full">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                    UN PRI Signatory
+                  </FormCheck.Label>
+                  <Controller
+                    name="unpri_signatory"
+                    control={control}
+                    render={({ field }) => (
+                      <FormCheck className="flex items-center">
+                        <FormCheck.Input
+                          id="unpri_signatory"
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                        <FormCheck.Label
+                          htmlFor="unpri_signatory"
+                          className="ml-2"
+                        >
+                          Yes
+                        </FormCheck.Label>
+                      </FormCheck>
+                    )}
+                  />
+                </div>
               </div>
 
               {/* <div className="w-full">
@@ -531,32 +642,134 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                   />
                 </div>
               </div> */}
+            
+            </Dialog.Description>
+            <Dialog.Footer>
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => setAddEditInstitutionVisible(false)}
+                className="w-20 mr-3"
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" type="submit">
+                {loading && (
+                  <Lucide
+                    icon="Loader"
+                    className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
+                      loading ? "animate-spin" : ""
+                    }`}
+                  />
+                )}
+
+                {selectedInstitution ? "Update" : "Save"}
+              </Button>
+            </Dialog.Footer>
+          </form>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* -------------------- NEW: FILER SELECTION POPUP -------------------- */}
+      <Dialog
+        size="xl"
+        open={showFilerModal}
+        onClose={() => setShowFilerModal(false)}
+      >
+        <Dialog.Panel>
+          <Dialog.Title>
+            <h2 className="text-lg font-semibold">Select Whale Wisdom ID</h2>
+            <div
+              onClick={() => setShowFilerModal(false)}
+              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
+            >
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+          <Dialog.Description className="p-4 max-h-[60vh] overflow-y-auto">
+            <div className="overflow-x-auto border rounded-md">
+              <table className="w-full text-left text-sm text-slate-700">
+                <thead className="bg-slate-100 text-slate-800 border-b">
+                  <tr>
+                    <th className="p-3 font-semibold w-16 text-center">Select</th>
+                    <th className="p-3 font-semibold">ID</th>
+                    <th className="p-3 font-semibold">Name</th>
+                    <th className="p-3 font-semibold">CIK</th>
+                    <th className="p-3 font-semibold">WhaleWisdom Page</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filerOptions.map((filer) => {
+                    // FIX: Ensure the link is absolute so it doesn't try to open in localhost
+                    const finalUrl = filer.link?.startsWith("http") 
+                      ? filer.link 
+                      : `https://whalewisdom.com${filer.link?.startsWith("/") ? "" : "/"}${filer.link}`;
+
+                    return (
+                      <tr 
+                        key={filer.id} 
+                className={`border-b transition-all duration-200 cursor-pointer ${
+                selectedFilerId === String(filer?.id)
+                  ? "bg-red-50 border-l-4 border-l-red-700"
+                  : "hover:bg-slate-50"
+              }`}
+                      >
+                        <td className="p-3 text-center">
+                          {/* FIX: Red accent styling for the radio button */}
+                          <FormCheck.Input
+                            type="radio"
+                            name="filerSelectionRadio"
+                            className="cursor-pointer w-4 h-4"
+                            style={{ accentColor: "#9b1b30" }} 
+                            checked={selectedFilerId === String(filer?.id)}
+                            onChange={() => setSelectedFilerId(String(filer?.id))}
+                          />
+                        </td>
+                        <td className="p-3">{filer.id}</td>
+                        <td className="p-3 font-medium">{filer.name}</td>
+                        <td className="p-3">{filer.cik}</td>
+                        <td className="p-3">
+                          {filer.link ? (
+                            <a
+                              href={finalUrl}
+                              className="text-blue-600 hover:text-blue-800 hover:underline flex items-center"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Stops the row from being selected when clicking the link
+                                e.preventDefault();  // Stops React Router from intercepting it
+                                window.open(finalUrl, "_blank", "noopener,noreferrer"); // Force open in new tab securely
+                              }}
+                            >
+                              View Page <Lucide icon="ExternalLink" className="w-3 h-3 ml-1" />
+                            </a>
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </Dialog.Description>
-          <Dialog.Footer>
+          <Dialog.Footer className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline-secondary"
-              onClick={() => setAddEditInstitutionVisible(false)}
-              className="w-20 mr-3"
+              onClick={() => setShowFilerModal(false)}
             >
               Cancel
             </Button>
-            <Button variant="primary" type="submit">
-              {loading && (
-                <Lucide
-                  icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                    loading ? "animate-spin" : ""
-                  }`}
-                />
-              )}
-
-              {selectedInstitution ? "Update" : "Save"}
+            <Button
+              type="button"
+              variant="primary"
+              onClick={confirmFilerSelection}
+            >
+              Confirm Selection
             </Button>
           </Dialog.Footer>
-        </form>
-      </Dialog.Panel>
-    </Dialog>
+        </Dialog.Panel>
+      </Dialog>
+    </>
   );
 };
