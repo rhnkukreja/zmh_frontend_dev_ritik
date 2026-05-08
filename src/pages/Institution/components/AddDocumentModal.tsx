@@ -227,14 +227,16 @@ const AddDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Category
+              Category <span className="text-red-500">*</span>
             </label>
             <Controller
               name="category"
               control={control}
+              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
                   value={field.value}
+                  required={true}
                   onChange={field.onChange}
                   options={{ placeholder: "Select category" }}
                   className="w-full"
@@ -248,6 +250,11 @@ const AddDocumentModal = ({
                 </TomSelect>
               )}
             />
+            {errors.category && (
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.category.message}
+              </span>
+            )}
           </div>
 
           <div className="col-span-12 sm:col-span-6">
@@ -353,7 +360,7 @@ const AddDocumentModal = ({
                 />
               )}
             />
-            <span className="text-slate-400 text-xs mt-1 block">
+            <span className="text-slate-500 text-xs mt-1 block">
               Separate multiple tags with commas
             </span>
           </div>
@@ -364,12 +371,12 @@ const AddDocumentModal = ({
             </label>
             <input
               type="file"
-              accept=".pdf,.doc,.docx,.xls,.xlsx"
+              accept=".pdf"
               onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
               className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
-            <span className="text-slate-400 text-xs mt-1 block">
-              Accepted formats: PDF, DOC, DOCX, XLS, XLSX (Max 10MB)
+            <span className="text-slate-500 text-xs mt-1 block">
+              Accepted format: PDF file (Max 100MB)
             </span>
           </div>
         </Dialog.Description>
