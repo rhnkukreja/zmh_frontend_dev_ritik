@@ -237,13 +237,15 @@ const EditDocumentModal = ({
 
           <div className="col-span-12 sm:col-span-6">
             <label className="block mb-1 text-sm font-medium">
-              Category
+              Category  <span className="text-red-500">*</span>
             </label>
             <Controller
               name="document_type"
               control={control}
+              rules={{ required: "Category is required" }}
               render={({ field }) => (
                 <TomSelect
+                  required={true}
                   value={field.value}
                   onChange={field.onChange}
                   options={{ placeholder: "Select category" }}
@@ -258,6 +260,11 @@ const EditDocumentModal = ({
                 </TomSelect>
               )}
             />
+            {errors.document_type && (
+              <span className="text-red-500 text-sm mt-1 block">
+                {errors.document_type.message}
+              </span>
+            )}
           </div>
 
           <div className="col-span-12 sm:col-span-6">
@@ -359,7 +366,7 @@ const EditDocumentModal = ({
                 />
               )}
             />
-            <span className="text-slate-400 text-xs mt-1 block">
+            <span className="text-slate-500 text-xs mt-1 block">
               Separate multiple tags with commas
             </span>
           </div>
@@ -382,7 +389,7 @@ const EditDocumentModal = ({
                 </FormCheck>
               )}
             />
-            <span className="text-slate-400 text-xs mt-1 block">
+            <span className="text-slate-500 text-xs mt-1 block">
               Inactive documents will not be displayed in reports
             </span>
           </div>
