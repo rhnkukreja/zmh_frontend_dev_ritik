@@ -27,7 +27,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const dispatch: AppDispatch = useAppDispatch();
-  const { agmSummaryDetails, loading, dashboardDataList, tempSearch } =
+  const { agmSummaryDetails, loading, dashboardDataList, tempSearch, agmRequestStatus, agmHasData, agmErrorMessage } =
     useAppSelector((state) => state.dashboard);
   const { user } = useAppSelector((state) => state.authentiction);
 
@@ -452,16 +452,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [chartModalVisible]);
 
-  // Trigger animation when modal opens
-  useEffect(() => {
-    if (chartModalVisible) {
-      setAnimateChart(false);
-      const timer = setTimeout(() => {
-        setAnimateChart(true);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [chartModalVisible]);
 
   // Analytics data processing
   const getAnalyticsChartData = () => {
@@ -587,7 +577,17 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   const handleAGMYearTab = (tab: string) => {
     setSelectedYear(tab);
-  }
+  };
+
+  const handleRetryAGMFetch = () => {
+    console.log('[AGM Retry] Retrying AGM summary fetch...');
+    const retryYear = selectedYear || yearFromQuery || agmSummaryDetails?.Year;
+    const url = createDynamicURL(`${baseURL}/voting_report_8k/`, {
+      ticker: companyGlobalSearchTicker,
+      ...(retryYear && { year: retryYear }),
+    });
+    dispatch(fetchAGMSummaryDashboard(url));
+  };
 
   // Generate available year tabs - only show years that actually have data
   const getAvailableYears = () => {
@@ -607,7 +607,39 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   return (
     <>
-      {agmSummaryDetails?.Year && (
+      {/* RENDER STATE: ERROR */}
+      {agmRequestStatus === 'error' && (
+        <div className="p-5 mt-3.5 box bg-white">
+          <div className="flex flex-col items-center justify-center gap-4 py-10">
+            <Lucide icon="AlertCircle" className="w-12 h-12 text-red-800" />
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-red-800 mb-2">Unable to Load AGM Summary</h2>
+              <p className="text-gray-600 mb-4">
+                {agmErrorMessage || "An error occurred while fetching AGM summary data. Please try again."}
+              </p>
+            </div>
+            <button
+              onClick={handleRetryAGMFetch}
+              className="px-6 py-2 bg-red-800 text-white rounded-md hover:bg-red-900 font-semibold flex items-center gap-2 transition-colors"
+            >
+              <Lucide icon="RotateCcw" className="w-4 h-4" />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* RENDER STATE: SUCCESS - NO DATA */}
+      {agmRequestStatus === 'success' && !agmHasData && (
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+            <h1 className="font-semibold">
+              No Shareholder Meetings Found for: {companyGlobalSearchName ? companyGlobalSearchName : companyGlobalSearchTicker}.
+            </h1>
+        </div>
+      )}
+
+      {/* RENDER STATE: SUCCESS - WITH DATA */}
+      {agmRequestStatus === 'success' && agmHasData && agmSummaryDetails?.Year && (
         <div className="p-5 mt-3.5 box ">
           <div className="w-full">
             <>
@@ -1102,31 +1134,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         </div>
       )}
 
-      {!agmSummaryDetails?.Year && !loading &&
-        <>
-          {
-            isMeetingModal ?
-              <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                <h1 className="font-semibold">
-                  {" "}
-                  AGM Summary Has Not Been Released
-                </h1>
-              </div>
-              :
-              (
-                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                  <h1 className="font-semibold">
-                    {" "}
-                    Previous AGM Summary Records Not Found..
-                  </h1>
-                </div>
-              )
-
-          }
-        </>}
-
-      {
-      /* Analytics Chart Modal */}
+      {/* Dialog for expanded year modal */}
       <Dialog size="lg" open={chartModalVisible} onClose={() => {
         if (!expandedYearModal?.visible) {
           setChartModalVisible(false);

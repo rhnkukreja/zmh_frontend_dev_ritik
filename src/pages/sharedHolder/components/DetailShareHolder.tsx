@@ -240,9 +240,7 @@ const DetailShareHolder = () => {
                         </h3>
                         <p>
                           {getSingleShareHolder.proposal_num}.{" "}
-                          {convertToTitleCase(
-                            getSingleShareHolder.proposal_name
-                          )}
+                          {getSingleShareHolder.proposal_name}
                         </p>
                       </div>
                     )}

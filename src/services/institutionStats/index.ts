@@ -6,6 +6,13 @@ export const institutionStatsService = {
     return response.data;
   },
 
+  getYearsForInstitution: async (institutionId: number) => {
+    const response = await axiosInstance.get('/api/institution-stats/investor-dropdown/', {
+      params: { institution_id: institutionId },
+    });
+    return response.data as { institution_id: number; years: number[] };
+  },
+
   getInstitutionStats: async (institutionId: number, year?: number) => {
     const params: any = { institution_id: institutionId };
     if (year) {

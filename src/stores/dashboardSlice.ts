@@ -56,6 +56,9 @@ interface CompanySliceState {
   totalPages: number;
   totalCompanyDashboard: number;
   agmSummaryDetails: any;
+  agmRequestStatus: 'idle' | 'loading' | 'success' | 'error';
+  agmHasData: boolean;
+  agmErrorMessage: string | null;
   agmSummaryProxyContest: any;
   caseStudyDetails: any;
   caseStudyLoading: boolean;
@@ -120,6 +123,9 @@ const initialState: CompanySliceState = {
   totalPages: 1,
   totalCompanyDashboard: 0,
   agmSummaryDetails: "",
+  agmRequestStatus: 'idle',
+  agmHasData: false,
+  agmErrorMessage: null,
   agmSummaryProxyContest: "",
   investorCardLoading: true,
   caseStudyDetails: "",
@@ -527,18 +533,46 @@ const companySlice = createSlice({
         state.agmSummaryDetails = "";
         state.loading = true;
         state.error = null;
+        state.agmRequestStatus = 'loading';
+        state.agmErrorMessage = null;
       })
       .addCase(
         fetchAGMSummaryDashboard.fulfilled,
         (state, action: PayloadAction<{ results: any }>) => {
           state.loading = false;
-          state.agmSummaryDetails = action.payload.results;
+          const results = action.payload.results;
+          
+          // Check if backend explicitly says no data
+          if (results?.has_data === false) {
+            state.agmRequestStatus = 'success';
+            state.agmHasData = false;
+            state.agmSummaryDetails = results;
+            state.agmErrorMessage = null;
+          } else if (results?.has_data === true) {
+            // Data exists
+            state.agmRequestStatus = 'success';
+            state.agmHasData = true;
+            state.agmSummaryDetails = results;
+            state.agmErrorMessage = null;
+          } else {
+            // Fallback: infer from Year field (backward compatibility)
+            state.agmRequestStatus = 'success';
+            state.agmHasData = Boolean(results?.Year);
+            state.agmSummaryDetails = results;
+            state.agmErrorMessage = null;
+          }
         }
       )
       .addCase(fetchAGMSummaryDashboard.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch company dashboard";
+        state.agmRequestStatus = 'error';
+        const errorMsg = action.error.message || "Failed to fetch AGM summary";
+        state.agmErrorMessage = errorMsg;
+        state.error = errorMsg;
+        state.agmSummaryDetails = "";
+        state.agmHasData = false;
+        // Log error for debugging
+        console.error('[AGM Summary Error]:', errorMsg, action.error);
       })
       .addCase(fetchAGMProxyContestDashboard.pending, (state) => {
         state.agmSummaryProxyContest = "";
