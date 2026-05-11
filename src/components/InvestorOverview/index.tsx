@@ -93,6 +93,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   const [showReasonsModal, setShowReasonsModal] = useState(false);
   const [modalReasons, setModalReasons] = useState<Array<ReasonItem>>([]);
   const companyTickerRef = useRef(companyTicker);
+  const skipYearEffectRef = useRef(false);
 
   // FIX 1: Read userType into state so it's reactive and reliable
   const [userType, setUserType] = useState<string | null>(() => localStorage.getItem('userType'));
@@ -151,31 +152,46 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
     loadInvestors();
   }, []);
 
-  // Fetch available years whenever institution changes
+  // When institution changes: fetch available years, auto-select latest, then fetch stats once
   useEffect(() => {
     if (!selectedInvestor) return;
-    const fetchYears = async () => {
-      setYearsLoading(true);
+    let cancelled = false;
+
+    setYearsLoading(true);
+
+    const run = async () => {
       try {
         const data = await institutionStatsService.getYearsForInstitution(selectedInvestor);
-        const years = data.years && data.years.length > 0 ? data.years : [2025, 2024];
+        if (cancelled) return;
+        const years = data.years?.length > 0 ? data.years : [2025, 2024];
+        const latestYear = years[0];
         setAvailableYears(years);
-        // Auto-select the most recent year
-        setSelectedYear(years[0]);
-      } catch (err) {
-        setAvailableYears([2025, 2024]);
-      } finally {
+        skipYearEffectRef.current = true;  // prevent year-change effect from double-firing
+        setSelectedYear(latestYear);
         setYearsLoading(false);
+        dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: latestYear }));
+      } catch {
+        if (!cancelled) {
+          setAvailableYears([2025, 2024]);
+          setYearsLoading(false);
+          dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
+        }
       }
     };
-    fetchYears();
+
+    run();
+    return () => { cancelled = true; };
   }, [selectedInvestor]);
 
-  // Load stats when investor or year changes (but not while years are still loading)
+  // When user manually changes year: fetch stats (skip if triggered by institution change)
   useEffect(() => {
-    if (!selectedInvestor || yearsLoading) return;
+    if (!selectedInvestor) return;
+    if (skipYearEffectRef.current) {
+      skipYearEffectRef.current = false;
+      return;
+    }
     dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
-  }, [selectedInvestor, selectedYear, yearsLoading]);
+  }, [selectedYear]);
 
   useEffect(() => {
     if (companyTickerRef.current === companyTicker) {
