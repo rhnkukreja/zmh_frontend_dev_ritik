@@ -380,19 +380,16 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                   <label className="block text-[15px] font-medium text-slate-700 mb-2">
                     Year
                   </label>
-                  <TomSelect
+                  <select
                     value={selectedYear.toString()}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    options={{
-                      placeholder: 'Select a year',
-                    }}
-                    className="w-full text-[15px]"
                     disabled={yearsLoading}
+                    className="w-full text-[15px] border border-slate-300 rounded-md px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {availableYears.map((yr) => (
                       <option key={yr} value={yr}>{yr}</option>
                     ))}
-                  </TomSelect>
+                  </select>
                 </div>
               </div>
             </div>

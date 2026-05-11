@@ -106,7 +106,7 @@ const VotingDataBanner = () => {
                 🎉 New Voting Data Available!
               </h3> */}
               <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200">
-                Added <strong>Q4 2025 Voting Data</strong> for <strong>BlackRock</strong>, <strong>Dimensional</strong>, <strong>State Street</strong>, and <strong>40+ more institutions</strong>.
+                Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>State Street</strong>, <strong>Dimensional</strong>, and <strong>40+ more institutions</strong>.
               </p>
             </div>
 
