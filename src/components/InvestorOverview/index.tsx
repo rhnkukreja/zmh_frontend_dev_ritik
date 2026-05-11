@@ -171,19 +171,11 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
     fetchYears();
   }, [selectedInvestor]);
 
-  // Load stats when investor or year changes
+  // Load stats when investor or year changes (but not while years are still loading)
   useEffect(() => {
-    if (!selectedInvestor) return;
-
-    // Check if current stats in Redux already match our needs
-    const statsMatch = stats && 
-                       stats.institution_id === selectedInvestor && 
-                       Number(stats.year) === Number(selectedYear);
-
-    if (!statsMatch) {
-      dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
-    }
-  }, [selectedInvestor, selectedYear, stats, dispatch]);
+    if (!selectedInvestor || yearsLoading) return;
+    dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
+  }, [selectedInvestor, selectedYear, yearsLoading]);
 
   useEffect(() => {
     if (companyTickerRef.current === companyTicker) {
