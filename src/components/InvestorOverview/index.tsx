@@ -84,6 +84,8 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   const [investors, setInvestors] = useState<InvestorOption[]>([]);
   const [selectedInvestor, setSelectedInvestor] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [availableYears, setAvailableYears] = useState<number[]>([2025, 2024]);
+  const [yearsLoading, setYearsLoading] = useState<boolean>(false);
   const [selectedBucket, setSelectedBucket] = useState<BucketKey>('election_of_directors');
   const dispatch = useAppDispatch();
   const { institutionStats: stats, institutionStatsLoading: loading, error: reduxError } = useAppSelector((state: RootState) => state.dashboard);
@@ -148,6 +150,26 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
     };
     loadInvestors();
   }, []);
+
+  // Fetch available years whenever institution changes
+  useEffect(() => {
+    if (!selectedInvestor) return;
+    const fetchYears = async () => {
+      setYearsLoading(true);
+      try {
+        const data = await institutionStatsService.getYearsForInstitution(selectedInvestor);
+        const years = data.years && data.years.length > 0 ? data.years : [2025, 2024];
+        setAvailableYears(years);
+        // Auto-select the most recent year
+        setSelectedYear(years[0]);
+      } catch (err) {
+        setAvailableYears([2025, 2024]);
+      } finally {
+        setYearsLoading(false);
+      }
+    };
+    fetchYears();
+  }, [selectedInvestor]);
 
   // Load stats when investor or year changes
   useEffect(() => {
@@ -357,9 +379,11 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                       placeholder: 'Select a year',
                     }}
                     className="w-full text-[15px]"
+                    disabled={yearsLoading}
                   >
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
                   </TomSelect>
                 </div>
               </div>
