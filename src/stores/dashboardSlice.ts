@@ -479,6 +479,10 @@ const companySlice = createSlice({
     setModulesCount(state, action: PayloadAction<any>) {
       state.modulesCount = action.payload;
     },
+    resetInstitutionStats(state) {
+      state.institutionStats = null;
+      state.institutionStatsLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -984,4 +988,5 @@ export const {
   saveToCache,
   loadFromCache,
   setModulesCount,
+  resetInstitutionStats,
 } = companySlice.actions;

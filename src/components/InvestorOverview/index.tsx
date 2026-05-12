@@ -16,7 +16,7 @@ import parse from 'html-react-parser';
 // import LoadingIcon from '@/components/Base/LoadingIcon';
 import EngagementPriorities from './EngagementPriorities';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
-import { fetchInstitutionStats } from '@/stores/dashboardSlice';
+import { fetchInstitutionStats, resetInstitutionStats } from '@/stores/dashboardSlice';
 import { RootState } from '@/stores/store';
 
 interface InvestorOption {
@@ -199,10 +199,24 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
     }
 
     companyTickerRef.current = companyTicker;
-    setSelectedInvestor(null);
-    setSelectedYear(2025);
+    dispatch(resetInstitutionStats());
     setSelectedBucket('election_of_directors');
     setError(null);
+
+    // Re-select BlackRock (or first investor) so data reloads for the new company
+    if (investors.length > 0) {
+      const blackrock = investors.find((inv) =>
+        inv.institution.toLowerCase().includes('blackrock')
+      );
+      const newInvestor = blackrock ? blackrock.id : investors[0].id;
+      if (newInvestor !== selectedInvestor) {
+        setSelectedInvestor(newInvestor);
+      } else {
+        // Same investor selected — force a re-fetch by resetting year state
+        setSelectedInvestor(null);
+        setTimeout(() => setSelectedInvestor(newInvestor), 0);
+      }
+    }
   }, [companyTicker]);
 
   const bucketData = stats?.buckets[selectedBucket];
