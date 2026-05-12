@@ -33,8 +33,7 @@ export const institutionStatsService = {
     formData.append('file', file);
     const response = await axiosInstance.post(
       '/api/institution-stats/upload-key-contacts/',
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
+      formData
     );
     return response.data as {
       message: string;

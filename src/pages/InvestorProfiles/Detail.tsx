@@ -17,6 +17,7 @@ import {
 } from "@/stores/investersProfileSlice";
 import { Dialog } from "@/components/Base/Headless";
 import { investersProfileService } from "@/services/investersProfile";
+import { institutionStatsService } from "@/services/institutionStats";
 
 import LoadingWrapper from "@/components/LoadingWrapper";
 
@@ -217,11 +218,11 @@ function Main() {
           if (fileType && !["xlsx", "xls", "csv"].includes(fileType)) {
             toast.error("Only .xlsx, .xls, or .csv files are allowed!");
           } else {
-            const institutionId = singleInvesterProfile?.institution_id
-              ? Number(singleInvesterProfile.institution_id)
-              : null;
+            const rawId = singleInvesterProfile?.institution_id ?? singleInvesterProfile?.institution;
+            const institutionId = rawId && !isNaN(Number(rawId)) ? Number(rawId) : null;
+            console.log("[KeyContacts Upload] institution_id:", singleInvesterProfile?.institution_id, "institution:", singleInvesterProfile?.institution, "resolved:", institutionId);
             if (!institutionId) {
-              toast.error("Institution ID not found.");
+              toast.error("Institution ID not found. Please contact support.");
             } else {
               setIsUploadingContacts(true);
               try {
@@ -235,8 +236,7 @@ function Main() {
                 setIsExpanded(false);
                 getSingleInvesterProfile(params.id!, params?.type!);
               } catch (err: any) {
-                const msg = err?.response?.data?.error || "Upload failed. Please try again.";
-                toast.error(msg);
+                console.error("[KeyContacts Upload] Error:", err?.message);
               } finally {
                 setIsUploadingContacts(false);
               }
@@ -605,8 +605,10 @@ function Main() {
                             Key Contacts
                           </h4>
                           <div className="text-[12px] text-slate-500">
-                          <span className="font-bold mr-2">Last Updated:</span>
-                            February 2025
+                            <span className="font-bold mr-2">Last Updated:</span>
+                            {singleInvesterProfile?.date_updated
+                              ? dayjs(singleInvesterProfile.date_updated).format("MMMM YYYY")
+                              : "—"}
                           </div>
                         </div>
                       {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (

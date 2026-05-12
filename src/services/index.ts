@@ -21,7 +21,8 @@ const multipartFormDataUrls = [
   "proxy_voting_guidelines_pdf_summary_data_upload",
   "/peer_analysis_excel_upload/",
   "/api/newsletter/",
-  "/proxy_contest/press_release_presentation/"
+  "/proxy_contest/press_release_presentation/",
+  "/api/institution-stats/upload-key-contacts/",
 ];
 
 const isNotMultipartFormDataUrls = [
