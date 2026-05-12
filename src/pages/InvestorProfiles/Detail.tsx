@@ -141,6 +141,7 @@ function Main() {
   const params = useParams();
 
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isUploadingContacts, setIsUploadingContacts] = useState<boolean>(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [expandedSections, setExpandedSections] = useState<boolean[]>(() => {
     return Object.keys(investorProfileEditableSectionsInvestors).map((_, idx) => idx === 0);
@@ -212,26 +213,39 @@ function Main() {
 
       const handleComplete = async (file: any) => {
         if (file?.status === "added") {
-          const fileType = file?.name?.split(".")?.pop();
-          if (fileType && !["xlsx"].includes(fileType)) {
-            toast.error("Only excel file are allowed!");
+          const fileType = file?.name?.split(".")?.pop()?.toLowerCase();
+          if (fileType && !["xlsx", "xls", "csv"].includes(fileType)) {
+            toast.error("Only .xlsx, .xls, or .csv files are allowed!");
           } else {
-            await handleApiCall(
-              { file },
-              () => "Uploaded Successfully!",
-              () => setIsExpanded(false)
-            );
+            const institutionId = singleInvesterProfile?.institution_id
+              ? Number(singleInvesterProfile.institution_id)
+              : null;
+            if (!institutionId) {
+              toast.error("Institution ID not found.");
+            } else {
+              setIsUploadingContacts(true);
+              try {
+                const result = await institutionStatsService.uploadKeyContacts(
+                  institutionId,
+                  file
+                );
+                toast.success(
+                  `Uploaded successfully! ${result.total_contacts} contacts — ${result.images_added} images added.`
+                );
+                setIsExpanded(false);
+                getSingleInvesterProfile(params.id!, params?.type!);
+              } catch (err: any) {
+                const msg = err?.response?.data?.error || "Upload failed. Please try again.";
+                toast.error(msg);
+              } finally {
+                setIsUploadingContacts(false);
+              }
+            }
           }
           dropzoneInstance.removeFile(file);
         }
         if (file?.status === "error") {
-          const fileType = file?.name?.split(".")?.pop();
-
-          if (fileType && !["xlsx"].includes(fileType)) {
-            toast.error("Only excel file are allowed!");
-          } else {
-            toast.error("Something went wrong!");
-          }
+          toast.error("Something went wrong!");
         }
       };
 
@@ -610,6 +624,11 @@ function Main() {
                       </div>
                       {isExpanded && (
                         <div className="w-full mt-3 max-h-[180px] exclude-from-pdf">
+                          {isUploadingContacts ? (
+                            <div className="flex items-center justify-center h-[120px] text-sm text-slate-500">
+                              Uploading contacts...
+                            </div>
+                          ) : (
                           <Dropzone
                             ref={dropzoneSingleRef}
                             options={{
@@ -618,8 +637,7 @@ function Main() {
                               clickable: true,
                               thumbnailWidth: 100,
                               maxFiles: 1,
-
-                              acceptedFiles: ".xlsx",
+                              acceptedFiles: ".xlsx,.xls,.csv",
                             }}
                             className="dropzone w-full flex flex-col justify-center items-center h-full "
                           >
@@ -628,30 +646,17 @@ function Main() {
                             </div>
                             <div className="p-4 bg-gray-100 rounded-lg shadow-md">
                               <div className="text-[0.8rem] leading-4 text-gray-600 mb-1">
-                                Only <span className="font-medium">xlsx</span>{" "}
-                                files are allowed.
+                                Accepted: <span className="font-medium">.xlsx, .xls, .csv</span>
                               </div>
                               <div className="text-[0.8rem] leading-4 text-gray-600">
-                                File should contain only 4 columns: <br />
-                                <span className="font-medium text-gray-800">
-                                  Name
-                                </span>
-                                ,
-                                <span className="font-medium text-gray-800">
-                                  Designation
-                                </span>
-                                ,
-                                <span className="font-medium text-gray-800">
-                                  LinkedIn
-                                </span>
-                                ,
-                                <span className="font-medium text-gray-800">
-                                  Image
-                                </span>
-                                .
+                                Required columns: <br />
+                                <span className="font-medium text-gray-800">Name</span>,{" "}
+                                <span className="font-medium text-gray-800">Designation</span>,{" "}
+                                <span className="font-medium text-gray-800">Linkedin</span>
                               </div>
                             </div>
                           </Dropzone>
+                          )}
                         </div>
                       )}
 
@@ -715,6 +720,7 @@ function Main() {
                                           __html: contacts?.designation,
                                         }}
                                       />
+                                      {contacts?.linkedin && (
                                       <Button
                                         size="sm"
                                         type="button"
@@ -729,6 +735,7 @@ function Main() {
                                       >
                                         LinkedIn
                                       </Button>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

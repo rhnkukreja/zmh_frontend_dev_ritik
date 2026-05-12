@@ -25,5 +25,25 @@ export const institutionStatsService = {
   getInstitutionCoverageList: async () => {
     const response = await axiosInstance.get('/api/institution-stats/coverage-list/');
     return response.data;
-  }
+  },
+
+  uploadKeyContacts: async (institutionId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('institution_id', String(institutionId));
+    formData.append('file', file);
+    const response = await axiosInstance.post(
+      '/api/institution-stats/upload-key-contacts/',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data as {
+      message: string;
+      institution_id: number;
+      total_contacts: number;
+      images_existing: number;
+      images_added: number;
+      images_deleted: number;
+      images_private: number;
+    };
+  },
 };
