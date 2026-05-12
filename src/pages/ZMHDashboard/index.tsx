@@ -219,7 +219,7 @@ function Main() {
         ).unwrap(),
         dispatch(
           fetchCompanyOverview(
-            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
+            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
           )
         ).unwrap(),
         dispatch(
@@ -235,7 +235,7 @@ function Main() {
         requests.push(
           dispatch(
             fetchCompanyOverviewGPT(
-              `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
+              `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
             )
           ).unwrap()
         );
