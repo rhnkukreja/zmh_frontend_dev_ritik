@@ -233,20 +233,29 @@ function CaseStudies() {
   }, [searchParams, dispatch]);
 
   useEffect(() => {
-    dispatch(
-      setFilters({
-        key: "global_search",
-        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
-      })
-    );
+    const nextGlobalSearch = isAllCompanySelected ? [] : [companyGlobalSearchName];
+    const currentGlobalSearch = filters?.global_search ?? [];
 
-    dispatch(
-      modifyRoute({
-        route: "case-studies",
-        type: isAllCompanySelected === true ? true : false,
-      })
-    );
-  }, [companyGlobalSearchName, isAllCompanySelected]);
+    const globalSearchChanged =
+      nextGlobalSearch.length !== currentGlobalSearch.length ||
+      nextGlobalSearch.some((value, index) => value !== currentGlobalSearch[index]);
+
+    if (globalSearchChanged) {
+      dispatch(
+        setFilters({
+          key: "global_search",
+          value: nextGlobalSearch,
+        })
+      );
+
+      dispatch(
+        modifyRoute({
+          route: "case-studies",
+          type: isAllCompanySelected === true ? true : false,
+        })
+      );
+    }
+  }, [companyGlobalSearchName, isAllCompanySelected, filters?.global_search, dispatch]);
 
   useEffect(() => {
     if (isAllCompanySelected === false && filters?.global_search.length === 0) {
@@ -289,7 +298,7 @@ function CaseStudies() {
 
     setSelectedChipFilters(generateFilterChips(filtersWithInstitution));
 
-  }, [page, filters, InstituteName]);
+  }, [page, filters, isAllCompanySelected]);
 
   const handleNextPage = () => {
     if (page < totalPages) {

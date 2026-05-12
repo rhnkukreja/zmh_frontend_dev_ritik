@@ -1,18 +1,37 @@
 import { FilterDropdown } from "@/types/casestudy";
 import { axiosInstance } from "../index";
 import { createQueryParams } from "@/utils/helper";
+import { dashboardCacheManager } from "@/utils/cacheManager";
 
 class CaseStudiesService {
   public async getCaseStudies(url: string): Promise<{
     count: number;
     results: any[];
   }> {
-    const response = await axiosInstance.get(url);
-    const { count, results } = response.data;
-    return {
-      count,
-      results,
-    };
+    const cacheKey = dashboardCacheManager.generateKey(url);
+
+    const cached = dashboardCacheManager.get(cacheKey);
+    if (cached) {
+      return cached as { count: number; results: any[] };
+    }
+
+    const inFlight = dashboardCacheManager.getInFlightPromise(cacheKey);
+    if (inFlight) {
+      return inFlight as Promise<{ count: number; results: any[] }>;
+    }
+
+    const requestPromise = axiosInstance.get(url).then((response) => {
+      const { count, results } = response.data;
+      const payload = {
+        count,
+        results,
+      };
+      dashboardCacheManager.set(cacheKey, payload);
+      return payload;
+    });
+
+    dashboardCacheManager.trackRequest(cacheKey, requestPromise);
+    return requestPromise;
   }
   public async getSingleSingleCaseStudy(id: number): Promise<{
     result: any;

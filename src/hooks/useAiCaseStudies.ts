@@ -47,6 +47,7 @@ export const useAiCaseStudies = () => {
     const [aiCaseStudiesCount, setAiCaseStudiesCount] = useState(0);
     const [activeAiFilterOrder, setActiveAiFilterOrder] = useState<ActiveAiFilterItem[]>([]);
     const lastAutoAnalysisKeyRef = useRef<string | null>(null);
+    const lastTopicsRequestKeyRef = useRef<string | null>(null);
 
     // Investor modal state
     const [isInvestorModalOpen, setIsInvestorModalOpen] = useState(false);
@@ -263,10 +264,25 @@ export const useAiCaseStudies = () => {
     }, [fetchAiFilters]);
 
     useEffect(() => {
-        if (aiFiltersData) {
-            fetchAiTopics();
+        if (!aiFiltersData) {
+            return;
         }
-    }, [aiFiltersData, fetchAiTopics]);
+
+        const topicsRequestKey = JSON.stringify({
+            institution_ids: selectedAiInstitutionIds,
+            themes: selectedAiThemes,
+            years: selectedAiYears,
+            company_ids: selectedAiCompanyIds,
+            markets: selectedAiMarkets,
+        });
+
+        if (lastTopicsRequestKeyRef.current === topicsRequestKey) {
+            return;
+        }
+
+        lastTopicsRequestKeyRef.current = topicsRequestKey;
+        fetchAiTopics();
+    }, [aiFiltersData, selectedAiInstitutionIds, selectedAiThemes, selectedAiYears, selectedAiCompanyIds, selectedAiMarkets, fetchAiTopics]);
 
     useEffect(() => {
         const selectedFilters: ActiveAiFilterItem[] = [
