@@ -6,7 +6,6 @@ import {
   fetchCompanyByName,
   fetchCompanyDashboard,
   fetchCompanyOverview,
-  fetchCompanyOverviewGPT,
   fetchAGMSummaryDashboard,
   getBoardDirectorMembers,
   setPage,
@@ -231,15 +230,16 @@ function Main() {
         ).unwrap(),
       ];
 
-      if (isAdmin) {
-        requests.push(
-          dispatch(
-            fetchCompanyOverviewGPT(
-              `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
-            )
-          ).unwrap()
-        );
-      }
+      // GPT-based key findings disabled temporarily per request.
+      // if (isAdmin) {
+      //   requests.push(
+      //     dispatch(
+      //       fetchCompanyOverviewGPT(
+      //         `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
+      //       )
+      //     ).unwrap()
+      //   );
+      // }
 
       const results = await Promise.allSettled(requests);
       const hasSuccess = results.some((r) => r.status === "fulfilled");

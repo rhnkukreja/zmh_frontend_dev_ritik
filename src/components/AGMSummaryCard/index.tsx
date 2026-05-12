@@ -57,16 +57,23 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     lastRequestedYearRef.current = "";
   }, [yearFromQuery]);
 
-  // Ensure selectedYear is set to a valid year on first load, but only after agmSummaryDetails loads
+  // Reset scoped state only when the company/ticker changes (not on every agmSummaryDetails update)
+  const prevTickerRef = useRef<string | null>(null);
   useEffect(() => {
-    resetCompanyScopedState();
+    if (prevTickerRef.current !== companyGlobalSearchTicker) {
+      prevTickerRef.current = companyGlobalSearchTicker || null;
+      resetCompanyScopedState();
+    }
+  }, [companyGlobalSearchTicker, resetCompanyScopedState]);
 
+  // Keep selectedYear in sync with loaded agmSummaryDetails, but do NOT reset refs here
+  useEffect(() => {
     if (agmSummaryDetails?.Year && selectedYear !== agmSummaryDetails.Year.toString()) {
       setSelectedYear(agmSummaryDetails.Year.toString());
     } else if (!selectedYear && agmSummaryDetails?.total_year?.length > 0) {
       setSelectedYear(agmSummaryDetails.total_year[0].toString());
     }
-  }, [agmSummaryDetails, resetCompanyScopedState]);
+  }, [agmSummaryDetails]);
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -129,19 +136,26 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     const currentYear = agmSummaryDetails?.Year?.toString();
     const requestKey = `${companyGlobalSearchTicker}:${nextYear}`;
 
-    if (lastRequestedYearRef.current === requestKey) {
+    // If we've already requested this key, skip
+    if (lastRequestedYearRef.current === requestKey) return;
+
+    // If current loaded year already matches, skip dispatch
+    if (currentYear === nextYear) {
+      lastRequestedYearRef.current = requestKey;
+      setSelectedYear(nextYear);
       return;
     }
 
-    if (currentYear !== nextYear) {
-      lastRequestedYearRef.current = requestKey;
-      setSelectedYear(nextYear);
-      const url = createDynamicURL(
-        `${baseURL}/voting_report_8k/`,
-        { ticker: companyGlobalSearchTicker, ...(nextYear && { year: nextYear }) }
-      );
-      dispatch(fetchAGMSummaryDashboard(url));
-    }
+    // Avoid dispatching if a request is already in-flight
+    if (agmRequestStatus === 'loading') return;
+
+    lastRequestedYearRef.current = requestKey;
+    setSelectedYear(nextYear);
+    const url = createDynamicURL(
+      `${baseURL}/voting_report_8k/`,
+      { ticker: companyGlobalSearchTicker, ...(nextYear && { year: nextYear }) }
+    );
+    dispatch(fetchAGMSummaryDashboard(url));
   }, [yearFromQuery, agmSummaryDetails, companyGlobalSearchTicker, dispatch]);
 
   useEffect(() => {
@@ -189,7 +203,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       const isAlreadyLoaded = agmSummaryDetails && agmSummaryDetails.Year?.toString() === selectedYear.toString();
       const requestKey = `${companyGlobalSearchTicker}:${selectedYear.toString()}`;
 
-      if (!isAlreadyLoaded && lastRequestedYearRef.current !== requestKey) {
+      if (!isAlreadyLoaded && lastRequestedYearRef.current !== requestKey && agmRequestStatus !== 'loading') {
         lastRequestedYearRef.current = requestKey;
         dispatch(
           fetchAGMSummaryDashboard(
