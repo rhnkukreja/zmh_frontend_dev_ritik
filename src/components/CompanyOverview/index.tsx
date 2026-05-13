@@ -16,7 +16,7 @@ import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
 import CompanyOverviewSummaryTab from "@/components/CompanyOverview/CompanyOverviewSummaryTab";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
-import { fetchCompanyOverview, fetchCompanyOverviewGPT } from "@/stores/dashboardSlice";
+import { fetchCompanyOverview } from "@/stores/dashboardSlice";
 import { dashboardService } from "@/services/dashboard";
 import { baseURL } from "@/constant";
 import pdfMake from "pdfmake/build/pdfmake";
@@ -1125,13 +1125,14 @@ export default function CompanyOverview() {
       )
     );
 
-    if (canViewRestrictedTabs) {
-      dispatch(
-        fetchCompanyOverviewGPT(
-          `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
-        )
-      );
-    }
+    // GPT-based key findings disabled temporarily per request.
+    // if (canViewRestrictedTabs) {
+    //   dispatch(
+    //     fetchCompanyOverviewGPT(
+    //       `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
+    //     )
+    //   );
+    // }
   }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs]);
 
   // Transform API data to UI format
