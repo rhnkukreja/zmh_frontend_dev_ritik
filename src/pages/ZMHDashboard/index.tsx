@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyByName,
@@ -11,9 +11,6 @@ import {
   getBoardDirectorMembers,
   setPage,
   setTempSearch,
-  saveToCache,
-  loadFromCache,
-  setModulesCount,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -39,6 +36,9 @@ import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
 import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-react";
+import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
+import { toast } from "react-toastify";
+import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -64,30 +64,18 @@ function Main() {
 
   // Check if user is admin
   const isAdmin = user?.user_type === 'Admin';
-  const [activeTab, setActiveTab] = useState(() => {
-    return sessionStorage.getItem("zmh_dashboard_active_tab") || "company-overview";
-  });
 
-  // Modules count state from Redux
-  const { resultsCache, modulesCount } = useAppSelector((state: RootState) => state.dashboard);
-  const resultsCacheRef = useRef(resultsCache);
-
-  useEffect(() => {
-    resultsCacheRef.current = resultsCache;
-  }, [resultsCache]);
+  // Active tab state - default based on user role
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.state?.activeTab || 'company-overview'
+  );
+  // Modules count state
+  const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
 
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
-
-  // Keep tab selection local to avoid route-state updates that refresh shell layout
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-  };
-
-  useEffect(() => {
-    sessionStorage.setItem("zmh_dashboard_active_tab", activeTab);
-  }, [activeTab]);
 
   // Handle generate report
   const handleGenerateReport = () => {
@@ -139,24 +127,97 @@ function Main() {
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
-  const [companyFetchError, setCompanyFetchError] = useState<string | null>(null);
-  const [isRetryingCompanyData, setIsRetryingCompanyData] = useState(false);
 
   const { companySearchAndUpdate } = useCompanySearch();
-  const { graphQLBoardData, graphQLBoardDataLoading } =
+  const { dashboardDataList, tempSearch, graphQLBoardData, graphQLBoardDataLoading } =
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
 
-  // Check if we already have this company in cache to avoid initial loading flash
+  const [autoScrapedData, setAutoScrapedData] = useState<Record<string, any>>({});
+  const [autoScrapeQueue, setAutoScrapeQueue] = useState<string[]>([]);
+  const autoScrapeInProgress = useRef(false);
+  const processedInstitutions = useRef<Set<string>>(new Set());
+
+  // 1. Populate the Queue when data loads
+useEffect(() => {
+    const processBulkScrape = async () => {
+      const currentData = dashboardDataList?.all_year_data?.[0]?.holdings_data;
+      if (!currentData || currentData.length === 0) return;
+
+      // 1. Get unique institutions that need scraping
+      const uniqueMissingProfiles = Array.from(new Set(
+        currentData
+          .filter((d: any) => !d.investor_profile_id && !processedInstitutions.current.has(d.institution_name))
+          .map((d: any) => d.institution_name)
+      )) as string[];
+
+      if (uniqueMissingProfiles.length === 0) return;
+
+      // Mark them as processed so we don't try again
+      uniqueMissingProfiles.forEach((name) => processedInstitutions.current.add(name));
+
+      try {
+        // 🌟 2. Format the payload with empty links! 
+        // We skip searching on the frontend entirely.
+        const validInvestorsToScrape = uniqueMissingProfiles.map(name => ({
+           name: name,
+           link: "" 
+        }));
+
+        // 🌟 3. SEND DIRECTLY TO THE PARALLEL BACKEND ENDPOINT! 🚀
+        if (validInvestorsToScrape.length > 0) {
+          console.log(`🚀 Sending ${validInvestorsToScrape.length} investors to Parallel Bulk Scraper...`);
+          const bulkResults = await scrapeBulkWhaleWisdom(validInvestorsToScrape); 
+          
+          // 4. Update the state all at once!
+          setAutoScrapedData(prev => ({ ...prev, ...bulkResults }));
+        }
+
+      } catch (error) {
+        console.error("Bulk auto-scrape process failed:", error);
+      }
+    };
+
+    processBulkScrape();
+  }, [dashboardDataList]);
+
+  // 2. Process the Queue sequentially in the background
   useEffect(() => {
-    if (companyGlobalSearchTicker && resultsCacheRef.current[companyGlobalSearchTicker]) {
-      dispatch(loadFromCache(companyGlobalSearchTicker));
+    const processQueue = async () => {
+      // if (autoScrapeInProgress.current || autoScrapeQueue.length === 0) return;
+
+      // autoScrapeInProgress.current = true; 
+      // const institutionToScrape = autoScrapeQueue[0];
+
+      // try {
+      //   const genResult = await generateWhaleWisdomId(institutionToScrape);
+
+      //   if (genResult && genResult.filers && genResult.filers.length === 1) {
+      //     const data = await scrapeQuickWhaleWisdom(institutionToScrape, genResult.filers[0].link);
+      //     setAutoScrapedData(prev => ({ ...prev, [institutionToScrape]: data }));
+      //   } else {
+      //     setAutoScrapedData(prev => ({ ...prev, [institutionToScrape]: { proxy_influence: "-" } }));
+      //   }
+      // } catch (error) {
+      //   setAutoScrapedData(prev => ({ ...prev, [institutionToScrape]: { proxy_influence: "-" } }));
+      // } finally {
+      //   setTimeout(() => {
+      //     setAutoScrapeQueue(prev => prev.slice(1)); 
+      //     autoScrapeInProgress.current = false;      
+      //   }, 3000);
+      // }
+    };
+
+    if (autoScrapeQueue.length > 0 && !autoScrapeInProgress.current) {
+      processQueue();
     }
-  }, [companyGlobalSearchTicker, dispatch]);
+  }, [autoScrapeQueue]);
+
+
 
   useEffect(() => {
     dispatch(setIsCompanySelected(false));
-  }, [isCompanySelected, dispatch]);
+  }, [isCompanySelected]);
 
   // useEffect(() => {
   //   // Use board_name if available, otherwise fallback to company name
@@ -177,126 +238,61 @@ function Main() {
           const response = await dashboardService.getModulesCount({
             global_search: companyGlobalSearchName
           });
-          dispatch(setModulesCount(response.result));
-          dispatch(saveToCache(companyGlobalSearchTicker || ""));
+          setModulesCount(response.result);
         } catch (error) {
           console.error('Error fetching modules count:', error);
         }
       }
     };
 
-    if (!resultsCacheRef.current[companyGlobalSearchTicker || ""]) {
-      fetchModulesCount();
-    }
-  }, [companyGlobalSearchName, companyGlobalSearchTicker, dispatch]);
+    fetchModulesCount();
+  }, [companyGlobalSearchName]);
 
-  const fetchCompanySearchData = useCallback(
-    async (source: "initial" | "manual" | "online" | "focus" = "initial") => {
-      if (!companyGlobalSearchTicker || !companyGlobalSearchId) return;
-
-      if (source !== "initial") {
-        setIsRetryingCompanyData(true);
-      }
-
-      // Check cache first
-      if (resultsCacheRef.current[companyGlobalSearchTicker || ""]) {
-        const cached = resultsCacheRef.current[companyGlobalSearchTicker || ""];
-        // If cache is less than 30 minutes old, use it
-        if (Date.now() - cached.timestamp < 30 * 60 * 1000) {
-          dispatch(loadFromCache(companyGlobalSearchTicker));
-          setIsRetryingCompanyData(false);
-          return;
-        }
-      }
-
-      const requests: Promise<any>[] = [
+  // Fetch all tab data on initial load
+  useEffect(() => {
+    if (companyGlobalSearchTicker && companyGlobalSearchId) {
+      // Only fetch if data doesn't exist (first load or company changed)
+      if (companyGlobalSearchTicker !== tempSearch) {
+        // 1. Fetch Ownership data
         dispatch(
           fetchCompanyDashboard(
             createDynamicURL(
               `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
             )
           )
-        ).unwrap(),
+        );
+
+        // 2. Fetch Company Overview data (for all users)
         dispatch(
           fetchCompanyOverview(
             `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
           )
-        ).unwrap(),
-        dispatch(
-          fetchAGMSummaryDashboard(
-            createDynamicURL(`${baseURL}/voting_report_8k/`, {
-              ticker: companyGlobalSearchTicker,
-            })
-          )
-        ).unwrap(),
-      ];
+        );
 
-      if (isAdmin) {
-        requests.push(
+        // 3. Fetch Company Overview GPT data (for admins only)
+        if (isAdmin) {
           dispatch(
             fetchCompanyOverviewGPT(
               `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
             )
-          ).unwrap()
+          );
+        }
+
+        // 4. Fetch Shareholder Meeting Results data
+        dispatch(
+          fetchAGMSummaryDashboard(
+            createDynamicURL(
+              `${baseURL}/voting_report_8k/`,
+              { ticker: companyGlobalSearchTicker }
+            )
+          )
         );
+
+        // Set tempSearch to mark data as loaded for this company
+        dispatch(setTempSearch(companyGlobalSearchTicker));
       }
-
-      const results = await Promise.allSettled(requests);
-      const hasSuccess = results.some((r) => r.status === "fulfilled");
-
-      if (hasSuccess) {
-        setCompanyFetchError(null);
-        dispatch(setTempSearch(companyGlobalSearchTicker || ""));
-        dispatch(saveToCache(companyGlobalSearchTicker || ""));
-      } else {
-        setCompanyFetchError(
-          "Company Search data could not be loaded. Please retry."
-        );
-      }
-
-      if (source !== "initial") {
-        setIsRetryingCompanyData(false);
-      }
-    },
-    [
-      companyGlobalSearchTicker,
-      companyGlobalSearchId,
-      dispatch,
-      isAdmin,
-    ]
-  );
-
-  // Initial/company-change fetch
-  useEffect(() => {
-    fetchCompanySearchData("initial");
-  }, [fetchCompanySearchData]);
-
-  // Auto-refetch once connection is restored.
-  useEffect(() => {
-    const handleOnline = () => {
-      fetchCompanySearchData("online");
-    };
-
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
-  }, [fetchCompanySearchData]);
-
-  // Refetch when user returns to this tab after an error.
-  useEffect(() => {
-    const handleFocusOrVisible = () => {
-      if (document.visibilityState === "visible" && navigator.onLine && companyFetchError) {
-        fetchCompanySearchData("focus");
-      }
-    };
-
-    window.addEventListener("focus", handleFocusOrVisible);
-    document.addEventListener("visibilitychange", handleFocusOrVisible);
-
-    return () => {
-      window.removeEventListener("focus", handleFocusOrVisible);
-      document.removeEventListener("visibilitychange", handleFocusOrVisible);
-    };
-  }, [companyFetchError, fetchCompanySearchData]);
+    }
+  }, [companyGlobalSearchTicker, companyGlobalSearchId, tempSearch, dispatch, isAdmin]);
 
   // No scroll-based tab update - tabs now show/hide content instead
 
@@ -346,7 +342,7 @@ function Main() {
             <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
               {/* Company Overview - All Users */}
               <button
-                onClick={() => handleTabChange('company-overview')}
+                onClick={() => setActiveTab('company-overview')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
                   activeTab === 'company-overview'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
@@ -360,7 +356,7 @@ function Main() {
               {/* Company Overview GPT - Admin Only */}
               {/* {isAdmin && (
                 <button
-                  onClick={() => handleTabChange('company-overview-gpt')}
+                  onClick={() => setActiveTab('company-overview-gpt')}
                   className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
                       ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -369,12 +365,12 @@ function Main() {
                   <Building2 className="w-4 h-4" />
                   Company Overview
                 </button>
-                  onClick={() => handleTabChange('investor-overview')}
+              )} */}
 
               {/* Investor Insight - All Users */}
               <div className="relative">
                 <button
-                  onClick={() => handleTabChange('investor-overview')}
+                  onClick={() => setActiveTab('investor-overview')}
                   className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
                       ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -383,14 +379,14 @@ function Main() {
                   <BarChart3 className="w-4 h-4" />
                   Investor Insight
                 </button>
-                {/* <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
                   BETA
-                </span> */}
+                </span>
               </div>
     
               {/* Ownership - All Users */}
               <button
-                onClick={() => handleTabChange('ownership')}
+                onClick={() => setActiveTab('ownership')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -404,7 +400,7 @@ function Main() {
 
               {/* Shareholder Meeting Results - All Users */}
               <button
-                onClick={() => handleTabChange('shareholder-meeting-results')}
+                onClick={() => setActiveTab('shareholder-meeting-results')}
                 className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'shareholder-meeting-results'
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -415,92 +411,57 @@ function Main() {
               </button>
             </div>
             {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
-              <div className="flex items-center gap-2">
-                {/* {companyFetchError && (
-                  <button
-                    type="button"
-                    onClick={() => fetchCompanySearchData("manual")}
-                    disabled={isRetryingCompanyData}
-                    className="px-5 py-2.5 text-[#9f1239] font-semibold text-sm rounded-full transition-all duration-200 shadow-md flex items-center gap-2 border border-[#9f1239] hover:bg-[#9f1239] hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <Lucide icon="RotateCw" className="w-4 h-4" />
-                    {isRetryingCompanyData ? "Retrying..." : "Retry Data"}
-                  </button>
-                )} */}
-                <button
-                  className="px-6 py-2.5 text-primary font-semibold text-sm rounded-full hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary"
-                  onClick={handleGenerateReport}
-                >
-                  <FileText className="w-4 h-4" />
-                  Generate Report
-                </button>
-              </div>
+              <button
+                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
+                onClick={handleGenerateReport}
+              >
+                <FileText className="w-4 h-4" />
+                Generate Report
+              </button>
             )}
           </div>
         </div>
 
-        {companyFetchError ? (
-          <div className="min-h-[58vh] flex items-center justify-center px-6">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <p className="text-sm text-slate-600">{companyFetchError}</p>
-              <button
-                type="button"
-                onClick={() => fetchCompanySearchData("manual")}
-                disabled={isRetryingCompanyData}
-                className="px-5 py-2 text-sm font-semibold rounded-full border border-[#9f1239] text-[#9f1239] hover:bg-[#9f1239] hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isRetryingCompanyData ? "Retrying..." : "Retry"}
-              </button>
-              <span className="text-xs text-slate-500">Auto-retry on reconnect is enabled.</span>
-            </div>
-          </div>
-        ) : (
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          <div
-            id="company-overview"
-            className={`col-span-12 xl:col-span-12 ${activeTab === 'company-overview' ? '' : 'hidden'}`}
-          >
-            <CompanyOverview />
-          </div>
+          {activeTab === 'company-overview' && (
+            <div id="company-overview" className="col-span-12 xl:col-span-12">
+              <CompanyOverview />
+            </div>
+          )}
 
-          {isAdmin && (
-            <div
-              id="company-overview-gpt"
-              className={`col-span-12 xl:col-span-12 ${activeTab === 'company-overview-gpt' ? '' : 'hidden'}`}
-            >
+          {activeTab === 'company-overview-gpt' && isAdmin && (
+            <div id="company-overview-gpt" className="col-span-12 xl:col-span-12">
               <CompanyOverviewGPT />
             </div>
           )}
 
-          <div
-            id="ownership"
-            className={`col-span-12 xl:col-span-12 ${activeTab === 'ownership' ? '' : 'hidden'}`}
-          >
-            <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} />
-          </div>
+          {activeTab === 'ownership' && (
+            <div id="ownership" className="col-span-12 xl:col-span-12">
+              {/* 🌟 PASS AUTOSCRAPEDDATA HERE */}
+              <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} autoScrapedData={autoScrapedData} />
+            </div>
+          )}
 
-          <div
-            id="investor-overview"
-            className={`col-span-12 xl:col-span-12 ${activeTab === 'investor-overview' ? '' : 'hidden'}`}
-          >
-            {/* Combine the name and ticker to format it exactly how your backend expects it! */}
-            <InvestorOverview companyTicker={`${companyGlobalSearchName} (${companyGlobalSearchTicker})`} />
-          </div>
+          {activeTab === 'investor-overview' && (
+            <div id="investor-overview" className="col-span-12 xl:col-span-12">
+              {/* Combine the name and ticker to format it exactly how your backend expects it! */}
+              <InvestorOverview companyTicker={`${companyGlobalSearchName} (${companyGlobalSearchTicker})`} />
+            </div>
+          )}
 
-          <div
-            id="shareholder-meeting-results"
-            className={`col-span-12 xl:col-span-12 ${activeTab === 'shareholder-meeting-results' ? '' : 'hidden'}`}
-          >
-            <AGMSummaryCard
-              companyGlobalSearchTicker={companyGlobalSearchTicker}
-              companyGlobalSearchName={companyGlobalSearchName}
-              isMeetingModal={false}
-              proxyContest={modulesCount?.proxy_contest || false}
-              proxyContest2024={modulesCount?.proxy_contest_2024 || false}
-              proxyContest2025={modulesCount?.proxy_contest_2025 || false}
-              onLoaded={() => setIsMeetingLoaded(true)}
-            />
-          </div>
+          {activeTab === 'shareholder-meeting-results' && (
+            <div id="shareholder-meeting-results" className="col-span-12 xl:col-span-12">
+              <AGMSummaryCard
+                companyGlobalSearchTicker={companyGlobalSearchTicker}
+                companyGlobalSearchName={companyGlobalSearchName}
+                isMeetingModal={false}
+                proxyContest={modulesCount?.proxy_contest || false}
+                proxyContest2024={modulesCount?.proxy_contest_2024 || false}
+                proxyContest2025={modulesCount?.proxy_contest_2025 || false}
+                onLoaded={() => setIsMeetingLoaded(true)}
+              />
+            </div>
+          )}
 
           {/* <div id="board-composition" className="col-span-12 xl:col-span-12">
             <div className="p-5 mt-3.5 box">
@@ -622,7 +583,6 @@ function Main() {
             <CaseStudiesCard />
           </div> */}
         </div>
-        )}
       </section>
       {/* </>
       } */}

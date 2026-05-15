@@ -131,3 +131,112 @@ export async function askPdf(
 
   return res.json();
 }
+
+export async function fetchWhaleWisdomSummary(institutionName: string) {
+  // We hit a new endpoint and pass the name as a query parameter
+  const url = new URL(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom`);
+  url.searchParams.append('name', institutionName);
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: getRequestHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch WhaleWisdom summary");
+  }
+
+  return res.json();
+}
+
+export async function saveWhaleWisdomSummary(institutionId: number | string, data: any) {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/institution/${institutionId}/whalewisdom-summary`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to save WhaleWisdom summary");
+  }
+
+  return res.json();
+}
+
+export async function scrapeSelectedWhaleWisdom(name: string, link: string) {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom/confirm`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name, link }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to scrape selected link");
+  }
+
+  return res.json();
+}
+
+export async function fetchExistingSummaryIds() {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/whalewisdom-summaries/existing`, {
+    method: "GET",
+    headers: getRequestHeaders(),
+  });
+
+  if (!res.ok) {
+    return [];
+  }
+
+  return res.json();
+}
+
+export async function searchWhaleWisdom(name: string) {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/search-whalewisdom?name=${encodeURIComponent(name)}`, {
+    method: "GET",
+    headers: getRequestHeaders(),
+  });
+  return res.json();
+}
+
+export const generateWhaleWisdomId = async (institutionName: string) => {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/generate-whalewisdom-id`, {
+    method: "POST",
+    headers: getRequestHeaders(), // Uses your existing headers helper
+    body: JSON.stringify({ institution_name: institutionName }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to generate WhaleWisdom ID");
+  }
+
+  return res.json();
+};
+
+export async function scrapeQuickWhaleWisdom(name: string, link: string) {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom/quick-summary`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name, link }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to quickly scrape selected link");
+  }
+
+  return res.json();
+}
+
+export const scrapeBulkWhaleWisdom = async (investors: {name: string, link: string}[]) => {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom/bulk-process`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ investors }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to run bulk scrape");
+  }
+
+  const data = await res.json();
+  return data.results;
+};

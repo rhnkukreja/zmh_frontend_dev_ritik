@@ -140,40 +140,24 @@ const InstitutionDocuments = () => {
     setPreviewData(null);
 
     try {
-      // Safely extract token from localStorage (Check your app's exact key: "token", "access", or "access_token")
-      const token = localStorage.getItem("token") || localStorage.getItem("access") || localStorage.getItem("access_token");
-
-      const listRes = await axios.get(
-        `${baseURL}/investor_profile/?institution_name=${encodeURIComponent(
-          singleInstitution.institution
-        )}`,
+      // Updated to use AI_CHATBOT_API_BASE
+      const response = await axios.get(
+        `${AI_CHATBOT_API_BASE}/search-whalewisdom`,
         {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "", // Ensure this matches DRF (Bearer vs JWT)
-          }
+          params: { name: singleInstitution.institution }
         }
       );
 
-      // Catch Django's silent 200 OK error payload
-      if (listRes.data && listRes.data.Error) {
-        throw new Error(listRes.data.Error);
-      }
-
-      const profiles = Array.isArray(listRes.data)
-        ? listRes.data
-        : listRes.data?.results || [];
-
-      const profile = profiles[0];
-
-      if (!profile) {
-        toast.info("No profile found.");
-      } else {
-        setPreviewData(profile);
-      }
+      console.log("S3 Data Fetched:", response.data); // Helps debug in console
+      setPreviewData(response.data);
 
     } catch (error: any) {
       console.error("❌ PREVIEW ERROR:", error);
-      toast.error(`Failed to load profile: ${error.message || "Network Error"}`);
+      if (error.response?.status === 404) {
+        toast.error("No scraped profile found in S3. Please scrape this investor from the Dashboard first.");
+      } else {
+        toast.error(`Failed to load profile: ${error.message || "Network Error"}`);
+      }
       setPreviewModalOpen(false);
     } finally {
       setIsPreviewLoading(false);
@@ -183,7 +167,8 @@ const InstitutionDocuments = () => {
   const fetchProfileData = async () => {
     if (!params.id) return;
     try {
-      const res = await axios.get(`${AI_CHATBOT_API_BASE}/investor_profile/${params.id}`);
+      // Changed underscore to hyphen here
+      const res = await axios.get(`${AI_CHATBOT_API_BASE}/investor-profile/${params.id}`);
       if (res.data.status === "success" && res.data.sections) {
         setFastApiProfile(res.data.sections);
       }
@@ -534,33 +519,42 @@ const InstitutionDocuments = () => {
             {/* --- PREVIEW EXISTING PROFILE MODAL --- */}
             {previewModalOpen && (
               <Dialog size="lg" open={previewModalOpen} onClose={() => setPreviewModalOpen(false)}>
-                <Dialog.Panel className="p-6">
-                  <div className="flex justify-between items-center mb-4 border-b pb-3">
-                    <h2 className="text-xl font-semibold">Existing Investor Profile</h2>
+                <Dialog.Panel className="p-6 bg-slate-50">
+                  <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+                    <h2 className="text-xl font-semibold text-slate-800">Existing Investor Profile</h2>
                     <button onClick={() => setPreviewModalOpen(false)} className="text-slate-400 hover:text-slate-600"><Lucide icon="X" className="w-5 h-5" /></button>
                   </div>
                   <div className="min-h-[200px] flex flex-col">
                     {isPreviewLoading && (
                       <div className="flex flex-col items-center justify-center flex-grow">
-                        <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
-                        <p className="text-slate-500">Checking for existing profile...</p>
+                        <Loader2 className="w-8 h-8 text-theme-2 animate-spin mb-2" />
+                        <p className="text-slate-500">Checking S3 for existing profile...</p>
                       </div>
                     )}
                     {!isPreviewLoading && !previewData && (
                       <div className="flex flex-col items-center justify-center flex-grow text-center p-10">
                         <Lucide icon="FileQuestion" className="w-12 h-12 text-slate-300 mb-3" />
                         <h3 className="text-lg font-medium text-slate-700">No Profile Found</h3>
-                        <p className="text-slate-500 mt-1">There is no previous investor profile present for this institution.</p>
+                        <p className="text-slate-500 mt-1">There is no previous investor profile present in S3 for this institution.</p>
                       </div>
                     )}
                     {!isPreviewLoading && previewData && (
                       <>
-                        <div className="space-y-5 overflow-y-auto max-h-[70vh] pr-2">
-                          {previewData.summary && (<div><h4 className="font-semibold text-slate-800 text-md">Summary</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.summary }}/></div>)}
-                          {previewData.engagement_priorities && (<div><h4 className="font-semibold text-slate-800 text-md">Engagement Priorities</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.engagement_priorities }}/></div>)}
-                          {previewData.reporting_expectations && (<div><h4 className="font-semibold text-slate-800 text-md">Reporting Expectations</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.reporting_expectations }}/></div>)}
-                          {previewData.esg_integration_process && (<div><h4 className="font-semibold text-slate-800 text-md">ESG Integration Process</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.esg_integration_process }}/></div>)}
-                          {previewData.voting_guidelines && (<div><h4 className="font-semibold text-slate-800 text-md">Voting Guidelines</h4><div className="text-slate-600 text-sm mt-1 prose max-w-none" dangerouslySetInnerHTML={{ __html: previewData.voting_guidelines }}/></div>)}
+                        <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
+                          
+                          {/* S3 WhaleWisdom Strategy */}
+                          <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
+                            <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
+                              <Lucide icon="Briefcase" className="w-4 h-4 text-theme-2" />
+                              Investment Strategy
+                            </h4>
+                            <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">
+                              {previewData.investment_strategy || "No strategy available."}
+                            </div>
+                          </div>
+
+                          {/* ✂️ THE SEC BROCHURE BLOCK WAS REMOVED FROM HERE ✂️ */}
+                          
                         </div>
                         <div className="mt-6 flex justify-end">
                           <Button variant="outline-secondary" onClick={() => setPreviewModalOpen(false)}>Close</Button>
