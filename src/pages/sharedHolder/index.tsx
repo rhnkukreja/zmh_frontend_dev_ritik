@@ -11,6 +11,7 @@ import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import {
   countValidFilters,
   countIndividualFilters,
@@ -65,6 +66,7 @@ import AddNewWithdrawn from "./components/AddNewWithdrawn";
 import AddNewNoAction from "./components/AddNewNoAction";
 import CompanySelect from "@/components/ReactSelectAsync";
 import DetailDialog from "./components/DetailDialog";
+import ProposalDetailsTableView from "./components/ProposalDetailsTableView";
 import { modifyRoute } from "@/stores/themeSlice";
 import FilterChips from "@/components/FilterChips";
 import StandardizedFilterPills from "@/components/StandardizedFilterPills";
@@ -90,6 +92,51 @@ function ShareHolderProposal() {
   );
   const location = useLocation();
   const { isBackToShareholderPage } = location.state || {};
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const viewParam = searchParams.get("view");
+    const gsParam = searchParams.get("global_search");
+    const urlParam = searchParams.get("url");
+    const pageParam = searchParams.get("page");
+
+    if (viewParam === "table-only") {
+      setTableOnlyView(true);
+    }
+
+    if (gsParam) {
+      try {
+        const decoded = decodeURIComponent(gsParam);
+        const parsed = JSON.parse(decoded);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          dispatch(setFilter({ key: "global_search", value: parsed }));
+        }
+      } catch {
+        dispatch(setFilter({ key: "global_search", value: [gsParam] }));
+      }
+    }
+
+    if (urlParam) {
+      if (urlParam.includes("no_action")) {
+        dispatch(setTabs("no-action"));
+        setTempTab("no-action");
+      } else if (urlParam.includes("withdrawn")) {
+        dispatch(setTabs("withdrawn"));
+        setTempTab("withdrawn");
+      } else {
+        dispatch(setTabs("proposal"));
+        setTempTab("proposal");
+      }
+    }
+
+    if (pageParam) {
+      const parsedPage = parseInt(pageParam, 10);
+      if (!isNaN(parsedPage) && parsedPage > 0) {
+        dispatch(setPage(parsedPage));
+      }
+    }
+  }, [dispatch, location.search]);
+
   const {
     loading,
     shareHolderProposal,
@@ -119,6 +166,8 @@ function ShareHolderProposal() {
   const [tempTab, setTempTab] = useState<
     "" | "proposal" | "no-action" | "withdrawn"
   >("proposal");
+
+  const [tableOnlyView, setTableOnlyView] = useState<boolean>(false);
 
   const month = [
     {
@@ -780,9 +829,9 @@ function ShareHolderProposal() {
           { keyword: searchTerm },
           null
         );
-        
+
         const response = await axiosInstance.get(dynamicURL);
-        
+
         // Extract synonyms from the response
         const synonyms = response.data.synonyms || [];
         console.log('Received synonyms:', synonyms); // Debug log
@@ -967,6 +1016,25 @@ function ShareHolderProposal() {
     });
   };
 
+  if (tableOnlyView) {
+    return (
+      <ProposalDetailsTableView
+        loading={loading}
+        loadingDownload={loadingDownload}
+        shareHolderProposal={shareHolderProposal}
+        isAllCompanySelected={isAllCompanySelected}
+        user={user}
+        companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
+        handleDownload={handleDownload}
+        onVisibleDetail={onVisibleDetail}
+        onEditProposalClickHandler={onEditProposalClickHandler}
+        setProposalToDelete={setProposalToDelete}
+        setIsDeleteModalOpen={setIsDeleteModalOpen}
+        tableOnlyView
+      />
+    );
+  }
+
 
 
   return (
@@ -1007,7 +1075,7 @@ function ShareHolderProposal() {
                       resetFormValues();
                       dispatch(resetFilter());
                       setProposalsAnalytics(null);
-                      
+
                       dispatch(selectUnSelectAllCompany(false));
                       dispatch(
                         modifyRoute({
@@ -1032,16 +1100,16 @@ function ShareHolderProposal() {
                       // Set default years (current year and previous year) when switching to View All
                       const currentYear = new Date().getFullYear();
                       const defaultYears = [(currentYear - 1).toString(), currentYear.toString()];
-                      
+
                       // Reset analytics state first
                       setProposalsAnalytics(null);
-                      
+
                       // Clear other filters and set default years
                       resetFormValues();
                       setValue("year", defaultYears);
                       dispatch(resetFilter());
                       dispatch(setAllFilters({ year: defaultYears }));
-                      
+
                       dispatch(selectUnSelectAllCompany(true));
                       dispatch(
                         modifyRoute({
@@ -1696,7 +1764,7 @@ function ShareHolderProposal() {
 
                           {tab === "proposal" && (
                             <>
-                            {/* 
+                              {/* 
                             <div className="w-full">
                               <div className="text-left text-slate-500 font-semibold">
                                 Ready For Review
@@ -1756,7 +1824,7 @@ function ShareHolderProposal() {
                             </div>
                             */}
 
-                            {/* 
+                              {/* 
                             <div className="w-full">
                               <div className="text-left text-slate-500 font-semibold">
                                 Admin Status
@@ -1816,7 +1884,7 @@ function ShareHolderProposal() {
                             </div>
                             */}
 
-                            {/* 
+                              {/* 
                             <div className="w-full">
                               <div className="text-left text-slate-500 font-semibold">
                                 No Shareholder Proposal
@@ -1876,123 +1944,123 @@ function ShareHolderProposal() {
                             </div>
                             */}
 
-                            <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-8 sm:gap-16">
-                              <div className="w-full flex-1">
-                                <div className="text-left text-slate-500 font-semibold">
-                                  NL Exist
+                              <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-8 sm:gap-16">
+                                <div className="w-full flex-1">
+                                  <div className="text-left text-slate-500 font-semibold">
+                                    NL Exist
+                                  </div>
+                                  <Controller
+                                    name="nl_exist"
+                                    control={control}
+                                    defaultValue={null} // Default as null to allow toggling
+                                    render={({ field }) => (
+                                      <div className="flex flex-row mt-[10px]">
+                                        <FormCheck className="flex items-center mr-2">
+                                          <FormCheck.Input
+                                            id="checkbox-switch-true"
+                                            type="checkbox"
+                                            checked={field.value === true} // Check for true value
+                                            onChange={
+                                              () =>
+                                                field.onChange(
+                                                  field.value === true
+                                                    ? null
+                                                    : true
+                                                ) // Toggle true/null
+                                            }
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-switch-true"
+                                            className="ml-2 text-left"
+                                          >
+                                            True
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                        <FormCheck className="flex items-center mr-2">
+                                          <FormCheck.Input
+                                            id="checkbox-switch-false"
+                                            type="checkbox"
+                                            checked={field.value === false} // Check for false value
+                                            onChange={
+                                              () =>
+                                                field.onChange(
+                                                  field.value === false
+                                                    ? null
+                                                    : false
+                                                ) // Toggle false/null
+                                            }
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-switch-false"
+                                            className="ml-2 text-left"
+                                          >
+                                            False
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  />
                                 </div>
-                                <Controller
-                                  name="nl_exist"
-                                  control={control}
-                                  defaultValue={null} // Default as null to allow toggling
-                                  render={({ field }) => (
-                                    <div className="flex flex-row mt-[10px]">
-                                      <FormCheck className="flex items-center mr-2">
-                                        <FormCheck.Input
-                                          id="checkbox-switch-true"
-                                          type="checkbox"
-                                          checked={field.value === true} // Check for true value
-                                          onChange={
-                                            () =>
-                                              field.onChange(
-                                                field.value === true
-                                                  ? null
-                                                  : true
-                                              ) // Toggle true/null
-                                          }
-                                        />
-                                        <FormCheck.Label
-                                          htmlFor="checkbox-switch-true"
-                                          className="ml-2 text-left"
-                                        >
-                                          True
-                                        </FormCheck.Label>
-                                      </FormCheck>
-                                      <FormCheck className="flex items-center mr-2">
-                                        <FormCheck.Input
-                                          id="checkbox-switch-false"
-                                          type="checkbox"
-                                          checked={field.value === false} // Check for false value
-                                          onChange={
-                                            () =>
-                                              field.onChange(
-                                                field.value === false
-                                                  ? null
-                                                  : false
-                                              ) // Toggle false/null
-                                          }
-                                        />
-                                        <FormCheck.Label
-                                          htmlFor="checkbox-switch-false"
-                                          className="ml-2 text-left"
-                                        >
-                                          False
-                                        </FormCheck.Label>
-                                      </FormCheck>
-                                    </div>
-                                  )}
-                                />
+
+                                <div className="w-full flex-1">
+                                  <div className="text-left text-slate-500 font-semibold">
+                                    Approved
+                                  </div>
+                                  <Controller
+                                    name="approved"
+                                    control={control}
+                                    defaultValue={null}
+                                    render={({ field }) => (
+                                      <div className="flex flex-row mt-[10px]">
+                                        <FormCheck className="flex items-center mr-2">
+                                          <FormCheck.Input
+                                            id="checkbox-approved-true"
+                                            type="checkbox"
+                                            checked={field.value === true}
+                                            onChange={
+                                              () =>
+                                                field.onChange(
+                                                  field.value === true
+                                                    ? null
+                                                    : true
+                                                )
+                                            }
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-approved-true"
+                                            className="ml-2 text-left"
+                                          >
+                                            True
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                        <FormCheck className="flex items-center mr-2">
+                                          <FormCheck.Input
+                                            id="checkbox-approved-false"
+                                            type="checkbox"
+                                            checked={field.value === false}
+                                            onChange={
+                                              () =>
+                                                field.onChange(
+                                                  field.value === false
+                                                    ? null
+                                                    : false
+                                                )
+                                            }
+                                          />
+                                          <FormCheck.Label
+                                            htmlFor="checkbox-approved-false"
+                                            className="ml-2 text-left"
+                                          >
+                                            False
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  />
+                                </div>
                               </div>
 
-                              <div className="w-full flex-1">
-                                <div className="text-left text-slate-500 font-semibold">
-                                  Approved
-                                </div>
-                                <Controller
-                                  name="approved"
-                                  control={control}
-                                  defaultValue={null}
-                                  render={({ field }) => (
-                                    <div className="flex flex-row mt-[10px]">
-                                      <FormCheck className="flex items-center mr-2">
-                                        <FormCheck.Input
-                                          id="checkbox-approved-true"
-                                          type="checkbox"
-                                          checked={field.value === true}
-                                          onChange={
-                                            () =>
-                                              field.onChange(
-                                                field.value === true
-                                                  ? null
-                                                  : true
-                                              )
-                                          }
-                                        />
-                                        <FormCheck.Label
-                                          htmlFor="checkbox-approved-true"
-                                          className="ml-2 text-left"
-                                        >
-                                          True
-                                        </FormCheck.Label>
-                                      </FormCheck>
-                                      <FormCheck className="flex items-center mr-2">
-                                        <FormCheck.Input
-                                          id="checkbox-approved-false"
-                                          type="checkbox"
-                                          checked={field.value === false}
-                                          onChange={
-                                            () =>
-                                              field.onChange(
-                                                field.value === false
-                                                  ? null
-                                                  : false
-                                              )
-                                          }
-                                        />
-                                        <FormCheck.Label
-                                          htmlFor="checkbox-approved-false"
-                                          className="ml-2 text-left"
-                                        >
-                                          False
-                                        </FormCheck.Label>
-                                      </FormCheck>
-                                    </div>
-                                  )}
-                                />
-                              </div>
-                            </div>
-
-                            {/* 
+                              {/* 
                             <div className="w-full">
                               <div className="text-left text-slate-500 font-semibold">
                                 Head Support
@@ -2375,265 +2443,19 @@ function ShareHolderProposal() {
                           </div>
                         </div>
                       )}
-                      <div className="flex justify-between items-center mb-4" id="data-listing">
-                        <h3 className="text-lg font-semibold mb-4">Proposal Details</h3>
-                        <Tippy content="Download Excel" options={{ theme: "light" }}>
-                          <div
-                            className="box p-[5px] cursor-pointer"
-                            onClick={() => !loadingDownload && handleDownload()}
-                          >
-                            {loadingDownload ? <Lucide
-                              icon="Loader"
-                              className="w-6 h-7  stroke-[1.3]  animate-spin
-"
-                            /> : <img alt="download-icon" src={downloadIcon} />}
-                          </div>
-                        </Tippy>
-                      </div>
-                      <StandardizedTable
-                        isLoading={loading}
-                        maxHeight="400px"
-                        skeletonCols={isAllCompanySelected ? 10 : 9}
-                        skeletonRows={10}
-                      >
-                        <StandardizedTable.Header>
-                          <StandardizedTable.Cell isHeader width="8%">
-                            Proxy Year
-                          </StandardizedTable.Cell>
-                          {isAllCompanySelected && (
-                            <StandardizedTable.Cell isHeader width="12%">
-                              Company
-                            </StandardizedTable.Cell>
-                          )}
-                          <StandardizedTable.Cell isHeader width="15%">
-                            Proponent
-                          </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="20%">
-                            Proposal
-                          </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="12%">
-                            Category
-                          </StandardizedTable.Cell>
-                          <StandardizedTable.Cell
-                            isHeader
-                            width="10%"
-                            className="text-center cursor-pointer"
-                          >
-                            % Support*
-                          </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="10%" className="text-center">
-                            Vote Details
-                          </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="8%" className="text-center">
-                            No Action Letters
-                          </StandardizedTable.Cell>
-                          <StandardizedTable.Cell isHeader width="8%" className="text-center">
-                            Details
-                          </StandardizedTable.Cell>
-                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                            <StandardizedTable.Cell isHeader width="8%" className="text-center">
-                              Actions
-                            </StandardizedTable.Cell>
-                          )}
-                        </StandardizedTable.Header>
-
-                        <Table.Tbody>
-                          {shareHolderProposal?.length > 0 &&
-                            shareHolderProposal.map(
-                              (noAction: any, index: number) => (
-                                <StandardizedTable.Row
-                                  key={noAction?.id}
-                                  index={index}
-                                >
-                                  <StandardizedTable.Cell>
-                                    <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                      {noAction?.proxy_season}
-                                    </span>
-                                  </StandardizedTable.Cell>
-                                  {isAllCompanySelected && (
-                                    <StandardizedTable.Cell>
-                                      <span className="font-medium">{noAction?.company_name}</span>
-                                    </StandardizedTable.Cell>
-                                  )}
-                                  <StandardizedTable.Cell>
-                                    <span className="font-medium">
-                                      {noAction?.proponent ===
-                                        "Not Disclosed" &&
-                                        (!noAction?.proponent_name ||
-                                          noAction?.proponent_name.trim() ===
-                                          "")
-                                        ? noAction?.proponent
-                                        : noAction?.proponent ===
-                                          "Not Disclosed"
-                                          ? noAction?.proponent_name
-                                          : noAction?.proponent}
-                                    </span>
-                                  </StandardizedTable.Cell>
-                                  <StandardizedTable.Cell>
-                                    <span className="font-medium text-sm">
-                                      {noAction?.proposal_name || '-'}
-                                    </span>
-                                  </StandardizedTable.Cell>
-                                  <StandardizedTable.Cell>
-                                    <span className="font-medium text-sm">
-                                      {noAction?.category || '-'}
-                                    </span>
-                                  </StandardizedTable.Cell>
-                                  <StandardizedTable.Cell className="text-center">
-                                    <span className={clsx([
-                                      `py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium ${noAction?.color_name} text-center`,
-                                    ])}>
-                                      {noAction?.outcome_percentage}
-                                    </span>
-                                  </StandardizedTable.Cell>
-                                  <StandardizedTable.Cell className="text-center">
-                                    {noAction?.vote_details?.length > 0 && (
-                                      <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
-                                        <Grid3X3
-                                          strokeWidth={1.25}
-                                          onClick={() =>
-                                            onVisibleDetail(noAction)
-                                          }
-                                        />
-                                      </div>
-                                    )}
-
-                                    {!noAction?.vote_details &&
-                                      noAction?.year?.toString() ===
-                                      "2025" && (
-                                        <div className="whitespace-nowrap flex items-center justify-center">
-                                          <div className="flex items-center justify-center w-full h-full text-primary">
-                                            <Tippy
-                                              content="Not Disclose"
-                                              options={{ theme: "light" }}
-                                            >
-                                              <MegaphoneOff
-                                                size={22}
-                                                strokeWidth={1.2}
-                                                absoluteStrokeWidth
-                                              />
-                                            </Tippy>
-                                          </div>
-                                        </div>
-                                      )}
-                                  </StandardizedTable.Cell>
-                                  <StandardizedTable.Cell
-                                    className={clsx([
-                                      "cursor-pointer text-center",
-                                      noAction?.nl_exist && "text-blue-600 underline"
-                                    ])}
-                                  >
-                                    {noAction?.nl_exist === true && (
-                                      <span
-                                        className="font-medium"
-                                        onClick={() => {
-                                          const id =
-                                            noAction?.nl_exist === true
-                                              ? noAction?.no_action_link
-                                                ?.split("/")
-                                                .filter(Boolean)
-                                                .pop()
-                                              : 0;
-                                          noAction?.nl_exist === true &&
-                                            navigate(
-                                              `/shareholder-proposal/${id}?url=shareholder_proposal/no_action`
-                                            )
-                                        }}>
-                                        Yes
-                                      </span>
-                                    )}
-                                  </StandardizedTable.Cell>
-
-                                  <StandardizedTable.Cell className="text-center">
-                                    <div className="flex gap-3 justify-center">
-                                      {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                        <Tippy
-                                          content="Duplicate"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() =>
-                                              onEditProposalClickHandler(
-                                                noAction,
-                                                "duplicate"
-                                              )
-                                            }
-                                            icon="Copy"
-                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                          />
-                                        </Tippy>
-                                      )}
-
-                                      <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                        <Lucide
-                                          onClick={() =>
-                                            navigate(
-                                              `/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/def14a`
-                                            )
-                                          }
-                                          icon="Eye"
-                                        />
-                                      </div>
-                                    </div>
-                                  </StandardizedTable.Cell>
-
-                                  {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-                                    <StandardizedTable.Cell className="text-center">
-                                      <div className="flex gap-3 justify-center">
-                                        <Tippy
-                                          content="Edit"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() =>
-                                              onEditProposalClickHandler(
-                                                noAction,
-                                                "edit"
-                                              )
-                                            }
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                          />
-                                        </Tippy>
-                                        <Tippy
-                                          content="Delete"
-                                          options={{ theme: "light" }}
-                                        >
-                                          <Lucide
-                                            onClick={() => {
-                                              setProposalToDelete(noAction);
-                                              setIsDeleteModalOpen(true);
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                          />
-                                        </Tippy>
-                                      </div>
-                                    </StandardizedTable.Cell>
-                                  )}
-                                </StandardizedTable.Row>
-                              )
-                            )}
-                        </Table.Tbody>
-                        {shareHolderProposal?.length === 0 && (
-                          <Table.Tbody>
-                            <Table.Tr>
-                              <Table.Td colSpan={12} className="text-center py-12">
-                                <div className="flex flex-col items-center justify-center">
-                                  <Lucide
-                                    icon="FileSearch"
-                                    className="w-12 h-12 text-gray-300 mb-2"
-                                  />
-                                  <div className="text-lg font-medium">No data found</div>
-                                  <div className="text-sm text-gray-500 mt-1">
-                                    Try adjusting your filters or search criteria
-                                  </div>
-                                </div>
-                              </Table.Td>
-                            </Table.Tr>
-                          </Table.Tbody>
-                        )}
-                      </StandardizedTable>
+                      <ProposalDetailsTableView
+                        loading={loading}
+                        loadingDownload={loadingDownload}
+                        shareHolderProposal={shareHolderProposal}
+                        isAllCompanySelected={isAllCompanySelected}
+                        user={user}
+                        companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
+                        handleDownload={handleDownload}
+                        onVisibleDetail={onVisibleDetail}
+                        onEditProposalClickHandler={onEditProposalClickHandler}
+                        setProposalToDelete={setProposalToDelete}
+                        setIsDeleteModalOpen={setIsDeleteModalOpen}
+                      />
                     </Tab.Panel>
                   </Tab.Panels>
 
@@ -2683,7 +2505,7 @@ function ShareHolderProposal() {
                           {/* Content */}
                           <div>
                             {loading ? (
-                              <div className="p-5 mt-3.5 space-y-8">                                
+                              <div className="p-5 mt-3.5 space-y-8">
                                 {/* Top Charts Skeleton */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                   <SkeletonChart type="bar" className="h-[350px]" />
@@ -2736,18 +2558,27 @@ function ShareHolderProposal() {
                       )}
                       <div className="flex justify-between items-center mb-4" id="data-listing">
                         <h3 className="text-lg font-semibold mb-4">Proposal Details</h3>
-                        <Tippy content="Download Excel" options={{ theme: "light" }}>
-                          <div
-                            className="box p-[5px] cursor-pointer"
-                            onClick={() => !loadingDownload && handleDownload()}
-                          >
-                            {loadingDownload ? <Lucide
-                              icon="Loader"
-                              className="w-6 h-7  stroke-[1.3]  animate-spin
-"
-                            /> : <img alt="download-icon" src={downloadIcon} />}
-                          </div>
-                        </Tippy>
+                        <div className="flex gap-2">
+                          <Tippy content="Download Excel" options={{ theme: "light" }}>
+                            <div
+                              className="box p-[5px] cursor-pointer"
+                              onClick={() => !loadingDownload && handleDownload()}
+                            >
+                              {loadingDownload ? <Lucide
+                                icon="Loader"
+                                className="w-6 h-7  stroke-[1.3]  animate-spin"
+                              /> : <img alt="download-icon" src={downloadIcon} />}
+                            </div>
+                          </Tippy>
+                          <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                            <div
+                              className="box p-2 cursor-pointer"
+                            // onClick={() => window.open("summary-details", "_blank")}
+                            >
+                              <img alt="tab-icon" src={tabIcon} />
+                            </div>
+                          </Tippy>
+                        </div>
                       </div>
                       <StandardizedTable
                         isLoading={loading}

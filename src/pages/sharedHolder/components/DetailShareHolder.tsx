@@ -154,7 +154,7 @@ const DetailShareHolder = () => {
         className="bg-theme-2 border-bg-theme-2 mb-4"
       >
         <ChevronLeft
-          className="roup-[.mode--light]:text-white text-white"
+          className="group-[.mode--light]:text-white text-white"
           size={18}
           strokeWidth={1.5}
         />
