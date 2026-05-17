@@ -171,7 +171,9 @@ function ShareHolderProposal() {
     "" | "proposal" | "no-action" | "withdrawn"
   >("proposal");
 
-  const [tableOnlyView, setTableOnlyView] = useState<boolean>(false);
+  const [tableOnlyView, setTableOnlyView] = useState<boolean>(
+    () => new URLSearchParams(window.location.search).get("view") === "table-only"
+  );
 
   const month = [
     {
