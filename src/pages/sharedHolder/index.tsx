@@ -99,10 +99,9 @@ function ShareHolderProposal() {
     const gsParam = searchParams.get("global_search");
     const urlParam = searchParams.get("url");
     const pageParam = searchParams.get("page");
+    const allCompaniesParam = searchParams.get("allCompanies");
 
-    if (viewParam === "table-only") {
-      setTableOnlyView(true);
-    }
+    setTableOnlyView(viewParam === "table-only");
 
     if (gsParam) {
       try {
@@ -134,6 +133,11 @@ function ShareHolderProposal() {
       if (!isNaN(parsedPage) && parsedPage > 0) {
         dispatch(setPage(parsedPage));
       }
+    }
+
+    // Restore isAllCompanySelected from URL param for table-only view
+    if (viewParam === "table-only" && allCompaniesParam === "true") {
+      dispatch(selectUnSelectAllCompany(true));
     }
   }, [dispatch, location.search]);
 
@@ -322,6 +326,37 @@ function ShareHolderProposal() {
   };
 
   const navigate = useNavigate();
+
+  const openTableOnlyInNewTab = (targetTab: "proposal" | "no-action" | "withdrawn") => {
+    try {
+      const tabUrlMap: Record<string, string> = {
+        proposal: "shareholder_proposal/def14a",
+        "no-action": "shareholder_proposal/no_action",
+        withdrawn: "shareholder_proposal/withdrawn",
+      };
+
+      const params = new URLSearchParams();
+      params.set("url", tabUrlMap[targetTab]);
+      params.set("view", "table-only");
+      params.set("page", String(page));
+      params.set("allCompanies", String(isAllCompanySelected));
+
+      if (Array.isArray(filters?.global_search) && filters.global_search.length > 0) {
+        params.set("global_search", JSON.stringify(filters.global_search));
+      } else if (companyGlobalSearchName) {
+        params.set("global_search", JSON.stringify([companyGlobalSearchName]));
+      }
+
+      window.open(`/shareholder-proposal?${params.toString()}`, "_blank");
+    } catch (error) {
+      const fallbackUrl = targetTab === "no-action"
+        ? "shareholder_proposal/no_action"
+        : targetTab === "withdrawn"
+          ? "shareholder_proposal/withdrawn"
+          : "shareholder_proposal/def14a";
+      window.open(`/shareholder-proposal?url=${fallbackUrl}&view=table-only`, "_blank");
+    }
+  };
 
   // Helper function to check if analytics data is available
   const isAnalyticsDataAvailable = () => {
@@ -1018,20 +1053,99 @@ function ShareHolderProposal() {
 
   if (tableOnlyView) {
     return (
-      <ProposalDetailsTableView
-        loading={loading}
-        loadingDownload={loadingDownload}
-        shareHolderProposal={shareHolderProposal}
-        isAllCompanySelected={isAllCompanySelected}
-        user={user}
-        companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
-        handleDownload={handleDownload}
-        onVisibleDetail={onVisibleDetail}
-        onEditProposalClickHandler={onEditProposalClickHandler}
-        setProposalToDelete={setProposalToDelete}
-        setIsDeleteModalOpen={setIsDeleteModalOpen}
-        tableOnlyView
-      />
+      <div>
+        <ProposalDetailsTableView
+          loading={loading}
+          loadingDownload={loadingDownload}
+          shareHolderProposal={shareHolderProposal}
+          isAllCompanySelected={isAllCompanySelected}
+          user={user}
+          companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
+          globalSearchValues={filters?.global_search}
+          currentPage={page}
+          currentTab={tab}
+          onOpenInNewTab={() => openTableOnlyInNewTab(tab)}
+          handleDownload={handleDownload}
+          onVisibleDetail={onVisibleDetail}
+          onEditProposalClickHandler={onEditProposalClickHandler}
+          onEditNoActionClickHandler={onEditNoActionClickHandler}
+          onEditWithdrawnClickHandler={onEditWithdrawnClickHandler}
+          setProposalToDelete={setProposalToDelete}
+          setIsDeleteModalOpen={setIsDeleteModalOpen}
+          tableOnlyView
+        />
+        <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
+          <CPagination
+            page={page}
+            totalPages={totalPages}
+            handleNextPage={handleNextPage}
+            handlePageChange={handlePageChange}
+            handlePreviousPage={handlePreviousPage}
+          />
+        </div>
+        {tab === "proposal" && (
+          <footer className="!pt-3 flex items-start flex-col">
+            <span className="!pt-3 flex items-center p-2">
+              <sup className="bold-sup cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>*</sup>
+              <p>[For/(For + Against or Withhold + Abstain)]</p>
+            </span>
+          </footer>
+        )}
+
+        {addNewShareholderModalVisible && (
+          <AddNewShareholder
+            addNewShareholderModalVisible={addNewShareholderModalVisible}
+            setAddNewShareholderModalVisible={setAddNewShareholderModalVisible}
+            selectedShareholderProposal={selectedShareholderProposal}
+            type={actionType}
+          />
+        )}
+        {addNewNoActionModalVisible && (
+          <AddNewNoAction
+            addNewNoActionModalVisible={addNewNoActionModalVisible}
+            setAddNewNoActionModalVisible={setAddNewNoActionModalVisible}
+            selectedShareholderNoAction={selectedShareholderNoAction}
+          />
+        )}
+        {addNewWithdrawnModalVisible && (
+          <AddNewWithdrawn
+            addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
+            setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
+            selectedShareholderWithdrawn={selectedShareholderWithdrawn}
+          />
+        )}
+        {shareholderDetailModalVisible && (
+          <DetailDialog
+            shareholderDetailModalVisible={shareholderDetailModalVisible}
+            setShareholderDetailModalVisible={setShareholderDetailModalVisible}
+            selectedShareholderDetail={selectedShareholderDetail}
+          />
+        )}
+        {isDeleteModalOpen && (
+          <Dialog
+            size="md"
+            open={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+          >
+            <Dialog.Panel className="p-0 text-center">
+              <div className="p-5 text-center">
+                <Lucide icon="XCircle" className="w-16 h-16 mx-auto mt-3 text-danger" />
+                <div className="mt-5 text-3xl">Are you sure?</div>
+                <div className="mt-2 text-slate-500">
+                  Do you really want to delete this proposal? <br />
+                  This action cannot be undone.
+                </div>
+              </div>
+              <div className="px-5 pb-8 text-center">
+                <Button variant="outline-secondary" type="button" onClick={() => setIsDeleteModalOpen(false)} className="w-24 mr-1">Cancel</Button>
+                <Button variant="danger" type="button" className="w-24" onClick={handleDelete} disabled={isDeleting}>
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </Button>
+              </div>
+            </Dialog.Panel>
+          </Dialog>
+        )}
+      </div>
     );
   }
 
@@ -2450,6 +2564,10 @@ function ShareHolderProposal() {
                         isAllCompanySelected={isAllCompanySelected}
                         user={user}
                         companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
+                        globalSearchValues={filters?.global_search}
+                        currentPage={page}
+                        currentTab={tab}
+                        onOpenInNewTab={() => openTableOnlyInNewTab(tab)}
                         handleDownload={handleDownload}
                         onVisibleDetail={onVisibleDetail}
                         onEditProposalClickHandler={onEditProposalClickHandler}
@@ -2573,7 +2691,7 @@ function ShareHolderProposal() {
                           <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                             <div
                               className="box p-2 cursor-pointer"
-                            // onClick={() => window.open("summary-details", "_blank")}
+                              onClick={() => openTableOnlyInNewTab("no-action")}
                             >
                               <img alt="tab-icon" src={tabIcon} />
                             </div>
@@ -2743,6 +2861,30 @@ function ShareHolderProposal() {
                           </Button>
                         </div>
                       )}
+                      <div className="flex justify-between items-center mb-4" id="data-listing-withdrawn">
+                        <h3 className="text-lg font-semibold mb-4">Proposal Details</h3>
+                        <div className="flex gap-2">
+                          <Tippy content="Download Excel" options={{ theme: "light" }}>
+                            <div
+                              className="box p-[5px] cursor-pointer"
+                              onClick={() => !loadingDownload && handleDownload()}
+                            >
+                              {loadingDownload ? <Lucide
+                                icon="Loader"
+                                className="w-6 h-7  stroke-[1.3]  animate-spin"
+                              /> : <img alt="download-icon" src={downloadIcon} />}
+                            </div>
+                          </Tippy>
+                          <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                            <div
+                              className="box p-2 cursor-pointer"
+                              onClick={() => openTableOnlyInNewTab("withdrawn")}
+                            >
+                              <img alt="tab-icon" src={tabIcon} />
+                            </div>
+                          </Tippy>
+                        </div>
+                      </div>
                       <StandardizedTable isLoading={loading} maxHeight="400px">
                         <StandardizedTable.Header>
                           <StandardizedTable.Cell isHeader width="15%">
