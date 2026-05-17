@@ -345,18 +345,18 @@ function ShareHolderProposal() {
 
       if (Array.isArray(filters?.global_search) && filters.global_search.length > 0) {
         params.set("global_search", JSON.stringify(filters.global_search));
-      } else if (companyGlobalSearchName) {
+      } else if (!isAllCompanySelected && companyGlobalSearchName) {
         params.set("global_search", JSON.stringify([companyGlobalSearchName]));
       }
 
-      window.open(`/shareholder-proposal?${params.toString()}`, "_blank");
+      navigate(`/shareholder-proposal?${params.toString()}`);
     } catch (error) {
       const fallbackUrl = targetTab === "no-action"
         ? "shareholder_proposal/no_action"
         : targetTab === "withdrawn"
           ? "shareholder_proposal/withdrawn"
           : "shareholder_proposal/def14a";
-      window.open(`/shareholder-proposal?url=${fallbackUrl}&view=table-only`, "_blank");
+      navigate(`/shareholder-proposal?url=${fallbackUrl}&view=table-only`);
     }
   };
 
@@ -2690,7 +2690,7 @@ function ShareHolderProposal() {
                               /> : <img alt="download-icon" src={downloadIcon} />}
                             </div>
                           </Tippy>
-                          <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                          <Tippy content="Expand View" options={{ theme: "light" }}>
                             <div
                               className="box p-2 cursor-pointer"
                               onClick={() => openTableOnlyInNewTab("no-action")}
@@ -2877,7 +2877,7 @@ function ShareHolderProposal() {
                               /> : <img alt="download-icon" src={downloadIcon} />}
                             </div>
                           </Tippy>
-                          <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                          <Tippy content="Expand View" options={{ theme: "light" }}>
                             <div
                               className="box p-2 cursor-pointer"
                               onClick={() => openTableOnlyInNewTab("withdrawn")}
