@@ -18,7 +18,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { countValidFilters, countIndividualFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { ArrowDown, FilterX, SaveAll } from "lucide-react";
+import { ArrowDown, ChevronLeft, FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 
 import AddNewInvesterProfile from "../InvestorProfiles/components/AddNewInvester";
@@ -46,6 +46,8 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import AddEngagementDetailsModal from "./components/AddEngagementDetailsModal";
+import { useNavigate, useLocation } from "react-router-dom";
+import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 
 interface PeerAnalysisFilter {
   category: string[];
@@ -60,6 +62,9 @@ interface PeerAnalysisFilter {
 
 function PeerAnalysis() {
   const dispatch: AppDispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [tableOnlyView, setTableOnlyView] = useState<boolean>(false);
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
     useState<boolean>(false);
@@ -71,6 +76,25 @@ function PeerAnalysis() {
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [viewAll, setViewAll] = useState<boolean>(false);
   const [isViewAnalysis, setIsViewAnalysis] = useState(true);
+
+  const openTableOnlyInNewTab = () => {
+    try {
+      const params = new URLSearchParams();
+      params.set("view", "table-only");
+      params.set("page", String(page));
+      params.set("allCompanies", String(isAllCompanySelected));
+
+      if (Array.isArray(filters?.global_search) && filters.global_search.length > 0) {
+        params.set("global_search", JSON.stringify(filters.global_search));
+      } else if (!isAllCompanySelected && companyGlobalSearchName) {
+        params.set("global_search", JSON.stringify([companyGlobalSearchName]));
+      }
+
+      navigate(`/engagement-detail?${params.toString()}`);
+    } catch (error) {
+      navigate(`/engagement-detail?view=table-only`);
+    }
+  };
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<any>({
@@ -155,6 +179,41 @@ function PeerAnalysis() {
     // setValue("institutes", []);
     setValue("index", " ");
   };
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const viewParam = searchParams.get("view");
+    const gsParam = searchParams.get("global_search");
+    const pageParam = searchParams.get("page");
+    const allCompaniesParam = searchParams.get("allCompanies");
+
+    setTableOnlyView(viewParam === "table-only");
+
+    if (gsParam) {
+      try {
+        const decoded = decodeURIComponent(gsParam);
+        const parsed = JSON.parse(decoded);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          dispatch(setFilter({ key: "global_search", value: parsed }));
+        }
+      } catch {
+        dispatch(setFilter({ key: "global_search", value: [gsParam] }));
+      }
+    }
+
+    if (pageParam) {
+      const parsedPage = parseInt(pageParam, 10);
+      if (!isNaN(parsedPage) && parsedPage > 0) {
+        dispatch(setPage(parsedPage));
+      }
+    }
+
+    if (viewParam === "table-only" && allCompaniesParam === "true") {
+      dispatch(selectUnSelectAllCompany(true));
+    } else if (viewParam === "table-only" && allCompaniesParam === "false") {
+      dispatch(selectUnSelectAllCompany(false));
+    }
+  }, [dispatch, location.search]);
 
   useEffect(() => {
     dispatch(
@@ -471,46 +530,75 @@ function PeerAnalysis() {
         <div className="col-span-12">
           {/* Sticky Header OUTSIDE scrollable content */}
           <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
-            {isAllCompanySelected === true ? (
-              <h1 className="font-semibold text-lg">
-                All Engagement Details
-              </h1>
+            {tableOnlyView ? (
+              <div className="flex items-center gap-2 py-4">
+                <Button
+                  onClick={() => {
+                    const params = new URLSearchParams(location.search);
+                    params.delete("view");
+                    params.delete("allCompanies");
+                    navigate(`/engagement-detail?${params.toString()}`);
+                  }}
+                  variant="primary"
+                  className="bg-theme-2 border-bg-theme-2"
+                >
+                  <ChevronLeft
+                    className="group-[.mode--light]:text-white text-white"
+                    size={18}
+                    strokeWidth={1.5}
+                  />
+                  Back
+                </Button>
+                <h1 className="font-semibold text-lg ml-2">
+                  {isAllCompanySelected ? "All Engagement Details" : "Engagement Details"}
+                </h1>
+              </div>
             ) : (
-              <div className="font-semibold text-lg">Engagement Details</div>
+              <>
+                {isAllCompanySelected === true ? (
+                  <h1 className="font-semibold text-lg">
+                    All Engagement Details
+                  </h1>
+                ) : (
+                  <div className="font-semibold text-lg">Engagement Details</div>
+                )}
+                <div className="flex gap-3 px-4 py-4">
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
+                    onClick={async (e) => {
+                      if (isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: false } });
+                      }
+                    }}
+                  >
+                    {companyGlobalSearchName || "Company"}
+                  </button>
+                  <button
+                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
+                      ? "bg-primary text-white shadow"
+                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                      }`}
+                    onClick={async (e) => {
+                      if (!isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: true } });
+                      }
+                    }}
+                  >
+                    View For All Companies
+                  </button>
+                </div>
+              </>
             )}
-            <div className="flex gap-3 px-4 py-4">
-              <button
-                className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                  ? "bg-primary text-white shadow"
-                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                  }`}
-                onClick={async (e) => {
-                  if (isAllCompanySelected) {
-                    handleViewAllChange({ target: { checked: false } });
-                  }
-                }}
-              >
-                {companyGlobalSearchName || "Company"}
-              </button>
-              <button
-                className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                  ? "bg-primary text-white shadow"
-                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                  }`}
-                onClick={async (e) => {
-                  if (!isAllCompanySelected) {
-                    handleViewAllChange({ target: { checked: true } });
-                  }
-                }}
-              >
-                View For All Companies
-              </button>
-            </div>
           </div>
           {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
             <div className="flex flex-col box box--stacked bg-white p-5">
-              <div className="grid grid-cols-6 xs:grid-cols-1 gap-4 md:grid-cols-3 p-4">
+              {!tableOnlyView && (
+                <>
+                  <div className="grid grid-cols-6 xs:grid-cols-1 gap-4 md:grid-cols-3 p-4">
                 <div className="mx-2">
                   <TomSelect
                     value={selectedInstitution}
@@ -1045,27 +1133,45 @@ function PeerAnalysis() {
                   />
                 )
               )}
+                </>
+              )}
 
               <div id="data-listing" className="flex justify-between items-center mb-4 px-5">
                 <h3 className="text-lg font-semibold mb-4">Engagement Details</h3>
-                <Tippy content="Download Excel" options={{ theme: "light" }}>
-                  <div
-                    className="box p-[5px] cursor-pointer"
-                    onClick={() => !loadingDownload && handleDownload()}
-                  >
-                    {loadingDownload ? <Lucide
-                      icon="Loader"
-                      className="w-6 h-7  stroke-[1.3]  animate-spin
-"
-                    /> : <img alt="download-icon" src={downloadIcon} />}
-                  </div>
-                </Tippy>
+                <div className="flex items-center gap-2">
+                  {count > 0 && (
+                    <span className="text-sm text-slate-500 font-semibold mr-2">
+                      Count: {count.toLocaleString()}
+                    </span>
+                  )}
+                  <Tippy content="Download Excel" options={{ theme: "light" }}>
+                    <div
+                      className="box p-[5px] cursor-pointer border border-gray-200 rounded flex items-center justify-center w-9 h-9"
+                      onClick={() => !loadingDownload && handleDownload()}
+                    >
+                      {loadingDownload ? <Lucide
+                        icon="Loader"
+                        className="w-4 h-4 stroke-[1.3] animate-spin"
+                      /> : <img alt="download-icon" src={downloadIcon} className="w-5 h-5" />}
+                    </div>
+                  </Tippy>
+                  {!tableOnlyView && (
+                    <Tippy content="Expand View" options={{ theme: "light" }}>
+                      <div
+                        className="box p-[5px] cursor-pointer border border-gray-200 rounded flex items-center justify-center w-9 h-9"
+                        onClick={openTableOnlyInNewTab}
+                      >
+                        <img alt="tab-icon" src={tabIcon} className="w-4 h-4" />
+                      </div>
+                    </Tippy>
+                  )}
+                </div>
               </div>
               <div className="px-5">
                 <TableWrapper
                   isLoading={loading}
                   skeleton={
-                    <div className="overflow-auto max-h-[400px] rounded-lg">
+                    <div className={clsx("overflow-auto rounded-lg", tableOnlyView ? "max-h-[70vh]" : "max-h-[400px]")}>
                       <Table>
                         <Table.Thead>
                           <Table.Tr className="bg-primary text-white">
@@ -1138,7 +1244,7 @@ function PeerAnalysis() {
                   rows={6}
                   columns={isAllCompanySelected ? 8 : 7}
                 >
-                  <div className="overflow-auto max-h-[400px] rounded-lg">
+                  <div className={clsx("overflow-auto rounded-lg", tableOnlyView ? "max-h-[70vh]" : "max-h-[400px]")}>
                     <Table>
                       <Table.Thead>
                         <Table.Tr className="bg-primary text-white">
