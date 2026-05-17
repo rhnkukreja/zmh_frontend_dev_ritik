@@ -6,9 +6,11 @@ import StandardizedTable from "@/components/StandardizedTable";
 import Table from "@/components/Base/Table";
 import downloadIcon from "../../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../../assets/images/zmh-images/new-tab-icon.png";
+import CPagination from "@/components/Pagination";
 import { ChevronLeft, Grid3X3, MegaphoneOff } from "lucide-react";
 import clsx from "clsx";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAppSelector } from "@/stores/hooks";
 import { useState } from "react";
 import AddNewShareholder from "./AddNewShareholder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
@@ -24,24 +26,18 @@ type ProposalDetailsTableViewProps = {
     isAllCompanySelected: boolean;
     user: any;
     companyGlobalSearchName?: string;
-    globalSearchValues?: string[];
-    currentPage?: number;
-    currentTab?: "proposal" | "no-action" | "withdrawn";
-    onOpenInNewTab?: () => void;
     handleDownload: () => void;
     onVisibleDetail: (proposal: any) => void;
     onEditProposalClickHandler: (proposal: any, actionType: "edit" | "duplicate") => void;
-    onEditNoActionClickHandler?: (noAction: any) => void;
-    onEditWithdrawnClickHandler?: (withdrawn: any) => void;
     setProposalToDelete: (proposal: any) => void;
     setIsDeleteModalOpen: (value: boolean) => void;
     tableOnlyView?: boolean;
-};
-
-const TAB_TITLES: Record<string, string> = {
-    proposal: "Proposal Details",
-    "no-action": "No Action Letter Details",
-    withdrawn: "Withdrawn Proposal Details",
+    page?: number;
+    totalPages?: number;
+    handleNextPage?: () => void;
+    handlePreviousPage?: () => void;
+    handlePageChange?: (newPage: number) => void;
+    setTableOnlyView?: (value: boolean) => void;
 };
 
 function ProposalDetailsTableView({
@@ -51,31 +47,35 @@ function ProposalDetailsTableView({
     isAllCompanySelected,
     user,
     companyGlobalSearchName,
-    globalSearchValues,
-    currentPage,
-    currentTab,
-    onOpenInNewTab,
     handleDownload,
     onVisibleDetail,
     onEditProposalClickHandler,
-    onEditNoActionClickHandler,
-    onEditWithdrawnClickHandler,
     setProposalToDelete,
     setIsDeleteModalOpen,
     tableOnlyView = false,
+    setTableOnlyView,
+    page,
+    totalPages,
+    handleNextPage,
+    handlePreviousPage,
+    handlePageChange,
 }: ProposalDetailsTableViewProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
     const url = searchParams.get("url");
     const pageParam = searchParams.get("page");
-    const selectedTab = url?.includes("withdrawn")
-        ? "withdrawn"
-        : url?.includes("def14a")
-            ? "proposal"
-            : url?.includes("no_action")
-                ? "no-action"
-                : currentTab || "proposal";
+
+    const { tab: reduxTab } = useAppSelector((state) => state.sharedHolderNoAction);
+    const selectedTab = reduxTab
+        ? reduxTab
+        : url?.includes("withdrawn")
+            ? "withdrawn"
+            : url?.includes("def14a")
+                ? "proposal"
+                : url?.includes("no_action")
+                    ? "no-action"
+                    : "proposal";
     const dispatch: AppDispatch = useAppDispatch();
     const [isAddNewShareholderModalVisible, setIsAddNewShareholderModalVisible] = useState(false);
     const [selectedShareholderProposal, setSelectedShareholderProposal] = useState<any | null>(null);
@@ -84,406 +84,16 @@ function ProposalDetailsTableView({
     const [proposalToDelete, setProposalPendingDelete] = useState<any | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const isAdminOrAnalyst = user?.user_type === "Analyst" || user?.user_type === "Admin";
-
     const handleOpenInNewTab = () => {
-        if (onOpenInNewTab) {
-            onOpenInNewTab();
-            return;
-        }
-
-        try {
-            const tabUrlMap: Record<string, string> = {
-                proposal: "shareholder_proposal/def14a",
-                "no-action": "shareholder_proposal/no_action",
-                withdrawn: "shareholder_proposal/withdrawn",
-            };
-
-            const params = new URLSearchParams();
-            params.set("url", tabUrlMap[selectedTab] || "shareholder_proposal/def14a");
-            params.set("view", "table-only");
-            params.set("page", String(currentPage || 1));
-            params.set("allCompanies", String(isAllCompanySelected));
-            if (Array.isArray(globalSearchValues) && globalSearchValues.length > 0) {
-                params.set("global_search", JSON.stringify(globalSearchValues));
-            } else if (!isAllCompanySelected && companyGlobalSearchName) {
-                params.set("global_search", JSON.stringify([companyGlobalSearchName]));
-            }
-            navigate(`/shareholder-proposal?${params.toString()}`);
-        } catch (error) {
-            navigate("/shareholder-proposal?url=shareholder_proposal/def14a&view=table-only");
+        if (setTableOnlyView) {
+            setTableOnlyView(true);
         }
     };
 
     const backToPreviousPage = () => {
-        const nextPage = pageParam ? parseInt(pageParam, 10) : (currentPage || 1);
-        const tabUrlMap: Record<string, string> = {
-            proposal: "shareholder_proposal/def14a",
-            "no-action": "shareholder_proposal/no_action",
-            withdrawn: "shareholder_proposal/withdrawn",
-        };
-
-        const params = new URLSearchParams();
-        params.set("url", url || tabUrlMap[selectedTab] || "shareholder_proposal/def14a");
-        params.set("page", String(Number.isNaN(nextPage) ? 1 : nextPage));
-
-        const existingGlobalSearch = searchParams.get("global_search");
-        if (existingGlobalSearch) {
-            params.set("global_search", existingGlobalSearch);
-        } else if (Array.isArray(globalSearchValues) && globalSearchValues.length > 0) {
-            params.set("global_search", JSON.stringify(globalSearchValues));
-        } else if (!isAllCompanySelected && companyGlobalSearchName) {
-            params.set("global_search", JSON.stringify([companyGlobalSearchName]));
+        if (setTableOnlyView) {
+            setTableOnlyView(false);
         }
-
-        dispatch(setPage(Number.isNaN(nextPage) ? 1 : nextPage));
-        dispatch(setTabs(selectedTab));
-        navigate(`/shareholder-proposal?${params.toString()}`, {
-            state: { isBackToShareholderPage: true },
-        });
-    };
-
-    // ──────────────────────────────────────────────
-    // Render helpers per tab
-    // ──────────────────────────────────────────────
-
-    const renderProposalHeader = () => (
-        <StandardizedTable.Header>
-            <StandardizedTable.Cell isHeader width="8%">Proxy Year</StandardizedTable.Cell>
-            {isAllCompanySelected && (
-                <StandardizedTable.Cell isHeader width="12%">Company</StandardizedTable.Cell>
-            )}
-            <StandardizedTable.Cell isHeader width="15%">Proponent</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="20%">Proposal</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="12%">Category</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="10%" className="text-center cursor-pointer">% Support*</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="10%" className="text-center">Vote Details</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="8%" className="text-center">No Action Letters</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="8%" className="text-center">Details</StandardizedTable.Cell>
-            {isAdminOrAnalyst && (
-                <StandardizedTable.Cell isHeader width="8%" className="text-center">Actions</StandardizedTable.Cell>
-            )}
-        </StandardizedTable.Header>
-    );
-
-    const renderProposalRows = () => (
-        <Table.Tbody>
-            {shareHolderProposal?.length > 0 &&
-                shareHolderProposal.map((proposal: any, index: number) => (
-                    <StandardizedTable.Row key={proposal?.id} index={index}>
-                        <StandardizedTable.Cell>
-                            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                {proposal?.proxy_season}
-                            </span>
-                        </StandardizedTable.Cell>
-                        {isAllCompanySelected && (
-                            <StandardizedTable.Cell>
-                                <span className="font-medium">{proposal?.company_name}</span>
-                            </StandardizedTable.Cell>
-                        )}
-                        <StandardizedTable.Cell>
-                            <span className="font-medium">
-                                {proposal?.proponent === "Not Disclosed" &&
-                                    (!proposal?.proponent_name || proposal?.proponent_name.trim() === "")
-                                    ? proposal?.proponent
-                                    : proposal?.proponent === "Not Disclosed"
-                                        ? proposal?.proponent_name
-                                        : proposal?.proponent}
-                            </span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell>
-                            <span className="font-medium text-sm">{proposal?.proposal_name || "-"}</span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell>
-                            <span className="font-medium text-sm">{proposal?.category || "-"}</span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell className="text-center">
-                            <span className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium ${proposal?.color_name} text-center`])}>
-                                {proposal?.outcome_percentage}
-                            </span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell className="text-center">
-                            {proposal?.vote_details?.length > 0 && (
-                                <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
-                                    <Grid3X3 strokeWidth={1.25} onClick={() => onVisibleDetail(proposal)} />
-                                </div>
-                            )}
-                            {!proposal?.vote_details && proposal?.year?.toString() === "2025" && (
-                                <div className="whitespace-nowrap flex items-center justify-center">
-                                    <div className="flex items-center justify-center w-full h-full text-primary">
-                                        <Tippy content="Not Disclose" options={{ theme: "light" }}>
-                                            <MegaphoneOff size={22} strokeWidth={1.2} absoluteStrokeWidth />
-                                        </Tippy>
-                                    </div>
-                                </div>
-                            )}
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell className={clsx(["cursor-pointer text-center", proposal?.nl_exist && "text-blue-600 underline"])}>
-                            {proposal?.nl_exist === true && (
-                                <span
-                                    className="font-medium"
-                                    onClick={() => {
-                                        const id = proposal?.nl_exist === true
-                                            ? proposal?.no_action_link?.split("/").filter(Boolean).pop()
-                                            : 0;
-                                        proposal?.nl_exist === true &&
-                                            navigate(`/shareholder-proposal/${id}?url=shareholder_proposal/no_action`);
-                                    }}
-                                >
-                                    Yes
-                                </span>
-                            )}
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell className="text-center">
-                            <div className="flex gap-3 justify-center">
-                                {isAdminOrAnalyst && (
-                                    <Tippy content="Duplicate" options={{ theme: "light" }}>
-                                        <Lucide
-                                            onClick={() => {
-                                                setSelectedShareholderProposal(proposal);
-                                                setActionType("duplicate");
-                                                setIsAddNewShareholderModalVisible(true);
-                                            }}
-                                            icon="Copy"
-                                            className="w-4 h-4 mr-1.5 stroke-[1.3]"
-                                        />
-                                    </Tippy>
-                                )}
-                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                    <Lucide
-                                        onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/def14a`)}
-                                        icon="Eye"
-                                    />
-                                </div>
-                            </div>
-                        </StandardizedTable.Cell>
-                        {isAdminOrAnalyst && (
-                            <StandardizedTable.Cell className="text-center">
-                                <div className="flex gap-3 justify-center">
-                                    <Tippy content="Edit" options={{ theme: "light" }}>
-                                        <Lucide
-                                            onClick={() => {
-                                                if (tableOnlyView) {
-                                                    onEditProposalClickHandler(proposal, "edit");
-                                                } else {
-                                                    setSelectedShareholderProposal(proposal);
-                                                    setActionType("edit");
-                                                    setIsAddNewShareholderModalVisible(true);
-                                                }
-                                            }}
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                        />
-                                    </Tippy>
-                                    <Tippy content="Delete" options={{ theme: "light" }}>
-                                        <Lucide
-                                            onClick={() => {
-                                                if (tableOnlyView) {
-                                                    setProposalToDelete(proposal);
-                                                    setIsDeleteModalOpen(true);
-                                                } else {
-                                                    setProposalPendingDelete(proposal);
-                                                    setDeleteModalOpen(true);
-                                                }
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                        />
-                                    </Tippy>
-                                </div>
-                            </StandardizedTable.Cell>
-                        )}
-                    </StandardizedTable.Row>
-                ))}
-        </Table.Tbody>
-    );
-
-    // ── No Action Letter Tab ──
-
-    const renderNoActionHeader = () => (
-        <StandardizedTable.Header>
-            <StandardizedTable.Cell isHeader width="10%">Proxy Year</StandardizedTable.Cell>
-            {isAllCompanySelected && (
-                <StandardizedTable.Cell isHeader width="15%">Company</StandardizedTable.Cell>
-            )}
-            <StandardizedTable.Cell isHeader width="20%">Proponent</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="15%">Category</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="15%">Sub Category</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="15%">Outcome</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="10%" className="text-center">Details</StandardizedTable.Cell>
-            {isAdminOrAnalyst && (
-                <StandardizedTable.Cell isHeader width="10%" className="text-center">Actions</StandardizedTable.Cell>
-            )}
-        </StandardizedTable.Header>
-    );
-
-    const renderNoActionRows = () => (
-        <Table.Tbody>
-            {shareHolderProposal?.length > 0 &&
-                shareHolderProposal.map((noAction: any, index: number) => (
-                    <StandardizedTable.Row key={noAction?.id} index={index}>
-                        <StandardizedTable.Cell>
-                            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                {noAction?.proxy_season || '-'}
-                            </span>
-                        </StandardizedTable.Cell>
-                        {isAllCompanySelected && (
-                            <StandardizedTable.Cell>
-                                <span className="font-medium">{noAction?.company_name}</span>
-                            </StandardizedTable.Cell>
-                        )}
-                        <StandardizedTable.Cell>
-                            <span className="font-medium">{noAction?.proponent || "-"}</span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell>
-                            <span className="font-medium">
-                                {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.category}
-                            </span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell>
-                            <span className="font-medium">
-                                {noAction?.proposal_text === "Not Disclosed" ? "N/A" : noAction?.sub_category}
-                            </span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell>
-                            <span className="font-medium">{noAction?.staff_response}</span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell className="text-center">
-                            <div className="flex gap-3 justify-center">
-                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                    <Lucide
-                                        onClick={() => navigate(`/shareholder-proposal/${noAction?.id}?url=shareholder_proposal/no_action`)}
-                                        icon="Eye"
-                                    />
-                                </div>
-                            </div>
-                        </StandardizedTable.Cell>
-                        {isAdminOrAnalyst && (
-                            <StandardizedTable.Cell className="text-center">
-                                <div className="flex gap-3 justify-center">
-                                    <Tippy content="Edit" options={{ theme: "light" }}>
-                                        <Lucide
-                                            onClick={() => onEditNoActionClickHandler?.(noAction)}
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                        />
-                                    </Tippy>
-                                    <Tippy content="Delete" options={{ theme: "light" }}>
-                                        <Lucide
-                                            onClick={() => {
-                                                setProposalToDelete(noAction);
-                                                setIsDeleteModalOpen(true);
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                        />
-                                    </Tippy>
-                                </div>
-                            </StandardizedTable.Cell>
-                        )}
-                    </StandardizedTable.Row>
-                ))}
-        </Table.Tbody>
-    );
-
-    // ── Withdrawn Tab ──
-
-    const renderWithdrawnHeader = () => (
-        <StandardizedTable.Header>
-            <StandardizedTable.Cell isHeader width="15%">Year</StandardizedTable.Cell>
-            {isAllCompanySelected && (
-                <StandardizedTable.Cell isHeader width="25%">Company</StandardizedTable.Cell>
-            )}
-            <StandardizedTable.Cell isHeader width="25%">Proponent</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="20%">Outcome</StandardizedTable.Cell>
-            <StandardizedTable.Cell isHeader width="15%" className="text-center">Details</StandardizedTable.Cell>
-            {isAdminOrAnalyst && (
-                <StandardizedTable.Cell isHeader width="15%" className="text-center">Actions</StandardizedTable.Cell>
-            )}
-        </StandardizedTable.Header>
-    );
-
-    const renderWithdrawnRows = () => (
-        <Table.Tbody>
-            {shareHolderProposal?.length > 0 &&
-                shareHolderProposal.map((item: any, index: number) => (
-                    <StandardizedTable.Row key={item?.id} index={index}>
-                        <StandardizedTable.Cell>
-                            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                {item?.year}
-                            </span>
-                        </StandardizedTable.Cell>
-                        {isAllCompanySelected && (
-                            <StandardizedTable.Cell>
-                                <span className="font-medium">{item?.company_name}</span>
-                            </StandardizedTable.Cell>
-                        )}
-                        <StandardizedTable.Cell>
-                            <span className="font-medium capitalize" title={item?.proponent}>
-                                {item?.proponent}
-                            </span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell>
-                            <span className="font-medium capitalize" title={item?.status}>
-                                {item?.status}
-                            </span>
-                        </StandardizedTable.Cell>
-                        <StandardizedTable.Cell className="text-center">
-                            <div className="flex gap-3 justify-center">
-                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                    <Lucide
-                                        onClick={() => navigate(`/shareholder-proposal/${item?.id}?url=shareholder_proposal/withdrawn`)}
-                                        icon="Eye"
-                                    />
-                                </div>
-                            </div>
-                        </StandardizedTable.Cell>
-                        {isAdminOrAnalyst && (
-                            <StandardizedTable.Cell className="text-center">
-                                <div className="flex gap-3 justify-center">
-                                    <Tippy content="Edit" options={{ theme: "light" }}>
-                                        <Lucide
-                                            onClick={() => onEditWithdrawnClickHandler?.(item)}
-                                            icon="PenLine"
-                                            className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer"
-                                        />
-                                    </Tippy>
-                                    <Tippy content="Delete" options={{ theme: "light" }}>
-                                        <Lucide
-                                            onClick={() => {
-                                                setProposalToDelete(item);
-                                                setIsDeleteModalOpen(true);
-                                            }}
-                                            icon="Trash2"
-                                            className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer"
-                                        />
-                                    </Tippy>
-                                </div>
-                            </StandardizedTable.Cell>
-                        )}
-                    </StandardizedTable.Row>
-                ))}
-        </Table.Tbody>
-    );
-
-    // ── Skeleton column count per tab ──
-    const skeletonColsMap: Record<string, number> = {
-        proposal: isAllCompanySelected ? 10 : 9,
-        "no-action": isAllCompanySelected ? 8 : 7,
-        withdrawn: isAllCompanySelected ? 6 : 5,
-    };
-
-    // ── Render header + rows based on selectedTab ──
-    const renderHeader = () => {
-        if (selectedTab === "no-action") return renderNoActionHeader();
-        if (selectedTab === "withdrawn") return renderWithdrawnHeader();
-        return renderProposalHeader();
-    };
-
-    const renderRows = () => {
-        if (selectedTab === "no-action") return renderNoActionRows();
-        if (selectedTab === "withdrawn") return renderWithdrawnRows();
-        return renderProposalRows();
     };
 
     return (
@@ -503,7 +113,7 @@ function ProposalDetailsTableView({
                 </Button>}
             </div>
             <div className="flex justify-between items-center mb-4" id="data-listing">
-                <h3 className="text-lg font-semibold mb-4">{TAB_TITLES[selectedTab] || "Proposal Details"}</h3>
+                <h3 className="text-lg font-semibold mb-4">Proposal Details</h3>
                 <div className="flex gap-2">
                     <Tippy content="Download Excel" options={{ theme: "light" }}>
                         <div
@@ -518,7 +128,7 @@ function ProposalDetailsTableView({
                         </div>
                     </Tippy>
                     {!tableOnlyView && (
-                        <Tippy content="Expand View" options={{ theme: "light" }}>
+                        <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                             <div className="box p-2 cursor-pointer" onClick={handleOpenInNewTab}>
                                 <img alt="open-tab-icon" src={tabIcon} />
                             </div>
@@ -530,11 +140,208 @@ function ProposalDetailsTableView({
             <StandardizedTable
                 isLoading={loading}
                 maxHeight={tableOnlyView ? "800px" : "400px"}
-                skeletonCols={skeletonColsMap[selectedTab] || 9}
+                skeletonCols={isAllCompanySelected ? 10 : 9}
                 skeletonRows={10}
             >
-                {renderHeader()}
-                {renderRows()}
+                    <StandardizedTable.Header>
+                        {selectedTab === "proposal" && (
+                            <>
+                                <StandardizedTable.Cell isHeader width="8%">Proxy Year</StandardizedTable.Cell>
+                                {isAllCompanySelected && (
+                                    <StandardizedTable.Cell isHeader width="12%">Company</StandardizedTable.Cell>
+                                )}
+                                <StandardizedTable.Cell isHeader width="15%">Proponent</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="20%">Proposal</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="12%">Category</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="10%" className="text-center cursor-pointer">% Support*</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="10%" className="text-center">Vote Details</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="8%" className="text-center">No Action Letters</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="8%" className="text-center">Details</StandardizedTable.Cell>
+                            </>
+                        )}
+
+                        {selectedTab === "no-action" && (
+                            <>
+                                <StandardizedTable.Cell isHeader width="10%">Proxy Year</StandardizedTable.Cell>
+                                {isAllCompanySelected && (
+                                    <StandardizedTable.Cell isHeader width="15%">Company</StandardizedTable.Cell>
+                                )}
+                                <StandardizedTable.Cell isHeader width="20%">Proponent</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="15%">Category</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="15%">Sub Category</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="15%">Outcome</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="10%" className="text-center">Details</StandardizedTable.Cell>
+                            </>
+                        )}
+
+                        {selectedTab === "withdrawn" && (
+                            <>
+                                <StandardizedTable.Cell isHeader width="15%">Year</StandardizedTable.Cell>
+                                {isAllCompanySelected && (
+                                    <StandardizedTable.Cell isHeader width="25%">Company</StandardizedTable.Cell>
+                                )}
+                                <StandardizedTable.Cell isHeader width="25%">Proponent</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="20%">Outcome</StandardizedTable.Cell>
+                                <StandardizedTable.Cell isHeader width="15%" className="text-center">Details</StandardizedTable.Cell>
+                            </>
+                        )}
+
+                        {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                            <StandardizedTable.Cell isHeader width="8%" className="text-center">Actions</StandardizedTable.Cell>
+                        )}
+                    </StandardizedTable.Header>
+
+                <Table.Tbody>
+                    {shareHolderProposal?.length > 0 && shareHolderProposal.map((proposal: any, index: number) => {
+                        if (selectedTab === "proposal") {
+                            return (
+                                <StandardizedTable.Row key={proposal?.id} index={index}>
+                                    <StandardizedTable.Cell>
+                                        <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                            {proposal?.proxy_season}
+                                        </span>
+                                    </StandardizedTable.Cell>
+                                    {isAllCompanySelected && (
+                                        <StandardizedTable.Cell>
+                                            <span className="font-medium">{proposal?.company_name}</span>
+                                        </StandardizedTable.Cell>
+                                    )}
+                                    <StandardizedTable.Cell>
+                                        <span className="font-medium">
+                                            {proposal?.proponent === "Not Disclosed" && (!proposal?.proponent_name || proposal?.proponent_name.trim() === "")
+                                                ? proposal?.proponent
+                                                : proposal?.proponent === "Not Disclosed"
+                                                    ? proposal?.proponent_name
+                                                    : proposal?.proponent}
+                                        </span>
+                                    </StandardizedTable.Cell>
+                                    <StandardizedTable.Cell>
+                                        <span className="font-medium text-sm">{proposal?.proposal_name || "-"}</span>
+                                    </StandardizedTable.Cell>
+                                    <StandardizedTable.Cell>
+                                        <span className="font-medium text-sm">{proposal?.category || "-"}</span>
+                                    </StandardizedTable.Cell>
+                                    <StandardizedTable.Cell className="text-center">
+                                        <span className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium ${proposal?.color_name} text-center`,])}>
+                                            {proposal?.outcome_percentage}
+                                        </span>
+                                    </StandardizedTable.Cell>
+                                    <StandardizedTable.Cell className="text-center">
+                                        {proposal?.vote_details?.length > 0 && (
+                                            <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
+                                                <Grid3X3 strokeWidth={1.25} onClick={() => onVisibleDetail(proposal)} />
+                                            </div>
+                                        )}
+
+                                        {!proposal?.vote_details && proposal?.year?.toString() === "2025" && (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                                <div className="flex items-center justify-center w-full h-full text-primary">
+                                                    <Tippy content="Not Disclose" options={{ theme: "light" }}>
+                                                        <MegaphoneOff size={22} strokeWidth={1.2} absoluteStrokeWidth />
+                                                    </Tippy>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </StandardizedTable.Cell>
+                                    <StandardizedTable.Cell className={clsx(["cursor-pointer text-center", proposal?.nl_exist && "text-blue-600 underline",])}>
+                                        {proposal?.nl_exist === true && (
+                                            <span className="font-medium" onClick={() => {
+                                                const id = proposal?.nl_exist === true ? proposal?.no_action_link?.split("/").filter(Boolean).pop() : 0;
+                                                proposal?.nl_exist === true && navigate(`/shareholder-proposal/${id}?url=shareholder_proposal/no_action`);
+                                            }}>
+                                                Yes
+                                            </span>
+                                        )}
+                                    </StandardizedTable.Cell>
+
+                                    <StandardizedTable.Cell className="text-center">
+                                        <div className="flex gap-3 justify-center">
+                                            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                                <Tippy content="Duplicate" options={{ theme: "light" }}>
+                                                    <Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("duplicate"); setIsAddNewShareholderModalVisible(true); }} icon="Copy" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
+                                                </Tippy>
+                                            )}
+
+                                            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                                <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/def14a`)} icon="Eye" />
+                                            </div>
+                                        </div>
+                                    </StandardizedTable.Cell>
+
+                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                        <StandardizedTable.Cell className="text-center">
+                                            <div className="flex gap-3 justify-center">
+                                                <Tippy content="Edit" options={{ theme: "light" }}>
+                                                    <Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("edit"); setIsAddNewShareholderModalVisible(true); }} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" />
+                                                </Tippy>
+                                                <Tippy content="Delete" options={{ theme: "light" }}>
+                                                    <Lucide onClick={() => { setProposalPendingDelete(proposal); setDeleteModalOpen(true); }} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" />
+                                                </Tippy>
+                                            </div>
+                                        </StandardizedTable.Cell>
+                                    )}
+                                </StandardizedTable.Row>
+                            );
+                        }
+
+                        if (selectedTab === "no-action") {
+                            return (
+                                <StandardizedTable.Row key={proposal?.id} index={index}>
+                                    <StandardizedTable.Cell>
+                                        <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{proposal?.proxy_season || proposal?.year}</span>
+                                    </StandardizedTable.Cell>
+                                    {isAllCompanySelected && (
+                                        <StandardizedTable.Cell><span className="font-medium">{proposal?.company_name}</span></StandardizedTable.Cell>
+                                    )}
+                                    <StandardizedTable.Cell><span className="font-medium">{proposal?.proponent || "-"}</span></StandardizedTable.Cell>
+                                    <StandardizedTable.Cell><span className="font-medium">{proposal?.category || "-"}</span></StandardizedTable.Cell>
+                                    <StandardizedTable.Cell><span className="font-medium">{proposal?.sub_category || "-"}</span></StandardizedTable.Cell>
+                                    <StandardizedTable.Cell><span className="font-medium">{proposal?.staff_response || "-"}</span></StandardizedTable.Cell>
+                                    <StandardizedTable.Cell className="text-center">
+                                        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                            <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/no_action`)} icon="Eye" />
+                                        </div>
+                                    </StandardizedTable.Cell>
+                                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                        <StandardizedTable.Cell className="text-center">
+                                            <div className="flex gap-3 justify-center">
+                                                <Tippy content="Edit" options={{ theme: "light" }}><Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("edit"); setIsAddNewShareholderModalVisible(true); }} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" /></Tippy>
+                                                <Tippy content="Delete" options={{ theme: "light" }}><Lucide onClick={() => { setProposalPendingDelete(proposal); setDeleteModalOpen(true); }} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" /></Tippy>
+                                            </div>
+                                        </StandardizedTable.Cell>
+                                    )}
+                                </StandardizedTable.Row>
+                            );
+                        }
+
+                        // withdrawn
+                        return (
+                            <StandardizedTable.Row key={proposal?.id} index={index}>
+                                <StandardizedTable.Cell>
+                                    <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{proposal?.year}</span>
+                                </StandardizedTable.Cell>
+                                {isAllCompanySelected && (
+                                    <StandardizedTable.Cell><span className="font-medium">{proposal?.company_name}</span></StandardizedTable.Cell>
+                                )}
+                                <StandardizedTable.Cell><span className="font-medium capitalize" title={proposal?.proponent}>{proposal?.proponent}</span></StandardizedTable.Cell>
+                                <StandardizedTable.Cell><span className="font-medium capitalize" title={proposal?.status}>{proposal?.status}</span></StandardizedTable.Cell>
+                                <StandardizedTable.Cell className="text-center">
+                                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                                        <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/withdrawn`)} icon="Eye" />
+                                    </div>
+                                </StandardizedTable.Cell>
+                                {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                                    <StandardizedTable.Cell className="text-center">
+                                        <div className="flex gap-3 justify-center">
+                                            <Tippy content="Edit" options={{ theme: "light" }}><Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("edit"); setIsAddNewShareholderModalVisible(true); }} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" /></Tippy>
+                                            <Tippy content="Delete" options={{ theme: "light" }}><Lucide onClick={() => { setProposalPendingDelete(proposal); setDeleteModalOpen(true); }} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" /></Tippy>
+                                        </div>
+                                    </StandardizedTable.Cell>
+                                )}
+                            </StandardizedTable.Row>
+                        );
+                    })}
+                </Table.Tbody>
 
                 {shareHolderProposal?.length === 0 && (
                     <Table.Tbody>
@@ -553,7 +360,6 @@ function ProposalDetailsTableView({
                 )}
             </StandardizedTable>
 
-            {/* Local modal for proposal duplicate — only used in embedded (non-tableOnly) mode */}
             {isAddNewShareholderModalVisible && (
                 <AddNewShareholder
                     addNewShareholderModalVisible={isAddNewShareholderModalVisible}
@@ -563,7 +369,18 @@ function ProposalDetailsTableView({
                 />
             )}
 
-            {/* Local delete modal — only used in embedded (non-tableOnly) mode */}
+            {tableOnlyView && (
+                <div className="mt-4 flex justify-center">
+                    <CPagination
+                        page={page || 1}
+                        totalPages={totalPages || 1}
+                        handleNextPage={handleNextPage}
+                        handlePreviousPage={handlePreviousPage}
+                        handlePageChange={handlePageChange}
+                    />
+                </div>
+            )}
+
             {isDeleteModalOpen && (
                 <Dialog
                     size="md"
