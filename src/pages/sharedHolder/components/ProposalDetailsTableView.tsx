@@ -106,12 +106,12 @@ function ProposalDetailsTableView({
             params.set("allCompanies", String(isAllCompanySelected));
             if (Array.isArray(globalSearchValues) && globalSearchValues.length > 0) {
                 params.set("global_search", JSON.stringify(globalSearchValues));
-            } else if (companyGlobalSearchName) {
+            } else if (!isAllCompanySelected && companyGlobalSearchName) {
                 params.set("global_search", JSON.stringify([companyGlobalSearchName]));
             }
-            window.open(`/shareholder-proposal?${params.toString()}`, "_blank");
+            navigate(`/shareholder-proposal?${params.toString()}`);
         } catch (error) {
-            window.open("/shareholder-proposal?url=shareholder_proposal/def14a&view=table-only", "_blank");
+            navigate("/shareholder-proposal?url=shareholder_proposal/def14a&view=table-only");
         }
     };
 
@@ -132,7 +132,7 @@ function ProposalDetailsTableView({
             params.set("global_search", existingGlobalSearch);
         } else if (Array.isArray(globalSearchValues) && globalSearchValues.length > 0) {
             params.set("global_search", JSON.stringify(globalSearchValues));
-        } else if (companyGlobalSearchName) {
+        } else if (!isAllCompanySelected && companyGlobalSearchName) {
             params.set("global_search", JSON.stringify([companyGlobalSearchName]));
         }
 
@@ -518,7 +518,7 @@ function ProposalDetailsTableView({
                         </div>
                     </Tippy>
                     {!tableOnlyView && (
-                        <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                        <Tippy content="Expand View" options={{ theme: "light" }}>
                             <div className="box p-2 cursor-pointer" onClick={handleOpenInNewTab}>
                                 <img alt="open-tab-icon" src={tabIcon} />
                             </div>
