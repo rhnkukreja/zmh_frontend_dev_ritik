@@ -529,15 +529,23 @@ function PeerAnalysis() {
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
           {/* Sticky Header OUTSIDE scrollable content */}
-          <div className="flex justify-between items-center bg-white px-4 pl-6 bg-white shadow sticky top-16 z-40">
+          <div className="flex justify-between items-center bg-white px-4 pl-6 shadow sticky top-16 z-40">
             {tableOnlyView ? (
               <div className="flex items-center gap-2 py-4">
                 <Button
                   onClick={() => {
                     const params = new URLSearchParams(location.search);
+                    // Remove params added for the expanded/table-only view
                     params.delete("view");
                     params.delete("allCompanies");
-                    navigate(`/engagement-detail?${params.toString()}`);
+                    params.delete("page");
+                    params.delete("global_search");
+                    const qs = params.toString();
+                    if (qs) {
+                      navigate(`/engagement-detail?${qs}`);
+                    } else {
+                      navigate(`/engagement-detail`);
+                    }
                   }}
                   variant="primary"
                   className="bg-theme-2 border-bg-theme-2"
