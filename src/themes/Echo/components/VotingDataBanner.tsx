@@ -4,6 +4,8 @@ import {
   IoMdInformationCircleOutline,
   IoMdCloseCircleOutline,
 } from "react-icons/io";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { fetchNotificationsOnce, fetchNotifications } from "@/stores/globalNotificationsSlice";
 
 const VotingDataBanner = () => {
   // Check localStorage. The banner is visible by default unless it has been seen before.
@@ -11,6 +13,9 @@ const VotingDataBanner = () => {
     return localStorage.getItem("banner_seen") !== "true";
   });
   const [isManuallyOpened, setIsManuallyOpened] = useState(false);
+  const dispatch = useAppDispatch();
+  const { notifications, loading, initialized } = useAppSelector((s) => (s as any).globalNotifications || { notifications: [], loading: false, initialized: false });
+  const [closedNotifications, setClosedNotifications] = useState<Array<number | string>>([]);
 
   const bannerRef = useRef(null);
   const autoDismissTimerRef = useRef(null);
@@ -29,10 +34,22 @@ const VotingDataBanner = () => {
   const openBanner = () => {
     setIsBannerVisible(true);
     setIsManuallyOpened(true);
+    setClosedNotifications([]);
+    dispatch(fetchNotificationsOnce());
     if (autoDismissTimerRef.current) {
       clearTimeout(autoDismissTimerRef.current);
     }
   };
+
+  // Fetch notifications on mount if none exist yet (avoid redundant calls)
+  useEffect(() => {
+    if ((notifications || []).length === 0 && !loading) {
+      // Use the unconditional fetch on mount to ensure initial population.
+      // fetchNotificationsOnce may be blocked if `initialized` was previously set,
+      // so fall back to fetchNotifications here.
+      dispatch(fetchNotifications());
+    }
+  }, [dispatch, notifications, loading]);
 
   // Auto-dismiss after 3 seconds if not manually opened
   useEffect(() => {
@@ -84,41 +101,55 @@ const VotingDataBanner = () => {
 
       {/* The floating banner, shown conditionally */}
       {isBannerVisible && (
-        <div
-          ref={bannerRef}
-          className={clsx(
-            "fixed top-20 right-4 w-auto max-w-md p-5 rounded-xl shadow-2xl",
-            "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800",
-            "border-2 border-blue-300 dark:border-blue-600",
-            "transition-all duration-300 ease-in-out transform translate-y-0",
-            "z-50 animate-slideIn"
-          )}
-        >
-          <div className="flex items-start gap-4">
-            {/* <div className="flex-shrink-0 mt-0.5">
-              <div className="w-10 h-10 rounded-full bg-blue-500 dark:bg-blue-400 flex items-center justify-center">
-                <IoMdInformationCircleOutline className="w-6 h-6 text-white" />
-              </div>
-            </div> */}
-            
-            <div className="flex-1 space-y-2">
-              {/* <h3 className="text-base font-bold text-blue-900 dark:text-blue-100">
-                🎉 New Voting Data Available!
-              </h3> */}
-              <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200">
-                Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>State Street</strong>, <strong>Dimensional</strong>, and <strong>40+ more institutions</strong>.
-              </p>
-            </div>
+        <>
+          {/* Single banner containing hardcoded message + notification rows */}
+          <div
+            ref={bannerRef}
+            className={clsx(
+              "fixed top-20 right-4 w-auto max-w-md p-5 rounded-xl shadow-2xl",
+              "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800",
+              "border-2 border-blue-300 dark:border-blue-600",
+              "transition-all duration-300 ease-in-out transform translate-y-0",
+              "z-50 animate-slideIn"
+            )}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex-1 space-y-2">
+                <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200">
+                  Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>State Street</strong>, <strong>Dimensional</strong>, and <strong>40+ more institutions</strong>.
+                </p>
 
-            <button
-              onClick={closeBanner}
-              className="flex-shrink-0 p-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100 focus:outline-none transition-colors rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
-              aria-label="Close notification banner"
-            >
-              <IoMdCloseCircleOutline size={22} />
-            </button>
+                {/* Notifications list (each row) */}
+                {(notifications || []).filter((n: any) => n && !closedNotifications.includes(n.id)).length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {(notifications || []).filter((n: any) => n && !closedNotifications.includes(n.id)).map((n: any) => (
+                      <div key={n.id} className="flex items-start justify-between gap-3 p-3 bg-blue-50/60 rounded-md border border-blue-100">
+                        <div className="text-sm leading-relaxed text-blue-800 dark:text-blue-200 prose max-w-none" dangerouslySetInnerHTML={{ __html: n.notification_text || n.text || "" }} />
+                        <div className="flex-shrink-0 ml-3">
+                          <button
+                            onClick={() => setClosedNotifications((prev) => [...prev, n.id])}
+                            className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100 focus:outline-none transition-colors rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
+                            aria-label={`Close notification ${n.id}`}
+                          >
+                            <IoMdCloseCircleOutline size={20} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={closeBanner}
+                className="flex-shrink-0 p-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100 focus:outline-none transition-colors rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
+                aria-label="Close notification banner"
+              >
+                <IoMdCloseCircleOutline size={22} />
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );

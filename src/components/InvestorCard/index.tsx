@@ -166,12 +166,12 @@ const index = ({ onLoaded }: InvestorCardProps) => {
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Investor-${companyGlobalSearchTicker}`);
+    downloadCSV(csvContent, `Investor-${ticker}`);
   };
 
   const handleGenerateReport = () => {
-    if (companyGlobalSearchTicker) {
-      window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
+    if (ticker) {
+      window.open(`/company-report?ticker=${encodeURIComponent(ticker)}`, "_blank");
     }
   };
 
@@ -282,11 +282,11 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                     </div>
                   </Tippy>
                   {locationPathName === "/" && (
-                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                    <Tippy content="Expand View" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
                         onClick={() =>
-                          window.open("investor-details", "_blank")
+                          navigate(`/investor-details?ticker=${ticker}`)
                         }
                       >
                         <img alt="tab-icon" src={tabIcon} />

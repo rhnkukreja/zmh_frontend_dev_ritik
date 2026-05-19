@@ -22,6 +22,7 @@ import shareholderNoActionReducer from "./shareholderProposalSlice";
 import caseStudiesReducer from "./caseStudySlice";
 import peerAnalysisReducer from "./peerAnalysisSlice";
 import userDetailReducer from "./userDetailSlice";
+import globalNotificationsReducer from "./globalNotificationsSlice";
 import notesReducer from "./notesSlice";
 import domainNotesReducer from "./domainNotesSlice";
 import vdsEuropeanReducer from "./vdsEuropeanSlice";
@@ -66,6 +67,7 @@ const slices = {
   vdsEuropean: vdsEuropeanReducer,
   realTime: realTimeReducer,
   companyReport: companyReportReducer,
+  globalNotifications: globalNotificationsReducer,
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(

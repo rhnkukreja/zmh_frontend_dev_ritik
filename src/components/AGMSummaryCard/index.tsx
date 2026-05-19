@@ -66,6 +66,36 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [companyGlobalSearchTicker, resetCompanyScopedState]);
 
+  // Initial fetch: when component mounts or ticker becomes available, trigger AGM fetch
+  useEffect(() => {
+    // If no ticker, nothing to fetch
+    if (!companyGlobalSearchTicker) return;
+
+    // If a request is already in progress, skip
+    if (agmRequestStatus === 'loading') return;
+
+    // If we already have data for this ticker and year, skip initial fetch
+    const alreadyHasData = Boolean(
+      agmSummaryDetails && (
+        (agmSummaryDetails.Year && agmSummaryDetails.Year.toString()) ||
+        (Array.isArray(agmSummaryDetails.total_year) && agmSummaryDetails.total_year.length > 0) ||
+        agmSummaryDetails.company
+      )
+    );
+
+    const key = `${companyGlobalSearchTicker}:${selectedYear || ''}`;
+    if (lastRequestedYearRef.current === key) return;
+
+    if (!alreadyHasData) {
+      lastRequestedYearRef.current = key;
+      const url = createDynamicURL(`${baseURL}/voting_report_8k/`, {
+        ticker: companyGlobalSearchTicker,
+        ...(selectedYear && { year: selectedYear }),
+      });
+      dispatch(fetchAGMSummaryDashboard(url));
+    }
+  }, [companyGlobalSearchTicker, selectedYear, agmSummaryDetails, agmRequestStatus, dispatch]);
+
   // Keep selectedYear in sync with loaded agmSummaryDetails, but do NOT reset refs here
   useEffect(() => {
     if (agmSummaryDetails?.Year && selectedYear !== agmSummaryDetails.Year.toString()) {
