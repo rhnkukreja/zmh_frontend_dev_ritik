@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useState, useEffect } from "react";
 import { Dialog } from "@/components/Base/Headless";
 import NoteForm from "./AddEditNoteForm";
-import { useAppDispatch } from "@/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { toast } from "react-toastify";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { DomainNote } from "@/types/domainNotes";
@@ -20,6 +20,13 @@ interface AddNoteModalProps {
   noteModule: boolean;
 }
 
+interface SelectedNoteData {
+  company: number;
+  institution: number;
+  investor_name: string;
+  company_name?: string;
+}
+
 const AddDomainNoteModal = ({
   addNoteModalVisible,
   setAddNoteModalVisible,
@@ -32,8 +39,15 @@ const AddDomainNoteModal = ({
   noteModule,
 }: AddNoteModalProps) => {
   const dispatch = useAppDispatch();
-  const [selectedData, setSelectedData] = useState({
-    company: selectedNote?.company || 0,
+  const { user } = useAppSelector((state) => state.authentiction);
+  const isCorporateUser =
+    !!user?.user_role && user.user_role.toLowerCase() === "corporate";
+  const corporateCompanyId = Number(user?.user_actual_company || 0);
+  const [selectedData, setSelectedData] = useState<SelectedNoteData>({
+    company:
+      isCorporateUser && corporateCompanyId
+        ? corporateCompanyId
+        : selectedNote?.company || 0,
     institution: selectedNote?.institution || 0,
     investor_name: selectedNote?.investor_name || "",
   });
@@ -48,12 +62,25 @@ const AddDomainNoteModal = ({
         investor_name: selectedNote.investor_name
       });
       setSelectedData({
-        company: selectedNote.company || 0,
+        company:
+          isCorporateUser && corporateCompanyId
+            ? corporateCompanyId
+            : selectedNote.company || 0,
         institution: selectedNote.institution || 0,
         investor_name: selectedNote.investor_name || "",
       });
     }
-  }, [selectedNote, mode]);
+  }, [selectedNote, mode, isCorporateUser, corporateCompanyId]);
+
+  useEffect(() => {
+    if (isCorporateUser && corporateCompanyId) {
+      setSelectedData((prev) => ({
+        ...prev,
+        company: corporateCompanyId,
+        company_name: user?.company_name,
+      }));
+    }
+  }, [isCorporateUser, corporateCompanyId, user?.company_name]);
   const handleNoteSubmit = async (data: DomainNote) => {
     function removeTrailingSpaces(htmlContent: string): string {
       const trailingTagsRegex = /^(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+|(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+$/gi;
@@ -67,6 +94,10 @@ const AddDomainNoteModal = ({
       if (selectedNote?.id && mode == "edit") {
         // For edit mode, only send the fields that are actually being edited
         const editData = {
+          company:
+            isCorporateUser && corporateCompanyId
+              ? corporateCompanyId
+              : selectedData.company,
           attendees: trimmedData.attendees,
           notes: trimmedData.notes,
           date: trimmedData.date,
@@ -79,11 +110,25 @@ const AddDomainNoteModal = ({
           const noteData = {
             ...trimmedData,
             ...selectedData,
+            company:
+              isCorporateUser && corporateCompanyId
+                ? corporateCompanyId
+                : selectedData.company,
           };
-        const response =  await dispatch(addDomainNote({ data: noteData })).unwrap();
-        if(response?.results)  toast.success("Note successfully created");
+        const response = await dispatch(addDomainNote({ data: noteData })).unwrap();
+        if (response?.results) toast.success("Note successfully created");
         } else {
-          await dispatch(addDomainNote({ data:trimmedData })).unwrap();
+          await dispatch(
+            addDomainNote({
+              data: {
+                ...trimmedData,
+                company:
+                  isCorporateUser && corporateCompanyId
+                    ? corporateCompanyId
+                    : trimmedData.company,
+              },
+            })
+          ).unwrap();
         }
       }
     } catch (error) {
