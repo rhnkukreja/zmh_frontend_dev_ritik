@@ -93,42 +93,50 @@ const AddDomainNoteModal = ({
       };
       if (selectedNote?.id && mode == "edit") {
         // For edit mode, only send the fields that are actually being edited
-        const editData = {
-          company:
-            isCorporateUser && corporateCompanyId
-              ? corporateCompanyId
-              : selectedData.company,
-          attendees: trimmedData.attendees,
-          notes: trimmedData.notes,
-          date: trimmedData.date,
-          category: trimmedData.category,
-        };
+        const editCompany = isCorporateUser && corporateCompanyId
+          ? corporateCompanyId
+          : selectedData.company || selectedNote?.company || data?.company || 0;
+
+        const editData: any = {
+            attendees: trimmedData.attendees,
+            notes: trimmedData.notes,
+            date: trimmedData.date,
+            category: trimmedData.category,
+          };
+        // Testing: omit `company` from payload when user is NOT corporate
+        if (isCorporateUser) {
+          editData.company = editCompany;
+        }
         console.log("Edit payload:", editData);
         await dispatch(addDomainNote({ id: selectedNote.id, data: editData }));
       } else {
         if (noteModule) {
-          const noteData = {
+          const fallbackCompany = isCorporateUser && corporateCompanyId
+            ? corporateCompanyId
+            : selectedData.company || selectedNote?.company || data?.company || 0;
+
+          const payload: any = {
             ...trimmedData,
             ...selectedData,
-            company:
-              isCorporateUser && corporateCompanyId
-                ? corporateCompanyId
-                : selectedData.company,
           };
-        const response = await dispatch(addDomainNote({ data: noteData })).unwrap();
-        if (response?.results) toast.success("Note successfully created");
+          if (isCorporateUser) {
+            payload.company = fallbackCompany;
+          } else {
+            // Testing behavior: omit company for non-corporate users
+            if (!payload.company) delete payload.company;
+          }
+
+          const response = await dispatch(addDomainNote({ data: payload })).unwrap();
+          if (response?.results) toast.success("Note successfully created");
         } else {
-          await dispatch(
-            addDomainNote({
-              data: {
-                ...trimmedData,
-                company:
-                  isCorporateUser && corporateCompanyId
-                    ? corporateCompanyId
-                    : trimmedData.company,
-              },
-            })
-          ).unwrap();
+          const payload: any = { ...trimmedData };
+          if (isCorporateUser) {
+            payload.company = corporateCompanyId || trimmedData.company;
+          } else {
+            // Testing behavior: omit company for non-corporate users
+            if (!payload.company) delete payload.company;
+          }
+          await dispatch(addDomainNote({ data: payload })).unwrap();
         }
       }
     } catch (error) {
