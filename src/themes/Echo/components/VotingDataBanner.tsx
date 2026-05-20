@@ -41,15 +41,13 @@ const VotingDataBanner = () => {
     }
   };
 
-  // Fetch notifications on mount if none exist yet (avoid redundant calls)
+  // Fetch notifications on mount if not already initialized
   useEffect(() => {
-    if ((notifications || []).length === 0 && !loading) {
-      // Use the unconditional fetch on mount to ensure initial population.
-      // fetchNotificationsOnce may be blocked if `initialized` was previously set,
-      // so fall back to fetchNotifications here.
+    if (!initialized) {
       dispatch(fetchNotifications());
     }
-  }, [dispatch, notifications, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-dismiss after 3 seconds if not manually opened
   useEffect(() => {

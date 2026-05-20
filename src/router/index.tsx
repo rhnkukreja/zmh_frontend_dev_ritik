@@ -115,6 +115,7 @@ import NewsletterV2 from "@/pages/NewsletterV2";
 
 import FinalProfileSummary from "../pages/Institution/components/FinalProfileSummary";
 import CaseStudiesAI from "@/pages/CaseStudiesAI";
+import ProxyContestAI from "@/pages/ProxyContestAI";
 
 const ProtectedLayout = withAuth(Layout);
 const ProtectedAiChatbot = withAuth(() => <ChatProvider><AiChatbot /></ChatProvider>);
@@ -551,6 +552,11 @@ function Router() {
           path: "npx-analytics",
           element: <NPXAnalyticsPage />,
           data: { titleName: "N-PX Analytics - ZMH Analytics" },
+        },
+        {
+          path: "proxy-contest-ai",
+          element: <ProxyContestAI />,
+          data: { titleName: "Proxy Contest AI - ZMH Analytics" },
         },
         {
           path: "proxy-contest",

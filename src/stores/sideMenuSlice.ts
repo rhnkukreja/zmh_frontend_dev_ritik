@@ -120,6 +120,11 @@ const initialState: any = {
       pathname: "/proxy-contest",
       title: "Proxy Contest",
     },
+    {
+      icon: "BrainCircuit",
+      pathname: "/proxy-contest-ai",
+      title: "Proxy Contest AI",
+    },
     
     // {
     //   icon: "PanelTopClose",
