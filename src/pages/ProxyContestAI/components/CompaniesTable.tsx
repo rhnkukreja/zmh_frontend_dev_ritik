@@ -133,7 +133,7 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
                 <StandardizedTable.Cell>
                   <button
                     onClick={() => navigate(`/proxy-contest-detail/${company.company_id}`, { state: { company } })}
-                    className="font-semibold text-primary hover:underline text-left"
+                    className="font-semibold text-slate-800 hover:underline text-left"
                   >
                     {company.company_name}
                   </button>
@@ -528,7 +528,7 @@ const ModalContent: React.FC<{ type: ModalType; data: any; companyName: string }
     );
   }
 
-  /* ── VOTING DATA ──────────────────────────────────────────────────────────── */
+  /* ── VOTING DATA ─────────────────────────────────────────────────────────── */
   if (type === "voting") {
     const results = data?.results || [];
     if (!results.length) {
@@ -545,29 +545,38 @@ const ModalContent: React.FC<{ type: ModalType; data: any; companyName: string }
         <p className="text-xs text-gray-500 mb-3">{data.count} record{data.count !== 1 ? "s" : ""}</p>
         <Table>
           <Table.Thead>
-            <Table.Tr>
-              {["#", "Proposal", "Prop #", "Vote", "Mgt Rec", "Institution", "Fund", "Category", "Meeting Date"].map(h => (
-                <Table.Td key={h} className="py-2 font-semibold h-[40px] bg-gray-50 border-gray-200 text-gray-700 whitespace-nowrap">{h}</Table.Td>
-              ))}
+            <Table.Tr className="bg-primary">
+              <Table.Td className="py-2.5 font-semibold text-white text-sm w-10">No.</Table.Td>
+              <Table.Td className="py-2.5 font-semibold text-white text-sm">Proposal</Table.Td>
+              <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Mgmt Rec</Table.Td>
+              <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Vote Cast</Table.Td>
+              <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Institution Name</Table.Td>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {results.map((row: any, i: number) => (
-              <Table.Tr key={row.id || i} className="[&_td]:last:border-b-0 hover:bg-gray-50">
-                <Table.Td className="py-2 border-dashed text-gray-400 text-xs">{i + 1}</Table.Td>
-                <Table.Td className="py-2 border-dashed text-sm max-w-[240px]">{row.proposal}</Table.Td>
-                <Table.Td className="py-2 border-dashed text-center text-sm">{row.proposal_num}</Table.Td>
-                <Table.Td className="py-2 border-dashed">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${VOTE_BADGE[row.vote] || "bg-gray-100 text-gray-600"}`}>
-                    {row.vote}
-                  </span>
-                </Table.Td>
-                <Table.Td className="py-2 border-dashed text-center text-sm">{row.mgt_rec}</Table.Td>
-                <Table.Td className="py-2 border-dashed text-sm whitespace-nowrap">{row.institution_name}</Table.Td>
-                <Table.Td className="py-2 border-dashed text-xs text-gray-500 max-w-[140px] truncate">{row.fund_name}</Table.Td>
-                <Table.Td className="py-2 border-dashed text-xs text-gray-500 whitespace-nowrap">{row.proposal_category}</Table.Td>
-                <Table.Td className="py-2 border-dashed text-xs text-gray-500 whitespace-nowrap">{row.meeting_date}</Table.Td>
-              </Table.Tr>
+              <React.Fragment key={row.id || i}>
+                <Table.Tr className="hover:bg-gray-50">
+                  <Table.Td className="py-2 border-dashed text-gray-400 text-sm align-top">{i + 1}</Table.Td>
+                  <Table.Td className="py-2 border-dashed text-sm">{row.proposal}</Table.Td>
+                  <Table.Td className="py-2 border-dashed text-sm text-center">{row.mgt_rec}</Table.Td>
+                  <Table.Td className="py-2 border-dashed">
+                    <span className={`text-sm font-medium ${
+                      row.vote === "Against" || row.vote === "Withhold" ? "text-red-600" : ""
+                    }`}>{row.vote}</span>
+                  </Table.Td>
+                  <Table.Td className="py-2 border-dashed text-sm whitespace-nowrap">{row.institution_name}</Table.Td>
+                </Table.Tr>
+                {(row.voting_rationale || row.notes) && (
+                  <Table.Tr className="bg-gray-50">
+                    <Table.Td className="pb-2 pt-0 border-dashed" />
+                    <Table.Td colSpan={4} className="pb-2 pt-0 border-dashed text-xs text-gray-500 italic">
+                      <span className="font-semibold not-italic text-gray-600">Voting Rationale: </span>
+                      {row.voting_rationale || row.notes}
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </React.Fragment>
             ))}
           </Table.Tbody>
         </Table>

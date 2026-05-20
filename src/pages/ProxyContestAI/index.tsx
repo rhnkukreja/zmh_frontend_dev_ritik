@@ -259,23 +259,38 @@ function ProxyContestAI() {
     return m;
   }, [filtersData?.companies]);
 
-  const getInstName = (id: number) => instNameMap.get(id) || (filtersLoading ? "…" : `#${id}`);
-  const getCmpName = (id: number) => companyNameMap.get(id) || `#${id}`;
+  // Return null while filters haven't loaded yet or if the ID isn't in the API result
+  const getInstName = (id: number): string | null => {
+    if (!filtersData) return null;
+    return instNameMap.get(id) ?? null;
+  };
+  const getCmpName = (id: number): string | null => {
+    if (!filtersData) return null;
+    return companyNameMap.get(id) ?? null;
+  };
 
   // ── Active chips (per active tab) ────────────────────────────────────────────
   const ovChips = [
     ...ovYears.map(y => ({ label: `Year: ${y}`, onRemove: () => ovToggleYear(y) })),
-    ...ovInstIds.map(id => ({ label: `Institution: ${getInstName(id)}`, onRemove: () => ovToggleInst(id) })),
+    ...ovInstIds.filter(id => id != null && !isNaN(id)).flatMap(id => {
+      const n = getInstName(id); return n ? [{ label: `Institution: ${n}`, onRemove: () => ovToggleInst(id) }] : [];
+    }),
     ...ovVotes.map(v => ({ label: `Vote: ${v}`, onRemove: () => ovToggleVote(v) })),
-    ...ovCompanyIds.map(id => ({ label: `Company: ${getCmpName(id)}`, onRemove: () => ovToggleCompany(id) })),
+    ...ovCompanyIds.filter(id => id != null).flatMap(id => {
+      const n = getCmpName(id); return n ? [{ label: `Company: ${n}`, onRemove: () => ovToggleCompany(id) }] : [];
+    }),
   ];
   const dtChips = [
     ...dtYears.map(y => ({ label: `Year: ${y}`, onRemove: () => dtToggleYear(y) })),
-    ...dtInstIds.map(id => ({ label: `Institution: ${getInstName(id)}`, onRemove: () => dtToggleInst(id) })),
+    ...dtInstIds.filter(id => id != null && !isNaN(id)).flatMap(id => {
+      const n = getInstName(id); return n ? [{ label: `Institution: ${n}`, onRemove: () => dtToggleInst(id) }] : [];
+    }),
     ...dtActivists.map(n => ({ label: `Activist: ${n}`, onRemove: () => dtToggleActivist(n) })),
     ...(dtIss ? [{ label: `ISS: ${dtIss}`, onRemove: () => dtToggleIss(dtIss) }] : []),
     ...(dtGl ? [{ label: `GL: ${dtGl}`, onRemove: () => dtToggleGl(dtGl) }] : []),
-    ...dtCompanyIds.map(id => ({ label: `Company: ${getCmpName(id)}`, onRemove: () => dtToggleCompany(id) })),
+    ...dtCompanyIds.filter(id => id != null).flatMap(id => {
+      const n = getCmpName(id); return n ? [{ label: `Company: ${n}`, onRemove: () => dtToggleCompany(id) }] : [];
+    }),
   ];
   const activeChips = activeTab === "overview" ? ovChips : dtChips;
   const handleClearAll = activeTab === "overview" ? ovClearAll : dtClearAll;
@@ -290,39 +305,10 @@ function ProxyContestAI() {
 
   return (
     <div className="grid grid-cols-12 gap-y-4 gap-x-6 pb-10">
-      {/* Page header — title + tabs + hide-filters in one row */}
+      {/* Page header — title + hide-filters button */}
       <div className="col-span-12">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-2xl font-bold text-slate-800 whitespace-nowrap">Proxy Contest AI</h2>
-
-          {/* Tabs inline with title */}
-          <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
-            {(["overview", "detailed"] as TabKey[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={clsx(
-                  "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
-                  activeTab === tab
-                    ? "bg-primary text-white shadow"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                )}
-              >
-                {tab === "overview" ? (
-                  <span className="flex items-center gap-1.5">
-                    <Lucide icon="BarChart3" className="w-4 h-4" />
-                    Overview
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <Lucide icon="Table" className="w-4 h-4" />
-                    Detailed View
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
           <button
             onClick={() => setSidebarOpen((v) => !v)}
             className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
@@ -331,12 +317,39 @@ function ProxyContestAI() {
             {sidebarOpen ? "Hide Filters" : "Show Filters"}
           </button>
         </div>
+        {/* Tabs below heading, left-aligned */}
+        <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm w-fit">
+          {(["overview", "detailed"] as TabKey[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={clsx(
+                "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
+                activeTab === tab
+                  ? "bg-primary text-white shadow"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              {tab === "overview" ? (
+                <span className="flex items-center gap-1.5">
+                  <Lucide icon="BarChart3" className="w-4 h-4" />
+                  Overview
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <Lucide icon="Table" className="w-4 h-4" />
+                  Detailed View
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Active filter chips */}
       {activeChips.length > 0 && (
         <div className="col-span-12 flex flex-wrap items-center gap-2 -mt-1">
-          <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
             Active Filters:
           </span>
           {activeChips.map((chip) => (
@@ -352,7 +365,7 @@ function ProxyContestAI() {
           ))}
           <button
             onClick={handleClearAll}
-            className="text-sm text-slate-400 hover:text-slate-600 underline"
+            className="text-xs text-slate-400 hover:text-slate-600 underline"
           >
             Clear all
           </button>
@@ -360,10 +373,10 @@ function ProxyContestAI() {
       )}
 
       {/* Sidebar + content in same-height flex row */}
-      <div className="col-span-12 flex gap-6 items-start">
+      <div className="col-span-12 flex gap-6">
         {/* Filters sidebar */}
         {sidebarOpen && (
-          <div className="w-64 flex-shrink-0">
+          <div className="w-64 flex-shrink-0 self-stretch">
             <FiltersSidebar
               filtersData={filtersData}
               filtersLoading={filtersLoading}
