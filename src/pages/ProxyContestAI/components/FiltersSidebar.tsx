@@ -9,10 +9,14 @@ interface FiltersSidebarProps {
   selectedInstitutionIds: number[];
   selectedActivistNames: string[];
   selectedVotes: string[];
+  selectedIssSupport: string | null;
+  selectedGlSupport: string | null;
   toggleYear: (year: string) => void;
   toggleInstitution: (id: number) => void;
   toggleActivistName: (name: string) => void;
   toggleVote: (vote: string) => void;
+  toggleIssSupport: (val: string) => void;
+  toggleGlSupport: (val: string) => void;
   onClearAll: () => void;
 }
 
@@ -23,10 +27,14 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   selectedInstitutionIds,
   selectedActivistNames,
   selectedVotes,
+  selectedIssSupport,
+  selectedGlSupport,
   toggleYear,
   toggleInstitution,
   toggleActivistName,
   toggleVote,
+  toggleIssSupport,
+  toggleGlSupport,
   onClearAll,
 }) => {
   const [showAllActivists, setShowAllActivists] = useState(false);
@@ -37,7 +45,9 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
     selectedYears.length > 0 ||
     selectedInstitutionIds.length > 0 ||
     selectedActivistNames.length > 0 ||
-    selectedVotes.length > 0;
+    selectedVotes.length > 0 ||
+    !!selectedIssSupport ||
+    !!selectedGlSupport;
 
   return (
     <div className="col-span-12 md:col-span-3 mb-6 md:mb-0">
@@ -255,18 +265,32 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
             {/* ISS SUPPORT */}
             {filtersData?.iss_support && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">
                   ISS Support
                 </h4>
-                <div className="space-y-1 text-sm text-slate-700">
-                  <div className="flex justify-between px-3 py-2 rounded-lg bg-slate-50">
-                    <span>Management</span>
-                    <span className="font-semibold text-primary">{filtersData.iss_support.Management ?? 0}</span>
-                  </div>
-                  <div className="flex justify-between px-3 py-2 rounded-lg bg-slate-50">
-                    <span>Activist</span>
-                    <span className="font-semibold text-amber-600">{filtersData.iss_support.Activist ?? 0}</span>
-                  </div>
+                <p className="text-[10px] text-slate-400 mb-2">Filters Detailed View companies</p>
+                <div className="space-y-1">
+                  {(["Management", "Activist"] as const).map((opt) => {
+                    const count = filtersData.iss_support[opt] ?? 0;
+                    const isSelected = selectedIssSupport === opt;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => toggleIssSupport(opt)}
+                        className={clsx(
+                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                          isSelected
+                            ? "bg-primary text-white font-semibold"
+                            : "hover:bg-slate-50 text-slate-700"
+                        )}
+                      >
+                        <span>{opt}</span>
+                        <span className={clsx("text-xs rounded-full px-2 py-0.5 font-medium",
+                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                        )}>{count}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -274,18 +298,32 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
             {/* GL SUPPORT */}
             {filtersData?.gl_support && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">
                   GL Support
                 </h4>
-                <div className="space-y-1 text-sm text-slate-700">
-                  <div className="flex justify-between px-3 py-2 rounded-lg bg-slate-50">
-                    <span>Management</span>
-                    <span className="font-semibold text-primary">{filtersData.gl_support.Management ?? 0}</span>
-                  </div>
-                  <div className="flex justify-between px-3 py-2 rounded-lg bg-slate-50">
-                    <span>Activist</span>
-                    <span className="font-semibold text-amber-600">{filtersData.gl_support.Activist ?? 0}</span>
-                  </div>
+                <p className="text-[10px] text-slate-400 mb-2">Filters Detailed View companies</p>
+                <div className="space-y-1">
+                  {(["Management", "Activist"] as const).map((opt) => {
+                    const count = filtersData.gl_support[opt] ?? 0;
+                    const isSelected = selectedGlSupport === opt;
+                    return (
+                      <button
+                        key={opt}
+                        onClick={() => toggleGlSupport(opt)}
+                        className={clsx(
+                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                          isSelected
+                            ? "bg-primary text-white font-semibold"
+                            : "hover:bg-slate-50 text-slate-700"
+                        )}
+                      >
+                        <span>{opt}</span>
+                        <span className={clsx("text-xs rounded-full px-2 py-0.5 font-medium",
+                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                        )}>{count}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

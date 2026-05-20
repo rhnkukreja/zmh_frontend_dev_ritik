@@ -5,6 +5,7 @@ import { proxyContestAIService } from "@/services/proxyContestAI";
 import FiltersSidebar from "./components/FiltersSidebar";
 import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
+import VotingRecordsList from "./components/VotingRecordsList";
 
 const DEFAULT_INSTITUTION_IDS = [33, 34];
 const DEFAULT_YEARS = ["2025", "2026"];
@@ -21,13 +22,19 @@ function ProxyContestAI() {
   const [selectedActivistNames, setSelectedActivistNames] = useState<string[]>([]);
   const [selectedVotes, setSelectedVotes] = useState<string[]>([]);
 
+  // ── ISS / GL support filters (Companies API only) ───────────────────────────
+  const [selectedIssSupport, setSelectedIssSupport] = useState<string | null>(null);
+  const [selectedGlSupport, setSelectedGlSupport] = useState<string | null>(null);
+
   // ── Filter options ──────────────────────────────────────────────────────────
   const [filtersData, setFiltersData] = useState<any>(null);
   const [filtersLoading, setFiltersLoading] = useState(false);
 
   // ── Overview tab data ───────────────────────────────────────────────────────
   const [summaryData, setSummaryData] = useState<any>(null);
+  const [votingRecordsData, setVotingRecordsData] = useState<any>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [vrPage, setVrPage] = useState(1);
 
   // ── Detailed tab data ───────────────────────────────────────────────────────
   const [companiesData, setCompaniesData] = useState<any>(null);
@@ -58,7 +65,7 @@ function ProxyContestAI() {
 
   // ── Fetch overview summary ──────────────────────────────────────────────────
   const fetchSummary = useCallback(
-    async (years: string[], institutionIds: number[], votes: string[]) => {
+    async (years: string[], institutionIds: number[], votes: string[], vrPageNum = 1) => {
       const id = ++summaryFetchId.current;
       setSummaryLoading(true);
       try {
@@ -66,9 +73,12 @@ function ProxyContestAI() {
           year: years.length > 0 ? years : undefined,
           institution_id: institutionIds.length > 0 ? institutionIds : undefined,
           vote: votes.length > 0 ? votes : undefined,
+          vr_page: vrPageNum,
+          vr_page_size: 50,
         });
         if (id !== summaryFetchId.current) return;
         setSummaryData(data?.summary ?? data);
+        setVotingRecordsData(data?.voting_records ?? null);
       } catch {
         /* silently ignore */
       } finally {
@@ -80,7 +90,13 @@ function ProxyContestAI() {
 
   // ── Fetch companies (detailed view) ────────────────────────────────────────
   const fetchCompanies = useCallback(
-    async (years: string[], institutionIds: number[], page: number) => {
+    async (
+      years: string[],
+      institutionIds: number[],
+      page: number,
+      issSupport?: string | null,
+      glSupport?: string | null
+    ) => {
       const id = ++companiesFetchId.current;
       setCompaniesLoading(true);
       try {
@@ -89,6 +105,8 @@ function ProxyContestAI() {
           institution_id: institutionIds.length > 0 ? institutionIds : undefined,
           page,
           page_size: 10,
+          iss_support: issSupport || undefined,
+          gl_support: glSupport || undefined,
         });
         if (id !== companiesFetchId.current) return;
         setCompaniesData(data);
@@ -104,8 +122,8 @@ function ProxyContestAI() {
   // ── Initial load ────────────────────────────────────────────────────────────
   useEffect(() => {
     fetchFilters(selectedYears);
-    fetchSummary(selectedYears, selectedInstitutionIds, selectedVotes);
-    fetchCompanies(selectedYears, selectedInstitutionIds, 1);
+    fetchSummary(selectedYears, selectedInstitutionIds, selectedVotes, 1);
+    fetchCompanies(selectedYears, selectedInstitutionIds, 1, null, null);
   }, []);
 
   // ── When filters change, re-fetch everything ────────────────────────────────
@@ -114,10 +132,13 @@ function ProxyContestAI() {
       years: string[],
       institutionIds: number[],
       activistNames: string[],
-      votes: string[]
+      votes: string[],
+      issSupport?: string | null,
+      glSupport?: string | null
     ) => {
-      fetchSummary(years, institutionIds, votes);
-      fetchCompanies(years, institutionIds, 1);
+      fetchSummary(years, institutionIds, votes, 1);
+      setVrPage(1);
+      fetchCompanies(years, institutionIds, 1, issSupport, glSupport);
       setCompaniesPage(1);
     },
     [fetchSummary, fetchCompanies]
@@ -130,7 +151,7 @@ function ProxyContestAI() {
       : [...selectedYears, year];
     setSelectedYears(next);
     fetchFilters(next);
-    applyFilters(next, selectedInstitutionIds, selectedActivistNames, selectedVotes);
+    applyFilters(next, selectedInstitutionIds, selectedActivistNames, selectedVotes, selectedIssSupport, selectedGlSupport);
   };
 
   const toggleInstitution = (id: number) => {
@@ -138,7 +159,7 @@ function ProxyContestAI() {
       ? selectedInstitutionIds.filter((i) => i !== id)
       : [...selectedInstitutionIds, id];
     setSelectedInstitutionIds(next);
-    applyFilters(selectedYears, next, selectedActivistNames, selectedVotes);
+    applyFilters(selectedYears, next, selectedActivistNames, selectedVotes, selectedIssSupport, selectedGlSupport);
   };
 
   const toggleActivistName = (name: string) => {
@@ -146,7 +167,7 @@ function ProxyContestAI() {
       ? selectedActivistNames.filter((n) => n !== name)
       : [...selectedActivistNames, name];
     setSelectedActivistNames(next);
-    applyFilters(selectedYears, selectedInstitutionIds, next, selectedVotes);
+    applyFilters(selectedYears, selectedInstitutionIds, next, selectedVotes, selectedIssSupport, selectedGlSupport);
   };
 
   const toggleVote = (vote: string) => {
@@ -154,7 +175,21 @@ function ProxyContestAI() {
       ? selectedVotes.filter((v) => v !== vote)
       : [...selectedVotes, vote];
     setSelectedVotes(next);
-    applyFilters(selectedYears, selectedInstitutionIds, selectedActivistNames, next);
+    applyFilters(selectedYears, selectedInstitutionIds, selectedActivistNames, next, selectedIssSupport, selectedGlSupport);
+  };
+
+  const toggleIssSupport = (val: string) => {
+    const next = selectedIssSupport === val ? null : val;
+    setSelectedIssSupport(next);
+    fetchCompanies(selectedYears, selectedInstitutionIds, 1, next, selectedGlSupport);
+    setCompaniesPage(1);
+  };
+
+  const toggleGlSupport = (val: string) => {
+    const next = selectedGlSupport === val ? null : val;
+    setSelectedGlSupport(next);
+    fetchCompanies(selectedYears, selectedInstitutionIds, 1, selectedIssSupport, next);
+    setCompaniesPage(1);
   };
 
   const handleClearAll = () => {
@@ -162,13 +197,20 @@ function ProxyContestAI() {
     setSelectedInstitutionIds(DEFAULT_INSTITUTION_IDS);
     setSelectedActivistNames([]);
     setSelectedVotes([]);
+    setSelectedIssSupport(null);
+    setSelectedGlSupport(null);
     fetchFilters(DEFAULT_YEARS);
-    applyFilters(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], []);
+    applyFilters(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], [], null, null);
   };
 
   const handleCompaniesPageChange = (p: number) => {
     setCompaniesPage(p);
-    fetchCompanies(selectedYears, selectedInstitutionIds, p);
+    fetchCompanies(selectedYears, selectedInstitutionIds, p, selectedIssSupport, selectedGlSupport);
+  };
+
+  const handleVrPageChange = (p: number) => {
+    setVrPage(p);
+    fetchSummary(selectedYears, selectedInstitutionIds, selectedVotes, p);
   };
 
   // ── Active filter chips ─────────────────────────────────────────────────────
@@ -192,6 +234,8 @@ function ProxyContestAI() {
       label: `Vote: ${v}`,
       onRemove: () => toggleVote(v),
     })),
+    ...(selectedIssSupport ? [{ label: `ISS: ${selectedIssSupport}`, onRemove: () => toggleIssSupport(selectedIssSupport) }] : []),
+    ...(selectedGlSupport ? [{ label: `GL: ${selectedGlSupport}`, onRemove: () => toggleGlSupport(selectedGlSupport) }] : []),
   ];
 
   return (
@@ -249,10 +293,14 @@ function ProxyContestAI() {
         selectedInstitutionIds={selectedInstitutionIds}
         selectedActivistNames={selectedActivistNames}
         selectedVotes={selectedVotes}
+        selectedIssSupport={selectedIssSupport}
+        selectedGlSupport={selectedGlSupport}
         toggleYear={toggleYear}
         toggleInstitution={toggleInstitution}
         toggleActivistName={toggleActivistName}
         toggleVote={toggleVote}
+        toggleIssSupport={toggleIssSupport}
+        toggleGlSupport={toggleGlSupport}
         onClearAll={handleClearAll}
       />}
 
@@ -303,6 +351,12 @@ function ProxyContestAI() {
             <OverviewSummaryTable
               summaryData={summaryData}
               loading={summaryLoading}
+            />
+            <VotingRecordsList
+              votingRecords={votingRecordsData}
+              loading={summaryLoading}
+              page={vrPage}
+              onPageChange={handleVrPageChange}
             />
           </div>
         )}
