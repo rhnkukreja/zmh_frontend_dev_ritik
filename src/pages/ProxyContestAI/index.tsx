@@ -12,246 +12,320 @@ const DEFAULT_YEARS = ["2025", "2026"];
 
 type TabKey = "overview" | "detailed";
 
+// ── localStorage persistence (keyed by token so it clears on logout) ──────────
+const getTokenSlice = () => (localStorage.getItem("token") || "").slice(-8);
+const storageKey = (tab: string) => `pcai_v3_${tab}_${getTokenSlice()}`;
+const loadF = (tab: string): any => {
+  try { return JSON.parse(localStorage.getItem(storageKey(tab)) || "null"); } catch { return null; }
+};
+const saveF = (tab: string, data: any) => {
+  try { localStorage.setItem(storageKey(tab), JSON.stringify(data)); } catch {}
+};
+
 function ProxyContestAI() {
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // ── Shared filter state ─────────────────────────────────────────────────────
-  const [selectedYears, setSelectedYears] = useState<string[]>(DEFAULT_YEARS);
-  const [selectedInstitutionIds, setSelectedInstitutionIds] = useState<number[]>(DEFAULT_INSTITUTION_IDS);
-  const [selectedActivistNames, setSelectedActivistNames] = useState<string[]>([]);
-  const [selectedVotes, setSelectedVotes] = useState<string[]>([]);
+  // ── Overview filters (persisted per-tab) ────────────────────────────────────
+  const [ovYears, setOvYears] = useState<string[]>(() => loadF("overview")?.years ?? DEFAULT_YEARS);
+  const [ovInstIds, setOvInstIds] = useState<number[]>(() => loadF("overview")?.instIds ?? DEFAULT_INSTITUTION_IDS);
+  const [ovVotes, setOvVotes] = useState<string[]>(() => loadF("overview")?.votes ?? []);
+  const [ovCompanyIds, setOvCompanyIds] = useState<number[]>(() => loadF("overview")?.companyIds ?? []);
 
-  // ── ISS / GL support filters (Companies API only) ───────────────────────────
-  const [selectedIssSupport, setSelectedIssSupport] = useState<string | null>(null);
-  const [selectedGlSupport, setSelectedGlSupport] = useState<string | null>(null);
+  // ── Detailed filters (persisted per-tab) ────────────────────────────────────
+  const [dtYears, setDtYears] = useState<string[]>(() => loadF("detailed")?.years ?? DEFAULT_YEARS);
+  const [dtInstIds, setDtInstIds] = useState<number[]>(() => loadF("detailed")?.instIds ?? DEFAULT_INSTITUTION_IDS);
+  const [dtActivists, setDtActivists] = useState<string[]>(() => loadF("detailed")?.activists ?? []);
+  const [dtIss, setDtIss] = useState<string | null>(() => loadF("detailed")?.iss ?? null);
+  const [dtGl, setDtGl] = useState<string | null>(() => loadF("detailed")?.gl ?? null);
+  const [dtCompanyIds, setDtCompanyIds] = useState<number[]>(() => loadF("detailed")?.companyIds ?? []);
 
-  // ── Filter options ──────────────────────────────────────────────────────────
+  // Persist overview filters on change
+  useEffect(() => {
+    saveF("overview", { years: ovYears, instIds: ovInstIds, votes: ovVotes, companyIds: ovCompanyIds });
+  }, [ovYears, ovInstIds, ovVotes, ovCompanyIds]);
+
+  // Persist detailed filters on change
+  useEffect(() => {
+    saveF("detailed", { years: dtYears, instIds: dtInstIds, activists: dtActivists, iss: dtIss, gl: dtGl, companyIds: dtCompanyIds });
+  }, [dtYears, dtInstIds, dtActivists, dtIss, dtGl, dtCompanyIds]);
+
+  // ── Filter options (from API) ────────────────────────────────────────────────
   const [filtersData, setFiltersData] = useState<any>(null);
   const [filtersLoading, setFiltersLoading] = useState(false);
 
-  // ── Overview tab data ───────────────────────────────────────────────────────
+  // ── Overview data ────────────────────────────────────────────────────────────
   const [summaryData, setSummaryData] = useState<any>(null);
-  const [votingRecordsData, setVotingRecordsData] = useState<any>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [votingRecordsData, setVotingRecordsData] = useState<any>(null);
+  const [vrLoading, setVrLoading] = useState(false);
   const [vrPage, setVrPage] = useState(1);
 
-  // ── Detailed tab data ───────────────────────────────────────────────────────
+  // ── Detailed data ────────────────────────────────────────────────────────────
   const [companiesData, setCompaniesData] = useState<any>(null);
   const [companiesLoading, setCompaniesLoading] = useState(false);
   const [companiesPage, setCompaniesPage] = useState(1);
 
-  // ── Ref to track in-flight requests ────────────────────────────────────────
+  // ── Fetch refs ───────────────────────────────────────────────────────────────
   const filtersFetchId = useRef(0);
   const summaryFetchId = useRef(0);
+  const vrFetchId = useRef(0);
   const companiesFetchId = useRef(0);
 
-  // ── Fetch overview filters (called when year changes) ───────────────────────
+  // ── Fetch filters ────────────────────────────────────────────────────────────
   const fetchFilters = useCallback(async (years: string[]) => {
     const id = ++filtersFetchId.current;
     setFiltersLoading(true);
     try {
-      const data = await proxyContestAIService.getOverviewFilters(
-        years.length > 0 ? years : undefined
-      );
+      const data = await proxyContestAIService.getOverviewFilters(years.length ? years : undefined);
       if (id !== filtersFetchId.current) return;
       setFiltersData(data);
-    } catch {
-      /* silently ignore */
-    } finally {
+    } catch {} finally {
       if (id === filtersFetchId.current) setFiltersLoading(false);
     }
   }, []);
 
-  // ── Fetch overview summary ──────────────────────────────────────────────────
-  const fetchSummary = useCallback(
-    async (years: string[], institutionIds: number[], votes: string[], vrPageNum = 1) => {
-      const id = ++summaryFetchId.current;
-      setSummaryLoading(true);
-      try {
-        const data = await proxyContestAIService.getOverviewSummary({
-          year: years.length > 0 ? years : undefined,
-          institution_id: institutionIds.length > 0 ? institutionIds : undefined,
-          vote: votes.length > 0 ? votes : undefined,
-          vr_page: vrPageNum,
-          vr_page_size: 50,
-        });
-        if (id !== summaryFetchId.current) return;
-        setSummaryData(data?.summary ?? data);
-        setVotingRecordsData(data?.voting_records ?? null);
-      } catch {
-        /* silently ignore */
-      } finally {
-        if (id === summaryFetchId.current) setSummaryLoading(false);
-      }
-    },
-    []
-  );
-
-  // ── Fetch companies (detailed view) ────────────────────────────────────────
-  const fetchCompanies = useCallback(
-    async (
-      years: string[],
-      institutionIds: number[],
-      page: number,
-      issSupport?: string | null,
-      glSupport?: string | null
-    ) => {
-      const id = ++companiesFetchId.current;
-      setCompaniesLoading(true);
-      try {
-        const data = await proxyContestAIService.getCompanies({
-          year: years.length > 0 ? years : undefined,
-          institution_id: institutionIds.length > 0 ? institutionIds : undefined,
-          page,
-          page_size: 10,
-          iss_support: issSupport || undefined,
-          gl_support: glSupport || undefined,
-        });
-        if (id !== companiesFetchId.current) return;
-        setCompaniesData(data);
-      } catch {
-        /* silently ignore */
-      } finally {
-        if (id === companiesFetchId.current) setCompaniesLoading(false);
-      }
-    },
-    []
-  );
-
-  // ── Initial load ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    fetchFilters(selectedYears);
-    fetchSummary(selectedYears, selectedInstitutionIds, selectedVotes, 1);
-    fetchCompanies(selectedYears, selectedInstitutionIds, 1, null, null);
+  // ── Fetch summary stats + VR page 1 (on filter change) ──────────────────────
+  const fetchSummaryStats = useCallback(async (
+    years: string[], instIds: number[], votes: string[], companyIds: number[], vrPageNum = 1
+  ) => {
+    const id = ++summaryFetchId.current;
+    setSummaryLoading(true);
+    try {
+      const data = await proxyContestAIService.getOverviewSummary({
+        year: years.length ? years : undefined,
+        institution_id: instIds.length ? instIds : undefined,
+        vote: votes.length ? votes : undefined,
+        company_id: companyIds.length ? companyIds : undefined,
+        vr_page: vrPageNum,
+        vr_page_size: 50,
+      });
+      if (id !== summaryFetchId.current) return;
+      setSummaryData(data?.summary ?? data);
+      setVotingRecordsData(data?.voting_records ?? null);
+    } catch {} finally {
+      if (id === summaryFetchId.current) setSummaryLoading(false);
+    }
   }, []);
 
-  // ── When filters change, re-fetch everything ────────────────────────────────
-  const applyFilters = useCallback(
-    (
-      years: string[],
-      institutionIds: number[],
-      activistNames: string[],
-      votes: string[],
-      issSupport?: string | null,
-      glSupport?: string | null
-    ) => {
-      fetchSummary(years, institutionIds, votes, 1);
-      setVrPage(1);
-      fetchCompanies(years, institutionIds, 1, issSupport, glSupport);
-      setCompaniesPage(1);
-    },
-    [fetchSummary, fetchCompanies]
-  );
+  // ── Fetch only voting records (VR page change — does NOT reload summary) ─────
+  const fetchVotingRecordsOnly = useCallback(async (
+    years: string[], instIds: number[], votes: string[], companyIds: number[], vrPageNum: number
+  ) => {
+    const id = ++vrFetchId.current;
+    setVrLoading(true);
+    try {
+      const data = await proxyContestAIService.getOverviewSummary({
+        year: years.length ? years : undefined,
+        institution_id: instIds.length ? instIds : undefined,
+        vote: votes.length ? votes : undefined,
+        company_id: companyIds.length ? companyIds : undefined,
+        vr_page: vrPageNum,
+        vr_page_size: 50,
+      });
+      if (id !== vrFetchId.current) return;
+      setVotingRecordsData(data?.voting_records ?? null);
+    } catch {} finally {
+      if (id === vrFetchId.current) setVrLoading(false);
+    }
+  }, []);
 
-  // ── Toggle helpers ──────────────────────────────────────────────────────────
-  const toggleYear = (year: string) => {
-    const next = selectedYears.includes(year)
-      ? selectedYears.filter((y) => y !== year)
-      : [...selectedYears, year];
-    setSelectedYears(next);
-    fetchFilters(next);
-    applyFilters(next, selectedInstitutionIds, selectedActivistNames, selectedVotes, selectedIssSupport, selectedGlSupport);
+  // ── Fetch companies (detailed) ───────────────────────────────────────────────
+  const fetchCompanies = useCallback(async (
+    years: string[], instIds: number[], activists: string[], companyIds: number[],
+    page: number, iss?: string | null, gl?: string | null
+  ) => {
+    const id = ++companiesFetchId.current;
+    setCompaniesLoading(true);
+    try {
+      const data = await proxyContestAIService.getCompanies({
+        year: years.length ? years : undefined,
+        institution_id: instIds.length ? instIds : undefined,
+        activist_name: activists.length ? activists : undefined,
+        company_id: companyIds.length ? companyIds : undefined,
+        page,
+        page_size: 10,
+        iss_support: iss || undefined,
+        gl_support: gl || undefined,
+      });
+      if (id !== companiesFetchId.current) return;
+      setCompaniesData(data);
+    } catch {} finally {
+      if (id === companiesFetchId.current) setCompaniesLoading(false);
+    }
+  }, []);
+
+  // ── Initial load ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    fetchFilters(ovYears);
+    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1);
+    fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Refetch filters when switching tabs ──────────────────────────────────────
+  const prevTab = useRef<TabKey>("overview");
+  useEffect(() => {
+    if (prevTab.current === activeTab) return;
+    prevTab.current = activeTab;
+    const years = activeTab === "overview" ? ovYears : dtYears;
+    fetchFilters(years);
+  }, [activeTab]);
+
+  // ── Overview toggle helpers ──────────────────────────────────────────────────
+  const ovToggleYear = (y: string) => {
+    const next = ovYears.includes(y) ? ovYears.filter(x => x !== y) : [...ovYears, y];
+    setOvYears(next); fetchFilters(next);
+    fetchSummaryStats(next, ovInstIds, ovVotes, ovCompanyIds, 1); setVrPage(1);
   };
-
-  const toggleInstitution = (id: number) => {
-    const next = selectedInstitutionIds.includes(id)
-      ? selectedInstitutionIds.filter((i) => i !== id)
-      : [...selectedInstitutionIds, id];
-    setSelectedInstitutionIds(next);
-    applyFilters(selectedYears, next, selectedActivistNames, selectedVotes, selectedIssSupport, selectedGlSupport);
+  const ovToggleInst = (id: number) => {
+    const next = ovInstIds.includes(id) ? ovInstIds.filter(x => x !== id) : [...ovInstIds, id];
+    setOvInstIds(next);
+    fetchSummaryStats(ovYears, next, ovVotes, ovCompanyIds, 1); setVrPage(1);
   };
-
-  const toggleActivistName = (name: string) => {
-    const next = selectedActivistNames.includes(name)
-      ? selectedActivistNames.filter((n) => n !== name)
-      : [...selectedActivistNames, name];
-    setSelectedActivistNames(next);
-    applyFilters(selectedYears, selectedInstitutionIds, next, selectedVotes, selectedIssSupport, selectedGlSupport);
+  const ovToggleVote = (v: string) => {
+    const next = ovVotes.includes(v) ? ovVotes.filter(x => x !== v) : [...ovVotes, v];
+    setOvVotes(next);
+    fetchSummaryStats(ovYears, ovInstIds, next, ovCompanyIds, 1); setVrPage(1);
   };
-
-  const toggleVote = (vote: string) => {
-    const next = selectedVotes.includes(vote)
-      ? selectedVotes.filter((v) => v !== vote)
-      : [...selectedVotes, vote];
-    setSelectedVotes(next);
-    applyFilters(selectedYears, selectedInstitutionIds, selectedActivistNames, next, selectedIssSupport, selectedGlSupport);
+  const ovToggleCompany = (id: number) => {
+    const next = ovCompanyIds.includes(id) ? ovCompanyIds.filter(x => x !== id) : [...ovCompanyIds, id];
+    setOvCompanyIds(next);
+    fetchSummaryStats(ovYears, ovInstIds, ovVotes, next, 1); setVrPage(1);
   };
-
-  const toggleIssSupport = (val: string) => {
-    const next = selectedIssSupport === val ? null : val;
-    setSelectedIssSupport(next);
-    fetchCompanies(selectedYears, selectedInstitutionIds, 1, next, selectedGlSupport);
-    setCompaniesPage(1);
-  };
-
-  const toggleGlSupport = (val: string) => {
-    const next = selectedGlSupport === val ? null : val;
-    setSelectedGlSupport(next);
-    fetchCompanies(selectedYears, selectedInstitutionIds, 1, selectedIssSupport, next);
-    setCompaniesPage(1);
-  };
-
-  const handleClearAll = () => {
-    setSelectedYears(DEFAULT_YEARS);
-    setSelectedInstitutionIds(DEFAULT_INSTITUTION_IDS);
-    setSelectedActivistNames([]);
-    setSelectedVotes([]);
-    setSelectedIssSupport(null);
-    setSelectedGlSupport(null);
+  const ovClearAll = () => {
+    setOvYears(DEFAULT_YEARS); setOvInstIds(DEFAULT_INSTITUTION_IDS); setOvVotes([]); setOvCompanyIds([]);
     fetchFilters(DEFAULT_YEARS);
-    applyFilters(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], [], null, null);
+    fetchSummaryStats(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], [], 1); setVrPage(1);
   };
 
+  // ── Detailed toggle helpers ──────────────────────────────────────────────────
+  const dtToggleYear = (y: string) => {
+    const next = dtYears.includes(y) ? dtYears.filter(x => x !== y) : [...dtYears, y];
+    setDtYears(next); fetchFilters(next);
+    fetchCompanies(next, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl); setCompaniesPage(1);
+  };
+  const dtToggleInst = (id: number) => {
+    const next = dtInstIds.includes(id) ? dtInstIds.filter(x => x !== id) : [...dtInstIds, id];
+    setDtInstIds(next);
+    fetchCompanies(dtYears, next, dtActivists, dtCompanyIds, 1, dtIss, dtGl); setCompaniesPage(1);
+  };
+  const dtToggleActivist = (n: string) => {
+    const next = dtActivists.includes(n) ? dtActivists.filter(x => x !== n) : [...dtActivists, n];
+    setDtActivists(next);
+    fetchCompanies(dtYears, dtInstIds, next, dtCompanyIds, 1, dtIss, dtGl); setCompaniesPage(1);
+  };
+  const dtToggleIss = (v: string) => {
+    const next = dtIss === v ? null : v; setDtIss(next);
+    fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, next, dtGl); setCompaniesPage(1);
+  };
+  const dtToggleGl = (v: string) => {
+    const next = dtGl === v ? null : v; setDtGl(next);
+    fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, next); setCompaniesPage(1);
+  };
+  const dtToggleCompany = (id: number) => {
+    const next = dtCompanyIds.includes(id) ? dtCompanyIds.filter(x => x !== id) : [...dtCompanyIds, id];
+    setDtCompanyIds(next);
+    fetchCompanies(dtYears, dtInstIds, dtActivists, next, 1, dtIss, dtGl); setCompaniesPage(1);
+  };
+  const dtClearAll = () => {
+    setDtYears(DEFAULT_YEARS); setDtInstIds(DEFAULT_INSTITUTION_IDS);
+    setDtActivists([]); setDtIss(null); setDtGl(null); setDtCompanyIds([]);
+    fetchFilters(DEFAULT_YEARS);
+    fetchCompanies(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], [], 1, null, null); setCompaniesPage(1);
+  };
+
+  // ── Pagination ───────────────────────────────────────────────────────────────
   const handleCompaniesPageChange = (p: number) => {
     setCompaniesPage(p);
-    fetchCompanies(selectedYears, selectedInstitutionIds, p, selectedIssSupport, selectedGlSupport);
+    fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, p, dtIss, dtGl);
   };
-
   const handleVrPageChange = (p: number) => {
     setVrPage(p);
-    fetchSummary(selectedYears, selectedInstitutionIds, selectedVotes, p);
+    // Only fetch voting records — summary stats stay unchanged
+    fetchVotingRecordsOnly(ovYears, ovInstIds, ovVotes, ovCompanyIds, p);
   };
 
-  // ── Active filter chips ─────────────────────────────────────────────────────
-  const activeChips: { label: string; onRemove: () => void }[] = [
-    ...selectedYears.map((y) => ({
-      label: `Year: ${y}`,
-      onRemove: () => toggleYear(y),
-    })),
-    ...selectedInstitutionIds.map((id) => {
-      const inst = filtersData?.institutions?.find((i: any) => i.institution_id === id);
-      return {
-        label: `Institution: ${inst?.institution_name || id}`,
-        onRemove: () => toggleInstitution(id),
-      };
-    }),
-    ...selectedActivistNames.map((n) => ({
-      label: `Activist: ${n}`,
-      onRemove: () => toggleActivistName(n),
-    })),
-    ...selectedVotes.map((v) => ({
-      label: `Vote: ${v}`,
-      onRemove: () => toggleVote(v),
-    })),
-    ...(selectedIssSupport ? [{ label: `ISS: ${selectedIssSupport}`, onRemove: () => toggleIssSupport(selectedIssSupport) }] : []),
-    ...(selectedGlSupport ? [{ label: `GL: ${selectedGlSupport}`, onRemove: () => toggleGlSupport(selectedGlSupport) }] : []),
+  // ── Name lookup maps (fix institution chips showing IDs on initial render) ───
+  const instNameMap = React.useMemo(() => {
+    const m = new Map<number, string>();
+    (filtersData?.institutions || []).forEach((i: any) => m.set(i.institution_id, i.institution_name));
+    return m;
+  }, [filtersData?.institutions]);
+
+  const companyNameMap = React.useMemo(() => {
+    const m = new Map<number, string>();
+    (filtersData?.companies || []).forEach((c: any) => m.set(c.company_id, c.company_name));
+    return m;
+  }, [filtersData?.companies]);
+
+  const getInstName = (id: number) => instNameMap.get(id) || (filtersLoading ? "…" : `#${id}`);
+  const getCmpName = (id: number) => companyNameMap.get(id) || `#${id}`;
+
+  // ── Active chips (per active tab) ────────────────────────────────────────────
+  const ovChips = [
+    ...ovYears.map(y => ({ label: `Year: ${y}`, onRemove: () => ovToggleYear(y) })),
+    ...ovInstIds.map(id => ({ label: `Institution: ${getInstName(id)}`, onRemove: () => ovToggleInst(id) })),
+    ...ovVotes.map(v => ({ label: `Vote: ${v}`, onRemove: () => ovToggleVote(v) })),
+    ...ovCompanyIds.map(id => ({ label: `Company: ${getCmpName(id)}`, onRemove: () => ovToggleCompany(id) })),
   ];
+  const dtChips = [
+    ...dtYears.map(y => ({ label: `Year: ${y}`, onRemove: () => dtToggleYear(y) })),
+    ...dtInstIds.map(id => ({ label: `Institution: ${getInstName(id)}`, onRemove: () => dtToggleInst(id) })),
+    ...dtActivists.map(n => ({ label: `Activist: ${n}`, onRemove: () => dtToggleActivist(n) })),
+    ...(dtIss ? [{ label: `ISS: ${dtIss}`, onRemove: () => dtToggleIss(dtIss) }] : []),
+    ...(dtGl ? [{ label: `GL: ${dtGl}`, onRemove: () => dtToggleGl(dtGl) }] : []),
+    ...dtCompanyIds.map(id => ({ label: `Company: ${getCmpName(id)}`, onRemove: () => dtToggleCompany(id) })),
+  ];
+  const activeChips = activeTab === "overview" ? ovChips : dtChips;
+  const handleClearAll = activeTab === "overview" ? ovClearAll : dtClearAll;
+
+  // ── Current tab's filter values for sidebar ──────────────────────────────────
+  const curYears = activeTab === "overview" ? ovYears : dtYears;
+  const curInstIds = activeTab === "overview" ? ovInstIds : dtInstIds;
+  const curCompanyIds = activeTab === "overview" ? ovCompanyIds : dtCompanyIds;
+  const curToggleYear = activeTab === "overview" ? ovToggleYear : dtToggleYear;
+  const curToggleInst = activeTab === "overview" ? ovToggleInst : dtToggleInst;
+  const curToggleCompany = activeTab === "overview" ? ovToggleCompany : dtToggleCompany;
 
   return (
-    <div className="grid grid-cols-12 gap-y-6 gap-x-6 pb-10">
-      {/* Page header */}
+    <div className="grid grid-cols-12 gap-y-4 gap-x-6 pb-10">
+      {/* Page header — title + tabs + hide-filters in one row */}
       <div className="col-span-12">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Institutional voting summaries &amp; activism documents
-            </p>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold text-slate-800 whitespace-nowrap">Proxy Contest AI</h2>
+
+          {/* Tabs inline with title */}
+          <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+            {(["overview", "detailed"] as TabKey[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={clsx(
+                  "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
+                  activeTab === tab
+                    ? "bg-primary text-white shadow"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                {tab === "overview" ? (
+                  <span className="flex items-center gap-1.5">
+                    <Lucide icon="BarChart3" className="w-4 h-4" />
+                    Overview
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <Lucide icon="Table" className="w-4 h-4" />
+                    Detailed View
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
+
           <button
             onClick={() => setSidebarOpen((v) => !v)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
           >
             <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
             {sidebarOpen ? "Hide Filters" : "Show Filters"}
@@ -261,14 +335,14 @@ function ProxyContestAI() {
 
       {/* Active filter chips */}
       {activeChips.length > 0 && (
-        <div className="col-span-12 flex flex-wrap items-center gap-2 -mt-2">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="col-span-12 flex flex-wrap items-center gap-2 -mt-1">
+          <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
             Active Filters:
           </span>
           {activeChips.map((chip) => (
             <span
               key={chip.label}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full"
             >
               {chip.label}
               <button onClick={chip.onRemove} className="hover:text-primary/70">
@@ -278,111 +352,92 @@ function ProxyContestAI() {
           ))}
           <button
             onClick={handleClearAll}
-            className="text-xs text-slate-400 hover:text-slate-600 underline"
+            className="text-sm text-slate-400 hover:text-slate-600 underline"
           >
             Clear all
           </button>
         </div>
       )}
 
-      {/* Filters sidebar */}
-      {sidebarOpen && <FiltersSidebar
-        filtersData={filtersData}
-        filtersLoading={filtersLoading}
-        selectedYears={selectedYears}
-        selectedInstitutionIds={selectedInstitutionIds}
-        selectedActivistNames={selectedActivistNames}
-        selectedVotes={selectedVotes}
-        selectedIssSupport={selectedIssSupport}
-        selectedGlSupport={selectedGlSupport}
-        toggleYear={toggleYear}
-        toggleInstitution={toggleInstitution}
-        toggleActivistName={toggleActivistName}
-        toggleVote={toggleVote}
-        toggleIssSupport={toggleIssSupport}
-        toggleGlSupport={toggleGlSupport}
-        onClearAll={handleClearAll}
-      />}
-
-      {/* Main content */}
-      <div className={sidebarOpen ? "col-span-12 md:col-span-9" : "col-span-12"}>
-        {/* Tab bar */}
-        <div className="flex items-center gap-1 mb-5 bg-white rounded-xl border border-slate-200 p-1 w-fit shadow-sm">
-          {(["overview", "detailed"] as TabKey[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={clsx(
-                "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
-                activeTab === tab
-                  ? "bg-primary text-white shadow"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-              )}
-            >
-              {tab === "overview" ? (
-                <span className="flex items-center gap-1.5">
-                  <Lucide icon="BarChart3" className="w-4 h-4" />
-                  Overview
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5">
-                  <Lucide icon="Table" className="w-4 h-4" />
-                  Detailed View
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab content */}
-        {activeTab === "overview" && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                <Lucide icon="BarChart3" className="w-5 h-5 text-primary" />
-                Voting Summary
-              </h3>
-              {selectedYears.length > 0 && (
-                <span className="text-xs text-slate-400">
-                  {selectedYears.join(", ")}
-                </span>
-              )}
-            </div>
-            <OverviewSummaryTable
-              summaryData={summaryData}
-              loading={summaryLoading}
-            />
-            <VotingRecordsList
-              votingRecords={votingRecordsData}
-              loading={summaryLoading}
-              page={vrPage}
-              onPageChange={handleVrPageChange}
+      {/* Sidebar + content in same-height flex row */}
+      <div className="col-span-12 flex gap-6 items-start">
+        {/* Filters sidebar */}
+        {sidebarOpen && (
+          <div className="w-64 flex-shrink-0">
+            <FiltersSidebar
+              filtersData={filtersData}
+              filtersLoading={filtersLoading}
+              activeTab={activeTab}
+              selectedYears={curYears}
+              selectedInstIds={curInstIds}
+              selectedCompanyIds={curCompanyIds}
+              selectedVotes={ovVotes}
+              selectedActivists={dtActivists}
+              selectedIss={dtIss}
+              selectedGl={dtGl}
+              toggleYear={curToggleYear}
+              toggleInst={curToggleInst}
+              toggleCompany={curToggleCompany}
+              toggleVote={ovToggleVote}
+              toggleActivist={dtToggleActivist}
+              toggleIss={dtToggleIss}
+              toggleGl={dtToggleGl}
+              onClearAll={handleClearAll}
             />
           </div>
         )}
 
-        {activeTab === "detailed" && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
-                <Lucide icon="Table" className="w-5 h-5 text-primary" />
-                Companies
-                {companiesData?.count != null && (
-                  <span className="text-xs text-slate-400 font-normal">
-                    ({companiesData.count} total)
-                  </span>
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {/* Tab content */}
+          {activeTab === "overview" && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5" style={{ minHeight: "calc(100vh - 14rem)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                  <Lucide icon="BarChart3" className="w-5 h-5 text-primary" />
+                  Voting Summary
+                </h3>
+                {ovYears.length > 0 && (
+                  <span className="text-sm text-slate-400">{ovYears.join(", ")}</span>
                 )}
-              </h3>
+              </div>
+              <OverviewSummaryTable
+                summaryData={summaryData}
+                loading={summaryLoading}
+              />
+              <VotingRecordsList
+                votingRecords={votingRecordsData}
+                loading={summaryLoading}
+                vrLoading={vrLoading}
+                page={vrPage}
+                onPageChange={handleVrPageChange}
+              />
             </div>
-            <CompaniesTable
-              data={companiesData}
-              loading={companiesLoading}
-              page={companiesPage}
-              onPageChange={handleCompaniesPageChange}
-              institutionIds={selectedInstitutionIds}
-            />
-          </div>
-        )}
+          )}
+
+          {activeTab === "detailed" && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5" style={{ minHeight: "calc(100vh - 14rem)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                  <Lucide icon="Table" className="w-5 h-5 text-primary" />
+                  Companies
+                  {companiesData?.count != null && (
+                    <span className="text-sm text-slate-400 font-normal">
+                      ({companiesData.count} total)
+                    </span>
+                  )}
+                </h3>
+              </div>
+              <CompaniesTable
+                data={companiesData}
+                loading={companiesLoading}
+                page={companiesPage}
+                onPageChange={handleCompaniesPageChange}
+                institutionIds={dtInstIds}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

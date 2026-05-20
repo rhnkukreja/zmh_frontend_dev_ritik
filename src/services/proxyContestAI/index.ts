@@ -25,7 +25,9 @@ export const proxyContestAIService = {
   getCompanies: async (filters: {
     year?: string[];
     company_name?: string[];
+    company_id?: number[];
     institution_id?: number[];
+    activist_name?: string[];
     page?: number;
     page_size?: number;
     iss_support?: string;
@@ -40,6 +42,7 @@ export const proxyContestAIService = {
     year?: string[];
     institution_id?: number[];
     vote?: string[];
+    company_id?: number[];
     vr_page?: number;
     vr_page_size?: number;
   }) => {

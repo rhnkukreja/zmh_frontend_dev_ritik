@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CPagination from "@/components/Pagination";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
@@ -13,6 +14,7 @@ interface CompaniesTableProps {
   onPageChange: (p: number) => void;
   institutionIds: number[];
 }
+
 
 type ModalType = "documents" | "proxy_advisory" | "meeting_details" | "case_studies" | "voting";
 
@@ -102,6 +104,8 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
     setModalData(null);
   };
 
+  const navigate = useNavigate();
+
   return (
     <>
       <StandardizedTable
@@ -127,7 +131,12 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
                   </span>
                 </StandardizedTable.Cell>
                 <StandardizedTable.Cell>
-                  <div className="font-semibold text-slate-800">{company.company_name}</div>
+                  <button
+                    onClick={() => navigate(`/proxy-contest-detail/${company.company_id}`, { state: { company } })}
+                    className="font-semibold text-primary hover:underline text-left"
+                  >
+                    {company.company_name}
+                  </button>
                 </StandardizedTable.Cell>
                 <StandardizedTable.Cell>
                   {company.meeting_date && (

@@ -2,52 +2,67 @@ import React, { useState } from "react";
 import Lucide from "@/components/Base/Lucide";
 import clsx from "clsx";
 
+type TabKey = "overview" | "detailed";
+
 interface FiltersSidebarProps {
   filtersData: any;
   filtersLoading: boolean;
+  activeTab: TabKey;
+  /* shared (current tab) */
   selectedYears: string[];
-  selectedInstitutionIds: number[];
-  selectedActivistNames: string[];
+  selectedInstIds: number[];
+  selectedCompanyIds: number[];
+  /* overview only */
   selectedVotes: string[];
-  selectedIssSupport: string | null;
-  selectedGlSupport: string | null;
-  toggleYear: (year: string) => void;
-  toggleInstitution: (id: number) => void;
-  toggleActivistName: (name: string) => void;
-  toggleVote: (vote: string) => void;
-  toggleIssSupport: (val: string) => void;
-  toggleGlSupport: (val: string) => void;
+  /* detailed only */
+  selectedActivists: string[];
+  selectedIss: string | null;
+  selectedGl: string | null;
+  /* toggles */
+  toggleYear: (y: string) => void;
+  toggleInst: (id: number) => void;
+  toggleCompany: (id: number) => void;
+  toggleVote: (v: string) => void;
+  toggleActivist: (n: string) => void;
+  toggleIss: (v: string) => void;
+  toggleGl: (v: string) => void;
   onClearAll: () => void;
 }
 
 const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   filtersData,
   filtersLoading,
+  activeTab,
   selectedYears,
-  selectedInstitutionIds,
-  selectedActivistNames,
+  selectedInstIds,
+  selectedCompanyIds,
   selectedVotes,
-  selectedIssSupport,
-  selectedGlSupport,
+  selectedActivists,
+  selectedIss,
+  selectedGl,
   toggleYear,
-  toggleInstitution,
-  toggleActivistName,
+  toggleInst,
+  toggleCompany,
   toggleVote,
-  toggleIssSupport,
-  toggleGlSupport,
+  toggleActivist,
+  toggleIss,
+  toggleGl,
   onClearAll,
 }) => {
   const [showAllActivists, setShowAllActivists] = useState(false);
   const [showAllInstitutions, setShowAllInstitutions] = useState(false);
+  const [showAllCompanies, setShowAllCompanies] = useState(false);
   const [institutionSearch, setInstitutionSearch] = useState("");
+  const [companySearch, setCompanySearch] = useState("");
 
   const hasAnyFilter =
     selectedYears.length > 0 ||
-    selectedInstitutionIds.length > 0 ||
-    selectedActivistNames.length > 0 ||
+    selectedInstIds.length > 0 ||
+    selectedCompanyIds.length > 0 ||
     selectedVotes.length > 0 ||
-    !!selectedIssSupport ||
-    !!selectedGlSupport;
+    selectedActivists.length > 0 ||
+    !!selectedIss ||
+    !!selectedGl;
 
   return (
     <div className="col-span-12 md:col-span-3 mb-6 md:mb-0">
@@ -78,7 +93,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
 
         {filtersLoading ? (
           <div className="space-y-5 animate-pulse">
-            {[4, 5, 4, 3, 3, 4].map((count, i) => (
+            {[4, 5, 4, 3].map((count, i) => (
               <div key={i}>
                 <div className="h-3 bg-slate-200 rounded w-20 mb-3" />
                 {Array.from({ length: count }).map((_, j) => (
@@ -93,29 +108,20 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
             {/* YEAR */}
             {filtersData?.years?.length > 0 && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
-                  Year
-                </h4>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Year</h4>
                 <div className="space-y-1">
                   {filtersData.years.map((item: any) => {
                     const isSelected = selectedYears.includes(String(item.year));
                     return (
-                      <button
-                        key={item.year}
-                        onClick={() => toggleYear(String(item.year))}
-                        className={clsx(
-                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
-                          isSelected
-                            ? "bg-primary text-white font-semibold"
-                            : "hover:bg-slate-50 text-slate-700"
+                      <button key={item.year} onClick={() => toggleYear(String(item.year))}
+                        className={clsx("w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                          isSelected ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
                         )}
                       >
                         <span>{item.year}</span>
                         <span className={clsx("text-xs rounded-full px-2 py-0.5 font-medium",
                           isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>
-                          {item.company_count}
-                        </span>
+                        )}>{item.company_count}</span>
                       </button>
                     );
                   })}
@@ -123,171 +129,162 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               </div>
             )}
 
-            {/* ACTIVIST NAMES */}
-            {filtersData?.activist_names?.length > 0 && (
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
-                  Activist
-                </h4>
-                <div className="space-y-1">
-                  {(showAllActivists ? filtersData.activist_names : filtersData.activist_names.slice(0, 3)).map((item: any) => {
-                    const isSelected = selectedActivistNames.includes(item.activist_name);
-                    return (
-                      <button
-                        key={item.activist_name}
-                        onClick={() => toggleActivistName(item.activist_name)}
-                        className={clsx(
-                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
-                          isSelected
-                            ? "bg-primary text-white font-semibold"
-                            : "hover:bg-slate-50 text-slate-700"
-                        )}
-                      >
-                        <span className="truncate text-left">{item.activist_name}</span>
-                        <span className={clsx("text-xs rounded-full px-2 py-0.5 font-medium flex-none ml-2",
-                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>
-                          {item.company_count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                  {filtersData.activist_names.length > 3 && (
-                    <button
-                      onClick={() => setShowAllActivists(!showAllActivists)}
-                      className="w-full text-xs text-primary hover:text-primary/70 font-medium py-1.5 flex items-center justify-center gap-1"
-                    >
-                      {showAllActivists ? (
-                        <>
-                          <Lucide icon="ChevronUp" className="w-3 h-3" />
-                          Show less
-                        </>
-                      ) : (
-                        <>
-                          <Lucide icon="ChevronDown" className="w-3 h-3" />
-                          See more ({filtersData.activist_names.length - 3})
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* INSTITUTIONS */}
-            {filtersData?.institutions?.length > 0 && (() => {
-              const filteredInstitutions = filtersData.institutions.filter((inst: any) =>
-                inst.institution_name.toLowerCase().includes(institutionSearch.toLowerCase())
+            {/* COMPANIES */}
+            {filtersData?.companies?.length > 0 && (() => {
+              const filtered = filtersData.companies.filter((c: any) =>
+                c.company_name.toLowerCase().includes(companySearch.toLowerCase())
               );
-              const displayedInstitutions = showAllInstitutions ? filteredInstitutions : filteredInstitutions.slice(0, 3);
-              
+              const displayed = showAllCompanies ? filtered : filtered.slice(0, 3);
               return (
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
-                    Institutions
-                  </h4>
-                  
-                  {/* Search input */}
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Company</h4>
                   <div className="relative mb-2">
                     <Lucide icon="Search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search institutions..."
-                      value={institutionSearch}
-                      onChange={(e) => setInstitutionSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    <input type="text" placeholder="Search companies..." value={companySearch}
+                      onChange={(e) => setCompanySearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
-                    {institutionSearch && (
-                      <button
-                        onClick={() => setInstitutionSearch("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
+                    {companySearch && (
+                      <button onClick={() => setCompanySearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                         <Lucide icon="X" className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
-
                   <div className="space-y-1">
-                    {displayedInstitutions.length > 0 ? (
-                      <>
-                        {displayedInstitutions.map((inst: any) => {
-                          const isSelected = selectedInstitutionIds.includes(inst.institution_id);
-                          return (
-                            <button
-                              key={inst.institution_id}
-                              onClick={() => toggleInstitution(inst.institution_id)}
-                              className={clsx(
-                                "w-full flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left gap-2",
-                                isSelected
-                                  ? "bg-primary/10 text-primary font-semibold border border-primary/30"
-                                  : "hover:bg-slate-50 text-slate-700"
-                              )}
-                            >
-                              <span className={clsx(
-                                "w-4 h-4 flex-none rounded border flex items-center justify-center",
-                                isSelected ? "bg-primary border-primary" : "border-slate-300"
-                              )}>
-                                {isSelected && <Lucide icon="Check" className="w-3 h-3 text-white" />}
-                              </span>
-                              <span className="leading-tight">{inst.institution_name}</span>
-                            </button>
-                          );
-                        })}
-                        {!institutionSearch && filteredInstitutions.length > 3 && (
-                          <button
-                            onClick={() => setShowAllInstitutions(!showAllInstitutions)}
-                            className="w-full text-xs text-primary hover:text-primary/70 font-medium py-1.5 flex items-center justify-center gap-1"
-                          >
-                            {showAllInstitutions ? (
-                              <>
-                                <Lucide icon="ChevronUp" className="w-3 h-3" />
-                                Show less
-                              </>
-                            ) : (
-                              <>
-                                <Lucide icon="ChevronDown" className="w-3 h-3" />
-                                See more ({filteredInstitutions.length - 3})
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-xs text-slate-400 text-center py-3">
-                        No institutions found
-                      </div>
+                    {displayed.length > 0 ? displayed.map((c: any) => {
+                      const isSel = selectedCompanyIds.includes(c.company_id);
+                      return (
+                        <button key={c.company_id} onClick={() => toggleCompany(c.company_id)}
+                          className={clsx("w-full flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left gap-2",
+                            isSel ? "bg-primary/10 text-primary font-semibold border border-primary/30" : "hover:bg-slate-50 text-slate-700"
+                          )}
+                        >
+                          <span className={clsx("w-4 h-4 flex-none rounded border flex items-center justify-center",
+                            isSel ? "bg-primary border-primary" : "border-slate-300"
+                          )}>
+                            {isSel && <Lucide icon="Check" className="w-3 h-3 text-white" />}
+                          </span>
+                          <span className="leading-tight truncate">{c.company_name}</span>
+                        </button>
+                      );
+                    }) : <div className="text-sm text-slate-400 text-center py-3">No companies found</div>}
+                    {!companySearch && filtered.length > 3 && (
+                      <button onClick={() => setShowAllCompanies(!showAllCompanies)}
+                        className="w-full text-sm text-primary hover:text-primary/70 font-medium py-1.5 flex items-center justify-center gap-1"
+                      >
+                        {showAllCompanies
+                          ? <><Lucide icon="ChevronUp" className="w-3 h-3" />Show less</>
+                          : <><Lucide icon="ChevronDown" className="w-3 h-3" />See more ({filtered.length - 3})</>}
+                      </button>
                     )}
                   </div>
                 </div>
               );
             })()}
 
-            {/* ISS SUPPORT */}
-            {filtersData?.iss_support && (
+            {/* INSTITUTIONS */}
+            {filtersData?.institutions?.length > 0 && (() => {
+              const filteredInst = filtersData.institutions.filter((i: any) =>
+                i.institution_name.toLowerCase().includes(institutionSearch.toLowerCase())
+              );
+              const displayedInst = showAllInstitutions ? filteredInst : filteredInst.slice(0, 3);
+              return (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Institutions</h4>
+                  <div className="relative mb-2">
+                    <Lucide icon="Search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                    <input type="text" placeholder="Search institutions..." value={institutionSearch}
+                      onChange={(e) => setInstitutionSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    />
+                    {institutionSearch && (
+                      <button onClick={() => setInstitutionSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <Lucide icon="X" className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {displayedInst.length > 0 ? displayedInst.map((inst: any) => {
+                      const isSel = selectedInstIds.includes(inst.institution_id);
+                      return (
+                        <button key={inst.institution_id} onClick={() => toggleInst(inst.institution_id)}
+                          className={clsx("w-full flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left gap-2",
+                            isSel ? "bg-primary/10 text-primary font-semibold border border-primary/30" : "hover:bg-slate-50 text-slate-700"
+                          )}
+                        >
+                          <span className={clsx("w-4 h-4 flex-none rounded border flex items-center justify-center",
+                            isSel ? "bg-primary border-primary" : "border-slate-300"
+                          )}>
+                            {isSel && <Lucide icon="Check" className="w-3 h-3 text-white" />}
+                          </span>
+                          <span className="leading-tight">{inst.institution_name}</span>
+                        </button>
+                      );
+                    }) : <div className="text-sm text-slate-400 text-center py-3">No institutions found</div>}
+                    {!institutionSearch && filteredInst.length > 3 && (
+                      <button onClick={() => setShowAllInstitutions(!showAllInstitutions)}
+                        className="w-full text-sm text-primary hover:text-primary/70 font-medium py-1.5 flex items-center justify-center gap-1"
+                      >
+                        {showAllInstitutions
+                          ? <><Lucide icon="ChevronUp" className="w-3 h-3" />Show less</>
+                          : <><Lucide icon="ChevronDown" className="w-3 h-3" />See more ({filteredInst.length - 3})</>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ACTIVIST — Detailed view only */}
+            {activeTab === "detailed" && filtersData?.activist_names?.length > 0 && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">
-                  ISS Support
-                </h4>
-                <p className="text-[10px] text-slate-400 mb-2">Filters Detailed View companies</p>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Activist</h4>
+                <div className="space-y-1">
+                  {(showAllActivists ? filtersData.activist_names : filtersData.activist_names.slice(0, 3)).map((item: any) => {
+                    const isSel = selectedActivists.includes(item.activist_name);
+                    return (
+                      <button key={item.activist_name} onClick={() => toggleActivist(item.activist_name)}
+                        className={clsx("w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                          isSel ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
+                        )}
+                      >
+                        <span className="truncate text-left">{item.activist_name}</span>
+                        <span className={clsx("text-sm rounded-full px-2 py-0.5 font-medium flex-none ml-2",
+                          isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                        )}>{item.company_count}</span>
+                      </button>
+                    );
+                  })}
+                  {filtersData.activist_names.length > 3 && (
+                    <button onClick={() => setShowAllActivists(!showAllActivists)}
+                      className="w-full text-sm text-primary hover:text-primary/70 font-medium py-1.5 flex items-center justify-center gap-1"
+                    >
+                      {showAllActivists
+                        ? <><Lucide icon="ChevronUp" className="w-3 h-3" />Show less</>
+                        : <><Lucide icon="ChevronDown" className="w-3 h-3" />See more ({filtersData.activist_names.length - 3})</>}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ISS SUPPORT — Detailed view only */}
+            {activeTab === "detailed" && filtersData?.iss_support && (
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">ISS Support</h4>
                 <div className="space-y-1">
                   {(["Management", "Activist"] as const).map((opt) => {
-                    const count = filtersData.iss_support[opt] ?? 0;
-                    const isSelected = selectedIssSupport === opt;
+                    const isSel = selectedIss === opt;
                     return (
-                      <button
-                        key={opt}
-                        onClick={() => toggleIssSupport(opt)}
-                        className={clsx(
-                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
-                          isSelected
-                            ? "bg-primary text-white font-semibold"
-                            : "hover:bg-slate-50 text-slate-700"
+                      <button key={opt} onClick={() => toggleIss(opt)}
+                        className={clsx("w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                          isSel ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
                         )}
                       >
                         <span>{opt}</span>
-                        <span className={clsx("text-xs rounded-full px-2 py-0.5 font-medium",
-                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>{count}</span>
+                        <span className={clsx("text-sm rounded-full px-2 py-0.5 font-medium",
+                          isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                        )}>{filtersData.iss_support[opt] ?? 0}</span>
                       </button>
                     );
                   })}
@@ -295,32 +292,23 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               </div>
             )}
 
-            {/* GL SUPPORT */}
-            {filtersData?.gl_support && (
+            {/* GL SUPPORT — Detailed view only */}
+            {activeTab === "detailed" && filtersData?.gl_support && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">
-                  GL Support
-                </h4>
-                <p className="text-[10px] text-slate-400 mb-2">Filters Detailed View companies</p>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">GL Support</h4>
                 <div className="space-y-1">
                   {(["Management", "Activist"] as const).map((opt) => {
-                    const count = filtersData.gl_support[opt] ?? 0;
-                    const isSelected = selectedGlSupport === opt;
+                    const isSel = selectedGl === opt;
                     return (
-                      <button
-                        key={opt}
-                        onClick={() => toggleGlSupport(opt)}
-                        className={clsx(
-                          "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
-                          isSelected
-                            ? "bg-primary text-white font-semibold"
-                            : "hover:bg-slate-50 text-slate-700"
+                      <button key={opt} onClick={() => toggleGl(opt)}
+                        className={clsx("w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                          isSel ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
                         )}
                       >
                         <span>{opt}</span>
-                        <span className={clsx("text-xs rounded-full px-2 py-0.5 font-medium",
-                          isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>{count}</span>
+                        <span className={clsx("text-sm rounded-full px-2 py-0.5 font-medium",
+                          isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                        )}>{filtersData.gl_support[opt] ?? 0}</span>
                       </button>
                     );
                   })}
@@ -328,28 +316,19 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               </div>
             )}
 
-            {/* VOTES */}
-            {filtersData?.votes?.length > 0 && (
+            {/* VOTES — Overview only */}
+            {activeTab === "overview" && filtersData?.votes?.length > 0 && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
-                  Vote
-                </h4>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Vote</h4>
                 <div className="flex flex-wrap gap-2">
                   {filtersData.votes.map((vote: string) => {
-                    const isSelected = selectedVotes.includes(vote);
+                    const isSel = selectedVotes.includes(vote);
                     return (
-                      <button
-                        key={vote}
-                        onClick={() => toggleVote(vote)}
-                        className={clsx(
-                          "px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150",
-                          isSelected
-                            ? "bg-primary text-white border-primary"
-                            : "bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary"
+                      <button key={vote} onClick={() => toggleVote(vote)}
+                        className={clsx("px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-150",
+                          isSel ? "bg-primary text-white border-primary" : "bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary"
                         )}
-                      >
-                        {vote}
-                      </button>
+                      >{vote}</button>
                     );
                   })}
                 </div>

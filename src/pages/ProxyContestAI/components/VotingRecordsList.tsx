@@ -26,6 +26,8 @@ interface VotingRecord {
   proponent_type: string;
   proposal_category: string;
   is_meeting_details: boolean;
+  voting_rationale?: string;
+  notes?: string;
 }
 
 interface MeetingGroup {
@@ -50,6 +52,7 @@ interface VotingRecordsListProps {
     results: VotingRecord[];
   } | null;
   loading: boolean;
+  vrLoading?: boolean;
   page: number;
   onPageChange: (p: number) => void;
 }
@@ -128,9 +131,9 @@ const MeetingDetailsModal: React.FC<{
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pt-20">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary to-primary/80 rounded-t-xl flex-shrink-0">
           <div>
@@ -180,13 +183,13 @@ const MeetingDetailsModal: React.FC<{
               {/* Nominees table */}
               {data?.nominees?.length > 0 && (
                 <div>
-                  <h3 className="text-base font-semibold mb-3 text-primary border-b border-gray-200 pb-2">Nominees</h3>
+                  <h3 className="text-sm font-semibold mb-3 text-primary border-b border-gray-200 pb-2">Nominees</h3>
                   <div className="overflow-x-auto">
                     <Table>
                       <Table.Thead>
                         <Table.Tr>
                           {(data.nominees_headers || []).map((h: any, i: number) => (
-                            <Table.Td key={i} className="py-2.5 font-semibold bg-gray-50 text-gray-700 text-sm whitespace-nowrap">
+                            <Table.Td key={i} className={clsx("py-2.5 font-semibold bg-gray-50 text-gray-700 text-sm whitespace-nowrap", i === 0 && "min-w-[220px]")}>
                               {h.header}
                             </Table.Td>
                           ))}
@@ -196,7 +199,7 @@ const MeetingDetailsModal: React.FC<{
                         {data.nominees.map((nominee: any, i: number) => (
                           <Table.Tr key={i} className="hover:bg-gray-50 [&_td]:last:border-b-0">
                             {(data.nominees_headers || []).map((h: any, hi: number) => (
-                              <Table.Td key={hi} className="py-2.5 border-dashed text-sm">
+                              <Table.Td key={hi} className={clsx("py-2.5 border-dashed text-sm", hi === 0 && "min-w-[220px] font-medium")}>
                                 {nominee[h.field] ?? ""}
                               </Table.Td>
                             ))}
@@ -211,13 +214,13 @@ const MeetingDetailsModal: React.FC<{
               {/* Proposals table */}
               {data?.proposals?.length > 0 && (
                 <div>
-                  <h3 className="text-base font-semibold mb-3 text-primary border-b border-gray-200 pb-2">Proposals</h3>
+                  <h3 className="text-sm font-semibold mb-3 text-primary border-b border-gray-200 pb-2">Proposals</h3>
                   <div className="overflow-x-auto">
                     <Table>
                       <Table.Thead>
                         <Table.Tr>
                           {(data.proposals_headers || []).map((h: any, i: number) => (
-                            <Table.Td key={i} className="py-2.5 font-semibold bg-gray-50 text-gray-700 text-sm whitespace-nowrap">
+                            <Table.Td key={i} className={clsx("py-2.5 font-semibold bg-gray-50 text-gray-700 text-sm whitespace-nowrap", i === 0 && "min-w-[300px]")}>
                               {h.header}
                             </Table.Td>
                           ))}
@@ -227,7 +230,7 @@ const MeetingDetailsModal: React.FC<{
                         {data.proposals.map((proposal: any, i: number) => (
                           <Table.Tr key={i} className="hover:bg-gray-50 [&_td]:last:border-b-0">
                             {(data.proposals_headers || []).map((h: any, hi: number) => (
-                              <Table.Td key={hi} className="py-2.5 border-dashed text-sm">
+                              <Table.Td key={hi} className={clsx("py-2.5 border-dashed text-sm", hi === 0 && "min-w-[300px]")}>
                                 {proposal[h.field] ?? "N/A"}
                               </Table.Td>
                             ))}
@@ -287,29 +290,41 @@ const MeetingRow: React.FC<{
           <div className="border-t border-slate-100 overflow-x-auto">
             <Table>
               <Table.Thead>
-                <Table.Tr>
-                  {["#", "Proposal", "Prop #", "Vote", "Mgt Rec", "Institution", "Fund", "Category"].map((h) => (
-                    <Table.Td key={h} className="py-2 font-semibold bg-gray-50 text-gray-700 text-xs whitespace-nowrap">{h}</Table.Td>
-                  ))}
+                <Table.Tr className="bg-primary">
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-14">No.</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm min-w-[340px]">Proposal</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Mgmt Rec</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Vote Cast</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Institution Name</Table.Td>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {group.records.map((row, i) => (
-                  <Table.Tr key={row.id || i} className="hover:bg-gray-50 [&_td]:last:border-b-0">
-                    <Table.Td className="py-2 border-dashed text-gray-400 text-xs">{i + 1}</Table.Td>
-                    <Table.Td className="py-2 border-dashed text-sm max-w-[260px]">{row.proposal}</Table.Td>
-                    <Table.Td className="py-2 border-dashed text-center text-xs">{row.proposal_num}</Table.Td>
-                    <Table.Td className="py-2 border-dashed">
-                      <span className={clsx("px-2 py-0.5 rounded-full text-xs font-medium", VOTE_BADGE[row.vote] || "bg-gray-100 text-gray-600")}>
-                        {row.vote}
-                      </span>
-                    </Table.Td>
-                    <Table.Td className="py-2 border-dashed text-center text-xs">{row.mgt_rec}</Table.Td>
-                    <Table.Td className="py-2 border-dashed text-xs whitespace-nowrap">{row.institution_name}</Table.Td>
-                    <Table.Td className="py-2 border-dashed text-xs text-gray-500 max-w-[140px] truncate">{row.fund_name}</Table.Td>
-                    <Table.Td className="py-2 border-dashed text-xs text-gray-500 whitespace-nowrap">{row.proposal_category}</Table.Td>
-                  </Table.Tr>
-                ))}
+                {group.records.map((row, i) => {
+                  const rationale = row.voting_rationale || row.notes;
+                  return (
+                    <React.Fragment key={row.id || i}>
+                      <Table.Tr className="hover:bg-gray-50">
+                        <Table.Td className="py-2.5 border-dashed text-sm text-gray-500">{row.proposal_num || (i + 1)}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm min-w-[340px]">{row.proposal}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm">{row.mgt_rec}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm">
+                          <span className={clsx("font-semibold", (row.vote === "Against" || row.vote === "Withhold") ? "text-red-600" : "text-slate-800")}>
+                            {row.vote}
+                          </span>
+                        </Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm whitespace-nowrap">{row.institution_name}</Table.Td>
+                      </Table.Tr>
+                      {rationale && (
+                        <Table.Tr className="bg-slate-50">
+                          <Table.Td className="border-dashed" />
+                          <Table.Td colSpan={4} className="py-1.5 border-dashed text-sm text-slate-600 italic">
+                            <span className="font-semibold not-italic text-slate-500">Voting Rationale: </span>{rationale}
+                          </Table.Td>
+                        </Table.Tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </Table.Tbody>
             </Table>
           </div>
@@ -331,6 +346,7 @@ const MeetingRow: React.FC<{
 const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
   votingRecords,
   loading,
+  vrLoading,
   page,
   onPageChange,
 }) => {
@@ -360,7 +376,7 @@ const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
     }
   };
 
-  if (loading) {
+  if (loading || vrLoading) {
     return (
       <div className="space-y-2 animate-pulse mt-4">
         {Array.from({ length: 6 }).map((_, i) => (
