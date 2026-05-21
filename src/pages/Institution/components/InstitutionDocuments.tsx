@@ -77,7 +77,6 @@ const InstitutionDocuments = () => {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
-  // NO MORE LOCAL STORAGE. Checklists start empty every load.
   const [profileMode, setProfileMode] = useState<ProfileMode>(null);
   const [pendingLinkOps, setPendingLinkOps] = useState<Array<{ document_id: number; section: ProfileSection; action: "link" | "unlink" }>>([]);
 
@@ -96,7 +95,6 @@ const InstitutionDocuments = () => {
   const [lastDocumentLinks, setLastDocumentLinks] = useState<Record<string, string>>({});
   const [lastOperations, setLastOperations] = useState<any[]>([]);
   
-  // 🌟 NEW: Array of regenerating sections to handle batches
   const [regeneratingSections, setRegeneratingSections] = useState<string[]>([]);
 
   const [processingDocs, setProcessingDocs] = useState<{ id?: number; document_name: string; institution_id: string }[]>([]);
@@ -107,7 +105,6 @@ const InstitutionDocuments = () => {
   const [fastApiProfile, setFastApiProfile] = useState<any>(null);
   const [verifiedDocs, setVerifiedDocs] = useState<Record<string, boolean>>({});
   
-  // 🌟 NEW STATE: Tracks if the S3 bulk verification is currently running
   const [isVerifyingDocs, setIsVerifyingDocs] = useState(false);
   const [uploadConfirmModal, setUploadConfirmModal] = useState<{open: boolean, doc: InstitutionDocument | null}>({open: false, doc: null});
 
@@ -140,7 +137,33 @@ const InstitutionDocuments = () => {
     setPreviewData(null);
 
     try {
-      // Updated to use AI_CHATBOT_API_BASE
+      // Step 1: Check PostgreSQL Database First
+      let dbProfile = null;
+      try {
+        const res = await axios.get(`${AI_CHATBOT_API_BASE}/investor-profile/${params.id}`);
+        if (res.data.status === "success" && res.data.sections) {
+          dbProfile = res.data.sections;
+        }
+      } catch (dbError) {
+        // Ignore DB 404, we will fallback to S3 in Step 2
+      }
+
+      // 🌟 FIX: If Postgres has the profile, store ALL sections!
+      if (dbProfile && (dbProfile.summary || dbProfile.engagement_priorities || dbProfile.voting_guidelines)) {
+        setPreviewData({
+          is_from_db: true, // Flag to tell the UI to render multiple sections
+          summary: stripHtml(dbProfile.summary || ""),
+          engagement_priorities: stripHtml(dbProfile.engagement_priorities || ""),
+          reporting_expectations: stripHtml(dbProfile.reporting_expectations || ""),
+          esg_integration_process: stripHtml(dbProfile.esg_integration_process || ""),
+          voting_guidelines: stripHtml(dbProfile.voting_guidelines || ""),
+          source: "Database"
+        });
+        setIsPreviewLoading(false);
+        return;
+      }
+
+      // Step 2: Fallback to S3 (WhaleWisdom)
       const response = await axios.get(
         `${AI_CHATBOT_API_BASE}/search-whalewisdom`,
         {
@@ -148,17 +171,16 @@ const InstitutionDocuments = () => {
         }
       );
 
-      console.log("S3 Data Fetched:", response.data); // Helps debug in console
       setPreviewData(response.data);
 
     } catch (error: any) {
       console.error("❌ PREVIEW ERROR:", error);
       if (error.response?.status === 404) {
-        toast.error("No scraped profile found in S3. Please scrape this investor from the Dashboard first.");
+        toast.error("No profile summary found in the Database or S3.");
       } else {
         toast.error(`Failed to load profile: ${error.message || "Network Error"}`);
       }
-      setPreviewModalOpen(false);
+      setPreviewModalOpen(false); // Close modal if nothing is found
     } finally {
       setIsPreviewLoading(false);
     }
@@ -167,7 +189,6 @@ const InstitutionDocuments = () => {
   const fetchProfileData = async () => {
     if (!params.id) return;
     try {
-      // Changed underscore to hyphen here
       const res = await axios.get(`${AI_CHATBOT_API_BASE}/investor-profile/${params.id}`);
       if (res.data.status === "success" && res.data.sections) {
         setFastApiProfile(res.data.sections);
@@ -177,7 +198,7 @@ const InstitutionDocuments = () => {
     }
   };
 
-  // 🌟 FAST BULK FETCH WITH BACKEND FUZZY MATCHING (POST REQUEST)
+  // 🌟 FAST BULK FETCH WITH BACKEND FUZZY MATCHING
   const checkAllDocsVerification = async (instId: string, docs: InstitutionDocument[]) => {
     if (!docs || docs.length === 0) return;
     setIsVerifyingDocs(true); 
@@ -189,8 +210,31 @@ const InstitutionDocuments = () => {
         { investor_id: instId, document_names: documentNames }
       );
       
-      {/*console.log("🟢 VERIFIED VIA FUZZY MATCH:", res.data.verified_docs);*/}
-      setVerifiedDocs(res.data.verified_docs || {});
+      // 🌟 THE FIX: Transform the backend response into a { "Doc Name": true/false } mapping
+      const backendDocs = res.data.verified_docs || {};
+      const verifiedMap: Record<string, boolean> = {};
+      
+      Object.keys(backendDocs).forEach((key) => {
+        const item = backendDocs[key];
+        
+        if (item && typeof item === 'object') {
+          // Map by the exact database URL AND the decoded URL for safety
+          if (item.db_link) {
+            verifiedMap[item.db_link] = item.verified;
+            verifiedMap[safeDecode(item.db_link)] = item.verified; // <--- ADD THIS
+          }
+          if (item.name) {
+            verifiedMap[item.name] = item.verified;
+          }
+        } 
+        else if (typeof item === 'boolean') {
+          verifiedMap[key] = item;
+          verifiedMap[safeDecode(key)] = item; // <--- ADD THIS
+        }
+      });
+
+      setVerifiedDocs(verifiedMap);
+      
     } catch (e) {
       console.error("Bulk verification check failed", e);
     } finally {
@@ -204,13 +248,12 @@ const InstitutionDocuments = () => {
     const docsSignature = `${params.id}_${institutionDocuments.map(d => d.id).join(',')}`;
     
     if (hasVerifiedDocs.current !== docsSignature) {
-      // Add a small delay to let Redux batch its state updates
       const timer = setTimeout(() => {
         checkAllDocsVerification(params.id!, institutionDocuments);
         hasVerifiedDocs.current = docsSignature;
-      }, 300); // 300ms debounce
+      }, 300);
 
-      return () => clearTimeout(timer); // Cleanup if state changes rapidly
+      return () => clearTimeout(timer); 
     }
   }, [params.id, documentsLoading, institutionDocuments]);
 
@@ -265,7 +308,6 @@ const InstitutionDocuments = () => {
     return () => clearInterval(interval);
   }, [processingDocs]);
 
-  // 🌟 NEW: Trigger manual processing for files not in S3
   const handleManualUpload = async (doc: InstitutionDocument) => {
     setUploadConfirmModal({ open: false, doc: null });
     if (!params.id) return;
@@ -282,20 +324,16 @@ const InstitutionDocuments = () => {
     }
   };
 
-  // 🌟 SAFELY check if a URL is in the DB, applying decodeURI to prevent mismatch bugs
   const isCheckedForSection = (doc: InstitutionDocument, section: ProfileSection): boolean => {
-    // 1. Check for unsaved changes pending in the UI
     const op = pendingLinkOps.find(o => o.document_id === doc.id && o.section === section);
     if (op) return op.action === "link";
     
-    // 2. Check if the URL is saved securely in the database profile links!
     if (fastApiProfile && doc.link) {
        const linkField = section === "reporting_expectation" ? "reporting_expectation_link" : `${section}_link`;
        const savedLinks = fastApiProfile[linkField] || "";
        return safeDecode(savedLinks).includes(safeDecode(doc.link));
     }
     
-    // Fallback to original logic if no FastAPI profile exists yet
     return Boolean(doc[sectionToField[section]]);
   };
 
@@ -447,7 +485,6 @@ const InstitutionDocuments = () => {
     }
   };
 
-  // 🌟 NEW: Advanced Batch-Capable Regeneration Logic
   const handleRegenerateTargets = async (targets: RegenerateTarget[]): Promise<boolean> => {
     if (!params.id || !lastApiPayload || targets.length === 0) { toast.error("Cannot regenerate: Missing institution ID or document payload."); return false; }
     const sectionsToUpdate = targets.map(t => t.section);
@@ -478,6 +515,7 @@ const InstitutionDocuments = () => {
   };
 
   const fullDbProfile = fastApiProfile ? { investor_id: String(params.id), sections: { summary: stripHtml(fastApiProfile.summary || ""), engagement_priorities: stripHtml(fastApiProfile.engagement_priorities || ""), reporting_expectations: stripHtml(fastApiProfile.reporting_expectations || ""), esg_integration_process: stripHtml(fastApiProfile.esg_integration_process || ""), voting_guidelines: stripHtml(fastApiProfile.voting_guidelines || "") } } : null; 
+
 
   return (
     <>
@@ -528,33 +566,81 @@ const InstitutionDocuments = () => {
                     {isPreviewLoading && (
                       <div className="flex flex-col items-center justify-center flex-grow">
                         <Loader2 className="w-8 h-8 text-theme-2 animate-spin mb-2" />
-                        <p className="text-slate-500">Checking S3 for existing profile...</p>
+                        <p className="text-slate-500">Checking for existing profile...</p>
                       </div>
                     )}
                     {!isPreviewLoading && !previewData && (
                       <div className="flex flex-col items-center justify-center flex-grow text-center p-10">
                         <Lucide icon="FileQuestion" className="w-12 h-12 text-slate-300 mb-3" />
                         <h3 className="text-lg font-medium text-slate-700">No Profile Found</h3>
-                        <p className="text-slate-500 mt-1">There is no previous investor profile present in S3 for this institution.</p>
+                        <p className="text-slate-500 mt-1">There is no previous investor profile available.</p>
                       </div>
                     )}
                     {!isPreviewLoading && previewData && (
                       <>
                         <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
-                          
-                          {/* S3 WhaleWisdom Strategy */}
-                          <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
-                            <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
-                              <Lucide icon="Briefcase" className="w-4 h-4 text-theme-2" />
-                              Investment Strategy
-                            </h4>
-                            <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">
-                              {previewData.investment_strategy || "No strategy available."}
-                            </div>
-                          </div>
+                          {previewData.is_from_db ? (
+                            <>
+                              {/* DB Data: Render all available sections */}
+                              {previewData.summary && (
+                                <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
+                                  <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
+                                    <Lucide icon="Briefcase" className="w-4 h-4 text-theme-2" /> Investment Strategy / Summary
+                                  </h4>
+                                  <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">{previewData.summary}</div>
+                                </div>
+                              )}
+                              
+                              {previewData.engagement_priorities && (
+                                <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
+                                  <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
+                                    <Lucide icon="Target" className="w-4 h-4 text-theme-2" /> Engagement Priorities
+                                  </h4>
+                                  <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">{previewData.engagement_priorities}</div>
+                                </div>
+                              )}
 
-                          {/* ✂️ THE SEC BROCHURE BLOCK WAS REMOVED FROM HERE ✂️ */}
-                          
+                              {previewData.reporting_expectations && (
+                                <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
+                                  <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
+                                    <Lucide icon="FileText" className="w-4 h-4 text-theme-2" /> Reporting Expectations
+                                  </h4>
+                                  <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">{previewData.reporting_expectations}</div>
+                                </div>
+                              )}
+
+                              {previewData.esg_integration_process && (
+                                <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
+                                  <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
+                                    <Lucide icon="Leaf" className="w-4 h-4 text-theme-2" /> ESG Integration Process
+                                  </h4>
+                                  <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">{previewData.esg_integration_process}</div>
+                                </div>
+                              )}
+
+                              {previewData.voting_guidelines && (
+                                <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
+                                  <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
+                                    <Lucide icon="CheckSquare" className="w-4 h-4 text-theme-2" /> Voting Guidelines
+                                  </h4>
+                                  <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">{previewData.voting_guidelines}</div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {/* S3 Fallback Data: Render only WhaleWisdom Strategy */}
+                              <div className="bg-white p-4 border border-slate-200 rounded-md shadow-sm">
+                                <h4 className="font-semibold text-slate-800 text-md flex items-center gap-2 border-b border-slate-100 pb-2 mb-3">
+                                  <Lucide icon="Briefcase" className="w-4 h-4 text-theme-2" />
+                                  Investment Strategy
+                                </h4>
+                                <div className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">
+                                  {previewData.investment_strategy || "No strategy available."}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
                         <div className="mt-6 flex justify-end">
                           <Button variant="outline-secondary" onClick={() => setPreviewModalOpen(false)}>Close</Button>
@@ -607,7 +693,20 @@ const InstitutionDocuments = () => {
                   
                   const rawName = doc.name || "";
                   const isProcessing = processingDocs.some(p => (p.id && p.id === doc.id) || (!p.id && p.document_name?.toLowerCase() === rawName.toLowerCase()));
-                  const isVerified = doc.link ? verifiedDocs[safeDecode(doc.link)] ?? verifiedDocs[doc.link] ?? false : false;
+                  // 🌟 Check by the exact DB Link first, fallback to name if link is missing
+                  const isVerified = 
+                  (doc.link && (verifiedDocs[doc.link] || verifiedDocs[safeDecode(doc.link)])) || 
+                  (doc.name && verifiedDocs[doc.name]) || 
+                  false;
+
+                  console.log("DOC DEBUG =>", {
+                    docName: doc.name,
+                    isVerifyingDocs,
+                    isVerified,
+                    isProcessing,
+                    shouldShowPlus: !isVerifyingDocs && !isVerified,
+                    doc,
+                  });
 
                   return (
                     <Table.Tr key={doc.id}>

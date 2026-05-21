@@ -13,7 +13,8 @@ const CURRENT_ENV: EnvType = Environment.PRODUCTION;
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
-  [Environment.PRODUCTION]: 'https://api-chatbot.zmhadvisors.com',
+  [Environment.PRODUCTION]: 'https://api-chatbot.zmhadvisors.com', // Your Backend URL
+  [Environment.NGROK] : 'https://6f72-2401-4900-1c70-83f3-5538-22ed-d0ef-c044.ngrok-free.app'
 };
 
 // Helper function to get the current Base URL
@@ -164,7 +165,8 @@ export async function saveWhaleWisdomSummary(institutionId: number | string, dat
 }
 
 export async function scrapeSelectedWhaleWisdom(name: string, link: string) {
-  const res = await fetch(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom/confirm`, {
+  // 🌟 CHANGED: Points to the new onboard endpoint
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/investors/onboard`, {
     method: "POST",
     headers: getRequestHeaders(),
     body: JSON.stringify({ name, link }),
@@ -213,7 +215,8 @@ export const generateWhaleWisdomId = async (institutionName: string) => {
 };
 
 export async function scrapeQuickWhaleWisdom(name: string, link: string) {
-  const res = await fetch(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom/quick-summary`, {
+  // 🌟 CHANGED: Points to the new onboard endpoint (Engine handles both now)
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/investors/onboard`, {
     method: "POST",
     headers: getRequestHeaders(),
     body: JSON.stringify({ name, link }),
@@ -227,7 +230,8 @@ export async function scrapeQuickWhaleWisdom(name: string, link: string) {
 }
 
 export const scrapeBulkWhaleWisdom = async (investors: {name: string, link: string}[]) => {
-  const res = await fetch(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom/bulk-process`, {
+  // 🌟 CHANGED: Points to the new bulk multiprocessor endpoint
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/investors/ownership-summary`, {
     method: "POST",
     headers: getRequestHeaders(),
     body: JSON.stringify({ investors }),
