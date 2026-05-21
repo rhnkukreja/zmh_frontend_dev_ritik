@@ -13,7 +13,8 @@ const CURRENT_ENV: EnvType = Environment.PRODUCTION;
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
-  [Environment.PRODUCTION]: 'https://api-chatbot.zmhadvisors.com',
+  [Environment.PRODUCTION]: 'https://api-chatbot.zmhadvisors.com', // Your Backend URL
+  [Environment.NGROK] : 'https://6f72-2401-4900-1c70-83f3-5538-22ed-d0ef-c044.ngrok-free.app'
 };
 
 // Helper function to get the current Base URL
@@ -131,3 +132,115 @@ export async function askPdf(
 
   return res.json();
 }
+
+export async function fetchWhaleWisdomSummary(institutionName: string) {
+  // We hit a new endpoint and pass the name as a query parameter
+  const url = new URL(`${AI_CHATBOT_API_BASE}/scrape-whalewisdom`);
+  url.searchParams.append('name', institutionName);
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: getRequestHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch WhaleWisdom summary");
+  }
+
+  return res.json();
+}
+
+export async function saveWhaleWisdomSummary(institutionId: number | string, data: any) {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/institution/${institutionId}/whalewisdom-summary`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to save WhaleWisdom summary");
+  }
+
+  return res.json();
+}
+
+export async function scrapeSelectedWhaleWisdom(name: string, link: string) {
+  // 🌟 CHANGED: Points to the new onboard endpoint
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/investors/onboard`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name, link }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to scrape selected link");
+  }
+
+  return res.json();
+}
+
+export async function fetchExistingSummaryIds() {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/whalewisdom-summaries/existing`, {
+    method: "GET",
+    headers: getRequestHeaders(),
+  });
+
+  if (!res.ok) {
+    return [];
+  }
+
+  return res.json();
+}
+
+export async function searchWhaleWisdom(name: string) {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/search-whalewisdom?name=${encodeURIComponent(name)}`, {
+    method: "GET",
+    headers: getRequestHeaders(),
+  });
+  return res.json();
+}
+
+export const generateWhaleWisdomId = async (institutionName: string) => {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/generate-whalewisdom-id`, {
+    method: "POST",
+    headers: getRequestHeaders(), // Uses your existing headers helper
+    body: JSON.stringify({ institution_name: institutionName }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to generate WhaleWisdom ID");
+  }
+
+  return res.json();
+};
+
+export async function scrapeQuickWhaleWisdom(name: string, link: string) {
+  // 🌟 CHANGED: Points to the new onboard endpoint (Engine handles both now)
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/investors/onboard`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ name, link }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to quickly scrape selected link");
+  }
+
+  return res.json();
+}
+
+export const scrapeBulkWhaleWisdom = async (investors: {name: string, link: string}[]) => {
+  // 🌟 CHANGED: Points to the new bulk multiprocessor endpoint
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/investors/ownership-summary`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({ investors }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to run bulk scrape");
+  }
+
+  const data = await res.json();
+  return data.results;
+};
