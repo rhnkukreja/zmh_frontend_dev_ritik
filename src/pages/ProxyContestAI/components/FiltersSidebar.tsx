@@ -231,7 +231,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                         <span>{opt}</span>
                         <span className={clsx("text-sm rounded-full px-2 py-0.5 font-medium",
                           isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>{filtersData.iss_support[opt] ?? 0}</span>
+                        )}>{(Array.isArray(filtersData.iss_support) ? filtersData.iss_support.find((i: any) => i.label === opt)?.count : filtersData.iss_support[opt]) ?? 0}</span>
                       </button>
                     );
                   })}
@@ -255,7 +255,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                         <span>{opt}</span>
                         <span className={clsx("text-sm rounded-full px-2 py-0.5 font-medium",
                           isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>{filtersData.gl_support[opt] ?? 0}</span>
+                        )}>{(Array.isArray(filtersData.gl_support) ? filtersData.gl_support.find((i: any) => i.label === opt)?.count : filtersData.gl_support[opt]) ?? 0}</span>
                       </button>
                     );
                   })}

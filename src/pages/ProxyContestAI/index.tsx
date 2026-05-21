@@ -66,6 +66,15 @@ function ProxyContestAI() {
   const [companiesLoading, setCompaniesLoading] = useState(false);
   const [companiesPage, setCompaniesPage] = useState(1);
 
+  // ── Inline warning for institution enforcement ───────────────────────────────
+  const [warnMsg, setWarnMsg] = useState<string | null>(null);
+  const warnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showWarn = (msg: string) => {
+    if (warnTimer.current) clearTimeout(warnTimer.current);
+    setWarnMsg(msg);
+    warnTimer.current = setTimeout(() => setWarnMsg(null), 4000);
+  };
+
   // ── Fetch refs ───────────────────────────────────────────────────────────────
   const filtersFetchId = useRef(0);
   const summaryFetchId = useRef(0);
@@ -179,6 +188,10 @@ function ProxyContestAI() {
     fetchSummaryStats(next, ovInstIds, ovVotes, ovCompanyIds, 1); setVrPage(1);
   };
   const ovToggleInst = (id: number) => {
+    if (ovInstIds.includes(id) && ovInstIds.length <= 1) {
+      showWarn("At least one institution must be selected. Please add another institution before removing this one.");
+      return;
+    }
     const next = ovInstIds.includes(id) ? ovInstIds.filter(x => x !== id) : [...ovInstIds, id];
     setOvInstIds(next);
     fetchSummaryStats(ovYears, next, ovVotes, ovCompanyIds, 1); setVrPage(1);
@@ -194,9 +207,10 @@ function ProxyContestAI() {
     fetchSummaryStats(ovYears, ovInstIds, ovVotes, next, 1); setVrPage(1);
   };
   const ovClearAll = () => {
-    setOvYears(DEFAULT_YEARS); setOvInstIds(DEFAULT_INSTITUTION_IDS); setOvVotes([]); setOvCompanyIds([]);
+    // Preserve current institution selection — at least one must always remain
+    setOvYears(DEFAULT_YEARS); setOvVotes([]); setOvCompanyIds([]);
     fetchFilters(DEFAULT_YEARS);
-    fetchSummaryStats(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], [], 1); setVrPage(1);
+    fetchSummaryStats(DEFAULT_YEARS, ovInstIds, [], [], 1); setVrPage(1);
   };
 
   // ── Detailed toggle helpers ──────────────────────────────────────────────────
@@ -369,6 +383,14 @@ function ProxyContestAI() {
           >
             Clear all
           </button>
+        </div>
+      )}
+
+      {/* Institution enforcement warning */}
+      {warnMsg && (
+        <div className="col-span-12 flex items-center gap-2.5 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 -mt-1">
+          <Lucide icon="AlertTriangle" className="w-4 h-4 flex-shrink-0 text-amber-500" />
+          {warnMsg}
         </div>
       )}
 
