@@ -249,53 +249,62 @@ useEffect(() => {
 
   // Fetch all tab data on initial load
   useEffect(() => {
-    if (companyGlobalSearchTicker && companyGlobalSearchId) {
-      // Only fetch if data doesn't exist (first load or company changed)
-      if (companyGlobalSearchTicker !== tempSearch) {
-        // 1. Fetch Ownership data
-        dispatch(
-          fetchCompanyDashboard(
-            createDynamicURL(
-              `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+    const fetchAllForCompany = async () => {
+      if (companyGlobalSearchTicker && companyGlobalSearchId) {
+        // Only fetch if data doesn't exist (first load or company changed)
+        if (companyGlobalSearchTicker !== tempSearch) {
+          // Collect any background promises here if needed
+          const requests: Promise<any>[] = [];
+
+          // 1. Fetch Ownership data
+          dispatch(
+            fetchCompanyDashboard(
+              createDynamicURL(
+                `${baseURL}/company-dashboard/?ticker=${companyGlobalSearchTicker}`
+              )
             )
-          )
-        );
+          );
 
-        // 2. Fetch Company Overview data (for all users)
-        dispatch(
-          fetchCompanyOverview(
-            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
-          )
-        );
-
-      // GPT-based key findings disabled temporarily per request.
-      // if (isAdmin) {
-      //   requests.push(
-      //     dispatch(
-      //       fetchCompanyOverviewGPT(
-      //         `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
-      //       )
-      //     ).unwrap()
-      //   );
-      // }
-
-      const results = await Promise.allSettled(requests);
-      const hasSuccess = results.some((r) => r.status === "fulfilled");
-
-        // 4. Fetch Shareholder Meeting Results data
-        dispatch(
-          fetchAGMSummaryDashboard(
-            createDynamicURL(
-              `${baseURL}/voting_report_8k/`,
-              { ticker: companyGlobalSearchTicker }
+          // 2. Fetch Company Overview data (for all users)
+          dispatch(
+            fetchCompanyOverview(
+              `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
             )
-          )
-        );
+          );
 
-        // Set tempSearch to mark data as loaded for this company
-        dispatch(setTempSearch(companyGlobalSearchTicker));
+          // GPT-based key findings disabled temporarily per request.
+          // If you later want to run this as a background promise, push an unwrapped thunk into `requests`:
+          // if (isAdmin) {
+          //   requests.push(
+          //     dispatch(
+          //       fetchCompanyOverviewGPT(
+          //         `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
+          //       )
+          //     ).unwrap()
+          //   );
+          // }
+
+          // Wait for any background requests (safe even when array is empty)
+          const results = await Promise.allSettled(requests);
+          const hasSuccess = results.some((r) => r.status === "fulfilled");
+
+          // 4. Fetch Shareholder Meeting Results data
+          dispatch(
+            fetchAGMSummaryDashboard(
+              createDynamicURL(
+                `${baseURL}/voting_report_8k/`,
+                { ticker: companyGlobalSearchTicker }
+              )
+            )
+          );
+
+          // Set tempSearch to mark data as loaded for this company
+          dispatch(setTempSearch(companyGlobalSearchTicker));
+        }
       }
-    }
+    };
+
+    fetchAllForCompany();
   }, [companyGlobalSearchTicker, companyGlobalSearchId, tempSearch, dispatch, isAdmin]);
 
   // No scroll-based tab update - tabs now show/hide content instead
