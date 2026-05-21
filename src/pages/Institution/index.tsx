@@ -36,6 +36,7 @@ import AddNewCaseStudies from "@/pages/CaseStudies/Components/AddEditCaseStudies
 import AddEngagementDetailsModal from "@/pages/PeerAnalysis/components/AddEngagementDetailsModal";
 import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
 import AddNewInvesterProfile from "@/pages/InvestorProfiles/components/AddNewInvester";
+import NotificationsManager from "./components/NotificationsManager";
 
 interface InstituteFilter {
   region: string[];
@@ -100,6 +101,7 @@ function Main() {
     useState<boolean>(false);
   const [selectedInstitutionIdForProfile, setSelectedInstitutionIdForProfile] =
     useState<number | null>(null);
+  const [notificationsManagerVisible, setNotificationsManagerVisible] = useState<boolean>(false);
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -231,6 +233,13 @@ function Main() {
               >
                 <Lucide icon="PenLine" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
                 Add New Institution
+              </Button>
+              <Button
+                onClick={() => setNotificationsManagerVisible(true)}
+                variant="secondary"
+                className="h-10"
+              >
+                Manage Notifications
               </Button>
             </div>
           )}
@@ -522,8 +531,8 @@ function Main() {
                             )} */}
 
                             {/* Document Tab Column */}
-                            {institution?.id && (
-                              <Table.Td className="py-2  bg-white border-slate-200/80">
+                            <Table.Td className="py-2  bg-white border-slate-200/80">
+                              {institution?.id ? (
                                 <button
                                   onClick={() => {
                                     navigate(`/investor-company-details/${institution.id}`, {
@@ -538,13 +547,10 @@ function Main() {
                                 >
                                   View Documents
                                 </button>
-                              </Table.Td>
-                            )}
-                            {!institution?.investor_profile_id && (
-                              <Table.Td className="py-2  bg-white border-slate-200/80">
+                              ) : (
                                 <span className="text-slate-400 text-sm">-</span>
-                              </Table.Td>
-                            )}
+                              )}
+                            </Table.Td>
                             {/* <Table.Td className="py-2  bg-white border-slate-200/80">
                               {institution.investor_type}
                             </Table.Td> */}
@@ -806,6 +812,9 @@ function Main() {
             setAddNewInvesterModalVisible={setAddNewInvesterModalVisible}
             preselectedInstitutionId={selectedInstitutionIdForProfile}
           />
+        )}
+        {notificationsManagerVisible && (
+          <NotificationsManager visible={notificationsManagerVisible} setVisible={setNotificationsManagerVisible} />
         )}
       </div>
     </div>

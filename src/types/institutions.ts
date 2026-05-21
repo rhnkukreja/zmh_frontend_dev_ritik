@@ -9,6 +9,7 @@ export type Institutions = {
   investor_type: string;
   contact: string | null;
   email: string | null;
+  contact_email?: string | null;
   date_created: string;
   date_updated: string;
   uploaded_time_caspio: string;

@@ -56,6 +56,9 @@ interface CompanySliceState {
   totalPages: number;
   totalCompanyDashboard: number;
   agmSummaryDetails: any;
+  agmRequestStatus: 'idle' | 'loading' | 'success' | 'error';
+  agmHasData: boolean;
+  agmErrorMessage: string | null;
   agmSummaryProxyContest: any;
   caseStudyDetails: any;
   caseStudyLoading: boolean;
@@ -99,8 +102,10 @@ interface CompanySliceState {
   graphQLBoardData: any;
   companyOverviewData: any;
   companyOverviewLoading: boolean;
+  companyOverviewRequestKey: string | null;
   companyOverviewGPTData: any;
   companyOverviewGPTLoading: boolean;
+  companyOverviewGPTRequestKey: string | null;
   resultsCache: Record<string, any>;
   modulesCount: any | null;
   institutionStats: any | null;
@@ -118,6 +123,9 @@ const initialState: CompanySliceState = {
   totalPages: 1,
   totalCompanyDashboard: 0,
   agmSummaryDetails: "",
+  agmRequestStatus: 'idle',
+  agmHasData: false,
+  agmErrorMessage: null,
   agmSummaryProxyContest: "",
   investorCardLoading: true,
   caseStudyDetails: "",
@@ -161,8 +169,10 @@ const initialState: CompanySliceState = {
   votingRationaleAllInvestors: [],
   companyOverviewData: null,
   companyOverviewLoading: false,
+  companyOverviewRequestKey: null,
   companyOverviewGPTData: null,
   companyOverviewGPTLoading: false,
+  companyOverviewGPTRequestKey: null,
   graphQLBoardDataLoading: false,
   graphQLBoardData: null,
   resultsCache: {},
@@ -469,6 +479,10 @@ const companySlice = createSlice({
     setModulesCount(state, action: PayloadAction<any>) {
       state.modulesCount = action.payload;
     },
+    resetInstitutionStats(state) {
+      state.institutionStats = null;
+      state.institutionStatsLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -523,18 +537,46 @@ const companySlice = createSlice({
         state.agmSummaryDetails = "";
         state.loading = true;
         state.error = null;
+        state.agmRequestStatus = 'loading';
+        state.agmErrorMessage = null;
       })
       .addCase(
         fetchAGMSummaryDashboard.fulfilled,
         (state, action: PayloadAction<{ results: any }>) => {
           state.loading = false;
-          state.agmSummaryDetails = action.payload.results;
+          const results = action.payload.results;
+          
+          // Check if backend explicitly says no data
+          if (results?.has_data === false) {
+            state.agmRequestStatus = 'success';
+            state.agmHasData = false;
+            state.agmSummaryDetails = results;
+            state.agmErrorMessage = null;
+          } else if (results?.has_data === true) {
+            // Data exists
+            state.agmRequestStatus = 'success';
+            state.agmHasData = true;
+            state.agmSummaryDetails = results;
+            state.agmErrorMessage = null;
+          } else {
+            // Fallback: infer from Year field (backward compatibility)
+            state.agmRequestStatus = 'success';
+            state.agmHasData = Boolean(results?.Year);
+            state.agmSummaryDetails = results;
+            state.agmErrorMessage = null;
+          }
         }
       )
       .addCase(fetchAGMSummaryDashboard.rejected, (state, action) => {
         state.loading = false;
-        state.error =
-          action.error.message || "Failed to fetch company dashboard";
+        state.agmRequestStatus = 'error';
+        const errorMsg = action.error.message || "Failed to fetch AGM summary";
+        state.agmErrorMessage = errorMsg;
+        state.error = errorMsg;
+        state.agmSummaryDetails = "";
+        state.agmHasData = false;
+        // Log error for debugging
+        console.error('[AGM Summary Error]:', errorMsg, action.error);
       })
       .addCase(fetchAGMProxyContestDashboard.pending, (state) => {
         state.agmSummaryProxyContest = "";
@@ -854,18 +896,27 @@ const companySlice = createSlice({
       // });
 
       // Company Overview - SWR Pattern: Keep previous data while revalidating
-      .addCase(fetchCompanyOverview.pending, (state) => {
+      .addCase(fetchCompanyOverview.pending, (state, action) => {
         state.companyOverviewLoading = true;
+        state.companyOverviewRequestKey = action.meta.arg;
         // DO NOT clear data - keep previous data visible (SWR pattern)
         state.error = null;
       })
       .addCase(fetchCompanyOverview.fulfilled, (state, action) => {
+        if (state.companyOverviewRequestKey !== action.meta.arg) {
+          return;
+        }
         state.companyOverviewLoading = false;
         state.companyOverviewData = action.payload;
+        state.companyOverviewRequestKey = null;
         state.error = null;
       })
       .addCase(fetchCompanyOverview.rejected, (state, action) => {
+        if (state.companyOverviewRequestKey !== action.meta.arg) {
+          return;
+        }
         state.companyOverviewLoading = false;
+        state.companyOverviewRequestKey = null;
         // Only clear data on error, not on revalidation
         if (!state.companyOverviewData) {
           state.companyOverviewData = null;
@@ -874,18 +925,27 @@ const companySlice = createSlice({
       })
 
       // Company Overview GPT - SWR Pattern: Keep previous data while revalidating
-      .addCase(fetchCompanyOverviewGPT.pending, (state) => {
+      .addCase(fetchCompanyOverviewGPT.pending, (state, action) => {
         state.companyOverviewGPTLoading = true;
+        state.companyOverviewGPTRequestKey = action.meta.arg;
         // DO NOT clear data - keep previous data visible (SWR pattern)
         state.error = null;
       })
       .addCase(fetchCompanyOverviewGPT.fulfilled, (state, action) => {
+        if (state.companyOverviewGPTRequestKey !== action.meta.arg) {
+          return;
+        }
         state.companyOverviewGPTLoading = false;
         state.companyOverviewGPTData = action.payload;
+        state.companyOverviewGPTRequestKey = null;
         state.error = null;
       })
       .addCase(fetchCompanyOverviewGPT.rejected, (state, action) => {
+        if (state.companyOverviewGPTRequestKey !== action.meta.arg) {
+          return;
+        }
         state.companyOverviewGPTLoading = false;
+        state.companyOverviewGPTRequestKey = null;
         // Only clear data on error, not on revalidation
         if (!state.companyOverviewGPTData) {
           state.companyOverviewGPTData = null;
@@ -928,4 +988,5 @@ export const {
   saveToCache,
   loadFromCache,
   setModulesCount,
+  resetInstitutionStats,
 } = companySlice.actions;

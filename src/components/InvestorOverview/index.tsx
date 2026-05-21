@@ -16,7 +16,7 @@ import parse from 'html-react-parser';
 // import LoadingIcon from '@/components/Base/LoadingIcon';
 import EngagementPriorities from './EngagementPriorities';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
-import { fetchInstitutionStats } from '@/stores/dashboardSlice';
+import { fetchInstitutionStats, resetInstitutionStats } from '@/stores/dashboardSlice';
 import { RootState } from '@/stores/store';
 
 interface InvestorOption {
@@ -84,6 +84,8 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   const [investors, setInvestors] = useState<InvestorOption[]>([]);
   const [selectedInvestor, setSelectedInvestor] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [availableYears, setAvailableYears] = useState<number[]>([2025, 2024]);
+  const [yearsLoading, setYearsLoading] = useState<boolean>(false);
   const [selectedBucket, setSelectedBucket] = useState<BucketKey>('election_of_directors');
   const dispatch = useAppDispatch();
   const { institutionStats: stats, institutionStatsLoading: loading, error: reduxError } = useAppSelector((state: RootState) => state.dashboard);
@@ -91,6 +93,7 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
   const [showReasonsModal, setShowReasonsModal] = useState(false);
   const [modalReasons, setModalReasons] = useState<Array<ReasonItem>>([]);
   const companyTickerRef = useRef(companyTicker);
+  const skipYearEffectRef = useRef(false);
 
   // FIX 1: Read userType into state so it's reactive and reliable
   const [userType, setUserType] = useState<string | null>(() => localStorage.getItem('userType'));
@@ -149,19 +152,46 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
     loadInvestors();
   }, []);
 
-  // Load stats when investor or year changes
+  // When institution changes: fetch available years, auto-select latest, then fetch stats once
   useEffect(() => {
     if (!selectedInvestor) return;
+    let cancelled = false;
 
-    // Check if current stats in Redux already match our needs
-    const statsMatch = stats && 
-                       stats.institution_id === selectedInvestor && 
-                       Number(stats.year) === Number(selectedYear);
+    setYearsLoading(true);
 
-    if (!statsMatch) {
-      dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
+    const run = async () => {
+      try {
+        const data = await institutionStatsService.getYearsForInstitution(selectedInvestor);
+        if (cancelled) return;
+        const years = data.years?.length > 0 ? data.years : [2025, 2024];
+        const latestYear = years[0];
+        setAvailableYears(years);
+        skipYearEffectRef.current = true;  // prevent year-change effect from double-firing
+        setSelectedYear(latestYear);
+        setYearsLoading(false);
+        dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: latestYear }));
+      } catch {
+        if (!cancelled) {
+          setAvailableYears([2025, 2024]);
+          setYearsLoading(false);
+          dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
+        }
+      }
+    };
+
+    run();
+    return () => { cancelled = true; };
+  }, [selectedInvestor]);
+
+  // When user manually changes year: fetch stats (skip if triggered by institution change)
+  useEffect(() => {
+    if (!selectedInvestor) return;
+    if (skipYearEffectRef.current) {
+      skipYearEffectRef.current = false;
+      return;
     }
-  }, [selectedInvestor, selectedYear, stats, dispatch]);
+    dispatch(fetchInstitutionStats({ institutionId: selectedInvestor, year: selectedYear }));
+  }, [selectedYear]);
 
   useEffect(() => {
     if (companyTickerRef.current === companyTicker) {
@@ -169,10 +199,24 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
     }
 
     companyTickerRef.current = companyTicker;
-    setSelectedInvestor(null);
-    setSelectedYear(2025);
+    dispatch(resetInstitutionStats());
     setSelectedBucket('election_of_directors');
     setError(null);
+
+    // Re-select BlackRock (or first investor) so data reloads for the new company
+    if (investors.length > 0) {
+      const blackrock = investors.find((inv) =>
+        inv.institution.toLowerCase().includes('blackrock')
+      );
+      const newInvestor = blackrock ? blackrock.id : investors[0].id;
+      if (newInvestor !== selectedInvestor) {
+        setSelectedInvestor(newInvestor);
+      } else {
+        // Same investor selected — force a re-fetch by resetting year state
+        setSelectedInvestor(null);
+        setTimeout(() => setSelectedInvestor(newInvestor), 0);
+      }
+    }
   }, [companyTicker]);
 
   const bucketData = stats?.buckets[selectedBucket];
@@ -350,17 +394,16 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
                   <label className="block text-[15px] font-medium text-slate-700 mb-2">
                     Year
                   </label>
-                  <TomSelect
+                  <select
                     value={selectedYear.toString()}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    options={{
-                      placeholder: 'Select a year',
-                    }}
-                    className="w-full text-[15px]"
+                    disabled={yearsLoading}
+                    className="w-full text-[15px] border border-slate-300 rounded-md px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="2025">2025</option>
-                    <option value="2024">2024</option>
-                  </TomSelect>
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

@@ -1,17 +1,32 @@
 import { AddNewInvesterType, InvestersProfile } from "@/types/investerProfiles";
 import { axiosInstance } from "../index";
+import { dashboardCacheManager } from "@/utils/cacheManager";
 
 class InvestersProfileService {
   public async getInvestersProfile(url: string): Promise<{
     count: number;
     results: InvestersProfile[];
   }> {
-    const response = await axiosInstance.get(url);
-    const { count, results } = response.data;
-    return {
-      count,
-      results,
-    };
+    const cacheKey = dashboardCacheManager.generateKey(url);
+
+    const cached = dashboardCacheManager.get(cacheKey);
+    if (cached) {
+      // API responses in other services are raw data; ensure shape matches
+      return cached as { count: number; results: InvestersProfile[] };
+    }
+
+    const inFlight = dashboardCacheManager.getInFlightPromise(cacheKey);
+    if (inFlight) return inFlight as Promise<{ count: number; results: InvestersProfile[] }>;
+
+    const requestPromise = axiosInstance.get(url).then((response) => {
+      const { count, results } = response.data;
+      const payload = { count, results };
+      dashboardCacheManager.set(cacheKey, payload);
+      return payload;
+    });
+
+    dashboardCacheManager.trackRequest(cacheKey, requestPromise);
+    return requestPromise;
   }
   public async getSingleInvester(
     id: number,

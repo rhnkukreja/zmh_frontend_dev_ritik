@@ -6,9 +6,11 @@ import { CorporateGovernanceData, CorporateGovernanceDataWithDocs, DocumentItem,
 import { ExternalLink, X } from "lucide-react";
 
 type GovernanceTabProps = {
-  ticker: string;
   companyId?: number;
 };
+
+const governanceDataCache = new Map<number, CorporateGovernanceData>();
+
 function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
   if (!rows || rows.length === 0) {
     return null;
@@ -297,24 +299,49 @@ function GovernanceLoadingSkeleton() {
 }
 
 export default function GovernanceTab({
-  ticker,
   companyId,
 }: GovernanceTabProps) {
   const [data, setData] = useState<CorporateGovernanceData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(companyId));
   const [error, setError] = useState<string | null>(null);
   const [modalType, setModalType] = useState<"coi" | "bylaws" | null>(null);
 
   useEffect(() => {
-    if (!companyId) return;
+    let isActive = true;
+
+    if (!companyId) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    // On every company change, clear stale content first and show loader.
+    setData(null);
+    setError(null);
+    setLoading(true);
+
+    const cachedData = governanceDataCache.get(companyId);
+    if (cachedData) {
+      setData(cachedData);
+      setError(null);
+      setLoading(false);
+      return;
+    }
 
     const fetchGovernanceData = async () => {
       try {
         setLoading(true);
         setError(null);
         const result = await governanceService.getCorporateGovernance(companyId);
+        governanceDataCache.set(companyId, result);
+
+        if (!isActive) return;
+
         setData(result);
       } catch (err: any) {
+        if (!isActive) return;
+
         setError(
           err.response?.data?.message ||
           err.message ||
@@ -322,11 +349,17 @@ export default function GovernanceTab({
         );
         console.error("Governance data fetch error:", err);
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setLoading(false);
+        }
       }
     };
 
     fetchGovernanceData();
+
+    return () => {
+      isActive = false;
+    };
   }, [companyId]);
 
   const governanceData = data as CorporateGovernanceDataWithDocs | null;
@@ -388,7 +421,7 @@ export default function GovernanceTab({
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm text-center">
         <p className="text-[15px] text-slate-600">
-          No governance data available for {ticker}.
+          No governance data available for selected company.
         </p>
       </div>
     );

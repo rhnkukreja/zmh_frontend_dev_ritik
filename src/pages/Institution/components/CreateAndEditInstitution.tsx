@@ -351,12 +351,30 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 isScrapingPdf ? "pointer-events-none opacity-60" : ""
               }`}
             >
-                          {isScrapingPdf && (
-              <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm">
-                <LoadingIcon
-                  color="#800000"
-                  icon="three-dots"
-                  className="w-12 h-12"
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+          <Dialog.Description className="px-6 py-4 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Institution Name <span className="text-red-500">*</span>
+                </FormCheck.Label>
+                <Controller
+                  name="institution"
+                  control={control}
+                  rules={{ required: "Institution Name is required" }}
+                  render={({ field, fieldState: { error } }) => (
+                    <>
+                      <FormInput
+                        placeholder="Enter Institution Name"
+                        {...field}
+                      />
+                      {error && (
+                        <Error className="text-red-600 ">{error.message}</Error>
+                      )}
+                    </>
+                  )}
                 />
 
                 <h3 className="mt-4 text-lg font-semibold text-slate-800">
@@ -525,20 +543,104 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                 </div>
+              </div> */}
 
-                {/* Contact Email */}
-                <div className="w-full">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Contact Email
-                  </FormCheck.Label>
-                  <Controller
-                    name="contact_email"
-                    control={control}
-                    render={({ field }) => (
-                      <FormInput
-                        placeholder="Enter Contact Email"
-                        type="email"
-                        {...field}
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Investor Type <span className="text-red-500">*</span>
+                </FormCheck.Label>
+                <Controller
+                  name="investor_type"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Type of Investor is required" }}
+                  render={({ field }) => (
+                    <TomSelect
+                      {...field}
+                      value={field.value?.toString() || ""}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                      }}
+                      options={{
+                        placeholder: "Select Investor Type",
+                      }}
+                      className="w-full text-left"
+                    >
+                      <option value="" disabled selected>
+                        Select Type
+                      </option>
+                      <option value="Investor">Investor</option>
+                      <option value="Proponent">Proponent</option>
+                    </TomSelect>
+                  )}
+                />
+
+                {errors.investor_type && (
+                  <Error className="max-w-[100%] ">
+                    {errors.investor_type.message}
+                  </Error>
+                )}
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Whale Wisdom Filer Id
+                </FormCheck.Label>
+                <Controller
+                  name="whale_wisdom_filer_id"
+                  control={control}
+                  rules={{}}
+                  render={({ field }) => (
+                    <FormInput
+                      placeholder="Enter Whale Wisdom Filer Id"
+                      {...field}
+                    />
+                  )}
+                />
+                {errors.whale_wisdom_filer_id && (
+                  <Error className="max-w-[100%] ">
+                    {errors.whale_wisdom_filer_id.message}
+                  </Error>
+                )}
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Contact Email
+                </FormCheck.Label>
+                <Controller
+                  name="contact_email"
+                  control={control}
+                  render={({ field }) => (
+                    <FormInput
+                      placeholder="Enter Contact Email"
+                      type="email"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Proxy Advisory Influence
+                </FormCheck.Label>
+                <div className="flex flex-col gap-2">
+                  {["Internal", "ISS", "GL", "Typically does not vote proxies"].map((option) => (
+                    <FormCheck key={option} className="flex items-center">
+                      <FormCheck.Input
+                        id={`proxy_${option}`}
+                        type="checkbox"
+                        checked={proxyAdvisoryOptions.includes(option)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
+                          } else {
+                            setProxyAdvisoryOptions(
+                              proxyAdvisoryOptions.filter((item) => item !== option)
+                            );
+                          }
+                        }}
                       />
                     )}
                   />

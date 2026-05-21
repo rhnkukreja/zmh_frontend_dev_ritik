@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
+import CompanyOverviewSummaryTab from "@/components/CompanyOverview/CompanyOverviewSummaryTab";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
-import { fetchCompanyOverview, fetchCompanyOverviewGPT } from "@/stores/dashboardSlice";
+import { fetchCompanyOverview } from "@/stores/dashboardSlice";
 import { dashboardService } from "@/services/dashboard";
 import { baseURL } from "@/constant";
 import pdfMake from "pdfmake/build/pdfmake";
@@ -164,19 +165,19 @@ const iconForSection = (key: string) => {
   }
 };
 
-type Rationale = {
+export type Rationale = {
   investor: string;
   vote: string;
   proposal: string;
   notes?: string;
 };
 
-type ProxySplit = {
+export type ProxySplit = {
   summary: string;
   buckets: { label: string; pct: number }[];
 };
 
-type ESGInvestor = {
+export type ESGInvestor = {
   name: string;
   env?: string[];
   soc?: string[];
@@ -184,7 +185,7 @@ type ESGInvestor = {
   noteIfNoTopics?: boolean;
 };
 
-type CompanyReport = {
+export type CompanyReport = {
   company: string;
   ticker: string;
   asOf: string;
@@ -1036,22 +1037,22 @@ export default function CompanyOverview() {
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const lastRequestedYearRef = useRef<string>("");
+  const isCompanyYearsLoadingRef = useRef(false);
 
   const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
 
   const canViewRestrictedTabs = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
+  const canViewCompensation = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
 
   const handleCompanySwitch = useCallback(() => {
     setAvailableYears([]);
     setSelectedYear(null);
-    setActiveOverviewTab('investor_summary');
     setQuery('');
     lastRequestedYearRef.current = "";
   }, []);
 
   const handleYearSwitch = useCallback((year: number | null) => {
     setSelectedYear(year);
-    setActiveOverviewTab('investor_summary');
   }, []);
 
   const cacheInvalidationOptions = useMemo(() => ({
@@ -1072,10 +1073,12 @@ export default function CompanyOverview() {
 
     const loadYears = async () => {
       if (!companyGlobalSearchId) {
+        isCompanyYearsLoadingRef.current = false;
         handleCompanySwitch();
         return;
       }
 
+      isCompanyYearsLoadingRef.current = true;
       handleCompanySwitch();
       setYearsLoading(true);
       try {
@@ -1094,6 +1097,7 @@ export default function CompanyOverview() {
         if (isMounted) {
           setYearsLoading(false);
         }
+        isCompanyYearsLoadingRef.current = false;
       }
     };
 
@@ -1106,6 +1110,8 @@ export default function CompanyOverview() {
 
   useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
+    if (isCompanyYearsLoadingRef.current) return;
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) return;
 
     const requestKey = `${companyGlobalSearchId}:${selectedYear}`;
     if (lastRequestedYearRef.current === requestKey) {
@@ -1119,13 +1125,14 @@ export default function CompanyOverview() {
       )
     );
 
-    if (canViewRestrictedTabs) {
-      dispatch(
-        fetchCompanyOverviewGPT(
-          `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
-        )
-      );
-    }
+    // GPT-based key findings disabled temporarily per request.
+    // if (canViewRestrictedTabs) {
+    //   dispatch(
+    //     fetchCompanyOverviewGPT(
+    //       `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${selectedYear}`
+    //     )
+    //   );
+    // }
   }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs]);
 
   // Transform API data to UI format
@@ -1626,7 +1633,60 @@ export default function CompanyOverview() {
   }, [reports, query]);
 
   const isOverviewLoading = yearsLoading || companyOverviewLoading;
-  const shouldShowInitialOverviewLoading = yearsLoading || (companyOverviewLoading && reports.length === 0);
+  const shouldShowInitialOverviewLoading = isOverviewLoading;
+
+  const renderActiveOverviewContent = () => {
+    if (activeOverviewTab === 'investor_summary') {
+      return (
+        <CompanyOverviewSummaryTab
+          filtered={filtered}
+          yearsLoading={yearsLoading}
+          availableYears={availableYears}
+          selectedYear={selectedYear}
+          onYearSwitch={handleYearSwitch}
+          onDownloadPdf={generatePDF}
+          downloadLoading={loading}
+          companyOverviewLoading={companyOverviewLoading}
+        />
+      );
+    }
+
+    if (activeOverviewTab === 'governance') {
+      return (
+        <div className="mt-4">
+          <GovernanceTab
+            key={`gov-${companyGlobalSearchId ?? 'none'}`}
+            companyId={companyGlobalSearchId}
+          />
+        </div>
+      );
+    }
+
+    if (activeOverviewTab === 'compensation') {
+      const activeTicker = filtered[0]?.ticker || "";
+
+      if (!activeTicker) {
+        return (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
+            <div className="mt-4 space-y-3">
+              <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
+              <div className="h-4 w-[78%] animate-pulse rounded bg-slate-200" />
+              <div className="h-4 w-[86%] animate-pulse rounded bg-slate-200" />
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="mt-4">
+          <CompensationTab key={`comp-${activeTicker || 'none'}`} ticker={activeTicker} />
+        </div>
+      );
+    }
+
+    return null;
+  };
 
 
 
@@ -1635,28 +1695,31 @@ export default function CompanyOverview() {
       {shouldShowInitialOverviewLoading ? (
         <>
           {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
-          {canViewRestrictedTabs && (
-            <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white backdrop-blur-md ps-6 shadow-lg">
-              <button
-                onClick={() => setActiveOverviewTab('investor_summary')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Summary
-              </button>
+          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
+            <button
+              onClick={() => setActiveOverviewTab('investor_summary')}
+              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              Summary
+            </button>
 
-              <button
-                onClick={() => setActiveOverviewTab('governance')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'governance'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Governance Profile
-              </button>
+            <button
+              onClick={() => setActiveOverviewTab('governance')}
+              className={`relative flex items-center justify-center gap-2 rounded-lg border px-5 py-2 text-[14px] font-semibold transition-colors ${activeOverviewTab === 'governance'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              <span>Governance Profile</span>
+              <span className="pointer-events-none absolute -top-2 -right-3 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
+                BETA
+              </span>
+            </button>
 
+            {canViewCompensation && (
               <button
                 onClick={() => setActiveOverviewTab('compensation')}
                 className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
@@ -1666,222 +1729,10 @@ export default function CompanyOverview() {
               >
                 Compensation
               </button>
-            </div>
-          )}
-
-          <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
-            <div className="mx-auto space-y-6">
-              {activeOverviewTab === 'investor_summary' && (
-                <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
-                      Key Governance & Investor Summary
-                    </h1>
-                    {(yearsLoading || availableYears.length > 0) && (
-                      <div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {yearsLoading
-                            ? [0, 1].map((index) => (
-                              <span
-                                key={`year-loading-${index}`}
-                                className="inline-block h-10 w-20 animate-pulse rounded-xl bg-slate-200"
-                              />
-                            ))
-                            : availableYears.map((year) => {
-                              const isActiveYear = selectedYear === year;
-                              return (
-                                <button
-                                  key={year}
-                                  type="button"
-                                  onClick={() => handleYearSwitch(year)}
-                                  className={cx(
-                                    "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
-                                    isActiveYear
-                                      ? "border-[#b01217] bg-[#b01217] text-white"
-                                      : "border-[#d9c2c8] bg-[#f3e7eb] text-[#b05b72] hover:bg-[#efdde3]"
-                                  )}
-                                  aria-pressed={isActiveYear}
-                                >
-                                  {year}
-                                </button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="gap-2"
-                      disabled
-                    >
-                      <Download className="h-4 w-4" />
-                      Download PDF
-                    </Button>
-                  </div>
-                </header>
-              )}
-
-              {activeOverviewTab === 'investor_summary' ? (
-                <div className="grid gap-6 md:grid-cols-12">
-                  <Card className="rounded-2xl shadow-sm md:col-span-4">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-[15px] text-slate-900">
-                        <div className="h-5 w-44 animate-pulse rounded bg-slate-200" />
-                      </CardTitle>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className="rounded-full" variant="outline">
-                          <span className="h-4 w-14 animate-pulse rounded bg-slate-200" />
-                        </Badge>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      <div className="rounded-xl border bg-white p-3">
-                        <SectionHeader
-                          title="Share Price Takeaway"
-                          icon={<BarChart3 className="h-4 w-4" />}
-                        />
-                        <div className="mt-3 space-y-2">
-                          <div className="h-4 w-[96%] animate-pulse rounded bg-slate-200" />
-                          <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
-                          <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl border bg-white p-3">
-                        <SectionHeader
-                          title="Proxy Advisor Influence"
-                          icon={<ShieldCheck className="h-4 w-4" />}
-                        />
-                        <div className="mt-3 space-y-2">
-                          <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
-                          <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
-                        </div>
-                        <div className="mt-3 space-y-2">
-                          {Array.from({ length: 3 }).map((_, idx) => (
-                            <div
-                              key={`proxy-bucket-skeleton-${idx}`}
-                              className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
-                            >
-                              <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                              <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="space-y-6 md:col-span-8">
-                    <CollapsibleCard title="Board of Directors" iconKey="board" defaultOpen>
-                      <div className="space-y-2">
-                        <div className="h-4 w-[92%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[84%] animate-pulse rounded bg-slate-200" />
-                      </div>
-                      <Separator className="my-4" />
-                      <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
-                      <div className="space-y-2 mt-3">
-                        <div className="h-4 w-[76%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[72%] animate-pulse rounded bg-slate-200" />
-                      </div>
-                    </CollapsibleCard>
-
-                    <CollapsibleCard
-                      title="Executive Compensation (Say-on-Pay)"
-                      iconKey="sop"
-                      defaultOpen
-                    >
-                      <div className="space-y-2">
-                        <div className="h-4 w-[86%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[70%] animate-pulse rounded bg-slate-200" />
-                      </div>
-                      <Separator className="my-4" />
-                      <div className="h-4 w-36 animate-pulse rounded bg-slate-200" />
-                      <div className="space-y-2 mt-3">
-                        <div className="h-4 w-[80%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
-                      </div>
-                    </CollapsibleCard>
-
-                    <CollapsibleCard title="Auditor Ratification" iconKey="auditor" defaultOpen>
-                      <div className="space-y-2">
-                        <div className="h-4 w-[88%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[74%] animate-pulse rounded bg-slate-200" />
-                      </div>
-                    </CollapsibleCard>
-
-                    <CollapsibleCard title="Shareholder Proposals" iconKey="sp" defaultOpen>
-                      <div className="space-y-2">
-                        <div className="h-4 w-[90%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[82%] animate-pulse rounded bg-slate-200" />
-                      </div>
-                      <Separator className="my-4" />
-                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
-                      <div className="space-y-2 mt-3">
-                        <div className="h-4 w-[78%] animate-pulse rounded bg-slate-200" />
-                        <div className="h-4 w-[68%] animate-pulse rounded bg-slate-200" />
-                      </div>
-                    </CollapsibleCard>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid gap-6 md:grid-cols-12">
-                  <div className="rounded-2xl shadow-sm md:col-span-4 bg-white border border-gray-200 p-6 space-y-4">
-                    <div>
-                      <div className="h-5 w-48 animate-pulse rounded bg-slate-200 mb-2" />
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="h-6 w-32 animate-pulse rounded-full bg-slate-200" />
-                      </div>
-                    </div>
-                    <div className="rounded-xl border bg-white p-3 space-y-2">
-                      <div className="h-4 w-40 animate-pulse rounded bg-slate-200" />
-                      <div className="mt-3 space-y-2">
-                        <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
-                        <div className="h-4 w-[88%] rounded bg-slate-200 animate-pulse" />
-                        <div className="h-4 w-[70%] rounded bg-slate-200 animate-pulse" />
-                      </div>
-                    </div>
-                    <div className="rounded-xl border bg-white p-3 space-y-2">
-                      <div className="h-4 w-48 animate-pulse rounded bg-slate-200" />
-                      <div className="mt-3 space-y-2">
-                        <div className="h-4 w-[92%] rounded bg-slate-200 animate-pulse" />
-                        <div className="h-4 w-[82%] rounded bg-slate-200 animate-pulse" />
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {Array.from({ length: 3 }).map((_, idx) => (
-                          <div
-                            key={`proxy-bucket-skeleton-${idx}`}
-                            className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
-                          >
-                            <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                            <div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6 md:col-span-8">
-                    {Array.from({ length: 4 }).map((_, idx) => (
-                      <div key={`section-skeleton-${idx}`} className="rounded-xl border bg-white overflow-hidden">
-                        <div className="flex items-center justify-between border-b px-4 py-4">
-                          <div className="h-5 w-56 animate-pulse rounded bg-slate-200" />
-                        </div>
-                        <div className="p-4 space-y-3">
-                          <div className="h-4 w-[96%] rounded bg-slate-200 animate-pulse" />
-                          <div className="h-4 w-[90%] rounded bg-slate-200 animate-pulse" />
-                          <div className="h-4 w-[78%] rounded bg-slate-200 animate-pulse" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
+          </div>
+          <div className="mx-auto space-y-6">
+            {renderActiveOverviewContent()}
           </div>
         </>
       ) : !companyGlobalSearchId ? (
@@ -1897,28 +1748,31 @@ export default function CompanyOverview() {
         <>
           {/* STICKY COMPANY OVERVIEW TABS */}
           {/* Note: You may need to adjust "top-[180px]" up or down depending on the exact pixel height of your main header */}
-          {canViewRestrictedTabs && (
-            <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white backdrop-blur-md ps-6 shadow-lg">
-              <button
-                onClick={() => setActiveOverviewTab('investor_summary')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Summary
-              </button>
+          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
+            <button
+              onClick={() => setActiveOverviewTab('investor_summary')}
+              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              Summary
+            </button>
 
-              <button
-                onClick={() => setActiveOverviewTab('governance')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'governance'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Governance Profile
-              </button>
+            <button
+              onClick={() => setActiveOverviewTab('governance')}
+              className={`relative flex items-center justify-center gap-2 rounded-lg border px-5 py-2 text-[14px] font-semibold transition-colors ${activeOverviewTab === 'governance'
+                  ? 'border-primary text-primary bg-white'
+                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+            >
+              <span>Governance Profile</span>
+              <span className="pointer-events-none absolute -top-2 -right-3 text-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
+                BETA
+              </span>
+            </button>
 
+            {canViewCompensation && (
               <button
                 onClick={() => setActiveOverviewTab('compensation')}
                 className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
@@ -1928,249 +1782,20 @@ export default function CompanyOverview() {
               >
                 Compensation
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
 
-          <div className="min-h-screen bg-white p-6 mt-3.5 border rounded-md">
-            <div className="mx-auto space-y-6">
-              {/* ONLY SHOW HEADER ON INVESTOR SUMMARY TAB */}
-              {activeOverviewTab === 'investor_summary' && (
-                <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                  <div>
-                    <h1 className="mt-2 pb-2 text-xl font-bold tracking-tight">
-                      Key Governance & Investor Summary
-                    </h1>
-                    {(yearsLoading || availableYears.length > 0) && (
-                      <div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {yearsLoading
-                            ? [0, 1].map((index) => (
-                              <span
-                                key={`year-loading-${index}`}
-                                className="inline-block h-10 w-20 animate-pulse rounded-xl bg-slate-200"
-                              />
-                            ))
-                            : availableYears.map((year) => {
-                              const isActiveYear = selectedYear === year;
-                              return (
-                                <button
-                                  key={year}
-                                  type="button"
-                                  onClick={() => setSelectedYear(year)}
-                                  className={cx(
-                                    "rounded-xl border px-6 py-2 text-[14px] font-semibold transition-colors",
-                                    isActiveYear
-                                      ? "border-red-800 bg-red-800 text-white"
-                                      : "border-[#d9c2c8] bg-[#f3e7eb] text-[#b05b72] hover:bg-[#efdde3]"
-                                  )}
-                                  aria-pressed={isActiveYear}
-                                >
-                                  {year}
-                                </button>
-                              );
-                            })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {companyOverviewLoading && !yearsLoading ? (
-                      <span className="text-[13px] font-medium text-slate-500">Updating...</span>
-                    ) : null}
-                    <Button
-                      variant="outline"
-                      className="gap-2"
-                      onClick={() => {
-                        if (filtered.length > 0) {
-                          generatePDF(filtered[0]);
-                        }
-                      }}
-                      disabled={loading ? true : (filtered.length === 0 || isOverviewLoading)}
-                    >
-                      <Download className="h-4 w-4" />
-                      {loading ? "Downloading..." : "Download PDF"}
-                    </Button>
-                  </div>
-                </header>
-              )}
-
-              {filtered.length === 0 ? (
-
-                <Card className="rounded-2xl">
-
-                  <CardContent className="py-10 text-center text-[15px] text-slate-600">
-                    No matches. Try a different search term.
-                  </CardContent>
-
-                </Card>
-
-              ) : (
-                <>
-                  {/* INVESTOR SUMMARY VIEW */}
-                  {activeOverviewTab === 'investor_summary' && (
-                    <Tabs defaultValue={filtered[0].ticker} className="w-full">
-                      {filtered.map((r) => (
-                        <TabsContent key={r.ticker} value={r.ticker} className="mt-4">
-                          <div className="grid gap-6 md:grid-cols-12">
-                            {/* Left column: headline */}
-                            <Card className="rounded-2xl shadow-sm md:col-span-4">
-                              <CardHeader className="pb-3">
-                                <CardTitle className="text-[15px] text-slate-900">
-                                  {r.company}
-                                </CardTitle>
-
-                                {r.sharePriceTakeaway && r.asOf && (
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <Badge className="rounded-full" variant="outline">
-                                      As of {r.asOf}
-                                    </Badge>
-                                  </div>                                  
-                                  )}
-                              </CardHeader>
-
-
-                              <CardContent className="space-y-4">
-                                {r.sharePriceTakeaway && (
-                                  <div className="rounded-xl border bg-white p-3">
-                                    <SectionHeader
-                                      title="Share Price Takeaway"
-                                      icon={<BarChart3 className="h-4 w-4" />}
-                                    />
-                                    <p className="mt-3 text-[15px] text-slate-700">
-                                      {r.sharePriceTakeaway}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {r.proxy ? (
-                                  <div className="rounded-xl border bg-white p-3">
-                                    <SectionHeader
-                                      title="Proxy Advisor Influence"
-                                      icon={<ShieldCheck className="h-4 w-4" />}
-                                    />
-                                    <p className="mt-3 text-[15px] text-slate-700">{r.proxy.summary}</p>
-                                    <div className="mt-3 space-y-2">
-                                      {r.proxy.buckets
-                                        .filter((b) => b.pct > 0)
-                                        .map((b, i) => (
-                                          <div
-                                            key={i}
-                                            className="flex items-center justify-between rounded-lg border bg-slate-50 px-3 py-2"
-                                          >
-                                            <div className="text-[15px] text-slate-700">{b.label}</div>
-                                            <span
-                                              className={`rounded-full border px-2 py-0.5 text-[15px] font-semibold ${pctPill(
-                                                b.pct
-                                              )}`}
-                                            >
-                                              {b.pct.toFixed(2)}%
-                                            </span>
-                                          </div>
-                                        ))}
-                                    </div>
-                                  </div>
-                                ) : null}
-                              </CardContent>
-                            </Card>
-
-                            {/* Right column: sections */}
-                            <div className="space-y-6 md:col-span-8">
-                              {r.board ? (
-                                <CollapsibleCard title="Board of Directors" iconKey="board">
-                                  <BulletList items={r.board.headlineBullets} />
-                                  {r.board.lowestSupport?.length ? (
-                                    <>
-                                      <Separator className="my-4" />
-                                      <div className="text-[15px] font-semibold text-slate-500">
-                                        Lowest support
-                                      </div>
-                                      <BulletList items={r.board.lowestSupport} />
-                                    </>
-                                  ) : null}
-                                  <RationaleList items={r.board.rationales} />
-                                </CollapsibleCard>
-                              ) : null}
-
-                              {r.sop ? (
-                                <CollapsibleCard
-                                  title="Executive Compensation (Say-on-Pay)"
-                                  iconKey="sop"
-                                >
-                                  <BulletList items={r.sop.headlineBullets} />
-                                  <RationaleList items={r.sop.rationales} summary={r.sop.rationaleSummary} />
-                                </CollapsibleCard>
-                              ) : null}
-
-                              {r.auditor ? (
-                                <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
-                                  <BulletList items={r.auditor.headlineBullets} />
-                                  <RationaleList items={r.auditor.rationales} />
-                                </CollapsibleCard>
-                              ) : null}
-
-                              {r.shareholderProposals ? (
-                                <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
-                                  <BulletList items={r.shareholderProposals.headlineBullets} />
-                                  {r.shareholderProposals.proposalVotes?.length ? (
-                                    <>
-                                      <Separator className="my-4" />
-                                      <div className="text-[15px] font-semibold text-slate-500 mb-3">
-                                        Proposal Details with Top Investor Votes
-                                      </div>
-                                      <ProposalVotesList proposals={r.shareholderProposals.proposalVotes} />
-                                    </>
-                                  ) : r.shareholderProposals.selected?.length ? (
-                                    <>
-                                      <Separator className="my-4" />
-                                      <div className="text-[15px] font-semibold text-slate-500 mb-3">
-                                        Selected proposal results
-                                      </div>
-                                      <ProposalList items={r.shareholderProposals.selected} />
-                                    </>
-                                  ) : null}
-                                </CollapsibleCard>
-                              ) : null}
-
-                              {r.esg ? (
-                                <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
-                                  {r.esg.themeSummary ? (
-                                    <p className="text-[15px] text-slate-700">
-                                      {r.esg.themeSummary}
-                                    </p>
-                                  ) : null}
-                                  <div className="mt-4 grid gap-3">
-                                    {r.esg.investors.map((inv, idx) => (
-                                      <ESGInvestorBlock key={idx} inv={inv} />
-                                    ))}
-                                  </div>
-                                </CollapsibleCard>
-                              ) : null}
-                            </div>
-                          </div>
-                        </TabsContent>
-                      ))}
-                    </Tabs>
-                  )}
-
-                  {/* COMPENSATION VIEW */}
-                  {activeOverviewTab === 'compensation' && (
-                    <div className="mt-4">
-                      <CompensationTab ticker={filtered[0]?.ticker || ""} />
-                    </div>
-                  )}
-
-                  {activeOverviewTab === 'governance' && (
-                    <div className="mt-4">
-                      <GovernanceTab 
-                        ticker={filtered[0]?.ticker || ""} 
-                        companyId={companyGlobalSearchId}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+          <div className="mx-auto space-y-6">
+            {activeOverviewTab === 'investor_summary' && filtered.length === 0 ? (
+              <Card className="rounded-2xl">
+                <CardContent className="py-10 text-center text-[15px] text-slate-600">
+                  No matches. Try a different search term.
+                </CardContent>
+              </Card>
+            ) : (
+              renderActiveOverviewContent()
+            )}
           </div>
         </>
       )}

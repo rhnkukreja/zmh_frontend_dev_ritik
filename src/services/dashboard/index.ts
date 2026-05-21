@@ -347,12 +347,10 @@ class DashboardService {
   public async getModulesCount(paramFilter?: any): Promise<{
     result: any;
   }> {
-    const response = await axiosInstance.get(
-      createDynamicURL(`/get_modules_count/`, paramFilter)
-    );
-    const result = response.data;
+    const url = createDynamicURL(`/get_modules_count/`, paramFilter);
+    const result = await this.fetchWithCache<any>(url);
     return {
-      result: result,
+      result,
     };
   }
 
@@ -514,11 +512,10 @@ class DashboardService {
   public async getVotingAnalytics(ticker: string): Promise<{
     result: any;
   }> {
-    const response = await axiosInstance.get(
-      `${baseURL}/voting_report_8k/?ticker=${ticker}`
-    );
+    const url = `${baseURL}/voting_report_8k/?ticker=${ticker}`;
+    const result = await this.fetchWithCache<any>(url);
     return {
-      result: response.data,
+      result,
     };
   }
 

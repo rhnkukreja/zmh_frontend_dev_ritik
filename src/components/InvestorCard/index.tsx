@@ -287,12 +287,12 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Investor-${companyGlobalSearchTicker}`);
+    downloadCSV(csvContent, `Investor-${ticker}`);
   };
 
   const handleGenerateReport = () => {
-    if (companyGlobalSearchTicker) {
-      window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
+    if (ticker) {
+      window.open(`/company-report?ticker=${encodeURIComponent(ticker)}`, "_blank");
     }
   };
 
@@ -397,11 +397,11 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                     </div>
                   </Tippy>
                   {locationPathName === "/" && (
-                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                    <Tippy content="Expand View" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
                         onClick={() =>
-                          window.open("investor-details", "_blank")
+                          navigate(`/investor-details?ticker=${ticker}`)
                         }
                       >
                         <img alt="tab-icon" src={tabIcon} />
@@ -851,7 +851,7 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                     </sup>
                     <p id="footnote" className="">
                       Source: Whalewisdom. Data as of{" "}
-                      {activeYear === "2024" ? "December 31, 2024" : todayDate}
+                      {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.data_as_of || todayDate}
                     </p>
                   </span>
                   <span className="!pt-3 flex items-center ">

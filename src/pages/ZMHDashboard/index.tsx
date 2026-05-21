@@ -6,7 +6,6 @@ import {
   fetchCompanyByName,
   fetchCompanyDashboard,
   fetchCompanyOverview,
-  fetchCompanyOverviewGPT,
   fetchAGMSummaryDashboard,
   getBoardDirectorMembers,
   setPage,
@@ -265,18 +264,23 @@ useEffect(() => {
         // 2. Fetch Company Overview data (for all users)
         dispatch(
           fetchCompanyOverview(
-            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}`
+            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
           )
         );
 
-        // 3. Fetch Company Overview GPT data (for admins only)
-        if (isAdmin) {
-          dispatch(
-            fetchCompanyOverviewGPT(
-              `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}`
-            )
-          );
-        }
+      // GPT-based key findings disabled temporarily per request.
+      // if (isAdmin) {
+      //   requests.push(
+      //     dispatch(
+      //       fetchCompanyOverviewGPT(
+      //         `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
+      //       )
+      //     ).unwrap()
+      //   );
+      // }
+
+      const results = await Promise.allSettled(requests);
+      const hasSuccess = results.some((r) => r.status === "fulfilled");
 
         // 4. Fetch Shareholder Meeting Results data
         dispatch(
