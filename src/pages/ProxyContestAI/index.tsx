@@ -6,6 +6,8 @@ import FiltersSidebar from "./components/FiltersSidebar";
 import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
 import VotingRecordsList from "./components/VotingRecordsList";
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 
 const DEFAULT_INSTITUTION_IDS = [33, 34];
 const DEFAULT_YEARS = ["2025", "2026"];
@@ -23,8 +25,11 @@ const saveF = (tab: string, data: any) => {
 };
 
 function ProxyContestAI() {
+  const { user } = useAppSelector((state: RootState) => state.authentiction);
+  const isAdminOrAnalyst = user?.user_type === "Admin" || user?.user_type === "Analyst";
+
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(isAdminOrAnalyst);
 
   // ── Overview filters (persisted per-tab) ────────────────────────────────────
   const [ovYears, setOvYears] = useState<string[]>(() => loadF("overview")?.years ?? DEFAULT_YEARS);
@@ -107,7 +112,7 @@ function ProxyContestAI() {
         vote: votes.length ? votes : undefined,
         company_id: companyIds.length ? companyIds : undefined,
         vr_page: vrPageNum,
-        vr_page_size: 50,
+        vr_page_size: 10,
       });
       if (id !== summaryFetchId.current) return;
       setSummaryData(data?.summary ?? data);
@@ -130,7 +135,7 @@ function ProxyContestAI() {
         vote: votes.length ? votes : undefined,
         company_id: companyIds.length ? companyIds : undefined,
         vr_page: vrPageNum,
-        vr_page_size: 50,
+        vr_page_size: 10,
       });
       if (id !== vrFetchId.current) return;
       setVotingRecordsData(data?.voting_records ?? null);
@@ -319,44 +324,48 @@ function ProxyContestAI() {
 
   return (
     <div className="grid grid-cols-12 gap-y-4 gap-x-6 pb-10">
-      {/* Page header — title + hide-filters button */}
+      {/* Page header — Case Studies style white card */}
       <div className="col-span-12">
-        <div className="flex items-center justify-between mb-3">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-4">
           <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
-          <button
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
-          >
-            <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
-            {sidebarOpen ? "Hide Filters" : "Show Filters"}
-          </button>
         </div>
-        {/* Tabs below heading, left-aligned */}
-        <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm w-fit">
-          {(["overview", "detailed"] as TabKey[]).map((tab) => (
+        {/* Tabs + optional hide-filters button */}
+        <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1">
+            {(["overview", "detailed"] as TabKey[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={clsx(
+                  "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
+                  activeTab === tab
+                    ? "bg-primary text-white shadow"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                {tab === "overview" ? (
+                  <span className="flex items-center gap-1.5">
+                    <Lucide icon="BarChart3" className="w-4 h-4" />
+                    Overview
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <Lucide icon="Table" className="w-4 h-4" />
+                    Detailed View
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          {isAdminOrAnalyst && (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={clsx(
-                "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
-                activeTab === tab
-                  ? "bg-primary text-white shadow"
-                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-              )}
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
             >
-              {tab === "overview" ? (
-                <span className="flex items-center gap-1.5">
-                  <Lucide icon="BarChart3" className="w-4 h-4" />
-                  Overview
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5">
-                  <Lucide icon="Table" className="w-4 h-4" />
-                  Detailed View
-                </span>
-              )}
+              <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
+              {sidebarOpen ? "Hide Filters" : "Show Filters"}
             </button>
-          ))}
+          )}
         </div>
       </div>
 
@@ -396,8 +405,8 @@ function ProxyContestAI() {
 
       {/* Sidebar + content in same-height flex row */}
       <div className="col-span-12 flex gap-6">
-        {/* Filters sidebar */}
-        {sidebarOpen && (
+        {/* Filters sidebar — Admin / Analyst only */}
+        {isAdminOrAnalyst && sidebarOpen && (
           <div className="w-64 flex-shrink-0 self-stretch">
             <FiltersSidebar
               filtersData={filtersData}

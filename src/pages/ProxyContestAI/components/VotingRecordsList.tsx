@@ -46,7 +46,8 @@ const resolveTicker = (r: VotingRecord) =>
 
 interface VotingRecordsListProps {
   votingRecords: {
-    count: number;
+    count?: number;
+    total_companies?: number;
     page: number;
     total_pages: number;
     results: VotingRecord[];
@@ -402,7 +403,7 @@ const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
         <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
           <Lucide icon="ClipboardList" className="w-5 h-5 text-primary" />
           Voting Records
-          <span className="text-xs text-slate-400 font-normal">({votingRecords.count} total)</span>
+          <span className="text-xs text-slate-400 font-normal">({votingRecords.total_companies ?? votingRecords.count} total companies)</span>
         </h3>
         <button
           onClick={handleExpandAll}

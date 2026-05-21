@@ -117,7 +117,7 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
                 >
                   <div className="font-semibold leading-tight">{name}</div>
                   {dateLabel && (
-                    <div className="text-[10px] font-normal opacity-80 mt-0.5 leading-tight">
+                    <div className="text-xs font-semibold opacity-95 mt-1 leading-tight">
                       {dateLabel}
                     </div>
                   )}

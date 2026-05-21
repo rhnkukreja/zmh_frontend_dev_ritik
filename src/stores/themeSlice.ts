@@ -89,6 +89,7 @@ const initialState: ThemeState = {
     "notes",
     "investor-company-details",
     "proxy-contest",
+    "proxy-contest-ai",
     "voting-data",
     "2025-shareholder-meetings",
     "custom-reports"
