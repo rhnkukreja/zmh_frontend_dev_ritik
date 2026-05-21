@@ -6,6 +6,8 @@ if (environment === 'production') {
     console.log("\n -------------- Welcome to development mode -------------- \n");
 }
 
-export const apiBaseURL: string = import.meta.env.VITE_API_BASE_URL || 'https://api.zmhadvisors.com';
+// export const apiBaseURL: string = import.meta.env.VITE_API_BASE_URL || 'https://api.zmhadvisors.com';
+
+export const apiBaseURL: string = 'https://api-dev.zmhadvisors.com';
 
 export { environment };
