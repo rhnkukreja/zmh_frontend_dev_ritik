@@ -73,7 +73,7 @@ import { MegaphoneOff, ChevronLeft, ChevronDown } from "lucide-react";
 // ✅ INTERFACE UPDATED TO ACCEPT LIFTED STATE
 interface InvestorCardProps {
   onLoaded?: () => void;
-  autoScrapedData: Record<string, any>; // 🌟 ADDED THIS
+  autoScrapedData?: Record<string, any>; // 🌟 ADDED THIS
 }
 
 // ✅ COMPONENT ACCEPTING THE PROP
