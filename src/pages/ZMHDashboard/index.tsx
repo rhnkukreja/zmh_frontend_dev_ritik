@@ -279,9 +279,6 @@ useEffect(() => {
       //   );
       // }
 
-      const results = await Promise.allSettled(requests);
-      const hasSuccess = results.some((r) => r.status === "fulfilled");
-
         // 4. Fetch Shareholder Meeting Results data
         dispatch(
           fetchAGMSummaryDashboard(

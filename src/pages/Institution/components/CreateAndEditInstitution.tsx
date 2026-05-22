@@ -351,41 +351,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 isScrapingPdf ? "pointer-events-none opacity-60" : ""
               }`}
             >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-            </div>
-          </Dialog.Title>
-          <Dialog.Description className="px-6 py-4 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Institution Name <span className="text-red-500">*</span>
-                </FormCheck.Label>
-                <Controller
-                  name="institution"
-                  control={control}
-                  rules={{ required: "Institution Name is required" }}
-                  render={({ field, fieldState: { error } }) => (
-                    <>
-                      <FormInput
-                        placeholder="Enter Institution Name"
-                        {...field}
-                      />
-                      {error && (
-                        <Error className="text-red-600 ">{error.message}</Error>
-                      )}
-                    </>
-                  )}
-                />
-
-                <h3 className="mt-4 text-lg font-semibold text-slate-800">
-                  Finding SEC Registration
-                </h3>
-
-                <p className="mt-2 text-sm text-slate-600 text-center max-w-md">
-                  Searching WhaleWisdom, extracting SEC number, and locating the brochure document...
-                </p>
-              </div>
-            )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
 
                 {/* Institution Name */}
@@ -543,7 +508,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                 </div>
-              </div> */}
+              </div>
 
               <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
@@ -621,32 +586,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 />
               </div>
 
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Proxy Advisory Influence
-                </FormCheck.Label>
-                <div className="flex flex-col gap-2">
-                  {["Internal", "ISS", "GL", "Typically does not vote proxies"].map((option) => (
-                    <FormCheck key={option} className="flex items-center">
-                      <FormCheck.Input
-                        id={`proxy_${option}`}
-                        type="checkbox"
-                        checked={proxyAdvisoryOptions.includes(option)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
-                          } else {
-                            setProxyAdvisoryOptions(
-                              proxyAdvisoryOptions.filter((item) => item !== option)
-                            );
-                          }
-                        }}
-                      />
-                    )}
-                  />
-                </div>
-
-                {/* Proxy Advisory Influence */}
+              {/* Proxy Advisory Influence */}
                 <div className="w-full">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <FormCheck.Label className="font-semibold text-gray-800 mb-0">
@@ -712,7 +652,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                 </div>
-              </div>
 
               {/* PDF PREVIEW SECTION WITH MINIMIZE/EXPAND */}
               {(isScrapingPdf || scrapedPdfUrl || scrapedBrochurePageUrl || scrapeMessage) && (
