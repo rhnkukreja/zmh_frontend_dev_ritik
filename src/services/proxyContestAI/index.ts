@@ -22,8 +22,8 @@ export const proxyContestAIService = {
     return res.data;
   },
 
-  getSummaryFilters: async (year?: string[]) => {
-    const q = year && year.length ? `?year=${encodeURIComponent(toJsonParam(year))}` : "";
+  getSummaryFilters: async (year?: string[], institution_id?: number[]) => {
+    const q = buildQuery({ year, institution_id });
     const res = await axiosInstance.get(`/proxy_contest/summary-filters/${q}`);
     return res.data;
   },

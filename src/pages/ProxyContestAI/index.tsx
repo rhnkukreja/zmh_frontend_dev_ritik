@@ -89,12 +89,15 @@ function ProxyContestAI() {
   const companiesFetchId = useRef(0);
 
   // ── Fetch filters ────────────────────────────────────────────────────────────
-  const fetchFilters = useCallback(async (years: string[], tab: TabKey = "overview") => {
+  const fetchFilters = useCallback(async (years: string[], tab: TabKey = "overview", instIds?: number[]) => {
     const id = ++filtersFetchId.current;
     setFiltersLoading(true);
     try {
       const data = tab === "overview"
-        ? await proxyContestAIService.getSummaryFilters(years.length ? years : undefined)
+        ? await proxyContestAIService.getSummaryFilters(
+            years.length ? years : undefined,
+            instIds && instIds.length ? instIds : undefined
+          )
         : await proxyContestAIService.getOverviewFilters(years.length ? years : undefined);
       if (id !== filtersFetchId.current) return;
       setFiltersData(data);
@@ -181,7 +184,7 @@ function ProxyContestAI() {
 
   // ── Initial load ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    fetchFilters(ovYears, "overview");
+    fetchFilters(ovYears, "overview", ovInstIds);
     fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, ovGl);
     fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,13 +196,14 @@ function ProxyContestAI() {
     if (prevTab.current === activeTab) return;
     prevTab.current = activeTab;
     const years = activeTab === "overview" ? ovYears : dtYears;
-    fetchFilters(years, activeTab);
+    const instIds = activeTab === "overview" ? ovInstIds : undefined;
+    fetchFilters(years, activeTab, instIds);
   }, [activeTab]);
 
   // ── Overview toggle helpers ──────────────────────────────────────────────────
   const ovToggleYear = (y: string) => {
     const next = ovYears.includes(y) ? ovYears.filter(x => x !== y) : [...ovYears, y];
-    setOvYears(next); fetchFilters(next, "overview");
+    setOvYears(next); fetchFilters(next, "overview", ovInstIds);
     fetchSummaryStats(next, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
   };
   const ovToggleInst = (id: number) => {
@@ -209,6 +213,7 @@ function ProxyContestAI() {
     }
     const next = ovInstIds.includes(id) ? ovInstIds.filter(x => x !== id) : [...ovInstIds, id];
     setOvInstIds(next);
+    fetchFilters(ovYears, "overview", next);
     fetchSummaryStats(ovYears, next, ovVotes, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
   };
   const ovToggleVote = (v: string) => {
@@ -231,7 +236,7 @@ function ProxyContestAI() {
   };
   const ovClearAll = () => {
     setOvYears(DEFAULT_YEARS); setOvVotes([]); setOvCompanyIds([]); setOvIss(null); setOvGl(null);
-    fetchFilters(DEFAULT_YEARS, "overview");
+    fetchFilters(DEFAULT_YEARS, "overview", ovInstIds);
     fetchSummaryStats(DEFAULT_YEARS, ovInstIds, [], [], 1, null, null); setVrPage(1);
   };
 

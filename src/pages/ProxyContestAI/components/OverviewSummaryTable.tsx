@@ -11,17 +11,7 @@ type RowDef =
 
 const ROW_DEFS: RowDef[] = [
   /* ── Campaigns ─────────────────────────────────────────── */
-  { key: "total_campaigns",   label: "No. of unique campaigns",   render: (v: any) => v ?? "-" },
-  { key: "unique_companies",  label: "No. of unique companies",   render: (v: any) => v ?? "-" },
-  { key: "proposals",         label: "No. of proposals",          render: (v: any) => v ?? "-" },
-  /* ── Votes ──────────────────────────────────────────────── */
-  { type: "separator", label: "Votes" },
-  { key: "for_votes",     label: "FOR votes",           render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
-  { key: "split_votes",   label: "SPLIT votes",         render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
-  { key: "against_votes", label: "AGAINST/WITHHOLD votes", render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
-  { key: "abstain_votes", label: "Abstain votes",       render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
-  { key: "alignment_with_management", label: "Alignment with management (Votes / Mgt Rec)", render: (v: any) => v ?? "-" },
-  { key: "alignment_percentage",      label: "Alignment percentage",                        render: (v: any) => v ?? "-" },
+  { key: "total_campaigns", label: "No. of unique campaigns", render: (v: any) => v ?? "-" },
   /* ── Director nominees ──────────────────────────────────── */
   { type: "separator", label: "Director Nominees" },
   { key: "management_nominees",                    label: "Management nominees",                     render: (v: any) => v ?? "-" },
@@ -102,24 +92,14 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
               Summary
             </th>
             {institutions.map((name, i) => {
-              const inst = summaryData[name];
-              const dateRange = inst?.date_range;
-              const dateLabel = dateRange
-                ? `(${dateRange.start} - ${dateRange.end})`
-                : "";
               return (
                 <th
                   key={name}
-                  className={`bg-primary text-white text-center px-4 py-1.5 font-semibold min-w-[160px] ${
+                  className={`bg-primary text-white text-center px-4 py-3 font-semibold min-w-[160px] ${
                     i === institutions.length - 1 ? "rounded-tr-xl" : ""
                   }`}
                 >
-                  <div className="font-semibold leading-tight">{name}</div>
-                  {dateLabel && (
-                    <div className="text-xs font-semibold opacity-95 mt-1 leading-tight">
-                      {dateLabel}
-                    </div>
-                  )}
+                  {name}
                 </th>
               );
             })}
