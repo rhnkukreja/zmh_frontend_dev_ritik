@@ -5,38 +5,40 @@ interface OverviewSummaryTableProps {
   loading: boolean;
 }
 
-const ROW_DEFS = [
-  { key: "unique_companies", label: "No. of unique companies", render: (v: any) => v ?? "-" },
-  { key: "proposals", label: "No. of proposals", render: (v: any) => v ?? "-" },
+type RowDef =
+  | { type?: "data";      key: string; label: string; render: (v: any) => React.ReactNode }
+  | { type: "separator";  label: string };
+
+const ROW_DEFS: RowDef[] = [
+  /* ── Campaigns ─────────────────────────────────────────── */
+  { key: "total_campaigns",   label: "No. of unique campaigns",   render: (v: any) => v ?? "-" },
+  { key: "unique_companies",  label: "No. of unique companies",   render: (v: any) => v ?? "-" },
+  { key: "proposals",         label: "No. of proposals",          render: (v: any) => v ?? "-" },
+  /* ── Votes ──────────────────────────────────────────────── */
+  { type: "separator", label: "Votes" },
+  { key: "for_votes",     label: "FOR votes",           render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
+  { key: "split_votes",   label: "SPLIT votes",         render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
+  { key: "against_votes", label: "AGAINST/WITHHOLD votes", render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
+  { key: "abstain_votes", label: "Abstain votes",       render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-" },
+  { key: "alignment_with_management", label: "Alignment with management (Votes / Mgt Rec)", render: (v: any) => v ?? "-" },
+  { key: "alignment_percentage",      label: "Alignment percentage",                        render: (v: any) => v ?? "-" },
+  /* ── Director nominees ──────────────────────────────────── */
+  { type: "separator", label: "Director Nominees" },
+  { key: "management_nominees",                    label: "Management nominees",                     render: (v: any) => v ?? "-" },
+  { key: "management_nominees_withheld_or_against",label: "Management nominees — withheld / against", render: (v: any) => v ?? "-" },
+  { key: "activist_nominees",                      label: "Activist nominees",                       render: (v: any) => v ?? "-" },
+  { key: "activist_nominees_supported",            label: "Activist nominees — supported",           render: (v: any) => v ?? "-" },
+  /* ── Advisory alignment ─────────────────────────────────── */
+  { type: "separator", label: "Advisory Firm Alignment" },
   {
-    key: "for_votes",
-    label: "No. of FOR votes",
-    render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-",
+    key: "iss_advisory_alignment",
+    label: "ISS — Campaigns where ISS supported activist",
+    render: (v: any) => v ? `${v.ratio} (${v.alignment_percentage})` : "-",
   },
   {
-    key: "split_votes",
-    label: "No. of SPLIT votes",
-    render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-",
-  },
-  {
-    key: "against_votes",
-    label: "No. of AGAINST/WITHHOLD votes",
-    render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-",
-  },
-  {
-    key: "abstain_votes",
-    label: "No. of Abstain votes",
-    render: (v: any) => v ? `${v.count} (${v.pct}%)` : "-",
-  },
-  {
-    key: "alignment_with_management",
-    label: "Alignment with management (Votes Cast / Management Recommendation)",
-    render: (v: any) => v ?? "-",
-  },
-  {
-    key: "alignment_percentage",
-    label: "Alignment percentage",
-    render: (v: any) => v ?? "-",
+    key: "gl_advisory_alignment",
+    label: "GL — Campaigns where GL supported activist",
+    render: (v: any) => v ? `${v.ratio} (${v.alignment_percentage})` : "-",
   },
 ];
 
@@ -62,7 +64,7 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
           </thead>
           <tbody>
             {ROW_DEFS.map((row, rowIdx) => (
-              <tr key={row.key} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+              <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                 <td className="px-4 py-3 border-b border-slate-100">
                   <div className="h-3.5 bg-slate-200 rounded w-3/4" />
                 </td>
@@ -96,10 +98,7 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr>
-            <th
-              className="bg-primary text-white text-left px-4 py-3 font-semibold rounded-tl-xl min-w-[200px]"
-              rowSpan={2}
-            >
+            <th className="bg-primary text-white text-left px-4 py-3 font-semibold rounded-tl-xl min-w-[200px]">
               Summary
             </th>
             {institutions.map((name, i) => {
@@ -127,27 +126,41 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
           </tr>
         </thead>
         <tbody>
-          {ROW_DEFS.map((row, rowIdx) => (
-            <tr
-              key={row.key}
-              className={rowIdx % 2 === 0 ? "bg-white" : "bg-slate-50"}
-            >
-              <td className="px-4 py-3 font-medium text-slate-700 border-b border-slate-100">
-                {row.label}
-              </td>
-              {institutions.map((name) => {
-                const val = summaryData[name]?.[row.key];
-                return (
+          {ROW_DEFS.map((row, rowIdx) => {
+            if (row.type === "separator") {
+              return (
+                <tr key={`sep-${rowIdx}`}>
                   <td
-                    key={name}
-                    className="px-4 py-3 text-center text-slate-800 border-b border-slate-100"
+                    colSpan={institutions.length + 1}
+                    className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50 border-b border-slate-200"
                   >
-                    {row.render(val)}
+                    {row.label}
                   </td>
-                );
-              })}
-            </tr>
-          ))}
+                </tr>
+              );
+            }
+            return (
+              <tr
+                key={row.key}
+                className={rowIdx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}
+              >
+                <td className="px-4 py-3 font-medium text-slate-700 border-b border-slate-100">
+                  {row.label}
+                </td>
+                {institutions.map((name) => {
+                  const val = summaryData[name]?.[row.key];
+                  return (
+                    <td
+                      key={name}
+                      className="px-4 py-3 text-center text-slate-800 border-b border-slate-100"
+                    >
+                      {row.render(val)}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

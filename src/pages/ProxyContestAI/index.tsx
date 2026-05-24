@@ -36,6 +36,8 @@ function ProxyContestAI() {
   const [ovInstIds, setOvInstIds] = useState<number[]>(() => loadF("overview")?.instIds ?? DEFAULT_INSTITUTION_IDS);
   const [ovVotes, setOvVotes] = useState<string[]>(() => loadF("overview")?.votes ?? []);
   const [ovCompanyIds, setOvCompanyIds] = useState<number[]>(() => loadF("overview")?.companyIds ?? []);
+  const [ovIss, setOvIss] = useState<string | null>(() => loadF("overview")?.iss ?? null);
+  const [ovGl, setOvGl] = useState<string | null>(() => loadF("overview")?.gl ?? null);
 
   // ── Detailed filters (persisted per-tab) ────────────────────────────────────
   const [dtYears, setDtYears] = useState<string[]>(() => loadF("detailed")?.years ?? DEFAULT_YEARS);
@@ -47,8 +49,8 @@ function ProxyContestAI() {
 
   // Persist overview filters on change
   useEffect(() => {
-    saveF("overview", { years: ovYears, instIds: ovInstIds, votes: ovVotes, companyIds: ovCompanyIds });
-  }, [ovYears, ovInstIds, ovVotes, ovCompanyIds]);
+    saveF("overview", { years: ovYears, instIds: ovInstIds, votes: ovVotes, companyIds: ovCompanyIds, iss: ovIss, gl: ovGl });
+  }, [ovYears, ovInstIds, ovVotes, ovCompanyIds, ovIss, ovGl]);
 
   // Persist detailed filters on change
   useEffect(() => {
@@ -87,11 +89,13 @@ function ProxyContestAI() {
   const companiesFetchId = useRef(0);
 
   // ── Fetch filters ────────────────────────────────────────────────────────────
-  const fetchFilters = useCallback(async (years: string[]) => {
+  const fetchFilters = useCallback(async (years: string[], tab: TabKey = "overview") => {
     const id = ++filtersFetchId.current;
     setFiltersLoading(true);
     try {
-      const data = await proxyContestAIService.getOverviewFilters(years.length ? years : undefined);
+      const data = tab === "overview"
+        ? await proxyContestAIService.getSummaryFilters(years.length ? years : undefined)
+        : await proxyContestAIService.getOverviewFilters(years.length ? years : undefined);
       if (id !== filtersFetchId.current) return;
       setFiltersData(data);
     } catch {} finally {
@@ -101,7 +105,8 @@ function ProxyContestAI() {
 
   // ── Fetch summary stats + VR page 1 (on filter change) ──────────────────────
   const fetchSummaryStats = useCallback(async (
-    years: string[], instIds: number[], votes: string[], companyIds: number[], vrPageNum = 1
+    years: string[], instIds: number[], votes: string[], companyIds: number[],
+    vrPageNum = 1, iss?: string | null, gl?: string | null
   ) => {
     const id = ++summaryFetchId.current;
     setSummaryLoading(true);
@@ -111,6 +116,8 @@ function ProxyContestAI() {
         institution_id: instIds.length ? instIds : undefined,
         vote: votes.length ? votes : undefined,
         company_id: companyIds.length ? companyIds : undefined,
+        iss_support: iss || undefined,
+        gl_support: gl || undefined,
         vr_page: vrPageNum,
         vr_page_size: 10,
       });
@@ -124,7 +131,8 @@ function ProxyContestAI() {
 
   // ── Fetch only voting records (VR page change — does NOT reload summary) ─────
   const fetchVotingRecordsOnly = useCallback(async (
-    years: string[], instIds: number[], votes: string[], companyIds: number[], vrPageNum: number
+    years: string[], instIds: number[], votes: string[], companyIds: number[],
+    vrPageNum: number, iss?: string | null, gl?: string | null
   ) => {
     const id = ++vrFetchId.current;
     setVrLoading(true);
@@ -134,6 +142,8 @@ function ProxyContestAI() {
         institution_id: instIds.length ? instIds : undefined,
         vote: votes.length ? votes : undefined,
         company_id: companyIds.length ? companyIds : undefined,
+        iss_support: iss || undefined,
+        gl_support: gl || undefined,
         vr_page: vrPageNum,
         vr_page_size: 10,
       });
@@ -171,8 +181,8 @@ function ProxyContestAI() {
 
   // ── Initial load ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    fetchFilters(ovYears);
-    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1);
+    fetchFilters(ovYears, "overview");
+    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, ovGl);
     fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -183,14 +193,14 @@ function ProxyContestAI() {
     if (prevTab.current === activeTab) return;
     prevTab.current = activeTab;
     const years = activeTab === "overview" ? ovYears : dtYears;
-    fetchFilters(years);
+    fetchFilters(years, activeTab);
   }, [activeTab]);
 
   // ── Overview toggle helpers ──────────────────────────────────────────────────
   const ovToggleYear = (y: string) => {
     const next = ovYears.includes(y) ? ovYears.filter(x => x !== y) : [...ovYears, y];
-    setOvYears(next); fetchFilters(next);
-    fetchSummaryStats(next, ovInstIds, ovVotes, ovCompanyIds, 1); setVrPage(1);
+    setOvYears(next); fetchFilters(next, "overview");
+    fetchSummaryStats(next, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
   };
   const ovToggleInst = (id: number) => {
     if (ovInstIds.includes(id) && ovInstIds.length <= 1) {
@@ -199,29 +209,36 @@ function ProxyContestAI() {
     }
     const next = ovInstIds.includes(id) ? ovInstIds.filter(x => x !== id) : [...ovInstIds, id];
     setOvInstIds(next);
-    fetchSummaryStats(ovYears, next, ovVotes, ovCompanyIds, 1); setVrPage(1);
+    fetchSummaryStats(ovYears, next, ovVotes, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
   };
   const ovToggleVote = (v: string) => {
     const next = ovVotes.includes(v) ? ovVotes.filter(x => x !== v) : [...ovVotes, v];
     setOvVotes(next);
-    fetchSummaryStats(ovYears, ovInstIds, next, ovCompanyIds, 1); setVrPage(1);
+    fetchSummaryStats(ovYears, ovInstIds, next, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
   };
   const ovToggleCompany = (id: number) => {
     const next = ovCompanyIds.includes(id) ? ovCompanyIds.filter(x => x !== id) : [...ovCompanyIds, id];
     setOvCompanyIds(next);
-    fetchSummaryStats(ovYears, ovInstIds, ovVotes, next, 1); setVrPage(1);
+    fetchSummaryStats(ovYears, ovInstIds, ovVotes, next, 1, ovIss, ovGl); setVrPage(1);
+  };
+  const ovToggleIss = (v: string) => {
+    const next = ovIss === v ? null : v; setOvIss(next);
+    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1, next, ovGl); setVrPage(1);
+  };
+  const ovToggleGl = (v: string) => {
+    const next = ovGl === v ? null : v; setOvGl(next);
+    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, next); setVrPage(1);
   };
   const ovClearAll = () => {
-    // Preserve current institution selection — at least one must always remain
-    setOvYears(DEFAULT_YEARS); setOvVotes([]); setOvCompanyIds([]);
-    fetchFilters(DEFAULT_YEARS);
-    fetchSummaryStats(DEFAULT_YEARS, ovInstIds, [], [], 1); setVrPage(1);
+    setOvYears(DEFAULT_YEARS); setOvVotes([]); setOvCompanyIds([]); setOvIss(null); setOvGl(null);
+    fetchFilters(DEFAULT_YEARS, "overview");
+    fetchSummaryStats(DEFAULT_YEARS, ovInstIds, [], [], 1, null, null); setVrPage(1);
   };
 
   // ── Detailed toggle helpers ──────────────────────────────────────────────────
   const dtToggleYear = (y: string) => {
     const next = dtYears.includes(y) ? dtYears.filter(x => x !== y) : [...dtYears, y];
-    setDtYears(next); fetchFilters(next);
+    setDtYears(next); fetchFilters(next, "detailed");
     fetchCompanies(next, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl); setCompaniesPage(1);
   };
   const dtToggleInst = (id: number) => {
@@ -250,7 +267,7 @@ function ProxyContestAI() {
   const dtClearAll = () => {
     setDtYears(DEFAULT_YEARS); setDtInstIds(DEFAULT_INSTITUTION_IDS);
     setDtActivists([]); setDtIss(null); setDtGl(null); setDtCompanyIds([]);
-    fetchFilters(DEFAULT_YEARS);
+    fetchFilters(DEFAULT_YEARS, "detailed");
     fetchCompanies(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], [], 1, null, null); setCompaniesPage(1);
   };
 
@@ -261,8 +278,7 @@ function ProxyContestAI() {
   };
   const handleVrPageChange = (p: number) => {
     setVrPage(p);
-    // Only fetch voting records — summary stats stay unchanged
-    fetchVotingRecordsOnly(ovYears, ovInstIds, ovVotes, ovCompanyIds, p);
+    fetchVotingRecordsOnly(ovYears, ovInstIds, ovVotes, ovCompanyIds, p, ovIss, ovGl);
   };
 
   // ── Name lookup maps (fix institution chips showing IDs on initial render) ───
@@ -298,6 +314,8 @@ function ProxyContestAI() {
     ...ovCompanyIds.filter(id => id != null).flatMap(id => {
       const n = getCmpName(id); return n ? [{ label: `Company: ${n}`, onRemove: () => ovToggleCompany(id) }] : [];
     }),
+    ...(ovIss ? [{ label: `ISS: ${ovIss}`, onRemove: () => ovToggleIss(ovIss) }] : []),
+    ...(ovGl  ? [{ label: `GL: ${ovGl}`,   onRemove: () => ovToggleGl(ovGl)   }] : []),
   ];
   const dtChips = [
     ...dtYears.map(y => ({ label: `Year: ${y}`, onRemove: () => dtToggleYear(y) })),
@@ -318,9 +336,13 @@ function ProxyContestAI() {
   const curYears = activeTab === "overview" ? ovYears : dtYears;
   const curInstIds = activeTab === "overview" ? ovInstIds : dtInstIds;
   const curCompanyIds = activeTab === "overview" ? ovCompanyIds : dtCompanyIds;
-  const curToggleYear = activeTab === "overview" ? ovToggleYear : dtToggleYear;
-  const curToggleInst = activeTab === "overview" ? ovToggleInst : dtToggleInst;
+  const curIss = activeTab === "overview" ? ovIss : dtIss;
+  const curGl  = activeTab === "overview" ? ovGl  : dtGl;
+  const curToggleYear    = activeTab === "overview" ? ovToggleYear    : dtToggleYear;
+  const curToggleInst    = activeTab === "overview" ? ovToggleInst    : dtToggleInst;
   const curToggleCompany = activeTab === "overview" ? ovToggleCompany : dtToggleCompany;
+  const curToggleIss     = activeTab === "overview" ? ovToggleIss     : dtToggleIss;
+  const curToggleGl      = activeTab === "overview" ? ovToggleGl      : dtToggleGl;
 
   return (
     <div className="grid grid-cols-12 gap-y-4 gap-x-6 pb-10">
@@ -417,15 +439,15 @@ function ProxyContestAI() {
               selectedCompanyIds={curCompanyIds}
               selectedVotes={ovVotes}
               selectedActivists={dtActivists}
-              selectedIss={dtIss}
-              selectedGl={dtGl}
+              selectedIss={curIss}
+              selectedGl={curGl}
               toggleYear={curToggleYear}
               toggleInst={curToggleInst}
               toggleCompany={curToggleCompany}
               toggleVote={ovToggleVote}
               toggleActivist={dtToggleActivist}
-              toggleIss={dtToggleIss}
-              toggleGl={dtToggleGl}
+              toggleIss={curToggleIss}
+              toggleGl={curToggleGl}
               onClearAll={handleClearAll}
             />
           </div>

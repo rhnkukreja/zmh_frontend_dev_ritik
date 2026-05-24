@@ -22,6 +22,12 @@ export const proxyContestAIService = {
     return res.data;
   },
 
+  getSummaryFilters: async (year?: string[]) => {
+    const q = year && year.length ? `?year=${encodeURIComponent(toJsonParam(year))}` : "";
+    const res = await axiosInstance.get(`/proxy_contest/summary-filters/${q}`);
+    return res.data;
+  },
+
   getCompanies: async (filters: {
     year?: string[];
     company_name?: string[];
@@ -43,6 +49,8 @@ export const proxyContestAIService = {
     institution_id?: number[];
     vote?: string[];
     company_id?: number[];
+    iss_support?: string;
+    gl_support?: string;
     vr_page?: number;
     vr_page_size?: number;
   }) => {

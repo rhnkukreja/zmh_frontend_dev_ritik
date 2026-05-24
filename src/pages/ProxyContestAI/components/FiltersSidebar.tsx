@@ -215,8 +215,8 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               </div>
             )}
 
-            {/* ISS SUPPORT — Detailed view only (before Institutions) */}
-            {activeTab === "detailed" && filtersData?.iss_support && (
+            {/* ISS SUPPORT — both tabs */}
+            {filtersData?.iss_support && (
               <div>
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">ISS Support</h4>
                 <div className="space-y-1">
@@ -231,7 +231,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                         <span>{opt}</span>
                         <span className={clsx("text-sm rounded-full px-2 py-0.5 font-medium",
                           isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>{(Array.isArray(filtersData.iss_support) ? filtersData.iss_support.find((i: any) => i.label === opt)?.count : filtersData.iss_support[opt]) ?? 0}</span>
+                        )}>{(() => { const cnt = Array.isArray(filtersData.iss_support) ? filtersData.iss_support.find((i: any) => i.label === opt)?.count : filtersData.iss_support[opt]; return cnt != null ? cnt : null; })()}</span>
                       </button>
                     );
                   })}
@@ -239,8 +239,8 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               </div>
             )}
 
-            {/* GL SUPPORT — Detailed view only (before Institutions) */}
-            {activeTab === "detailed" && filtersData?.gl_support && (
+            {/* GL SUPPORT — both tabs */}
+            {filtersData?.gl_support && (
               <div>
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">GL Support</h4>
                 <div className="space-y-1">
@@ -255,7 +255,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                         <span>{opt}</span>
                         <span className={clsx("text-sm rounded-full px-2 py-0.5 font-medium",
                           isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>{(Array.isArray(filtersData.gl_support) ? filtersData.gl_support.find((i: any) => i.label === opt)?.count : filtersData.gl_support[opt]) ?? 0}</span>
+                        )}>{(() => { const cnt = Array.isArray(filtersData.gl_support) ? filtersData.gl_support.find((i: any) => i.label === opt)?.count : filtersData.gl_support[opt]; return cnt != null ? cnt : null; })()}</span>
                       </button>
                     );
                   })}
