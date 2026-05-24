@@ -6,28 +6,26 @@ interface OverviewSummaryTableProps {
 }
 
 type RowDef =
-  | { type?: "data";      key: string; label: string; render: (v: any) => React.ReactNode }
-  | { type: "separator";  label: string };
+  | { type?: "data";    key: string; label: string; render: (v: any) => React.ReactNode }
+  | { type: "spacer" };
 
 const ROW_DEFS: RowDef[] = [
-  /* ── Campaigns ─────────────────────────────────────────── */
-  { key: "total_campaigns", label: "No. of unique campaigns", render: (v: any) => v ?? "-" },
-  /* ── Director nominees ──────────────────────────────────── */
-  { type: "separator", label: "Director Nominees" },
-  { key: "management_nominees",                    label: "Management nominees",                     render: (v: any) => v ?? "-" },
-  { key: "management_nominees_withheld_or_against",label: "Management nominees — withheld / against", render: (v: any) => v ?? "-" },
-  { key: "activist_nominees",                      label: "Activist nominees",                       render: (v: any) => v ?? "-" },
-  { key: "activist_nominees_supported",            label: "Activist nominees — supported",           render: (v: any) => v ?? "-" },
-  /* ── Advisory alignment ─────────────────────────────────── */
-  { type: "separator", label: "Advisory Firm Alignment" },
+  { key: "total_campaigns",                    label: "Total no. of campaigns",                              render: (v: any) => v ?? "-" },
+  { type: "spacer" },
+  { key: "management_nominees",                label: "No. of management nominees",                         render: (v: any) => v ?? "-" },
+  { key: "management_nominees_withheld_or_against", label: "Management nominees withheld or voted against",  render: (v: any) => v ?? "-" },
+  { type: "spacer" },
+  { key: "activist_nominees",                  label: "No. of activist nominees",                           render: (v: any) => v ?? "-" },
+  { key: "activist_nominees_supported",        label: "Activist nominees supported",                        render: (v: any) => v ?? "-" },
+  { type: "spacer" },
   {
     key: "iss_advisory_alignment",
-    label: "ISS — Campaigns where ISS supported activist",
+    label: "No. of campaigns where ISS supported activist (Investor Support / ISS Support)",
     render: (v: any) => v ? `${v.ratio} (${v.alignment_percentage})` : "-",
   },
   {
     key: "gl_advisory_alignment",
-    label: "GL — Campaigns where GL supported activist",
+    label: "No. of campaigns where GL supported activist (Investor Support / GL Support)",
     render: (v: any) => v ? `${v.ratio} (${v.alignment_percentage})` : "-",
   },
 ];
@@ -92,14 +90,20 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
               Summary
             </th>
             {institutions.map((name, i) => {
+              const dateRange = summaryData[name]?.date_range;
               return (
                 <th
                   key={name}
-                  className={`bg-primary text-white text-center px-4 py-3 font-semibold min-w-[160px] ${
+                  className={`bg-primary text-white text-center px-4 py-1.5 font-semibold min-w-[160px] ${
                     i === institutions.length - 1 ? "rounded-tr-xl" : ""
                   }`}
                 >
-                  {name}
+                  <div className="font-semibold leading-tight">{name}</div>
+                  {dateRange && (
+                    <div className="text-xs font-semibold opacity-90 mt-0.5 leading-tight">
+                      {dateRange.start} – {dateRange.end}
+                    </div>
+                  )}
                 </th>
               );
             })}
@@ -107,22 +111,17 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
         </thead>
         <tbody>
           {ROW_DEFS.map((row, rowIdx) => {
-            if (row.type === "separator") {
+            if (row.type === "spacer") {
               return (
-                <tr key={`sep-${rowIdx}`}>
-                  <td
-                    colSpan={institutions.length + 1}
-                    className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50 border-b border-slate-200"
-                  >
-                    {row.label}
-                  </td>
+                <tr key={`spacer-${rowIdx}`}>
+                  <td colSpan={institutions.length + 1} className="py-2 bg-transparent" />
                 </tr>
               );
             }
             return (
               <tr
                 key={row.key}
-                className={rowIdx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}
+                className="bg-white hover:bg-slate-50/60 transition-colors"
               >
                 <td className="px-4 py-3 font-medium text-slate-700 border-b border-slate-100">
                   {row.label}
