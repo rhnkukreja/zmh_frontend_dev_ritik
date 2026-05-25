@@ -6,6 +6,7 @@ import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import TradingViewWidget from "@/components/TradingViewWidget";
 import { axiosInstance } from "@/services";
+import { dashboardService } from "@/services/dashboard";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
@@ -47,12 +48,11 @@ const CountryInfoHeader = () => {
       }
 
       try {
-        const res = await axiosInstance.get(
-          `/get_modules_count/?global_search=${encodeURIComponent(searchValue)}`
-        );
+        const res = await dashboardService.getModulesCount({ global_search: searchValue });
+        const payload = res?.result;
         const urlFromApi =
-          (typeof res?.data?.sec_filing === "string" && res.data.sec_filing) ||
-          (typeof res?.data?.sec_filings === "string" && res.data.sec_filings) ||
+          (typeof payload?.sec_filing === "string" && payload.sec_filing) ||
+          (typeof payload?.sec_filings === "string" && payload.sec_filings) ||
           "";
         setSecFilingsUrl(urlFromApi || finhub?.sec_filing || "");
       } catch (error) {

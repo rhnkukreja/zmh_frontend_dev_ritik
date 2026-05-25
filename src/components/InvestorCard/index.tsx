@@ -6,10 +6,20 @@ import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import flagIcon from "../../assets/images/zmh-images/flag-icon.png";
 import caseStudiesIcon from "../../assets/images/zmh-images/case_studies.svg";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
-import { MegaphoneOff } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+
+
+
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+
 import {
   CompanyDashboard,
   fetchCompanyDashboard,
@@ -17,44 +27,87 @@ import {
   setPage,
   setTempSearch,
 } from "@/stores/dashboardSlice";
+
 import { AppDispatch, RootState } from "@/stores/store";
+
 import {
   Navigate,
   useLocation,
   useNavigate,
   useSearchParams,
 } from "react-router-dom";
-import { useEffect, useReducer, useState } from "react";
+
+import { useEffect, useReducer, useState , useRef} from "react";
+
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
+
 import { baseURL } from "@/constant";
+
 import Tippy from "../Base/Tippy";
 import clsx from "clsx";
+import LoadingIcon from "../Base/LoadingIcon";
 import Button from "../Base/Button";
-import { ChevronLeft } from "lucide-react";
 
 import Lucide from "../Base/Lucide";
 import { Dialog, Tab } from "../Base/Headless";
+
 import TradingViewWidget from "../TradingViewWidget";
 import EngagementQuestionsDialog from "../EngagementQuestionsDialog";
+
 import AddNoteModal from "@/pages/Notes/AddNotesModal";
 import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
 
+import {
+  searchWhaleWisdom,
+  scrapeSelectedWhaleWisdom,
+  generateWhaleWisdomId
+} from "@/pages/AIChatbot/api";
+
+import FormCheck from "@/components/Base/Form/FormCheck";
+
+import { toast } from "react-toastify";
+import { scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
+import { MegaphoneOff, ChevronLeft, ChevronDown } from "lucide-react";
+
+
+// ✅ INTERFACE UPDATED TO ACCEPT LIFTED STATE
 interface InvestorCardProps {
   onLoaded?: () => void;
+  autoScrapedData?: Record<string, any>; // 🌟 ADDED THIS
 }
 
-const index = ({ onLoaded }: InvestorCardProps) => {
+// ✅ COMPONENT ACCEPTING THE PROP
+const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
+
+  const [isScrapingPdf, setIsScrapingPdf] = useState(false);
+
+  const [scrapedPdfUrl, setScrapedPdfUrl] = useState<string | null>(null);
+
+  const [scrapeMessage, setScrapeMessage] = useState<string>("");
+
   const location = useLocation();
+
   const locationPathName = location?.pathname;
+
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
-  const { dashboardDataList, investorCardLoading, page, tempSearch, percent } =
-    useAppSelector((state) => state.dashboard);
 
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const {
+    dashboardDataList,
+    investorCardLoading,
+    page,
+    tempSearch,
+    percent,
+  } = useAppSelector((state) => state.dashboard);
+
+  const {
+    companyGlobalSearchName,
+    companyGlobalSearchTicker,
+  } = useAppSelector(
     (state: RootState) => state.authentiction
   );
+
   const navigate = useNavigate();
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
@@ -63,18 +116,108 @@ const index = ({ onLoaded }: InvestorCardProps) => {
   const [institutionName, setInstitutionName] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [data, setData] = useState<CompanyDashboard>();
-  const [addNoteModalVisible, setAddNoteModalVisible] =
-    useState<boolean>(false);
+  const [addNoteModalVisible, setAddNoteModalVisible] = useState<boolean>(false);
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
-
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
 
-  // Check if Say on Pay column should be shown based on selected year
-  const showSayOnPayColumn = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.say_on_pay_column_check === true;
+  const showSayOnPayColumn =
+    dashboardDataList?.all_year_data?.[selectedIndex || 0]
+      ?.say_on_pay_column_check === true;
+
   const isColumnGrayedOut = !showSayOnPayColumn;
+
+  const [summaryModalVisible, setSummaryModalVisible] = useState<boolean>(false);
+  const [summaryData, setSummaryData] = useState<any>(null);
+  const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
+  const [showFilerModal, setShowFilerModal] = useState<boolean>(false);
+  const [showAdvBrochure, setShowAdvBrochure] = useState<boolean>(false);
+  const [filerOptions, setFilerOptions] = useState<any[]>([]);
+  const [selectedFilerLink, setSelectedFilerLink] = useState<string>("");
+  const [activeInstitutionName, setActiveInstitutionName] = useState<string>("");
+
+  const handleViewSummary = async (institutionName: string | undefined) => {
+    if (!institutionName) return;
+    
+    setActiveInstitutionName(institutionName);
+    
+    // Check if the background queue already fetched this!
+    if (autoScrapedData[institutionName] && autoScrapedData[institutionName].investment_strategy) {
+      setSummaryData(autoScrapedData[institutionName]);
+      setSummaryModalVisible(true);
+      return; 
+    }
+
+    setSummaryLoading(true);
+
+    try {
+      const result = await searchWhaleWisdom(institutionName);
+      
+      if (result) {
+        // Fallback: If the background job didn't parse the strategy, don't crash!
+        if (!result.investment_strategy) {
+           result.investment_strategy = "Overview not publicly listed on this profile.";
+        }
+        setSummaryData(result);
+        setSummaryModalVisible(true);
+      } else {
+        toast.error("Invalid data format received from S3.");
+      }
+   } catch (error: any) {
+      if (error.message && error.message.includes("404")) {
+        try {
+          const genResult = await generateWhaleWisdomId(institutionName);
+          if (genResult && genResult.filers) {
+            
+            // Automatically scrape if exactly 1 match! No popup!
+            if (genResult.filers.length === 1) {
+              const data = await scrapeQuickWhaleWisdom(institutionName, genResult.filers[0].link);
+              setSummaryData(data);
+              setSummaryModalVisible(true);
+            } 
+            // Show popup if multiple options
+            else if (genResult.filers.length > 1) {
+              setFilerOptions(genResult.filers);
+              setSelectedFilerLink("");
+              setShowFilerModal(true);
+            } 
+            else {
+              toast.error("No profiles found on WhaleWisdom for this investor.");
+            }
+          }
+       } catch (genError) {
+          // 🌟 UPDATED SPECIFIC ERROR MESSAGE HERE
+          toast.error(`No such investor found with the name "${institutionName}" on WhaleWisdom.`);
+        }
+      } else {
+        toast.error("An error occurred while fetching the summary.");
+      }
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const confirmFilerSelection = async () => {
+    if (!selectedFilerLink) {
+      toast.error("Please select a profile from the list.");
+      return;
+    }
+
+    setShowFilerModal(false);
+    setSummaryModalVisible(true);
+    setSummaryLoading(true);
+
+    try {
+      const data = await scrapeQuickWhaleWisdom(activeInstitutionName, selectedFilerLink);
+      setSummaryData(data);
+    } catch (error) {
+      toast.error("Failed to scrape the selected profile.");
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   useEffect(() => {
     const today = new Date();
@@ -86,8 +229,9 @@ const index = ({ onLoaded }: InvestorCardProps) => {
   }, []);
 
   useEffect(() => {
-    setSelectedYear("");
-    setSelectedIndex(0);
+    if (companyGlobalSearchTicker !== tempSearch) {
+      setSelectedYear("");
+    }
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
   }, [companyGlobalSearchTicker, searchTicker, tempSearch]);
@@ -118,39 +262,17 @@ const index = ({ onLoaded }: InvestorCardProps) => {
     }
   }, [onLoaded, investorCardLoading, hasNotifiedLoaded, dashboardDataList]);
 
-  // useEffect(() => {
-  //   const validateImages = async () => {
-  //     const tempValidImages: { [key: string]: string } = {};
-  //     if(dashboardDataList?.all_year_data?.length > 0) {
-  //       for (const dashbboard of dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data || []) {
-  //         const isValid = await checkImageUrl(dashbboard?.institution_logo_url);
-  //         tempValidImages[dashbboard?.institution_name] = isValid
-  //           ? dashbboard?.institution_logo_url
-  //           : investorIcon;
-  //       }
-  //       setValidImages(tempValidImages);
-  //     }
-  //   };
-
-  //   validateImages();
-  // }, [dashboardDataList]);
-
   const convertDivTableToCSV = () => {
-    // Get the table element
     const table = document.querySelector(".table");
     const rows = table?.querySelectorAll(".row");
     let csvContent = "";
 
-    // Iterate over each row
     rows?.forEach((row) => {
       const cells = row.querySelectorAll(".cell");
       let rowData: any = [];
 
-      // Iterate over each cell and get the text content
       cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim(); // Get text content and trim any extra spaces
-        // console.log(cellText);
-        // Check if the cell contains a comma, wrap it in double quotes
+        let cellText = cell.textContent?.trim(); 
         if (cellText?.includes(",")) {
           cellText = `"${cellText}"`;
         }
@@ -162,21 +284,19 @@ const index = ({ onLoaded }: InvestorCardProps) => {
         rowData.push(cellText);
       });
 
-      // Join cells with commas to form a CSV row
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Investor-${companyGlobalSearchTicker}`);
+    downloadCSV(csvContent, `Investor-${ticker}`);
   };
 
   const handleGenerateReport = () => {
-    if (companyGlobalSearchTicker) {
-      window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
+    if (ticker) {
+      window.open(`/company-report?ticker=${encodeURIComponent(ticker)}`, "_blank");
     }
   };
 
   const redirectCaseStudy = (institution_name: string) => {
-    // window.open(`/case-studies`, "_blank");
     navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
   };
 
@@ -202,11 +322,8 @@ const index = ({ onLoaded }: InvestorCardProps) => {
     setSelectedYear(tab);
   }
 
-  // Generate available year tabs - only show years that actually have data
   const getAvailableYears = () => {
     if (!dashboardDataList?.total_year?.length) return [];
-
-    // Return the actual years that have data
     return dashboardDataList.total_year.map((year: any) => year.toString());
   };
 
@@ -222,7 +339,6 @@ const index = ({ onLoaded }: InvestorCardProps) => {
     setSelectedIndex(index);
   }, [selectedYear])
 
-  // Analytics data processing
   const getAnalyticsData = () => {
     const analyticsData = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics;
     if (!analyticsData) return [];
@@ -258,7 +374,6 @@ const index = ({ onLoaded }: InvestorCardProps) => {
         <>
           <div className="p-5 mt-3.5 box">
             <div className="w-full">
-              {/* Header row with Top Investors title on left and History of Schedule 13D Filing on right */}
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
                 <div className="flex items-center">
                   <h1 className="text-xl font-bold">
@@ -282,11 +397,11 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                     </div>
                   </Tippy>
                   {locationPathName === "/" && (
-                    <Tippy content="Open in New Tab" options={{ theme: "light" }}>
+                    <Tippy content="Expand View" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
                         onClick={() =>
-                          window.open("investor-details", "_blank")
+                          navigate(`/investor-details?ticker=${ticker}`)
                         }
                       >
                         <img alt="tab-icon" src={tabIcon} />
@@ -297,7 +412,6 @@ const index = ({ onLoaded }: InvestorCardProps) => {
               </div>
 
               <div className="mt-5">
-                {/* Year selection tabs - show when any year data is available */}
                 {getAvailableYears().length > 0 && (
                   <div className="mb-4">
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
@@ -322,13 +436,8 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                 )}
 
                 <div className="grid gap-6 grid-cols-1">
-                  {/* Investor Table */}
                   <div className="col-span-1">
-                    <TableWrapper
-                      isLoading={investorCardLoading}
-                      rows={6}
-                      columns={8}
-                    >
+                    <TableWrapper isLoading={investorCardLoading}>
                       <div
                         className={clsx([
                           locationPathName === "/" &&
@@ -443,81 +552,88 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                         </Table.Td>
 
                                         <Table.Td className="relative w-full px-4 py-2">
+  <div className="flex justify-between items-center w-full">
+    <div className="flex items-center whitespace-nowrap">
+      
+      {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
+      {(() => {
+        const dynInstId = dashboard?.institution_id || autoScrapedData[dashboard?.institution_name]?.institution_id;
+        
+        return (
+          <>
+            {/* 🌟 2. Hide the Asterisk if the Dynamic ID exists! */}
+            {!dynInstId && (
+              <sup
+                className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
+                onClick={() => {
+                  window.scrollBy({ top: 350, behavior: "smooth" });
+                }}
+              >
+                *
+              </sup>
+            )}
+            
+            {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
+            <h1
+              onClick={() =>
+                dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
+              }
+              className={clsx([
+                "cell whitespace-nowrap capitalize text-wrap font-semibold",
+                dynInstId && "cursor-pointer underline",
+              ])}
+            >
+              {dashboard?.institution_name}
+            </h1>
+          </>
+        );
+      })()}
 
-                                          <div className="flex justify-between items-center w-full">
-                                            <div className="flex items-center  whitespace-nowrap">
-                                              {!dashboard.institution_id && (
+      {dashboard?.flag_13d === true && (
+        <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
+      )}
+    </div>
+                                           <div className="flex items-center gap-x-2">
+  {dashboard?.investor_profile_id ? (
+    /* 1. Show Investor Profile if it exists */
+    <Tippy
+      content="Investor Profile"
+      options={{ theme: "light" }}
+      className="w-5 h-5"
+      onClick={() =>
+        navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
+      }
+    >
+      <div className="flex items-center justify-center w-6 h-6 text-primary">
+        <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
+      </div>
+    </Tippy>
+  ) : (
+    /* 2. Show the Eye button if NO profile exists */
+   <Tippy
+    content={summaryLoading && activeInstitutionName === dashboard?.institution_name ? "Loading..." : "Scrape/View Summary"}
+    options={{ theme: "light" }}
+    className="w-5 h-5"
+    onClick={() => {
+      // Prevent multiple clicks while loading
+      if (!summaryLoading) {
+        handleViewSummary(dashboard?.institution_name);
+      }
+    }}
+  >
+    <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
+      {summaryLoading && activeInstitutionName === dashboard?.institution_name ? (
+        <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+      ) : (
+        <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
+      )}
+    </div>
+  </Tippy>
+  )}
 
-                                                <sup
-                                                  className="cursor-pointer text-lg absolute left-2 top-1"
-                                                  onClick={() => {
-                                                    window.scrollBy({
-                                                      top: 350,
-                                                      behavior: "smooth",
-                                                    });
-                                                  }}
-                                                >
-                                                  *
-                                                </sup>
-                                              )}
-                                              <h1
-                                                onClick={() => {
-                                                  if (dashboard?.is_doc && dashboard?.institution_id) {
-                                                    navigate(`/investor-company-details/${dashboard?.institution_id}`, {
-                                                      state: {
-                                                        from: location.pathname,
-                                                        fromState: location.state
-                                                      }
-                                                    });
-                                                  }
-                                                }}
-                                                className={clsx([
-                                                  "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                  dashboard?.is_doc &&
-                                                  "cursor-pointer underline",
-                                                ])}
-                                              >
-                                                {dashboard?.institution_name}
-                                              </h1>
-                                              {dashboard?.flag_13d === true && (
-                                                <img
-                                                  className="w-3 ml-2"
-                                                  alt="flag-icon"
-                                                  src={flagIcon}
-                                                />
-                                              )}
-                                            </div>
-                                            <div className="flex items-center gap-x-2">
-                                              {dashboard?.investor_profile_id ? (
-                                                <Tippy
-                                                  content="Investor Profile"
-                                                  options={{ theme: "light" }}
-                                                  onClick={() =>
-                                                    navigate(
-                                                      `/investor-profile/investor/${dashboard?.investor_profile_id}`,
-                                                      { 
-                                                        state: { 
-                                                          from: location.pathname,
-                                                          fromState: location.state 
-                                                        } 
-                                                      }
-                                                    )
-                                                  }
-                                                >
-                                                  <div className="flex items-center justify-center w-6 h-6 text-primary">
-                                                    <Lucide
-                                                      icon="FileText"
-                                                      className="w-4 h-4 stroke-[1.3]"
-                                                    />
-                                                  </div>
-                                                </Tippy>
-                                              ) : (
-                                                <div className="w-6 h-6" />
-                                              )}
-
-                                              {dashboard?.case_studies_id ? (
-                                                <Tippy
-                                                  content="Case Studies"
+  {dashboard?.case_studies_id ? (
+     <Tippy
+       content="Case Studies"
                                                   options={{ theme: "light" }}
                                                   className="w-6 h-6 mt-1"
                                                   onClick={() =>
@@ -567,12 +683,23 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                             {dashboard?.percent_ownership}%
                                           </div>
                                         </Table.Td>
-                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[180px]">
-                                          <div className="px-2">
-                                            {dashboard.proxy_advisor_influence ||
-                                              "-"}
-                                          </div>
-                                        </Table.Td>
+                                       <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                                    <div className="whitespace-nowrap">
+                                                      {(() => {
+                                                        // 1. Grab the proxy data from either S3 or DB
+                                                        const rawProxy = autoScrapedData[dashboard?.institution_name]?.proxy_influence 
+                                                                      || dashboard?.proxy_advisor_influence;
+
+                                                        // 2. If it's missing OR says "Not Disclosed", safely render a dash
+                                                        if (!rawProxy || rawProxy === "Not Disclosed" || rawProxy.toLowerCase() === "not disclosed") {
+                                                          return <span className="text-gray-400">-</span>;
+                                                        }
+
+                                                        // 3. Otherwise, return the actual ISS / GL / Internal value
+                                                        return rawProxy;
+                                                      })()}
+                                                    </div>
+                                                  </Table.Td>
                                         <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                           <div className="whitespace-nowrap ">
                                             {dashboard?.unpri_signatory ===
@@ -762,116 +889,12 @@ const index = ({ onLoaded }: InvestorCardProps) => {
       )}
 
       {dashboardDataList?.length === 0 && investorCardLoading && (
-        <div className="p-5 mt-3.5 box bg-white">
-          <div className="w-full">
-            <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3 gap-3">
-              <div className="flex items-center">
-                <h1 className="text-xl font-bold flex items-center gap-2 flex-wrap">
-                  Top
-                  <span className="inline-block h-6 w-12 rounded bg-slate-200 animate-pulse" />
-                  Investors
-                  <span className="text-lg font-bold inline-flex items-center gap-2">
-                    (
-                    <span className="inline-block h-5 w-20 rounded bg-slate-200 animate-pulse" />
-                    of shares outstanding)
-                  </span>
-                </h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <img alt="flag-icon" src={flagIcon} />
-                <h4 className="font-semibold mr-4">
-                  History of Schedule 13D Filing
-                </h4>
-                <div className="box p-[5px] opacity-60">
-                  <img alt="download-icon" src={downloadIcon} />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <div className="mb-4 flex gap-2">
-                <div className="h-8 w-20 rounded-[0.6rem] bg-slate-200 animate-pulse" />
-                <div className="h-8 w-20 rounded-[0.6rem] bg-slate-200 animate-pulse" />
-              </div>
-
-              <div
-                className={clsx([
-                  locationPathName === "/" && "max-h-[600px]",
-                  "max-h-[60vh] overflow-y-scroll"
-                ])}
-              >
-                <Table className="table w-full">
-                  <Table.Thead>
-                    <Table.Tr className="row">
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">No.</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Shareholder</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Ownership</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Proxy Advisory Influence</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">UN PRI Signatory</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Engaged with Company</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Engagement Topic</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Voted Against Directors</Table.Td>
-                      <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2]">Voted Against Say on Pay</Table.Td>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {Array.from({ length: 6 }).map((_, rowIdx) => (
-                      <Table.Tr key={`investor-loading-row-${rowIdx}`} className="row [&_td]:last:border-b-0">
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-4 w-6 rounded bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-4 w-44 rounded bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-4 w-16 rounded bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-4 w-32 rounded bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                        <Table.Td className="cell py-2 h-[50px] border-dashed">
-                          <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse" />
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Table.Tbody>
-                </Table>
-              </div>
-
-              <footer className="mt-4 border-t border-dashed border-slate-300 pt-3">
-                <div className="text-[13px] text-slate-500 flex flex-wrap justify-between gap-3">
-                  <div className="flex flex-col gap-2">
-                    <span className="!pt-3 flex items-center">
-                      <sup className="cursor-pointer" style={{ fontSize: "0.8em" }}>1</sup>
-                      <p id="footnote">Source: Whalewisdom. Data as of <span className="inline-block h-4 w-24 rounded bg-slate-200 animate-pulse ml-1" /></p>
-                    </span>
-                    <span className="!pt-3 flex items-center ">
-                      <sup className="cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>2</sup>
-                      <p id="footnote">As disclosed by the investor in the last three years.</p>
-                    </span>
-                  </div>
-                  <div>
-                    <span className="!pt-3 flex items-center relative justify-end">
-                      <sup className="cursor-pointer ml-1" style={{ fontSize: "0.8em" }}>*</sup>
-                      <p id="footnote" className="">Not in ZMH coverage universe.</p>
-                    </span>
-                  </div>
-                </div>
-              </footer>
-            </div>
-          </div>
+        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
+          <LoadingIcon
+            color="#800000"
+            icon="three-dots"
+            className="w-16 h-16"
+          />
         </div>
       )}
 
@@ -893,22 +916,144 @@ const index = ({ onLoaded }: InvestorCardProps) => {
         />
       )}
 
-      <Dialog size="xl" open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
-        <Dialog.Panel>
-          <Dialog.Title>
-            <h2 className="text-xl font-semibold">Engagement Notes</h2>
-            <div
-              onClick={() => setIsDialogOpen(false)}
-              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
-            >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+      {/* --- START OF INVESTOR SUMMARY MODAL --- */}
+      <Dialog size="xl" open={summaryModalVisible} onClose={() => setSummaryModalVisible(false)}>
+        <Dialog.Panel className="p-0 bg-slate-50/50 overflow-hidden">
+          
+          <Dialog.Title className="p-6 bg-white border-b border-slate-200 relative m-0">
+            <div className="pr-10">
+              <h2 className="text-2xl font-semibold text-slate-700">{activeInstitutionName}</h2>
+              <div className="text-sm text-slate-500 mt-2">
+                <span className="font-bold text-slate-600">Last updated:</span> {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </div>
+            </div>
+            <div onClick={() => setSummaryModalVisible(false)} className="absolute top-6 right-6 cursor-pointer hover:bg-slate-100 p-2 rounded-full transition-colors">
+              <Lucide icon="X" className="w-6 h-6 text-slate-400" />
             </div>
           </Dialog.Title>
-          <Dialog.Description>
-            <div className="w-full minh-[550px]">
-              <EngagementQuestionsDialog data={data} />
+
+          <Dialog.Description className="p-6 bg-slate-50 m-0 max-h-[85vh] overflow-y-auto">
+            {summaryLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <LoadingIcon color="#800000" icon="three-dots" className="w-12 h-12" />
+                <p className="text-slate-500 mt-4 animate-pulse">Scraping SEC and WhaleWisdom data...</p>
+              </div>
+            ) : summaryData ? (
+              <div className="bg-white border border-slate-200 rounded-md shadow-sm flex flex-col gap-6">
+                
+                <div className="p-6 pb-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lucide icon="Briefcase" className="w-5 h-5 text-red-800" />
+                    <h3 className="text-lg font-bold text-slate-800">Investment Strategy</h3>
+                  </div>
+
+                <div className="flex items-center gap-3 mb-4 flex-wrap">
+              
+              {/* 🌟 NEW: REGION BADGE */}
+              {summaryData.region && (
+                <div className="px-3 py-1 rounded-md bg-slate-100 border border-slate-200">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">
+                    Region
+                  </span>
+                  <div className="text-sm font-bold text-slate-800 mt-1">
+                    {summaryData.region}
+                  </div>
+                </div>
+              )}
+
+
+              {/* EXISTING PROXY INFLUENCE BADGE */}
+           
+              {(summaryData.adv_pdf_s3_url || summaryData.brochure_url) && 
+               summaryData.proxy_influence && 
+               summaryData.proxy_influence !== "Not Disclosed" && (
+                <div className="px-3 py-1 rounded-md bg-slate-100 border border-slate-200">
+                  <span className="text-xs font-semibold text-slate-500 uppercase">
+                    Proxy Influence
+                  </span>
+                  <div className="text-sm font-bold text-slate-800 mt-1">
+                    {summaryData.proxy_influence}
+                  </div>
+                </div>
+              )}
+
             </div>
+                  <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap bg-slate-50 p-4 rounded-md border border-slate-100">
+                    {summaryData.investment_strategy}
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-100 mt-4">
+
+
+
+  {(summaryData.brochure_url || summaryData.brochure_page_url) && (
+  <div>
+    {/* HEADER */}
+    <div
+      onClick={() => setShowAdvBrochure(!showAdvBrochure)}
+      className="flex items-center justify-between p-6 cursor-pointer hover:bg-slate-50 transition-all"
+    >
+      <div className="flex items-center gap-2">
+        <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
+        <h3 className="text-lg font-bold text-slate-800">
+          SEC Form ADV Part 2 Brochure
+        </h3>
+      </div>
+      <ChevronDown
+        className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+          showAdvBrochure ? "rotate-180" : ""
+        }`}
+      />
+    </div>
+    {/* COLLAPSIBLE CONTENT */}
+    {showAdvBrochure && (
+      <div className="px-6 pb-6">
+        {summaryData.brochure_url ? (
+          <div className="border border-slate-200 rounded-md overflow-hidden bg-slate-100 shadow-inner">
+            <iframe
+              src={summaryData.brochure_url}
+              width="100%"
+              height="600px"
+              title="SEC Brochure PDF"
+              className="w-full"
+            />
+          </div>
+        ) : (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-3">
+            <Lucide icon="ExternalLink" className="w-6 h-6 text-blue-700 mt-0.5 shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-blue-900 mb-1">
+                Brochure Page Available
+              </h4>
+              <p className="text-sm text-blue-800 font-medium mb-2">
+                {summaryData.iapd_message ||
+                  "Direct PDF preview is unavailable, but the IAPD brochure page is available."}
+              </p>
+              <a
+                href={summaryData.brochure_page_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-blue-700 underline"
+              >
+                Open IAPD brochure page
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+  )}
+
+
+              </div>
+            </div>
+            ) : (
+              <p className="text-center text-slate-500 py-10">No summary data available.</p>
+            )}
           </Dialog.Description>
+
         </Dialog.Panel>
       </Dialog>
 
@@ -954,24 +1099,20 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                             const x = cx + radius * Math.cos(-midAngle * RADIAN);
                             const y = cy + radius * Math.sin(-midAngle * RADIAN);
 
-                            // Calculate line end points for leader lines
                             const lineRadius = outerRadius + 15;
                             const lineX = cx + lineRadius * Math.cos(-midAngle * RADIAN);
                             const lineY = cy + lineRadius * Math.sin(-midAngle * RADIAN);
 
-                            // Extend line horizontally (shorter extension)
                             const extendedX = lineX + (lineX > cx ? 25 : -25);
 
                             return (
                               <g>
-                                {/* Leader line from pie to label */}
                                 <polyline
                                   points={`${cx + outerRadius * Math.cos(-midAngle * RADIAN)},${cy + outerRadius * Math.sin(-midAngle * RADIAN)} ${lineX},${lineY} ${extendedX},${lineY}`}
                                   fill="none"
                                   stroke="#333"
                                   strokeWidth={1.5}
                                 />
-                                {/* Label text */}
                                 <text
                                   x={extendedX}
                                   y={lineY - 8}
@@ -983,7 +1124,6 @@ const index = ({ onLoaded }: InvestorCardProps) => {
                                 >
                                   {name}
                                 </text>
-                                {/* Percentage text */}
                                 <text
                                   x={extendedX}
                                   y={lineY + 8}
@@ -1011,6 +1151,74 @@ const index = ({ onLoaded }: InvestorCardProps) => {
               </div>
             </div>
           </Dialog.Description>
+        </Dialog.Panel>
+      </Dialog>
+
+{/* 🌟 NEW FILER SELECTION MODAL */}
+      <Dialog size="xl" open={showFilerModal} onClose={() => setShowFilerModal(false)}>
+        <Dialog.Panel>
+          <Dialog.Title>
+            <h2 className="text-lg font-semibold">Select Whale Wisdom Profile for {activeInstitutionName}</h2>
+            <div onClick={() => setShowFilerModal(false)} className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer">
+              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
+            </div>
+          </Dialog.Title>
+
+          <Dialog.Description className="p-4 max-h-[60vh] overflow-y-auto">
+            {filerOptions.length === 0 ? (
+              <p className="text-slate-500 text-center py-4">No profiles found on WhaleWisdom.</p>
+            ) : (
+              <div className="overflow-x-auto border rounded-md">
+                <table className="w-full text-left text-sm text-slate-700">
+                  <thead className="bg-slate-100 text-slate-800 border-b">
+                    <tr>
+                      <th className="p-3 font-semibold w-16 text-center">Select</th>
+                      <th className="p-3 font-semibold">ID</th>
+                      <th className="p-3 font-semibold">Name</th>
+                      <th className="p-3 font-semibold">CIK</th>
+                      <th className="p-3 font-semibold">WhaleWisdom Page</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filerOptions.map((filer) => {
+                      const finalUrl = filer.link?.startsWith('http') ? filer.link : `https://whalewisdom.com${filer.link}`;
+                      const isSelected = selectedFilerLink === filer.link;
+
+                      return (
+                        <tr key={filer.id} className={`border-b transition-all duration-200 cursor-pointer ${isSelected ? "bg-red-50 border-l-4 border-l-red-700" : "hover:bg-slate-50"}`}>
+                          <td className="p-3 text-center">
+                            <FormCheck.Input
+                              type="radio"
+                              name="filerSelectionRadio"
+                              className="cursor-pointer w-4 h-4"
+                              style={{ accentColor: "#9b1b30" }}
+                              checked={isSelected}
+                              onChange={() => setSelectedFilerLink(filer.link)}
+                            />
+                          </td>
+                          <td className="p-3">{filer.id}</td>
+                          <td className="p-3 font-medium">{filer.name}</td>
+                          <td className="p-3">{filer.cik || "N/A"}</td>
+                          <td className="p-3">
+                            {filer.link ? (
+                              <a href={finalUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center" onClick={(e) => e.stopPropagation()}>
+                                View Page <Lucide icon="ExternalLink" className="w-3 h-3 ml-1" />
+                              </a>
+                            ) : ("N/A")}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Dialog.Description>
+
+          <Dialog.Footer className="flex justify-end gap-2">
+            <Button type="button" variant="outline-secondary" onClick={() => setShowFilerModal(false)}>Cancel</Button>
+            <Button type="button" variant="primary" onClick={confirmFilerSelection} disabled={!selectedFilerLink}>Scrape Selected Profile</Button>
+          </Dialog.Footer>
         </Dialog.Panel>
       </Dialog>
     </>

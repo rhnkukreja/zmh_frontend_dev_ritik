@@ -80,5 +80,6 @@ export const pageTitles: Record<string, string | null> = {
   "/voting-guidelines": null,
   "/case-studies": null,
   "/engagement-detail": null,
-  "/shareholder-proposal":null
+  "/shareholder-proposal":null,
+  "/proxy-contest-ai": null
 };
