@@ -114,7 +114,7 @@ const VotingDataBanner = () => {
             <div className="flex items-start gap-4">
               <div className="flex-1 space-y-2">
                 <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200">
-                  Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>State Street</strong>, <strong>Dimensional</strong>, and <strong>40+ more institutions</strong>.
+                  Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>Vanguard</strong>, <strong>State Street</strong>, and <strong>40+ more institutions</strong>.
                 </p>
 
                 {/* Notifications list (each row) */}
