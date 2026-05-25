@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import Lucide from "@/components/Base/Lucide";
+import Button from "@/components/Base/Button";
 import { proxyContestAIService } from "@/services/proxyContestAI";
 import FiltersSidebar from "./components/FiltersSidebar";
 import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
 import VotingRecordsList from "./components/VotingRecordsList";
+import ProxyContestModal from "../ProxyContest/components/ProxyContestModal";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 
@@ -29,7 +31,8 @@ function ProxyContestAI() {
   const isAdminOrAnalyst = user?.user_type === "Admin" || user?.user_type === "Analyst";
 
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [sidebarOpen, setSidebarOpen] = useState(isAdminOrAnalyst);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   // ── Overview filters (persisted per-tab) ────────────────────────────────────
   const [ovYears, setOvYears] = useState<string[]>(() => loadF("overview")?.years ?? DEFAULT_YEARS);
@@ -353,10 +356,16 @@ function ProxyContestAI() {
     <div className="grid grid-cols-12 gap-y-4 gap-x-6 pb-10">
       {/* Page header — Case Studies style white card */}
       <div className="col-span-12">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-4">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
+          {isAdminOrAnalyst && (
+            <Button variant="primary" onClick={() => setAddModalOpen(true)}>
+              <Lucide icon="Plus" className="w-4 h-4 mr-1.5" />
+              Add Proxy Contest
+            </Button>
+          )}
         </div>
-        {/* Tabs + optional hide-filters button */}
+        {/* Tabs + Hide/Show Filters button (Admin/Analyst only) */}
         <div className="flex items-center justify-between">
           <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1">
             {(["overview", "detailed"] as TabKey[]).map((tab) => (
@@ -384,15 +393,13 @@ function ProxyContestAI() {
               </button>
             ))}
           </div>
-          {isAdminOrAnalyst && (
-            <button
+          <button
               onClick={() => setSidebarOpen((v) => !v)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
             >
               <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
               {sidebarOpen ? "Hide Filters" : "Show Filters"}
             </button>
-          )}
         </div>
       </div>
 
@@ -432,8 +439,8 @@ function ProxyContestAI() {
 
       {/* Sidebar + content in same-height flex row */}
       <div className="col-span-12 flex gap-6">
-        {/* Filters sidebar — Admin / Analyst only */}
-        {isAdminOrAnalyst && sidebarOpen && (
+        {/* Filters sidebar */}
+        {sidebarOpen && (
           <div className="w-64 flex-shrink-0 self-stretch">
             <FiltersSidebar
               filtersData={filtersData}
@@ -510,6 +517,18 @@ function ProxyContestAI() {
           )}
         </div>
       </div>
+      {/* Add Proxy Contest modal — Admin / Analyst only */}
+      {isAdminOrAnalyst && (
+        <ProxyContestModal
+          open={addModalOpen}
+          mode="add"
+          onClose={() => setAddModalOpen(false)}
+          onSuccess={() => {
+            setAddModalOpen(false);
+            fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
+          }}
+        />
+      )}
     </div>
   );
 }

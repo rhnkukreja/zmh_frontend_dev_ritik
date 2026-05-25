@@ -124,6 +124,8 @@ const initialState: any = {
       icon: "BrainCircuit",
       pathname: "/proxy-contest-ai",
       title: "Proxy Contest AI",
+      isAdmin: true,
+      isAnalyst: true,
     },
     
     // {
