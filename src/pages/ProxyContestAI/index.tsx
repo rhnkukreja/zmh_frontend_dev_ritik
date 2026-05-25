@@ -37,7 +37,7 @@ function ProxyContestAI() {
   // ── Overview filters (persisted per-tab) ────────────────────────────────────
   const [ovYears, setOvYears] = useState<string[]>(() => loadF("overview")?.years ?? DEFAULT_YEARS);
   const [ovInstIds, setOvInstIds] = useState<number[]>(() => loadF("overview")?.instIds ?? DEFAULT_INSTITUTION_IDS);
-  const [ovVotes, setOvVotes] = useState<string[]>(() => loadF("overview")?.votes ?? []);
+  const [ovInvestorSupport, setOvInvestorSupport] = useState<boolean>(() => loadF("overview")?.investorSupport ?? false);
   const [ovCompanyIds, setOvCompanyIds] = useState<number[]>(() => loadF("overview")?.companyIds ?? []);
   const [ovIss, setOvIss] = useState<string | null>(() => loadF("overview")?.iss ?? null);
   const [ovGl, setOvGl] = useState<string | null>(() => loadF("overview")?.gl ?? null);
@@ -52,8 +52,8 @@ function ProxyContestAI() {
 
   // Persist overview filters on change
   useEffect(() => {
-    saveF("overview", { years: ovYears, instIds: ovInstIds, votes: ovVotes, companyIds: ovCompanyIds, iss: ovIss, gl: ovGl });
-  }, [ovYears, ovInstIds, ovVotes, ovCompanyIds, ovIss, ovGl]);
+    saveF("overview", { years: ovYears, instIds: ovInstIds, investorSupport: ovInvestorSupport, companyIds: ovCompanyIds, iss: ovIss, gl: ovGl });
+  }, [ovYears, ovInstIds, ovInvestorSupport, ovCompanyIds, ovIss, ovGl]);
 
   // Persist detailed filters on change
   useEffect(() => {
@@ -111,8 +111,8 @@ function ProxyContestAI() {
 
   // ── Fetch summary stats + VR page 1 (on filter change) ──────────────────────
   const fetchSummaryStats = useCallback(async (
-    years: string[], instIds: number[], votes: string[], companyIds: number[],
-    vrPageNum = 1, iss?: string | null, gl?: string | null
+    years: string[], instIds: number[], companyIds: number[],
+    vrPageNum = 1, iss?: string | null, gl?: string | null, investorSupport?: boolean
   ) => {
     const id = ++summaryFetchId.current;
     setSummaryLoading(true);
@@ -120,10 +120,10 @@ function ProxyContestAI() {
       const data = await proxyContestAIService.getOverviewSummary({
         year: years.length ? years : undefined,
         institution_id: instIds.length ? instIds : undefined,
-        vote: votes.length ? votes : undefined,
         company_id: companyIds.length ? companyIds : undefined,
         iss_support: iss || undefined,
         gl_support: gl || undefined,
+        investor_support_activist: investorSupport || undefined,
         vr_page: vrPageNum,
         vr_page_size: 10,
       });
@@ -137,8 +137,8 @@ function ProxyContestAI() {
 
   // ── Fetch only voting records (VR page change — does NOT reload summary) ─────
   const fetchVotingRecordsOnly = useCallback(async (
-    years: string[], instIds: number[], votes: string[], companyIds: number[],
-    vrPageNum: number, iss?: string | null, gl?: string | null
+    years: string[], instIds: number[], companyIds: number[],
+    vrPageNum: number, iss?: string | null, gl?: string | null, investorSupport?: boolean
   ) => {
     const id = ++vrFetchId.current;
     setVrLoading(true);
@@ -146,10 +146,10 @@ function ProxyContestAI() {
       const data = await proxyContestAIService.getOverviewSummary({
         year: years.length ? years : undefined,
         institution_id: instIds.length ? instIds : undefined,
-        vote: votes.length ? votes : undefined,
         company_id: companyIds.length ? companyIds : undefined,
         iss_support: iss || undefined,
         gl_support: gl || undefined,
+        investor_support_activist: investorSupport || undefined,
         vr_page: vrPageNum,
         vr_page_size: 10,
       });
@@ -188,7 +188,7 @@ function ProxyContestAI() {
   // ── Initial load ─────────────────────────────────────────────────────────────
   useEffect(() => {
     fetchFilters(ovYears, "overview", ovInstIds);
-    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, ovGl);
+    fetchSummaryStats(ovYears, ovInstIds, ovCompanyIds, 1, ovIss, ovGl, ovInvestorSupport);
     fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -207,7 +207,7 @@ function ProxyContestAI() {
   const ovToggleYear = (y: string) => {
     const next = ovYears.includes(y) ? ovYears.filter(x => x !== y) : [...ovYears, y];
     setOvYears(next); fetchFilters(next, "overview", ovInstIds);
-    fetchSummaryStats(next, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
+    fetchSummaryStats(next, ovInstIds, ovCompanyIds, 1, ovIss, ovGl, ovInvestorSupport); setVrPage(1);
   };
   const ovToggleInst = (id: number) => {
     if (ovInstIds.includes(id) && ovInstIds.length <= 1) {
@@ -217,30 +217,30 @@ function ProxyContestAI() {
     const next = ovInstIds.includes(id) ? ovInstIds.filter(x => x !== id) : [...ovInstIds, id];
     setOvInstIds(next);
     fetchFilters(ovYears, "overview", next);
-    fetchSummaryStats(ovYears, next, ovVotes, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
+    fetchSummaryStats(ovYears, next, ovCompanyIds, 1, ovIss, ovGl, ovInvestorSupport); setVrPage(1);
   };
-  const ovToggleVote = (v: string) => {
-    const next = ovVotes.includes(v) ? ovVotes.filter(x => x !== v) : [...ovVotes, v];
-    setOvVotes(next);
-    fetchSummaryStats(ovYears, ovInstIds, next, ovCompanyIds, 1, ovIss, ovGl); setVrPage(1);
+  const ovToggleInvestorSupport = () => {
+    const next = !ovInvestorSupport;
+    setOvInvestorSupport(next);
+    fetchSummaryStats(ovYears, ovInstIds, ovCompanyIds, 1, ovIss, ovGl, next); setVrPage(1);
   };
   const ovToggleCompany = (id: number) => {
     const next = ovCompanyIds.includes(id) ? ovCompanyIds.filter(x => x !== id) : [...ovCompanyIds, id];
     setOvCompanyIds(next);
-    fetchSummaryStats(ovYears, ovInstIds, ovVotes, next, 1, ovIss, ovGl); setVrPage(1);
+    fetchSummaryStats(ovYears, ovInstIds, next, 1, ovIss, ovGl, ovInvestorSupport); setVrPage(1);
   };
   const ovToggleIss = (v: string) => {
     const next = ovIss === v ? null : v; setOvIss(next);
-    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1, next, ovGl); setVrPage(1);
+    fetchSummaryStats(ovYears, ovInstIds, ovCompanyIds, 1, next, ovGl, ovInvestorSupport); setVrPage(1);
   };
   const ovToggleGl = (v: string) => {
     const next = ovGl === v ? null : v; setOvGl(next);
-    fetchSummaryStats(ovYears, ovInstIds, ovVotes, ovCompanyIds, 1, ovIss, next); setVrPage(1);
+    fetchSummaryStats(ovYears, ovInstIds, ovCompanyIds, 1, ovIss, next, ovInvestorSupport); setVrPage(1);
   };
   const ovClearAll = () => {
-    setOvYears(DEFAULT_YEARS); setOvVotes([]); setOvCompanyIds([]); setOvIss(null); setOvGl(null);
+    setOvYears(DEFAULT_YEARS); setOvCompanyIds([]); setOvIss(null); setOvGl(null); setOvInvestorSupport(false);
     fetchFilters(DEFAULT_YEARS, "overview", ovInstIds);
-    fetchSummaryStats(DEFAULT_YEARS, ovInstIds, [], [], 1, null, null); setVrPage(1);
+    fetchSummaryStats(DEFAULT_YEARS, ovInstIds, [], 1, null, null, false); setVrPage(1);
   };
 
   // ── Detailed toggle helpers ──────────────────────────────────────────────────
@@ -286,7 +286,7 @@ function ProxyContestAI() {
   };
   const handleVrPageChange = (p: number) => {
     setVrPage(p);
-    fetchVotingRecordsOnly(ovYears, ovInstIds, ovVotes, ovCompanyIds, p, ovIss, ovGl);
+    fetchVotingRecordsOnly(ovYears, ovInstIds, ovCompanyIds, p, ovIss, ovGl, ovInvestorSupport);
   };
 
   // ── Name lookup maps (fix institution chips showing IDs on initial render) ───
@@ -318,7 +318,7 @@ function ProxyContestAI() {
     ...ovInstIds.filter(id => id != null && !isNaN(id)).flatMap(id => {
       const n = getInstName(id); return n ? [{ label: `Institution: ${n}`, onRemove: () => ovToggleInst(id) }] : [];
     }),
-    ...ovVotes.map(v => ({ label: `Vote: ${v}`, onRemove: () => ovToggleVote(v) })),
+    ...(ovInvestorSupport ? [{ label: 'Investor supported activist', onRemove: ovToggleInvestorSupport }] : []),
     ...ovCompanyIds.filter(id => id != null).flatMap(id => {
       const n = getCmpName(id); return n ? [{ label: `Company: ${n}`, onRemove: () => ovToggleCompany(id) }] : [];
     }),
@@ -449,14 +449,14 @@ function ProxyContestAI() {
               selectedYears={curYears}
               selectedInstIds={curInstIds}
               selectedCompanyIds={curCompanyIds}
-              selectedVotes={ovVotes}
+              selectedInvestorSupport={ovInvestorSupport}
               selectedActivists={dtActivists}
               selectedIss={curIss}
               selectedGl={curGl}
               toggleYear={curToggleYear}
               toggleInst={curToggleInst}
               toggleCompany={curToggleCompany}
-              toggleVote={ovToggleVote}
+              toggleInvestorSupport={ovToggleInvestorSupport}
               toggleActivist={dtToggleActivist}
               toggleIss={curToggleIss}
               toggleGl={curToggleGl}
