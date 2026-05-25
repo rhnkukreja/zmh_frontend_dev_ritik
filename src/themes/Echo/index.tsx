@@ -894,6 +894,7 @@ function Main() {
                 {[
                   "/notes",
                   "/proxy-contest",
+                  "/proxy-contest-ai",
                   "/proxy-contest-detail",
                   "/voting-data",
                   "/investor-profile",

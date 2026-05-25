@@ -272,21 +272,16 @@ useEffect(() => {
             )
           );
 
-          // GPT-based key findings disabled temporarily per request.
-          // If you later want to run this as a background promise, push an unwrapped thunk into `requests`:
-          // if (isAdmin) {
-          //   requests.push(
-          //     dispatch(
-          //       fetchCompanyOverviewGPT(
-          //         `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
-          //       )
-          //     ).unwrap()
-          //   );
-          // }
-
-          // Wait for any background requests (safe even when array is empty)
-          const results = await Promise.allSettled(requests);
-          const hasSuccess = results.some((r) => r.status === "fulfilled");
+      // GPT-based key findings disabled temporarily per request.
+      // if (isAdmin) {
+      //   requests.push(
+      //     dispatch(
+      //       fetchCompanyOverviewGPT(
+      //         `${baseURL}/company_report/key_findings_gpt/?company_id=${companyGlobalSearchId}&year=${new Date().getFullYear()}`
+      //       )
+      //     ).unwrap()
+      //   );
+      // }
 
           // 4. Fetch Shareholder Meeting Results data
           dispatch(

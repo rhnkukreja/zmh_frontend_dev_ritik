@@ -489,24 +489,99 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                 </div>
+              </div>
 
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Investor Type <span className="text-red-500">*</span>
+                </FormCheck.Label>
+                <Controller
+                  name="investor_type"
+                  control={control}
+                  defaultValue=""
+                  rules={{ required: "Type of Investor is required" }}
+                  render={({ field }) => (
+                    <TomSelect
+                      {...field}
+                      value={field.value?.toString() || ""}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                      }}
+                      options={{
+                        placeholder: "Select Investor Type",
+                      }}
+                      className="w-full text-left"
+                    >
+                      <option value="" disabled selected>
+                        Select Type
+                      </option>
+                      <option value="Investor">Investor</option>
+                      <option value="Proponent">Proponent</option>
+                    </TomSelect>
+                  )}
+                />
+
+                {errors.investor_type && (
+                  <Error className="max-w-[100%] ">
+                    {errors.investor_type.message}
+                  </Error>
+                )}
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Whale Wisdom Filer Id
+                </FormCheck.Label>
+                <Controller
+                  name="whale_wisdom_filer_id"
+                  control={control}
+                  rules={{}}
+                  render={({ field }) => (
+                    <FormInput
+                      placeholder="Enter Whale Wisdom Filer Id"
+                      {...field}
+                    />
+                  )}
+                />
+                {errors.whale_wisdom_filer_id && (
+                  <Error className="max-w-[100%] ">
+                    {errors.whale_wisdom_filer_id.message}
+                  </Error>
+                )}
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  Contact Email
+                </FormCheck.Label>
+                <Controller
+                  name="contact_email"
+                  control={control}
+                  render={({ field }) => (
+                    <FormInput
+                      placeholder="Enter Contact Email"
+                      type="email"
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+
+              {/* Proxy Advisory Influence */}
                 <div className="w-full">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Contact Email
-                  </FormCheck.Label>
-                  <Controller
-                    name="contact_email"
-                    control={control}
-                    render={({ field }) => (
-                      <FormInput placeholder="Enter Contact Email" type="email" {...field} />
-                    )}
-                  />
-                </div>
-
-                <div className="w-full sm:col-span-2">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proxy Advisory Influence
-                  </FormCheck.Label>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <FormCheck.Label className="font-semibold text-gray-800 mb-0">
+                      Proxy Advisory Influence
+                    </FormCheck.Label>
+                    {/* <a
+                      href="https://adviserinfo.sec.gov/firm"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline text-sm"
+                    >
+                      Click here to know about IAPD
+                    </a> */}
+                  </div>
                   <div className="flex flex-col gap-2">
                     {[
                       "Internal",
@@ -557,7 +632,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                 </div>
-              </div>
 
               {(isScrapingPdf || scrapedPdfUrl || scrapedBrochurePageUrl || scrapeMessage) && (
                 <div className="mt-8 pt-6 border-t border-slate-200">

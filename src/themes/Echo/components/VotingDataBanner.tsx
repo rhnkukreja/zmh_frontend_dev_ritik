@@ -41,15 +41,13 @@ const VotingDataBanner = () => {
     }
   };
 
-  // Fetch notifications on mount if none exist yet (avoid redundant calls)
+  // Fetch notifications on mount if not already initialized
   useEffect(() => {
-    if ((notifications || []).length === 0 && !loading) {
-      // Use the unconditional fetch on mount to ensure initial population.
-      // fetchNotificationsOnce may be blocked if `initialized` was previously set,
-      // so fall back to fetchNotifications here.
+    if (!initialized) {
       dispatch(fetchNotifications());
     }
-  }, [dispatch, notifications, loading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-dismiss after 3 seconds if not manually opened
   useEffect(() => {
@@ -116,7 +114,7 @@ const VotingDataBanner = () => {
             <div className="flex items-start gap-4">
               <div className="flex-1 space-y-2">
                 <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200">
-                  Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>State Street</strong>, <strong>Dimensional</strong>, and <strong>40+ more institutions</strong>.
+                  Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>Vanguard</strong>, <strong>State Street</strong>, and <strong>40+ more institutions</strong>.
                 </p>
 
                 {/* Notifications list (each row) */}
