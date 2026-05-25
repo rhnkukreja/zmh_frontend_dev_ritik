@@ -51,6 +51,7 @@ export const proxyContestAIService = {
     company_id?: number[];
     iss_support?: string;
     gl_support?: string;
+    investor_support_activist?: boolean;
     vr_page?: number;
     vr_page_size?: number;
   }) => {

@@ -13,7 +13,7 @@ interface FiltersSidebarProps {
   selectedInstIds: number[];
   selectedCompanyIds: number[];
   /* overview only */
-  selectedVotes: string[];
+  selectedInvestorSupport: boolean;
   /* detailed only */
   selectedActivists: string[];
   selectedIss: string | null;
@@ -22,7 +22,7 @@ interface FiltersSidebarProps {
   toggleYear: (y: string) => void;
   toggleInst: (id: number) => void;
   toggleCompany: (id: number) => void;
-  toggleVote: (v: string) => void;
+  toggleInvestorSupport: () => void;
   toggleActivist: (n: string) => void;
   toggleIss: (v: string) => void;
   toggleGl: (v: string) => void;
@@ -36,14 +36,14 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   selectedYears,
   selectedInstIds,
   selectedCompanyIds,
-  selectedVotes,
+  selectedInvestorSupport,
   selectedActivists,
   selectedIss,
   selectedGl,
   toggleYear,
   toggleInst,
   toggleCompany,
-  toggleVote,
+  toggleInvestorSupport,
   toggleActivist,
   toggleIss,
   toggleGl,
@@ -59,7 +59,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
     selectedYears.length > 0 ||
     selectedInstIds.length > 0 ||
     selectedCompanyIds.length > 0 ||
-    selectedVotes.length > 0 ||
+    selectedInvestorSupport ||
     selectedActivists.length > 0 ||
     !!selectedIss ||
     !!selectedGl;
@@ -154,7 +154,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                     {displayed.length > 0 ? displayed.map((c: any) => {
                       const isSel = selectedCompanyIds.includes(c.company_id);
                       return (
-                        <button key={c.company_id} onClick={() => toggleCompany(c.company_id)}
+                        <button key={c.company_id} onClick={() => { toggleCompany(c.company_id); setCompanySearch(""); }}
                           className={clsx("w-full flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left gap-2",
                             isSel ? "bg-primary/10 text-primary font-semibold border border-primary/30" : "hover:bg-slate-50 text-slate-700"
                           )}
@@ -288,7 +288,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                     {displayedInst.length > 0 ? displayedInst.map((inst: any) => {
                       const isSel = selectedInstIds.includes(inst.institution_id);
                       return (
-                        <button key={inst.institution_id} onClick={() => toggleInst(inst.institution_id)}
+                        <button key={inst.institution_id} onClick={() => { toggleInst(inst.institution_id); setInstitutionSearch(""); }}
                           className={clsx("w-full flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left gap-2",
                             isSel ? "bg-primary/10 text-primary font-semibold border border-primary/30" : "hover:bg-slate-50 text-slate-700"
                           )}
@@ -341,7 +341,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                     {displayed.length > 0 ? displayed.map((c: any) => {
                       const isSel = selectedCompanyIds.includes(c.company_id);
                       return (
-                        <button key={c.company_id} onClick={() => toggleCompany(c.company_id)}
+                        <button key={c.company_id} onClick={() => { toggleCompany(c.company_id); setCompanySearch(""); }}
                           className={clsx("w-full flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left gap-2",
                             isSel ? "bg-primary/10 text-primary font-semibold border border-primary/30" : "hover:bg-slate-50 text-slate-700"
                           )}
@@ -367,24 +367,30 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                   </div>
                 </div>
               );
-            })()}
+            })()} 
 
-            {/* VOTES — Overview only */}
-            {activeTab === "overview" && filtersData?.votes?.length > 0 && (
+            {/* INVESTOR SUPPORT ACTIVIST — Overview only */}
+            {activeTab === "overview" && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Vote</h4>
-                <div className="flex flex-wrap gap-2">
-                  {filtersData.votes.map((vote: string) => {
-                    const isSel = selectedVotes.includes(vote);
-                    return (
-                      <button key={vote} onClick={() => toggleVote(vote)}
-                        className={clsx("px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-150",
-                          isSel ? "bg-primary text-white border-primary" : "bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary"
-                        )}
-                      >{vote}</button>
-                    );
-                  })}
-                </div>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Investor Support</h4>
+                <button
+                  onClick={toggleInvestorSupport}
+                  className={clsx(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                    selectedInvestorSupport ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
+                  )}
+                >
+                  <span>Investor supported activist</span>
+                  <span className={clsx(
+                    "w-8 h-4 rounded-full flex items-center transition-all flex-none",
+                    selectedInvestorSupport ? "bg-white/30" : "bg-slate-200"
+                  )}>
+                    <span className={clsx(
+                      "w-3 h-3 rounded-full shadow transition-transform mx-0.5",
+                      selectedInvestorSupport ? "bg-white translate-x-4" : "bg-white translate-x-0"
+                    )} />
+                  </span>
+                </button>
               </div>
             )}
 
