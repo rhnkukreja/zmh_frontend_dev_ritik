@@ -493,65 +493,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
 
               <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Investor Type <span className="text-red-500">*</span>
-                </FormCheck.Label>
-                <Controller
-                  name="investor_type"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Type of Investor is required" }}
-                  render={({ field }) => (
-                    <TomSelect
-                      {...field}
-                      value={field.value?.toString() || ""}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                      }}
-                      options={{
-                        placeholder: "Select Investor Type",
-                      }}
-                      className="w-full text-left"
-                    >
-                      <option value="" disabled selected>
-                        Select Type
-                      </option>
-                      <option value="Investor">Investor</option>
-                      <option value="Proponent">Proponent</option>
-                    </TomSelect>
-                  )}
-                />
-
-                {errors.investor_type && (
-                  <Error className="max-w-[100%] ">
-                    {errors.investor_type.message}
-                  </Error>
-                )}
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Whale Wisdom Filer Id
-                </FormCheck.Label>
-                <Controller
-                  name="whale_wisdom_filer_id"
-                  control={control}
-                  rules={{}}
-                  render={({ field }) => (
-                    <FormInput
-                      placeholder="Enter Whale Wisdom Filer Id"
-                      {...field}
-                    />
-                  )}
-                />
-                {errors.whale_wisdom_filer_id && (
-                  <Error className="max-w-[100%] ">
-                    {errors.whale_wisdom_filer_id.message}
-                  </Error>
-                )}
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Contact Email
                 </FormCheck.Label>
                 <Controller
@@ -567,71 +508,70 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 />
               </div>
 
-              {/* Proxy Advisory Influence */}
-                <div className="w-full">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <FormCheck.Label className="font-semibold text-gray-800 mb-0">
-                      Proxy Advisory Influence
-                    </FormCheck.Label>
-                    {/* <a
-                      href="https://adviserinfo.sec.gov/firm"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline text-sm"
-                    >
-                      Click here to know about IAPD
-                    </a> */}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {[
-                      "Internal",
-                      "ISS",
-                      "GL",
-                      "Typically does not vote proxies",
-                    ].map((option) => (
-                      <FormCheck key={option} className="flex items-center gap-2">
-                        <FormCheck.Input
-                          id={`proxy_${option}`}
-                          type="checkbox"
-                          checked={proxyAdvisoryOptions.includes(option)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
-                            } else {
-                              setProxyAdvisoryOptions(
-                                proxyAdvisoryOptions.filter((item) => item !== option)
-                              );
-                            }
-                          }}
-                        />
-                        <FormCheck.Label htmlFor={`proxy_${option}`}>{option}</FormCheck.Label>
-                      </FormCheck>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="w-full">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    UN PRI Signatory
+              <div className="w-full">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <FormCheck.Label className="font-semibold text-gray-800 mb-0">
+                    Proxy Advisory Influence
                   </FormCheck.Label>
-                  <Controller
-                    name="unpri_signatory"
-                    control={control}
-                    render={({ field }) => (
-                      <FormCheck className="flex items-center">
-                        <FormCheck.Input
-                          id="unpri_signatory"
-                          type="checkbox"
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
-                        />
-                        <FormCheck.Label htmlFor="unpri_signatory" className="ml-2">
-                          Yes
-                        </FormCheck.Label>
-                      </FormCheck>
-                    )}
-                  />
+                  {/* <a
+                    href="https://adviserinfo.sec.gov/firm"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline text-sm"
+                  >
+                    Click here to know about IAPD
+                  </a> */}
                 </div>
+                <div className="flex flex-col gap-2">
+                  {[
+                    "Internal",
+                    "ISS",
+                    "GL",
+                    "Typically does not vote proxies",
+                  ].map((option) => (
+                    <FormCheck key={option} className="flex items-center gap-2">
+                      <FormCheck.Input
+                        id={`proxy_${option}`}
+                        type="checkbox"
+                        checked={proxyAdvisoryOptions.includes(option)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
+                          } else {
+                            setProxyAdvisoryOptions(
+                              proxyAdvisoryOptions.filter((item) => item !== option)
+                            );
+                          }
+                        }}
+                      />
+                      <FormCheck.Label htmlFor={`proxy_${option}`}>{option}</FormCheck.Label>
+                    </FormCheck>
+                  ))}
+                </div>
+              </div>
+
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  UN PRI Signatory
+                </FormCheck.Label>
+                <Controller
+                  name="unpri_signatory"
+                  control={control}
+                  render={({ field }) => (
+                    <FormCheck className="flex items-center">
+                      <FormCheck.Input
+                        id="unpri_signatory"
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                      <FormCheck.Label htmlFor="unpri_signatory" className="ml-2">
+                        Yes
+                      </FormCheck.Label>
+                    </FormCheck>
+                  )}
+                />
+              </div>
 
               {(isScrapingPdf || scrapedPdfUrl || scrapedBrochurePageUrl || scrapeMessage) && (
                 <div className="mt-8 pt-6 border-t border-slate-200">
