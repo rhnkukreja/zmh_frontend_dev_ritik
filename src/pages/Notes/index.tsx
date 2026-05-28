@@ -28,7 +28,9 @@ const Notes: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "institution" | "other" | "company"
   >("institution");
+  const { user } = useAppSelector((state) => state.authentiction);
   const { selectedFolder } = useAppSelector((state) => state.notes);
+  const isCorporateUser = user?.user_role?.toLowerCase() === "corporate";
   const [companyName, setCompanyName] = useState<string>("");
   const [institutionName, setInstitutionName] = useState<string>("");
   const [selectedInstitution, setSelectedInstitution] = useState<string>("");
@@ -40,6 +42,10 @@ const Notes: React.FC = () => {
     (state) => state.notes
   );
   const handleTabSwitch = (activeTab: "institution" | "other" | "company") => {
+    if (isCorporateUser && activeTab !== "institution") {
+      return;
+    }
+
     setActiveTab(activeTab);
     
     // Clear selections when switching tabs to allow auto-selection
@@ -93,6 +99,11 @@ const Notes: React.FC = () => {
     }
   };
   useEffect(() => {
+    if (isCorporateUser && activeTab !== "institution") {
+      setActiveTab("institution");
+      return;
+    }
+
     dispatch(setSelectedGroup(null));
     // Fetch hierarchy data on mount based on active tab
     if (activeTab === "institution") {
@@ -100,41 +111,32 @@ const Notes: React.FC = () => {
     } else if (activeTab === "company") {
       dispatch(fetchCompanyHierarchyNotes());
     }
-  }, [dispatch, activeTab]);
+  }, [dispatch, activeTab, isCorporateUser]);
+
+  const visibleTabs = isCorporateUser
+    ? ["institution" as const]
+    : (["institution", "company", "other"] as const);
   return (
     <div className="container m-auto h-[calc(100vh-70px)] flex flex-col my-[-35px] pb-[30px]">
       <div className="w-full flex justify-between px-4 py-6 bg-white dark:bg-darkmode-800">
         <div className="flex gap-4">
-          <button
-            className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-              activeTab === "institution"
-                ? "bg-primary text-white shadow"
-                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-            }`}
-            onClick={() => handleTabSwitch("institution")}
-          >
-            Institution
-          </button>
-          <button
-            className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-              activeTab === "company"
-                ? "bg-primary text-white shadow"
-                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-            }`}
-            onClick={() => handleTabSwitch("company")}
-          >
-            Company
-          </button>
-          <button
-            className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-              activeTab === "other"
-                ? "bg-primary text-white shadow"
-                : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-            }`}
-            onClick={() => handleTabSwitch("other")}
-          >
-            Other
-          </button>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab}
+              className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                activeTab === tab
+                  ? "bg-primary text-white shadow"
+                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+              }`}
+              onClick={() => handleTabSwitch(tab)}
+            >
+              {tab === "institution"
+                ? "Institution"
+                : tab === "company"
+                  ? "Company"
+                  : "Other"}
+            </button>
+          ))}
         </div>
         {activeTab === "institution" || activeTab === "company" ? (
           <button

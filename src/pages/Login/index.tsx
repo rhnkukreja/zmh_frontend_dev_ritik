@@ -87,7 +87,7 @@ const Main: React.FC = () => {
           })
         );
         // toast.success("Logged In Successfully!");
-        
+
         // Fetch complete finnhub data including sec_filing via saveSearch API
         try {
           const saveSearchResponse = await commonService.saveSearches({
@@ -269,7 +269,7 @@ const Main: React.FC = () => {
                         className="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3"
                         type="submit"
                         disabled={loading}
-                        // disabled
+                      // disabled
                       >
                         {loading && (
                           <Lucide
@@ -458,6 +458,7 @@ const Main: React.FC = () => {
         </div>
       </div>
       <div className="fixed container grid w-screen inset-0 h-screen grid-cols-12 lg:max-w-[1550px] 2xl:max-w-[1750px] pl-14 pr-12 xl:px-24">
+        {/* <div className="absolute inset-0 z-10 pointer-events-none bg-transparent bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[length:24px_24px]" /> */}
         <div
           className={clsx([
             "relative h-screen col-span-12 lg:col-span-5 2xl:col-span-4 z-20",
@@ -469,9 +470,10 @@ const Main: React.FC = () => {
           className={clsx([
             "h-full col-span-7 2xl:col-span-8 lg:relative",
             "before:content-[''] before:absolute before:lg:-ml-10 before:left-0 before:inset-y-0 before:bg-gradient-to-b before:from-theme-1 before:to-theme-2 before:w-screen before:lg:w-[800%]",
-            "after:content-[''] after:absolute after:inset-y-0 after:left-0 after:w-screen after:lg:w-[800%] after:bg-texture-white after:bg-fixed after:bg-center after:lg:bg-[25rem_-25rem] after:bg-no-repeat",
+            "after:content-[''] after:absolute after:inset-y-0 after:left-0 after:w-screen after:lg:w-[800%] after:bg-transparent after:bg-[linear-gradient(to_right,#80808030_1px,transparent_1px),linear-gradient(to_bottom,#80808030_1px,transparent_1px)] after:bg-[length:34px_34px] after:bg-fixed after:bg-center after:bg-repeat after:pointer-events-none",
           ])}
         >
+          {/* <div className="absolute inset-0 z-10 h-full w-full pointer-events-none bg-transparent bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[length:24px_24px]" /> */}
           <div className="sticky top-0 z-10 flex-col justify-center hidden h-screen ml-16 lg:flex xl:ml-28 2xl:ml-36">
             <CompanyAdvertisement />
           </div>

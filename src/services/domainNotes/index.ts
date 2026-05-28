@@ -4,13 +4,14 @@ import {
   EngagementFormData,
   EngagementQuestions,
 } from "@/types/engagementQuestions";
+import { decryptNotesDeep, encryptNotesField } from "@/utils/notesCrypto";
 
 class DomainNotesService {
   public async getDomainNotes(url: string): Promise<{
     results: any[];
   }> {
     const response = await axiosInstance.get(url);
-    const results = response.data;
+    const results = decryptNotesDeep(response.data);
     console.log("response.data", results)
     return {
       results,
@@ -20,8 +21,9 @@ class DomainNotesService {
   public async addNewNote(data: Partial<DomainNote>): Promise<{
     results: DomainNote;
   }> {
-    const response = await axiosInstance.post(`/user/domain_notes/`, data);
-    const results = response.data;
+    const encryptedPayload = encryptNotesField(data);
+    const response = await axiosInstance.post(`/user/domain_notes/`, encryptedPayload);
+    const results = decryptNotesDeep(response.data);
     return {
       results,
     };
@@ -63,7 +65,7 @@ class DomainNotesService {
     results: any[];
   }> {
     const response = await axiosInstance.get(`/user/get_domain_notes/?filter=institution`);
-    const results = response.data;
+    const results = decryptNotesDeep(response.data);
     return {
       results,
     };
@@ -73,7 +75,7 @@ class DomainNotesService {
     results: any[];
   }> {
     const response = await axiosInstance.get(`/user/get_domain_notes/?filter=company`);
-    const results = response.data;
+    const results = decryptNotesDeep(response.data);
     return {
       results,
     };
@@ -101,8 +103,9 @@ class DomainNotesService {
   ): Promise<{
     results: DomainNote;
   }> {
-    const response = await axiosInstance.put(`/user/domain_notes/${id}/`, data);
-    const results = response.data;
+    const encryptedPayload = encryptNotesField(data);
+    const response = await axiosInstance.put(`/user/domain_notes/${id}/`, encryptedPayload);
+    const results = decryptNotesDeep(response.data);
     return {
       results,
     };
