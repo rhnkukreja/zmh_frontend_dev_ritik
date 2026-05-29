@@ -9,17 +9,11 @@ const CompanyAdvertisement = () => {
     <div className=" text-white">
       <h1 className="text-3xl font-bold mb-4 tracking-wide">AI-Powered Engagement Insights</h1>
 
-      <div className="mt-4">
-        <div className="flex items-start gap-4">
-          <div className="text-5xl leading-none text-white/80 -mt-2">“</div>
-          <div className="text-[15px] italic text-white/95">
-            <span className="font-semibold">ZMH Advisors’ AI-powered Dashboard</span>
-            <span>
-              {' '}
-              transforms what used to take days into minutes — bringing together an unmatched breadth of ownership, voting, and governance data in one place. It surfaces the signals that matter, giving governance professionals the speed, clarity, and insight needed to anticipate investor behavior and act with confidence on virtually any governance issue.
-            </span>
-          </div>
-        </div>
+      <div className="mt-4 pl-5 border-l-2 border-white/30">
+        <p className="text-[15px] italic text-white/90 leading-relaxed">
+          <span className="font-semibold not-italic text-white">ZMH Advisors’ AI-powered Dashboard</span>
+          {' '}transforms what used to take days into minutes — bringing together an unmatched breadth of ownership, voting, and governance data in one place. It surfaces the signals that matter, giving governance professionals the speed, clarity, and insight needed to anticipate investor behavior and act with confidence on virtually any governance issue.
+        </p>
       </div>
 
       {/* <div className="mt-8">
