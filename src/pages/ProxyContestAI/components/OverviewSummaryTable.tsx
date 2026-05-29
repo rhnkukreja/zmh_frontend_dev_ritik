@@ -10,24 +10,17 @@ type RowDef =
   | { type: "spacer" };
 
 const ROW_DEFS: RowDef[] = [
-  { key: "total_campaigns",                    label: "Total no. of campaigns",                              render: (v: any) => v ?? "-" },
+  { key: "total_campaigns",                         label: "Total no. of campaigns",                              render: (v: any) => v ?? "-" },
+  { key: "campaigns_investor_supported_activist",   label: "No. of campaigns where investor supported activist",  render: (v: any) => v ?? "-" },
   { type: "spacer" },
-  { key: "management_nominees",                label: "No. of management nominees",                         render: (v: any) => v ?? "-" },
-  { key: "management_nominees_withheld_or_against", label: "Management nominees withheld or voted against",  render: (v: any) => v ?? "-" },
+  { key: "management_nominees",                     label: "No. of management nominees",                          render: (v: any) => v ?? "-" },
+  { key: "management_nominees_withheld_or_against", label: "Management nominees withheld or voted against",       render: (v: any) => v ?? "-" },
   { type: "spacer" },
-  { key: "activist_nominees",                  label: "No. of activist nominees",                           render: (v: any) => v ?? "-" },
-  { key: "activist_nominees_supported",        label: "Activist nominees supported",                        render: (v: any) => v ?? "-" },
+  { key: "activist_nominees",                       label: "No. of activist nominees",                            render: (v: any) => v ?? "-" },
+  { key: "activist_nominees_supported",             label: "Activist nominees supported",                         render: (v: any) => v ?? "-" },
   { type: "spacer" },
-  {
-    key: "iss_advisory_alignment",
-    label: "No. of campaigns where ISS supported activist (Investor Support / ISS Support)",
-    render: (v: any) => v ? `${v.ratio} (${v.alignment_percentage})` : "-",
-  },
-  {
-    key: "gl_advisory_alignment",
-    label: "No. of campaigns where GL supported activist (Investor Support / GL Support)",
-    render: (v: any) => v ? `${v.ratio} (${v.alignment_percentage})` : "-",
-  },
+  { key: "iss_campaigns_supporting_activist",       label: "No. of campaigns where ISS supported activist",       render: (v: any) => v ?? "-" },
+  { key: "gl_campaigns_supporting_activist",        label: "No. of campaigns where GL supported activist",        render: (v: any) => v ?? "-" },
 ];
 
 const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData, loading }) => {

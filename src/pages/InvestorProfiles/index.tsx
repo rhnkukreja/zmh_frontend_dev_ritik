@@ -86,6 +86,7 @@ function Main() {
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [pdfTitle, setPdfTitle] = useState<string>("");
+  const [selectedProfileIds, setSelectedProfileIds] = useState<Set<number>>(new Set());
   const isInitialInstitutionSync = useRef(true);
   const { user } = useAppSelector((state) => state.authentiction);
 
@@ -293,6 +294,32 @@ function Main() {
     }
   };
 
+  const toggleProfileSelection = (profileId: number) => {
+    setSelectedProfileIds(prev => {
+      const next = new Set(prev);
+      if (next.has(profileId)) {
+        next.delete(profileId);
+      } else {
+        next.add(profileId);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedProfileIds(new Set());
+
+  const downloadProfiles = (format: 'pdf' | 'document') => {
+    if (selectedProfileIds.size === 0) return;
+    const ids = Array.from(selectedProfileIds);
+    const url = `https://api.zmhadvisors.com/api/download_multiple_investor_profiles/?profile_ids=[${ids.join(', ')}]&format_type=${format}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', '');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
     const updatedFilters: InvestorProfileFilter = { ...filters };
     if (Array.isArray(updatedFilters[removeKey])) {
@@ -330,7 +357,7 @@ function Main() {
               <div className="flex items-center h-[64px]">
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap justify-end">
                 <a
                   className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
                   onClick={handleOverboardingPoliciesClick}
@@ -373,43 +400,42 @@ function Main() {
                     onSelectionChange={setSelectedInstitutions}
                   />
 
-                  <div className="hover:bg-slate-50">
-                    <Button onClick={handleClearAllFilter}>
-                      <Tippy
-                        content="Clear Filters"
-                        options={{ theme: "light" }}
-                      >
-                        <FilterX
-                          size={17}
-                          strokeWidth={1}
-                          className="text-slate-500 cursor-pointer"
-                        />
-                      </Tippy>
-                      {/* <span className="text-slate-500">Clear Filters</span> */}
-                    </Button>
-                  </div>
-
-                  <div className="hover:bg-slate-50 ml-2">
-                    <Button onClick={saveSearch}>
-                      <Tippy
-                        content="Save Searches"
-                        options={{ theme: "light" }}
-                      >
-                        <SaveAll
-                          size={17}
-                          strokeWidth={1}
-                          className="text-slate-500 cursor-pointer	"
-                        />
-                      </Tippy>
-                    </Button>
-                  </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
+                <div className="flex flex-row gap-x-3 gap-y-2 ml-auto items-center">
                   {user?.saved_search?.["Investor Profile"] !== undefined && (
-                    <div className="hover:bg-slate-50 ">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
-                      </Button>
+                    <div className="hover:bg-slate-50">
+                      <Button onClick={getSavedSearches}>Previous Search</Button>
+                    </div>
+                  )}
+                  {selectedProfileIds.size > 0 && (
+                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-5 h-5 flex items-center justify-center bg-primary text-white text-[11px] font-bold rounded-full">
+                          {selectedProfileIds.size}
+                        </span>
+                        <span className="text-sm font-medium text-slate-600 whitespace-nowrap">selected</span>
+                      </div>
+                      <button
+                        onClick={clearSelection}
+                        className="text-xs text-slate-400 hover:text-red-500 font-medium transition-colors whitespace-nowrap"
+                      >
+                        Clear
+                      </button>
+                      <div className="w-px h-5 bg-slate-200" />
+                      <button
+                        onClick={() => downloadProfiles('pdf')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all whitespace-nowrap"
+                      >
+                        <Lucide icon="FileDown" className="w-4 h-4" />
+                        Download PDF
+                      </button>
+                      <button
+                        onClick={() => downloadProfiles('document')}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-md transition-all whitespace-nowrap"
+                      >
+                        <Lucide icon="FileText" className="w-4 h-4" />
+                        Download DOC
+                      </button>
                     </div>
                   )}
                 </div>
@@ -485,21 +511,34 @@ function Main() {
                           className="intro-x"
                         >
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
-                            <span
-                              onClick={() => {
-                                if (profile.investor_profile_id) {
-                                  gotoDetailPage(profile.investor_profile_id);
-                                }
-                              }}
-                              className={`font-semibold text-[0.94rem] transition-colors ${
-                                profile.investor_profile_id
-                                  ? "cursor-pointer hover:text-primary"
-                                  : "cursor-default"
-                              }`}
-                            >
-                              {profile.institution || profile.institution_name}
-                              {profile.region?.toUpperCase() === "EMEA" ? ` (${profile?.region})` : ""}
+                            <div className="flex items-center gap-2.5">
+                              {profile.investor_profile_id ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProfileIds.has(profile.investor_profile_id)}
+                                  onChange={() => toggleProfileSelection(profile.investor_profile_id!)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 flex-none rounded border-slate-300 text-primary accent-primary cursor-pointer"
+                                />
+                              ) : (
+                                <div className="w-4 h-4 flex-none" />
+                              )}
+                              <span
+                                onClick={() => {
+                                  if (profile.investor_profile_id) {
+                                    gotoDetailPage(profile.investor_profile_id);
+                                  }
+                                }}
+                                className={`font-semibold text-[0.94rem] transition-colors ${
+                                  profile.investor_profile_id
+                                    ? "cursor-pointer hover:text-primary"
+                                    : "cursor-default"
+                                }`}
+                              >
+                                {profile.institution || profile.institution_name}
+                                {profile.region?.toUpperCase() === "EMEA" ? ` (${profile?.region})` : ""}
                             </span>
+                            </div>
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md">
                             <span className="text-slate-600 text-sm font-medium">
