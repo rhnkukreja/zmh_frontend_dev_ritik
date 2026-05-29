@@ -3,10 +3,11 @@ import { Menu, Popover, Tab } from "@/components/Base/Headless";
 import { FormCheck, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { batch } from "react-redux";
 import {
   fetchInvestersProfiles,
   resetFilter,
@@ -45,6 +46,12 @@ import { MdOutlineClear } from "react-icons/md";
 interface InvestorProfileFilter {
   region: string[];
 }
+
+interface SelectedInstitutionOption {
+  label: string;
+  value: string | number;
+}
+
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -67,6 +74,9 @@ function Main() {
   const [searchTerms, setSearchTerms] = useState<string[]>(
     filters?.institution_name?.length > 0 ? filters?.institution_name : []
   );
+  const [selectedInstitutions, setSelectedInstitutions] = useState<
+    SelectedInstitutionOption[]
+  >([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [votingGuidelinesModalOpen, setVotingGuidelinesModalOpen] = useState<boolean>(false);
@@ -76,6 +86,7 @@ function Main() {
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [pdfTitle, setPdfTitle] = useState<string>("");
+  const isInitialInstitutionSync = useRef(true);
   const { user } = useAppSelector((state) => state.authentiction);
 
   const { handleSubmit, control, reset, setValue, watch } =
@@ -97,8 +108,25 @@ function Main() {
       page
     );
 
+    const debugPayload: Record<string, string> = {};
+    Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          debugPayload[key] = JSON.stringify(value);
+        }
+      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
+        debugPayload[key] = String(value);
+      }
+    });
+
+    console.log("[InvestorProfiles] backend request payload", {
+      page,
+      payload: debugPayload,
+      dynamicURL,
+    });
+
     dispatch(fetchInvestersProfiles(dynamicURL));
-    const { institution_name, ...restFilters } = filters;
+    const { institution_name, institution_id, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
     
     // Include institution_name in filter chips with proper formatting
@@ -118,15 +146,45 @@ function Main() {
 
   const handleClearAllFilter = () => {
     setSearchTerms([]);
+    setSelectedInstitutions([]);
     reset();
     resetFormValues();
     dispatch(resetFilter());
     dispatch(resetPage());
   };
 
-  const handleSearch = (searchTerms: string[]) => {
-    dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+  const handleSearch = (_searchTerms: string[]) => {
+    // Intentionally empty.
+    // Selected option objects drive the actual backend filter update so
+    // institution_name and institution_id are applied together.
   };
+
+  useEffect(() => {
+    if (isInitialInstitutionSync.current) {
+      isInitialInstitutionSync.current = false;
+      return;
+    }
+
+    const institutionNames = selectedInstitutions
+      .map((item) => String(item?.label).trim())
+      .filter((value) => value.length > 0);
+
+    const institutionIds = selectedInstitutions
+      .map((item) => Number(item?.value))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    console.log("[InvestorProfiles] institution selection", {
+      selectedInstitutions,
+      institutionNames,
+      institutionIds,
+    });
+
+    batch(() => {
+      dispatch(setFilter({ key: "institution_name", value: institutionNames }));
+      dispatch(setFilter({ key: "institution_id", value: institutionIds }));
+      dispatch(resetPage());
+    });
+  }, [dispatch, selectedInstitutions]);
 
   const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
     Object.entries(investorProfileFilter).forEach(([key, value]) => {
@@ -206,6 +264,7 @@ function Main() {
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Investor Profile"]?.institution]);
+    setSelectedInstitutions([]);
     dispatch(
       setFilter({
         key: "region",
@@ -251,6 +310,8 @@ function Main() {
           ? updatedFilters[removeKey]
           : []
       );
+      setSelectedInstitutions([]);
+      dispatch(setFilter({ key: "institution_id", value: [] }));
     }
 
     setValue(removeKey, updatedFilters[removeKey]);
@@ -304,10 +365,12 @@ function Main() {
                     setSearchTerms={setSearchTerms}
                     url="/investor_with_voting_guidelines/"
                     getOptionKey="institution_name"
+                    getValueKey="id"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
                     showPills={false}
                     searchPoponents={true}
+                    onSelectionChange={setSelectedInstitutions}
                   />
 
                   <div className="hover:bg-slate-50">
@@ -435,6 +498,7 @@ function Main() {
                               }`}
                             >
                               {profile.institution || profile.institution_name}
+                              {profile.region?.toUpperCase() === "EMEA" ? ` (${profile?.region})` : ""}
                             </span>
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md">
