@@ -123,11 +123,11 @@ function Main() {
       }
     });
 
-    console.log("[InvestorProfiles] backend request payload", {
-      page,
-      payload: debugPayload,
-      dynamicURL,
-    });
+    // console.log("[InvestorProfiles] backend request payload", {
+    //   page,
+    //   payload: debugPayload,
+    //   dynamicURL,
+    // });
 
     dispatch(fetchInvestersProfiles(dynamicURL));
     const { institution_name, institution_id, ...restFilters } = filters;
@@ -177,11 +177,11 @@ function Main() {
       .map((item) => Number(item?.value))
       .filter((value) => Number.isFinite(value) && value > 0);
 
-    console.log("[InvestorProfiles] institution selection", {
-      selectedInstitutions,
-      institutionNames,
-      institutionIds,
-    });
+    // console.log("[InvestorProfiles] institution selection", {
+    //   selectedInstitutions,
+    //   institutionNames,
+    //   institutionIds,
+    // });
 
     batch(() => {
       dispatch(setFilter({ key: "institution_name", value: institutionNames }));
@@ -421,7 +421,7 @@ function Main() {
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/investor_with_voting_guidelines/"
-                    getOptionKey="institution_name"
+                    getOptionKey={["institution_name", "region"]}
                     getValueKey="id"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
@@ -832,7 +832,10 @@ function Main() {
                         ?.filter((p) => p.investor_profile_id && selectedProfileIds.has(p.investor_profile_id))
                         .map((p) => (
                           <li key={p.investor_profile_id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm">
-                            <div className="text-sm font-medium">{p.institution || p.institution_name || '—'}</div>
+                            <div className="text-sm font-medium">
+                              {p.institution || p.institution_name || '—'}
+                              {p.region && String(p.region).toUpperCase() === 'EMEA' ? ` (${p.region})` : ''}
+                            </div>
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => {
