@@ -321,13 +321,36 @@ function Main() {
       const response = await axiosInstance.get(endpoint, { responseType: 'blob' });
       const blob = response.data as Blob;
 
-      // try to extract filename from Content-Disposition
+      // Try Content-Disposition header first (works if backend exposes it via Access-Control-Expose-Headers)
       const disposition = (response.headers as any)["content-disposition"] || (response.headers as any)["Content-Disposition"];
-      let filename = `investor_profiles.${format === 'pdf' ? 'pdf' : 'docx'}`;
+      let filename: string | null = null;
       if (disposition) {
         const fileNameMatch = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/);
         if (fileNameMatch) {
           filename = decodeURIComponent(fileNameMatch[1] || fileNameMatch[2]);
+        }
+      }
+      // Build filename matching backend naming format
+      if (!filename) {
+        const now = new Date();
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const month = monthNames[now.getMonth()];
+        const day = now.getDate();
+        const year = now.getFullYear();
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        const dateStr = `${month} ${day}, ${year} _ ${hours}_${minutes} ${ampm}`;
+
+        if (ids.length === 1) {
+          const profile = investersProfile?.find((p: InvestersProfile) => p.investor_profile_id === ids[0]);
+          const name = profile ? (profile.institution || profile.institution_name || 'Investor Profile') : 'Investor Profile';
+          const ext = format === 'pdf' ? 'pdf' : 'docx';
+          filename = `${name} Investor Profile (${dateStr}).${ext}`;
+        } else {
+          const ext = format === 'pdf' ? 'pdf' : 'zip';
+          filename = `Investor Profiles (${dateStr}).${ext}`;
         }
       }
 
@@ -339,7 +362,6 @@ function Main() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(blobUrl);
-      toast.success('Download Successful');
     } catch (error) {
       console.error('Download failed', error);
       toast.error('Download failed');
@@ -639,6 +661,7 @@ function Main() {
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
                             <button
+                              disabled={!profile.investor_profile_id}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const id = profile.investor_profile_id;
@@ -650,10 +673,10 @@ function Main() {
                                   return s;
                                 });
                               }}
-                              className="p-1"
+                              className={`p-1 ${profile.investor_profile_id ? 'cursor-pointer' : 'cursor-not-allowed opacity-30'}`}
                               aria-label="Toggle download"
                             >
-                              <Lucide icon="FileDown" className={`w-4 h-4 stroke-[1.3] hover:text-primary ${selectedProfileIds.has(profile.investor_profile_id!) ? 'text-primary' : ''}`} />
+                              <Lucide icon="FileDown" className={`w-4 h-4 stroke-[1.3] ${profile.investor_profile_id && selectedProfileIds.has(profile.investor_profile_id) ? 'text-primary' : profile.investor_profile_id ? 'hover:text-primary' : ''}`} />
                             </button>
                           </Table.Td>
                         </Table.Tr>
