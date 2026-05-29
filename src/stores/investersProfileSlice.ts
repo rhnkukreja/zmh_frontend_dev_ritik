@@ -26,6 +26,7 @@ interface nvestersProfileSlice {
   filters: {
     region: string[];
     institution_name: string[];
+    institution_id: string[];
   };
 }
 
@@ -43,6 +44,7 @@ const initialState: nvestersProfileSlice = {
   filters: {
     region: [],
     institution_name: [],
+    institution_id: [],
   },
   count: 0
 
@@ -99,7 +101,7 @@ const investersProfileSlice = createSlice({
       state,
       action: PayloadAction<{
         key: keyof typeof initialState.filters;
-        value: string | string[];
+        value: string | string[] | number[];
       }>
     ) {
       state.filters[action.payload.key] = action.payload.value as any;

@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
 
-import _, { set } from "lodash";
+import _ from "lodash";
 import { axiosInstance } from "@/services";
 import { useAppDispatch } from "@/stores/hooks";
 
@@ -24,7 +24,12 @@ interface MultiSearchBarProps {
   searchPoponents?: boolean;
   fieldLabel?: string; // New prop for field label
   showPills?: boolean; // New prop to control pill display
+  onSelectionChange?: (
+    selected: Array<{ label: string; value: string | number }>
+  ) => void;
 }
+
+type SearchOption = string | { label: string; value: string | number };
 
 // type FetchedOptionType = {
 //   value: string;
@@ -49,10 +54,14 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   searchPoponents = false, // New prop to control the search popover
   fieldLabel, // New prop for field label
   showPills = true, // New prop to control pill display, default true for backward compatibility
+  onSelectionChange,
 }) => {
   const dispatch = useAppDispatch();
   const [searchValue, setSearchValue] = useState("");
-  const [options, setOptions] = useState<any[]>([]);
+  const [options, setOptions] = useState<SearchOption[]>([]);
+  const [selectedOptions, setSelectedOptions] = useState<
+    Array<{ label: string; value: string | number }>
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [msg, setMsg] = useState("");
@@ -95,8 +104,14 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
           return response.data?.map((item: any) => item) || [];
         }
         if (searchPoponents) {
-  
-          return response.data?.results?.map((item: any) => item.institution as string) || [];
+          return (
+            response.data?.results?.map((item: any) => ({
+              label: item[getOptionKey as string] ?? item.institution,
+              value: getValueKey
+                ? item[getValueKey as string]
+                : item[getOptionKey as string] ?? item.institution,
+            })) || []
+          );
         }
 
         else {
@@ -127,10 +142,29 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         setMsg("No results found for ");
       }
           
-      setOptions(Array.isArray(options) ? [...new Set(options)] : []);
+      if (Array.isArray(options)) {
+        const uniqueOptions = _.uniqBy(options as any[], (item: any) => {
+          if (typeof item === "string") {
+            return item;
+          }
+          return `${item?.label}-${item?.value}`;
+        });
+        setOptions(uniqueOptions as SearchOption[]);
+      } else {
+        setOptions([]);
+      }
     }, 900),
     [url]
   );
+
+  const normalizeOption = (
+    item: SearchOption
+  ): { label: string; value: string | number } => {
+    if (typeof item === "string") {
+      return { label: item, value: item };
+    }
+    return item;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (msg) setMsg("");
@@ -143,31 +177,40 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
     }
   };
 
-  const removeTerm = (term: string) => {
-    const newTerms = searchTerms.filter((institute) => institute !== term);
-    setOptions((prev) => [...new Set([...prev, term])]);
-    if (newTerms?.length === 0 && onSearchSelect) {
-      onSearchSelect();
-    }
-    setSearchTerms(newTerms);
+  const handleSearch = (item: SearchOption, isChecked: boolean) => {
+    const normalized = normalizeOption(item);
+    const label = normalized.label;
 
-    setIsOpen(false);
-  };
-
-  const handleSearch = (item: string, isChecked: boolean) => {
     if (isChecked === false) {
-      return removeTerm(item);
+      const newTerms = searchTerms.filter((institute) => institute !== label);
+      setOptions((prev) => [...prev, item]);
+      if (newTerms?.length === 0 && onSearchSelect) {
+        onSearchSelect();
+      }
+      setSearchTerms(newTerms);
+      setSelectedOptions((prev) => prev.filter((opt) => opt.label !== label));
+      setIsOpen(false);
+      return;
     } else {
       if (isRadioInput) {
-        const data = options?.find((x: any) => x?.name === item)?.id;
+        const compareValue = typeof item === "string" ? item : item.label;
+        const data = (options as any[])?.find((x: any) => x?.name === compareValue)?.id;
         onSearch([data]);
         // setSearchTerms([item]);
         setSearchValue("");
       } else {
         if (isSingle) {
-          setSearchTerms([item]);
+          setSearchTerms([label]);
+          setSelectedOptions([normalized]);
         } else {
-          setSearchTerms([...new Set([...searchTerms, item])]);
+          setSearchTerms([...new Set([...searchTerms, label])]);
+          setSelectedOptions((prev) => {
+            const exists = prev.some((opt) => opt.label === normalized.label);
+            if (exists) {
+              return prev;
+            }
+            return [...prev, normalized];
+          });
         }
 
         setSearchValue("");
@@ -179,6 +222,18 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
 
   useEffect(() => {
     onSearch([...searchTerms]);
+  }, [searchTerms]);
+
+  useEffect(() => {
+    if (onSelectionChange) {
+      onSelectionChange(selectedOptions);
+    }
+  }, [selectedOptions, onSelectionChange]);
+
+  useEffect(() => {
+    if (searchTerms.length === 0) {
+      setSelectedOptions([]);
+    }
   }, [searchTerms]);
 
   useEffect(() => {
@@ -252,6 +307,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                         <div className="flex flex-col gap-1 mt-3.5 max-h-[200px] overflow-y-auto">
                           {options?.length > 0 &&
                             options?.map((item: any, key: number) => {
+                              const normalizedItem = normalizeOption(item);
                               return (
                                 <div
                                   key={key}
@@ -267,7 +323,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                       <FormCheck.Input
                                         id={`checkbox-switch-${key}`}
                                         type="checkbox"
-                                        checked={searchTerms.includes(item)}
+                                        checked={searchTerms.includes(normalizedItem.label)}
                                         onChange={(e) => {
                                           handleSearch(item, e.target.checked);
                                         }}
@@ -276,7 +332,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
                                         htmlFor={`checkbox-switch-${key}`}
                                         className="cursor-pointer pl-2"
                                       >
-                                        <span>{item}</span>
+                                        <span>{normalizedItem.label}</span>
                                       </label>
                                     </FormCheck>
                                   )}
