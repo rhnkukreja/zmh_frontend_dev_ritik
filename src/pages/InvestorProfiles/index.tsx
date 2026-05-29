@@ -372,6 +372,17 @@ function Main() {
   };
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    if (removeKey === "institution_name") {
+      // Remove only the specific institution — useEffect on selectedInstitutions
+      // will sync institution_name + institution_id correctly for remaining items.
+      const updatedSelections = selectedInstitutions.filter(
+        (inst) => String(inst?.label).trim() !== removeValue
+      );
+      setSelectedInstitutions(updatedSelections);
+      setSearchTerms(updatedSelections.map((inst) => String(inst?.label).trim()));
+      return;
+    }
+
     const updatedFilters: InvestorProfileFilter = { ...filters };
     if (Array.isArray(updatedFilters[removeKey])) {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
@@ -379,18 +390,6 @@ function Main() {
       );
     } else if (updatedFilters[removeKey] === removeValue) {
       updatedFilters[removeKey] = "";
-    }
-
-    // Clear searchTerms if institution filter is being removed
-    if (removeKey === "institution_name") {
-      setSearchTerms(
-        Array.isArray(updatedFilters[removeKey])
-          ? updatedFilters[removeKey]
-          : []
-      );
-      setSelectedInstitutions([]);
-      // Keep both institution filters in sync when removing the name chip.
-      (updatedFilters as any).institution_id = [];
     }
 
     setValue(removeKey, updatedFilters[removeKey]);
@@ -451,7 +450,13 @@ function Main() {
                     searchPoponents={true}
                     onSelectionChange={setSelectedInstitutions}
                   />
-
+                  <div className="hover:bg-slate-50">
+                    <Button onClick={handleClearAllFilter}>
+                      <Tippy content="Clear Filters" options={{ theme: "light" }}>
+                        <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer" />
+                      </Tippy>
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex flex-row gap-x-3 gap-y-2 ml-auto items-center">
                   {/* {user?.saved_search?.["Investor Profile"] !== undefined && (
