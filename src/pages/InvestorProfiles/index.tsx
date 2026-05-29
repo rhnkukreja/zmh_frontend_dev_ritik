@@ -3,10 +3,11 @@ import { Menu, Popover, Tab } from "@/components/Base/Headless";
 import { FormCheck, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { batch } from "react-redux";
 import {
   fetchInvestersProfiles,
   resetFilter,
@@ -32,6 +33,7 @@ import { FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
+import { axiosInstance } from "@/services";
 import { setSavedSearch } from "@/stores/authenticationSlice";
 import PdfViewer from "@/components/PdfView";
 import { Controller, useForm } from "react-hook-form";
@@ -45,6 +47,12 @@ import { MdOutlineClear } from "react-icons/md";
 interface InvestorProfileFilter {
   region: string[];
 }
+
+interface SelectedInstitutionOption {
+  label: string;
+  value: string | number;
+}
+
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -67,6 +75,9 @@ function Main() {
   const [searchTerms, setSearchTerms] = useState<string[]>(
     filters?.institution_name?.length > 0 ? filters?.institution_name : []
   );
+  const [selectedInstitutions, setSelectedInstitutions] = useState<
+    SelectedInstitutionOption[]
+  >([]);
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [votingGuidelinesModalOpen, setVotingGuidelinesModalOpen] = useState<boolean>(false);
@@ -76,6 +87,11 @@ function Main() {
   const [pdfVisible, setPdfVisible] = useState<boolean>(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [pdfTitle, setPdfTitle] = useState<string>("");
+  const [selectedProfileIds, setSelectedProfileIds] = useState<Set<number>>(new Set());
+  const [selectedProfilesData, setSelectedProfilesData] = useState<Map<number, string>>(new Map());
+  const [selectedProfilesModalOpen, setSelectedProfilesModalOpen] = useState<boolean>(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const isInitialInstitutionSync = useRef(true);
   const { user } = useAppSelector((state) => state.authentiction);
 
   const { handleSubmit, control, reset, setValue, watch } =
@@ -97,16 +113,33 @@ function Main() {
       page
     );
 
+    const debugPayload: Record<string, string> = {};
+    Object.entries(filters).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        if (value.length > 0) {
+          debugPayload[key] = JSON.stringify(value);
+        }
+      } else if (value !== null && value !== undefined && value !== "" && value !== " ") {
+        debugPayload[key] = String(value);
+      }
+    });
+
+    console.log("[InvestorProfiles] backend request payload", {
+      page,
+      payload: debugPayload,
+      dynamicURL,
+    });
+
     dispatch(fetchInvestersProfiles(dynamicURL));
-    const { institution_name, ...restFilters } = filters;
+    const { institution_name, institution_id, ...restFilters } = filters;
     setFiltersLength(countValidFilters(restFilters));
-    
+
     // Include institution_name in filter chips with proper formatting
     const filtersWithInstitution = {
       ...restFilters,
       ...(institution_name && institution_name.length > 0 && { institution_name })
     };
-    
+
     setSelectedChipFilters(generateFilterChips(filtersWithInstitution));
   }, [page, filters, tab]);
 
@@ -118,15 +151,45 @@ function Main() {
 
   const handleClearAllFilter = () => {
     setSearchTerms([]);
+    setSelectedInstitutions([]);
     reset();
     resetFormValues();
     dispatch(resetFilter());
     dispatch(resetPage());
   };
 
-  const handleSearch = (searchTerms: string[]) => {
-    dispatch(setFilter({ key: "institution_name", value: searchTerms }));
+  const handleSearch = (_searchTerms: string[]) => {
+    // Intentionally empty.
+    // Selected option objects drive the actual backend filter update so
+    // institution_name and institution_id are applied together.
   };
+
+  useEffect(() => {
+    if (isInitialInstitutionSync.current) {
+      isInitialInstitutionSync.current = false;
+      return;
+    }
+
+    const institutionNames = selectedInstitutions
+      .map((item) => String(item?.label).trim())
+      .filter((value) => value.length > 0);
+
+    const institutionIds = selectedInstitutions
+      .map((item) => Number(item?.value))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    console.log("[InvestorProfiles] institution selection", {
+      selectedInstitutions,
+      institutionNames,
+      institutionIds,
+    });
+
+    batch(() => {
+      dispatch(setFilter({ key: "institution_name", value: institutionNames }));
+      dispatch(setFilter({ key: "institution_id", value: institutionIds }));
+      dispatch(resetPage());
+    });
+  }, [dispatch, selectedInstitutions]);
 
   const onSubmit = async (investorProfileFilter: InvestorProfileFilter) => {
     Object.entries(investorProfileFilter).forEach(([key, value]) => {
@@ -155,9 +218,9 @@ function Main() {
   const gotoDetailPage = (investorProfileId: number | null | undefined) => {
     if (investorProfileId) {
       navigate(`/investor-profile/investor/${investorProfileId}`, {
-        state: { 
+        state: {
           from: location.pathname,
-          fromState: location.state 
+          fromState: location.state
         },
       });
     }
@@ -181,9 +244,9 @@ function Main() {
 
   const handleDocumentsClick = (institutionId: string) => {
     navigate(`/investor-company-details/${institutionId}`, {
-      state: { 
+      state: {
         from: location.pathname,
-        fromState: location.state 
+        fromState: location.state
       },
     });
   };
@@ -206,6 +269,7 @@ function Main() {
 
   const getSavedSearches = () => {
     setSearchTerms([...user?.saved_search["Investor Profile"]?.institution]);
+    setSelectedInstitutions([]);
     dispatch(
       setFilter({
         key: "region",
@@ -234,7 +298,98 @@ function Main() {
     }
   };
 
+  const toggleProfileSelection = (profileId: number, profileName?: string) => {
+    setSelectedProfileIds(prev => {
+      const next = new Set(prev);
+      if (next.has(profileId)) next.delete(profileId);
+      else next.add(profileId);
+      return next;
+    });
+    setSelectedProfilesData(prev => {
+      const next = new Map(prev);
+      if (next.has(profileId)) next.delete(profileId);
+      else if (profileName !== undefined) next.set(profileId, profileName);
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedProfileIds(new Set());
+    setSelectedProfilesData(new Map());
+  };
+
+  const downloadProfiles = async (format: 'pdf' | 'document') => {
+    if (selectedProfileIds.size === 0) return;
+    setIsDownloading(true);
+    const ids = Array.from(selectedProfileIds);
+    const endpoint = `/api/download_multiple_investor_profiles/?profile_ids=[${ids.join(',')} ]&format_type=${format}`.replace(/\s+/g, '');
+
+    try {
+      const response = await axiosInstance.get(endpoint, { responseType: 'blob' });
+      const blob = response.data as Blob;
+
+      // Try Content-Disposition header first (works if backend exposes it via Access-Control-Expose-Headers)
+      const disposition = (response.headers as any)["content-disposition"] || (response.headers as any)["Content-Disposition"];
+      let filename: string | null = null;
+      if (disposition) {
+        const fileNameMatch = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/);
+        if (fileNameMatch) {
+          filename = decodeURIComponent(fileNameMatch[1] || fileNameMatch[2]);
+        }
+      }
+      // Build filename matching backend naming format
+      if (!filename) {
+        const now = new Date();
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const month = monthNames[now.getMonth()];
+        const day = now.getDate();
+        const year = now.getFullYear();
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        const dateStr = `${month} ${day}, ${year} _ ${hours}_${minutes} ${ampm}`;
+
+        if (ids.length === 1) {
+          const profile = investersProfile?.find((p: InvestersProfile) => p.investor_profile_id === ids[0]);
+          const name = profile ? (profile.institution || profile.institution_name || 'Investor Profile') : 'Investor Profile';
+          const ext = format === 'pdf' ? 'pdf' : 'docx';
+          filename = `${name} Investor Profile (${dateStr}).${ext}`;
+        } else {
+          const ext = format === 'pdf' ? 'pdf' : 'zip';
+          filename = `Investor Profiles (${dateStr}).${ext}`;
+        }
+      }
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed', error);
+      toast.error('Download failed');
+    }
+    finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
+    if (removeKey === "institution_name") {
+      // Remove only the specific institution — useEffect on selectedInstitutions
+      // will sync institution_name + institution_id correctly for remaining items.
+      const updatedSelections = selectedInstitutions.filter(
+        (inst) => String(inst?.label).trim() !== removeValue
+      );
+      setSelectedInstitutions(updatedSelections);
+      setSearchTerms(updatedSelections.map((inst) => String(inst?.label).trim()));
+      return;
+    }
+
     const updatedFilters: InvestorProfileFilter = { ...filters };
     if (Array.isArray(updatedFilters[removeKey])) {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
@@ -242,15 +397,6 @@ function Main() {
       );
     } else if (updatedFilters[removeKey] === removeValue) {
       updatedFilters[removeKey] = "";
-    }
-
-    // Clear searchTerms if institution filter is being removed
-    if (removeKey === "institution_name") {
-      setSearchTerms(
-        Array.isArray(updatedFilters[removeKey])
-          ? updatedFilters[removeKey]
-          : []
-      );
     }
 
     setValue(removeKey, updatedFilters[removeKey]);
@@ -269,7 +415,7 @@ function Main() {
               <div className="flex items-center h-[64px]">
                 <h1 className="text-xl font-semibold flex items-center gap-2">Investor Profile</h1>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap justify-end">
                 <a
                   className="p-2 bg-primary border-white border-2 text-white rounded-md cursor-pointer"
                   onClick={handleOverboardingPoliciesClick}
@@ -284,7 +430,7 @@ function Main() {
                     </span>
                   </div>
                 </a>
-                <AIAssistantButton 
+                <AIAssistantButton
                   label="AI Assistant Voting Guideline"
                   href="/ai-assistant/voting-guidelines"
                 />
@@ -304,49 +450,75 @@ function Main() {
                     setSearchTerms={setSearchTerms}
                     url="/investor_with_voting_guidelines/"
                     getOptionKey="institution_name"
+                    getValueKey="id"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
                     showPills={false}
                     searchPoponents={true}
+                    onSelectionChange={setSelectedInstitutions}
                   />
-
                   <div className="hover:bg-slate-50">
                     <Button onClick={handleClearAllFilter}>
-                      <Tippy
-                        content="Clear Filters"
-                        options={{ theme: "light" }}
-                      >
-                        <FilterX
-                          size={17}
-                          strokeWidth={1}
-                          className="text-slate-500 cursor-pointer"
-                        />
-                      </Tippy>
-                      {/* <span className="text-slate-500">Clear Filters</span> */}
-                    </Button>
-                  </div>
-
-                  <div className="hover:bg-slate-50 ml-2">
-                    <Button onClick={saveSearch}>
-                      <Tippy
-                        content="Save Searches"
-                        options={{ theme: "light" }}
-                      >
-                        <SaveAll
-                          size={17}
-                          strokeWidth={1}
-                          className="text-slate-500 cursor-pointer	"
-                        />
+                      <Tippy content="Clear Filters" options={{ theme: "light" }}>
+                        <FilterX size={17} strokeWidth={1} className="text-slate-500 cursor-pointer" />
                       </Tippy>
                     </Button>
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
-                  {user?.saved_search?.["Investor Profile"] !== undefined && (
-                    <div className="hover:bg-slate-50 ">
-                      <Button onClick={getSavedSearches}>
-                        Previous Search
+                <div className="flex flex-row gap-x-3 gap-y-2 ml-auto items-center">
+                  {/* {user?.saved_search?.["Investor Profile"] !== undefined && (
+                    <div className="hover:bg-slate-50">
+                      <Button onClick={getSavedSearches}>Previous Search</Button>
+                    </div>
+                  )} */}
+                  {count > 0 && (
+                    <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-2 mb-1">
+                      Count: {count.toLocaleString()}
+                    </h2>
+                  )}
+                  {selectedProfileIds.size > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={clearSelection}
+                        className="text-xs text-slate-700 border border-slate-400 px-2 py-1 whitespace-nowrap"
+                      >
+                        Clear selection
                       </Button>
+                      <div className="w-px h-5 bg-slate-300" />
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setSelectedProfilesModalOpen(true)} className="text-sm font-medium text-slate-600 hover:text-primary transition-colors whitespace-nowrap">Download as:</button>
+                        <button
+                          onClick={() => setSelectedProfilesModalOpen(true)}
+                          title="View selected profiles"
+                          className="w-5 h-5 flex items-center justify-center bg-primary text-white text-[11px] font-bold rounded-full hover:bg-primary/80 transition-colors"
+                        >
+                          {selectedProfileIds.size}
+                        </button>
+
+                        {/* Disabled PDF Download for now */}
+                        {/* <button
+                          onClick={() => downloadProfiles('pdf')}
+                          className="flex items-center gap-1 px-3 py-1 border border-red-300 rounded-md bg-white text-sm font-semibold shadow-sm hover:shadow-md"
+                          aria-label="Download PDF"
+                        >
+                         <Lucide icon="FileType" className="w-3 h-3 text-red-600" />
+                          <span className="text-xs tracking-wide text-red-600">PDF</span>
+                        </button> */}
+
+                        <Button
+                          onClick={() => downloadProfiles('document')}
+                          disabled={isDownloading}
+                          className="flex items-center gap-1 px-3 py-1.5  text-sm font-semibold shadow-sm border border-blue-700 hover:shadow-md text-blue-700 hover:bg-blue-700 hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                          aria-label={isDownloading ? "Downloading..." : "Download DOC"}
+                        >
+                          {isDownloading ? (
+                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Lucide icon="FileText" className="w-5 h-5" />
+                          )}
+                          <span className="text-xs tracking-wide">{isDownloading ? 'Downloading' : 'DOC'}</span>
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -358,20 +530,21 @@ function Main() {
                   <FilterChips filters={selectedChipFilters} onRemove={handleRemoveChip} />
                 </>
               }
-              {count > 0 && (
+              {/* {count > 0 && (
                 <h2 className="flex items-end font-semibold justify-end my-2 text-[13px] md:ml-auto mx-5 mb-1">
                   Count: {count.toLocaleString()}
                 </h2>
-              )}
+              )} */}
 
-              <div className="overflow-auto xl:overflow-visible px-5">
+              <div className="overflow-auto xl:overflow-visible px-5 mt-5">
                 <Table className="w-full table-fixed border-spacing-y-[10px] border-separate -mt-2">
                   <colgroup>
                     <col className="w-[35%]" />
                     <col className="w-[20%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[15%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[10%]" />
                   </colgroup>
                   <Table.Thead className="bg-[#ab123d] sticky top-0 z-10">
                     <Table.Tr>
@@ -389,6 +562,9 @@ function Main() {
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal last:rounded-r-md">
                         All Documents
+                      </Table.Td>
+                      <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal last:rounded-r-md">
+                        Download Profile
                       </Table.Td>
                     </Table.Tr>
                   </Table.Thead>
@@ -412,6 +588,9 @@ function Main() {
                             <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
                               <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
                             </Table.Td>
+                            <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
+                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+                            </Table.Td>
                           </Table.Tr>
                         ))}
                       </>
@@ -422,20 +601,33 @@ function Main() {
                           className="intro-x"
                         >
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
-                            <span
-                              onClick={() => {
-                                if (profile.investor_profile_id) {
-                                  gotoDetailPage(profile.investor_profile_id);
-                                }
-                              }}
-                              className={`font-semibold text-[0.94rem] transition-colors ${
-                                profile.investor_profile_id
-                                  ? "cursor-pointer hover:text-primary"
-                                  : "cursor-default"
-                              }`}
-                            >
-                              {profile.institution || profile.institution_name}
-                            </span>
+                            <div className="flex items-center gap-2.5">
+                              {profile.investor_profile_id ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProfileIds.has(profile.investor_profile_id)}
+                                  onChange={() => toggleProfileSelection(profile.investor_profile_id!, profile.institution || profile.institution_name || '')}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-4 h-4 flex-none rounded border-slate-300 text-primary accent-primary cursor-pointer"
+                                />
+                              ) : (
+                                <div className="w-4 h-4 flex-none" />
+                              )}
+                              <span
+                                onClick={() => {
+                                  if (profile.investor_profile_id) {
+                                    gotoDetailPage(profile.investor_profile_id);
+                                  }
+                                }}
+                                className={`font-semibold text-[0.94rem] transition-colors ${profile.investor_profile_id
+                                    ? "cursor-pointer hover:text-primary"
+                                    : "cursor-default"
+                                  }`}
+                              >
+                                {profile.institution || profile.institution_name}
+                                {profile.region?.toUpperCase() === "EMEA" ? ` (${profile?.region})` : ""}
+                              </span>
+                            </div>
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md">
                             <span className="text-slate-600 text-sm font-medium">
@@ -446,22 +638,20 @@ function Main() {
                             <Lucide
                               onClick={() => gotoDetailPage(profile.investor_profile_id)}
                               icon="Briefcase"
-                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
-                                profile.investor_profile_id
+                              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.investor_profile_id
                                   ? 'cursor-pointer hover:text-primary'
                                   : 'opacity-30 cursor-not-allowed'
-                              }`}
+                                }`}
                             />
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
                             <Lucide
                               onClick={() => handleVotingGuidelinesClick(profile)}
                               icon="Vote"
-                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
-                                profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0
+                              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0
                                   ? 'cursor-pointer hover:text-primary'
                                   : 'opacity-30 cursor-not-allowed'
-                              }`}
+                                }`}
                             />
                           </Table.Td>
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
@@ -472,18 +662,32 @@ function Main() {
                                 }
                               }}
                               icon="FileText"
-                              className={`w-4 h-4 stroke-[1.3] mx-auto ${
-                                profile.is_document
+                              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.is_document
                                   ? 'cursor-pointer hover:text-primary'
                                   : 'opacity-30 cursor-not-allowed'
-                              }`}
+                                }`}
                             />
+                          </Table.Td>
+                          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
+                            <button
+                              disabled={!profile.investor_profile_id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const id = profile.investor_profile_id;
+                                if (!id) return;
+                                toggleProfileSelection(id, profile.institution || profile.institution_name || '');
+                              }}
+                              className={`p-1 ${profile.investor_profile_id ? 'cursor-pointer' : 'cursor-not-allowed opacity-30'}`}
+                              aria-label="Toggle download"
+                            >
+                              <Lucide icon="FileDown" className={`w-4 h-4 stroke-[1.3] ${profile.investor_profile_id && selectedProfileIds.has(profile.investor_profile_id) ? 'text-primary' : profile.investor_profile_id ? 'hover:text-primary' : ''}`} />
+                            </button>
                           </Table.Td>
                         </Table.Tr>
                       ))
                     ) : (
                       <Table.Tr>
-                        <Table.Td colSpan={5} className="py-12 text-center bg-white shadow-md rounded-md"> 
+                        <Table.Td colSpan={5} className="py-12 text-center bg-white shadow-md rounded-md">
                           <div className="flex flex-col items-center justify-center">
                             <Lucide icon="FileSearch" className="w-12 h-12 text-gray-300 mb-2" />
                             <div className="text-lg font-medium">No data found</div>
@@ -626,6 +830,65 @@ function Main() {
               </div>
             </div>
           </div>
+          {/* Selected profiles modal */}
+          <Dialog
+            size="lg"
+            open={selectedProfilesModalOpen}
+            onClose={() => setSelectedProfilesModalOpen(false)}
+          >
+            <Dialog.Panel>
+              <Dialog.Title className="flex justify-between items-center bg-primary p-6 !text-white rounded-t-lg">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold">Selected Profiles ({selectedProfileIds.size})</h2>
+                  <div className="text-sm text-white/90 mt-1">Review and remove selected profiles</div>
+                </div>
+                <button
+                  onClick={() => setSelectedProfilesModalOpen(false)}
+                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <Lucide icon="X" className="w-5 h-5" />
+                </button>
+              </Dialog.Title>
+              <Dialog.Description className="p-6">
+                <div className="space-y-3">
+                  {Array.from(selectedProfileIds).length === 0 ? (
+                    <div className="text-sm text-slate-600">No profiles selected.</div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {Array.from(selectedProfileIds).map((id) => (
+                        <li key={id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm">
+                          <div className="text-sm font-medium">{selectedProfilesData.get(id) || `Profile #${id}`}</div>
+                          <button
+                            onClick={() => toggleProfileSelection(id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Lucide icon="X" className="w-4 h-4" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </Dialog.Description>
+              <div className="p-6 border-t bg-slate-50 flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    clearSelection();
+                    setSelectedProfilesModalOpen(false);
+                  }}
+                  className="px-4 py-2 bg-white border rounded-md text-sm"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={() => setSelectedProfilesModalOpen(false)}
+                  className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </Dialog.Panel>
+          </Dialog>
           {addNewInvesterModalVisible && (
             <AddNewInvesterProfile
               addNewInvesterModalVisible={addNewInvesterModalVisible}
@@ -701,7 +964,7 @@ function Main() {
                   </button>
                 </Dialog.Title>
                 <Dialog.Description className="p-8 overflow-y-auto max-h-[70vh]">
-                  <div 
+                  <div
                     className="prose prose-sm max-w-none text-slate-600 leading-relaxed [&_a]:cursor-pointer [&_a]:text-primary [&_a]:underline hover:[&_a]:text-primary/80"
                     dangerouslySetInnerHTML={{ __html: selectedKeyChanges?.key_changes || '' }}
                     onClick={(e) => {
@@ -837,7 +1100,7 @@ function Main() {
           )}
         </div>
       </div >
-      
+
       {pdfVisible && (
         <PdfViewer
           currentPdfDoc={pdfUrl}

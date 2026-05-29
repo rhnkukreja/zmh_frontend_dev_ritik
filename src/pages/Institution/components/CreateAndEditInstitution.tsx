@@ -352,8 +352,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
               }`}
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-
-                {/* Institution Name */}
                 <div className="w-full">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Institution Name <span className="text-red-500">*</span>
@@ -364,10 +362,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     rules={{ required: "Institution Name is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <>
-                        <FormInput
-                          placeholder="Enter Institution Name"
-                          {...field}
-                        />
+                        <FormInput placeholder="Enter Institution Name" {...field} />
                         {error && (
                           <Error className="text-red-600">{error.message}</Error>
                         )}
@@ -376,7 +371,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                   />
                 </div>
 
-                {/* Region */}
                 <div className="w-full">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Region <span className="text-red-500">*</span>
@@ -399,16 +393,13 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                           <option value="APAC">APAC</option>
                         </TomSelect>
                         {error && (
-                          <Error className="text-red-600 mt-2">
-                            {error.message}
-                          </Error>
+                          <Error className="text-red-600 mt-2">{error.message}</Error>
                         )}
                       </>
                     )}
                   />
                 </div>
 
-                {/* Investor Type */}
                 <div className="w-full">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Investor Type <span className="text-red-500">*</span>
@@ -435,13 +426,10 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                     )}
                   />
                   {errors.investor_type && (
-                    <Error className="max-w-[100%]">
-                      {errors.investor_type.message}
-                    </Error>
+                    <Error className="max-w-[100%]">{errors.investor_type.message}</Error>
                   )}
                 </div>
 
-                {/* Whale Wisdom Filer ID */}
                 <div className="w-full">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     Whale Wisdom Filer Id
@@ -458,10 +446,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                               : false,
                         }}
                         render={({ field }) => (
-                          <FormInput
-                            placeholder="Enter Whale Wisdom Filer Id"
-                            {...field}
-                          />
+                          <FormInput placeholder="Enter Whale Wisdom Filer Id" {...field} />
                         )}
                       />
                     </div>
@@ -473,10 +458,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                       disabled={isGeneratingId}
                     >
                       {isGeneratingId ? (
-                        <Lucide
-                          icon="Loader"
-                          className="w-4 h-4 mr-2 animate-spin"
-                        />
+                        <Lucide icon="Loader" className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
                         <Lucide icon="Zap" className="w-4 h-4 mr-2" />
                       )}
@@ -490,7 +472,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                   )}
                 </div>
 
-                {/* SEC Number Field */}
                 <div className="w-full">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                     SEC Number
@@ -512,65 +493,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
 
               <div className="w-full">
                 <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Investor Type <span className="text-red-500">*</span>
-                </FormCheck.Label>
-                <Controller
-                  name="investor_type"
-                  control={control}
-                  defaultValue=""
-                  rules={{ required: "Type of Investor is required" }}
-                  render={({ field }) => (
-                    <TomSelect
-                      {...field}
-                      value={field.value?.toString() || ""}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                      }}
-                      options={{
-                        placeholder: "Select Investor Type",
-                      }}
-                      className="w-full text-left"
-                    >
-                      <option value="" disabled selected>
-                        Select Type
-                      </option>
-                      <option value="Investor">Investor</option>
-                      <option value="Proponent">Proponent</option>
-                    </TomSelect>
-                  )}
-                />
-
-                {errors.investor_type && (
-                  <Error className="max-w-[100%] ">
-                    {errors.investor_type.message}
-                  </Error>
-                )}
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Whale Wisdom Filer Id
-                </FormCheck.Label>
-                <Controller
-                  name="whale_wisdom_filer_id"
-                  control={control}
-                  rules={{}}
-                  render={({ field }) => (
-                    <FormInput
-                      placeholder="Enter Whale Wisdom Filer Id"
-                      {...field}
-                    />
-                  )}
-                />
-                {errors.whale_wisdom_filer_id && (
-                  <Error className="max-w-[100%] ">
-                    {errors.whale_wisdom_filer_id.message}
-                  </Error>
-                )}
-              </div>
-
-              <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                   Contact Email
                 </FormCheck.Label>
                 <Controller
@@ -586,80 +508,75 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                 />
               </div>
 
-              {/* Proxy Advisory Influence */}
-                <div className="w-full">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <FormCheck.Label className="font-semibold text-gray-800 mb-0">
-                      Proxy Advisory Influence
-                    </FormCheck.Label>
-                    {/* <a
-                      href="https://adviserinfo.sec.gov/firm"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline text-sm"
-                    >
-                      Click here to know about IAPD
-                    </a> */}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {[
-                      "Internal",
-                      "ISS",
-                      "GL",
-                      "Typically does not vote proxies",
-                    ].map((option) => (
-                      <FormCheck key={option} className="flex items-center gap-2">
-                        <FormCheck.Input
-                          id={"proxy_" + option}
-                          type="checkbox"
-                          checked={proxyAdvisoryOptions.includes(option)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
-                            } else {
-                              setProxyAdvisoryOptions(proxyAdvisoryOptions.filter((item) => item !== option));
-                            }
-                          }}
-                        />
-                        <FormCheck.Label htmlFor={"proxy_" + option}>
-                          {option}
-                        </FormCheck.Label>
-                      </FormCheck>
-                    ))}
-                  </div>
-                </div>
-
-                {/* UN PRI Signatory */}
-                <div className="w-full">
-                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    UN PRI Signatory
+              <div className="w-full">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <FormCheck.Label className="font-semibold text-gray-800 mb-0">
+                    Proxy Advisory Influence
                   </FormCheck.Label>
-                  <Controller
-                    name="unpri_signatory"
-                    control={control}
-                    render={({ field }) => (
-                      <FormCheck className="flex items-center">
-                        <FormCheck.Input
-                          id="unpri_signatory"
-                          type="checkbox"
-                          checked={field.value}
-                          onChange={(e) => field.onChange(e.target.checked)}
-                        />
-                        <FormCheck.Label htmlFor="unpri_signatory" className="ml-2">
-                          Yes
-                        </FormCheck.Label>
-                      </FormCheck>
-                    )}
-                  />
+                  {/* <a
+                    href="https://adviserinfo.sec.gov/firm"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline text-sm"
+                  >
+                    Click here to know about IAPD
+                  </a> */}
                 </div>
+                <div className="flex flex-col gap-2">
+                  {[
+                    "Internal",
+                    "ISS",
+                    "GL",
+                    "Typically does not vote proxies",
+                  ].map((option) => (
+                    <FormCheck key={option} className="flex items-center gap-2">
+                      <FormCheck.Input
+                        id={`proxy_${option}`}
+                        type="checkbox"
+                        checked={proxyAdvisoryOptions.includes(option)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setProxyAdvisoryOptions([...proxyAdvisoryOptions, option]);
+                          } else {
+                            setProxyAdvisoryOptions(
+                              proxyAdvisoryOptions.filter((item) => item !== option)
+                            );
+                          }
+                        }}
+                      />
+                      <FormCheck.Label htmlFor={`proxy_${option}`}>{option}</FormCheck.Label>
+                    </FormCheck>
+                  ))}
+                </div>
+              </div>
 
-              {/* PDF PREVIEW SECTION WITH MINIMIZE/EXPAND */}
+              <div className="w-full">
+                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
+                  UN PRI Signatory
+                </FormCheck.Label>
+                <Controller
+                  name="unpri_signatory"
+                  control={control}
+                  render={({ field }) => (
+                    <FormCheck className="flex items-center">
+                      <FormCheck.Input
+                        id="unpri_signatory"
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                      <FormCheck.Label htmlFor="unpri_signatory" className="ml-2">
+                        Yes
+                      </FormCheck.Label>
+                    </FormCheck>
+                  )}
+                />
+              </div>
+
               {(isScrapingPdf || scrapedPdfUrl || scrapedBrochurePageUrl || scrapeMessage) && (
                 <div className="mt-8 pt-6 border-t border-slate-200">
                   <div className="border border-slate-300 rounded-md overflow-hidden flex flex-col bg-slate-50 shadow-sm transition-all duration-300">
-                    
-                    {/* Collapsible Header */}
-                    <div 
+                    <div
                       className="bg-slate-200 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-slate-300 transition-colors"
                       onClick={() => setIsPdfExpanded(!isPdfExpanded)}
                     >
@@ -667,13 +584,13 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                         <Lucide icon="FileText" className="w-4 h-4 mr-2" />
                         SEC Brochure Preview
                       </span>
-                      
+
                       <div className="flex items-center gap-4">
                         {scrapedPdfUrl && (
-                          <a 
-                            href={scrapedPdfUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={scrapedPdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -681,25 +598,28 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                           </a>
                         )}
                         <div className="p-1 bg-white rounded shadow-sm border border-slate-300">
-                          <Lucide 
-                            icon={isPdfExpanded ? "ChevronUp" : "ChevronDown"} 
-                            className="w-4 h-4 text-slate-600" 
+                          <Lucide
+                            icon={isPdfExpanded ? "ChevronUp" : "ChevronDown"}
+                            className="w-4 h-4 text-slate-600"
                           />
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Expandable Body */}
+
                     {isPdfExpanded && (
                       <div className="w-full flex flex-col animate-fadeIn">
                         {isScrapingPdf ? (
                           <div className="flex flex-col items-center justify-center py-16">
                             <LoadingIcon color="#800000" icon="three-dots" className="w-10 h-10" />
-                            <p className="text-slate-500 mt-3 animate-pulse">Running automation to find the SEC document ID...</p>
+                            <p className="text-slate-500 mt-3 animate-pulse">
+                              Running automation to find the SEC document ID...
+                            </p>
                           </div>
                         ) : scrapedPdfUrl ? (
-                          <iframe 
-                            src={`http://localhost:8000/proxy-pdf?pdf_url=${encodeURIComponent(scrapedPdfUrl)}#search="Item 17"`} 
+                          <iframe
+                            src={`http://localhost:8000/proxy-pdf?pdf_url=${encodeURIComponent(
+                              scrapedPdfUrl
+                            )}#search="Item 17"`}
                             className="w-full h-[600px] border-none"
                             title="SEC Brochure Inline Viewer"
                           />
@@ -725,7 +645,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
                   </div>
                 </div>
               )}
-
             </Dialog.Description>
 
             <Dialog.Footer>

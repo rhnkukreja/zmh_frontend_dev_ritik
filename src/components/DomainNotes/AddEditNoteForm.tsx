@@ -34,6 +34,13 @@ interface NoteFormProps {
   selectedData: any;
 }
 
+interface SelectedNoteData {
+  company: number;
+  institution: number;
+  investor_name: string;
+  company_name?: string;
+}
+
 const NoteForm: React.FC<NoteFormProps> = ({
   initialData,
   onSubmit,
@@ -48,6 +55,11 @@ const NoteForm: React.FC<NoteFormProps> = ({
   const dispatch =
     useDispatch<typeof import("@/stores/store").store.dispatch>();
   const { notesLoading } = useAppSelector((state) => state.notes);
+  const { user } = useAppSelector((state) => state.authentiction);
+  const isCorporateUser =
+    !!user?.user_role &&
+    user.user_role.toLowerCase() === "corporate";
+  const corporateCompanyId = Number(user?.user_actual_company || user?.company_id);
   const [searchTerm, setSearchTerm] = useState("");
   const [institutionsSearchTerm, setInstitutionsSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -101,14 +113,40 @@ const NoteForm: React.FC<NoteFormProps> = ({
     if (mode === "edit" && initialData && noteModule) {
       console.log("Initializing edit form with:", initialData);
       setSelectedData({
-        company: initialData.company || 0,
+        company:
+          isCorporateUser && corporateCompanyId
+            ? corporateCompanyId
+            : initialData.company || 0,
         institution: initialData.institution || 0,
         investor_name: initialData.investor_name || "",
       });
       setSearchTerm(initialData.company_name || "");
       setInstitutionsSearchTerm(initialData.investor_name || "");
     }
-  }, [mode, initialData, noteModule]);
+  }, [
+    mode,
+    initialData,
+    noteModule,
+    isCorporateUser,
+    corporateCompanyId,
+    setSelectedData,
+  ]);
+
+  useEffect(() => {
+    if (isCorporateUser && corporateCompanyId) {
+      setSelectedData((prev: SelectedNoteData) => ({
+        ...prev,
+        company: corporateCompanyId,
+        company_name: user?.company_name || prev.company_name,
+      }));
+      setSearchTerm(user?.company_name || searchTerm);
+    }
+  }, [
+    isCorporateUser,
+    corporateCompanyId,
+    user?.company_name,
+    setSelectedData,
+  ]);
 
   const { control, handleSubmit, reset } = useForm<DomainNote>({
     defaultValues:
@@ -118,7 +156,10 @@ const NoteForm: React.FC<NoteFormProps> = ({
             notes: "",
             date: today,
             category: "Shareholder Engagement",
-            company: data?.company_id || 0,
+            company:
+              isCorporateUser && corporateCompanyId
+                ? corporateCompanyId
+                : data?.company_id || 0,
             institution: data?.institution_id || null,
             investor_name: data?.institution_name || "",
           }
@@ -127,7 +168,10 @@ const NoteForm: React.FC<NoteFormProps> = ({
             notes: initialData?.notes || "",
             date: formatDate(initialData?.date) || today,
             category: initialData?.category || "",
-            company: data?.company_id || 0,
+            company:
+              isCorporateUser && corporateCompanyId
+                ? corporateCompanyId
+                : data?.company_id || 0,
             institution: data?.institution_id || null,
             investor_name: data?.institution_name || "",
           },
@@ -165,7 +209,8 @@ const NoteForm: React.FC<NoteFormProps> = ({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="flex flex-wrap gap-4">
-        <div className="w-full md:w-[47%]">
+        {!isCorporateUser && (
+          <div className="w-full md:w-[47%]">
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Company
           </label>
@@ -222,7 +267,8 @@ const NoteForm: React.FC<NoteFormProps> = ({
             <FormInput value={data?.company_name} disabled className="w-full" />
           )}
         </div>
-        <div className="w-full md:w-[47%]">
+        )}
+        <div className={`w-full ${!isCorporateUser ? "md:w-[47%]" : ""}`}>
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Institution
           </label>

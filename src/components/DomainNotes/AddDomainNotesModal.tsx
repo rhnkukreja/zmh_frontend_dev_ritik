@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useState, useEffect } from "react";
 import { Dialog } from "@/components/Base/Headless";
 import NoteForm from "./AddEditNoteForm";
-import { useAppDispatch } from "@/stores/hooks";
+import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { toast } from "react-toastify";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { DomainNote } from "@/types/domainNotes";
@@ -20,6 +20,13 @@ interface AddNoteModalProps {
   noteModule: boolean;
 }
 
+interface SelectedNoteData {
+  company: number;
+  institution: number;
+  investor_name: string;
+  company_name?: string;
+}
+
 const AddDomainNoteModal = ({
   addNoteModalVisible,
   setAddNoteModalVisible,
@@ -32,8 +39,15 @@ const AddDomainNoteModal = ({
   noteModule,
 }: AddNoteModalProps) => {
   const dispatch = useAppDispatch();
-  const [selectedData, setSelectedData] = useState({
-    company: selectedNote?.company || 0,
+  const { user } = useAppSelector((state) => state.authentiction);
+  const isCorporateUser =
+    !!user?.user_role && user.user_role.toLowerCase() === "corporate";
+  const corporateCompanyId = Number(user?.user_actual_company || 0);
+  const [selectedData, setSelectedData] = useState<SelectedNoteData>({
+    company:
+      isCorporateUser && corporateCompanyId
+        ? corporateCompanyId
+        : selectedNote?.company || 0,
     institution: selectedNote?.institution || 0,
     investor_name: selectedNote?.investor_name || "",
   });
@@ -48,12 +62,25 @@ const AddDomainNoteModal = ({
         investor_name: selectedNote.investor_name
       });
       setSelectedData({
-        company: selectedNote.company || 0,
+        company:
+          isCorporateUser && corporateCompanyId
+            ? corporateCompanyId
+            : selectedNote.company || 0,
         institution: selectedNote.institution || 0,
         investor_name: selectedNote.investor_name || "",
       });
     }
-  }, [selectedNote, mode]);
+  }, [selectedNote, mode, isCorporateUser, corporateCompanyId]);
+
+  useEffect(() => {
+    if (isCorporateUser && corporateCompanyId) {
+      setSelectedData((prev) => ({
+        ...prev,
+        company: corporateCompanyId,
+        company_name: user?.company_name,
+      }));
+    }
+  }, [isCorporateUser, corporateCompanyId, user?.company_name]);
   const handleNoteSubmit = async (data: DomainNote) => {
     function removeTrailingSpaces(htmlContent: string): string {
       const trailingTagsRegex = /^(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+|(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+$/gi;
@@ -66,24 +93,50 @@ const AddDomainNoteModal = ({
       };
       if (selectedNote?.id && mode == "edit") {
         // For edit mode, only send the fields that are actually being edited
-        const editData = {
-          attendees: trimmedData.attendees,
-          notes: trimmedData.notes,
-          date: trimmedData.date,
-          category: trimmedData.category,
-        };
+        const editCompany = isCorporateUser && corporateCompanyId
+          ? corporateCompanyId
+          : selectedData.company || selectedNote?.company || data?.company || 0;
+
+        const editData: any = {
+            attendees: trimmedData.attendees,
+            notes: trimmedData.notes,
+            date: trimmedData.date,
+            category: trimmedData.category,
+          };
+        // Testing: omit `company` from payload when user is NOT corporate
+        if (isCorporateUser) {
+          editData.company = editCompany;
+        }
         console.log("Edit payload:", editData);
         await dispatch(addDomainNote({ id: selectedNote.id, data: editData }));
       } else {
         if (noteModule) {
-          const noteData = {
+          const fallbackCompany = isCorporateUser && corporateCompanyId
+            ? corporateCompanyId
+            : selectedData.company || selectedNote?.company || data?.company || 0;
+
+          const payload: any = {
             ...trimmedData,
             ...selectedData,
           };
-        const response =  await dispatch(addDomainNote({ data: noteData })).unwrap();
-        if(response?.results)  toast.success("Note successfully created");
+          if (isCorporateUser) {
+            payload.company = fallbackCompany;
+          } else {
+            // Testing behavior: omit company for non-corporate users
+            if (!payload.company) delete payload.company;
+          }
+
+          const response = await dispatch(addDomainNote({ data: payload })).unwrap();
+          if (response?.results) toast.success("Note successfully created");
         } else {
-          await dispatch(addDomainNote({ data:trimmedData })).unwrap();
+          const payload: any = { ...trimmedData };
+          if (isCorporateUser) {
+            payload.company = corporateCompanyId || trimmedData.company;
+          } else {
+            // Testing behavior: omit company for non-corporate users
+            if (!payload.company) delete payload.company;
+          }
+          await dispatch(addDomainNote({ data: payload })).unwrap();
         }
       }
     } catch (error) {
