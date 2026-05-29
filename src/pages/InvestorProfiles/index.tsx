@@ -338,7 +338,8 @@ function Main() {
           : []
       );
       setSelectedInstitutions([]);
-      dispatch(setFilter({ key: "institution_id", value: [] }));
+      // Keep both institution filters in sync when removing the name chip.
+      (updatedFilters as any).institution_id = [];
     }
 
     setValue(removeKey, updatedFilters[removeKey]);
