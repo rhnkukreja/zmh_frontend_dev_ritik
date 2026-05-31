@@ -29,7 +29,9 @@ export interface CreateUserDTO {
   user_type: UserType;
   subscription: SubscriptionType;
   duration_days: number;
-  user_company: string;
+  user_company?: string;
+  user_actual_company?: number | null;
+  user_role?: string;
 }
 
 export interface UpdateUserDTO {
@@ -43,6 +45,8 @@ export interface UpdateUserDTO {
   subscription?: SubscriptionType;
   duration_days?: number;
   user_company?: string;
+  user_actual_company?: number | null;
+  user_role?: string;
 }
 
 export interface UserManagementResponse {
