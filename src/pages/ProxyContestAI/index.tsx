@@ -8,13 +8,14 @@ import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
 import VotingRecordsList from "./components/VotingRecordsList";
 import ProxyContestModal from "../ProxyContest/components/ProxyContestModal";
+import ActivistInvestorProfileDashboard from "./components/ActivistProfile";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 
+type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
+
 const DEFAULT_INSTITUTION_IDS = [33, 34];
 const DEFAULT_YEARS = ["2025", "2026"];
-
-type TabKey = "overview" | "detailed";
 
 // ── localStorage persistence (keyed by token so it clears on logout) ──────────
 const getTokenSlice = () => (localStorage.getItem("token") || "").slice(-8);
@@ -28,9 +29,10 @@ const saveF = (tab: string, data: any) => {
 
 function ProxyContestAI() {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdminOrAnalyst = user?.user_type === "Admin" || user?.user_type === "Analyst";
+  const isAdmin = user?.user_type === "Admin";
+  const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
 
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [activeTab, setActiveTab] = useState<ProxyContestTabKey>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -92,7 +94,7 @@ function ProxyContestAI() {
   const companiesFetchId = useRef(0);
 
   // ── Fetch filters ────────────────────────────────────────────────────────────
-  const fetchFilters = useCallback(async (years: string[], tab: TabKey = "overview", instIds?: number[]) => {
+  const fetchFilters = useCallback(async (years: string[], tab: ProxyContestTabKey = "overview", instIds?: number[]) => {
     const id = ++filtersFetchId.current;
     setFiltersLoading(true);
     try {
@@ -194,7 +196,7 @@ function ProxyContestAI() {
   }, []);
 
   // ── Refetch filters when switching tabs ──────────────────────────────────────
-  const prevTab = useRef<TabKey>("overview");
+  const prevTab = useRef<ProxyContestTabKey>("overview");
   useEffect(() => {
     if (prevTab.current === activeTab) return;
     prevTab.current = activeTab;
@@ -202,6 +204,18 @@ function ProxyContestAI() {
     const instIds = activeTab === "overview" ? ovInstIds : undefined;
     fetchFilters(years, activeTab, instIds);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!isAdmin && activeTab === "activist_profile") {
+      setActiveTab("overview");
+    }
+  }, [activeTab, isAdmin]);
+
+  const tabs = [
+    { key: "overview", label: "Overview", icon: "BarChart3" },
+    { key: "detailed", label: "Detailed View", icon: "Table" },
+    ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
+  ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
   // ── Overview toggle helpers ──────────────────────────────────────────────────
   const ovToggleYear = (y: string) => {
@@ -368,28 +382,21 @@ function ProxyContestAI() {
         {/* Tabs + Hide/Show Filters button (Admin/Analyst only) */}
         <div className="flex items-center justify-between">
           <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1">
-            {(["overview", "detailed"] as TabKey[]).map((tab) => (
+            {tabs.map((tabItem) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                key={tabItem.key}
+                onClick={() => setActiveTab(tabItem.key)}
                 className={clsx(
                   "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
-                  activeTab === tab
+                  activeTab === tabItem.key
                     ? "bg-primary text-white shadow"
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 )}
               >
-                {tab === "overview" ? (
-                  <span className="flex items-center gap-1.5">
-                    <Lucide icon="BarChart3" className="w-4 h-4" />
-                    Overview
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <Lucide icon="Table" className="w-4 h-4" />
-                    Detailed View
-                  </span>
-                )}
+                <span className="flex items-center gap-1.5">
+                  <Lucide icon={tabItem.icon as any} className="w-4 h-4" />
+                  {tabItem.label}
+                </span>
               </button>
             ))}
           </div>
@@ -514,6 +521,10 @@ function ProxyContestAI() {
                 institutionIds={dtInstIds}
               />
             </div>
+          )}
+
+          {isAdmin && activeTab === "activist_profile" && (
+            <ActivistInvestorProfileDashboard />
           )}
         </div>
       </div>
