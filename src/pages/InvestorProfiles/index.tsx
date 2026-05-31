@@ -88,6 +88,7 @@ function Main() {
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [pdfTitle, setPdfTitle] = useState<string>("");
   const [selectedProfileIds, setSelectedProfileIds] = useState<Set<number>>(new Set());
+  const [selectedProfilesData, setSelectedProfilesData] = useState<Map<number, { name: string; region?: string }>>(new Map());
   const [selectedProfilesModalOpen, setSelectedProfilesModalOpen] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const isInitialInstitutionSync = useRef(true);
@@ -297,19 +298,25 @@ function Main() {
     }
   };
 
-  const toggleProfileSelection = (profileId: number) => {
+  const toggleProfileSelection = (profileId: number, profileName?: string, profileRegion?: string) => {
     setSelectedProfileIds(prev => {
       const next = new Set(prev);
-      if (next.has(profileId)) {
-        next.delete(profileId);
-      } else {
-        next.add(profileId);
-      }
+      if (next.has(profileId)) next.delete(profileId);
+      else next.add(profileId);
+      return next;
+    });
+    setSelectedProfilesData(prev => {
+      const next = new Map(prev);
+      if (next.has(profileId)) next.delete(profileId);
+      else if (profileName !== undefined) next.set(profileId, { name: profileName, region: profileRegion });
       return next;
     });
   };
 
-  const clearSelection = () => setSelectedProfileIds(new Set());
+  const clearSelection = () => {
+    setSelectedProfileIds(new Set());
+    setSelectedProfilesData(new Map());
+  };
 
   const downloadProfiles = async (format: 'pdf' | 'document') => {
     if (selectedProfileIds.size === 0) return;
@@ -470,26 +477,23 @@ function Main() {
                     </h2>
                   )}
                   {selectedProfileIds.size > 0 && (
-                    <div className="flex items-center gap-2 bg-white  px-3">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="primary"
-                          onClick={() => setSelectedProfilesModalOpen(true)}
-                          className="flex items-center gap-2 px-3 py-1.5  rounded-md text-sm font-semibold"
-                        >
-                          <span className="w-5 h-5 flex items-center justify-center bg-white text-red-800 text-[11px] font-bold rounded-full">{selectedProfileIds.size}</span>
-                          <span className="text-sm font-medium whitespace-nowrap">View selected</span>
-                        </Button>
-                      </div>
-                      <button
+                    <div className="flex items-center gap-2">
+                      <Button
                         onClick={clearSelection}
-                        className="text-slate-500 hover:text-red-600 hover:underline font-medium transition-colors whitespace-nowrap"
+                        className="text-xs text-slate-700 border border-slate-400 px-2 py-1 whitespace-nowrap"
                       >
-                        Clear
-                      </button>
+                        Clear selection
+                      </Button>
                       <div className="w-px h-5 bg-slate-300" />
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-slate-600">Download as:</span>
+                        <button onClick={() => setSelectedProfilesModalOpen(true)} className="text-sm font-medium text-slate-600 hover:text-primary transition-colors whitespace-nowrap">Download as:</button>
+                        <button
+                          onClick={() => setSelectedProfilesModalOpen(true)}
+                          title="View selected profiles"
+                          className="w-5 h-5 flex items-center justify-center bg-primary text-white text-[11px] font-bold rounded-full hover:bg-primary/80 transition-colors"
+                        >
+                          {selectedProfileIds.size}
+                        </button>
 
                         {/* Disabled PDF Download for now */}
                         {/* <button
@@ -602,7 +606,7 @@ function Main() {
                                 <input
                                   type="checkbox"
                                   checked={selectedProfileIds.has(profile.investor_profile_id)}
-                                  onChange={() => toggleProfileSelection(profile.investor_profile_id!)}
+                                  onChange={() => toggleProfileSelection(profile.investor_profile_id!, profile.institution || profile.institution_name || '', profile.region)}
                                   onClick={(e) => e.stopPropagation()}
                                   className="w-4 h-4 flex-none rounded border-slate-300 text-primary accent-primary cursor-pointer"
                                 />
@@ -667,16 +671,11 @@ function Main() {
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
                             <button
                               disabled={!profile.investor_profile_id}
-                              onClick={(e) => {
+                                onClick={(e) => {
                                 e.stopPropagation();
                                 const id = profile.investor_profile_id;
                                 if (!id) return;
-                                setSelectedProfileIds(prev => {
-                                  const s = new Set(prev);
-                                  if (s.has(id)) s.delete(id);
-                                  else s.add(id);
-                                  return s;
-                                });
+                                toggleProfileSelection(id, profile.institution || profile.institution_name || '', profile.region);
                               }}
                               className={`p-1 ${profile.investor_profile_id ? 'cursor-pointer' : 'cursor-not-allowed opacity-30'}`}
                               aria-label="Toggle download"
@@ -856,33 +855,25 @@ function Main() {
                     <div className="text-sm text-slate-600">No profiles selected.</div>
                   ) : (
                     <ul className="space-y-2">
-                      {investersProfile
-                        ?.filter((p) => p.investor_profile_id && selectedProfileIds.has(p.investor_profile_id))
-                        .map((p) => (
-                          <li key={p.investor_profile_id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm">
+                      {Array.from(selectedProfileIds).map((id) => {
+                        const raw = selectedProfilesData.get(id) as any;
+                        const name = typeof raw === 'string' ? raw : raw?.name;
+                        const region = typeof raw === 'string' ? undefined : raw?.region;
+                        return (
+                          <li key={id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm">
                             <div className="text-sm font-medium">
-                              {p.institution || p.institution_name || '—'}
-                              {p.region && String(p.region).toUpperCase() === 'EMEA' ? ` (${p.region})` : ''}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => {
-                                  const id = p.investor_profile_id;
-                                  if (!id) return;
-                                  setSelectedProfileIds(prev => {
-                                    const s = new Set(prev);
-                                    s.delete(id);
-                                    return s;
-                                  });
-                                }}
-                                className="text-sm text-red-600 hover:text-red-700"
-                              >
-                                <Lucide icon="X" className="w-5 h-5" />
-                              </button>
-                              
-                            </div>
+                                {name || `Profile #${id}`}
+                                {region && String(region).toUpperCase() === 'EMEA' ? ` (${region})` : ''}
+                              </div>
+                            <button
+                              onClick={() => toggleProfileSelection(id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Lucide icon="X" className="w-4 h-4" />
+                            </button>
                           </li>
-                        ))}
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
@@ -890,7 +881,7 @@ function Main() {
               <div className="p-6 border-t bg-slate-50 flex justify-end gap-2">
                 <button
                   onClick={() => {
-                    setSelectedProfileIds(new Set());
+                    clearSelection();
                     setSelectedProfilesModalOpen(false);
                   }}
                   className="px-4 py-2 bg-white border rounded-md text-sm"
