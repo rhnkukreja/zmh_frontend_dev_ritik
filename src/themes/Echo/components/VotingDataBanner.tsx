@@ -99,55 +99,36 @@ const VotingDataBanner = () => {
 
       {/* The floating banner, shown conditionally */}
       {isBannerVisible && (
-        <>
-          {/* Single banner containing hardcoded message + notification rows */}
-          <div
-            ref={bannerRef}
-            className={clsx(
-              "fixed top-20 right-4 w-auto max-w-md p-5 rounded-xl shadow-2xl",
-              "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800",
-              "border-2 border-blue-300 dark:border-blue-600",
-              "transition-all duration-300 ease-in-out transform translate-y-0",
-              "z-50 animate-slideIn"
-            )}
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex-1 space-y-2">
-                <p className="text-sm leading-relaxed text-blue-800 dark:text-blue-200">
-                  Added <strong>Q1 2026 Voting Data</strong> for <strong>BlackRock</strong>, <strong>Vanguard</strong>, <strong>State Street</strong>, and <strong>40+ more institutions</strong>.
-                </p>
-
-                {/* Notifications list (each row) */}
-                {(notifications || []).filter((n: any) => n && !closedNotifications.includes(n.id)).length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {(notifications || []).filter((n: any) => n && !closedNotifications.includes(n.id)).map((n: any) => (
-                      <div key={n.id} className="flex items-start justify-between gap-3 p-3 bg-blue-50/60 rounded-md border border-blue-100">
-                        <div className="text-sm leading-relaxed text-blue-800 dark:text-blue-200 prose max-w-none" dangerouslySetInnerHTML={{ __html: n.notification_text || n.text || "" }} />
-                        <div className="flex-shrink-0 ml-3">
-                          <button
-                            onClick={() => setClosedNotifications((prev) => [...prev, n.id])}
-                            className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100 focus:outline-none transition-colors rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
-                            aria-label={`Close notification ${n.id}`}
-                          >
-                            <IoMdCloseCircleOutline size={20} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+        <div className="fixed top-20 right-4 z-50 space-y-3">
+          {(notifications || []).filter((n: any) => n && !closedNotifications.includes(n.id)).map((n: any, idx: number) => (
+            <div
+              key={n.id}
+              ref={idx === 0 ? bannerRef : undefined}
+              className={clsx(
+                "w-auto max-w-md p-4 rounded-xl shadow-2xl",
+                "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800",
+                "border-2 border-blue-300 dark:border-blue-600",
+                "transition-all duration-300 ease-in-out transform translate-y-0",
+                "animate-slideIn"
+              )}
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="text-sm leading-relaxed text-blue-800 dark:text-blue-200 prose max-w-none [&_strong]:text-blue-800 [&_strong]:dark:text-blue-200" dangerouslySetInnerHTML={{ __html: n.notification_text || n.text || "" }} />
+                </div>
+                <div className="flex-shrink-0 ml-3">
+                  <button
+                    onClick={() => setClosedNotifications((prev) => [...prev, n.id])}
+                    className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100 focus:outline-none transition-colors rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
+                    aria-label={`Close notification ${n.id}`}
+                  >
+                    <IoMdCloseCircleOutline size={20} />
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={closeBanner}
-                className="flex-shrink-0 p-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100 focus:outline-none transition-colors rounded-full hover:bg-blue-200 dark:hover:bg-blue-700"
-                aria-label="Close notification banner"
-              >
-                <IoMdCloseCircleOutline size={22} />
-              </button>
             </div>
-          </div>
-        </>
+          ))}
+        </div>
       )}
     </>
   );

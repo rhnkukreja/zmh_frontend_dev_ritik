@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
 import { FormInput, FormLabel, FormCheck } from "@/components/Base/Form";
+import CompanySelect from "@/components/ReactSelectAsync";
 import { Dialog } from "@/components/Base/Headless";
 import StandardizedTable from "@/components/StandardizedTable";
 import Pagination from "@/components/Base/Pagination";
@@ -17,7 +18,12 @@ const DEBOUNCE_DELAY = 400;
 const USER_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "Admin", label: "Admin" },
   { value: "Client", label: "Client" },
-  { value: "ZMH Employee", label: "ZMH Employee" },
+  { value: "Analyst", label: "Analyst" },
+];
+
+const USER_ROLE_OPTIONS: { value: string; label: string }[] = [
+  { value: "Advisor", label: "Advisor" },
+  { value: "Corporate", label: "Corporate" },
 ];
 
 const SUBSCRIPTION_OPTIONS: { value: SubscriptionType; label: string }[] = [
@@ -76,8 +82,10 @@ function UserManagementPage() {
     user_type: "Client" as any,
     subscription: "Trial",
     duration_days: 30,
-    user_company: "ZMH Advisors",
+    user_company: "",
   });
+  const [createUserRole, setCreateUserRole] = useState<string>(USER_ROLE_OPTIONS[0].value);
+  const [createCompanyValue, setCreateCompanyValue] = useState<any>(null);
   
   // Form state for edit
   const [editFormData, setEditFormData] = useState<UpdateUserDTO>({
@@ -88,9 +96,11 @@ function UserManagementPage() {
     user_type: "Client" as any,
     subscription: "Trial",
     duration_days: 30,
-    user_company: "ZMH Advisors",
+    user_company: "",
     password: "",
   });
+  const [editUserRole, setEditUserRole] = useState<string>(USER_ROLE_OPTIONS[0].value);
+  const [editCompanyValue, setEditCompanyValue] = useState<any>(null);
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
@@ -268,9 +278,12 @@ function UserManagementPage() {
 
     try {
       // Send email as username
+      const { user_company: _userCompany, ...restCreateFormData } = createFormData;
       const payload = {
-        ...createFormData,
+        ...restCreateFormData,
         username: createFormData.email,
+        user_actual_company: createCompanyValue?.value ?? null,
+        user_role: createUserRole,
       };
       await userManagementService.createUser(payload);
       toast.success("User created successfully");
@@ -299,8 +312,10 @@ function UserManagementPage() {
       user_type: "Client" as any,
       subscription: "Trial",
       duration_days: 30,
-      user_company: "ZMH Advisors",
+      user_company: "",
     });
+    setCreateCompanyValue(null);
+    setCreateUserRole(USER_ROLE_OPTIONS[0].value);
     setFormErrors({});
   };
 
@@ -322,9 +337,12 @@ function UserManagementPage() {
       user_type: normalizedUserType as any,
       subscription: (user.subscription as SubscriptionType) || "Trial",
       duration_days: user.duration_days ?? 30,
-      user_company: user.user_company || "ZMH Advisors",
+      user_company: user.user_company || "",
       password: "",
     });
+    setEditCompanyValue(null);
+    // default role (if backend provides role in future, map it here)
+    setEditUserRole(USER_ROLE_OPTIONS[0].value);
     setFormErrors({});
     setShowEditModal(true);
   };
@@ -359,9 +377,12 @@ function UserManagementPage() {
 
     try {
       // Send email as username, only include password if provided
+      const { user_company: _userCompany, ...restEditFormData } = editFormData;
       const payload: UpdateUserDTO & { username?: string } = {
-        ...editFormData,
+        ...restEditFormData,
         username: editFormData.email,
+        user_actual_company: editCompanyValue?.value ?? null,
+        user_role: editUserRole,
       };
       
       // Remove password from payload if empty
@@ -1072,6 +1093,21 @@ function UserManagementPage() {
               )}
             </div>
             <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="create-user_role">User Role</FormLabel>
+              <select
+                id="create-user_role"
+                value={createUserRole}
+                onChange={(e) => setCreateUserRole(e.target.value)}
+                className="w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8"
+              >
+                {USER_ROLE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-12 sm:col-span-6">
               <FormLabel htmlFor="create-subscription">
                 Subscription
               </FormLabel>
@@ -1108,14 +1144,18 @@ function UserManagementPage() {
               <FormLabel htmlFor="create-user_company">
                 User Company
               </FormLabel>
-              <FormInput
-                id="create-user_company"
-                type="text"
-                placeholder="Enter user company"
-                value={createFormData.user_company}
-                onChange={(e) =>
-                  setCreateFormData({ ...createFormData, user_company: e.target.value })
-                }
+              <CompanySelect
+                value={createCompanyValue}
+                onChange={(selected: any) => {
+                  const company = Array.isArray(selected) ? selected?.[0] : selected;
+                  setCreateCompanyValue(company || null);
+                  setCreateFormData({ ...createFormData, user_company: company?.label || "" });
+                }}
+                isMulti={false}
+                className="w-full"
+                placeholder="Search Company"
+                setDefaultValue={createFormData.user_company}
+                isClearable
               />
             </div>
           </Dialog.Description>
@@ -1248,6 +1288,21 @@ function UserManagementPage() {
               )}
             </div>
             <div className="col-span-12 sm:col-span-6">
+              <FormLabel htmlFor="edit-user_role">User Role</FormLabel>
+              <select
+                id="edit-user_role"
+                value={editUserRole}
+                onChange={(e) => setEditUserRole(e.target.value)}
+                className="w-full text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8"
+              >
+                {USER_ROLE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-12 sm:col-span-6">
               <FormLabel htmlFor="edit-subscription">
                 Subscription
               </FormLabel>
@@ -1284,14 +1339,18 @@ function UserManagementPage() {
               <FormLabel htmlFor="edit-user_company">
                 User Company
               </FormLabel>
-              <FormInput
-                id="edit-user_company"
-                type="text"
-                placeholder="Enter user company"
-                value={editFormData.user_company || "ZMH Advisors"}
-                onChange={(e) =>
-                  setEditFormData({ ...editFormData, user_company: e.target.value })
-                }
+              <CompanySelect
+                value={editCompanyValue}
+                onChange={(selected: any) => {
+                  const company = Array.isArray(selected) ? selected?.[0] : selected;
+                  setEditCompanyValue(company || null);
+                  setEditFormData({ ...editFormData, user_company: company?.label || "" });
+                }}
+                isMulti={false}
+                className="w-full"
+                placeholder="Search Company"
+                setDefaultValue={editFormData.user_company}
+                isClearable
               />
             </div>
             <div className="col-span-12">

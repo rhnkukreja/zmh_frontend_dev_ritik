@@ -105,12 +105,26 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         }
         if (searchPoponents) {
           return (
-            response.data?.results?.map((item: any) => ({
-              label: item[getOptionKey as string] ?? item.institution,
-              value: getValueKey
+            response.data?.results?.map((item: any) => {
+              // support getOptionKey as string or array of keys (e.g. ["institution_name","region"])
+              let label: string;
+              if (Array.isArray(getOptionKey)) {
+                const nameKey = getOptionKey[0];
+                const regionKey = getOptionKey[1];
+                const name = item[nameKey] ?? item.institution ?? "";
+                const region = regionKey ? item[regionKey] : undefined;
+                // only show region when it's EMEA as requested
+                label = region && String(region).toUpperCase() === "EMEA" ? `${name} (${region})` : name;
+              } else {
+                label = item[getOptionKey as string] ?? item.institution ?? "";
+              }
+
+              const value = getValueKey
                 ? item[getValueKey as string]
-                : item[getOptionKey as string] ?? item.institution,
-            })) || []
+                : (Array.isArray(getOptionKey) ? (item[getOptionKey[0]] ?? item.institution) : (item[getOptionKey as string] ?? item.institution));
+
+              return { label, value };
+            }) || []
           );
         }
 

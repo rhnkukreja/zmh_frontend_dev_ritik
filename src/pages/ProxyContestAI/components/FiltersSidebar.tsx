@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import Lucide from "@/components/Base/Lucide";
 import clsx from "clsx";
 
-type TabKey = "overview" | "detailed";
-
 interface FiltersSidebarProps {
   filtersData: any;
   filtersLoading: boolean;
-  activeTab: TabKey;
+  activeTab: "overview" | "detailed" | "activist_profile";
   /* shared (current tab) */
   selectedYears: string[];
   selectedInstIds: number[];
@@ -183,7 +181,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
             })()}
 
             {/* ACTIVIST — Detailed view only (before Institutions) */}
-            {activeTab === "detailed" && filtersData?.activist_names?.length > 0 && (
+            {(activeTab === "detailed" || activeTab === "activist_profile") && filtersData?.activist_names?.length > 0 && (
               <div>
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Activist</h4>
                 <div className="space-y-1">

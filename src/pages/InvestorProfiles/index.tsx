@@ -88,7 +88,7 @@ function Main() {
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [pdfTitle, setPdfTitle] = useState<string>("");
   const [selectedProfileIds, setSelectedProfileIds] = useState<Set<number>>(new Set());
-  const [selectedProfilesData, setSelectedProfilesData] = useState<Map<number, string>>(new Map());
+  const [selectedProfilesData, setSelectedProfilesData] = useState<Map<number, { name: string; region?: string }>>(new Map());
   const [selectedProfilesModalOpen, setSelectedProfilesModalOpen] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const isInitialInstitutionSync = useRef(true);
@@ -124,11 +124,11 @@ function Main() {
       }
     });
 
-    console.log("[InvestorProfiles] backend request payload", {
-      page,
-      payload: debugPayload,
-      dynamicURL,
-    });
+    // console.log("[InvestorProfiles] backend request payload", {
+    //   page,
+    //   payload: debugPayload,
+    //   dynamicURL,
+    // });
 
     dispatch(fetchInvestersProfiles(dynamicURL));
     const { institution_name, institution_id, ...restFilters } = filters;
@@ -178,11 +178,11 @@ function Main() {
       .map((item) => Number(item?.value))
       .filter((value) => Number.isFinite(value) && value > 0);
 
-    console.log("[InvestorProfiles] institution selection", {
-      selectedInstitutions,
-      institutionNames,
-      institutionIds,
-    });
+    // console.log("[InvestorProfiles] institution selection", {
+    //   selectedInstitutions,
+    //   institutionNames,
+    //   institutionIds,
+    // });
 
     batch(() => {
       dispatch(setFilter({ key: "institution_name", value: institutionNames }));
@@ -298,7 +298,7 @@ function Main() {
     }
   };
 
-  const toggleProfileSelection = (profileId: number, profileName?: string) => {
+  const toggleProfileSelection = (profileId: number, profileName?: string, profileRegion?: string) => {
     setSelectedProfileIds(prev => {
       const next = new Set(prev);
       if (next.has(profileId)) next.delete(profileId);
@@ -308,7 +308,7 @@ function Main() {
     setSelectedProfilesData(prev => {
       const next = new Map(prev);
       if (next.has(profileId)) next.delete(profileId);
-      else if (profileName !== undefined) next.set(profileId, profileName);
+      else if (profileName !== undefined) next.set(profileId, { name: profileName, region: profileRegion });
       return next;
     });
   };
@@ -449,7 +449,7 @@ function Main() {
                     searchTerms={searchTerms}
                     setSearchTerms={setSearchTerms}
                     url="/investor_with_voting_guidelines/"
-                    getOptionKey="institution_name"
+                    getOptionKey={["institution_name", "region"]}
                     getValueKey="id"
                     placeHolder="Search Institution"
                     onSearchChange={resetPage}
@@ -606,7 +606,7 @@ function Main() {
                                 <input
                                   type="checkbox"
                                   checked={selectedProfileIds.has(profile.investor_profile_id)}
-                                  onChange={() => toggleProfileSelection(profile.investor_profile_id!, profile.institution || profile.institution_name || '')}
+                                  onChange={() => toggleProfileSelection(profile.investor_profile_id!, profile.institution || profile.institution_name || '', profile.region)}
                                   onClick={(e) => e.stopPropagation()}
                                   className="w-4 h-4 flex-none rounded border-slate-300 text-primary accent-primary cursor-pointer"
                                 />
@@ -671,11 +671,11 @@ function Main() {
                           <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
                             <button
                               disabled={!profile.investor_profile_id}
-                              onClick={(e) => {
+                                onClick={(e) => {
                                 e.stopPropagation();
                                 const id = profile.investor_profile_id;
                                 if (!id) return;
-                                toggleProfileSelection(id, profile.institution || profile.institution_name || '');
+                                toggleProfileSelection(id, profile.institution || profile.institution_name || '', profile.region);
                               }}
                               className={`p-1 ${profile.investor_profile_id ? 'cursor-pointer' : 'cursor-not-allowed opacity-30'}`}
                               aria-label="Toggle download"
@@ -855,17 +855,25 @@ function Main() {
                     <div className="text-sm text-slate-600">No profiles selected.</div>
                   ) : (
                     <ul className="space-y-2">
-                      {Array.from(selectedProfileIds).map((id) => (
-                        <li key={id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm">
-                          <div className="text-sm font-medium">{selectedProfilesData.get(id) || `Profile #${id}`}</div>
-                          <button
-                            onClick={() => toggleProfileSelection(id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Lucide icon="X" className="w-4 h-4" />
-                          </button>
-                        </li>
-                      ))}
+                      {Array.from(selectedProfileIds).map((id) => {
+                        const raw = selectedProfilesData.get(id) as any;
+                        const name = typeof raw === 'string' ? raw : raw?.name;
+                        const region = typeof raw === 'string' ? undefined : raw?.region;
+                        return (
+                          <li key={id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm">
+                            <div className="text-sm font-medium">
+                                {name || `Profile #${id}`}
+                                {region && String(region).toUpperCase() === 'EMEA' ? ` (${region})` : ''}
+                              </div>
+                            <button
+                              onClick={() => toggleProfileSelection(id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Lucide icon="X" className="w-4 h-4" />
+                            </button>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
