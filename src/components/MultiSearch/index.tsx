@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import Lucide from "@/components/Base/Lucide";
 
@@ -57,6 +57,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   onSelectionChange,
 }) => {
   const dispatch = useAppDispatch();
+  const isInitialMount = useRef(true);
   const [searchValue, setSearchValue] = useState("");
   const [options, setOptions] = useState<SearchOption[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<
@@ -68,26 +69,25 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
 
   async function fetchOptions(query: string): Promise<any> {
     setIsLoading(true);
+    // When getOptionKey is an array, use only the first element as the URL query key
+    const searchParamKey = queryKey || (Array.isArray(getOptionKey) ? getOptionKey[0] : getOptionKey);
     try {
       const responses = await Promise.all(
         Array.isArray(url)
           ? url?.map((u) =>
             axiosInstance.get(
-              `${u}${u.includes("?") ? "&" : "?"}${queryKey || getOptionKey
-              }=${query}&all=true`
+              `${u}${u.includes("?") ? "&" : "?"}${searchParamKey}=${query}&all=true`
             )
           )
           : isRadioInput
             ? [
               axiosInstance.get(
-                `${url}${url.includes("?") ? "&" : "?"
-                }${urlQueryKey}=${query}&all=true`
+                `${url}${url.includes("?") ? "&" : "?"}${urlQueryKey}=${query}&all=true`
               ),
             ]
             : [
               axiosInstance.get(
-                `${url}${url.includes("?") ? "&" : "?"}${queryKey || getOptionKey
-                }=${query}${searchPoponents ? "" : "&all=true"} `
+                `${url}${url.includes("?") ? "&" : "?"}${searchParamKey}=${query}${searchPoponents ? "" : "&all=true"} `
               ),
             ]
       );
@@ -183,7 +183,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (msg) setMsg("");
     setSearchValue(e.target.value);
-
+    setOptions([]); // Clear stale options so old results don't show while the new debounced fetch is pending
     debouncedFetchResults(e.target.value);
 
     if (onSearchChange) {
@@ -239,6 +239,10 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
   }, [searchTerms]);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     if (onSelectionChange) {
       onSelectionChange(selectedOptions);
     }
