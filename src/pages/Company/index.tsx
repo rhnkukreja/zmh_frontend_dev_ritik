@@ -314,7 +314,7 @@ function CompanyList() {
                                   <div className="w-full ">
                                     <div className="w-full mt-1">
                                       <div className="text-left text-slate-500 ">
-                                        Select Comapnies
+                                        Select Companies
                                       </div>
                                       <div className=" mt-2">
                                         <Controller
