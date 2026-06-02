@@ -7,7 +7,7 @@ import {
   generateFilterChips,
   downloadFileFromAPI,
 } from "@/utils/helper";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -65,7 +65,7 @@ const index = () => {
   });
 
   const totalPages = Math.ceil(totalNPXCount / 50);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     companyGlobalSearchName,
@@ -96,6 +96,11 @@ const index = () => {
     fund_name: [],
   });
   const [meetingDate, setMeetingDate] = useState('');
+  const isFirstLoad = useRef(true);
+  const savedInstitutionRef = useRef<string>('');
+  const fetchRequestId = useRef(0); // incremented on every call; guards against stale responses
+  const allApplyFilterRef = useRef<any>({}); // always-fresh mirror of allApplyFilter state
+  const savedFiltersRef = useRef<any>({ fund_name: [], proposal: [], vote: [], vote_category: [], keyword: [] });
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
       proposal: [],
@@ -137,10 +142,11 @@ const index = () => {
     }
   };
 
-  const getFundNameDependentDropdown = async (value: any) => {
+  const getFundNameDependentDropdown = async (value: any, meetingDateOverride?: string) => {
     if (value !== "") {
       // Always explicitly include year parameter
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      // Accept an explicit override to avoid stale-closure issues when called programmatically
+      const currentMeetingDate = meetingDateOverride !== undefined ? meetingDateOverride : meetingDate;
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024', // Always provide a year value
@@ -207,13 +213,17 @@ const index = () => {
   };
 
   // Function to fetch all available institutions and auto-select first one with single API call
-  const fetchAllInstitutions = useCallback(async () => {
+  const fetchAllInstitutions = useCallback(async (savedInstitution?: string, initialMeetingDate?: string) => {
+    // Stamp this call; if a newer call starts before this one resolves, discard this result
+    const requestId = ++fetchRequestId.current;
     try {
       // Keep initial loading true until we complete the process
       setInitialLoading(true);
 
-      // Prepare parameters for API call to fetch all institutions
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      // Use the explicitly passed meeting date — avoids stale closure issues.
+      // Initial page load passes meetingDateFromURL; company-change calls pass '' so the
+      // backend returns the correct date for the new company.
+      const currentMeetingDate = initialMeetingDate || '';
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024',
@@ -222,11 +232,18 @@ const index = () => {
 
       const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
 
+      // A newer request has been fired — discard this stale response
+      if (requestId !== fetchRequestId.current) return;
+
       if (res.result && res.result.all_institution && res.result.all_institution.length > 0) {
         setAllInstitutions(res.result.all_institution);
 
-        // Auto-select the first institution
-        const firstInstitution = res.result.all_institution[0];
+        // Prefer previously selected institution if it exists in the new company's list;
+        // otherwise fall back to the first one.
+        const firstInstitution =
+          (savedInstitution && res.result.all_institution.includes(savedInstitution))
+            ? savedInstitution
+            : res.result.all_institution[0];
 
         // Format for the dropdown
         const institutionValue = {
@@ -286,18 +303,75 @@ const index = () => {
         // Set dependent dropdown options from the same response
         setApiDependentDropdownOptions({ ...res.result });
 
+        // Fetch fund + dependent dropdown options for the selected institution using the
+        // fresh meeting_date from this response (avoids stale-state issues on company change)
+        if (firstInstitution && res.result?.meeting_date) {
+          await getFundNameDependentDropdown(firstInstitution, formatMeetingDate(res.result.meeting_date));
+        }
+
+        // Re-apply any non-institution filters the user had before the company change
+        if (requestId !== fetchRequestId.current) return;
+        const saved = savedFiltersRef.current;
+        const hasSavedFilters =
+          (Array.isArray(saved.fund_name) && saved.fund_name.length > 0) ||
+          (Array.isArray(saved.proposal) && saved.proposal.length > 0) ||
+          (Array.isArray(saved.vote) && saved.vote.length > 0) ||
+          (Array.isArray(saved.vote_category) && saved.vote_category.length > 0) ||
+          (Array.isArray(saved.keyword) && saved.keyword.length > 0) ||
+          (typeof saved.keyword === 'string' && saved.keyword.length > 0);
+
+        if (hasSavedFilters) {
+          if (Array.isArray(saved.fund_name) && saved.fund_name.length > 0) {
+            setValue('fund_name', saved.fund_name);
+            handleDropdownChange('fund_name', saved.fund_name);
+            setShowFundName(true);
+          }
+          if (saved.proposal) setValue('proposal', saved.proposal);
+          if (saved.vote) setValue('vote', saved.vote);
+          if (saved.vote_category) setValue('vote_category', saved.vote_category);
+          if (saved.keyword && (Array.isArray(saved.keyword) ? saved.keyword.length > 0 : saved.keyword)) {
+            setValue('keyword', saved.keyword);
+          }
+
+          const fullFilterObj = {
+            ...filterObj,
+            ...(Array.isArray(saved.fund_name) && saved.fund_name.length > 0 && { fund_name: saved.fund_name }),
+            ...(saved.proposal && { proposal: saved.proposal }),
+            ...(saved.vote && { vote: saved.vote }),
+            ...(saved.vote_category && { vote_category: saved.vote_category }),
+            ...(saved.keyword && { keyword: saved.keyword }),
+          };
+          const fullChipsObj = {
+            institution_name: [firstInstitution],
+            fund_name: saved.fund_name || [],
+            proposal: saved.proposal || [],
+            vote: saved.vote || [],
+            vote_category: saved.vote_category || [],
+            keyword: saved.keyword || '',
+          };
+          setallApplyFilter(fullFilterObj);
+          setSelectedChipFilters(generateFilterChips(fullChipsObj));
+          setFiltersLength(countValidFilters(fullChipsObj));
+          dispatch(resetPage());
+          dispatch(fetchNpxProxyDashboard(createDynamicURL(`${baseURL}/npx/detail/`, fullFilterObj, undefined, 1)));
+        }
+
       } else {
+        if (requestId !== fetchRequestId.current) return;
         setAllInstitutions([]);
         // Even if no institutions, we need to stop initial loading
         setInitialLoading(false);
       }
     } catch (error) {
+      if (requestId !== fetchRequestId.current) return;
       console.error("Error fetching institutions:", error);
       setAllInstitutions([]);
       setInitialLoading(false);
     } finally {
-      // Ensure initial loading is set to false after the first API call completes
-      setInitialLoading(false);
+      // Only mark loading done if this is still the active request
+      if (requestId === fetchRequestId.current) {
+        setInitialLoading(false);
+      }
     }
   }, [companyGlobalSearchName, year, dispatch]);
 
@@ -305,7 +379,7 @@ const index = () => {
   const fetchInitialData = useCallback(async () => {
     try {
       // Prepare parameters with year and selected institution if any
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      const currentMeetingDate = meetingDate; // Use state only
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year,
@@ -333,7 +407,22 @@ const index = () => {
     }
   }, [companyGlobalSearchName, year]);
 
+  // Keep allApplyFilterRef always in sync so the company-change useEffect can read it without stale closure
   useEffect(() => {
+    allApplyFilterRef.current = allApplyFilter;
+  });
+
+  useEffect(() => {
+    // Save non-institution filter values BEFORE resetting, so they can be re-applied after company data loads
+    const current = allApplyFilterRef.current;
+    savedFiltersRef.current = {
+      fund_name: current?.fund_name || [],
+      proposal: current?.proposal || [],
+      vote: current?.vote || [],
+      vote_category: current?.vote_category || [],
+      keyword: current?.keyword || [],
+    };
+
     // Reset values on company or year change
     setMeetingDate('');
     setAllInstitutions([]);
@@ -359,17 +448,58 @@ const index = () => {
     // Only fetch institutions if we have company data
     // This will make ONLY ONE API call that handles everything
     if (companyGlobalSearchName) {
-      fetchAllInstitutions();
+      // Initial page load: pass URL meeting_date so the correct meeting is pre-selected.
+      // Company/year change: pass '' so no stale date constrains the new company's API call.
+      const meetingDateToPass = isFirstLoad.current ? (meetingDateFromURL ?? '') : '';
+      fetchAllInstitutions(savedInstitutionRef.current, meetingDateToPass);
     } else {
       // If no company, stop loading
       setInitialLoading(false);
     }
+    // After the first call, URL meeting_date is no longer valid for subsequent companies
+    isFirstLoad.current = false;
   }, [companyGlobalSearchName, year]);
+
+  // Keep savedInstitutionRef in sync with the currently selected institution
+  useEffect(() => {
+    const inst = Array.isArray(dropdownValues.institution_name)
+      ? dropdownValues.institution_name[0] ?? ''
+      : (typeof dropdownValues.institution_name === 'string' ? dropdownValues.institution_name : '');
+    if (inst) savedInstitutionRef.current = inst;
+  }, [dropdownValues.institution_name]);
+
+  // Keep URL ticker in sync when user changes company via global search
+  useEffect(() => {
+    if (!companyGlobalSearchTicker) return;
+    const newTicker = companyGlobalSearchTicker.split('-')[0];
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      if (params.get('ticker') !== newTicker) {
+        params.set('ticker', newTicker);
+        params.delete('meeting_date'); // remove stale meeting_date for the old company
+      }
+      return params;
+    });
+  }, [companyGlobalSearchTicker]);
+
+  // Update URL meeting_date once the API returns the correct date for the current company
+  useEffect(() => {
+    if (!meetingDate) return;
+    const formatted = formatMeetingDate(meetingDate);
+    if (!formatted) return;
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      if (params.get('meeting_date') !== formatted) {
+        params.set('meeting_date', formatted);
+      }
+      return params;
+    });
+  }, [meetingDate]);
 
 
   const getDependentDropdown = async () => {
     // Prepare parameters for API call
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     const paramFilter = {
       global_search: companyGlobalSearchName,
       year: year, // Add year parameter from URL
@@ -487,7 +617,7 @@ const index = () => {
   useEffect(() => {
     // Only handle pagination changes, not initial data loading
     if (allApplyFilter && Object.keys(allApplyFilter).length > 0 && page > 1) {
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      const currentMeetingDate = meetingDate; // Use state — always correct for the current company
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
@@ -613,7 +743,7 @@ const index = () => {
 
     // Always explicitly include year parameter and meeting date
     const yearParam = year || '2024'; // Ensure we always have a year value
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     updatedFilters.year = yearParam;
     if (currentMeetingDate) {
       updatedFilters.meeting_date = formatMeetingDate(currentMeetingDate); // Include formatted meeting date
@@ -637,7 +767,7 @@ const index = () => {
       return;
     }
 
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     const filterObj = {
       global_search: companyGlobalSearchName,
       institution_name:
@@ -717,7 +847,7 @@ const index = () => {
     setallApplyFilter({});
 
     // Reset pagination and fetch fresh data with just basic parameters
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     dispatch(resetPage());
     dispatch(
       fetchNpxProxyDashboard(
