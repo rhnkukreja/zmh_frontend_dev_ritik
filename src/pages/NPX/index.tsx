@@ -65,7 +65,7 @@ const index = () => {
   });
 
   const totalPages = Math.ceil(totalNPXCount / 50);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     companyGlobalSearchName,
@@ -97,6 +97,7 @@ const index = () => {
   });
   const [meetingDate, setMeetingDate] = useState('');
   const isFirstLoad = useRef(true);
+  const savedInstitutionRef = useRef<string>('');
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
       proposal: [],
@@ -208,7 +209,7 @@ const index = () => {
   };
 
   // Function to fetch all available institutions and auto-select first one with single API call
-  const fetchAllInstitutions = useCallback(async () => {
+  const fetchAllInstitutions = useCallback(async (savedInstitution?: string) => {
     try {
       // Keep initial loading true until we complete the process
       setInitialLoading(true);
@@ -228,8 +229,12 @@ const index = () => {
       if (res.result && res.result.all_institution && res.result.all_institution.length > 0) {
         setAllInstitutions(res.result.all_institution);
 
-        // Auto-select the first institution
-        const firstInstitution = res.result.all_institution[0];
+        // Prefer previously selected institution if it exists in the new company's list;
+        // otherwise fall back to the first one.
+        const firstInstitution =
+          (savedInstitution && res.result.all_institution.includes(savedInstitution))
+            ? savedInstitution
+            : res.result.all_institution[0];
 
         // Format for the dropdown
         const institutionValue = {
@@ -362,7 +367,7 @@ const index = () => {
     // Only fetch institutions if we have company data
     // This will make ONLY ONE API call that handles everything
     if (companyGlobalSearchName) {
-      fetchAllInstitutions();
+      fetchAllInstitutions(savedInstitutionRef.current);
     } else {
       // If no company, stop loading
       setInitialLoading(false);
@@ -370,6 +375,42 @@ const index = () => {
     // After the first call, URL meeting_date is no longer valid for subsequent companies
     isFirstLoad.current = false;
   }, [companyGlobalSearchName, year]);
+
+  // Keep savedInstitutionRef in sync with the currently selected institution
+  useEffect(() => {
+    const inst = Array.isArray(dropdownValues.institution_name)
+      ? dropdownValues.institution_name[0] ?? ''
+      : (typeof dropdownValues.institution_name === 'string' ? dropdownValues.institution_name : '');
+    if (inst) savedInstitutionRef.current = inst;
+  }, [dropdownValues.institution_name]);
+
+  // Keep URL ticker in sync when user changes company via global search
+  useEffect(() => {
+    if (!companyGlobalSearchTicker) return;
+    const newTicker = companyGlobalSearchTicker.split('-')[0];
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      if (params.get('ticker') !== newTicker) {
+        params.set('ticker', newTicker);
+        params.delete('meeting_date'); // remove stale meeting_date for the old company
+      }
+      return params;
+    });
+  }, [companyGlobalSearchTicker]);
+
+  // Update URL meeting_date once the API returns the correct date for the current company
+  useEffect(() => {
+    if (!meetingDate) return;
+    const formatted = formatMeetingDate(meetingDate);
+    if (!formatted) return;
+    setSearchParams(prev => {
+      const params = new URLSearchParams(prev);
+      if (params.get('meeting_date') !== formatted) {
+        params.set('meeting_date', formatted);
+      }
+      return params;
+    });
+  }, [meetingDate]);
 
 
   const getDependentDropdown = async () => {
