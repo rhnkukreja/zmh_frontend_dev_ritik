@@ -99,6 +99,8 @@ const index = () => {
   const isFirstLoad = useRef(true);
   const savedInstitutionRef = useRef<string>('');
   const fetchRequestId = useRef(0); // incremented on every call; guards against stale responses
+  const allApplyFilterRef = useRef<any>({}); // always-fresh mirror of allApplyFilter state
+  const savedFiltersRef = useRef<any>({ fund_name: [], proposal: [], vote: [], vote_category: [], keyword: [] });
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
       proposal: [],
@@ -140,10 +142,11 @@ const index = () => {
     }
   };
 
-  const getFundNameDependentDropdown = async (value: any) => {
+  const getFundNameDependentDropdown = async (value: any, meetingDateOverride?: string) => {
     if (value !== "") {
       // Always explicitly include year parameter
-      const currentMeetingDate = meetingDate; // Use state only — meetingDate is set from API after initial load
+      // Accept an explicit override to avoid stale-closure issues when called programmatically
+      const currentMeetingDate = meetingDateOverride !== undefined ? meetingDateOverride : meetingDate;
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024', // Always provide a year value
@@ -300,6 +303,59 @@ const index = () => {
         // Set dependent dropdown options from the same response
         setApiDependentDropdownOptions({ ...res.result });
 
+        // Fetch fund + dependent dropdown options for the selected institution using the
+        // fresh meeting_date from this response (avoids stale-state issues on company change)
+        if (firstInstitution && res.result?.meeting_date) {
+          await getFundNameDependentDropdown(firstInstitution, formatMeetingDate(res.result.meeting_date));
+        }
+
+        // Re-apply any non-institution filters the user had before the company change
+        if (requestId !== fetchRequestId.current) return;
+        const saved = savedFiltersRef.current;
+        const hasSavedFilters =
+          (Array.isArray(saved.fund_name) && saved.fund_name.length > 0) ||
+          (Array.isArray(saved.proposal) && saved.proposal.length > 0) ||
+          (Array.isArray(saved.vote) && saved.vote.length > 0) ||
+          (Array.isArray(saved.vote_category) && saved.vote_category.length > 0) ||
+          (Array.isArray(saved.keyword) && saved.keyword.length > 0) ||
+          (typeof saved.keyword === 'string' && saved.keyword.length > 0);
+
+        if (hasSavedFilters) {
+          if (Array.isArray(saved.fund_name) && saved.fund_name.length > 0) {
+            setValue('fund_name', saved.fund_name);
+            handleDropdownChange('fund_name', saved.fund_name);
+            setShowFundName(true);
+          }
+          if (saved.proposal) setValue('proposal', saved.proposal);
+          if (saved.vote) setValue('vote', saved.vote);
+          if (saved.vote_category) setValue('vote_category', saved.vote_category);
+          if (saved.keyword && (Array.isArray(saved.keyword) ? saved.keyword.length > 0 : saved.keyword)) {
+            setValue('keyword', saved.keyword);
+          }
+
+          const fullFilterObj = {
+            ...filterObj,
+            ...(Array.isArray(saved.fund_name) && saved.fund_name.length > 0 && { fund_name: saved.fund_name }),
+            ...(saved.proposal && { proposal: saved.proposal }),
+            ...(saved.vote && { vote: saved.vote }),
+            ...(saved.vote_category && { vote_category: saved.vote_category }),
+            ...(saved.keyword && { keyword: saved.keyword }),
+          };
+          const fullChipsObj = {
+            institution_name: [firstInstitution],
+            fund_name: saved.fund_name || [],
+            proposal: saved.proposal || [],
+            vote: saved.vote || [],
+            vote_category: saved.vote_category || [],
+            keyword: saved.keyword || '',
+          };
+          setallApplyFilter(fullFilterObj);
+          setSelectedChipFilters(generateFilterChips(fullChipsObj));
+          setFiltersLength(countValidFilters(fullChipsObj));
+          dispatch(resetPage());
+          dispatch(fetchNpxProxyDashboard(createDynamicURL(`${baseURL}/npx/detail/`, fullFilterObj, undefined, 1)));
+        }
+
       } else {
         if (requestId !== fetchRequestId.current) return;
         setAllInstitutions([]);
@@ -351,7 +407,22 @@ const index = () => {
     }
   }, [companyGlobalSearchName, year]);
 
+  // Keep allApplyFilterRef always in sync so the company-change useEffect can read it without stale closure
   useEffect(() => {
+    allApplyFilterRef.current = allApplyFilter;
+  });
+
+  useEffect(() => {
+    // Save non-institution filter values BEFORE resetting, so they can be re-applied after company data loads
+    const current = allApplyFilterRef.current;
+    savedFiltersRef.current = {
+      fund_name: current?.fund_name || [],
+      proposal: current?.proposal || [],
+      vote: current?.vote || [],
+      vote_category: current?.vote_category || [],
+      keyword: current?.keyword || [],
+    };
+
     // Reset values on company or year change
     setMeetingDate('');
     setAllInstitutions([]);
