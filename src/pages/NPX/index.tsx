@@ -98,6 +98,7 @@ const index = () => {
   const [meetingDate, setMeetingDate] = useState('');
   const isFirstLoad = useRef(true);
   const savedInstitutionRef = useRef<string>('');
+  const fetchRequestId = useRef(0); // incremented on every call; guards against stale responses
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
       proposal: [],
@@ -209,15 +210,17 @@ const index = () => {
   };
 
   // Function to fetch all available institutions and auto-select first one with single API call
-  const fetchAllInstitutions = useCallback(async (savedInstitution?: string) => {
+  const fetchAllInstitutions = useCallback(async (savedInstitution?: string, initialMeetingDate?: string) => {
+    // Stamp this call; if a newer call starts before this one resolves, discard this result
+    const requestId = ++fetchRequestId.current;
     try {
       // Keep initial loading true until we complete the process
       setInitialLoading(true);
 
-      // On initial page load use the meeting_date from URL params (passed from the calling page).
-      // On subsequent calls (company change) meetingDateFromURL is stale for the new company
-      // so we intentionally omit it and let the backend return the correct date.
-      const currentMeetingDate = isFirstLoad.current ? (meetingDateFromURL || meetingDate) : meetingDate;
+      // Use the explicitly passed meeting date — avoids stale closure issues.
+      // Initial page load passes meetingDateFromURL; company-change calls pass '' so the
+      // backend returns the correct date for the new company.
+      const currentMeetingDate = initialMeetingDate || '';
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024',
@@ -225,6 +228,9 @@ const index = () => {
       };
 
       const res = await dashboardService.getDynamicNPXDropdownValues(paramFilter);
+
+      // A newer request has been fired — discard this stale response
+      if (requestId !== fetchRequestId.current) return;
 
       if (res.result && res.result.all_institution && res.result.all_institution.length > 0) {
         setAllInstitutions(res.result.all_institution);
@@ -295,17 +301,21 @@ const index = () => {
         setApiDependentDropdownOptions({ ...res.result });
 
       } else {
+        if (requestId !== fetchRequestId.current) return;
         setAllInstitutions([]);
         // Even if no institutions, we need to stop initial loading
         setInitialLoading(false);
       }
     } catch (error) {
+      if (requestId !== fetchRequestId.current) return;
       console.error("Error fetching institutions:", error);
       setAllInstitutions([]);
       setInitialLoading(false);
     } finally {
-      // Ensure initial loading is set to false after the first API call completes
-      setInitialLoading(false);
+      // Only mark loading done if this is still the active request
+      if (requestId === fetchRequestId.current) {
+        setInitialLoading(false);
+      }
     }
   }, [companyGlobalSearchName, year, dispatch]);
 
@@ -367,7 +377,10 @@ const index = () => {
     // Only fetch institutions if we have company data
     // This will make ONLY ONE API call that handles everything
     if (companyGlobalSearchName) {
-      fetchAllInstitutions(savedInstitutionRef.current);
+      // Initial page load: pass URL meeting_date so the correct meeting is pre-selected.
+      // Company/year change: pass '' so no stale date constrains the new company's API call.
+      const meetingDateToPass = isFirstLoad.current ? (meetingDateFromURL ?? '') : '';
+      fetchAllInstitutions(savedInstitutionRef.current, meetingDateToPass);
     } else {
       // If no company, stop loading
       setInitialLoading(false);
