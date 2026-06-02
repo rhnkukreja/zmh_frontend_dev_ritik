@@ -627,9 +627,7 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
 
     if (showEyeIcon) {
       return (
-        <Tippy
-          content={summaryLoading && activeInstitutionName === dashboard?.institution_name ? "Loading..." : "Scrape/View Summary"}
-          options={{ theme: "light" }}
+        <div
           className="w-5 h-5"
           onClick={() => {
             if (!summaryLoading) {
@@ -644,7 +642,7 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
               <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
             )}
           </div>
-        </Tippy>
+        </div>
       );
     }
 

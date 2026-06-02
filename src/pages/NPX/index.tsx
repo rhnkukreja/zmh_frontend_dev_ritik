@@ -7,7 +7,7 @@ import {
   generateFilterChips,
   downloadFileFromAPI,
 } from "@/utils/helper";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -96,6 +96,7 @@ const index = () => {
     fund_name: [],
   });
   const [meetingDate, setMeetingDate] = useState('');
+  const isFirstLoad = useRef(true);
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
       proposal: [],
@@ -140,7 +141,7 @@ const index = () => {
   const getFundNameDependentDropdown = async (value: any) => {
     if (value !== "") {
       // Always explicitly include year parameter
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      const currentMeetingDate = meetingDate; // Use state only — meetingDate is set from API after initial load
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024', // Always provide a year value
@@ -212,8 +213,10 @@ const index = () => {
       // Keep initial loading true until we complete the process
       setInitialLoading(true);
 
-      // Prepare parameters for API call to fetch all institutions
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      // On initial page load use the meeting_date from URL params (passed from the calling page).
+      // On subsequent calls (company change) meetingDateFromURL is stale for the new company
+      // so we intentionally omit it and let the backend return the correct date.
+      const currentMeetingDate = isFirstLoad.current ? (meetingDateFromURL || meetingDate) : meetingDate;
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024',
@@ -305,7 +308,7 @@ const index = () => {
   const fetchInitialData = useCallback(async () => {
     try {
       // Prepare parameters with year and selected institution if any
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      const currentMeetingDate = meetingDate; // Use state only
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year,
@@ -364,12 +367,14 @@ const index = () => {
       // If no company, stop loading
       setInitialLoading(false);
     }
+    // After the first call, URL meeting_date is no longer valid for subsequent companies
+    isFirstLoad.current = false;
   }, [companyGlobalSearchName, year]);
 
 
   const getDependentDropdown = async () => {
     // Prepare parameters for API call
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     const paramFilter = {
       global_search: companyGlobalSearchName,
       year: year, // Add year parameter from URL
@@ -487,7 +492,7 @@ const index = () => {
   useEffect(() => {
     // Only handle pagination changes, not initial data loading
     if (allApplyFilter && Object.keys(allApplyFilter).length > 0 && page > 1) {
-      const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+      const currentMeetingDate = meetingDate; // Use state — always correct for the current company
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
@@ -613,7 +618,7 @@ const index = () => {
 
     // Always explicitly include year parameter and meeting date
     const yearParam = year || '2024'; // Ensure we always have a year value
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     updatedFilters.year = yearParam;
     if (currentMeetingDate) {
       updatedFilters.meeting_date = formatMeetingDate(currentMeetingDate); // Include formatted meeting date
@@ -637,7 +642,7 @@ const index = () => {
       return;
     }
 
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     const filterObj = {
       global_search: companyGlobalSearchName,
       institution_name:
@@ -717,7 +722,7 @@ const index = () => {
     setallApplyFilter({});
 
     // Reset pagination and fetch fresh data with just basic parameters
-    const currentMeetingDate = meetingDateFromURL || meetingDate; // Use URL meeting date first, then state
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     dispatch(resetPage());
     dispatch(
       fetchNpxProxyDashboard(
