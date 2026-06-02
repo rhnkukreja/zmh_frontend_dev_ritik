@@ -480,7 +480,7 @@ function Main() {
                     {selectedProfileIds.size > 0 && (
                       <Button
                         onClick={clearSelection}
-                        className="text-xs text-slate-700 border border-slate-400 px-2 py-1 whitespace-nowrap"
+                        className="text-sm text-slate-700 border border-slate-400 rounded-md px-3 py-1.5 whitespace-nowrap"
                       >
                         Clear selection
                       </Button>
@@ -489,7 +489,7 @@ function Main() {
                       <Button
                         onClick={() => selectedProfileIds.size > 0 && downloadProfiles('document')}
                         disabled={selectedProfileIds.size === 0 || isDownloading}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors whitespace-nowrap ${
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors whitespace-nowrap h-[34px] ${
                           selectedProfileIds.size === 0
                             ? 'text-slate-400 border border-slate-200 bg-slate-50 cursor-not-allowed'
                             : 'text-white bg-primary border border-primary hover:bg-primary/90'
@@ -506,10 +506,10 @@ function Main() {
                       {selectedProfileIds.size > 0 && (
                         <button
                           onClick={() => setSelectedProfilesModalOpen(true)}
-                          title="View selected profiles"
-                          className="w-6 h-6 flex items-center justify-center bg-primary text-white text-[11px] font-bold rounded-full hover:bg-primary/80 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-primary/40 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors whitespace-nowrap h-[34px]"
                         >
-                          {selectedProfileIds.size}
+                          <Lucide icon="List" className="w-3.5 h-3.5" />
+                          <span>{selectedProfileIds.size} selected</span>
                         </button>
                       )}
                     </div>
