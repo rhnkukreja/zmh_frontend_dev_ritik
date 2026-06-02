@@ -593,43 +593,64 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
         <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
       )}
     </div>
-                                           <div className="flex items-center gap-x-2">
+    <div className="flex items-center gap-x-2">
   {dashboard?.investor_profile_id ? (
-    /* 1. Show Investor Profile if it exists */
-    <Tippy
-      content="Investor Profile"
-      options={{ theme: "light" }}
-      className="w-5 h-5"
-      onClick={() =>
-        navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
-      }
-    >
-      <div className="flex items-center justify-center w-6 h-6 text-primary">
-        <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
-      </div>
-    </Tippy>
-  ) : (
-    /* 2. Show the Eye button if NO profile exists */
-   <Tippy
-    content={summaryLoading && activeInstitutionName === dashboard?.institution_name ? "Loading..." : "Scrape/View Summary"}
+  /* 1. Show Investor Profile if it exists */
+  <Tippy
+    content="Investor Profile"
     options={{ theme: "light" }}
     className="w-5 h-5"
-    onClick={() => {
-      // Prevent multiple clicks while loading
-      if (!summaryLoading) {
-        handleViewSummary(dashboard?.institution_name);
-      }
-    }}
+    onClick={() =>
+      navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
+    }
   >
-    <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
-      {summaryLoading && activeInstitutionName === dashboard?.institution_name ? (
-        <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-      ) : (
-        <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
-      )}
+    <div className="flex items-center justify-center w-6 h-6 text-primary">
+      <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
     </div>
   </Tippy>
-  )}
+) : (
+  /* 2. Show the Eye button ONLY if in DB, has Brochure, and is present in S3 */
+  (() => {
+    const scrapedInfo = autoScrapedData[dashboard?.institution_name] || {};
+    
+    // 🌟 FIX: Re-define dynInstId in this scope so it doesn't crash!
+    const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
+    
+    // Check if it's in S3 (your backend returns an 'error' key if it's NOT in S3)
+    const isInS3 = !scrapedInfo.error && Object.keys(scrapedInfo).length > 0;
+    
+    // Check if the Part 2 brochure is present
+    const hasBrochure = !!(scrapedInfo.brochure_url || scrapedInfo.adv_pdf_s3_url);
+    
+    // The strict condition you requested
+    const showEyeIcon = dynInstId && isInS3 && hasBrochure;
+
+    if (showEyeIcon) {
+      return (
+        <Tippy
+          content={summaryLoading && activeInstitutionName === dashboard?.institution_name ? "Loading..." : "Scrape/View Summary"}
+          options={{ theme: "light" }}
+          className="w-5 h-5"
+          onClick={() => {
+            if (!summaryLoading) {
+              handleViewSummary(dashboard?.institution_name);
+            }
+          }}
+        >
+          <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
+            {summaryLoading && activeInstitutionName === dashboard?.institution_name ? (
+              <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+            ) : (
+              <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
+            )}
+          </div>
+        </Tippy>
+      );
+    }
+
+    return <div className="w-6 h-6" />;
+  })()
+)}
 
   {dashboard?.case_studies_id ? (
      <Tippy

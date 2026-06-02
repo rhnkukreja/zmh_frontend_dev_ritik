@@ -476,51 +476,44 @@ function Main() {
                       Count: {count.toLocaleString()}
                     </h2>
                   )}
-                  {selectedProfileIds.size > 0 && (
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    {selectedProfileIds.size > 0 && (
                       <Button
                         onClick={clearSelection}
-                        className="text-xs text-slate-700 border border-slate-400 px-2 py-1 whitespace-nowrap"
+                        className="text-sm text-slate-700 border border-slate-400 rounded-md px-3 py-1.5 whitespace-nowrap"
                       >
                         Clear selection
                       </Button>
-                      <div className="w-px h-5 bg-slate-300" />
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setSelectedProfilesModalOpen(true)} className="text-sm font-medium text-slate-600 hover:text-primary transition-colors whitespace-nowrap">Download as:</button>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => selectedProfileIds.size > 0 && downloadProfiles('document')}
+                        disabled={selectedProfileIds.size === 0 || isDownloading}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors whitespace-nowrap h-[34px] ${
+                          selectedProfileIds.size === 0
+                            ? 'text-slate-400 border border-slate-200 bg-slate-50 cursor-not-allowed'
+                            : 'text-white bg-primary border border-primary hover:bg-primary/90'
+                        } disabled:opacity-60 disabled:cursor-not-allowed`}
+                        aria-label={isDownloading ? 'Downloading...' : 'Download Now'}
+                      >
+                        {isDownloading ? (
+                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Lucide icon="Download" className="w-4 h-4" />
+                        )}
+                        <span>{isDownloading ? 'Downloading...' : 'Download Now'}</span>
+                      </Button>
+                      {selectedProfileIds.size > 0 && (
                         <button
                           onClick={() => setSelectedProfilesModalOpen(true)}
-                          title="View selected profiles"
-                          className="w-5 h-5 flex items-center justify-center bg-primary text-white text-[11px] font-bold rounded-full hover:bg-primary/80 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-primary/40 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors whitespace-nowrap h-[34px]"
                         >
-                          {selectedProfileIds.size}
+                          <Lucide icon="List" className="w-3.5 h-3.5" />
+                          <span>{selectedProfileIds.size} selected</span>
                         </button>
-
-                        {/* Disabled PDF Download for now */}
-                        {/* <button
-                          onClick={() => downloadProfiles('pdf')}
-                          className="flex items-center gap-1 px-3 py-1 border border-red-300 rounded-md bg-white text-sm font-semibold shadow-sm hover:shadow-md"
-                          aria-label="Download PDF"
-                        >
-                         <Lucide icon="FileType" className="w-3 h-3 text-red-600" />
-                          <span className="text-xs tracking-wide text-red-600">PDF</span>
-                        </button> */}
-
-                        <Button
-                          onClick={() => downloadProfiles('document')}
-                          disabled={isDownloading}
-                          className="flex items-center gap-1 px-3 py-1.5  text-sm font-semibold shadow-sm border border-blue-700 hover:shadow-md text-blue-700 hover:bg-blue-700 hover:text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                          aria-label={isDownloading ? "Downloading..." : "Download DOC"}
-                        >
-                          {isDownloading ? (
-                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Lucide icon="FileText" className="w-5 h-5" />
-                          )}
-                          <span className="text-xs tracking-wide">{isDownloading ? 'Downloading' : 'DOC'}</span>
-                        </Button>
-                      </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
@@ -564,7 +557,7 @@ function Main() {
                         All Documents
                       </Table.Td>
                       <Table.Td className="py-4 px-4 font-semibold text-white border-b-0 text-center whitespace-normal last:rounded-r-md">
-                        Download Profile
+                        Select to Download
                       </Table.Td>
                     </Table.Tr>
                   </Table.Thead>
