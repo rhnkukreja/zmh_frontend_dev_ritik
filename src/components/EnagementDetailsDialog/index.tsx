@@ -10,6 +10,7 @@ interface ChartComponentProps {
         environmental: number;
         social: number;
         governance: number;
+        recent_engagement_doc: string | null;
     }[];
     pieChartDataPeerAnalysis: {
         name: string;
@@ -208,95 +209,60 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                                         {onDocumentClick && (
                                                             <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
                                                                 {(() => {
-                                                                    // Map institution name to document URL
-                                                                    const mapping: Record<string, string> = {
-                                                                        // BlackRock variations
-                                                                        "Blackrock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                        "Blackrock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                        "BlackRock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-                                                                        "BlackRock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
-
-                                                                        // Vanguard variations  
-                                                                        "The Vanguard Group": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-                                                                        "Vanguard": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-                                                                        "The Vanguard Group, Inc.": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
-
-                                                                        // Baillie Gifford variations
-                                                                        "Baillie Gifford and Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-                                                                        "Baillie Gifford": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-                                                                        "Baillie Gifford & Co": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-                                                                        "Baillie Gifford & Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
-
-                                                                        // Schroder variations
-                                                                        "Schroder Investment Management Ltd": "https://publications.schroders.com/view/833551848/19/",
-                                                                        "Schroders": "https://publications.schroders.com/view/833551848/19/",
-
-                                                                        // UBS Asset Management variations
-                                                                        "UBS Asset Management AG": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
-                                                                        "UBS Asset Management": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
-                                                                        "UBS": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
-
-                                                                        // Northern Trust variations
-                                                                        "Northern Trust Asset Management": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
-                                                                        "Northern Trust": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
-
-                                                                        // Allspring Global Investments variations
-                                                                        "Allspring Global Investments": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
-                                                                        "Allspring": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
-
-                                                                        // State Street Global Advisors variations
-                                                                        "State Street Global Advisors": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
-                                                                        "SSGA": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
-
-                                                                        // T. Rowe Price variations
-                                                                        "T Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
-                                                                        "T. Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
-                                                                        "T Rowe Price": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
-
-                                                                        // Dimensional 
-                                                                        "Dimensional Fund Advisors": "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf",
-                                                                        "Dimensional": "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf",
-                                                                    };
-
+                                                                    // 1. Try API recent_engagement_doc first
+                                                                    // 2. Fallback to hardcoded mapping if API field is null/empty
                                                                     const institutionName = investor.institution__institution;
-                                                                    let url = mapping[institutionName] ?? "";
+                                                                    let url = investor.recent_engagement_doc ?? "";
 
-                                                                    // If no direct match, try case-insensitive partial matching
                                                                     if (!url || url.trim() === "") {
-                                                                        const lowerInstitution = institutionName.toLowerCase();
-
-                                                                        // More flexible matching patterns
-                                                                        if (lowerInstitution.includes('blackrock') || lowerInstitution.includes('black rock')) {
-                                                                            url = "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf";
-                                                                        } else if (lowerInstitution.includes('vanguard')) {
-                                                                            url = "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf";
-                                                                        } else if (lowerInstitution.includes('baillie') || lowerInstitution.includes('gifford')) {
-                                                                            url = "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025";
-                                                                        } else if (lowerInstitution.includes('schroder') || lowerInstitution.includes('schroders')) {
-                                                                            url = "https://publications.schroders.com/view/833551848/19/";
-                                                                        } else if (lowerInstitution.includes('ubs')) {
-                                                                            url = "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf";
-                                                                        } else if (lowerInstitution.includes('northern trust')) {
-                                                                            url = "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf";
-                                                                        } else if (lowerInstitution.includes('allspring')) {
-                                                                            url = "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf";
-                                                                        } else if (lowerInstitution.includes('state street') || lowerInstitution.includes('global advisors')) {
-                                                                            url = "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf";
-                                                                        } else if (lowerInstitution.includes('rowe') || lowerInstitution.includes('price')) {
-                                                                            url = "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf";
-                                                                        } else if (lowerInstitution.includes('dimensional')) {
-                                                                            url = "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf";
+                                                                        const mapping: Record<string, string> = {
+                                                                            "Blackrock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                            "Blackrock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                            "BlackRock": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                            "BlackRock, Inc.": "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf",
+                                                                            "The Vanguard Group": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                                            "Vanguard": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                                            "The Vanguard Group, Inc.": "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf",
+                                                                            "Baillie Gifford and Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                                            "Baillie Gifford": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                                            "Baillie Gifford & Co": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                                            "Baillie Gifford & Co.": "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025",
+                                                                            "Schroder Investment Management Ltd": "https://publications.schroders.com/view/833551848/19/",
+                                                                            "Schroders": "https://publications.schroders.com/view/833551848/19/",
+                                                                            "UBS Asset Management AG": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+                                                                            "UBS Asset Management": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+                                                                            "UBS": "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf",
+                                                                            "Northern Trust Asset Management": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
+                                                                            "Northern Trust": "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf",
+                                                                            "Allspring Global Investments": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
+                                                                            "Allspring": "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf",
+                                                                            "State Street Global Advisors": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
+                                                                            "SSGA": "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf",
+                                                                            "T Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                                            "T. Rowe Price Associates": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                                            "T Rowe Price": "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf",
+                                                                            "Dimensional Fund Advisors": "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf",
+                                                                            "Dimensional": "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf",
+                                                                        };
+                                                                        url = mapping[institutionName] ?? "";
+                                                                        if (!url) {
+                                                                            const lower = institutionName.toLowerCase();
+                                                                            if (lower.includes('blackrock')) url = "https://www.blackrock.com/corporate/literature/press-release/investment-stewardship-global-quarterly-engagement-summary.pdf";
+                                                                            else if (lower.includes('vanguard')) url = "https://corporate.vanguard.com/content/dam/corp/advocate/investment-stewardship/pdf/policies-and-reports/quarterly_engagement_report_for_vanguard_advised_funds_q2_2025.pdf";
+                                                                            else if (lower.includes('baillie') || lower.includes('gifford')) url = "https://www.bailliegifford.com/en/uk/individual-investors/literature-library/corporate-governance/voting-disclosure-company-engagement/company-engagement-report-q3-2025";
+                                                                            else if (lower.includes('schroder')) url = "https://publications.schroders.com/view/833551848/19/";
+                                                                            else if (lower.includes('ubs')) url = "https://www.ubs.com/global/en/assetmanagement/capabilities/sustainable-investing/stewardship-engagement/_jcr_content/root/contentarea/mainpar/toplevelgrid_1815047835/col_1/innergrid_1956072969/col_1/actionbutton_copy_co.0583425761.file/PS9jb250ZW50L2RhbS9hc3NldHMvYXNzZXQtbWFuYWdlbWVudC1yZWltYWdpbmVkL2dsb2JhbC9jYXBhYmlsaXRpZXMvc3VzdGFpbmFiaWxpdHkvZG9jL3N0ZXdhcmRzaGlwLWFubnVhbC1yZXBvcnQtdWstZnJjLTIwMjQucGRm/stewardship-annual-report-uk-frc-2024.pdf";
+                                                                            else if (lower.includes('northern trust')) url = "https://www.northerntrust.com/content/dam/northerntrust/pws/nt/documents/investment-management/stewardship-report.pdf";
+                                                                            else if (lower.includes('allspring')) url = "https://www.allspringglobal.com/globalassets/assets/insights/pdf/2024-stewardship-annual-report.pdf";
+                                                                            else if (lower.includes('state street')) url = "https://www.ssga.com/library-content/assets/pdf/global/asset-stewardship/asset-stewardship-activity-report.pdf";
+                                                                            else if (lower.includes('rowe')) url = "https://www.troweprice.com/content/dam/trowecorp/Pdfs/esg/stewardship-report.pdf";
+                                                                            else if (lower.includes('dimensional')) url = "https://www.dimensional.com/chmedia/427214/source/annual-stewardship-report.pdf";
                                                                         }
                                                                     }
 
-                                                                    // Always show info icon, but only make it clickable if URL exists
                                                                     return url && url.trim() !== "" ? (
                                                                         <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                // All documents now have URLs, so open in new tab
-                                                                                window.open(url, '_blank', 'noopener,noreferrer');
-                                                                            }}
+                                                                            onClick={(e) => { e.stopPropagation(); window.open(url, '_blank', 'noopener,noreferrer'); }}
                                                                             className="text-blue-600 hover:text-blue-800 p-1 rounded"
                                                                             aria-label={`Open documents for ${institutionName}`}
                                                                         >

@@ -32,6 +32,7 @@ export interface InvestorData {
   environmental: number;
   social: number;
   governance: number;
+  recent_engagement_doc: string | null;
 }
 
 export interface PieChartDataPeerAnalysis {
