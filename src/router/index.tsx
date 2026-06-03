@@ -117,6 +117,8 @@ import FinalProfileSummary from "../pages/Institution/components/FinalProfileSum
 import CaseStudiesAI from "@/pages/CaseStudiesAI";
 import ProxyContestAI from "@/pages/ProxyContestAI";
 
+import ActivistIntelligenceDashboard from "../pages/AIChatbot/ActivistDashboard";
+
 const ProtectedLayout = withAuth(Layout);
 const ProtectedAiChatbot = withAuth(() => <ChatProvider><AiChatbot /></ChatProvider>);
 
@@ -629,6 +631,10 @@ function Router() {
     {
       path: "final-summary/:id",
       element: <FinalProfileSummary/>,
+    },
+    {
+      path: "activist-dashboard",
+      element: <ActivistIntelligenceDashboard/>,
     },
   ];
 
