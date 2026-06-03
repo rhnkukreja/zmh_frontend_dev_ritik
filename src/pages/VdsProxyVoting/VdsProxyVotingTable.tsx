@@ -380,6 +380,10 @@ const VdsProxyVotingTable = () => {
   };
 
   const getSplitContents = (items: any) => {
+    // Guard: API can return null/undefined for split_vote_counts which crashes Object.entries
+    if (!items || typeof items !== "object") {
+      return "";
+    }
     const resultString = Object.entries(items)
       .map(([key, value]) => `${convertToTitleCase(key)}: ${value}`)
       .join(", ");
