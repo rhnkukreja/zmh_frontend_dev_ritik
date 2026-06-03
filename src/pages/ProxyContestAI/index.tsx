@@ -176,7 +176,7 @@ function ProxyContestAI() {
         activist_name: activists.length ? activists : undefined,
         company_id: companyIds.length ? companyIds : undefined,
         page,
-        page_size: 10,
+        page_size: 20,
         iss_support: iss || undefined,
         gl_support: gl || undefined,
       });
@@ -354,6 +354,30 @@ function ProxyContestAI() {
   const activeChips = activeTab === "overview" ? ovChips : dtChips;
   const handleClearAll = activeTab === "overview" ? ovClearAll : dtClearAll;
 
+  // ── Sticky header height + sidebar left measurement ─────────────────────────
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
+  const spacerRef = useRef<HTMLDivElement>(null);
+  const [stickyHeaderH, setStickyHeaderH] = React.useState(0);
+  const [sidebarLeft, setSidebarLeft] = React.useState(0);
+  useEffect(() => {
+    const el = stickyHeaderRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setStickyHeaderH(el.offsetHeight));
+    ro.observe(el);
+    setStickyHeaderH(el.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
+  useEffect(() => {
+    const measure = () => {
+      if (spacerRef.current) {
+        setSidebarLeft(spacerRef.current.getBoundingClientRect().left);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [sidebarOpen]);
+
   // ── Current tab's filter values for sidebar ──────────────────────────────────
   const curYears = activeTab === "overview" ? ovYears : dtYears;
   const curInstIds = activeTab === "overview" ? ovInstIds : dtInstIds;
@@ -367,10 +391,16 @@ function ProxyContestAI() {
   const curToggleGl      = activeTab === "overview" ? ovToggleGl      : dtToggleGl;
 
   return (
-    <div className="grid grid-cols-12 gap-y-4 gap-x-6 pb-10">
-      {/* Page header — Case Studies style white card */}
-      <div className="col-span-12">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-4 flex items-center justify-between">
+    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 7rem)" }}>
+
+      {/* ── Sticky top bar: header + tabs + chips + warning ───────────────── */}
+      <div
+        ref={stickyHeaderRef}
+        className="sticky z-30 bg-[#f1f5f9] pb-3"
+        style={{ top: "4rem" }}
+      >
+        {/* Page header card */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
           {isAdminOrAnalyst && (
             <Button variant="primary" onClick={() => setAddModalOpen(true)}>
@@ -379,8 +409,9 @@ function ProxyContestAI() {
             </Button>
           )}
         </div>
-        {/* Tabs + Hide/Show Filters button (Admin/Analyst only) */}
-        <div className="flex items-center justify-between">
+
+        {/* Tabs + Hide/Show Filters */}
+        <div className="flex items-center justify-between mb-2">
           <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1">
             {tabs.map((tabItem) => (
               <button
@@ -401,54 +432,66 @@ function ProxyContestAI() {
             ))}
           </div>
           <button
-              onClick={() => setSidebarOpen((v) => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
-            >
-              <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
-              {sidebarOpen ? "Hide Filters" : "Show Filters"}
-            </button>
-        </div>
-      </div>
-
-      {/* Active filter chips */}
-      {activeChips.length > 0 && (
-        <div className="col-span-12 flex flex-wrap items-center gap-2 -mt-1">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Active Filters:
-          </span>
-          {activeChips.map((chip) => (
-            <span
-              key={chip.label}
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full"
-            >
-              {chip.label}
-              <button onClick={chip.onRemove} className="hover:text-primary/70">
-                <Lucide icon="X" className="w-3 h-3" />
-              </button>
-            </span>
-          ))}
-          <button
-            onClick={handleClearAll}
-            className="text-xs text-slate-400 hover:text-slate-600 underline"
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
           >
-            Clear all
+            <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
+            {sidebarOpen ? "Hide Filters" : "Show Filters"}
           </button>
         </div>
-      )}
 
-      {/* Institution enforcement warning */}
-      {warnMsg && (
-        <div className="col-span-12 flex items-center gap-2.5 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 -mt-1">
-          <Lucide icon="AlertTriangle" className="w-4 h-4 flex-shrink-0 text-amber-500" />
-          {warnMsg}
-        </div>
-      )}
+        {/* Active filter chips */}
+        {activeChips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Active Filters:
+            </span>
+            {activeChips.map((chip) => (
+              <span
+                key={chip.label}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full"
+              >
+                {chip.label}
+                <button onClick={chip.onRemove} className="hover:text-primary/70">
+                  <Lucide icon="X" className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            <button
+              onClick={handleClearAll}
+              className="text-xs text-slate-400 hover:text-slate-600 underline"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
 
-      {/* Sidebar + content in same-height flex row */}
-      <div className="col-span-12 flex gap-6">
-        {/* Filters sidebar */}
+        {/* Institution enforcement warning */}
+        {warnMsg && (
+          <div className="flex items-center gap-2.5 px-4 py-2.5 mt-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+            <Lucide icon="AlertTriangle" className="w-4 h-4 flex-shrink-0 text-amber-500" />
+            {warnMsg}
+          </div>
+        )}
+      </div>
+
+      {/* ── Body: sidebar (fixed) + scrollable content ────────────────────── */}
+      <div className="flex gap-6 flex-1 min-h-0">
+
+        {/* Spacer placeholder — reserves width in the flex row and measures left offset */}
+        {sidebarOpen && <div ref={spacerRef} className="w-64 flex-shrink-0" />}
+
+        {/* Filters sidebar — FIXED, never scrolls with content */}
         {sidebarOpen && (
-          <div className="w-64 flex-shrink-0 self-stretch">
+          <div
+            className="fixed z-20 w-64"
+            style={{
+              top: `calc(4rem + ${stickyHeaderH}px + 0.75rem)`,
+              left: sidebarLeft > 0 ? `${sidebarLeft}px` : "calc(285px + 1.25rem)",
+              bottom: "1rem",
+              width: "16rem",
+            }}
+          >
             <FiltersSidebar
               filtersData={filtersData}
               filtersLoading={filtersLoading}
@@ -472,11 +515,10 @@ function ProxyContestAI() {
           </div>
         )}
 
-        {/* Main content */}
-        <div className="flex-1 min-w-0">
-          {/* Tab content */}
+        {/* Main content — takes remaining space */}
+        <div className="flex-1 min-w-0 pb-10">
           {activeTab === "overview" && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5" style={{ minHeight: "calc(100vh - 14rem)" }}>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
                   <Lucide icon="BarChart3" className="w-5 h-5 text-primary" />
@@ -501,7 +543,7 @@ function ProxyContestAI() {
           )}
 
           {activeTab === "detailed" && (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5" style={{ minHeight: "calc(100vh - 14rem)" }}>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
                   <Lucide icon="Table" className="w-5 h-5 text-primary" />

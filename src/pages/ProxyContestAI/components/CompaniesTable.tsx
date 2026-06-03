@@ -57,7 +57,7 @@ const ActionIcon: React.FC<{
 const CompaniesTable: React.FC<CompaniesTableProps> = ({
   data, loading, page, onPageChange, institutionIds,
 }) => {
-  const pageSize = 10;
+  const pageSize = 20;
   const totalPages = data ? Math.ceil(data.count / pageSize) : 1;
 
   // ── Details modal state ────────────────────────────────────────────────────
