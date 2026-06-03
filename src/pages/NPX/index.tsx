@@ -897,7 +897,7 @@ const index = () => {
     <>
       <Button
         onClick={() => {
-          navigate("/");
+          navigate("/", { state: { activeTab: 'shareholder-meeting-results' } });
         }}
         variant="primary"
         className="bg-theme-2 border-bg-theme-2 mb-1"
