@@ -371,7 +371,6 @@ const ActivistIntelligenceDashboard = () => {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 20 }}>
             {[
               { label: "13F Portfolio Value", value: formatLargeUSD(profile.snapshot.portfolio_value), sub: "As of " + (profile.snapshot.filing_date || "N/A") },
-              { label: "AUM Signal", value: profile.snapshot.aum_signal || "N/A", sub: "Form ADV regulatory AUM" },
               { label: "Tracked Campaigns", value: campaigns.length, sub: "Historical count" },
               { label: "Active / Open", value: activeCampaigns, sub: "Current watchlist" },
               { label: "Personnel Tracked", value: profile.personnel.length, sub: `${visiblePersonnel.length} mgmt · ${nominees.length} nominees` },
@@ -462,17 +461,16 @@ const ActivistIntelligenceDashboard = () => {
                       <td style={{ padding: "10px 10px" }}><StatusBadge status={c.normalized_status} /></td>
                       <td style={{ padding: "10px 10px" }}>
                         {c.main_issues.length > 0 && (
-                          <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.notes ? 6 : 0 }}>
+                          <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.campaign_form.length > 0 ? 6 : 0 }}>
                             {c.main_issues.map((issue, j) => <Tag key={j} text={issue} />)}
                           </div>
                         )}
                         {c.campaign_form.length > 0 && (
-                          <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.notes ? 6 : 0 }}>
+                          <div style={{ display: "flex", flexWrap: "wrap" }}>
                             {c.campaign_form.map((form, j) => <Tag key={j} text={form} color="#eff6ff" textColor="#1d4ed8" />)}
                           </div>
                         )}
-                        {c.notes && <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0", lineHeight: 1.5 }}>{c.notes}</p>}
-                        {c.nominees.length > 0 && <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>👤 {c.nominees.join(", ")}</p>}
+                        {c.nominees.length > 0 && <p style={{ fontSize: 11, color: "#9ca3af", margin: "6px 0 0" }}>👤 {c.nominees.join(", ")}</p>}
                       </td>
                     </tr>
                   ))}
@@ -494,17 +492,13 @@ const ActivistIntelligenceDashboard = () => {
               <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>13F Portfolio Value</p>
               <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{formatLargeUSD(profile.snapshot.portfolio_value)}</p>
             </div>
-            <div style={{ borderLeft: "1px solid #e5e7eb", paddingLeft: 16 }}>
-              <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>AUM Signal</p>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{profile.snapshot.aum_signal || "N/A"}</p>
-            </div>
           </div>
           
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1.5px solid #e5e7eb" }}>
-                  {["#", "Issuer", "Ticker", "Type", "Value", "Position", "Note"].map((h) => (
+                  {["#", "Issuer", "Ticker", "Type", "Value", "Position"].map((h) => (
                     <th key={h} style={{ padding: "8px 10px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: "left", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
                   ))}
                 </tr>
@@ -514,7 +508,7 @@ const ActivistIntelligenceDashboard = () => {
                   const isOption = h.security_type?.toLowerCase().includes("option") || h.security_type?.toLowerCase().includes("put");
                   return (
                     <tr key={i} style={{ borderBottom: "1px solid #f3f4f6", background: i % 2 === 0 ? "white" : "#fafafa" }}>
-                      <td style={{ padding: "9px 10px", fontSize: 12, color: "#9ca3af" }}>{h.rank}</td>
+                      {/* <td style={{ padding: "9px 10px", fontSize: 12, color: "#9ca3af" }}>{h.rank}</td> */}
                       <td style={{ padding: "9px 10px", fontSize: 13, fontWeight: 600, color: "#111827" }}>{h.issuer}</td>
                       <td style={{ padding: "9px 10px", fontSize: 12, color: "#2563eb", fontWeight: 500 }}>{h.ticker_or_symbol}</td>
                       <td style={{ padding: "9px 10px" }}>
@@ -559,18 +553,45 @@ const ActivistIntelligenceDashboard = () => {
         <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 16px" }}>📚 Source Inventory</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {profile.sources.map((src, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, padding: "12px 14px", background: "#f9fafb", border: "1px solid #f3f4f6", borderRadius: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", minWidth: 32 }}>{src.source_id || i + 1}</span>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: "0 0 2px" }}>{src.title || src["Form / Document Type"]}</p>
-                  <p style={{ fontSize: 12, color: "#6b7280", margin: 0 }}>
-                    {src.publisher || src["Target Company"]} {src.publication_or_filing_date || src["Filing Date"] ? `· ${src.publication_or_filing_date || src["Filing Date"]}` : ""}
-                  </p>
-                  {(src.relevance_note || src["Relevance Note"]) && <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0", fontStyle: "italic" }}>{src.relevance_note || src["Relevance Note"]}</p>}
+            {profile.sources.map((src, i) => {
+              const title = src.title || src["Form / Document Type"] || "Untitled Source";
+              const publisher = src.publisher || src["Target Company"] || "";
+              const date = src.publication_or_filing_date || src["Filing Date"] || "";
+              const note = src.relevance_note || src["Relevance Note"] || "";
+              const url = src.url || src["URL"] || null;
+              const sourceId = src.source_id || String(i + 1);
+
+              return (
+                <div key={i} style={{ display: "flex", gap: 12, padding: "12px 14px", background: "#f9fafb", border: "1px solid #f3f4f6", borderRadius: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", minWidth: 32, paddingTop: 1 }}>{sourceId}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: 13, fontWeight: 600, color: "#2563eb", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}
+                        onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                        onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                      >
+                        {title}
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                          <polyline points="15 3 21 3 21 9"/>
+                          <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                      </a>
+                    ) : (
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: 0 }}>{title}</p>
+                    )}
+                    <p style={{ fontSize: 12, color: "#6b7280", margin: "3px 0 0" }}>
+                      {publisher}{date ? ` · ${date}` : ""}
+                    </p>
+                    {note && <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0", fontStyle: "italic" }}>{note}</p>}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -605,6 +626,30 @@ const PersonnelCard = ({ person, accentColor = "#eff6ff", borderColor = "#bfdbfe
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", margin: "0 0 2px" }}>{person.name}</p>
         <p style={{ fontSize: 12, color: "#6b7280", margin: 0, lineHeight: 1.4 }}>{person.role}</p>
+        {/* {person.linkedin && (
+          <a
+            href={person.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              marginTop: 6,
+              fontSize: 11,
+              fontWeight: 500,
+              color: "#2563eb",
+              textDecoration: "none",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+            </svg>
+            LinkedIn
+          </a>
+        )} */}
       </div>
     </div>
   );
