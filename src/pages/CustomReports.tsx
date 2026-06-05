@@ -14,6 +14,7 @@ import CompanySelect from "@/components/ReactSelectAsync";
 import clsx from "clsx";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CPagination from "@/components/Pagination";
+import StandardizedTable from "@/components/StandardizedTable";
 
 // ── Index options (hardcoded — not from API) ─────────────────────────────────
 const GP_INDEX_OPTIONS = [
@@ -234,64 +235,62 @@ const GovernanceProfileTab = () => {
       )}
 
       {/* Table */}
-      {loading ? (
-        <SkeletonTable rows={8} columns={5} />
-      ) : results.length > 0 ? (
-        <>
-          <TableWrapper isLoading={false} rows={results.length} columns={5}>
-            <Table>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Td className="font-semibold whitespace-nowrap">Company</Table.Td>
-                  <Table.Td className="font-semibold whitespace-nowrap">Category</Table.Td>
-                  <Table.Td className="font-semibold whitespace-nowrap">Yes / No</Table.Td>
-                  <Table.Td className="font-semibold">Key Provisions</Table.Td>
-                  <Table.Td className="font-semibold whitespace-nowrap">Source</Table.Td>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {results.map((item, idx) => (
-                  <Table.Tr key={idx}>
-                    <Table.Td className="font-medium whitespace-nowrap">{item.company}</Table.Td>
-                    <Table.Td className="text-sm">{item.category}</Table.Td>
-                    <Table.Td>
-                      <span className={clsx(
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
-                        item.yes_no === "Yes" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                      )}>
-                        {item.yes_no}
-                      </span>
-                    </Table.Td>
-                    <Table.Td className="text-sm text-slate-600 max-w-xs">{item.key_provisions}</Table.Td>
-                    <Table.Td>
-                      {item.source?.link ? (
-                        <a href={item.source.link} target="_blank" rel="noopener noreferrer"
-                          className="text-primary hover:underline text-sm font-medium whitespace-nowrap">
-                          {item.source.name || "Source"}
-                        </a>
-                      ) : <span className="text-slate-400 text-sm">—</span>}
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </TableWrapper>
-          {totalPages > 1 && (
-            <div className="flex justify-end mt-4">
-              <CPagination
-                page={page}
-                totalPages={totalPages}
-                handlePageChange={handlePageChange}
-                handlePreviousPage={() => { if (page > 1) handlePageChange(page - 1); }}
-                handleNextPage={() => { if (page < totalPages) handlePageChange(page + 1); }}
-              />
-            </div>
+      <StandardizedTable isLoading={loading} skeletonRows={8} skeletonCols={5}>
+        <StandardizedTable.Header>
+          <StandardizedTable.Cell isHeader>Company</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader>Category</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader>Yes / No</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader>Key Provisions</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader>Source</StandardizedTable.Cell>
+        </StandardizedTable.Header>
+        <Table.Tbody>
+          {results.length > 0 ? results.map((item, idx) => (
+            <StandardizedTable.Row key={idx} index={idx}>
+              <StandardizedTable.Cell>
+                <span className="font-medium whitespace-nowrap">{item.company}</span>
+              </StandardizedTable.Cell>
+              <StandardizedTable.Cell>{item.category}</StandardizedTable.Cell>
+              <StandardizedTable.Cell>
+                <span className={clsx(
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
+                  item.yes_no === "Yes" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                )}>
+                  {item.yes_no}
+                </span>
+              </StandardizedTable.Cell>
+              <StandardizedTable.Cell>
+                <span className="text-slate-600">{item.key_provisions}</span>
+              </StandardizedTable.Cell>
+              <StandardizedTable.Cell>
+                {item.source?.link ? (
+                  <a href={item.source.link} target="_blank" rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium whitespace-nowrap">
+                    {item.source.name || "Source"}
+                  </a>
+                ) : <span className="text-slate-400">—</span>}
+              </StandardizedTable.Cell>
+            </StandardizedTable.Row>
+          )) : (
+            <Table.Tr>
+              <Table.Td colSpan={5}>
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                  <Lucide icon="SearchX" className="w-10 h-10 mb-3 opacity-40" />
+                  <p>Apply filters to see governance profile results.</p>
+                </div>
+              </Table.Td>
+            </Table.Tr>
           )}
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-          <Lucide icon="SearchX" className="w-10 h-10 mb-3 opacity-40" />
-          <p>Apply filters to see governance profile results.</p>
+        </Table.Tbody>
+      </StandardizedTable>
+      {totalPages > 1 && (
+        <div className="flex justify-end mt-4">
+          <CPagination
+            page={page}
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+            handlePreviousPage={() => { if (page > 1) handlePageChange(page - 1); }}
+            handleNextPage={() => { if (page < totalPages) handlePageChange(page + 1); }}
+          />
         </div>
       )}
     </div>
