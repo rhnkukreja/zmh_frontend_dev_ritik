@@ -3,17 +3,393 @@ import TableWrapper from "../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
 import { SkeletonTable } from "@/components/Base/Skeletons";
-import { FaDownload, FaTimes } from "react-icons/fa";
+import { FaDownload, FaTimes, FaSearch } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
 import downloadIcon from "@/assets/images/zmh-images/download-icon.png";
-import { reportsService, CompanyOwnership, OwnershipData } from "@/services/reports";
+import { reportsService, governanceProfileService, CompanyOwnership } from "@/services/reports";
 import { useAppSelector } from "@/stores/hooks";
 import CompanySelect from "@/components/ReactSelectAsync";
+import clsx from "clsx";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CPagination from "@/components/Pagination";
+import StandardizedTable from "@/components/StandardizedTable";
+import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
+import { ExternalLink, X, Check } from "lucide-react";
+
+// ── Index options (hardcoded — not from API) ─────────────────────────────────
+const GP_INDEX_OPTIONS = [
+  { value: "SP 500", label: "S&P 500" },
+  { value: "Russell 3000", label: "Russell 3000" },
+];
+
+type CategoryYesNo = { category: string; yes_no: "Yes" | "No" };
+type GPFilters = { index: string[]; multiFilters: CategoryYesNo[] };
+
+const GovernanceProfileTab = () => {
+  const getDefaults = (cats: string[]): GPFilters => ({
+    index: ["SP 500"],
+    multiFilters: cats.length > 0 ? [{ category: cats[0], yes_no: "Yes" }] : [],
+  });
+
+  const [dropdowns, setDropdowns] = useState<{ categories: string[] }>({ categories: [] });
+  const [tempFilters, setTempFilters] = useState<GPFilters>({ index: ["SP 500"], multiFilters: [] });
+  const [appliedFilters, setAppliedFilters] = useState<GPFilters>({ index: ["SP 500"], multiFilters: [] });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [dropdownsLoading, setDropdownsLoading] = useState(true);
+  const [catSearch, setCatSearch] = useState("");
+  const [modalCompanyId, setModalCompanyId] = useState<number | null>(null);
+  const [modalCompanyName, setModalCompanyName] = useState("");
+  const PAGE_SIZE = 20;
+
+  const fetchData = async (pageNum: number, filters: GPFilters) => {
+    setLoading(true);
+    try {
+      const data = await governanceProfileService.getCompanies({
+        index: filters.index,
+        multiFilters: filters.multiFilters,
+        page: pageNum,
+      });
+      setResults(data?.results || []);
+      setTotal(data?.count || 0);
+    } catch {
+      setResults([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      setDropdownsLoading(true);
+      try {
+        const data = await governanceProfileService.getDropdowns();
+        setDropdowns({ categories: data.categories });
+        const defaults = getDefaults(data.categories);
+        setTempFilters(defaults);
+        setAppliedFilters(defaults);
+        fetchData(1, defaults);
+      } catch { /* silent */ }
+      finally { setDropdownsLoading(false); }
+    })();
+  }, []);
+
+  const handleApply = () => {
+    setAppliedFilters({ ...tempFilters });
+    setPage(1);
+    fetchData(1, tempFilters);
+    setFiltersOpen(false);
+  };
+
+  const handleClear = () => {
+    const defaults = getDefaults(dropdowns.categories);
+    setTempFilters(defaults);
+    setAppliedFilters(defaults);
+    setPage(1);
+    fetchData(1, defaults);
+    setFiltersOpen(false);
+  };
+
+  const toggleCategory = (cat: string) => {
+    const exists = tempFilters.multiFilters.find(f => f.category === cat);
+    if (exists) {
+      setTempFilters(p => ({ ...p, multiFilters: p.multiFilters.filter(f => f.category !== cat) }));
+    } else {
+      setTempFilters(p => ({ ...p, multiFilters: [...p.multiFilters, { category: cat, yes_no: "Yes" }] }));
+    }
+  };
+
+  const setCatYesNo = (cat: string, yn: "Yes" | "No") => {
+    setTempFilters(p => ({
+      ...p,
+      multiFilters: p.multiFilters.map(f => f.category === cat ? { ...f, yes_no: yn } : f),
+    }));
+  };
+
+  const removeIndexChip = (val: string) => {
+    const next = { ...appliedFilters, index: appliedFilters.index.filter(v => v !== val) };
+    if (next.index.length === 0) return;
+    setAppliedFilters(next); setTempFilters(next); setPage(1); fetchData(1, next);
+  };
+
+  const removeMultiChip = (cat: string) => {
+    const next = { ...appliedFilters, multiFilters: appliedFilters.multiFilters.filter(f => f.category !== cat) };
+    setAppliedFilters(next); setTempFilters(next); setPage(1); fetchData(1, next);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchData(newPage, appliedFilters);
+  };
+
+  const totalChips = appliedFilters.index.length + appliedFilters.multiFilters.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const filteredCats = dropdowns.categories.filter(c =>
+    c.toLowerCase().includes(catSearch.toLowerCase())
+  );
+
+  return (
+    <div>
+      {/* Filter row: chips (left) + Count + Filters button (right) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {appliedFilters.index.map(v => (
+            <div key={v} className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border border-rose-200 bg-rose-50 text-rose-700">
+              <span>{v === "SP 500" ? "S&P 500" : v}</span>
+              <button onClick={() => removeIndexChip(v)} className="hover:bg-rose-200/60 rounded-full p-0.5 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          {appliedFilters.multiFilters.map(f => (
+            <div key={f.category} className={clsx(
+              "inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border",
+              f.yes_no === "Yes" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"
+            )}>
+              <span>{f.category}: <span className="font-bold">{f.yes_no}</span></span>
+              <button onClick={() => removeMultiChip(f.category)} className="hover:bg-black/10 rounded-full p-0.5 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-3 ml-auto">
+          {total > 0 && (
+            <span className="text-sm text-slate-500">Count: <span className="font-semibold">{total}</span></span>
+          )}
+          <Button
+            variant="outline-secondary"
+            className="w-full sm:w-auto cursor-pointer"
+            onClick={() => setFiltersOpen(!filtersOpen)}
+          >
+            <Lucide icon="ArrowDownWideNarrow" className="stroke-[1.3] w-4 h-4 mr-2" />
+            Filters
+            <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+              {totalChips}
+            </div>
+          </Button>
+        </div>
+      </div>
+
+      {/* Filter panel */}
+      {filtersOpen && (
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <h3 className="font-medium text-base">Filters</h3>
+            <div className="flex items-center gap-2">
+              <Button variant="outline-secondary" className="cursor-pointer" onClick={handleClear}>
+                <MdOutlineClear className="mr-1.5 w-4 h-4" /> Clear
+              </Button>
+              <Button variant="primary" className="cursor-pointer" onClick={handleApply}>
+                <FaSearch className="mr-1.5 w-3.5 h-3.5" /> Apply
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            {/* Index */}
+            <div>
+              <label className="block text-slate-600 font-semibold text-sm mb-2">Index</label>
+              <MultiSelectDropdown
+                data={GP_INDEX_OPTIONS}
+                selectedOption={tempFilters.index}
+                onChange={(vals: any[]) => setTempFilters(p => ({ ...p, index: vals.map(v => v.value ?? v) }))}
+                placeholder="Select Index..."
+                alignLeft
+              />
+            </div>
+            {/* Category + Yes/No combined — spans 2 cols */}
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-slate-600 font-semibold text-sm">Category &amp; Yes / No</label>
+                <span className="text-xs text-slate-400 font-medium">{tempFilters.multiFilters.length} selected</span>
+              </div>
+              {/* Search */}
+              <div className="relative mb-2">
+                <Lucide icon="Search" className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={catSearch}
+                  onChange={e => setCatSearch(e.target.value)}
+                  placeholder="Search categories…"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              {/* Category rows */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                {dropdownsLoading ? (
+                  <div className="flex flex-col gap-2 p-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-8 bg-slate-100 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                ) : filteredCats.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-slate-400">No categories found</div>
+                ) : filteredCats.map(cat => {
+                  const entry = tempFilters.multiFilters.find(f => f.category === cat);
+                  const isChecked = !!entry;
+                  return (
+                    <div
+                      key={cat}
+                      className={clsx(
+                        "flex items-center justify-between px-3 py-2 border-b border-slate-100 last:border-0 transition-colors",
+                        isChecked ? "bg-primary/5" : "hover:bg-slate-50"
+                      )}
+                    >
+                      <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0" onClick={() => toggleCategory(cat)}>
+                        <div className={clsx(
+                          "flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+                          isChecked ? "bg-primary border-primary" : "border-slate-300"
+                        )}>
+                          {isChecked && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                        </div>
+                        <span className="text-sm text-slate-700 truncate">{cat}</span>
+                      </label>
+                      <div className={clsx(
+                        "flex-shrink-0 flex rounded-full border border-slate-200 overflow-hidden text-xs font-semibold ml-3",
+                        !isChecked ? "opacity-30 pointer-events-none" : ""
+                      )}>
+                        <button
+                          onClick={() => setCatYesNo(cat, "Yes")}
+                          className={clsx(
+                            "px-2.5 py-1 transition-colors",
+                            entry?.yes_no === "Yes" ? "bg-green-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                          )}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setCatYesNo(cat, "No")}
+                          className={clsx(
+                            "px-2.5 py-1 border-l border-slate-200 transition-colors",
+                            entry?.yes_no === "No" ? "bg-red-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                          )}
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <StandardizedTable isLoading={loading} skeletonRows={8} skeletonCols={5}>
+        <StandardizedTable.Header>
+          <StandardizedTable.Cell isHeader>Company</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader>Category</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader className="whitespace-nowrap">Yes / No</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader>Key Provisions</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader>Source</StandardizedTable.Cell>
+        </StandardizedTable.Header>
+        <Table.Tbody>
+          {results.length > 0 ? results.map((item, idx) => (
+            <StandardizedTable.Row key={idx} index={idx}>
+              <StandardizedTable.Cell>
+                <button
+                  onClick={() => { setModalCompanyId(item.company_id); setModalCompanyName(item.company); }}
+                  className="font-medium whitespace-nowrap text-left text-slate-900 underline hover:opacity-75 cursor-pointer"
+                >
+                  {item.company}
+                </button>
+              </StandardizedTable.Cell>
+              <StandardizedTable.Cell>{item.category}</StandardizedTable.Cell>
+              <StandardizedTable.Cell>
+                <span className={clsx(
+                  "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
+                  item.yes_no === "Yes" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                )}>
+                  {item.yes_no}
+                </span>
+              </StandardizedTable.Cell>
+              <StandardizedTable.Cell>
+                <span className="text-slate-600">{item.key_provisions}</span>
+              </StandardizedTable.Cell>
+              <StandardizedTable.Cell>
+                {item.source?.link ? (
+                  <a href={item.source.link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-primary hover:underline font-medium whitespace-nowrap">
+                    {item.source.name || "Source"}
+                    <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                  </a>
+                ) : item.source?.name ? (
+                  <span className="text-sm">{item.source.name}</span>
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
+              </StandardizedTable.Cell>
+            </StandardizedTable.Row>
+          )) : (
+            <Table.Tr>
+              <Table.Td colSpan={5}>
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                  <Lucide icon="SearchX" className="w-10 h-10 mb-3 opacity-40" />
+                  <p>Apply filters to see governance profile results.</p>
+                </div>
+              </Table.Td>
+            </Table.Tr>
+          )}
+        </Table.Tbody>
+      </StandardizedTable>
+      {totalPages > 1 && (
+        <div className="flex justify-end mt-4">
+          <CPagination
+            page={page}
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+            handlePreviousPage={() => { if (page > 1) handlePageChange(page - 1); }}
+            handleNextPage={() => { if (page < totalPages) handlePageChange(page + 1); }}
+          />
+        </div>
+      )}
+
+      {/* ── Company Governance Modal ── */}
+      {modalCompanyId !== null && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-start justify-center px-4 pb-4"
+          style={{ zIndex: 99999, paddingTop: '4.5rem' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setModalCompanyId(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col" style={{ maxHeight: 'calc(100vh - 4.5rem)', width: 'min(90vw, 72rem)' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary to-primary/90 flex-shrink-0 rounded-t-2xl">
+              <div>
+                <h2 className="text-lg font-bold text-white">{modalCompanyName}</h2>
+                <p className="text-sm text-white/80">Governance Profile</p>
+              </div>
+              <button
+                onClick={() => setModalCompanyId(null)}
+                className="inline-flex items-center justify-center rounded-full w-8 h-8 hover:bg-white/20 transition-colors"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
+            </div>
+            {/* Content: overflow-x-hidden prevents table horizontal scrollbars */}
+            <div className="overflow-y-auto overflow-x-hidden p-6 flex-1 min-h-0">
+              <GovernanceTab companyId={modalCompanyId} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CustomReports = () => {
   // Get global company ticker from authentication store
   const { companyGlobalSearchTicker } = useAppSelector((state) => state.authentiction);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'ownership' | 'governance'>('ownership');
 
   // Initialize with local storage data, global company ticker, or default values
   const getInitialTickers = () => {
@@ -204,8 +580,39 @@ const CustomReports = () => {
 
   return (
     <div className="box p-5 mt-3.5">
-      <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-center mb-4">
-        <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 companies can be selected)</h1>
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1 mb-5 w-fit">
+        <button
+          onClick={() => setActiveTab('ownership')}
+          className={clsx(
+            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
+            activeTab === 'ownership'
+              ? "bg-primary text-white shadow"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+          )}
+        >
+          <Lucide icon="BarChart2" className="w-4 h-4" />
+          Ownership
+        </button>
+        <button
+          onClick={() => setActiveTab('governance')}
+          className={clsx(
+            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
+            activeTab === 'governance'
+              ? "bg-primary text-white shadow"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+          )}
+        >
+          <Lucide icon="ShieldCheck" className="w-4 h-4" />
+          Governance Profile
+        </button>
+      </div>
+
+      {/* Ownership Tab */}
+      {activeTab === 'ownership' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-center mb-4">
+            <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 companies can be selected)</h1>
         <div className="flex items-center gap-2">
           {/* Download icon only visible when not loading and data exists */}
           {!loading && ownershipData.length > 0 && (
@@ -374,6 +781,11 @@ const CustomReports = () => {
           No ownership data available for the selected tickers.
         </div>
       )}
+        </>
+      )}
+
+      {/* Governance Profile Tab */}
+      {activeTab === 'governance' && <GovernanceProfileTab />}
     </div>
   );
 };

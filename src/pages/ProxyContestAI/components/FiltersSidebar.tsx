@@ -31,7 +31,7 @@ interface FiltersSidebarProps {
 interface SearchPickerProps {
   label: string;
   placeholder: string;
-  allItems: { id: number | string; name: string }[];
+  allItems: { id: number | string; name: string; count?: number }[];
   selectedIds: (number | string)[];
   onToggle: (id: number | string) => void;
 }
@@ -40,9 +40,9 @@ const SearchPicker: React.FC<SearchPickerProps> = ({ label, placeholder, allItem
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const filtered = query.trim()
-    ? allItems.filter((i) => i.name.toLowerCase().includes(query.toLowerCase()))
-    : [];
+  const filtered = allItems.filter((i) =>
+    !query.trim() || i.name.toLowerCase().includes(query.toLowerCase())
+  );
 
   return (
     <div>
@@ -70,8 +70,8 @@ const SearchPicker: React.FC<SearchPickerProps> = ({ label, placeholder, allItem
           </button>
         )}
 
-        {/* Dropdown results */}
-        {open && query.trim() && (
+        {/* Dropdown - show on focus */}
+        {open && (
           <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-44 overflow-y-auto">
             {filtered.length > 0 ? (
               filtered.map((item) => {
@@ -92,7 +92,13 @@ const SearchPicker: React.FC<SearchPickerProps> = ({ label, placeholder, allItem
                     )}>
                       {isSel && <Lucide icon="Check" className="w-2.5 h-2.5 text-white" />}
                     </span>
-                    <span className="leading-tight truncate">{item.name}</span>
+                    <span className="leading-tight break-words flex-1">{item.name}</span>
+                    {item.count != null && (
+                      <span className={clsx(
+                        "text-xs rounded-full px-2 py-0.5 font-medium flex-none ml-1",
+                        isSel ? "bg-primary/20 text-primary" : "bg-slate-100 text-slate-500"
+                      )}>{item.count}</span>
+                    )}
                   </button>
                 );
               })
@@ -126,7 +132,6 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
   toggleGl,
   onClearAll,
 }) => {
-  const [showAllActivists, setShowAllActivists] = useState(false);
 
   const hasAnyFilter =
     selectedYears.length > 0 ||
@@ -154,6 +159,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
 
   const companyItems = (filtersData?.companies || []).map((c: any) => ({ id: c.company_id, name: c.company_name }));
   const institutionItems = (filtersData?.institutions || []).map((i: any) => ({ id: i.institution_id, name: i.institution_name }));
+  const activistItems = (filtersData?.activist_names || []).map((a: any) => ({ id: a.activist_name, name: a.activist_name, count: a.company_count }));
 
   return (
     <div className="h-full">
@@ -219,8 +225,8 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               </div>
             )}
 
-            {/* COMPANY — search-only picker (overview: before institutions; detailed: after) */}
-            {activeTab === "overview" && companyItems.length > 0 && (
+            {/* COMPANY — both tabs */}
+            {companyItems.length > 0 && (
               <SearchPicker
                 label="Company"
                 placeholder="Search companies..."
@@ -230,50 +236,56 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               />
             )}
 
-            {/* ACTIVIST — Detailed view only */}
-            {(activeTab === "detailed" || activeTab === "activist_profile") && filtersData?.activist_names?.length > 0 && (
+            {/* ACTIVIST — Detailed view only, uses SearchPicker with count */}
+            {activeTab === "detailed" && activistItems.length > 0 && (
+              <SearchPicker
+                label="Activist"
+                placeholder="Search activists..."
+                allItems={activistItems}
+                selectedIds={selectedActivists}
+                onToggle={(id) => toggleActivist(id as string)}
+              />
+            )}
+
+            {/* INSTITUTION — both tabs */}
+            {institutionItems.length > 0 && (
+              <SearchPicker
+                label="Institution"
+                placeholder="Search institutions..."
+                allItems={institutionItems}
+                selectedIds={selectedInstIds}
+                onToggle={(id) => toggleInst(id as number)}
+              />
+            )}
+
+            {/* INVESTOR SUPPORT ACTIVIST — Overview only, no heading */}
+            {activeTab === "overview" && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Activist</h4>
-                <div className="space-y-1">
-                  {/* Show less — appears at TOP when expanded */}
-                  {showAllActivists && filtersData.activist_names.length > 1 && (
-                    <button onClick={() => setShowAllActivists(false)}
-                      className="w-full text-sm text-primary hover:text-primary/70 font-medium py-1 flex items-center justify-center gap-1"
-                    >
-                      <Lucide icon="ChevronUp" className="w-3 h-3" />Show less
-                    </button>
+                <button
+                  onClick={toggleInvestorSupport}
+                  className={clsx(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                    selectedInvestorSupport ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
                   )}
-                  {(showAllActivists ? filtersData.activist_names : filtersData.activist_names.slice(0, 1)).map((item: any) => {
-                    const isSel = selectedActivists.includes(item.activist_name);
-                    return (
-                      <button key={item.activist_name} onClick={() => toggleActivist(item.activist_name)}
-                        className={clsx("w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
-                          isSel ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
-                        )}
-                      >
-                        <span className="truncate text-left">{item.activist_name}</span>
-                        <span className={clsx("text-xs rounded-full px-2 py-0.5 font-medium flex-none ml-2",
-                          isSel ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
-                        )}>{item.company_count}</span>
-                      </button>
-                    );
-                  })}
-                  {/* See more — appears at BOTTOM when collapsed */}
-                  {!showAllActivists && filtersData.activist_names.length > 1 && (
-                    <button onClick={() => setShowAllActivists(true)}
-                      className="w-full text-sm text-primary hover:text-primary/70 font-medium py-1 flex items-center justify-center gap-1"
-                    >
-                      <Lucide icon="ChevronDown" className="w-3 h-3" />See more ({filtersData.activist_names.length - 1})
-                    </button>
-                  )}
-                </div>
+                >
+                  <span>Investor supported activist</span>
+                  <span className={clsx(
+                    "w-8 h-4 rounded-full flex items-center transition-all flex-none",
+                    selectedInvestorSupport ? "bg-white/30" : "bg-slate-200"
+                  )}>
+                    <span className={clsx(
+                      "w-3 h-3 rounded-full shadow transition-transform mx-0.5",
+                      selectedInvestorSupport ? "bg-white translate-x-4" : "bg-white translate-x-0"
+                    )} />
+                  </span>
+                </button>
               </div>
             )}
 
-            {/* ADVISOR SUPPORT — ISS + GL merged into one section */}
+            {/* PROXY ADVISOR SUPPORT — ISS + GL merged into one section */}
             {(filtersData?.iss_support || filtersData?.gl_support) && (
               <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Advisor Support</h4>
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Proxy Advisor Support</h4>
                 {/* Header row */}
                 <div className="grid grid-cols-[2rem_1fr_1fr] gap-x-1.5 mb-1">
                   <div />
@@ -330,52 +342,6 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               </div>
             )}
 
-            {/* INSTITUTION — search-only picker */}
-            {institutionItems.length > 0 && (
-              <SearchPicker
-                label="Institution"
-                placeholder="Search institutions..."
-                allItems={institutionItems}
-                selectedIds={selectedInstIds}
-                onToggle={(id) => toggleInst(id as number)}
-              />
-            )}
-
-            {/* COMPANY — Detailed: after institutions */}
-            {activeTab === "detailed" && companyItems.length > 0 && (
-              <SearchPicker
-                label="Company"
-                placeholder="Search companies..."
-                allItems={companyItems}
-                selectedIds={selectedCompanyIds}
-                onToggle={(id) => toggleCompany(id as number)}
-              />
-            )}
-
-            {/* INVESTOR SUPPORT ACTIVIST — Overview only */}
-            {activeTab === "overview" && (
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Investor Support</h4>
-                <button
-                  onClick={toggleInvestorSupport}
-                  className={clsx(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-150",
-                    selectedInvestorSupport ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
-                  )}
-                >
-                  <span>Investor supported activist</span>
-                  <span className={clsx(
-                    "w-8 h-4 rounded-full flex items-center transition-all flex-none",
-                    selectedInvestorSupport ? "bg-white/30" : "bg-slate-200"
-                  )}>
-                    <span className={clsx(
-                      "w-3 h-3 rounded-full shadow transition-transform mx-0.5",
-                      selectedInvestorSupport ? "bg-white translate-x-4" : "bg-white translate-x-0"
-                    )} />
-                  </span>
-                </button>
-              </div>
-            )}
 
           </div>
         )}

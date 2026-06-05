@@ -17,6 +17,16 @@ type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
 const DEFAULT_INSTITUTION_IDS = [33, 34];
 const DEFAULT_YEARS = ["2025", "2026"];
 
+// ── In-memory data cache with TTL (clears on page refresh) ─────────────────
+const DATA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const _dataCache = new Map<string, { data: any; ts: number }>();
+const cacheGet = (key: string): any => {
+  const entry = _dataCache.get(key);
+  if (entry && Date.now() - entry.ts < DATA_CACHE_TTL) return entry.data;
+  return null;
+};
+const cacheSet = (key: string, data: any) => _dataCache.set(key, { data, ts: Date.now() });
+
 // ── localStorage persistence (keyed by token so it clears on logout) ──────────
 const getTokenSlice = () => (localStorage.getItem("token") || "").slice(-8);
 const storageKey = (tab: string) => `pcai_v3_${tab}_${getTokenSlice()}`;
@@ -35,6 +45,57 @@ function ProxyContestAI() {
   const [activeTab, setActiveTab] = useState<ProxyContestTabKey>("activist_profile");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editInitialData, setEditInitialData] = useState<any>(null);
+
+  // ── Edit handler ─────────────────────────────────────────────────────────────
+  const openEditModal = async (company: any) => {
+    try {
+      const data = await proxyContestAIService.getActivismTables(
+        company.company_name,
+        company.year ? [String(company.year)] : undefined
+      );
+      const selectedYear = String(company.year || "");
+      const presentations = Array.isArray(data?.Activism_Presentation) ? data.Activism_Presentation : [];
+      const pressReleases = Array.isArray(data?.Activism_Press_Release) ? data.Activism_Press_Release : [];
+      const allDocs = [
+        ...presentations.map((item: any) => ({
+          id: item?.id,
+          year: String(item?.year || selectedYear || ""),
+          keyword: String(item?.keyword || "Presentation"),
+          documentName: String(item?.document_name || ""),
+          activistName: String(item?.activist_name || ""),
+          documentDate: String(item?.document_date || ""),
+          isCompanyActivist: item?.is_company_activist || "company",
+          existingDocumentUrl: String(item?.document_url || ""),
+        })),
+        ...pressReleases.map((item: any) => ({
+          id: item?.id,
+          year: String(item?.year || selectedYear || ""),
+          keyword: String(item?.keyword || "Press Release"),
+          documentName: String(item?.document_name || ""),
+          activistName: String(item?.activist_name || ""),
+          documentDate: String(item?.document_date || ""),
+          isCompanyActivist: item?.is_company_activist || "company",
+          existingDocumentUrl: String(item?.document_url || ""),
+        })),
+      ];
+      const recommendations = Array.isArray(data?.Activism_ISS_GL) ? data.Activism_ISS_GL : [];
+      const issRow = recommendations.find((r: any) => String(r?.type || "").toUpperCase() === "ISS");
+      const glRow = recommendations.find((r: any) => String(r?.type || "").toUpperCase() === "GL");
+      setEditInitialData({
+        company: { id: Number(company.company_id || 0), name: company.company_name },
+        documents: allDocs,
+        advisory: {
+          iss: { id: issRow?.id, management: Boolean(issRow?.management), activist: Boolean(issRow?.activist), split: Boolean(issRow?.split) },
+          gl:  { id: glRow?.id,  management: Boolean(glRow?.management),  activist: Boolean(glRow?.activist),  split: Boolean(glRow?.split)  },
+        },
+      });
+      setEditModalOpen(true);
+    } catch {
+      /* silent */
+    }
+  };
 
   // ── Overview filters (persisted per-tab) ────────────────────────────────────
   const [ovYears, setOvYears] = useState<string[]>(() => loadF("overview")?.years ?? DEFAULT_YEARS);
@@ -95,6 +156,9 @@ function ProxyContestAI() {
 
   // ── Fetch filters ────────────────────────────────────────────────────────────
   const fetchFilters = useCallback(async (years: string[], tab: ProxyContestTabKey = "overview", instIds?: number[]) => {
+    const cacheKey = `filters_${tab}_${years.join(",")}_${(instIds || []).join(",")}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) { setFiltersData(cached); return; }
     const id = ++filtersFetchId.current;
     setFiltersLoading(true);
     try {
@@ -106,6 +170,7 @@ function ProxyContestAI() {
         : await proxyContestAIService.getOverviewFilters(years.length ? years : undefined);
       if (id !== filtersFetchId.current) return;
       setFiltersData(data);
+      cacheSet(cacheKey, data);
     } catch {} finally {
       if (id === filtersFetchId.current) setFiltersLoading(false);
     }
@@ -116,6 +181,9 @@ function ProxyContestAI() {
     years: string[], instIds: number[], companyIds: number[],
     vrPageNum = 1, iss?: string | null, gl?: string | null, investorSupport?: boolean
   ) => {
+    const cacheKey = `summary_${years.join(",")}_${instIds.join(",")}_${companyIds.join(",")}_${vrPageNum}_${iss}_${gl}_${investorSupport}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) { setSummaryData(cached.summary); setVotingRecordsData(cached.vr); return; }
     const id = ++summaryFetchId.current;
     setSummaryLoading(true);
     try {
@@ -132,6 +200,7 @@ function ProxyContestAI() {
       if (id !== summaryFetchId.current) return;
       setSummaryData(data?.summary ?? data);
       setVotingRecordsData(data?.voting_records ?? null);
+      cacheSet(cacheKey, { summary: data?.summary ?? data, vr: data?.voting_records ?? null });
     } catch {} finally {
       if (id === summaryFetchId.current) setSummaryLoading(false);
     }
@@ -167,6 +236,9 @@ function ProxyContestAI() {
     years: string[], instIds: number[], activists: string[], companyIds: number[],
     page: number, iss?: string | null, gl?: string | null
   ) => {
+    const cacheKey = `companies_${years.join(",")}_${instIds.join(",")}_${activists.join(",")}_${companyIds.join(",")}_${page}_${iss}_${gl}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) { setCompaniesData(cached); return; }
     const id = ++companiesFetchId.current;
     setCompaniesLoading(true);
     try {
@@ -182,6 +254,7 @@ function ProxyContestAI() {
       });
       if (id !== companiesFetchId.current) return;
       setCompaniesData(data);
+      cacheSet(cacheKey, data);
     } catch {} finally {
       if (id === companiesFetchId.current) setCompaniesLoading(false);
     }
@@ -218,12 +291,15 @@ function ProxyContestAI() {
   //   ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
   // ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
-  const tabs = [
-    { key: "activist_profile", label: "Activist Profile", icon: "UserRound" },
-    { key: "overview", label: "Overview", icon: "BarChart3" },
-    { key: "detailed", label: "Detailed View", icon: "Table" },
-  ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
+  const tabs = [
+    { key: "overview", label: "Proxy Contest Analytics", icon: "BarChart3" },
+    { key: "detailed", label: "Campaign Details", icon: "Table" },
+    ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
+  ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
+      
+      
+     
   // ── Overview toggle helpers ──────────────────────────────────────────────────
   const ovToggleYear = (y: string) => {
     const next = ovYears.includes(y) ? ovYears.filter(x => x !== y) : [...ovYears, y];
@@ -570,6 +646,8 @@ function ProxyContestAI() {
                 page={companiesPage}
                 onPageChange={handleCompaniesPageChange}
                 institutionIds={dtInstIds}
+                isAdminOrAnalyst={isAdminOrAnalyst}
+                onEdit={openEditModal}
               />
             </div>
           )}
@@ -594,6 +672,19 @@ function ProxyContestAI() {
           onSuccess={() => {
             setAddModalOpen(false);
             fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
+          }}
+        />
+      )}
+      {isAdminOrAnalyst && (
+        <ProxyContestModal
+          open={editModalOpen}
+          mode="edit"
+          initialData={editInitialData}
+          onClose={() => { setEditModalOpen(false); setEditInitialData(null); }}
+          onSuccess={() => {
+            setEditModalOpen(false);
+            setEditInitialData(null);
+            fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, companiesPage, dtIss, dtGl);
           }}
         />
       )}
