@@ -15,6 +15,8 @@ import clsx from "clsx";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CPagination from "@/components/Pagination";
 import StandardizedTable from "@/components/StandardizedTable";
+import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
+import { ExternalLink, X } from "lucide-react";
 
 // ── Index options (hardcoded — not from API) ─────────────────────────────────
 const GP_INDEX_OPTIONS = [
@@ -39,6 +41,8 @@ const GovernanceProfileTab = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [modalCompanyId, setModalCompanyId] = useState<number | null>(null);
+  const [modalCompanyName, setModalCompanyName] = useState("");
   const PAGE_SIZE = 20;
 
   const fetchData = async (pageNum: number, filters: GPFilters) => {
@@ -247,7 +251,12 @@ const GovernanceProfileTab = () => {
           {results.length > 0 ? results.map((item, idx) => (
             <StandardizedTable.Row key={idx} index={idx}>
               <StandardizedTable.Cell>
-                <span className="font-medium whitespace-nowrap">{item.company}</span>
+                <button
+                  onClick={() => { setModalCompanyId(item.company_id); setModalCompanyName(item.company); }}
+                  className="font-medium whitespace-nowrap text-left text-slate-900 underline hover:opacity-75 cursor-pointer"
+                >
+                  {item.company}
+                </button>
               </StandardizedTable.Cell>
               <StandardizedTable.Cell>{item.category}</StandardizedTable.Cell>
               <StandardizedTable.Cell>
@@ -264,10 +273,15 @@ const GovernanceProfileTab = () => {
               <StandardizedTable.Cell>
                 {item.source?.link ? (
                   <a href={item.source.link} target="_blank" rel="noopener noreferrer"
-                    className="text-primary hover:underline font-medium whitespace-nowrap">
+                    className="inline-flex items-center gap-1 text-primary hover:underline font-medium whitespace-nowrap">
                     {item.source.name || "Source"}
+                    <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
                   </a>
-                ) : <span className="text-slate-400">—</span>}
+                ) : item.source?.name ? (
+                  <span className="text-sm">{item.source.name}</span>
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
               </StandardizedTable.Cell>
             </StandardizedTable.Row>
           )) : (
@@ -291,6 +305,35 @@ const GovernanceProfileTab = () => {
             handlePreviousPage={() => { if (page > 1) handlePageChange(page - 1); }}
             handleNextPage={() => { if (page < totalPages) handlePageChange(page + 1); }}
           />
+        </div>
+      )}
+
+      {/* ── Company Governance Modal ── */}
+      {modalCompanyId !== null && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-start justify-center px-4 pb-4"
+          style={{ zIndex: 99999, paddingTop: '4.5rem' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setModalCompanyId(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col" style={{ maxHeight: 'calc(100vh - 4.5rem)', width: 'min(90vw, 72rem)' }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary to-primary/90 flex-shrink-0 rounded-t-2xl">
+              <div>
+                <h2 className="text-lg font-bold text-white">{modalCompanyName}</h2>
+                <p className="text-sm text-white/80">Governance Profile</p>
+              </div>
+              <button
+                onClick={() => setModalCompanyId(null)}
+                className="inline-flex items-center justify-center rounded-full w-8 h-8 hover:bg-white/20 transition-colors"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
+            </div>
+            {/* Content: overflow-x-hidden prevents table horizontal scrollbars */}
+            <div className="overflow-y-auto overflow-x-hidden p-6 flex-1 min-h-0">
+              <GovernanceTab companyId={modalCompanyId} />
+            </div>
+          </div>
         </div>
       )}
     </div>

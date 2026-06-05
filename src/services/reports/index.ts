@@ -71,14 +71,28 @@ class ReportsService {
   }
 }
 
+// ── In-memory cache for GovernanceProfileService (clears on page refresh) ────
+const _gpCache = new Map<string, { data: any; ts: number }>();
+const GP_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const gpCacheGet = (key: string): any => {
+  const entry = _gpCache.get(key);
+  if (entry && Date.now() - entry.ts < GP_CACHE_TTL) return entry.data;
+  return null;
+};
+const gpCacheSet = (key: string, data: any) => _gpCache.set(key, { data, ts: Date.now() });
+
 class GovernanceProfileService {
   public async getDropdowns(): Promise<{ categories: string[]; yesNo: string[] }> {
+    const cached = gpCacheGet('dropdowns');
+    if (cached) return cached;
     try {
       const response = await axiosInstance.get('/api/get_governance_profile_companies_dropdown_values/');
-      return {
+      const result = {
         categories: response.data?.Categories || [],
         yesNo: response.data?.Yes_No || [],
       };
+      gpCacheSet('dropdowns', result);
+      return result;
     } catch {
       return { categories: [], yesNo: [] };
     }
@@ -91,12 +105,19 @@ class GovernanceProfileService {
     page?: number;
   }): Promise<any> {
     const parts: string[] = [];
-    (params.category || []).forEach(c => parts.push(`category=${encodeURIComponent(c)}`));
-    (params.yes_no || []).forEach(v => parts.push(`yes_no=${encodeURIComponent(v)}`));
-    (params.index || []).forEach(i => parts.push(`index=${encodeURIComponent(i)}`));
+    if ((params.category || []).length > 0)
+      parts.push(`category=${encodeURIComponent(JSON.stringify(params.category))}`);
+    if ((params.yes_no || []).length > 0)
+      parts.push(`yes_no=${encodeURIComponent(JSON.stringify(params.yes_no))}`);
+    if ((params.index || []).length > 0)
+      parts.push(`index=${encodeURIComponent(JSON.stringify(params.index))}`);
     if (params.page && params.page > 1) parts.push(`page=${params.page}`);
+    const cacheKey = `companies_${parts.join('&')}`;
+    const cached = gpCacheGet(cacheKey);
+    if (cached) return cached;
     try {
       const response = await axiosInstance.get(`/api/get_governance_profile_companies/?${parts.join('&')}`);
+      gpCacheSet(cacheKey, response.data);
       return response.data;
     } catch {
       return { count: 0, results: [] };
