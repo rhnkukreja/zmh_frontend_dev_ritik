@@ -208,8 +208,10 @@ const index = () => {
       }
 
       const companyName = encodeURIComponent(companyNameRaw);
+      const selectedYear = String(company?.year || "");
+      const yearParam = selectedYear ? `&year=${encodeURIComponent(JSON.stringify([selectedYear]))}` : "";
       const response = await fetch(
-        `${baseURL}/activism_tables/?company_name=${companyName}`,
+        `${baseURL}/activism_tables/?company_name=${companyName}${yearParam}`,
         {
           headers: {
             Authorization: `JWT ${localStorage.getItem("token")}`,
@@ -223,7 +225,6 @@ const index = () => {
       }
 
       const data = await response.json();
-      const selectedYear = String(company?.year || "");
 
       const presentations = Array.isArray(data?.Activism_Presentation)
         ? data.Activism_Presentation
@@ -238,6 +239,9 @@ const index = () => {
           year: String(item?.year || selectedYear || ""),
           keyword: String(item?.keyword || "Presentation"),
           documentName: String(item?.document_name || ""),
+          activistName: String(item?.activist_name || ""),
+          documentDate: String(item?.document_date || ""),
+          isCompanyActivist: item?.is_company_activist || "company",
           existingDocumentUrl: String(item?.document_url || ""),
         })),
         ...pressReleases.map((item: any) => ({
@@ -245,6 +249,9 @@ const index = () => {
           year: String(item?.year || selectedYear || ""),
           keyword: String(item?.keyword || "Press Release"),
           documentName: String(item?.document_name || ""),
+          activistName: String(item?.activist_name || ""),
+          documentDate: String(item?.document_date || ""),
+          isCompanyActivist: item?.is_company_activist || "company",
           existingDocumentUrl: String(item?.document_url || ""),
         })),
       ];
