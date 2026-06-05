@@ -112,33 +112,40 @@ const GovernanceProfileTab = () => {
 
   return (
     <div>
-      {/* Filter button + chips */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <Button
-          variant="outline-secondary"
-          className="w-full sm:w-auto cursor-pointer"
-          onClick={() => setFiltersOpen(!filtersOpen)}
-        >
-          <Lucide icon="ArrowDownWideNarrow" className="stroke-[1.3] w-4 h-4 mr-2" />
-          Filters
-          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-            {chips.length}
-          </div>
-        </Button>
-        {chips.map((chip, idx) => (
-          <div
-            key={`${chip.type}-${chip.value}-${idx}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border border-rose-200 bg-rose-50 text-rose-700"
-          >
-            <span>{chip.label}</span>
-            <button
-              onClick={() => removeChip(chip.type, chip.value)}
-              className="hover:bg-rose-200/60 rounded-full p-0.5 transition-colors"
+      {/* Filter row: chips (left) + Count + Filters button (right) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {chips.map((chip, idx) => (
+            <div
+              key={`${chip.type}-${chip.value}-${idx}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border border-rose-200 bg-rose-50 text-rose-700"
             >
-              <Lucide icon="X" className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
+              <span>{chip.label}</span>
+              <button
+                onClick={() => removeChip(chip.type, chip.value)}
+                className="hover:bg-rose-200/60 rounded-full p-0.5 transition-colors"
+              >
+                <Lucide icon="X" className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-3 ml-auto">
+          {total > 0 && (
+            <span className="text-sm text-slate-500">Count: <span className="font-semibold">{total}</span></span>
+          )}
+          <Button
+            variant="outline-secondary"
+            className="w-full sm:w-auto cursor-pointer"
+            onClick={() => setFiltersOpen(!filtersOpen)}
+          >
+            <Lucide icon="ArrowDownWideNarrow" className="stroke-[1.3] w-4 h-4 mr-2" />
+            Filters
+            <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+              {chips.length}
+            </div>
+          </Button>
+        </div>
       </div>
 
       {/* Filter panel */}
@@ -231,7 +238,6 @@ const GovernanceProfileTab = () => {
         <SkeletonTable rows={8} columns={5} />
       ) : results.length > 0 ? (
         <>
-          <p className="text-sm text-slate-500 mb-3 text-right">Count: <span className="font-semibold">{total}</span></p>
           <TableWrapper isLoading={false} rows={results.length} columns={5}>
             <Table>
               <Table.Thead>
@@ -272,7 +278,13 @@ const GovernanceProfileTab = () => {
           </TableWrapper>
           {totalPages > 1 && (
             <div className="flex justify-end mt-4">
-              <CPagination currentPage={page} totalPages={totalPages} onPageChange={handlePageChange} />
+              <CPagination
+                page={page}
+                totalPages={totalPages}
+                handlePageChange={handlePageChange}
+                handlePreviousPage={() => { if (page > 1) handlePageChange(page - 1); }}
+                handleNextPage={() => { if (page < totalPages) handlePageChange(page + 1); }}
+              />
             </div>
           )}
         </>
@@ -483,14 +495,14 @@ const CustomReports = () => {
   return (
     <div className="box p-5 mt-3.5">
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 pb-3">
+      <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1 mb-5 w-fit">
         <button
           onClick={() => setActiveTab('ownership')}
           className={clsx(
-            "px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2",
+            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
             activeTab === 'ownership'
-              ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md"
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              ? "bg-primary text-white shadow"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
           )}
         >
           <Lucide icon="BarChart2" className="w-4 h-4" />
@@ -499,10 +511,10 @@ const CustomReports = () => {
         <button
           onClick={() => setActiveTab('governance')}
           className={clsx(
-            "px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2",
+            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
             activeTab === 'governance'
-              ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md"
-              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              ? "bg-primary text-white shadow"
+              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
           )}
         >
           <Lucide icon="ShieldCheck" className="w-4 h-4" />
