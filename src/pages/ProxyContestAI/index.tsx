@@ -32,7 +32,7 @@ function ProxyContestAI() {
   const isAdmin = user?.user_type === "Admin";
   const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
 
-  const [activeTab, setActiveTab] = useState<ProxyContestTabKey>("overview");
+  const [activeTab, setActiveTab] = useState<ProxyContestTabKey>("activist_profile");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
@@ -196,7 +196,7 @@ function ProxyContestAI() {
   }, []);
 
   // ── Refetch filters when switching tabs ──────────────────────────────────────
-  const prevTab = useRef<ProxyContestTabKey>("overview");
+  const prevTab = useRef<ProxyContestTabKey>("activist_profile");
   useEffect(() => {
     if (prevTab.current === activeTab) return;
     prevTab.current = activeTab;
@@ -219,8 +219,8 @@ function ProxyContestAI() {
   // ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
   const tabs = [
+    { key: "activist_profile", label: "Activist Profile", icon: "UserRound" },
     { key: "overview", label: "Overview", icon: "BarChart3" },
-    { key: "activist_profile", label: "AI Activism Profile", icon: "UserRound" },
     { key: "detailed", label: "Detailed View", icon: "Table" },
   ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
@@ -408,7 +408,7 @@ function ProxyContestAI() {
       >
         {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
+          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest</h2>
           {isAdminOrAnalyst && (
             <Button variant="primary" onClick={() => setAddModalOpen(true)}>
               <Lucide icon="Plus" className="w-4 h-4 mr-1.5" />

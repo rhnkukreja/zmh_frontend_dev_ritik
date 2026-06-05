@@ -352,7 +352,7 @@ const ActivistIntelligenceDashboard = () => {
             { id: "campaigns", label: "Campaigns" },
             { id: "holdings",  label: "13F Holdings" },
             { id: "personnel", label: "Personnel" },
-            { id: "sources",   label: "Sources" },
+            // { id: "sources",   label: "Sources" },
           ].map((tab) => (
             <button
               key={tab.id}
