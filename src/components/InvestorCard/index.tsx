@@ -575,12 +575,20 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
             
             {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
             <h1
-              onClick={() =>
-                dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
-              }
+              onClick={(e) => {
+                if (dynInstId && dashboard?.is_doc) {
+                  if (e.ctrlKey || e.metaKey) {
+                    window.open(`/investor-company-details/${dynInstId}?from=ownership`, "_blank");
+                  } else {
+                    navigate(`/investor-company-details/${dynInstId}`, {
+                      state: { from: location.pathname, fromState: { activeTab: 'ownership' } }
+                    });
+                  }
+                }
+              }}
               className={clsx([
                 "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                dynInstId && "cursor-pointer underline",
+                dashboard?.is_doc && "cursor-pointer underline",
               ])}
             >
               {dashboard?.institution_name}
