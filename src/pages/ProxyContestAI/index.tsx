@@ -8,7 +8,7 @@ import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
 import VotingRecordsList from "./components/VotingRecordsList";
 import ProxyContestModal from "../ProxyContest/components/ProxyContestModal";
-import ActivistInvestorProfileDashboard from "./components/ActivistProfile";
+import ActivistIntelligenceDashboard from "../AIChatbot/ActivistDashboard"; 
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 
@@ -205,16 +205,23 @@ function ProxyContestAI() {
     fetchFilters(years, activeTab, instIds);
   }, [activeTab]);
 
-  useEffect(() => {
-    if (!isAdmin && activeTab === "activist_profile") {
-      setActiveTab("overview");
-    }
-  }, [activeTab, isAdmin]);
+  // useEffect(() => {
+  //   if (!isAdmin && activeTab === "activist_profile") {
+  //     setActiveTab("overview");
+  //   }
+  // }, [activeTab, isAdmin]);
+
+  // const tabs = [
+  //   { key: "overview", label: "Overview", icon: "BarChart3" },
+  //   { key: "activist_profile", label: "Activism Profile", icon: "UserRound" },
+  //   { key: "detailed", label: "Detailed View", icon: "Table" },
+  //   ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
+  // ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
   const tabs = [
     { key: "overview", label: "Overview", icon: "BarChart3" },
+    { key: "activist_profile", label: "AI Activism Profile", icon: "UserRound" },
     { key: "detailed", label: "Detailed View", icon: "Table" },
-    ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
   ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
   // ── Overview toggle helpers ──────────────────────────────────────────────────
@@ -431,17 +438,19 @@ function ProxyContestAI() {
               </button>
             ))}
           </div>
-          <button
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
-          >
-            <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
-            {sidebarOpen ? "Hide Filters" : "Show Filters"}
-          </button>
+          {activeTab !== "activist_profile" && (
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
+            >
+              <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
+              {sidebarOpen ? "Hide Filters" : "Show Filters"}
+            </button>
+          )}
         </div>
 
         {/* Active filter chips */}
-        {activeChips.length > 0 && (
+        {activeChips.length > 0 && activeTab !== "activist_profile" && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Active Filters:
@@ -479,10 +488,10 @@ function ProxyContestAI() {
       <div className="flex gap-6 flex-1 min-h-0">
 
         {/* Spacer placeholder — reserves width in the flex row and measures left offset */}
-        {sidebarOpen && <div ref={spacerRef} className="w-64 flex-shrink-0" />}
+        {sidebarOpen && activeTab !== "activist_profile" && <div ref={spacerRef} className="w-64 flex-shrink-0" />}
 
         {/* Filters sidebar — FIXED, never scrolls with content */}
-        {sidebarOpen && (
+        {sidebarOpen && activeTab !== "activist_profile" && (
           <div
             className="fixed z-20 w-64"
             style={{
@@ -541,7 +550,7 @@ function ProxyContestAI() {
               />
             </div>
           )}
-
+        
           {activeTab === "detailed" && (
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
               <div className="flex items-center justify-between mb-4">
@@ -565,9 +574,15 @@ function ProxyContestAI() {
             </div>
           )}
 
-          {isAdmin && activeTab === "activist_profile" && (
-            <ActivistInvestorProfileDashboard />
+          {/* {isAdmin && activeTab === "activist_profile" && (
+            <ActivistIntelligenceDashboard />
+          )} */}
+
+          {activeTab === "activist_profile" && (
+            <ActivistIntelligenceDashboard />
           )}
+
+
         </div>
       </div>
       {/* Add Proxy Contest modal — Admin / Analyst only */}
