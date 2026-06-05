@@ -3,17 +3,295 @@ import TableWrapper from "../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
 import { SkeletonTable } from "@/components/Base/Skeletons";
-import { FaDownload, FaTimes } from "react-icons/fa";
+import { FaDownload, FaTimes, FaSearch } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
 import downloadIcon from "@/assets/images/zmh-images/download-icon.png";
-import { reportsService, CompanyOwnership, OwnershipData } from "@/services/reports";
+import { reportsService, governanceProfileService, CompanyOwnership } from "@/services/reports";
 import { useAppSelector } from "@/stores/hooks";
 import CompanySelect from "@/components/ReactSelectAsync";
+import clsx from "clsx";
+import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CPagination from "@/components/Pagination";
+
+// ── Index options (hardcoded — not from API) ─────────────────────────────────
+const GP_INDEX_OPTIONS = [
+  { value: "SP 500", label: "S&P 500" },
+  { value: "Russell 3000", label: "Russell 3000" },
+];
+
+type GPFilters = { index: string[]; category: string[]; yesNo: string[] };
+
+const GovernanceProfileTab = () => {
+  const getDefaults = (cats: string[], yns: string[]): GPFilters => ({
+    index: ["SP 500"],
+    category: cats.length > 0 ? [cats[0]] : [],
+    yesNo: yns.length > 0 ? [yns[0]] : [],
+  });
+
+  const [dropdowns, setDropdowns] = useState<{ categories: string[]; yesNo: string[] }>({ categories: [], yesNo: [] });
+  const [tempFilters, setTempFilters] = useState<GPFilters>({ index: ["SP 500"], category: [], yesNo: [] });
+  const [appliedFilters, setAppliedFilters] = useState<GPFilters>({ index: ["SP 500"], category: [], yesNo: [] });
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const PAGE_SIZE = 20;
+
+  const fetchData = async (pageNum: number, filters: GPFilters) => {
+    setLoading(true);
+    try {
+      const data = await governanceProfileService.getCompanies({
+        index: filters.index,
+        category: filters.category,
+        yes_no: filters.yesNo,
+        page: pageNum,
+      });
+      setResults(data?.results || []);
+      setTotal(data?.count || 0);
+    } catch {
+      setResults([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await governanceProfileService.getDropdowns();
+        setDropdowns(data);
+        const defaults = getDefaults(data.categories, data.yesNo);
+        setTempFilters(defaults);
+        setAppliedFilters(defaults);
+        fetchData(1, defaults);
+      } catch { /* silent */ }
+    })();
+  }, []);
+
+  const handleApply = () => {
+    setAppliedFilters({ ...tempFilters });
+    setPage(1);
+    fetchData(1, tempFilters);
+    setFiltersOpen(false);
+  };
+
+  const handleClear = () => {
+    const defaults = getDefaults(dropdowns.categories, dropdowns.yesNo);
+    setTempFilters(defaults);
+    setAppliedFilters(defaults);
+    setPage(1);
+    fetchData(1, defaults);
+    setFiltersOpen(false);
+  };
+
+  const removeChip = (type: keyof GPFilters, value: string) => {
+    const next = { ...appliedFilters, [type]: appliedFilters[type].filter(v => v !== value) };
+    if (next[type].length === 0) return;
+    setAppliedFilters(next);
+    setTempFilters(next);
+    setPage(1);
+    fetchData(1, next);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchData(newPage, appliedFilters);
+  };
+
+  const chips = [
+    ...appliedFilters.index.map(v => ({ type: 'index' as keyof GPFilters, value: v, label: v === "SP 500" ? "S&P 500" : v })),
+    ...appliedFilters.category.map(v => ({ type: 'category' as keyof GPFilters, value: v, label: v })),
+    ...appliedFilters.yesNo.map(v => ({ type: 'yesNo' as keyof GPFilters, value: v, label: v })),
+  ];
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  return (
+    <div>
+      {/* Filter button + chips */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <Button
+          variant="outline-secondary"
+          className="w-full sm:w-auto cursor-pointer"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+        >
+          <Lucide icon="ArrowDownWideNarrow" className="stroke-[1.3] w-4 h-4 mr-2" />
+          Filters
+          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+            {chips.length}
+          </div>
+        </Button>
+        {chips.map((chip, idx) => (
+          <div
+            key={`${chip.type}-${chip.value}-${idx}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border border-rose-200 bg-rose-50 text-rose-700"
+          >
+            <span>{chip.label}</span>
+            <button
+              onClick={() => removeChip(chip.type, chip.value)}
+              className="hover:bg-rose-200/60 rounded-full p-0.5 transition-colors"
+            >
+              <Lucide icon="X" className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter panel */}
+      {filtersOpen && (
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <h3 className="font-medium text-base">Filters</h3>
+            <div className="flex items-center gap-2">
+              <Button variant="outline-secondary" className="cursor-pointer" onClick={handleClear}>
+                <MdOutlineClear className="mr-1.5 w-4 h-4" /> Clear
+              </Button>
+              <Button variant="primary" className="cursor-pointer" onClick={handleApply}>
+                <FaSearch className="mr-1.5 w-3.5 h-3.5" /> Apply
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Index */}
+            <div className="mx-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-slate-600 font-semibold text-sm">Index</label>
+                <label className="inline-flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={tempFilters.index.length === GP_INDEX_OPTIONS.length}
+                    onChange={(e) => setTempFilters(p => ({ ...p, index: e.target.checked ? GP_INDEX_OPTIONS.map(o => o.value) : [] }))}
+                    className="rounded border-gray-300"
+                  />
+                  Select All
+                </label>
+              </div>
+              <MultiSelectDropdown
+                data={GP_INDEX_OPTIONS}
+                selectedOption={tempFilters.index}
+                onChange={(vals: any[]) => setTempFilters(p => ({ ...p, index: vals.map(v => v.value ?? v) }))}
+                placeholder="Select Index..."
+                alignLeft
+              />
+            </div>
+            {/* Category */}
+            <div className="mx-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-slate-600 font-semibold text-sm">Category</label>
+                <label className="inline-flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dropdowns.categories.length > 0 && tempFilters.category.length === dropdowns.categories.length}
+                    onChange={(e) => setTempFilters(p => ({ ...p, category: e.target.checked ? [...dropdowns.categories] : [] }))}
+                    className="rounded border-gray-300"
+                  />
+                  Select All
+                </label>
+              </div>
+              <MultiSelectDropdown
+                data={dropdowns.categories.map(c => ({ value: c, label: c }))}
+                selectedOption={tempFilters.category}
+                onChange={(vals: any[]) => setTempFilters(p => ({ ...p, category: vals.map(v => v.value ?? v) }))}
+                placeholder="Select Category..."
+                alignLeft
+              />
+            </div>
+            {/* Yes / No */}
+            <div className="mx-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-slate-600 font-semibold text-sm">Yes / No</label>
+                <label className="inline-flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dropdowns.yesNo.length > 0 && tempFilters.yesNo.length === dropdowns.yesNo.length}
+                    onChange={(e) => setTempFilters(p => ({ ...p, yesNo: e.target.checked ? [...dropdowns.yesNo] : [] }))}
+                    className="rounded border-gray-300"
+                  />
+                  Select All
+                </label>
+              </div>
+              <MultiSelectDropdown
+                data={dropdowns.yesNo.map(v => ({ value: v, label: v }))}
+                selectedOption={tempFilters.yesNo}
+                onChange={(vals: any[]) => setTempFilters(p => ({ ...p, yesNo: vals.map(v => v.value ?? v) }))}
+                placeholder="Select Yes/No..."
+                alignLeft
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      {loading ? (
+        <SkeletonTable rows={8} columns={5} />
+      ) : results.length > 0 ? (
+        <>
+          <p className="text-sm text-slate-500 mb-3 text-right">Count: <span className="font-semibold">{total}</span></p>
+          <TableWrapper isLoading={false} rows={results.length} columns={5}>
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Td className="font-semibold whitespace-nowrap">Company</Table.Td>
+                  <Table.Td className="font-semibold whitespace-nowrap">Category</Table.Td>
+                  <Table.Td className="font-semibold whitespace-nowrap">Yes / No</Table.Td>
+                  <Table.Td className="font-semibold">Key Provisions</Table.Td>
+                  <Table.Td className="font-semibold whitespace-nowrap">Source</Table.Td>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {results.map((item, idx) => (
+                  <Table.Tr key={idx}>
+                    <Table.Td className="font-medium whitespace-nowrap">{item.company}</Table.Td>
+                    <Table.Td className="text-sm">{item.category}</Table.Td>
+                    <Table.Td>
+                      <span className={clsx(
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
+                        item.yes_no === "Yes" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                      )}>
+                        {item.yes_no}
+                      </span>
+                    </Table.Td>
+                    <Table.Td className="text-sm text-slate-600 max-w-xs">{item.key_provisions}</Table.Td>
+                    <Table.Td>
+                      {item.source?.link ? (
+                        <a href={item.source.link} target="_blank" rel="noopener noreferrer"
+                          className="text-primary hover:underline text-sm font-medium whitespace-nowrap">
+                          {item.source.name || "Source"}
+                        </a>
+                      ) : <span className="text-slate-400 text-sm">—</span>}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </TableWrapper>
+          {totalPages > 1 && (
+            <div className="flex justify-end mt-4">
+              <CPagination currentPage={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+          <Lucide icon="SearchX" className="w-10 h-10 mb-3 opacity-40" />
+          <p>Apply filters to see governance profile results.</p>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CustomReports = () => {
   // Get global company ticker from authentication store
   const { companyGlobalSearchTicker } = useAppSelector((state) => state.authentiction);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'ownership' | 'governance'>('ownership');
 
   // Initialize with local storage data, global company ticker, or default values
   const getInitialTickers = () => {
@@ -204,8 +482,39 @@ const CustomReports = () => {
 
   return (
     <div className="box p-5 mt-3.5">
-      <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-center mb-4">
-        <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 companies can be selected)</h1>
+      {/* Tab Navigation */}
+      <div className="flex gap-2 mb-6 border-b border-gray-200 pb-3">
+        <button
+          onClick={() => setActiveTab('ownership')}
+          className={clsx(
+            "px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2",
+            activeTab === 'ownership'
+              ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          )}
+        >
+          <Lucide icon="BarChart2" className="w-4 h-4" />
+          Ownership
+        </button>
+        <button
+          onClick={() => setActiveTab('governance')}
+          className={clsx(
+            "px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-2",
+            activeTab === 'governance'
+              ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md"
+              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          )}
+        >
+          <Lucide icon="ShieldCheck" className="w-4 h-4" />
+          Governance Profile
+        </button>
+      </div>
+
+      {/* Ownership Tab */}
+      {activeTab === 'ownership' && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-y-2 justify-between items-center mb-4">
+            <h1 className="text-lg font-bold">Ownership Summary (Maximum 5 companies can be selected)</h1>
         <div className="flex items-center gap-2">
           {/* Download icon only visible when not loading and data exists */}
           {!loading && ownershipData.length > 0 && (
@@ -374,6 +683,11 @@ const CustomReports = () => {
           No ownership data available for the selected tickers.
         </div>
       )}
+        </>
+      )}
+
+      {/* Governance Profile Tab */}
+      {activeTab === 'governance' && <GovernanceProfileTab />}
     </div>
   );
 };

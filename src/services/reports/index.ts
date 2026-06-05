@@ -71,4 +71,38 @@ class ReportsService {
   }
 }
 
+class GovernanceProfileService {
+  public async getDropdowns(): Promise<{ categories: string[]; yesNo: string[] }> {
+    try {
+      const response = await axiosInstance.get('/api/get_governance_profile_companies_dropdown_values/');
+      return {
+        categories: response.data?.Categories || [],
+        yesNo: response.data?.Yes_No || [],
+      };
+    } catch {
+      return { categories: [], yesNo: [] };
+    }
+  }
+
+  public async getCompanies(params: {
+    category?: string[];
+    yes_no?: string[];
+    index?: string[];
+    page?: number;
+  }): Promise<any> {
+    const parts: string[] = [];
+    (params.category || []).forEach(c => parts.push(`category=${encodeURIComponent(c)}`));
+    (params.yes_no || []).forEach(v => parts.push(`yes_no=${encodeURIComponent(v)}`));
+    (params.index || []).forEach(i => parts.push(`index=${encodeURIComponent(i)}`));
+    if (params.page && params.page > 1) parts.push(`page=${params.page}`);
+    try {
+      const response = await axiosInstance.get(`/api/get_governance_profile_companies/?${parts.join('&')}`);
+      return response.data;
+    } catch {
+      return { count: 0, results: [] };
+    }
+  }
+}
+
 export const reportsService = new ReportsService();
+export const governanceProfileService = new GovernanceProfileService();
