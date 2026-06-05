@@ -23,7 +23,8 @@ import Lucide from "@/components/Base/Lucide";
 import { baseURL } from "@/constant";
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
-type ProfileMode = "create" | "update" | "voting" | "preview" | null;
+// Add "link_sources" to the ProfileMode type
+type ProfileMode = "create" | "update" | "voting" | "preview" | "link_sources" | null;
 
 const SECTIONS: ProfileSection[] = ["summary", "engagement_priorities", "reporting_expectation", "esg_integration", "voting_guidelines"];
 const SECTION_COLS: { key: ProfileSection; label: string }[] = [
@@ -540,6 +541,15 @@ const InstitutionDocuments = () => {
             </div>
             {isAnalystOrAdmin && !showTrash && (
               <div className="flex items-center gap-2">
+              {/* NEW ADD SOURCES BUTTON */}
+                <Button 
+                  variant={profileMode === 'link_sources' ? "primary" : "outline-secondary"} 
+                  className={profileMode === 'link_sources' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} 
+                  onClick={() => handleActivateMode('link_sources')} 
+                  disabled={linkingInProgress.bulk}
+                >
+                  Add Sources
+                </Button>
                 <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={handlePreviewExistingProfile} disabled={linkingInProgress.bulk}>Preview Existing Profile</Button>
                 <Button variant={profileMode === 'voting' ? "primary" : "outline-secondary"} className={profileMode === 'voting' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('voting')} disabled={linkingInProgress.bulk}>Voting Guideline</Button>
                 <div className="relative" ref={dropdownRef}>
@@ -654,7 +664,40 @@ const InstitutionDocuments = () => {
 
             {profileMode && (
               <div className="flex justify-end gap-2">
-                <Button variant="primary" className="bg-theme-2 border-bg-theme-2" onClick={() => setLinkConfirmOpen(true)} disabled={linkingInProgress.bulk || !hasSubmittableOps}>Submit</Button>
+                <Button 
+                  variant="primary" 
+                  className="bg-theme-2 border-bg-theme-2" 
+                  onClick={async () => {
+                    if (profileMode === 'link_sources') {
+                        try {
+                            // Extract BOTH the document ID and the Section it was checked under
+                            const operations = pendingLinkOps
+                                .filter(op => op.action === 'link')
+                                .map(op => ({
+                                    document_id: op.document_id,
+                                    section: op.section
+                                }));
+                            
+                            await axios.post(`${AI_CHATBOT_API_BASE}/api/investor-profile/${params.id}/link-sources`, {
+                                operations: operations
+                            });
+                            
+                            toast.success("Sources linked to profile successfully!");
+                            setProfileMode(null);
+                            setPendingLinkOps([]);
+                            // Optional: Refetch the profile data here so the UI updates instantly
+                            fetchProfileData(); 
+                        } catch (error) {
+                            toast.error("Failed to link sources.");
+                        }
+                    } else {
+                        setLinkConfirmOpen(true);
+                    }
+                  }} 
+                  disabled={linkingInProgress.bulk || !hasSubmittableOps}
+                >
+                  {profileMode === 'link_sources' ? "Save Sources" : "Submit"}
+                </Button>
                 <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={() => { setPendingLinkOps([]); setProfileMode(null); }}>Cancel</Button>
               </div>
             )}

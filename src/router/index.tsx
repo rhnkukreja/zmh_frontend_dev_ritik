@@ -632,10 +632,10 @@ function Router() {
       path: "final-summary/:id",
       element: <FinalProfileSummary/>,
     },
-    {
-      path: "activist-dashboard",
-      element: <ActivistIntelligenceDashboard/>,
-    },
+    // {
+    //   path: "activist-dashboard",
+    //   element: <ActivistIntelligenceDashboard/>,
+    // },
   ];
 
   return useRoutes(routes);
