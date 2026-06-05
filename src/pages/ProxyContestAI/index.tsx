@@ -42,7 +42,14 @@ function ProxyContestAI() {
   const isAdmin = user?.user_type === "Admin";
   const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
 
-  const [activeTab, setActiveTab] = useState<ProxyContestTabKey>("activist_profile");
+  const [activeTab, setActiveTab] = useState<ProxyContestTabKey>(() => {
+    const saved = loadF("activeTab");
+    return (saved as ProxyContestTabKey) ?? "activist_profile";
+  });
+  const setActiveTabPersisted = (tab: ProxyContestTabKey) => {
+    setActiveTab(tab);
+    saveF("activeTab", tab);
+  };
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -293,9 +300,10 @@ function ProxyContestAI() {
 
 
   const tabs = [
+    { key: "activist_profile", label: "Activism Profile", icon: "UserRound" },
     { key: "overview", label: "Proxy Contest Analytics", icon: "BarChart3" },
     { key: "detailed", label: "Campaign Details", icon: "Table" },
-    ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
+    // ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
   ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
       
       
@@ -437,12 +445,10 @@ function ProxyContestAI() {
   const activeChips = activeTab === "overview" ? ovChips : dtChips;
   const handleClearAll = activeTab === "overview" ? ovClearAll : dtClearAll;
 
-  // ── Sticky header height + sidebar left measurement ─────────────────────────
+  // ── Sticky header height measurement (for sidebar sticky-top offset) ────────
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
-  const spacerRef = useRef<HTMLDivElement>(null);
   const [stickyHeaderH, setStickyHeaderH] = React.useState(0);
-  const [sidebarLeft, setSidebarLeft] = React.useState(0);
-  useEffect(() => {
+  React.useLayoutEffect(() => {
     const el = stickyHeaderRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => setStickyHeaderH(el.offsetHeight));
@@ -450,16 +456,6 @@ function ProxyContestAI() {
     setStickyHeaderH(el.offsetHeight);
     return () => ro.disconnect();
   }, []);
-  useEffect(() => {
-    const measure = () => {
-      if (spacerRef.current) {
-        setSidebarLeft(spacerRef.current.getBoundingClientRect().left);
-      }
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [sidebarOpen]);
 
   // ── Current tab's filter values for sidebar ──────────────────────────────────
   const curYears = activeTab === "overview" ? ovYears : dtYears;
@@ -479,7 +475,7 @@ function ProxyContestAI() {
       {/* ── Sticky top bar: header + tabs + chips + warning ───────────────── */}
       <div
         ref={stickyHeaderRef}
-        className="sticky z-30 bg-[#f1f5f9] pb-3"
+        className="sticky z-30 bg-[#f1f5f9]"
         style={{ top: "4rem" }}
       >
         {/* Page header card */}
@@ -494,12 +490,12 @@ function ProxyContestAI() {
         </div>
 
         {/* Tabs + Hide/Show Filters */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1">
             {tabs.map((tabItem) => (
               <button
                 key={tabItem.key}
-                onClick={() => setActiveTab(tabItem.key)}
+                onClick={() => setActiveTabPersisted(tabItem.key)}
                 className={clsx(
                   "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
                   activeTab === tabItem.key
@@ -527,7 +523,7 @@ function ProxyContestAI() {
 
         {/* Active filter chips */}
         {activeChips.length > 0 && activeTab !== "activist_profile" && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 pb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Active Filters:
             </span>
@@ -560,22 +556,14 @@ function ProxyContestAI() {
         )}
       </div>
 
-      {/* ── Body: sidebar (fixed) + scrollable content ────────────────────── */}
-      <div className="flex gap-6 flex-1 min-h-0">
+      {/* ── Body: sidebar (sticky) + content ─────────────────────────────── */}
+      <div className="flex gap-6 flex-1 min-h-0 items-start">
 
-        {/* Spacer placeholder — reserves width in the flex row and measures left offset */}
-        {sidebarOpen && activeTab !== "activist_profile" && <div ref={spacerRef} className="w-64 flex-shrink-0" />}
-
-        {/* Filters sidebar — FIXED, never scrolls with content */}
+        {/* Filters sidebar — sticky, stays in document flow (never overlaps content) */}
         {sidebarOpen && activeTab !== "activist_profile" && (
           <div
-            className="fixed z-20 w-64"
-            style={{
-              top: `calc(4rem + ${stickyHeaderH}px + 0.75rem)`,
-              left: sidebarLeft > 0 ? `${sidebarLeft}px` : "calc(285px + 1.25rem)",
-              bottom: "1rem",
-              width: "16rem",
-            }}
+            className="w-64 flex-shrink-0 sticky"
+            style={{ top: `calc(4rem + ${stickyHeaderH}px + 0.75rem)` }}
           >
             <FiltersSidebar
               filtersData={filtersData}
