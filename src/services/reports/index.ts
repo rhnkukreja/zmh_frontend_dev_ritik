@@ -99,16 +99,13 @@ class GovernanceProfileService {
   }
 
   public async getCompanies(params: {
-    category?: string[];
-    yes_no?: string[];
+    multiFilters?: { category: string; yes_no: string }[];
     index?: string[];
     page?: number;
   }): Promise<any> {
     const parts: string[] = [];
-    if ((params.category || []).length > 0)
-      parts.push(`category=${encodeURIComponent(JSON.stringify(params.category))}`);
-    if ((params.yes_no || []).length > 0)
-      parts.push(`yes_no=${encodeURIComponent(JSON.stringify(params.yes_no))}`);
+    if ((params.multiFilters || []).length > 0)
+      parts.push(`multi_filters=${encodeURIComponent(JSON.stringify(params.multiFilters))}`);
     if ((params.index || []).length > 0)
       parts.push(`index=${encodeURIComponent(JSON.stringify(params.index))}`);
     if (params.page && params.page > 1) parts.push(`page=${params.page}`);

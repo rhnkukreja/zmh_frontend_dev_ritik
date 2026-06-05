@@ -474,7 +474,7 @@ function ProxyContestAI() {
       >
         {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
+          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest</h2>
           {isAdminOrAnalyst && (
             <Button variant="primary" onClick={() => setAddModalOpen(true)}>
               <Lucide icon="Plus" className="w-4 h-4 mr-1.5" />

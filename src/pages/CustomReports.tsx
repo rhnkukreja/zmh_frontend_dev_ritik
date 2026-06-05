@@ -16,7 +16,7 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CPagination from "@/components/Pagination";
 import StandardizedTable from "@/components/StandardizedTable";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, X, Check } from "lucide-react";
 
 // ── Index options (hardcoded — not from API) ─────────────────────────────────
 const GP_INDEX_OPTIONS = [
@@ -24,23 +24,25 @@ const GP_INDEX_OPTIONS = [
   { value: "Russell 3000", label: "Russell 3000" },
 ];
 
-type GPFilters = { index: string[]; category: string[]; yesNo: string[] };
+type CategoryYesNo = { category: string; yes_no: "Yes" | "No" };
+type GPFilters = { index: string[]; multiFilters: CategoryYesNo[] };
 
 const GovernanceProfileTab = () => {
-  const getDefaults = (cats: string[], yns: string[]): GPFilters => ({
+  const getDefaults = (cats: string[]): GPFilters => ({
     index: ["SP 500"],
-    category: cats.length > 0 ? [cats[0]] : [],
-    yesNo: yns.length > 0 ? [yns[0]] : [],
+    multiFilters: cats.length > 0 ? [{ category: cats[0], yes_no: "Yes" }] : [],
   });
 
-  const [dropdowns, setDropdowns] = useState<{ categories: string[]; yesNo: string[] }>({ categories: [], yesNo: [] });
-  const [tempFilters, setTempFilters] = useState<GPFilters>({ index: ["SP 500"], category: [], yesNo: [] });
-  const [appliedFilters, setAppliedFilters] = useState<GPFilters>({ index: ["SP 500"], category: [], yesNo: [] });
+  const [dropdowns, setDropdowns] = useState<{ categories: string[] }>({ categories: [] });
+  const [tempFilters, setTempFilters] = useState<GPFilters>({ index: ["SP 500"], multiFilters: [] });
+  const [appliedFilters, setAppliedFilters] = useState<GPFilters>({ index: ["SP 500"], multiFilters: [] });
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [dropdownsLoading, setDropdownsLoading] = useState(true);
+  const [catSearch, setCatSearch] = useState("");
   const [modalCompanyId, setModalCompanyId] = useState<number | null>(null);
   const [modalCompanyName, setModalCompanyName] = useState("");
   const PAGE_SIZE = 20;
@@ -50,8 +52,7 @@ const GovernanceProfileTab = () => {
     try {
       const data = await governanceProfileService.getCompanies({
         index: filters.index,
-        category: filters.category,
-        yes_no: filters.yesNo,
+        multiFilters: filters.multiFilters,
         page: pageNum,
       });
       setResults(data?.results || []);
@@ -66,14 +67,16 @@ const GovernanceProfileTab = () => {
 
   useEffect(() => {
     (async () => {
+      setDropdownsLoading(true);
       try {
         const data = await governanceProfileService.getDropdowns();
-        setDropdowns(data);
-        const defaults = getDefaults(data.categories, data.yesNo);
+        setDropdowns({ categories: data.categories });
+        const defaults = getDefaults(data.categories);
         setTempFilters(defaults);
         setAppliedFilters(defaults);
         fetchData(1, defaults);
       } catch { /* silent */ }
+      finally { setDropdownsLoading(false); }
     })();
   }, []);
 
@@ -85,7 +88,7 @@ const GovernanceProfileTab = () => {
   };
 
   const handleClear = () => {
-    const defaults = getDefaults(dropdowns.categories, dropdowns.yesNo);
+    const defaults = getDefaults(dropdowns.categories);
     setTempFilters(defaults);
     setAppliedFilters(defaults);
     setPage(1);
@@ -93,13 +96,31 @@ const GovernanceProfileTab = () => {
     setFiltersOpen(false);
   };
 
-  const removeChip = (type: keyof GPFilters, value: string) => {
-    const next = { ...appliedFilters, [type]: appliedFilters[type].filter(v => v !== value) };
-    if (next[type].length === 0) return;
-    setAppliedFilters(next);
-    setTempFilters(next);
-    setPage(1);
-    fetchData(1, next);
+  const toggleCategory = (cat: string) => {
+    const exists = tempFilters.multiFilters.find(f => f.category === cat);
+    if (exists) {
+      setTempFilters(p => ({ ...p, multiFilters: p.multiFilters.filter(f => f.category !== cat) }));
+    } else {
+      setTempFilters(p => ({ ...p, multiFilters: [...p.multiFilters, { category: cat, yes_no: "Yes" }] }));
+    }
+  };
+
+  const setCatYesNo = (cat: string, yn: "Yes" | "No") => {
+    setTempFilters(p => ({
+      ...p,
+      multiFilters: p.multiFilters.map(f => f.category === cat ? { ...f, yes_no: yn } : f),
+    }));
+  };
+
+  const removeIndexChip = (val: string) => {
+    const next = { ...appliedFilters, index: appliedFilters.index.filter(v => v !== val) };
+    if (next.index.length === 0) return;
+    setAppliedFilters(next); setTempFilters(next); setPage(1); fetchData(1, next);
+  };
+
+  const removeMultiChip = (cat: string) => {
+    const next = { ...appliedFilters, multiFilters: appliedFilters.multiFilters.filter(f => f.category !== cat) };
+    setAppliedFilters(next); setTempFilters(next); setPage(1); fetchData(1, next);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -107,30 +128,33 @@ const GovernanceProfileTab = () => {
     fetchData(newPage, appliedFilters);
   };
 
-  const chips = [
-    ...appliedFilters.index.map(v => ({ type: 'index' as keyof GPFilters, value: v, label: v === "SP 500" ? "S&P 500" : v })),
-    ...appliedFilters.category.map(v => ({ type: 'category' as keyof GPFilters, value: v, label: v })),
-    ...appliedFilters.yesNo.map(v => ({ type: 'yesNo' as keyof GPFilters, value: v, label: v })),
-  ];
-
+  const totalChips = appliedFilters.index.length + appliedFilters.multiFilters.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const filteredCats = dropdowns.categories.filter(c =>
+    c.toLowerCase().includes(catSearch.toLowerCase())
+  );
 
   return (
     <div>
       {/* Filter row: chips (left) + Count + Filters button (right) */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div className="flex flex-wrap items-center gap-2">
-          {chips.map((chip, idx) => (
-            <div
-              key={`${chip.type}-${chip.value}-${idx}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border border-rose-200 bg-rose-50 text-rose-700"
-            >
-              <span>{chip.label}</span>
-              <button
-                onClick={() => removeChip(chip.type, chip.value)}
-                className="hover:bg-rose-200/60 rounded-full p-0.5 transition-colors"
-              >
-                <Lucide icon="X" className="w-3 h-3" />
+          {appliedFilters.index.map(v => (
+            <div key={v} className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border border-rose-200 bg-rose-50 text-rose-700">
+              <span>{v === "SP 500" ? "S&P 500" : v}</span>
+              <button onClick={() => removeIndexChip(v)} className="hover:bg-rose-200/60 rounded-full p-0.5 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          {appliedFilters.multiFilters.map(f => (
+            <div key={f.category} className={clsx(
+              "inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border",
+              f.yes_no === "Yes" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"
+            )}>
+              <span>{f.category}: <span className="font-bold">{f.yes_no}</span></span>
+              <button onClick={() => removeMultiChip(f.category)} className="hover:bg-black/10 rounded-full p-0.5 transition-colors">
+                <X className="w-3 h-3" />
               </button>
             </div>
           ))}
@@ -147,7 +171,7 @@ const GovernanceProfileTab = () => {
             <Lucide icon="ArrowDownWideNarrow" className="stroke-[1.3] w-4 h-4 mr-2" />
             Filters
             <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-              {chips.length}
+              {totalChips}
             </div>
           </Button>
         </div>
@@ -167,21 +191,10 @@ const GovernanceProfileTab = () => {
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
             {/* Index */}
-            <div className="mx-2">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-slate-600 font-semibold text-sm">Index</label>
-                <label className="inline-flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={tempFilters.index.length === GP_INDEX_OPTIONS.length}
-                    onChange={(e) => setTempFilters(p => ({ ...p, index: e.target.checked ? GP_INDEX_OPTIONS.map(o => o.value) : [] }))}
-                    className="rounded border-gray-300"
-                  />
-                  Select All
-                </label>
-              </div>
+            <div>
+              <label className="block text-slate-600 font-semibold text-sm mb-2">Index</label>
               <MultiSelectDropdown
                 data={GP_INDEX_OPTIONS}
                 selectedOption={tempFilters.index}
@@ -190,49 +203,80 @@ const GovernanceProfileTab = () => {
                 alignLeft
               />
             </div>
-            {/* Category */}
-            <div className="mx-2">
+            {/* Category + Yes/No combined — spans 2 cols */}
+            <div className="md:col-span-2">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-slate-600 font-semibold text-sm">Category</label>
-                <label className="inline-flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dropdowns.categories.length > 0 && tempFilters.category.length === dropdowns.categories.length}
-                    onChange={(e) => setTempFilters(p => ({ ...p, category: e.target.checked ? [...dropdowns.categories] : [] }))}
-                    className="rounded border-gray-300"
-                  />
-                  Select All
-                </label>
+                <label className="text-slate-600 font-semibold text-sm">Category &amp; Yes / No</label>
+                <span className="text-xs text-slate-400 font-medium">{tempFilters.multiFilters.length} selected</span>
               </div>
-              <MultiSelectDropdown
-                data={dropdowns.categories.map(c => ({ value: c, label: c }))}
-                selectedOption={tempFilters.category}
-                onChange={(vals: any[]) => setTempFilters(p => ({ ...p, category: vals.map(v => v.value ?? v) }))}
-                placeholder="Select Category..."
-                alignLeft
-              />
-            </div>
-            {/* Yes / No */}
-            <div className="mx-2">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-slate-600 font-semibold text-sm">Yes / No</label>
-                <label className="inline-flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={dropdowns.yesNo.length > 0 && tempFilters.yesNo.length === dropdowns.yesNo.length}
-                    onChange={(e) => setTempFilters(p => ({ ...p, yesNo: e.target.checked ? [...dropdowns.yesNo] : [] }))}
-                    className="rounded border-gray-300"
-                  />
-                  Select All
-                </label>
+              {/* Search */}
+              <div className="relative mb-2">
+                <Lucide icon="Search" className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={catSearch}
+                  onChange={e => setCatSearch(e.target.value)}
+                  placeholder="Search categories…"
+                  className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
               </div>
-              <MultiSelectDropdown
-                data={dropdowns.yesNo.map(v => ({ value: v, label: v }))}
-                selectedOption={tempFilters.yesNo}
-                onChange={(vals: any[]) => setTempFilters(p => ({ ...p, yesNo: vals.map(v => v.value ?? v) }))}
-                placeholder="Select Yes/No..."
-                alignLeft
-              />
+              {/* Category rows */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                {dropdownsLoading ? (
+                  <div className="flex flex-col gap-2 p-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-8 bg-slate-100 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                ) : filteredCats.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-slate-400">No categories found</div>
+                ) : filteredCats.map(cat => {
+                  const entry = tempFilters.multiFilters.find(f => f.category === cat);
+                  const isChecked = !!entry;
+                  return (
+                    <div
+                      key={cat}
+                      className={clsx(
+                        "flex items-center justify-between px-3 py-2 border-b border-slate-100 last:border-0 transition-colors",
+                        isChecked ? "bg-primary/5" : "hover:bg-slate-50"
+                      )}
+                    >
+                      <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0" onClick={() => toggleCategory(cat)}>
+                        <div className={clsx(
+                          "flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+                          isChecked ? "bg-primary border-primary" : "border-slate-300"
+                        )}>
+                          {isChecked && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                        </div>
+                        <span className="text-sm text-slate-700 truncate">{cat}</span>
+                      </label>
+                      <div className={clsx(
+                        "flex-shrink-0 flex rounded-full border border-slate-200 overflow-hidden text-xs font-semibold ml-3",
+                        !isChecked ? "opacity-30 pointer-events-none" : ""
+                      )}>
+                        <button
+                          onClick={() => setCatYesNo(cat, "Yes")}
+                          className={clsx(
+                            "px-2.5 py-1 transition-colors",
+                            entry?.yes_no === "Yes" ? "bg-green-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                          )}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setCatYesNo(cat, "No")}
+                          className={clsx(
+                            "px-2.5 py-1 border-l border-slate-200 transition-colors",
+                            entry?.yes_no === "No" ? "bg-red-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                          )}
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -243,7 +287,7 @@ const GovernanceProfileTab = () => {
         <StandardizedTable.Header>
           <StandardizedTable.Cell isHeader>Company</StandardizedTable.Cell>
           <StandardizedTable.Cell isHeader>Category</StandardizedTable.Cell>
-          <StandardizedTable.Cell isHeader>Yes / No</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader className="whitespace-nowrap">Yes / No</StandardizedTable.Cell>
           <StandardizedTable.Cell isHeader>Key Provisions</StandardizedTable.Cell>
           <StandardizedTable.Cell isHeader>Source</StandardizedTable.Cell>
         </StandardizedTable.Header>
