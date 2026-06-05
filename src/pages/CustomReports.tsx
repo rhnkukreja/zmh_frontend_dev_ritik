@@ -85,6 +85,7 @@ const GovernanceProfileTab = () => {
     setPage(1);
     fetchData(1, tempFilters);
     setFiltersOpen(false);
+    setCatSearch("");
   };
 
   const handleClear = () => {
@@ -94,6 +95,7 @@ const GovernanceProfileTab = () => {
     setPage(1);
     fetchData(1, defaults);
     setFiltersOpen(false);
+    setCatSearch("");
   };
 
   const toggleCategory = (cat: string) => {
@@ -106,10 +108,15 @@ const GovernanceProfileTab = () => {
   };
 
   const setCatYesNo = (cat: string, yn: "Yes" | "No") => {
-    setTempFilters(p => ({
-      ...p,
-      multiFilters: p.multiFilters.map(f => f.category === cat ? { ...f, yes_no: yn } : f),
-    }));
+    const exists = tempFilters.multiFilters.find(f => f.category === cat);
+    if (exists) {
+      setTempFilters(p => ({
+        ...p,
+        multiFilters: p.multiFilters.map(f => f.category === cat ? { ...f, yes_no: yn } : f),
+      }));
+    } else {
+      setTempFilters(p => ({ ...p, multiFilters: [...p.multiFilters, { category: cat, yes_no: yn }] }));
+    }
   };
 
   const removeIndexChip = (val: string) => {
@@ -148,12 +155,9 @@ const GovernanceProfileTab = () => {
             </div>
           ))}
           {appliedFilters.multiFilters.map(f => (
-            <div key={f.category} className={clsx(
-              "inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border",
-              f.yes_no === "Yes" ? "border-green-200 bg-green-50 text-green-700" : "border-red-200 bg-red-50 text-red-700"
-            )}>
-              <span>{f.category}: <span className="font-bold">{f.yes_no}</span></span>
-              <button onClick={() => removeMultiChip(f.category)} className="hover:bg-black/10 rounded-full p-0.5 transition-colors">
+            <div key={f.category} className="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full border border-rose-200 bg-rose-50 text-rose-700">
+              <span>{f.category}: <span className="font-semibold">{f.yes_no}</span></span>
+              <button onClick={() => removeMultiChip(f.category)} className="hover:bg-rose-200/60 rounded-full p-0.5 transition-colors">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -192,16 +196,35 @@ const GovernanceProfileTab = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            {/* Index */}
+            {/* Index — same inline checkbox style as category */}
             <div>
               <label className="block text-slate-600 font-semibold text-sm mb-2">Index</label>
-              <MultiSelectDropdown
-                data={GP_INDEX_OPTIONS}
-                selectedOption={tempFilters.index}
-                onChange={(vals: any[]) => setTempFilters(p => ({ ...p, index: vals.map(v => v.value ?? v) }))}
-                placeholder="Select Index..."
-                alignLeft
-              />
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                {GP_INDEX_OPTIONS.map(opt => {
+                  const isChecked = tempFilters.index.includes(opt.value);
+                  return (
+                    <div
+                      key={opt.value}
+                      onClick={() => setTempFilters(p => ({
+                        ...p,
+                        index: isChecked ? p.index.filter(v => v !== opt.value) : [...p.index, opt.value],
+                      }))}
+                      className={clsx(
+                        "flex items-center gap-2.5 px-3 py-2 border-b border-slate-100 last:border-0 cursor-pointer transition-colors",
+                        isChecked ? "bg-primary/5" : "hover:bg-slate-50"
+                      )}
+                    >
+                      <div className={clsx(
+                        "flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+                        isChecked ? "bg-primary border-primary" : "border-slate-300"
+                      )}>
+                        {isChecked && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
+                      </div>
+                      <span className="text-sm text-slate-700">{opt.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             {/* Category + Yes/No combined — spans 2 cols */}
             <div className="md:col-span-2">
@@ -252,13 +275,13 @@ const GovernanceProfileTab = () => {
                       </label>
                       <div className={clsx(
                         "flex-shrink-0 flex rounded-full border border-slate-200 overflow-hidden text-xs font-semibold ml-3",
-                        !isChecked ? "opacity-30 pointer-events-none" : ""
+                        !isChecked ? "opacity-50" : ""
                       )}>
                         <button
                           onClick={() => setCatYesNo(cat, "Yes")}
                           className={clsx(
                             "px-2.5 py-1 transition-colors",
-                            entry?.yes_no === "Yes" ? "bg-green-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                            entry?.yes_no === "Yes" ? "bg-primary text-white" : "text-slate-500 hover:bg-slate-100"
                           )}
                         >
                           Yes
@@ -267,7 +290,7 @@ const GovernanceProfileTab = () => {
                           onClick={() => setCatYesNo(cat, "No")}
                           className={clsx(
                             "px-2.5 py-1 border-l border-slate-200 transition-colors",
-                            entry?.yes_no === "No" ? "bg-red-500 text-white" : "text-slate-500 hover:bg-slate-100"
+                            entry?.yes_no === "No" ? "bg-primary text-white" : "text-slate-500 hover:bg-slate-100"
                           )}
                         >
                           No
@@ -304,10 +327,7 @@ const GovernanceProfileTab = () => {
               </StandardizedTable.Cell>
               <StandardizedTable.Cell>{item.category}</StandardizedTable.Cell>
               <StandardizedTable.Cell>
-                <span className={clsx(
-                  "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
-                  item.yes_no === "Yes" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                )}>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
                   {item.yes_no}
                 </span>
               </StandardizedTable.Cell>
