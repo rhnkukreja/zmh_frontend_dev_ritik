@@ -383,13 +383,38 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
     if (!yearToCheck || !cik) return;
 
+    // Open the window synchronously (inside the user-gesture context) to avoid
+    // popup blockers. We'll navigate it to the real URL once the fetch resolves.
+    // NOTE: do NOT use noopener/noreferrer here — those flags make window.open
+    // return null in most browsers, preventing us from setting location.href.
+    const newTab = window.open("", "_blank");
+    if (newTab) {
+      newTab.document.write(`<!DOCTYPE html><html><head><title>Loading 8-K…</title>
+        <style>
+          *{margin:0;padding:0;box-sizing:border-box;}
+          body{display:flex;align-items:center;justify-content:center;height:100vh;
+               font-family:system-ui,sans-serif;background:#f8fafc;}
+          .wrap{text-align:center;}
+          .spinner{width:44px;height:44px;border:4px solid #e2e8f0;
+                   border-top-color:#9F1239;border-radius:50%;
+                   animation:spin .8s linear infinite;margin:0 auto 16px;}
+          @keyframes spin{to{transform:rotate(360deg)}}
+          p{color:#64748b;font-size:14px;}
+        </style></head>
+        <body><div class="wrap"><div class="spinner"></div><p>Loading 8-K filing…</p></div></body></html>`);
+      newTab.document.close();
+    }
+
     try {
       setIs8kLoading(true);
       const res = await fetch(
         `https://temp-8k-fetch-cd130a407e9b.herokuapp.com/api/get_proxy_voting_data_v2/?cik=${cik}`
       );
 
-      if (!res.ok) return;
+      if (!res.ok) {
+        newTab?.close();
+        return;
+      }
 
       const data = await res.json();
       const key = `url_${yearToCheck}`;
@@ -399,10 +424,17 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
           .find((u: any) => typeof u === "string" && u.trim() !== "")
         : null;
 
-      if (!url) return;
-      window.open(url, "_blank", "noopener,noreferrer");
+      if (!url) {
+        newTab?.close();
+        return;
+      }
+
+      if (newTab) {
+        newTab.location.href = url;
+      }
     } catch (e) {
       console.error("Failed to fetch 8-K link:", e);
+      newTab?.close();
     } finally {
       setIs8kLoading(false);
     }
