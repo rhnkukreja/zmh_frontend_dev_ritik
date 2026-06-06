@@ -538,12 +538,6 @@ function ProxyContestAI() {
                 </button>
               </span>
             ))}
-            <button
-              onClick={handleClearAll}
-              className="text-xs text-slate-400 hover:text-slate-600 underline"
-            >
-              Clear all
-            </button>
           </div>
         )}
 
@@ -563,7 +557,10 @@ function ProxyContestAI() {
         {sidebarOpen && activeTab !== "activist_profile" && (
           <div
             className="w-64 flex-shrink-0 sticky"
-            style={{ top: `calc(4rem + ${stickyHeaderH}px + 0.75rem)` }}
+            style={{
+              top: `calc(4rem + ${stickyHeaderH}px + 0.75rem)`,
+              height: `calc(100vh - 4rem - ${stickyHeaderH}px - 1.5rem)`,
+            }}
           >
             <FiltersSidebar
               filtersData={filtersData}
@@ -597,9 +594,6 @@ function ProxyContestAI() {
                   <Lucide icon="BarChart3" className="w-5 h-5 text-primary" />
                   Voting Summary
                 </h3>
-                {ovYears.length > 0 && (
-                  <span className="text-sm text-slate-400">{ovYears.join(", ")}</span>
-                )}
               </div>
               <OverviewSummaryTable
                 summaryData={summaryData}

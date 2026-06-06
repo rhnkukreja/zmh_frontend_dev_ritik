@@ -268,7 +268,7 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
                     selectedInvestorSupport ? "bg-primary text-white font-semibold" : "hover:bg-slate-50 text-slate-700"
                   )}
                 >
-                  <span>Investor supported activist</span>
+                  <span className="text-left flex-1">Investor supported activist</span>
                   <span className={clsx(
                     "w-8 h-4 rounded-full flex items-center transition-all flex-none",
                     selectedInvestorSupport ? "bg-white/30" : "bg-slate-200"

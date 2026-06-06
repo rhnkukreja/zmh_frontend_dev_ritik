@@ -562,8 +562,8 @@ function Router() {
         },
         {
           path: "proxy-contest",
-          element: <ProxyContest />,
-          data: { titleName: "Proxy - Contest - ZMH Analytics" },
+          element: <ProxyContestAI />,
+          data: { titleName: "Proxy Contest - ZMH Analytics" },
         },
         {
           path: "proxy-contest-detail/:companyId",
