@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from "recharts";
+
+// ─── Module-level cache (survives tab switches, clears on page refresh) ───────
+const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+let _profilesCache: { data: Record<string, any>; ts: number } | null = null;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -186,6 +190,137 @@ const Tag = ({ text, color = "#6b728020", textColor = "#374151" }) => (
   </span>
 );
 
+// ─── Investor trigger button (header only) ────────────────────────────────────
+
+const InvestorTrigger = ({
+  label,
+  open,
+  onClick,
+}: {
+  label: string;
+  open: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    style={{
+      padding: "8px 14px",
+      fontSize: 13,
+      borderRadius: 6,
+      border: "1px solid #e5e7eb",
+      background: "white",
+      color: "#111827",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      minWidth: 220,
+      maxWidth: 320,
+      textAlign: "left",
+    }}
+  >
+    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      {label}
+    </span>
+    <svg
+      width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }}
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  </button>
+);
+
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+
+const Bone = ({ w = "100%", h = 14, radius = 6, mb = 0 }: { w?: string | number; h?: number; radius?: number; mb?: number }) => (
+  <div className="animate-pulse bg-slate-200" style={{ width: w, height: h, borderRadius: radius, marginBottom: mb }} />
+);
+
+const ActivistDashboardSkeleton = () => (
+  <div style={{ padding: 24, width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden", boxShadow: "0 1px 3px #0000000a" }}>
+
+      {/* Header bar */}
+      <div style={{ background: THEME_MAROON, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
+        <Bone w={200} h={22} radius={4} />
+        <Bone w={240} h={36} radius={6} />
+      </div>
+
+      {/* Profile info */}
+      <div style={{ padding: "20px 24px 0" }}>
+        <Bone w={130} h={22} radius={999} mb={14} />
+        <Bone w={110} h={13} radius={4} mb={16} />
+        <Bone w="90%" h={14} radius={4} mb={8} />
+        <Bone w="75%" h={14} radius={4} mb={20} />
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
+            <Bone w={12} h={12} radius={2} />
+            <Bone w={`${[85, 78, 70][i]}%`} h={13} radius={4} />
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{ padding: "16px 24px", borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb", display: "flex", gap: 28, marginTop: 16 }}>
+        {[70, 80, 90, 72].map((w, i) => (
+          <Bone key={i} w={w} h={14} radius={4} />
+        ))}
+      </div>
+
+      {/* Metric cards */}
+      <div style={{ padding: "24px 24px 0", display: "flex", flexWrap: "wrap", gap: 0, borderBottom: "1px solid #e5e7eb", paddingBottom: 24 }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={{ flex: "1 1 180px", borderRight: i < 3 ? "1px solid #e5e7eb" : "none", padding: "0 16px" }}>
+            <Bone w={100} h={11} radius={3} mb={10} />
+            <Bone w={70} h={30} radius={4} mb={8} />
+            <Bone w={90} h={11} radius={3} />
+          </div>
+        ))}
+      </div>
+
+      {/* Observations section */}
+      <div style={{ padding: "24px 24px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 16, gap: 16 }}>
+          <Bone w={220} h={13} radius={3} />
+          <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+        </div>
+        {[95, 88, 82, 90].map((w, i) => (
+          <div key={i} style={{ display: "flex", gap: 10, paddingBottom: 14, borderBottom: i < 3 ? "1px solid #f3f4f6" : "none", marginBottom: 14 }}>
+            <Bone w={12} h={12} radius={2} />
+            <Bone w={`${w}%`} h={13} radius={4} />
+          </div>
+        ))}
+      </div>
+
+      {/* Campaign cards */}
+      <div style={{ padding: "8px 24px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 16, gap: 16 }}>
+          <Bone w={190} h={13} radius={3} />
+          <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 16, background: "#fafafa" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                <Bone w="55%" h={14} radius={4} />
+                <Bone w={56} h={20} radius={999} />
+              </div>
+              <Bone w={90} h={12} radius={3} mb={10} />
+              <div style={{ display: "flex", gap: 6 }}>
+                <Bone w={60} h={20} radius={6} />
+                <Bone w={72} h={20} radius={6} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  </div>
+);
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const ActivistIntelligenceDashboard = () => {
@@ -197,20 +332,34 @@ const ActivistIntelligenceDashboard = () => {
   const [profile, setProfile]   = useState(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [selectorSearch, setSelectorSearch] = useState("");
 
   useEffect(() => {
     const fetchAllProfiles = async () => {
+      // Serve from cache if still fresh
+      if (_profilesCache && Date.now() - _profilesCache.ts < PROFILES_CACHE_TTL) {
+        const serverPayload = _profilesCache.data;
+        setProfilesCache(serverPayload);
+        const discoveredKeys = Object.keys(serverPayload);
+        setInvestorKeys(discoveredKeys);
+        setActiveInvestorKey(discoveredKeys[0]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
-        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles?t=${Date.now()}`;
+        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles`;
         const response = await axios.get(url);
         const serverPayload = response.data?.data || response.data;
-        
+
         if (!serverPayload || Object.keys(serverPayload).length === 0) {
           throw new Error("No data matrices available in the designated S3 cluster prefix.");
         }
 
+        _profilesCache = { data: serverPayload, ts: Date.now() };
         setProfilesCache(serverPayload);
         const discoveredKeys = Object.keys(serverPayload);
         setInvestorKeys(discoveredKeys);
@@ -253,13 +402,7 @@ const ActivistIntelligenceDashboard = () => {
   };
 
   if (loading) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <p style={{ color: "#6b7280", fontSize: 15, animation: "pulse 1.5s infinite" }}>
-          Syncing activist intelligence metrics…
-        </p>
-      </div>
-    );
+    return <ActivistDashboardSkeleton />;
   }
 
   if (error || !profile) {
@@ -301,22 +444,91 @@ const ActivistIntelligenceDashboard = () => {
           {/* <h2 style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>{profile.legalName}</h2> */}
           </h1>
           
-          <select
-            value={activeInvestorKey}
-            onChange={(e) => setActiveInvestorKey(e.target.value)}
-            style={{
-              padding: "8px 14px", fontSize: 13, borderRadius: 6,
-              border: "1px solid #e5e7eb", background: "white", color: "#111827", cursor: "pointer",
-              minWidth: 240
-            }}
-          >
-            {investorKeys.map((key) => (
-              <option key={key} value={key}>
-                {formatKeyToLabel(key)}
-              </option>
-            ))}
-          </select>
+          <InvestorTrigger
+            label={formatKeyToLabel(activeInvestorKey)}
+            open={selectorOpen}
+            onClick={() => { setSelectorOpen((v) => !v); setSelectorSearch(""); }}
+          />
         </div>
+
+        {/* ── Inline investor picker (in-flow, never overlays content) ── */}
+        {selectorOpen && (
+          <div style={{ borderBottom: "1px solid #e5e7eb", background: "#f9fafb", padding: "16px 24px" }}>
+            {/* Search */}
+            <div style={{ position: "relative", marginBottom: 14 }}>
+              <svg
+                width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+              >
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                autoFocus
+                value={selectorSearch}
+                onChange={(e) => setSelectorSearch(e.target.value)}
+                placeholder="Search investors..."
+                style={{
+                  width: "100%", padding: "9px 12px 9px 36px", fontSize: 13,
+                  border: "1px solid #e5e7eb", borderRadius: 8, outline: "none",
+                  boxSizing: "border-box", color: "#111827", background: "#fff",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                }}
+              />
+            </div>
+
+            {/* Grid list */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: 0,
+              maxHeight: 300,
+              overflowY: "auto",
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              background: "#fff",
+              overflow: "hidden",
+            }}>
+              {investorKeys
+                .filter((k) => formatKeyToLabel(k).toLowerCase().includes(selectorSearch.toLowerCase()))
+                .map((key, idx, arr) => {
+                  const isActive = key === activeInvestorKey;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
+                      style={{
+                        padding: "11px 16px",
+                        fontSize: 13,
+                        textAlign: "left",
+                        background: isActive ? "#fdf2f2" : "#fff",
+                        color: isActive ? THEME_MAROON : "#374151",
+                        fontWeight: isActive ? 600 : 400,
+                        border: "none",
+                        borderRight: "1px solid #f3f4f6",
+                        borderBottom: "1px solid #f3f4f6",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 8,
+                        transition: "background 0.1s",
+                      }}
+                      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
+                      onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}
+                    >
+                      {formatKeyToLabel(key)}
+                      {isActive && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        )}
 
         {/* ── Profile Header Info ── */}
         <div style={{ padding: "20px 24px" }}>
