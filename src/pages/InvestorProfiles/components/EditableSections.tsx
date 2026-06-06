@@ -12,6 +12,7 @@ import LoadingWrapper from "@/components/LoadingWrapper";
 interface EditableSectionProps {
   id: number;
   title: string;
+  sources?: string | null;
 
   field: keyof InvestersProfile;
   fetchloading: boolean;
@@ -27,6 +28,7 @@ interface EditableSectionProps {
 const EditableSection: React.FC<EditableSectionProps> = ({
   id,
   title,
+  sources,
 
   field,
   fetchloading,
@@ -43,6 +45,16 @@ const EditableSection: React.FC<EditableSectionProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState<string>(renderHtml);
   const [loading, setLoading] = useState(false);
+  
+  let parsedSources: any[] = [];
+  if (typeof sources === 'string') {
+      try {
+          parsedSources = JSON.parse(sources);
+      } catch (e) {
+          parsedSources = [];
+      }
+  }
+
   const editorRef = useRef<HTMLDivElement>(null);
 
   const { user } = useAppSelector((state) => state.authentiction);
@@ -185,6 +197,42 @@ useEffect(() => {
                 </div>
               ):null}
             </>
+          )}
+
+       
+          {/* 👉 UPDATED SOURCES FOOTER BLOCK WITH CLICKABLE LINKS */}
+          {parsedSources && parsedSources.length > 0 && (
+            <div className="px-5 pb-4 mt-2">
+              <div className="pt-3 border-t border-slate-200">
+                <p className="text-[13px] text-slate-500 italic m-0">
+                  Profile updated based on the release of{" "}
+                  <span className="font-semibold text-slate-900">
+                    {parsedSources.map((s: any, index: number) => {
+                      const docName = s.name || s.document_name || s.title || "Unknown Document";
+                      const isLast = index === parsedSources.length - 1;
+                      
+                      return (
+                        <React.Fragment key={index}>
+                          {s.link ? (
+                            <a 
+                              href={s.link} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-primary hover:underline"
+                            >
+                              {docName}
+                            </a>
+                          ) : (
+                            <span>{docName}</span>
+                          )}
+                          {!isLast && ", "}
+                        </React.Fragment>
+                      );
+                    })}
+                  </span>
+                </p>
+              </div>
+            </div>
           )}
           </>}
          

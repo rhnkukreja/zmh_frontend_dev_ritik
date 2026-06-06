@@ -497,6 +497,9 @@ function Main() {
                       return null;
                     }
 
+                    const linkKey = `${key}_link` as keyof InvestersProfile;
+                    const linkedSources = singleInvesterProfile?.[linkKey] as string | undefined;
+
                     return (
                       <EditableSection
                         key={index}
@@ -511,6 +514,7 @@ function Main() {
                         renderHtml={formatContentHtml(value || "")}
                         field={key as keyof InvestersProfile}
                         expanded={expandedSections[index]}
+                        sources={linkedSources}
                         onToggle={() =>
                           setExpandedSections(prev =>
                             prev.map((v, i) => (i === index ? !v : v))

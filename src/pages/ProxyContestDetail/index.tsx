@@ -192,7 +192,7 @@ const ProxyContestDetail = () => {
                         {!isFromGlobalSearch && (
                             <Button
                                 onClick={() => {
-                                    navigate('/proxy-contest', {
+                                    navigate('/proxy-contest-ai', {
                                         replace: true,
                                         state: { preventAutoNavigation: true }
                                     });
@@ -208,9 +208,11 @@ const ProxyContestDetail = () => {
                             <div className="font-bold text-2xl pt-4">
                                 {company.company_name}
                             </div>
-                            <p className="text-gray-600 mt-2">
-                                Meeting Date: {company.meeting_date}
-                            </p>
+                            {company.meeting_date && (
+                                <p className="text-gray-600 mt-2">
+                                    Meeting Date: {company.meeting_date}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

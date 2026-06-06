@@ -13,6 +13,8 @@ interface CompaniesTableProps {
   page: number;
   onPageChange: (p: number) => void;
   institutionIds: number[];
+  isAdminOrAnalyst?: boolean;
+  onEdit?: (company: any) => void;
 }
 
 
@@ -55,9 +57,9 @@ const ActionIcon: React.FC<{
   );
 
 const CompaniesTable: React.FC<CompaniesTableProps> = ({
-  data, loading, page, onPageChange, institutionIds,
+  data, loading, page, onPageChange, institutionIds, isAdminOrAnalyst, onEdit,
 }) => {
-  const pageSize = 10;
+  const pageSize = 20;
   const totalPages = data ? Math.ceil(data.count / pageSize) : 1;
 
   // ── Details modal state ────────────────────────────────────────────────────
@@ -177,6 +179,14 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
                       icon="Vote"
                       onClick={() => openModal(company, "voting")}
                     />
+                    {isAdminOrAnalyst && (
+                      <ActionIcon
+                        active={true}
+                        tooltip="Edit"
+                        icon="Pencil"
+                        onClick={() => onEdit?.(company)}
+                      />
+                    )}
                   </div>
                 </StandardizedTable.Cell>
               </StandardizedTable.Row>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import _, { head } from "lodash";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   CompanyDashboard,
   fetchCompanyByName,
@@ -66,9 +66,20 @@ function Main() {
 
   // Active tab state - default based on user role
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(
     location.state?.activeTab || 'company-overview'
   );
+
+  // Apply activeTab from navigation state only once on mount (for back button)
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Modules count state
   const [modulesCount, setModulesCount] = useState<ModulesCount | null>(null);
 
@@ -387,9 +398,6 @@ useEffect(() => {
                   <BarChart3 className="w-4 h-4" />
                   Investor Insight
                 </button>
-                <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                  BETA
-                </span>
               </div>
     
               {/* Ownership - All Users */}

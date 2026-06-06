@@ -218,18 +218,32 @@ function EngagementCard({ card }: { card: CardData }) {
 interface EngagementPrioritiesProps {
   name?: string | null;
   onLoaded?: () => void;
+  sources?: { id: number; name: string; year?: string }[];
 }
 
 // 2. Applied the props to the main component
-const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ name, onLoaded }) => {
+const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ name, onLoaded, sources }) => {
   const [activeTab, setActiveTab] = useState(0);
 
-  // 3. Trigger onLoaded when component mounts
+  // 2. ADD THIS PARSING LOGIC RIGHT HERE
+  let parsedSources: { id: number; name: string; year?: string | number }[] = [];
+  if (typeof sources === 'string') {
+      try {
+          parsedSources = JSON.parse(sources);
+      } catch (e) {
+          parsedSources = [];
+      }
+  } else if (Array.isArray(sources)) {
+      parsedSources = sources;
+  }
+
+  // 3. Keep your existing useEffect
   useEffect(() => {
     if (onLoaded) {
       onLoaded();
     }
   }, [onLoaded]);
+  console.log("DEBUG SOURCES:", parsedSources);
 
   return (
     <div style={{ fontFamily: "system-ui, -apple-system, sans-serif", padding: "24px 0", background: "transparent" }}>
@@ -264,6 +278,23 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ name, onLoa
           gap: 16,
         }}
       >
+       
+      
+      {parsedSources && parsedSources.length > 0 && (
+        <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid #e2e8f0" }}>
+          <p style={{ fontSize: "13px", color: "#64748b", fontStyle: "italic", margin: 0 }}>
+            Profile updated based on the release of{" "}
+            <span style={{ fontWeight: 600, color: "#0f172a" }}>
+              {parsedSources.map((s: any) => {
+                  // If it's a string, render it directly
+                  if (typeof s === 'string') return s;
+                  // If it's an object, check all possible keys for the name
+                  return s.name || s.document_name || s.title || "Unknown Document";
+              }).join(", ")}
+            </span>
+          </p>
+        </div>
+      )}
         {CARDS.map((card) => (
           <EngagementCard key={card.label} card={card} />
         ))}
