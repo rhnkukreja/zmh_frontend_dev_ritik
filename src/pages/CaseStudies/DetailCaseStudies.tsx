@@ -6,12 +6,14 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 const DetailCaseStudies = () => {
   const dispatch: AppDispatch = useAppDispatch();
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromTab: string | undefined = location.state?.fromTab;
 
   const { singleCaseStudy, loading } = useAppSelector(
     (state) => state.caseStudies
@@ -22,7 +24,7 @@ const DetailCaseStudies = () => {
   }, [params.id]);
 
   const backToPreviousPage = () => {
-    navigate(`/case-studies`);
+    navigate(fromTab ? `/case-studies?tab=${fromTab}` : `/case-studies`);
   };
 
   return (

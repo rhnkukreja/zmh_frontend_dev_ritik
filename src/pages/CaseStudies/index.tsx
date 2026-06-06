@@ -1482,7 +1482,7 @@ function CaseStudies() {
                                     <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
                                       <Lucide
                                         onClick={() => {
-                                          navigate(`/case-studies/${item?.id}`);
+                                          navigate(`/case-studies/${item?.id}`, { state: { fromTab: activeTab } });
                                         }}
                                         icon="Eye"
                                       />
