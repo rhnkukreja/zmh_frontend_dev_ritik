@@ -300,7 +300,7 @@ function ProxyContestAI() {
 
 
   const tabs = [
-    { key: "activist_profile", label: "Activism Profile", icon: "UserRound" },
+    { key: "activist_profile", label: "Activist Profile", icon: "UserRound" },
     { key: "overview", label: "Proxy Contest Analytics", icon: "BarChart3" },
     { key: "detailed", label: "Campaign Details", icon: "Table" },
     // ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
