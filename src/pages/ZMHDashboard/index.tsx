@@ -398,9 +398,6 @@ useEffect(() => {
                   <BarChart3 className="w-4 h-4" />
                   Investor Insight
                 </button>
-                <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                  BETA
-                </span>
               </div>
     
               {/* Ownership - All Users */}

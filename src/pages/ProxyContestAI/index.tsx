@@ -301,7 +301,7 @@ function ProxyContestAI() {
 
   const tabs = [
     { key: "activist_profile", label: "Activist Profile", icon: "UserRound" },
-    { key: "overview", label: "Proxy Contest Analytics", icon: "BarChart3" },
+    { key: "overview", label: "Voting Analytics", icon: "BarChart3" },
     { key: "detailed", label: "Campaign Details", icon: "Table" },
     // ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
   ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
@@ -497,7 +497,7 @@ function ProxyContestAI() {
                 key={tabItem.key}
                 onClick={() => setActiveTabPersisted(tabItem.key)}
                 className={clsx(
-                  "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
+                  "relative px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
                   activeTab === tabItem.key
                     ? "bg-primary text-white shadow"
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
@@ -507,6 +507,11 @@ function ProxyContestAI() {
                   <Lucide icon={tabItem.icon as any} className="w-4 h-4" />
                   {tabItem.label}
                 </span>
+                {tabItem.key === "overview" && (
+                  <span className="pointer-events-none absolute -top-2 -right-2 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
+                    BETA
+                  </span>
+                )}
               </button>
             ))}
           </div>

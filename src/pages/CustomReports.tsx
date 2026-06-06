@@ -17,6 +17,7 @@ import CPagination from "@/components/Pagination";
 import StandardizedTable from "@/components/StandardizedTable";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
 import { ExternalLink, X, Check } from "lucide-react";
+import {Users} from "lucide-react";
 
 // ── Index options (hardcoded — not from API) ─────────────────────────────────
 const GP_INDEX_OPTIONS = [
@@ -306,12 +307,9 @@ const GovernanceProfileTab = () => {
       )}
 
       {/* Table */}
-      <StandardizedTable isLoading={loading} skeletonRows={8} skeletonCols={5}>
+      <StandardizedTable isLoading={loading} skeletonRows={8} skeletonCols={2}>
         <StandardizedTable.Header>
           <StandardizedTable.Cell isHeader>Company</StandardizedTable.Cell>
-          <StandardizedTable.Cell isHeader>Category</StandardizedTable.Cell>
-          <StandardizedTable.Cell isHeader className="whitespace-nowrap">Yes / No</StandardizedTable.Cell>
-          <StandardizedTable.Cell isHeader>Key Provisions</StandardizedTable.Cell>
           <StandardizedTable.Cell isHeader>Source</StandardizedTable.Cell>
         </StandardizedTable.Header>
         <Table.Tbody>
@@ -320,19 +318,10 @@ const GovernanceProfileTab = () => {
               <StandardizedTable.Cell>
                 <button
                   onClick={() => { setModalCompanyId(item.company_id); setModalCompanyName(item.company); }}
-                  className="font-medium whitespace-nowrap text-left text-slate-900 underline hover:opacity-75 cursor-pointer"
+                  className="block w-full font-medium whitespace-nowrap text-left text-slate-900 hover:opacity-75 cursor-pointer"
                 >
-                  {item.company}
+                  <span className="underline">{item.company}</span>
                 </button>
-              </StandardizedTable.Cell>
-              <StandardizedTable.Cell>{item.category}</StandardizedTable.Cell>
-              <StandardizedTable.Cell>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                  {item.yes_no}
-                </span>
-              </StandardizedTable.Cell>
-              <StandardizedTable.Cell>
-                <span className="text-slate-600">{item.key_provisions}</span>
               </StandardizedTable.Cell>
               <StandardizedTable.Cell>
                 {item.source?.link ? (
@@ -350,7 +339,7 @@ const GovernanceProfileTab = () => {
             </StandardizedTable.Row>
           )) : (
             <Table.Tr>
-              <Table.Td colSpan={5}>
+              <Table.Td colSpan={2}>
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                   <Lucide icon="SearchX" className="w-10 h-10 mb-3 opacity-40" />
                   <p>Apply filters to see governance profile results.</p>
@@ -611,7 +600,7 @@ const CustomReports = () => {
               : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
           )}
         >
-          <Lucide icon="BarChart2" className="w-4 h-4" />
+          <Users className="w-4 h-4" />
           Ownership
         </button>
         <button
@@ -624,7 +613,12 @@ const CustomReports = () => {
           )}
         >
           <Lucide icon="ShieldCheck" className="w-4 h-4" />
-          Governance Profile
+          <span className="relative">
+            Governance Profile
+            <span className="pointer-events-none absolute -top-3 -right-7 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
+              BETA
+            </span>
+          </span>
         </button>
       </div>
 
