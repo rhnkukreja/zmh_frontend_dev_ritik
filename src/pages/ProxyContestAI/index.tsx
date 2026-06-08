@@ -17,6 +17,16 @@ type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
 const DEFAULT_INSTITUTION_IDS = [33, 34];
 const DEFAULT_YEARS = ["2025", "2026"];
 
+// ── In-memory data cache with TTL (clears on page refresh) ─────────────────
+const DATA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const _dataCache = new Map<string, { data: any; ts: number }>();
+const cacheGet = (key: string): any => {
+  const entry = _dataCache.get(key);
+  if (entry && Date.now() - entry.ts < DATA_CACHE_TTL) return entry.data;
+  return null;
+};
+const cacheSet = (key: string, data: any) => _dataCache.set(key, { data, ts: Date.now() });
+
 // ── localStorage persistence (keyed by token so it clears on logout) ──────────
 const getTokenSlice = () => (localStorage.getItem("token") || "").slice(-8);
 const storageKey = (tab: string) => `pcai_v3_${tab}_${getTokenSlice()}`;
@@ -32,9 +42,67 @@ function ProxyContestAI() {
   const isAdmin = user?.user_type === "Admin";
   const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
 
-  const [activeTab, setActiveTab] = useState<ProxyContestTabKey>("overview");
+  const [activeTab, setActiveTab] = useState<ProxyContestTabKey>(() => {
+    const saved = loadF("activeTab");
+    return (saved as ProxyContestTabKey) ?? "activist_profile";
+  });
+  const setActiveTabPersisted = (tab: ProxyContestTabKey) => {
+    setActiveTab(tab);
+    saveF("activeTab", tab);
+  };
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editInitialData, setEditInitialData] = useState<any>(null);
+
+  // ── Edit handler ─────────────────────────────────────────────────────────────
+  const openEditModal = async (company: any) => {
+    try {
+      const data = await proxyContestAIService.getActivismTables(
+        company.company_name,
+        company.year ? [String(company.year)] : undefined
+      );
+      const selectedYear = String(company.year || "");
+      const presentations = Array.isArray(data?.Activism_Presentation) ? data.Activism_Presentation : [];
+      const pressReleases = Array.isArray(data?.Activism_Press_Release) ? data.Activism_Press_Release : [];
+      const allDocs = [
+        ...presentations.map((item: any) => ({
+          id: item?.id,
+          year: String(item?.year || selectedYear || ""),
+          keyword: String(item?.keyword || "Presentation"),
+          documentName: String(item?.document_name || ""),
+          activistName: String(item?.activist_name || ""),
+          documentDate: String(item?.document_date || ""),
+          isCompanyActivist: item?.is_company_activist || "company",
+          existingDocumentUrl: String(item?.document_url || ""),
+        })),
+        ...pressReleases.map((item: any) => ({
+          id: item?.id,
+          year: String(item?.year || selectedYear || ""),
+          keyword: String(item?.keyword || "Press Release"),
+          documentName: String(item?.document_name || ""),
+          activistName: String(item?.activist_name || ""),
+          documentDate: String(item?.document_date || ""),
+          isCompanyActivist: item?.is_company_activist || "company",
+          existingDocumentUrl: String(item?.document_url || ""),
+        })),
+      ];
+      const recommendations = Array.isArray(data?.Activism_ISS_GL) ? data.Activism_ISS_GL : [];
+      const issRow = recommendations.find((r: any) => String(r?.type || "").toUpperCase() === "ISS");
+      const glRow = recommendations.find((r: any) => String(r?.type || "").toUpperCase() === "GL");
+      setEditInitialData({
+        company: { id: Number(company.company_id || 0), name: company.company_name },
+        documents: allDocs,
+        advisory: {
+          iss: { id: issRow?.id, management: Boolean(issRow?.management), activist: Boolean(issRow?.activist), split: Boolean(issRow?.split) },
+          gl:  { id: glRow?.id,  management: Boolean(glRow?.management),  activist: Boolean(glRow?.activist),  split: Boolean(glRow?.split)  },
+        },
+      });
+      setEditModalOpen(true);
+    } catch {
+      /* silent */
+    }
+  };
 
   // ── Overview filters (persisted per-tab) ────────────────────────────────────
   const [ovYears, setOvYears] = useState<string[]>(() => loadF("overview")?.years ?? DEFAULT_YEARS);
@@ -95,6 +163,9 @@ function ProxyContestAI() {
 
   // ── Fetch filters ────────────────────────────────────────────────────────────
   const fetchFilters = useCallback(async (years: string[], tab: ProxyContestTabKey = "overview", instIds?: number[]) => {
+    const cacheKey = `filters_${tab}_${years.join(",")}_${(instIds || []).join(",")}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) { setFiltersData(cached); return; }
     const id = ++filtersFetchId.current;
     setFiltersLoading(true);
     try {
@@ -106,6 +177,7 @@ function ProxyContestAI() {
         : await proxyContestAIService.getOverviewFilters(years.length ? years : undefined);
       if (id !== filtersFetchId.current) return;
       setFiltersData(data);
+      cacheSet(cacheKey, data);
     } catch {} finally {
       if (id === filtersFetchId.current) setFiltersLoading(false);
     }
@@ -116,6 +188,9 @@ function ProxyContestAI() {
     years: string[], instIds: number[], companyIds: number[],
     vrPageNum = 1, iss?: string | null, gl?: string | null, investorSupport?: boolean
   ) => {
+    const cacheKey = `summary_${years.join(",")}_${instIds.join(",")}_${companyIds.join(",")}_${vrPageNum}_${iss}_${gl}_${investorSupport}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) { setSummaryData(cached.summary); setVotingRecordsData(cached.vr); return; }
     const id = ++summaryFetchId.current;
     setSummaryLoading(true);
     try {
@@ -132,6 +207,7 @@ function ProxyContestAI() {
       if (id !== summaryFetchId.current) return;
       setSummaryData(data?.summary ?? data);
       setVotingRecordsData(data?.voting_records ?? null);
+      cacheSet(cacheKey, { summary: data?.summary ?? data, vr: data?.voting_records ?? null });
     } catch {} finally {
       if (id === summaryFetchId.current) setSummaryLoading(false);
     }
@@ -167,6 +243,9 @@ function ProxyContestAI() {
     years: string[], instIds: number[], activists: string[], companyIds: number[],
     page: number, iss?: string | null, gl?: string | null
   ) => {
+    const cacheKey = `companies_${years.join(",")}_${instIds.join(",")}_${activists.join(",")}_${companyIds.join(",")}_${page}_${iss}_${gl}`;
+    const cached = cacheGet(cacheKey);
+    if (cached) { setCompaniesData(cached); return; }
     const id = ++companiesFetchId.current;
     setCompaniesLoading(true);
     try {
@@ -182,6 +261,7 @@ function ProxyContestAI() {
       });
       if (id !== companiesFetchId.current) return;
       setCompaniesData(data);
+      cacheSet(cacheKey, data);
     } catch {} finally {
       if (id === companiesFetchId.current) setCompaniesLoading(false);
     }
@@ -196,7 +276,7 @@ function ProxyContestAI() {
   }, []);
 
   // ── Refetch filters when switching tabs ──────────────────────────────────────
-  const prevTab = useRef<ProxyContestTabKey>("overview");
+  const prevTab = useRef<ProxyContestTabKey>("activist_profile");
   useEffect(() => {
     if (prevTab.current === activeTab) return;
     prevTab.current = activeTab;
@@ -218,12 +298,16 @@ function ProxyContestAI() {
   //   ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
   // ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
-  const tabs = [
-    { key: "overview", label: "Overview", icon: "BarChart3" },
-    { key: "activist_profile", label: "AI Activism Profile", icon: "UserRound" },
-    { key: "detailed", label: "Detailed View", icon: "Table" },
-  ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
 
+  const tabs = [
+    { key: "activist_profile", label: "Activist Profile", icon: "UserRound" },
+    { key: "overview", label: "Voting Analytics", icon: "BarChart3" },
+    { key: "detailed", label: "Campaign Details", icon: "Table" },
+    // ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
+  ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
+      
+      
+     
   // ── Overview toggle helpers ──────────────────────────────────────────────────
   const ovToggleYear = (y: string) => {
     const next = ovYears.includes(y) ? ovYears.filter(x => x !== y) : [...ovYears, y];
@@ -361,12 +445,10 @@ function ProxyContestAI() {
   const activeChips = activeTab === "overview" ? ovChips : dtChips;
   const handleClearAll = activeTab === "overview" ? ovClearAll : dtClearAll;
 
-  // ── Sticky header height + sidebar left measurement ─────────────────────────
+  // ── Sticky header height measurement (for sidebar sticky-top offset) ────────
   const stickyHeaderRef = useRef<HTMLDivElement>(null);
-  const spacerRef = useRef<HTMLDivElement>(null);
   const [stickyHeaderH, setStickyHeaderH] = React.useState(0);
-  const [sidebarLeft, setSidebarLeft] = React.useState(0);
-  useEffect(() => {
+  React.useLayoutEffect(() => {
     const el = stickyHeaderRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => setStickyHeaderH(el.offsetHeight));
@@ -374,16 +456,6 @@ function ProxyContestAI() {
     setStickyHeaderH(el.offsetHeight);
     return () => ro.disconnect();
   }, []);
-  useEffect(() => {
-    const measure = () => {
-      if (spacerRef.current) {
-        setSidebarLeft(spacerRef.current.getBoundingClientRect().left);
-      }
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [sidebarOpen]);
 
   // ── Current tab's filter values for sidebar ──────────────────────────────────
   const curYears = activeTab === "overview" ? ovYears : dtYears;
@@ -403,12 +475,12 @@ function ProxyContestAI() {
       {/* ── Sticky top bar: header + tabs + chips + warning ───────────────── */}
       <div
         ref={stickyHeaderRef}
-        className="sticky z-30 bg-[#f1f5f9] pb-3"
+        className="sticky z-30 bg-[#f1f5f9]"
         style={{ top: "4rem" }}
       >
         {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest AI</h2>
+          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest</h2>
           {isAdminOrAnalyst && (
             <Button variant="primary" onClick={() => setAddModalOpen(true)}>
               <Lucide icon="Plus" className="w-4 h-4 mr-1.5" />
@@ -418,14 +490,14 @@ function ProxyContestAI() {
         </div>
 
         {/* Tabs + Hide/Show Filters */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1">
             {tabs.map((tabItem) => (
               <button
                 key={tabItem.key}
-                onClick={() => setActiveTab(tabItem.key)}
+                onClick={() => setActiveTabPersisted(tabItem.key)}
                 className={clsx(
-                  "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
+                  "relative px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
                   activeTab === tabItem.key
                     ? "bg-primary text-white shadow"
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
@@ -435,6 +507,11 @@ function ProxyContestAI() {
                   <Lucide icon={tabItem.icon as any} className="w-4 h-4" />
                   {tabItem.label}
                 </span>
+                {tabItem.key === "overview" && (
+                  <span className="pointer-events-none absolute -top-2 -right-2 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
+                    BETA
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -451,7 +528,7 @@ function ProxyContestAI() {
 
         {/* Active filter chips */}
         {activeChips.length > 0 && activeTab !== "activist_profile" && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 pb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Active Filters:
             </span>
@@ -466,12 +543,6 @@ function ProxyContestAI() {
                 </button>
               </span>
             ))}
-            <button
-              onClick={handleClearAll}
-              className="text-xs text-slate-400 hover:text-slate-600 underline"
-            >
-              Clear all
-            </button>
           </div>
         )}
 
@@ -484,21 +555,16 @@ function ProxyContestAI() {
         )}
       </div>
 
-      {/* ── Body: sidebar (fixed) + scrollable content ────────────────────── */}
-      <div className="flex gap-6 flex-1 min-h-0">
+      {/* ── Body: sidebar (sticky) + content ─────────────────────────────── */}
+      <div className="flex gap-6 flex-1 min-h-0 items-start">
 
-        {/* Spacer placeholder — reserves width in the flex row and measures left offset */}
-        {sidebarOpen && activeTab !== "activist_profile" && <div ref={spacerRef} className="w-64 flex-shrink-0" />}
-
-        {/* Filters sidebar — FIXED, never scrolls with content */}
+        {/* Filters sidebar — sticky, stays in document flow (never overlaps content) */}
         {sidebarOpen && activeTab !== "activist_profile" && (
           <div
-            className="fixed z-20 w-64"
+            className="w-64 flex-shrink-0 sticky"
             style={{
               top: `calc(4rem + ${stickyHeaderH}px + 0.75rem)`,
-              left: sidebarLeft > 0 ? `${sidebarLeft}px` : "calc(285px + 1.25rem)",
-              bottom: "1rem",
-              width: "16rem",
+              height: `calc(100vh - 4rem - ${stickyHeaderH}px - 1.5rem)`,
             }}
           >
             <FiltersSidebar
@@ -533,9 +599,6 @@ function ProxyContestAI() {
                   <Lucide icon="BarChart3" className="w-5 h-5 text-primary" />
                   Voting Summary
                 </h3>
-                {ovYears.length > 0 && (
-                  <span className="text-sm text-slate-400">{ovYears.join(", ")}</span>
-                )}
               </div>
               <OverviewSummaryTable
                 summaryData={summaryData}
@@ -570,6 +633,8 @@ function ProxyContestAI() {
                 page={companiesPage}
                 onPageChange={handleCompaniesPageChange}
                 institutionIds={dtInstIds}
+                isAdminOrAnalyst={isAdminOrAnalyst}
+                onEdit={openEditModal}
               />
             </div>
           )}
@@ -594,6 +659,19 @@ function ProxyContestAI() {
           onSuccess={() => {
             setAddModalOpen(false);
             fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
+          }}
+        />
+      )}
+      {isAdminOrAnalyst && (
+        <ProxyContestModal
+          open={editModalOpen}
+          mode="edit"
+          initialData={editInitialData}
+          onClose={() => { setEditModalOpen(false); setEditInitialData(null); }}
+          onSuccess={() => {
+            setEditModalOpen(false);
+            setEditInitialData(null);
+            fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, companiesPage, dtIss, dtGl);
           }}
         />
       )}

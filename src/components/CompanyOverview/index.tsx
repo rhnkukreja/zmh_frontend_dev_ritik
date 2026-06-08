@@ -1714,9 +1714,6 @@ export default function CompanyOverview() {
                 }`}
             >
               <span>Governance Profile</span>
-              <span className="pointer-events-none absolute -top-2 -right-3 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
-                BETA
-              </span>
             </button>
 
             {canViewCompensation && (
@@ -1767,9 +1764,6 @@ export default function CompanyOverview() {
                 }`}
             >
               <span>Governance Profile</span>
-              <span className="pointer-events-none absolute -top-2 -right-3 text-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
-                BETA
-              </span>
             </button>
 
             {canViewCompensation && (
