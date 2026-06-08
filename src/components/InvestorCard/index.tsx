@@ -550,45 +550,37 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                                             {index + 1}
                                           </div>
                                         </Table.Td>
-
-                                        <Table.Td className="relative w-full px-4 py-2">
-  <div className="flex justify-between items-center w-full">
-    <div className="flex items-center whitespace-nowrap">
       
-      {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
-      {(() => {
-        const dynInstId = dashboard?.institution_id || autoScrapedData[dashboard?.institution_name]?.institution_id;
+      <Table.Td className="relative w-full px-4 py-2">
+    <div className="flex justify-between items-center w-full">
+      <div className="flex items-center whitespace-nowrap">
         
-        return (
-          <>
-            {/* 🌟 2. Hide the Asterisk if the Dynamic ID exists! */}
-            {!dynInstId && (
-              <sup
-                className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
-                onClick={() => {
-                  window.scrollBy({ top: 350, behavior: "smooth" });
-                }}
-              >
-                *
-              </sup>
-            )}
+        {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
+        {(() => {
+          const dynInstId = dashboard?.institution_id || autoScrapedData[dashboard?.institution_name]?.institution_id;
+          
+          return (
+            <>
+              {/* 🌟 2. Hide the Asterisk if the Dynamic ID exists! */}
+              {!dynInstId && (
+                <sup
+                  className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
+                  onClick={() => {
+                    window.scrollBy({ top: 350, behavior: "smooth" });
+                  }}
+                >
+                  *
+                </sup>
+              )}
             
             {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
             <h1
-              onClick={(e) => {
-                if (dynInstId && dashboard?.is_doc) {
-                  if (e.ctrlKey || e.metaKey) {
-                    window.open(`/investor-company-details/${dynInstId}?from=ownership`, "_blank");
-                  } else {
-                    navigate(`/investor-company-details/${dynInstId}`, {
-                      state: { from: location.pathname, fromState: { activeTab: 'ownership' } }
-                    });
-                  }
-                }
-              }}
+              onClick={() =>
+                dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
+              }
               className={clsx([
                 "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                dashboard?.is_doc && "cursor-pointer underline",
+                dynInstId && "cursor-pointer underline",
               ])}
             >
               {dashboard?.institution_name}
@@ -601,62 +593,65 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
         <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
       )}
     </div>
+   {/* ========================================== */}
+    {/* 2. ACTION BUTTONS (EYE ICON LOGIC)         */}
+    {/* ========================================== */}
+    {/* ========================================== */}
+    {/* 2. SILENT ACTION TRAYS (CLEAN RENDER VIEW) */}
+    {/* ========================================== */}
     <div className="flex items-center gap-x-2">
-  {dashboard?.investor_profile_id ? (
-  /* 1. Show Investor Profile if it exists */
-  <Tippy
-    content="Investor Profile"
-    options={{ theme: "light" }}
-    className="w-5 h-5"
-    onClick={() =>
-      navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
-    }
-  >
-    <div className="flex items-center justify-center w-6 h-6 text-primary">
-      <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
-    </div>
-  </Tippy>
-) : (
-  /* 2. Show the Eye button ONLY if in DB, has Brochure, and is present in S3 */
-  (() => {
-    const scrapedInfo = autoScrapedData[dashboard?.institution_name] || {};
-    
-    // 🌟 FIX: Re-define dynInstId in this scope so it doesn't crash!
-    const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
-    
-    // Check if it's in S3 (your backend returns an 'error' key if it's NOT in S3)
-    const isInS3 = !scrapedInfo.error && Object.keys(scrapedInfo).length > 0;
-    
-    // Check if the Part 2 brochure is present
-    const hasBrochure = !!(scrapedInfo.brochure_url || scrapedInfo.adv_pdf_s3_url);
-    
-    // The strict condition you requested
-    const showEyeIcon = dynInstId && isInS3 && hasBrochure;
-
-    if (showEyeIcon) {
-      return (
-        <div
+      {dashboard?.investor_profile_id ? (
+        /* Show Investor Profile if it exists */
+        <Tippy
+          content="Investor Profile"
+          options={{ theme: "light" }}
           className="w-5 h-5"
-          onClick={() => {
-            if (!summaryLoading) {
-              handleViewSummary(dashboard?.institution_name);
-            }
-          }}
+          onClick={() =>
+            navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
+          }
         >
-          <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
-            {summaryLoading && activeInstitutionName === dashboard?.institution_name ? (
-              <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-            ) : (
-              <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
-            )}
+          <div className="flex items-center justify-center w-6 h-6 text-primary">
+            <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
           </div>
-        </div>
-      );
-    }
+        </Tippy>
+      ) : (
+  /* 2. Show the Eye button ONLY if in DB, has Brochure, and is present in S3 */
+        (() => {
+          const scrapedInfo = autoScrapedData[dashboard?.institution_name] || {};
+          const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
+          
+          const isInS3 = !scrapedInfo.error && Object.keys(scrapedInfo).length > 0;
+          const hasBrochure = !!(scrapedInfo.brochure_url || scrapedInfo.adv_pdf_s3_url);
+          
+    // The strict condition you requested
+          const showEyeIcon = dynInstId && isInS3 && hasBrochure;
 
-    return <div className="w-6 h-6" />;
-  })()
-)}
+          if (showEyeIcon) {
+            return (
+              <Tippy content="View SEC Details" options={{ theme: "light" }}>
+                <div
+                  className="w-5 h-5"
+                  onClick={() => {
+                    if (!summaryLoading) {
+                      handleViewSummary(dashboard?.institution_name);
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
+                    {summaryLoading && activeInstitutionName === dashboard?.institution_name ? (
+                      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                    ) : (
+                      <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
+                    )}
+                  </div>
+                </div>
+              </Tippy>
+            );
+          }
+         
+          return <div className="w-6 h-6" />;
+        })()
+      )}
 
   {dashboard?.case_studies_id ? (
      <Tippy
