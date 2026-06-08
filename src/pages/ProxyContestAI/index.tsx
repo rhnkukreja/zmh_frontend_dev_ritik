@@ -305,6 +305,7 @@ function ProxyContestAI() {
     { key: "detailed", label: "Campaign Details", icon: "Table" },
     // ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
   ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
+  
       
       
      
