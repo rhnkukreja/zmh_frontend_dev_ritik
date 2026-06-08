@@ -16,7 +16,7 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CPagination from "@/components/Pagination";
 import StandardizedTable from "@/components/StandardizedTable";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
-import { ExternalLink, X, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import {Users} from "lucide-react";
 
 // ── Index options (hardcoded — not from API) ─────────────────────────────────
@@ -309,8 +309,8 @@ const GovernanceProfileTab = () => {
       {/* Table */}
       <StandardizedTable isLoading={loading} skeletonRows={8} skeletonCols={2}>
         <StandardizedTable.Header>
-          <StandardizedTable.Cell isHeader>Company</StandardizedTable.Cell>
-          <StandardizedTable.Cell isHeader>Source</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader className="w-full">Company</StandardizedTable.Cell>
+          <StandardizedTable.Cell isHeader className="w-40 text-center whitespace-nowrap">Governance Profile</StandardizedTable.Cell>
         </StandardizedTable.Header>
         <Table.Tbody>
           {results.length > 0 ? results.map((item, idx) => (
@@ -323,18 +323,14 @@ const GovernanceProfileTab = () => {
                   <span className="underline">{item.company}</span>
                 </button>
               </StandardizedTable.Cell>
-              <StandardizedTable.Cell>
-                {item.source?.link ? (
-                  <a href={item.source.link} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-primary hover:underline font-medium whitespace-nowrap">
-                    {item.source.name || "Source"}
-                    <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
-                  </a>
-                ) : item.source?.name ? (
-                  <span className="text-sm">{item.source.name}</span>
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
+              <StandardizedTable.Cell className="text-center">
+                <button
+                  onClick={() => { setModalCompanyId(item.company_id); setModalCompanyName(item.company); }}
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-primary hover:text-white transition-colors cursor-pointer mx-auto"
+                  title="View Governance Profile"
+                >
+                  <Lucide icon="Eye" className="w-4 h-4" />
+                </button>
               </StandardizedTable.Cell>
             </StandardizedTable.Row>
           )) : (
