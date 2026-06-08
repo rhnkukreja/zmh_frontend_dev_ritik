@@ -305,6 +305,7 @@ function ProxyContestAI() {
     { key: "detailed", label: "Campaign Details", icon: "Table" },
     // ...(isAdmin ? [{ key: "activist_profile", label: "Activist Profile", icon: "UserRound" }] : []),
   ] as Array<{ key: ProxyContestTabKey; label: string; icon: string }>;
+  
       
       
      
@@ -507,7 +508,7 @@ function ProxyContestAI() {
                   <Lucide icon={tabItem.icon as any} className="w-4 h-4" />
                   {tabItem.label}
                 </span>
-                {tabItem.key === "overview" && (
+                {(tabItem.key === "overview" || tabItem.key === "activist_profile") && (
                   <span className="pointer-events-none absolute -top-2 -right-2 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
                     BETA
                   </span>
