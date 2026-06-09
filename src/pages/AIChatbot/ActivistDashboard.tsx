@@ -47,15 +47,19 @@ const formatLargeUSD = (value: any) => {
 const normaliseProfile = (raw: any) => {
   if (!raw) return null;
 
-  // ── Universal Citation Stripper Helper ────────────────────────────────────
-const stripCitations = (text: any) => {
+const stripCitations = (text: any): string => {
   if (typeof text !== "string") return "";
-
   return text
-    .replace(/\]*\]/gi, "")
+    // [cite: 6], [cite: 6.], [cite: 6, 7], unclosed variants
+    .replace(/\[cite:[^\]]*\]?/gi, "")
+    // Standard numeric: [1], [1,2], [1-3]
+    .replace(/\[\d[\d,\s\-]*\]/g, "")
+    // Trailing whitespace before punctuation after removal
+    .replace(/\s+([.,;!?])/g, "$1")
     .trim();
 };
-  // ── Summary text ──────────────────────────────────────────────────────────
+
+// ── Summary text ──────────────────────────────────────────────────────────
   const rawSummary =
     typeof raw.investor_summary === "string"
       ? raw.investor_summary
@@ -418,11 +422,10 @@ const ActivistIntelligenceDashboard = () => {
         {/* ── STICKY HEADER WRAPPER ── */}
         <div style={{ 
           position: "sticky", 
-        
           top: "200px", 
           zIndex: 40, 
           borderRadius: "10px 10px 0 0",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" // Adds a nice shadow when it sticks and floats
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
         }}>
           
           {/* ── Maroon ZMH Header ── */}
@@ -569,6 +572,7 @@ const ActivistIntelligenceDashboard = () => {
             { id: "campaigns", label: "Campaigns" },
             { id: "holdings",  label: "13F Holdings" },
             { id: "personnel", label: "Personnel" },
+            { id: "sources",   label: "Sources" }, // <── ADDED SOURCES TAB BACK
           ].map((tab) => (
             <button
               key={tab.id}
@@ -807,6 +811,52 @@ const ActivistIntelligenceDashboard = () => {
               )}
             </div>
           )}
+
+          {/* ── ADDED SOURCES TAB CONTENT ── */}
+          {activeTab === "sources" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <SectionHeader title="Source Inventory & References" />
+              {profile.sources && profile.sources.length > 0 ? (
+                <ul style={{ padding: 0, margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
+                  {profile.sources.map((src: any, i: number) => {
+                    // Robust parser in case backend sends strings OR objects
+                    const title = typeof src === "string" ? src : (src.title || src.name || src.source_name || "Reference Document");
+                    const url = typeof src === "object" ? (src.url || src.link || src.source_url) : null;
+                    const date = typeof src === "object" ? src.date : null;
+
+                    return (
+                      <li key={i} style={{ display: "flex", alignItems: "flex-start", paddingBottom: 14, borderBottom: i !== profile.sources.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                        <span style={{ color: THEME_MAROON, marginRight: 10, fontSize: 16, lineHeight: 1 }}>▸</span>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 13, color: "#4b5563", margin: 0, lineHeight: 1.55 }}>
+                            {url ? (
+                              <a 
+                                href={url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                style={{ color: "#2e50cdcf", textDecoration: "none", fontWeight: 500 }}
+                                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                              >
+                                {title}
+                              </a>
+                            ) : (
+                              <span>{title}</span>
+                            )}
+                          </p>
+                          {date && <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>{date}</p>}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No source documents indexed for this profile.</p>
+              )}
+            </div>
+          )}
+          {/* ── END SOURCES TAB CONTENT ── */}
+
         </div>
       </div>
     </div>
