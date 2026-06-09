@@ -120,6 +120,19 @@ class GovernanceProfileService {
       return { count: 0, results: [] };
     }
   }
+
+  public async downloadExcel(params: {
+    multiFilters?: { category: string; yes_no: string }[];
+    index?: string[];
+  }): Promise<Blob> {
+    const parts: string[] = ['download=true'];
+    if ((params.multiFilters || []).length > 0)
+      parts.push(`multi_filters=${encodeURIComponent(JSON.stringify(params.multiFilters))}`);
+    if ((params.index || []).length > 0)
+      parts.push(`index=${encodeURIComponent(JSON.stringify(params.index))}`);
+    const response = await axiosInstance.get(`/api/get_governance_profile_companies/?${parts.join('&')}`, { responseType: 'blob' });
+    return response.data as Blob;
+  }
 }
 
 export const reportsService = new ReportsService();

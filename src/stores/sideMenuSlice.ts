@@ -164,6 +164,11 @@ const initialState: any = {
       isAdmin: true,
     },
     {
+      icon: "BarChart2",
+      pathname: "/custom-reports",
+      title: "Custom Reports",
+    },
+    {
       icon: "Headphones",
       pathname: "#",
       title: "Podcasts",
@@ -177,11 +182,6 @@ const initialState: any = {
       icon: "Newspaper",
       pathname: "/newsletter",
       title: "Newsletter",
-    },
-    {
-      icon: "BarChart2",
-      pathname: "/custom-reports",
-      title: "Custom Reports",
     },
     {
       icon: "Mail",
