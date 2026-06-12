@@ -73,11 +73,11 @@ import { MegaphoneOff, ChevronLeft, ChevronDown } from "lucide-react";
 // ✅ INTERFACE UPDATED TO ACCEPT LIFTED STATE
 interface InvestorCardProps {
   onLoaded?: () => void;
-  autoScrapedData?: Record<string, any>; // 🌟 ADDED THIS
+  autoScrapedData?: Record<string, any>;
+  pendingInvestors?: Set<string>;
 }
 
-// ✅ COMPONENT ACCEPTING THE PROP
-const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
+const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }: InvestorCardProps) => {
 
   const [isScrapingPdf, setIsScrapingPdf] = useState(false);
 
@@ -615,30 +615,38 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
           </div>
         </Tippy>
       ) : (
-  /* 2. Show the Eye button ONLY if in DB, has Brochure, and is present in S3 */
         (() => {
-          const scrapedInfo = autoScrapedData[dashboard?.institution_name] || {};
+          const name = dashboard?.institution_name;
+          const scrapedInfo = autoScrapedData[name] || {};
           const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
-          
-          const isInS3 = !scrapedInfo.error && Object.keys(scrapedInfo).length > 0;
+          const isInS3 = scrapedInfo.status !== "scraping" && Object.keys(scrapedInfo).length > 0;
           const hasBrochure = !!(scrapedInfo.brochure_url || scrapedInfo.adv_pdf_s3_url);
-          
-    // The strict condition you requested
-          const showEyeIcon = dynInstId && isInS3 && hasBrochure;
+          const isScraping = pendingInvestors.has(name);
 
-          if (showEyeIcon) {
+          // Backend is still scraping this investor in the background — show spinner.
+          if (isScraping) {
+            return (
+              <Tippy content="Fetching SEC details..." options={{ theme: "light" }}>
+                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                  <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                </div>
+              </Tippy>
+            );
+          }
+
+          if (dynInstId && isInS3 && hasBrochure) {
             return (
               <Tippy content="View SEC Details" options={{ theme: "light" }}>
                 <div
                   className="w-5 h-5"
                   onClick={() => {
                     if (!summaryLoading) {
-                      handleViewSummary(dashboard?.institution_name);
+                      handleViewSummary(name);
                     }
                   }}
                 >
                   <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
-                    {summaryLoading && activeInstitutionName === dashboard?.institution_name ? (
+                    {summaryLoading && activeInstitutionName === name ? (
                       <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
                     ) : (
                       <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
@@ -648,7 +656,6 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
               </Tippy>
             );
           }
-         
           return <div className="w-6 h-6" />;
         })()
       )}
