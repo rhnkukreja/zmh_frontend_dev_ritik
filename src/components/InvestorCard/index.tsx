@@ -370,7 +370,7 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
           Back
         </Button>
       )}
-      {dashboardDataList?.length !== 0 && (
+      {(dashboardDataList?.length !== 0 || investorCardLoading) && (
         <>
           <div className="p-5 mt-3.5 box">
             <div className="w-full">
@@ -378,9 +378,11 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                 <div className="flex items-center">
                   <h1 className="text-xl font-bold">
                     Top {dashboardDataList?.length || 20} Investors{" "}
-                    <span className="text-lg font-bold">
-                      ({dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership} of shares outstanding)
-                    </span>
+                    {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership && (
+                      <span className="text-lg font-bold">
+                        ({dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership} of shares outstanding)
+                      </span>
+                    )}
                   </h1>
                 </div>
                 <div className="flex items-center gap-2">
@@ -437,7 +439,7 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
 
                 <div className="grid gap-6 grid-cols-1">
                   <div className="col-span-1">
-                    <TableWrapper isLoading={investorCardLoading}>
+                    <TableWrapper>
                       <div
                         className={clsx([
                           locationPathName === "/" &&
@@ -535,8 +537,22 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                             </Table.Tr>
                           </Table.Thead>
                           <Table.Tbody>
+                            {investorCardLoading &&
+                              Array.from({ length: 10 }).map((_, rowIdx) => (
+                                <Table.Tr key={`skeleton-${rowIdx}`} className="row [&_td]:last:border-b-0">
+                                  {Array.from({ length: 9 }).map((_, colIdx) => (
+                                    <Table.Td key={colIdx} className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <div
+                                        className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                                        style={{ width: `${[85, 70, 60, 75, 55, 65, 80, 50, 72][(rowIdx + colIdx) % 9]}%` }}
+                                      />
+                                    </Table.Td>
+                                  ))}
+                                </Table.Tr>
+                              ))}
 
-                            {dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
+                            {!investorCardLoading &&
+                              dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
                               dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.map(
                                 (dashboard: CompanyDashboard, index: number) => (
                                   <Table.Tr
@@ -573,14 +589,16 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                 </sup>
               )}
             
-            {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
+            {/* 🌟 3. Make the name clickable only when is_doc is true */}
             <h1
               onClick={() =>
-                dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
+                dashboard?.is_doc === true &&
+                dynInstId &&
+                window.open(`/investor-company-details/${dynInstId}`, "_blank")
               }
               className={clsx([
                 "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                dynInstId && "cursor-pointer underline",
+                dashboard?.is_doc === true && dynInstId && "cursor-pointer underline",
               ])}
             >
               {dashboard?.institution_name}
@@ -1100,74 +1118,42 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
             <div className="w-full">
               <div className="bg-white rounded-lg">
                 <div className="flex items-center justify-center">
-                  <div className="w-[500px] h-[380px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={getAnalyticsData()}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={90}
-                          innerRadius={45}
-                          startAngle={90}
-                          endAngle={-270}
-                          fill="#8884d8"
-                          dataKey="value"
-                          strokeWidth={2}
-                          stroke="#ffffff"
-                          label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
-                            const RADIAN = Math.PI / 180;
-                            const radius = innerRadius + (outerRadius - innerRadius) * 1.3;
-                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                            const lineRadius = outerRadius + 15;
-                            const lineX = cx + lineRadius * Math.cos(-midAngle * RADIAN);
-                            const lineY = cy + lineRadius * Math.sin(-midAngle * RADIAN);
-
-                            const extendedX = lineX + (lineX > cx ? 25 : -25);
-
-                            return (
-                              <g>
-                                <polyline
-                                  points={`${cx + outerRadius * Math.cos(-midAngle * RADIAN)},${cy + outerRadius * Math.sin(-midAngle * RADIAN)} ${lineX},${lineY} ${extendedX},${lineY}`}
-                                  fill="none"
-                                  stroke="#333"
-                                  strokeWidth={1.5}
-                                />
-                                <text
-                                  x={extendedX}
-                                  y={lineY - 8}
-                                  fill="#333"
-                                  textAnchor={extendedX > cx ? "start" : "end"}
-                                  dominantBaseline="central"
-                                  fontSize={12}
-                                  fontWeight="500"
-                                >
-                                  {name}
-                                </text>
-                                <text
-                                  x={extendedX}
-                                  y={lineY + 8}
-                                  fill="#666"
-                                  textAnchor={extendedX > cx ? "start" : "end"}
-                                  dominantBaseline="central"
-                                  fontSize={11}
-                                  fontWeight="600"
-                                >
-                                  {value}%
-                                </text>
-                              </g>
-                            );
-                          }}
-                          labelLine={false}
-                        >
-                          {getAnalyticsData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="w-[560px]">
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={getAnalyticsData()}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            innerRadius={50}
+                            startAngle={90}
+                            endAngle={-270}
+                            dataKey="value"
+                            strokeWidth={2}
+                            stroke="#ffffff"
+                            labelLine={false}
+                          >
+                            {getAnalyticsData().map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: any, name: any) => [`${value}%`, name]}
+                            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                          />
+                          <Legend
+                            layout="vertical"
+                            align="right"
+                            verticalAlign="middle"
+                            iconType="circle"
+                            iconSize={10}
+                            formatter={(value) => <span style={{ fontSize: 12, color: '#374151' }}>{value}</span>}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
               </div>
