@@ -14,7 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
 // import { toast } from "react-toastify";
-import logo from "../../assets/images/logo/zmh-logo.jpg";
+import logo from "../../assets/images/logo/Vantage ZMH-01.svg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 import { Eye, EyeOff } from "lucide-react";
 import { Helmet } from "react-helmet-async";
@@ -180,10 +180,12 @@ const Main: React.FC = () => {
             {/* <p className="mb-6 text-base font-medium text-center text-red-600 bold">
     We are upgrading our Dashboard. Login will be available soon.
   </p> */}
-            <div className="rounded-[0.8rem] w-[55px] h-[55px]  flex items-center justify-center">
-              <div className="flex items-center justify-center w-full rounded-sm h-full  from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
-                <div className="w-full h-full overflow-hidden    image-fit">
-                  <img alt="Logo" src={logo} />
+            <div className="flex justify-center">
+              <div className="rounded-[0.8rem] w-[180px] h-[180px] flex items-center justify-center">
+                <div className="flex items-center justify-center w-full rounded-sm h-full from-theme-1 to-theme-2/80 transition-transform ease-in-out group-[.side-menu--collapsed.side-menu--on-hover]:xl:-rotate-[360px]">
+                  <div className="w-full h-full overflow-hidden image-fit">
+                    <img alt="Logo" src={logo} className="w-full h-full object-contain" />
+                  </div>
                 </div>
               </div>
             </div>

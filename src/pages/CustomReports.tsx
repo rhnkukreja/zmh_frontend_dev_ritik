@@ -172,22 +172,18 @@ const GovernanceProfileTab = () => {
         {total > 0 && (
           <span className="text-sm text-slate-500">Count: <span className="font-semibold">{total}</span></span>
         )}
-        <Button
+        <button
           onClick={handleDownloadExcel}
           disabled={isDownloading || total === 0}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors whitespace-nowrap h-[34px] ${
-            total === 0
-              ? 'text-slate-400 border border-slate-200 bg-slate-50 cursor-not-allowed'
-              : 'text-white bg-primary border border-primary hover:bg-primary/90'
-          } disabled:opacity-60 disabled:cursor-not-allowed`}
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors whitespace-nowrap bg-primary text-white border-primary hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {isDownloading ? (
             <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
           ) : (
             <Lucide icon="Download" className="w-4 h-4" />
           )}
-          <span>{isDownloading ? 'Downloading...' : 'Download Now'}</span>
-        </Button>
+          {isDownloading ? 'Downloading...' : 'Download Now'}
+        </button>
         <Button
           variant="outline-secondary"
           className="w-full sm:w-auto cursor-pointer"

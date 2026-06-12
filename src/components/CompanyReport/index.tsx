@@ -1,6 +1,6 @@
 import { forwardRef, useRef, useState } from "react";
 import { CompanyReportData } from "@/types/companyReport";
-import zmhLogo from "@/assets/images/logo/zmh-logo.jpg";
+import zmhLogo from "@/assets/images/logo/Vantage ZMH-01.svg";
 import html2canvas from "html2canvas";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";

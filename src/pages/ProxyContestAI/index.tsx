@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
-import { proxyContestAIService } from "@/services/proxyContestAI";
+import { proxyContestAIService, setProxyContestSettledMode } from "@/services/proxyContestAI";
 import FiltersSidebar from "./components/FiltersSidebar";
 import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
@@ -145,6 +145,12 @@ function ProxyContestAI() {
   const [companiesData, setCompaniesData] = useState<any>(null);
   const [companiesLoading, setCompaniesLoading] = useState(false);
   const [companiesPage, setCompaniesPage] = useState(1);
+
+  // ── Voting records Excel download ─────────────────────────────────────────
+  const [vrDownloading, setVrDownloading] = useState(false);
+
+  // ── Settled / excluded campaigns (admin audit view) ────────────────────────
+  const [includeSettled, setIncludeSettled] = useState(false);
 
   // ── Inline warning for institution enforcement ───────────────────────────────
   const [warnMsg, setWarnMsg] = useState<string | null>(null);
@@ -385,6 +391,46 @@ function ProxyContestAI() {
     fetchCompanies(DEFAULT_YEARS, DEFAULT_INSTITUTION_IDS, [], [], 1, null, null); setCompaniesPage(1);
   };
 
+  // ── Download all voting records matching current overview filters as Excel ───
+  const handleDownloadVotingRecords = async () => {
+    setVrDownloading(true);
+    try {
+      const blob = await proxyContestAIService.downloadVotingRecordsExcel({
+        year: ovYears.length ? ovYears : undefined,
+        institution_id: ovInstIds.length ? ovInstIds : undefined,
+        company_id: ovCompanyIds.length ? ovCompanyIds : undefined,
+        iss_support: ovIss || undefined,
+        gl_support: ovGl || undefined,
+        investor_support_activist: ovInvestorSupport || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "voting_records.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      /* silent */
+    } finally {
+      setVrDownloading(false);
+    }
+  };
+
+  // ── Toggle settled/excluded campaigns visibility & refetch everything ───────
+  const toggleIncludeSettled = () => {
+    const next = !includeSettled;
+    setIncludeSettled(next);
+    setProxyContestSettledMode(next ? "Include" : undefined);
+    _dataCache.clear();
+    fetchFilters(activeTab === "overview" ? ovYears : dtYears, activeTab, activeTab === "overview" ? ovInstIds : undefined);
+    fetchSummaryStats(ovYears, ovInstIds, ovCompanyIds, 1, ovIss, ovGl, ovInvestorSupport);
+    setVrPage(1);
+    fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
+    setCompaniesPage(1);
+  };
+
   // ── Pagination ───────────────────────────────────────────────────────────────
   const handleCompaniesPageChange = (p: number) => {
     setCompaniesPage(p);
@@ -517,13 +563,29 @@ function ProxyContestAI() {
             ))}
           </div>
           {activeTab !== "activist_profile" && (
-            <button
-              onClick={() => setSidebarOpen((v) => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
-            >
-              <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
-              {sidebarOpen ? "Hide Filters" : "Show Filters"}
-            </button>
+            <div className="flex items-center gap-2">
+              {isAdminOrAnalyst && (
+                <button
+                  onClick={toggleIncludeSettled}
+                  className={clsx(
+                    "flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors whitespace-nowrap",
+                    includeSettled
+                      ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                      : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                  )}
+                >
+                  <Lucide icon={includeSettled ? "EyeOff" : "Eye"} className="w-4 h-4" />
+                  {includeSettled ? "Including Settled" : "Include Settled"}
+                </button>
+              )}
+              <button
+                onClick={() => setSidebarOpen((v) => !v)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
+              >
+                <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
+                {sidebarOpen ? "Hide Filters" : "Show Filters"}
+              </button>
+            </div>
           )}
         </div>
 
@@ -611,6 +673,8 @@ function ProxyContestAI() {
                 vrLoading={vrLoading}
                 page={vrPage}
                 onPageChange={handleVrPageChange}
+                onDownload={handleDownloadVotingRecords}
+                downloading={vrDownloading}
               />
             </div>
           )}
