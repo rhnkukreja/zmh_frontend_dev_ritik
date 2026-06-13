@@ -37,7 +37,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import { useEffect, useReducer, useState , useRef} from "react";
+import { useEffect, useMemo, useReducer, useState , useRef} from "react";
 
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 
@@ -128,6 +128,15 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
       ?.say_on_pay_column_check === true;
 
   const isColumnGrayedOut = !showSayOnPayColumn;
+
+  // Holdings for the selected year, exactly as returned by the API (genuine
+  // repeats are preserved). Memoized so switching year tabs does not visually
+  // re-duplicate rows; stable keys in the render handle reconciliation.
+  const currentHoldings: CompanyDashboard[] = useMemo(() => {
+    const holdings =
+      dashboardDataList?.all_year_data?.[selectedIndex || 0]?.holdings_data;
+    return Array.isArray(holdings) ? holdings : [];
+  }, [dashboardDataList, selectedIndex]);
 
   const [summaryModalVisible, setSummaryModalVisible] = useState<boolean>(false);
   const [summaryData, setSummaryData] = useState<any>(null);
@@ -552,11 +561,11 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                               ))}
 
                             {!investorCardLoading &&
-                              dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
-                              dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.map(
+                              currentHoldings.length > 0 &&
+                              currentHoldings.map(
                                 (dashboard: CompanyDashboard, index: number) => (
                                   <Table.Tr
-                                    key={dashboard.filer_id}
+                                    key={`${dashboard.filer_id ?? dashboard.institution_name ?? "row"}-${index}`}
                                     className="row [&_td]:last:border-b-0"
                                   >
                                     {dashboard?.institution_name && (
@@ -926,16 +935,6 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
             </footer>
           </div>
         </>
-      )}
-
-      {dashboardDataList?.length === 0 && investorCardLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
       )}
 
       {dashboardDataList?.length === 0 && !investorCardLoading && (

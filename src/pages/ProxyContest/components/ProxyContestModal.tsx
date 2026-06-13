@@ -436,9 +436,11 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             ? initialData.documents.filter(Boolean)
             : [];
 
+          let effectiveYear = "";
           if (docs.length > 0) {
             const firstDoc = docs[0];
-            setYear(firstDoc.year || fetchedYears[0] || "");
+            effectiveYear = firstDoc.year || fetchedYears[0] || "";
+            setYear(effectiveYear);
             setKeyword(firstDoc.keyword || fetchedKeywords[0] || "");
             setActivistName(firstDoc.activistName || "");
             setDocumentDate(firstDoc.documentDate || firstDoc.documentName || "");
@@ -461,7 +463,8 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             extraDocumentIdRef.current = restDocs.length + 1;
           } else {
             // No documents exist - initialize with dropdown defaults for adding new ones
-            setYear(fetchedYears[0] || "");
+            effectiveYear = fetchedYears[0] || "";
+            setYear(effectiveYear);
             setKeyword(fetchedKeywords[0] || "");
             setActivistName("");
             setDocumentDate("");
@@ -486,12 +489,13 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             split: Boolean(initialData.advisory?.gl?.split),
           });
 
-          // Check if company-year is excluded
-          if (initialData.company?.id && year) {
+          // Check if company-year is excluded (use effectiveYear: the `year`
+          // state is not yet updated within this same effect run).
+          if (initialData.company?.id && effectiveYear) {
             setExclusionLoading(true);
             proxyContestAIService.getSettledExclusions({
               company_id: initialData.company.id,
-              year: Number(year),
+              year: Number(effectiveYear),
             }).then((data: any) => {
               const exclusion = data?.results?.[0];
               if (exclusion?.exclude) {

@@ -26,6 +26,7 @@ const cacheGet = (key: string): any => {
   return null;
 };
 const cacheSet = (key: string, data: any) => _dataCache.set(key, { data, ts: Date.now() });
+const cacheClear = () => _dataCache.clear();
 
 // ── localStorage persistence (keyed by token so it clears on logout) ──────────
 const getTokenSlice = () => (localStorage.getItem("token") || "").slice(-8);
@@ -290,6 +291,34 @@ function ProxyContestAI() {
     const instIds = activeTab === "overview" ? ovInstIds : undefined;
     fetchFilters(years, activeTab, instIds);
   }, [activeTab]);
+
+  // ── Auto-prune stale company filters ─────────────────────────────────────────
+  // When the loaded filter options no longer contain a selected company (e.g. it
+  // doesn't exist for the current year/institution selection), drop that
+  // company_id and re-call the data API without it so the flow doesn't get stuck
+  // sending a company that no longer exists in the filter options.
+  useEffect(() => {
+    if (filtersLoading || !filtersData || !Array.isArray(filtersData.companies)) return;
+    const validIds = new Set<number>(
+      (filtersData.companies as any[]).map((c) => c.company_id)
+    );
+    if (activeTab === "detailed") {
+      const next = dtCompanyIds.filter((id) => validIds.has(id));
+      if (next.length !== dtCompanyIds.length) {
+        setDtCompanyIds(next);
+        fetchCompanies(dtYears, dtInstIds, dtActivists, next, 1, dtIss, dtGl);
+        setCompaniesPage(1);
+      }
+    } else if (activeTab === "overview") {
+      const next = ovCompanyIds.filter((id) => validIds.has(id));
+      if (next.length !== ovCompanyIds.length) {
+        setOvCompanyIds(next);
+        fetchSummaryStats(ovYears, ovInstIds, next, 1, ovIss, ovGl, ovInvestorSupport);
+        setVrPage(1);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersData, filtersLoading, activeTab]);
 
   // useEffect(() => {
   //   if (!isAdmin && activeTab === "activist_profile") {
@@ -723,6 +752,7 @@ function ProxyContestAI() {
           onClose={() => setAddModalOpen(false)}
           onSuccess={() => {
             setAddModalOpen(false);
+            cacheClear();
             fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl);
           }}
         />
@@ -736,6 +766,10 @@ function ProxyContestAI() {
           onSuccess={() => {
             setEditModalOpen(false);
             setEditInitialData(null);
+            // Exclusion/edit changes server data; drop the in-memory cache so the
+            // refetch hits the network and the excluded company is removed.
+            cacheClear();
+            fetchFilters(dtYears, "detailed");
             fetchCompanies(dtYears, dtInstIds, dtActivists, dtCompanyIds, companiesPage, dtIss, dtGl);
           }}
         />
