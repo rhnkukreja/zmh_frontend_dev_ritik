@@ -336,6 +336,19 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
     return dashboardDataList.total_year.map((year: any) => year.toString());
   };
 
+  // Dynamic year context for column header tooltips (no hardcoded 2024/2025).
+  // The latest "expected" meeting year is the current calendar year; if it is
+  // not among the available data years, displayed data falls back to the most
+  // recent available year.
+  const currentExpectedYear = new Date().getFullYear();
+  const latestAvailableYear = (() => {
+    const years = getAvailableYears()
+      .map((y: string) => Number(y))
+      .filter((n: number) => !isNaN(n));
+    return years.length ? Math.max(...years).toString() : (currentExpectedYear - 1).toString();
+  })();
+  const isLatestMeetingMissing = !getAvailableYears().includes(currentExpectedYear.toString());
+
   const getSelectedTabIndex = () => {
     const availableYears = getAvailableYears();
     const tabIndex = availableYears.findIndex((year: string) => year === (selectedYear?.toString() !== "" ?
@@ -526,8 +539,8 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 <div className="flex items-center justify-center gap-1">
                                   Voted Against Directors
-                                  {!getAvailableYears().includes('2025') && (
-                                    <Tippy content="2025 meeting not held yet. Data based on 2024 voting details" options={{ theme: "light" }}>
+                                  {isLatestMeetingMissing && (
+                                    <Tippy content={`${currentExpectedYear} meeting not held yet. Data based on ${latestAvailableYear} voting details`} options={{ theme: "light" }}>
                                       <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
                                     </Tippy>
                                   )}
@@ -536,8 +549,8 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                               <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
                                 <div className="flex items-center justify-center gap-1">
                                   Voted Against Say on Pay
-                                  {(isColumnGrayedOut || !getAvailableYears().includes('2025')) && (
-                                    <Tippy content={isColumnGrayedOut ? "Say on Pay not on ballot at 2025 shareholder meeting" : "2025 meeting not held yet. Data based 2024 voting details"} options={{ theme: "light" }}>
+                                  {(isColumnGrayedOut || isLatestMeetingMissing) && (
+                                    <Tippy content={isColumnGrayedOut ? `Say on Pay not on ballot at ${activeYear || currentExpectedYear} shareholder meeting` : `${currentExpectedYear} meeting not held yet. Data based on ${latestAvailableYear} voting details`} options={{ theme: "light" }}>
                                       <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
                                     </Tippy>
                                   )}
@@ -856,7 +869,7 @@ const index = ({ onLoaded, autoScrapedData = {} }: InvestorCardProps) => {
                                                 'NSE' && (
                                                   <div className="whitespace-nowrap flex items-center justify-center">
                                                     <div className="flex items-center w-full h-full text-primary justify-center">
-                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || "Say on Pay not on ballot at 2025 shareholder meeting"} options={{ theme: "light" }}>
+                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || `Say on Pay not on ballot at ${activeYear || currentExpectedYear} shareholder meeting`} options={{ theme: "light" }}>
                                                         <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                       </Tippy>
                                                     </div>

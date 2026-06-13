@@ -525,12 +525,12 @@ function Main() {
           ])}
         >
           {/* Logo with white background */}
-          <a className="mt-5 mx-4 flex items-center justify-center transition-[margin] duration-700 group-[.side-menu--collapsed]:xl:mx-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:mx-4">
-            <div className="flex items-center justify-center w-full bg-white rounded-2xl px-2 py-1.5 shadow-md">
+          <a className="mt-6 mb-1 flex items-center justify-center transition-all duration-700">
+            <div className="flex items-center justify-center bg-white rounded-xl shadow-md w-[110px] h-[110px] p-3 group-[.side-menu--collapsed]:xl:w-[56px] group-[.side-menu--collapsed]:xl:h-[56px] group-[.side-menu--collapsed]:xl:p-1.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:h-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:p-3 transition-all duration-300">
               <img
                 alt="Logo"
                 src={headerLogo}
-                className="h-32 w-auto object-contain group-[.side-menu--collapsed]:xl:h-12 group-[.side-menu--collapsed.side-menu--on-hover]:xl:h-32 transition-all duration-300"
+                className="w-full h-full object-contain"
               />
             </div>
           </a>
