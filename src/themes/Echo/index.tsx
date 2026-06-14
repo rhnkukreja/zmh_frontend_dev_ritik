@@ -40,7 +40,7 @@ import localStorageHelper, {
   filterMenu,
   getCustomRelativeDate,
 } from "@/utils/helper";
-import logo from "../../assets/images/logo/zmh-logo.jpg";
+import headerLogo from "../../assets/images/logo/Vantage ZMH-01.png";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
 import { BellRing, FilterX, Mail } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
@@ -524,9 +524,21 @@ function Main() {
             "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[285px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
         >
+          {/* Logo with white background */}
+          <a className="mt-6 mb-1 flex items-center justify-center transition-all duration-700">
+            <div className="flex items-center justify-center bg-white rounded-xl shadow-md w-[110px] h-[110px] p-3 group-[.side-menu--collapsed]:xl:w-[56px] group-[.side-menu--collapsed]:xl:h-[56px] group-[.side-menu--collapsed]:xl:p-1.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:h-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:p-3 transition-all duration-300">
+              <img
+                alt="Logo"
+                src={headerLogo}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </a>
+
+          {/* Sidebar toggle arrow - below logo */}
           <div
             className={clsx([
-              "flex-none hidden xl:flex items-center z-10 px-5 h-[65px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
+              "flex-none hidden xl:flex items-center z-10 px-5 mt-4 h-[50px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
             ])}
           >
             {compactMenu && (
@@ -550,18 +562,6 @@ function Main() {
               </a>
             )}
           </div>
-
-          <a className="mt-5 flex items-center justify-center transition-[margin] duration-700">
-            <div className="flex items-center justify-center w-auto h-[80px] transition-transform ease-in group-[.side-menu--collapsed]:h-[40px] ">
-              <div className="w-full h-full overflow-hidden transition-transform duration-700 ease-in">
-                <img
-                  alt="Logo"
-                  src={logo}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </a>
 
           <div
             ref={scrollableRef}
@@ -891,6 +891,7 @@ function Main() {
               </div>
 
               <>
+
                 {[
                   "/notes",
                   "/proxy-contest",
@@ -1310,7 +1311,7 @@ function Main() {
                 {/* ZMH Logo */}
                 <div className="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-2 mb-3">
                   <img
-                    src={logo}
+                    src={headerLogo}
                     alt="ZMH Analytics Logo"
                     className="w-12 h-12 object-contain"
                   />

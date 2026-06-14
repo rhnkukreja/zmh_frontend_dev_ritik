@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { signUp, VerifySignUpOtp, resendSignUpOtp } from "@/stores/authenticationSlice";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
-import logo from "../../assets/images/logo/zmh-logo.jpg";
+import logo from "../../assets/images/logo/Vantage ZMH-01.svg";
 import CompanyAdvertisement from "@/components/CompanyAdvertisement";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
