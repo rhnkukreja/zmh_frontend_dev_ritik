@@ -493,7 +493,7 @@ function Main() {
                     
                     const isContentEmpty = !value || value.replace(/<[^>]*>?/gm, "").replace(/&nbsp;/g, "").trim() === "";
 
-                    if (isContentEmpty) {
+                    if (isContentEmpty && user?.user_type !== "Admin" && user?.user_type !== "Analyst") {
                       return null;
                     }
 
