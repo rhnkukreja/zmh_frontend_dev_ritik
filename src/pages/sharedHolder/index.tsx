@@ -508,27 +508,36 @@ function ShareHolderProposal() {
 
   const getAllShareholderAPI = async () => {
     try {
-      const updatedFilters = tab === "withdrawn"
-        ? {
-          ...filters,
-          ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season, proxy_season: [] })
-        }
-        : {
-          ...filters,
-          ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
-        };
-      // Create a copy of filters and ensure index is not transformed to index_name
-      const shareholderFilters = { ...updatedFilters };
-      if (shareholderFilters.index_name && !shareholderFilters.index) {
-        shareholderFilters.index = shareholderFilters.index_name;
-        delete shareholderFilters.index_name;
+      // proposal + no-action APIs require proxy_season param
+      const pnaUpdated = {
+        ...filters,
+        ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] }),
+      };
+      const pnaFilters = { ...pnaUpdated };
+      if (pnaFilters.index_name && !pnaFilters.index) {
+        pnaFilters.index = pnaFilters.index_name;
+        delete pnaFilters.index_name;
+      }
+
+      // withdrawn API always uses year param (never proxy_season)
+      const wUpdated = {
+        ...filters,
+        proxy_season: [],
+        year: filters.year?.length > 0
+          ? filters.year
+          : (filters.proxy_season?.length > 0 ? filters.proxy_season : []),
+      };
+      const wFilters = { ...wUpdated };
+      if (wFilters.index_name && !wFilters.index) {
+        wFilters.index = wFilters.index_name;
+        delete wFilters.index_name;
       }
 
       const proposalResponse =
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/def14a/`,
-            shareholderFilters,
+            pnaFilters,
             undefined,
             page
           )
@@ -541,7 +550,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/no_action/`,
-            shareholderFilters,
+            pnaFilters,
             undefined,
             page
           )
@@ -554,7 +563,7 @@ function ShareHolderProposal() {
         await shareHolderProposalService.getAllShareholderAPI(
           createDynamicURL(
             `${baseURL}/shareholder_proposal/withdrawn/`,
-            shareholderFilters,
+            wFilters,
             undefined,
             page
           )
@@ -694,6 +703,7 @@ function ShareHolderProposal() {
     dispatch(
       setAllFilters({
         ...shareHolderFilters,
+        proxy_season: [],
         proponent_name: searchTerms,
         global_search: isAllCompanySelected
           ? Array.isArray(shareHolderFilters?.global_search)
@@ -1317,12 +1327,12 @@ function ShareHolderProposal() {
                                   id="year"
                                   checked={
                                     apiDropdownOptions.year.length ===
-                                    watch(tab === "withdrawn" ? "year" : "proxy_season")?.length
+                                    watch("year")?.length
                                   }
                                   type="checkbox"
                                   onChange={(e) => {
                                     setValue(
-                                      tab === "withdrawn" ? "year" : "proxy_season",
+                                      "year",
                                       e.target.checked
                                         ? apiDropdownOptions.year.map((item: any) => item.value || item)
                                         : []
@@ -1334,9 +1344,9 @@ function ShareHolderProposal() {
                           )}
                         </div>
                         <Controller
-                          name={"proxy_season"}
+                          name={"year"}
                           control={control}
-                          defaultValue={[]}
+                          defaultValue={filters.year ? filters.year.map(String) : []}
                           render={({ field }) => (
                             <MultiSelectDropdown
                               data={apiDropdownOptions.year?.map(String) || []}
