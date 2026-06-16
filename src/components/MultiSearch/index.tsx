@@ -58,6 +58,7 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const isInitialMount = useRef(true);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [searchValue, setSearchValue] = useState("");
   const [options, setOptions] = useState<SearchOption[]>([]);
   const [selectedOptions, setSelectedOptions] = useState<
@@ -203,7 +204,6 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
       }
       setSearchTerms(newTerms);
       setSelectedOptions((prev) => prev.filter((opt) => opt.label !== label));
-      setIsOpen(false);
       return;
     } else {
       if (isRadioInput) {
@@ -212,10 +212,12 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         onSearch([data]);
         // setSearchTerms([item]);
         setSearchValue("");
+        setIsOpen(false);
       } else {
         if (isSingle) {
           setSearchTerms([label]);
           setSelectedOptions([normalized]);
+          setIsOpen(false);
         } else {
           setSearchTerms([...new Set([...searchTerms, label])]);
           setSelectedOptions((prev) => {
@@ -230,8 +232,6 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
         setSearchValue("");
       }
     }
-
-    setIsOpen(false);
   };
 
   useEffect(() => {
@@ -262,8 +262,18 @@ const MultiSearchBar: React.FC<MultiSearchBarProps> = ({
     }
   }, [searchValue, searchTerms]);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <div>
+    <div ref={containerRef}>
       <div className="relative mr-3 w-full sm:w-auto">
         <Lucide
           icon="Search"

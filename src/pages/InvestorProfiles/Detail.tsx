@@ -497,8 +497,13 @@ function Main() {
                       return null;
                     }
 
-                    const linkKey = `${key}_link` as keyof InvestersProfile;
-                    const linkedSources = singleInvesterProfile?.[linkKey] as string | undefined;
+                    let linkKey = `${key}_link`;
+
+                      // Fix the naming mismatches between the frontend keys and Django database columns
+                    if (key === "reporting_expectations") linkKey = "reporting_expectation_link";
+                    if (key === "esg_integration_process") linkKey = "esg_integration_link";
+
+                    const linkedSources = singleInvesterProfile?.[linkKey as keyof InvestersProfile] as string | undefined;
 
                     return (
                       <EditableSection

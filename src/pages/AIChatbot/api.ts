@@ -244,3 +244,17 @@ export const scrapeBulkWhaleWisdom = async (investors: {name: string, link: stri
   const data = await res.json();
   return data.results;
 };
+
+// Add this to the bottom of api.ts
+export async function pollWhaleWisdomStatus(name: string) {
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/poll-status?name=${encodeURIComponent(name)}`, {
+    method: "GET",
+    headers: getRequestHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to poll status");
+  }
+
+  return res.json();
+}
