@@ -37,7 +37,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import { useEffect, useReducer, useState , useRef} from "react";
+import { useEffect, useMemo, useReducer, useState , useRef} from "react";
 
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 
@@ -129,6 +129,15 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
 
   const isColumnGrayedOut = !showSayOnPayColumn;
 
+  // Holdings for the selected year, exactly as returned by the API (genuine
+  // repeats are preserved). Memoized so switching year tabs does not visually
+  // re-duplicate rows; stable keys in the render handle reconciliation.
+  const currentHoldings: CompanyDashboard[] = useMemo(() => {
+    const holdings =
+      dashboardDataList?.all_year_data?.[selectedIndex || 0]?.holdings_data;
+    return Array.isArray(holdings) ? holdings : [];
+  }, [dashboardDataList, selectedIndex]);
+
   const [summaryModalVisible, setSummaryModalVisible] = useState<boolean>(false);
   const [summaryData, setSummaryData] = useState<any>(null);
   const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
@@ -208,7 +217,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
               setSummaryModalVisible(true);
             } else if (genResult.filers.length > 1) {
 
-              // Show popup if multiple options
+            // Show popup if multiple options
               setFilerOptions(genResult.filers);
               setSelectedFilerLink("");
               setShowFilerModal(true);
@@ -431,6 +440,19 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
     return dashboardDataList.total_year.map((year: any) => year.toString());
   };
 
+  // Dynamic year context for column header tooltips (no hardcoded 2024/2025).
+  // The latest "expected" meeting year is the current calendar year; if it is
+  // not among the available data years, displayed data falls back to the most
+  // recent available year.
+  const currentExpectedYear = new Date().getFullYear();
+  const latestAvailableYear = (() => {
+    const years = getAvailableYears()
+      .map((y: string) => Number(y))
+      .filter((n: number) => !isNaN(n));
+    return years.length ? Math.max(...years).toString() : (currentExpectedYear - 1).toString();
+  })();
+  const isLatestMeetingMissing = !getAvailableYears().includes(currentExpectedYear.toString());
+
   const getSelectedTabIndex = () => {
     const availableYears = getAvailableYears();
     const tabIndex = availableYears.findIndex((year: string) => year === (selectedYear?.toString() !== "" ?
@@ -474,7 +496,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
           Back
         </Button>
       )}
-      {dashboardDataList?.length !== 0 && (
+      {(dashboardDataList?.length !== 0 || investorCardLoading) && (
         <>
           <div className="p-5 mt-3.5 box">
             <div className="w-full">
@@ -482,9 +504,11 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                 <div className="flex items-center">
                   <h1 className="text-xl font-bold">
                     Top {dashboardDataList?.length || 20} Investors{" "}
-                    <span className="text-lg font-bold">
-                      ({dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership} of shares outstanding)
-                    </span>
+                    {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership && (
+                      <span className="text-lg font-bold">
+                        ({dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership} of shares outstanding)
+                      </span>
+                    )}
                   </h1>
                 </div>
                 <div className="flex items-center gap-2">
@@ -619,8 +643,8 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 <div className="flex items-center justify-center gap-1">
                                   Voted Against Directors
-                                  {!getAvailableYears().includes('2025') && (
-                                    <Tippy content="2025 meeting not held yet. Data based on 2024 voting details" options={{ theme: "light" }}>
+                                  {isLatestMeetingMissing && (
+                                    <Tippy content={`${currentExpectedYear} meeting not held yet. Data based on ${latestAvailableYear} voting details`} options={{ theme: "light" }}>
                                       <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
                                     </Tippy>
                                   )}
@@ -629,8 +653,8 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                               <Table.Td className={`cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] ${isColumnGrayedOut ? 'text-gray-400' : 'text-[#000000B2]'}`}>
                                 <div className="flex items-center justify-center gap-1">
                                   Voted Against Say on Pay
-                                  {(isColumnGrayedOut || !getAvailableYears().includes('2025')) && (
-                                    <Tippy content={isColumnGrayedOut ? "Say on Pay not on ballot at 2025 shareholder meeting" : "2025 meeting not held yet. Data based 2024 voting details"} options={{ theme: "light" }}>
+                                  {(isColumnGrayedOut || isLatestMeetingMissing) && (
+                                    <Tippy content={isColumnGrayedOut ? `Say on Pay not on ballot at ${activeYear || currentExpectedYear} shareholder meeting` : `${currentExpectedYear} meeting not held yet. Data based on ${latestAvailableYear} voting details`} options={{ theme: "light" }}>
                                       <Lucide icon="Info" className="w-4 h-4 text-gray-600 cursor-pointer" />
                                     </Tippy>
                                   )}
@@ -639,9 +663,23 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                             </Table.Tr>
                           </Table.Thead>
                           <Table.Tbody>
+                            {investorCardLoading &&
+                              Array.from({ length: 10 }).map((_, rowIdx) => (
+                                <Table.Tr key={`skeleton-${rowIdx}`} className="row [&_td]:last:border-b-0">
+                                  {Array.from({ length: 9 }).map((_, colIdx) => (
+                                    <Table.Td key={colIdx} className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                      <div
+                                        className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                                        style={{ width: `${[85, 70, 60, 75, 55, 65, 80, 50, 72][(rowIdx + colIdx) % 9]}%` }}
+                                      />
+                                    </Table.Td>
+                                  ))}
+                                </Table.Tr>
+                              ))}
 
-                            {dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.length > 0 &&
-                              dashboardDataList?.all_year_data[selectedIndex || 0]?.holdings_data?.map(
+                            {!investorCardLoading &&
+                              currentHoldings.length > 0 &&
+                              currentHoldings.map(
                                 (dashboard: CompanyDashboard, index: number) => (
                                   <Table.Tr
                                     key={dashboard.filer_id}
@@ -655,12 +693,12 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                                           </div>
                                         </Table.Td>
       
-                                        <Table.Td className="relative w-full px-4 py-2">
-                                          <div className="flex justify-between items-center w-full">
-                                            <div className="flex items-center whitespace-nowrap">
-                                              
+      <Table.Td className="relative w-full px-4 py-2">
+    <div className="flex justify-between items-center w-full">
+      <div className="flex items-center whitespace-nowrap">
+        
         {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
-                                              {(() => {
+        {(() => {
                                                 const name = dashboard?.institution_name;
                                                 const scrapedInfo = getNormalizedScrapedInfo(name);
                                                 const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
@@ -674,68 +712,68 @@ const isActivelyScraping =
   (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
   scrapedInfo.status !== "success" && 
   scrapedInfo.status !== "failed";
-                                                
-                                                return (
-                                                  <>
+          
+          return (
+            <>
                                                     {!dynInstId && !isActivelyScraping && (
-                                                      <sup
-                                                        className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
-                                                        onClick={() => {
-                                                          window.scrollBy({ top: 350, behavior: "smooth" });
-                                                        }}
-                                                      >
-                                                        *
-                                                      </sup>
-                                                    )}
-                                                  
+                <sup
+                  className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
+                  onClick={() => {
+                    window.scrollBy({ top: 350, behavior: "smooth" });
+                  }}
+                >
+                  *
+                </sup>
+              )}
+            
             {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
-                                                  <h1
-                                                    onClick={() =>
+            <h1
+              onClick={() =>
                                                       dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
-                                                    }
-                                                    className={clsx([
-                                                      "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                                                      dynInstId && "cursor-pointer underline",
-                                                    ])}
-                                                  >
-                                                    {name}
-                                                  </h1>
+              }
+              className={clsx([
+                "cell whitespace-nowrap capitalize text-wrap font-semibold",
+                dashboard?.is_doc === true && dynInstId && "cursor-pointer underline",
+              ])}
+            >
+              {dashboard?.institution_name}
+            </h1>
 
                                                   {isActivelyScraping && (
                                                      <Lucide icon="Loader2" className="w-4 h-4 ml-2 text-red-700 animate-spin inline-block" />
                                                   )}
-                                                </>
-                                              );
-                                            })()}
+          </>
+        );
+      })()}
 
-                                            {dashboard?.flag_13d === true && (
-                                              <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
-                                            )}
-                                          </div>
+      {dashboard?.flag_13d === true && (
+        <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
+      )}
+    </div>
    {/* ========================================== */}
     {/* 2. ACTION BUTTONS (EYE ICON LOGIC)         */}
     {/* ========================================== */}
     {/* ========================================== */}
     {/* 2. SILENT ACTION TRAYS (CLEAN RENDER VIEW) */}
     {/* ========================================== */}
-                                          <div className="flex items-center gap-x-2">
-                                            {dashboard?.investor_profile_id ? (
+    <div className="flex items-center gap-x-2">
+      {dashboard?.investor_profile_id ? (
         /* Show Investor Profile if it exists */
-                                              <Tippy
-                                                content="Investor Profile"
-                                                options={{ theme: "light" }}
-                                                className="w-5 h-5"
-                                                onClick={() =>
-                                                  navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
-                                                }
-                                              >
-                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
-                                                  <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
-                                                </div>
-                                              </Tippy>
-                                            ) : (
-                                              (() => {
-                                                const name = dashboard?.institution_name;
+        <Tippy
+          content="Investor Profile"
+          options={{ theme: "light" }}
+          className="w-5 h-5"
+          onClick={() =>
+            navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
+          }
+        >
+          <div className="flex items-center justify-center w-6 h-6 text-primary">
+            <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
+          </div>
+        </Tippy>
+      ) : (
+        (() => {
+          const name = dashboard?.institution_name;
                                                 const scrapedInfo = getNormalizedScrapedInfo(name);
                                                 
                                                 const hasLiveResult = Object.keys(liveData).some(k => 
@@ -752,44 +790,44 @@ const isActivelyScraping =
                                                 const hasContent = !!(scrapedInfo?.brochure_url || scrapedInfo?.adv_pdf_s3_url || scrapedInfo?.investment_strategy || scrapedInfo?.whale_wisdom_summary);
 
                                                 if (isActivelyScraping) {
-                                                  return (
-                                                    <Tippy content="Fetching SEC details..." options={{ theme: "light" }}>
-                                                      <div className="flex items-center justify-center w-6 h-6 text-primary">
-                                                        <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-                                                      </div>
-                                                    </Tippy>
-                                                  );
-                                                }
+            return (
+              <Tippy content="Fetching SEC details..." options={{ theme: "light" }}>
+                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                  <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                </div>
+              </Tippy>
+            );
+          }
 
                                                 if (isInS3 && hasContent) {
-                                                  return (
+            return (
                                                     <Tippy content="View" options={{ theme: "light" }}>
-                                                      <div
-                                                        className="w-5 h-5"
-                                                        onClick={() => {
-                                                          if (!summaryLoading) {
-                                                            handleViewSummary(name);
-                                                          }
-                                                        }}
-                                                      >
-                                                        <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
-                                                          {summaryLoading && activeInstitutionName === name ? (
-                                                            <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-                                                          ) : (
-                                                            <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
-                                                          )}
-                                                        </div>
-                                                      </div>
-                                                    </Tippy>
-                                                  );
-                                                }
-                                                return <div className="w-6 h-6" />;
-                                              })()
-                                            )}
+                <div
+                  className="w-5 h-5"
+                  onClick={() => {
+                    if (!summaryLoading) {
+                      handleViewSummary(name);
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
+                    {summaryLoading && activeInstitutionName === name ? (
+                      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                    ) : (
+                      <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
+                    )}
+                  </div>
+                </div>
+              </Tippy>
+            );
+          }
+          return <div className="w-6 h-6" />;
+        })()
+      )}
 
-                                          {dashboard?.case_studies_id ? (
-                                             <Tippy
-                                               content="Case Studies"
+  {dashboard?.case_studies_id ? (
+     <Tippy
+       content="Case Studies"
                                                   options={{ theme: "light" }}
                                                   className="w-6 h-6 mt-1"
                                                   onClick={() =>
@@ -962,7 +1000,7 @@ const isActivelyScraping =
                                                 'NSE' && (
                                                   <div className="whitespace-nowrap flex items-center justify-center">
                                                     <div className="flex items-center w-full h-full text-primary justify-center">
-                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || "Say on Pay not on ballot at 2025 shareholder meeting"} options={{ theme: "light" }}>
+                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || `Say on Pay not on ballot at ${activeYear || currentExpectedYear} shareholder meeting`} options={{ theme: "light" }}>
                                                         <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
                                                       </Tippy>
                                                     </div>
@@ -1017,7 +1055,7 @@ const isActivelyScraping =
                       2
                     </sup>
                     <p id="footnote">
-                      As disclosed by the investor in the last three years.
+                      As disclosed by the investor in the last three years.
                     </p>
                   </span>
                 </div>
@@ -1128,7 +1166,7 @@ const isActivelyScraping =
 
 
               {/* EXISTING PROXY INFLUENCE BADGE */}
-
+           
               {(summaryData.adv_pdf_s3_url || summaryData.brochure_url) && 
                summaryData.proxy_influence && 
                summaryData.proxy_influence !== "Not Disclosed" && (
@@ -1155,64 +1193,64 @@ const isActivelyScraping =
 
 
 
-                  {(summaryData.brochure_url || summaryData.brochure_page_url) && (
-                  <div>
+  {(summaryData.brochure_url || summaryData.brochure_page_url) && (
+  <div>
     {/* HEADER */}
-                    <div
-                      onClick={() => setShowAdvBrochure(!showAdvBrochure)}
-                      className="flex items-center justify-between p-6 cursor-pointer hover:bg-slate-50 transition-all"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
-                        <h3 className="text-lg font-bold text-slate-800">
-                          SEC Form ADV Part 2 Brochure
-                        </h3>
-                      </div>
-                      <ChevronDown
-                        className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
-                          showAdvBrochure ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
+    <div
+      onClick={() => setShowAdvBrochure(!showAdvBrochure)}
+      className="flex items-center justify-between p-6 cursor-pointer hover:bg-slate-50 transition-all"
+    >
+      <div className="flex items-center gap-2">
+        <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
+        <h3 className="text-lg font-bold text-slate-800">
+          SEC Form ADV Part 2 Brochure
+        </h3>
+      </div>
+      <ChevronDown
+        className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+          showAdvBrochure ? "rotate-180" : ""
+        }`}
+      />
+    </div>
     {/* COLLAPSIBLE CONTENT */}
-                    {showAdvBrochure && (
-                      <div className="px-6 pb-6">
-                        {summaryData.brochure_url ? (
-                          <div className="border border-slate-200 rounded-md overflow-hidden bg-slate-100 shadow-inner">
-                            <iframe
-                              src={summaryData.brochure_url}
-                              width="100%"
-                              height="600px"
-                              title="SEC Brochure PDF"
-                              className="w-full"
-                            />
-                          </div>
-                        ) : (
-                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-3">
-                            <Lucide icon="ExternalLink" className="w-6 h-6 text-blue-700 mt-0.5 shrink-0" />
-                            <div>
-                              <h4 className="text-sm font-bold text-blue-900 mb-1">
-                                Brochure Page Available
-                              </h4>
-                              <p className="text-sm text-blue-800 font-medium mb-2">
-                                {summaryData.iapd_message ||
-                                  "Direct PDF preview is unavailable, but the IAPD brochure page is available."}
-                              </p>
-                              <a
-                                href={summaryData.brochure_page_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm font-semibold text-blue-700 underline"
-                              >
-                                Open IAPD brochure page
-                              </a>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  )}
+    {showAdvBrochure && (
+      <div className="px-6 pb-6">
+        {summaryData.brochure_url ? (
+          <div className="border border-slate-200 rounded-md overflow-hidden bg-slate-100 shadow-inner">
+            <iframe
+              src={summaryData.brochure_url}
+              width="100%"
+              height="600px"
+              title="SEC Brochure PDF"
+              className="w-full"
+            />
+          </div>
+        ) : (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-3">
+            <Lucide icon="ExternalLink" className="w-6 h-6 text-blue-700 mt-0.5 shrink-0" />
+            <div>
+              <h4 className="text-sm font-bold text-blue-900 mb-1">
+                Brochure Page Available
+              </h4>
+              <p className="text-sm text-blue-800 font-medium mb-2">
+                {summaryData.iapd_message ||
+                  "Direct PDF preview is unavailable, but the IAPD brochure page is available."}
+              </p>
+              <a
+                href={summaryData.brochure_page_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-blue-700 underline"
+              >
+                Open IAPD brochure page
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+  )}
 
 
               </div>
@@ -1246,74 +1284,42 @@ const isActivelyScraping =
             <div className="w-full">
               <div className="bg-white rounded-lg">
                 <div className="flex items-center justify-center">
-                  <div className="w-[500px] h-[380px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={getAnalyticsData()}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={90}
-                          innerRadius={45}
-                          startAngle={90}
-                          endAngle={-270}
-                          fill="#8884d8"
-                          dataKey="value"
-                          strokeWidth={2}
-                          stroke="#ffffff"
-                          label={({ cx, cy, midAngle, innerRadius, outerRadius, name, value, index }) => {
-                            const RADIAN = Math.PI / 180;
-                            const radius = innerRadius + (outerRadius - innerRadius) * 1.3;
-                            const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                            const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                            const lineRadius = outerRadius + 15;
-                            const lineX = cx + lineRadius * Math.cos(-midAngle * RADIAN);
-                            const lineY = cy + lineRadius * Math.sin(-midAngle * Math.PI / 180);
-
-                            const extendedX = lineX + (lineX > cx ? 25 : -25);
-
-                            return (
-                              <g>
-                                <polyline
-                                  points={`${cx + outerRadius * Math.cos(-midAngle * RADIAN)},${cy + outerRadius * Math.sin(-midAngle * RADIAN)} ${lineX},${lineY} ${extendedX},${lineY}`}
-                                  fill="none"
-                                  stroke="#333"
-                                  strokeWidth={1.5}
-                                />
-                                <text
-                                  x={extendedX}
-                                  y={lineY - 8}
-                                  fill="#333"
-                                  textAnchor={extendedX > cx ? "start" : "end"}
-                                  dominantBaseline="central"
-                                  fontSize={12}
-                                  fontWeight="500"
-                                >
-                                  {name}
-                                </text>
-                                <text
-                                  x={extendedX}
-                                  y={lineY + 8}
-                                  fill="#666"
-                                  textAnchor={extendedX > cx ? "start" : "end"}
-                                  dominantBaseline="central"
-                                  fontSize={11}
-                                  fontWeight="600"
-                                >
-                                  {value}%
-                                </text>
-                              </g>
-                            );
-                          }}
-                          labelLine={false}
-                        >
-                          {getAnalyticsData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
+                  <div className="w-[560px]">
+                    <div className="h-[280px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={getAnalyticsData()}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            innerRadius={50}
+                            startAngle={90}
+                            endAngle={-270}
+                            dataKey="value"
+                            strokeWidth={2}
+                            stroke="#ffffff"
+                            labelLine={false}
+                          >
+                            {getAnalyticsData().map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={ANALYTICS_COLORS[index % ANALYTICS_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: any, name: any) => [`${value}%`, name]}
+                            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                          />
+                          <Legend
+                            layout="vertical"
+                            align="right"
+                            verticalAlign="middle"
+                            iconType="circle"
+                            iconSize={10}
+                            formatter={(value) => <span style={{ fontSize: 12, color: '#374151' }}>{value}</span>}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
               </div>
