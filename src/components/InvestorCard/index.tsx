@@ -137,15 +137,45 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const [filerOptions, setFilerOptions] = useState<any[]>([]);
   const [selectedFilerLink, setSelectedFilerLink] = useState<string>("");
   const [activeInstitutionName, setActiveInstitutionName] = useState<string>("");
+  
+  // 🌟 BACKGROUND POLLING STATES
+  const [liveData, setLiveData] = useState<Record<string, any>>({});
+  const [pollingSet, setPollingSet] = useState<Set<string>>(new Set());
+
+  const pollingRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    pollingRef.current = pollingSet;
+  }, [pollingSet]);
+
+  // Helper to normalize names
+  const getNormalizedScrapedInfo = (name: string) => {
+    if (!name) return {};
+    const cleanStr = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const target = cleanStr(name);
+    
+    const liveKey = Object.keys(liveData).find(k => cleanStr(k) === target);
+    const autoKey = Object.keys(autoScrapedData).find(k => cleanStr(k) === target);
+    
+    return {
+      ...(autoKey ? autoScrapedData[autoKey] : {}),
+      ...(liveKey ? liveData[liveKey] : {})
+    };
+  };
 
   const handleViewSummary = async (institutionName: string | undefined) => {
     if (!institutionName) return;
     
     setActiveInstitutionName(institutionName);
-    
-    // Check if the background queue already fetched this!
-    if (autoScrapedData[institutionName] && autoScrapedData[institutionName].investment_strategy) {
-      setSummaryData(autoScrapedData[institutionName]);
+    const backgroundCachedData = getNormalizedScrapedInfo(institutionName);
+
+    // 🌟 THE FIX: Directly trust the bulk Redux payload!
+    // No more enforcing `.status === "success"`, as Redux drops that flag on page refresh.
+    const hasSummaryText = backgroundCachedData && (backgroundCachedData.investment_strategy || backgroundCachedData.whale_wisdom_summary);
+    const isScraping = backgroundCachedData?.status === "scraping" || pendingInvestors.has(institutionName);
+
+    if (hasSummaryText && !isScraping && !backgroundCachedData.error) {
+      setSummaryData(backgroundCachedData);
       setSummaryModalVisible(true);
       return; 
     }
@@ -156,11 +186,11 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
       const result = await searchWhaleWisdom(institutionName);
       
       if (result) {
-        // Fallback: If the background job didn't parse the strategy, don't crash!
-        if (!result.investment_strategy) {
-           result.investment_strategy = "Overview not publicly listed on this profile.";
+        let strategy = result.investment_strategy || result.whale_wisdom_summary || result.adv_item4_summary;
+        if (!strategy || strategy.length < 10) {
+           strategy = "Overview not publicly listed on this profile.";
         }
-        setSummaryData(result);
+        setSummaryData({ ...result, investment_strategy: strategy });
         setSummaryModalVisible(true);
       } else {
         toast.error("Invalid data format received from S3.");
@@ -176,14 +206,13 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
               const data = await scrapeQuickWhaleWisdom(institutionName, genResult.filers[0].link);
               setSummaryData(data);
               setSummaryModalVisible(true);
-            } 
-            // Show popup if multiple options
-            else if (genResult.filers.length > 1) {
+            } else if (genResult.filers.length > 1) {
+
+              // Show popup if multiple options
               setFilerOptions(genResult.filers);
               setSelectedFilerLink("");
               setShowFilerModal(true);
-            } 
-            else {
+            } else {
               toast.error("No profiles found on WhaleWisdom for this investor.");
             }
           }
@@ -218,6 +247,81 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
       setSummaryLoading(false);
     }
   };
+
+  // Sync polling set based on loading states
+  useEffect(() => {
+    const newPolling = new Set<string>();
+    const holdings = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.holdings_data || [];
+    
+    holdings.forEach((dashboard: any) => {
+      const name = dashboard?.institution_name;
+      if (!name) return;
+
+      const scrapedInfo = getNormalizedScrapedInfo(name);
+      
+      const isActivelyScraping = 
+        (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
+        scrapedInfo.status !== "success" && 
+        scrapedInfo.status !== "failed";
+      
+      if (isActivelyScraping) {
+        newPolling.add(name);
+      }
+    });
+    
+    setPollingSet((prev) => {
+      if (prev.size === newPolling.size && [...prev].every(x => newPolling.has(x))) return prev;
+      return newPolling;
+    });
+  }, [dashboardDataList, selectedIndex, autoScrapedData, liveData, pendingInvestors]);
+
+
+  // 🌟 FIX: Safely lock the polling to completely prevent request overlapping!
+  useEffect(() => {
+    if (pollingSet.size === 0) return;
+
+    const interval = setInterval(async () => {
+      const targets = Array.from(pollingSet);
+
+      // Run polls concurrently and safely
+      await Promise.all(targets.map(async (name) => {
+        try {
+          // Clean the baseURL to prevent double slashes, ensure correct path
+          const endpoint = `${baseURL.replace(/\/+$/, '')}/poll-status?name=${encodeURIComponent(name)}`;
+          const res = await fetch(endpoint, {
+            headers: { 'Accept': 'application/json' }
+          });
+          
+          if (res.ok) {
+            const result = await res.json();
+            
+            // Once status changes from "scraping" to success/failed
+            if (result.status === "success" || result.status === "failed") {
+              // Commit real-time updates directly to state
+              setLiveData((prev) => ({
+                ...prev,
+                [name]: { ...result.data, status: result.status, error: null }
+              }));
+
+              // Evict from active queue
+              setPollingSet((prev) => {
+                const updated = new Set(prev);
+                updated.delete(name);
+                return updated;
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Polling error for ${name}:`, error);
+        }
+      }));
+      
+    }, 4000); // Polling every 4 seconds for snappier feedback
+
+    // Cleanup interval on unmount or when pollingSet changes
+    return () => clearInterval(interval);
+  }, [pollingSet]);
+
 
   useEffect(() => {
     const today = new Date();
@@ -551,118 +655,141 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                                           </div>
                                         </Table.Td>
       
-      <Table.Td className="relative w-full px-4 py-2">
-    <div className="flex justify-between items-center w-full">
-      <div className="flex items-center whitespace-nowrap">
-        
+                                        <Table.Td className="relative w-full px-4 py-2">
+                                          <div className="flex justify-between items-center w-full">
+                                            <div className="flex items-center whitespace-nowrap">
+                                              
         {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
-        {(() => {
-          const dynInstId = dashboard?.institution_id || autoScrapedData[dashboard?.institution_name]?.institution_id;
-          
-          return (
-            <>
-              {/* 🌟 2. Hide the Asterisk if the Dynamic ID exists! */}
-              {!dynInstId && (
-                <sup
-                  className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
-                  onClick={() => {
-                    window.scrollBy({ top: 350, behavior: "smooth" });
-                  }}
-                >
-                  *
-                </sup>
-              )}
-            
-            {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
-            <h1
-              onClick={() =>
-                dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
-              }
-              className={clsx([
-                "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                dynInstId && "cursor-pointer underline",
-              ])}
-            >
-              {dashboard?.institution_name}
-            </h1>
-          </>
-        );
-      })()}
+                                              {(() => {
+                                                const name = dashboard?.institution_name;
+                                                const scrapedInfo = getNormalizedScrapedInfo(name);
+                                                const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
+                                                
+                                                const hasLiveResult = Object.keys(liveData).some(k => 
+  k.toLowerCase().replace(/[^a-z0-9]/g, '') === name.toLowerCase().replace(/[^a-z0-9]/g, '')
+);
 
-      {dashboard?.flag_13d === true && (
-        <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
-      )}
-    </div>
+const isActivelyScraping = 
+  !hasLiveResult &&   // ← KEY FIX: live result means done, stop spinning
+  (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
+  scrapedInfo.status !== "success" && 
+  scrapedInfo.status !== "failed";
+                                                
+                                                return (
+                                                  <>
+                                                    {!dynInstId && !isActivelyScraping && (
+                                                      <sup
+                                                        className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
+                                                        onClick={() => {
+                                                          window.scrollBy({ top: 350, behavior: "smooth" });
+                                                        }}
+                                                      >
+                                                        *
+                                                      </sup>
+                                                    )}
+                                                  
+            {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
+                                                  <h1
+                                                    onClick={() =>
+                                                      dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
+                                                    }
+                                                    className={clsx([
+                                                      "cell whitespace-nowrap capitalize text-wrap font-semibold",
+                                                      dynInstId && "cursor-pointer underline",
+                                                    ])}
+                                                  >
+                                                    {name}
+                                                  </h1>
+
+                                                  {isActivelyScraping && (
+                                                     <Lucide icon="Loader2" className="w-4 h-4 ml-2 text-red-700 animate-spin inline-block" />
+                                                  )}
+                                                </>
+                                              );
+                                            })()}
+
+                                            {dashboard?.flag_13d === true && (
+                                              <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
+                                            )}
+                                          </div>
    {/* ========================================== */}
     {/* 2. ACTION BUTTONS (EYE ICON LOGIC)         */}
     {/* ========================================== */}
     {/* ========================================== */}
     {/* 2. SILENT ACTION TRAYS (CLEAN RENDER VIEW) */}
     {/* ========================================== */}
-    <div className="flex items-center gap-x-2">
-      {dashboard?.investor_profile_id ? (
+                                          <div className="flex items-center gap-x-2">
+                                            {dashboard?.investor_profile_id ? (
         /* Show Investor Profile if it exists */
-        <Tippy
-          content="Investor Profile"
-          options={{ theme: "light" }}
-          className="w-5 h-5"
-          onClick={() =>
-            navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
-          }
-        >
-          <div className="flex items-center justify-center w-6 h-6 text-primary">
-            <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
-          </div>
-        </Tippy>
-      ) : (
-        (() => {
-          const name = dashboard?.institution_name;
-          const scrapedInfo = autoScrapedData[name] || {};
-          const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
-          const isInS3 = scrapedInfo.status !== "scraping" && Object.keys(scrapedInfo).length > 0;
-          const hasBrochure = !!(scrapedInfo.brochure_url || scrapedInfo.adv_pdf_s3_url);
-          const isScraping = pendingInvestors.has(name);
+                                              <Tippy
+                                                content="Investor Profile"
+                                                options={{ theme: "light" }}
+                                                className="w-5 h-5"
+                                                onClick={() =>
+                                                  navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
+                                                }
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                  <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
+                                                </div>
+                                              </Tippy>
+                                            ) : (
+                                              (() => {
+                                                const name = dashboard?.institution_name;
+                                                const scrapedInfo = getNormalizedScrapedInfo(name);
+                                                
+                                                const hasLiveResult = Object.keys(liveData).some(k => 
+  k.toLowerCase().replace(/[^a-z0-9]/g, '') === name.toLowerCase().replace(/[^a-z0-9]/g, '')
+);
 
-          // Backend is still scraping this investor in the background — show spinner.
-          if (isScraping) {
-            return (
-              <Tippy content="Fetching SEC details..." options={{ theme: "light" }}>
-                <div className="flex items-center justify-center w-6 h-6 text-primary">
-                  <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-                </div>
-              </Tippy>
-            );
-          }
+const isActivelyScraping = 
+  !hasLiveResult &&   // ← KEY FIX: live result means done, stop spinning
+  (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
+  scrapedInfo.status !== "success" && 
+  scrapedInfo.status !== "failed";
 
-          if (dynInstId && isInS3 && hasBrochure) {
-            return (
-              <Tippy content="View SEC Details" options={{ theme: "light" }}>
-                <div
-                  className="w-5 h-5"
-                  onClick={() => {
-                    if (!summaryLoading) {
-                      handleViewSummary(name);
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
-                    {summaryLoading && activeInstitutionName === name ? (
-                      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-                    ) : (
-                      <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
-                    )}
-                  </div>
-                </div>
-              </Tippy>
-            );
-          }
-          return <div className="w-6 h-6" />;
-        })()
-      )}
+                                                const isInS3 = scrapedInfo && Object.keys(scrapedInfo).length > 0 && !scrapedInfo.error;
+                                                const hasContent = !!(scrapedInfo?.brochure_url || scrapedInfo?.adv_pdf_s3_url || scrapedInfo?.investment_strategy || scrapedInfo?.whale_wisdom_summary);
 
-  {dashboard?.case_studies_id ? (
-     <Tippy
-       content="Case Studies"
+                                                if (isActivelyScraping) {
+                                                  return (
+                                                    <Tippy content="Fetching SEC details..." options={{ theme: "light" }}>
+                                                      <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                        <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                                                      </div>
+                                                    </Tippy>
+                                                  );
+                                                }
+
+                                                if (isInS3 && hasContent) {
+                                                  return (
+                                                    <Tippy content="View" options={{ theme: "light" }}>
+                                                      <div
+                                                        className="w-5 h-5"
+                                                        onClick={() => {
+                                                          if (!summaryLoading) {
+                                                            handleViewSummary(name);
+                                                          }
+                                                        }}
+                                                      >
+                                                        <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
+                                                          {summaryLoading && activeInstitutionName === name ? (
+                                                            <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                                                          ) : (
+                                                            <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
+                                                          )}
+                                                        </div>
+                                                      </div>
+                                                    </Tippy>
+                                                  );
+                                                }
+                                                return <div className="w-6 h-6" />;
+                                              })()
+                                            )}
+
+                                          {dashboard?.case_studies_id ? (
+                                             <Tippy
+                                               content="Case Studies"
                                                   options={{ theme: "light" }}
                                                   className="w-6 h-6 mt-1"
                                                   onClick={() =>
@@ -715,9 +842,8 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                                     <div className="whitespace-nowrap">
                                                       {(() => {
-                                                        // 1. Grab the proxy data from either S3 or DB
-                                                        const rawProxy = autoScrapedData[dashboard?.institution_name]?.proxy_influence 
-                                                                      || dashboard?.proxy_advisor_influence;
+                                                        const scrapedInfo = getNormalizedScrapedInfo(dashboard?.institution_name);
+                                                        const rawProxy = scrapedInfo?.proxy_influence || dashboard?.proxy_advisor_influence;
 
                                                         // 2. If it's missing OR says "Not Disclosed", safely render a dash
                                                         if (!rawProxy || rawProxy === "Not Disclosed" || rawProxy.toLowerCase() === "not disclosed") {
@@ -891,7 +1017,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                       2
                     </sup>
                     <p id="footnote">
-                      As disclosed by the investor in the last three years.
+                      As disclosed by the investor in the last three years.
                     </p>
                   </span>
                 </div>
@@ -972,8 +1098,18 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                 
                 <div className="p-6 pb-0">
                   <div className="flex items-center gap-2 mb-3">
-                    <Lucide icon="Briefcase" className="w-5 h-5 text-red-800" />
-                    <h3 className="text-lg font-bold text-slate-800">Investment Strategy</h3>
+                    
+                    <Lucide 
+                      icon={summaryData.summary_source === "whalewisdom" ? "Globe" : "Briefcase"} 
+                      className="w-5 h-5 text-red-800" 
+                    />
+                    
+                    <h3 className="text-lg font-bold text-slate-800">
+                      {summaryData.summary_source === "whalewisdom" 
+                        ? "Investor Overview (WhaleWisdom)" 
+                        : "Investment Strategy (SEC Form ADV)"}
+                    </h3>
+                    
                   </div>
 
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -992,7 +1128,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
 
 
               {/* EXISTING PROXY INFLUENCE BADGE */}
-           
+
               {(summaryData.adv_pdf_s3_url || summaryData.brochure_url) && 
                summaryData.proxy_influence && 
                summaryData.proxy_influence !== "Not Disclosed" && (
@@ -1008,7 +1144,10 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
 
             </div>
                   <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap bg-slate-50 p-4 rounded-md border border-slate-100">
-                    {summaryData.investment_strategy}
+                    {summaryData.investment_strategy && summaryData.investment_strategy !== "Overview not publicly listed on this profile."
+                      ? summaryData.investment_strategy
+                      : (summaryData.whale_wisdom_summary || "Overview not publicly listed on this profile.")
+                    }
                   </p>
                 </div>
 
@@ -1016,64 +1155,64 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
 
 
 
-  {(summaryData.brochure_url || summaryData.brochure_page_url) && (
-  <div>
+                  {(summaryData.brochure_url || summaryData.brochure_page_url) && (
+                  <div>
     {/* HEADER */}
-    <div
-      onClick={() => setShowAdvBrochure(!showAdvBrochure)}
-      className="flex items-center justify-between p-6 cursor-pointer hover:bg-slate-50 transition-all"
-    >
-      <div className="flex items-center gap-2">
-        <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
-        <h3 className="text-lg font-bold text-slate-800">
-          SEC Form ADV Part 2 Brochure
-        </h3>
-      </div>
-      <ChevronDown
-        className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
-          showAdvBrochure ? "rotate-180" : ""
-        }`}
-      />
-    </div>
+                    <div
+                      onClick={() => setShowAdvBrochure(!showAdvBrochure)}
+                      className="flex items-center justify-between p-6 cursor-pointer hover:bg-slate-50 transition-all"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
+                        <h3 className="text-lg font-bold text-slate-800">
+                          SEC Form ADV Part 2 Brochure
+                        </h3>
+                      </div>
+                      <ChevronDown
+                        className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${
+                          showAdvBrochure ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
     {/* COLLAPSIBLE CONTENT */}
-    {showAdvBrochure && (
-      <div className="px-6 pb-6">
-        {summaryData.brochure_url ? (
-          <div className="border border-slate-200 rounded-md overflow-hidden bg-slate-100 shadow-inner">
-            <iframe
-              src={summaryData.brochure_url}
-              width="100%"
-              height="600px"
-              title="SEC Brochure PDF"
-              className="w-full"
-            />
-          </div>
-        ) : (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-3">
-            <Lucide icon="ExternalLink" className="w-6 h-6 text-blue-700 mt-0.5 shrink-0" />
-            <div>
-              <h4 className="text-sm font-bold text-blue-900 mb-1">
-                Brochure Page Available
-              </h4>
-              <p className="text-sm text-blue-800 font-medium mb-2">
-                {summaryData.iapd_message ||
-                  "Direct PDF preview is unavailable, but the IAPD brochure page is available."}
-              </p>
-              <a
-                href={summaryData.brochure_page_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-semibold text-blue-700 underline"
-              >
-                Open IAPD brochure page
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
-    )}
-  </div>
-  )}
+                    {showAdvBrochure && (
+                      <div className="px-6 pb-6">
+                        {summaryData.brochure_url ? (
+                          <div className="border border-slate-200 rounded-md overflow-hidden bg-slate-100 shadow-inner">
+                            <iframe
+                              src={summaryData.brochure_url}
+                              width="100%"
+                              height="600px"
+                              title="SEC Brochure PDF"
+                              className="w-full"
+                            />
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-md flex items-start gap-3">
+                            <Lucide icon="ExternalLink" className="w-6 h-6 text-blue-700 mt-0.5 shrink-0" />
+                            <div>
+                              <h4 className="text-sm font-bold text-blue-900 mb-1">
+                                Brochure Page Available
+                              </h4>
+                              <p className="text-sm text-blue-800 font-medium mb-2">
+                                {summaryData.iapd_message ||
+                                  "Direct PDF preview is unavailable, but the IAPD brochure page is available."}
+                              </p>
+                              <a
+                                href={summaryData.brochure_page_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-semibold text-blue-700 underline"
+                              >
+                                Open IAPD brochure page
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  )}
 
 
               </div>
@@ -1130,7 +1269,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
 
                             const lineRadius = outerRadius + 15;
                             const lineX = cx + lineRadius * Math.cos(-midAngle * RADIAN);
-                            const lineY = cy + lineRadius * Math.sin(-midAngle * RADIAN);
+                            const lineY = cy + lineRadius * Math.sin(-midAngle * Math.PI / 180);
 
                             const extendedX = lineX + (lineX > cx ? 25 : -25);
 
@@ -1183,7 +1322,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
         </Dialog.Panel>
       </Dialog>
 
-{/* 🌟 NEW FILER SELECTION MODAL */}
+      {/* FILER SELECTION MODAL */}
       <Dialog size="xl" open={showFilerModal} onClose={() => setShowFilerModal(false)}>
         <Dialog.Panel>
           <Dialog.Title>

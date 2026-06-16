@@ -23,8 +23,8 @@ import Lucide from "@/components/Base/Lucide";
 import { baseURL } from "@/constant";
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
-// Add "link_sources" to the ProfileMode type
-type ProfileMode = "create" | "update" | "voting" | "preview" | "link_sources" | null;
+// Split link_sources into add_sources and remove_sources
+type ProfileMode = "create" | "update" | "voting" | "preview" | "add_sources" | "remove_sources" | null;
 
 const SECTIONS: ProfileSection[] = ["summary", "engagement_priorities", "reporting_expectation", "esg_integration", "voting_guidelines"];
 const SECTION_COLS: { key: ProfileSection; label: string }[] = [
@@ -114,22 +114,28 @@ const InstitutionDocuments = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false);
+  const sourceDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
+      if (sourceDropdownRef.current && !sourceDropdownRef.current.contains(event.target as Node)) {
+        setIsSourceDropdownOpen(false);
+      }
     };
-    if (isDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
+    if (isDropdownOpen || isSourceDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isSourceDropdownOpen]);
 
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-  // --- NEW: ROBUST PREVIEW FUNCTION ---
+  // --- PREVIEW FUNCTION ---
   const handlePreviewExistingProfile = async () => {
     if (!singleInstitution?.institution) return;
 
@@ -199,7 +205,7 @@ const InstitutionDocuments = () => {
     }
   };
 
-  // 🌟 FAST BULK FETCH WITH BACKEND FUZZY MATCHING
+  // FAST BULK FETCH WITH BACKEND FUZZY MATCHING
   const checkAllDocsVerification = async (instId: string, docs: InstitutionDocument[]) => {
     if (!docs || docs.length === 0) return;
     setIsVerifyingDocs(true); 
@@ -329,10 +335,25 @@ const InstitutionDocuments = () => {
     const op = pendingLinkOps.find(o => o.document_id === doc.id && o.section === section);
     if (op) return op.action === "link";
     
-    if (fastApiProfile && doc.link) {
-       const linkField = section === "reporting_expectation" ? "reporting_expectation_link" : `${section}_link`;
-       const savedLinks = fastApiProfile[linkField] || "";
-       return safeDecode(savedLinks).includes(safeDecode(doc.link));
+    // Check against DB loaded values
+    if (fastApiProfile) {
+       const linkField = section === "reporting_expectation" ? "reporting_expectation_link" :
+                         section === "esg_integration" ? "esg_integration_link" :
+                         `${section}_link`;
+                         
+       const savedLinks = fastApiProfile[linkField];
+       if (savedLinks) {
+           try {
+               // The Python backend saves links as a JSON string containing an array of dicts
+               const parsed = JSON.parse(savedLinks);
+               if (Array.isArray(parsed)) {
+                   return parsed.some((d: any) => d.id === doc.id);
+               }
+           } catch(e) {
+               // Fallback if it's a raw string list
+               if (doc.link && safeDecode(savedLinks).includes(safeDecode(doc.link))) return true;
+           }
+       }
     }
     
     return Boolean(doc[sectionToField[section]]);
@@ -541,15 +562,24 @@ const InstitutionDocuments = () => {
             </div>
             {isAnalystOrAdmin && !showTrash && (
               <div className="flex items-center gap-2">
-              {/* NEW ADD SOURCES BUTTON */}
-                <Button 
-                  variant={profileMode === 'link_sources' ? "primary" : "outline-secondary"} 
-                  className={profileMode === 'link_sources' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} 
-                  onClick={() => handleActivateMode('link_sources')} 
-                  disabled={linkingInProgress.bulk}
-                >
-                  Add Sources
-                </Button>
+                {/* NEW ADD/REMOVE SOURCES DROPDOWN */}
+                <div className="relative" ref={sourceDropdownRef}>
+                  <Button 
+                    variant={(profileMode === 'add_sources' || profileMode === 'remove_sources') ? "primary" : "outline-secondary"} 
+                    className={(profileMode === 'add_sources' || profileMode === 'remove_sources') ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} 
+                    onClick={() => setIsSourceDropdownOpen(!isSourceDropdownOpen)} 
+                    disabled={linkingInProgress.bulk}
+                  >
+                    {profileMode === 'add_sources' ? 'Add Sources ▼' : profileMode === 'remove_sources' ? 'Remove Sources ▼' : 'Add/Remove Sources ▼'}
+                  </Button>
+                  {isSourceDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50 flex flex-col overflow-hidden">
+                      <button className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 hover:text-theme-2 transition-colors" onClick={() => { handleActivateMode('add_sources'); setIsSourceDropdownOpen(false); }}>Add Sources</button>
+                      <button className="px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 hover:text-theme-2 transition-colors border-t border-gray-100" onClick={() => { handleActivateMode('remove_sources'); setIsSourceDropdownOpen(false); }}>Remove Sources</button>
+                    </div>
+                  )}
+                </div>
+                
                 <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={handlePreviewExistingProfile} disabled={linkingInProgress.bulk}>Preview Existing Profile</Button>
                 <Button variant={profileMode === 'voting' ? "primary" : "outline-secondary"} className={profileMode === 'voting' ? "bg-theme-2 border-bg-theme-2" : "border-theme-2 text-theme-2"} onClick={() => handleActivateMode('voting')} disabled={linkingInProgress.bulk}>Voting Guideline</Button>
                 <div className="relative" ref={dropdownRef}>
@@ -668,27 +698,32 @@ const InstitutionDocuments = () => {
                   variant="primary" 
                   className="bg-theme-2 border-bg-theme-2" 
                   onClick={async () => {
-                    if (profileMode === 'link_sources') {
+                    if (profileMode === 'add_sources' || profileMode === 'remove_sources') {
                         try {
-                            // Extract BOTH the document ID and the Section it was checked under
-                            const operations = pendingLinkOps
-                                .filter(op => op.action === 'link')
-                                .map(op => ({
-                                    document_id: op.document_id,
-                                    section: op.section
-                                }));
+                            // Extract ALL currently valid checked states to cleanly overwrite DB
+                            const operations: {document_id: number, section: string}[] = [];
+                            SECTIONS.forEach(sec => {
+                                filteredDocuments.forEach(doc => {
+                                    if (isCheckedForSection(doc, sec)) {
+                                        operations.push({
+                                            document_id: doc.id,
+                                            section: sec
+                                        });
+                                    }
+                                });
+                            });
                             
                             await axios.post(`${AI_CHATBOT_API_BASE}/api/investor-profile/${params.id}/link-sources`, {
                                 operations: operations
                             });
                             
-                            toast.success("Sources linked to profile successfully!");
+                            toast.success("Sources saved successfully!");
                             setProfileMode(null);
                             setPendingLinkOps([]);
-                            // Optional: Refetch the profile data here so the UI updates instantly
+                            // Refetch the profile data here so the UI updates instantly
                             fetchProfileData(); 
                         } catch (error) {
-                            toast.error("Failed to link sources.");
+                            toast.error("Failed to save sources.");
                         }
                     } else {
                         setLinkConfirmOpen(true);
@@ -696,7 +731,7 @@ const InstitutionDocuments = () => {
                   }} 
                   disabled={linkingInProgress.bulk || !hasSubmittableOps}
                 >
-                  {profileMode === 'link_sources' ? "Save Sources" : "Submit"}
+                  {profileMode === 'add_sources' || profileMode === 'remove_sources' ? "Save Sources" : "Submit"}
                 </Button>
                 <Button variant="outline-secondary" className="border-theme-2 text-theme-2" onClick={() => { setPendingLinkOps([]); setProfileMode(null); }}>Cancel</Button>
               </div>
@@ -710,7 +745,7 @@ const InstitutionDocuments = () => {
               <span className="font-semibold text-slate-700">Legend:</span>
               <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-[3px] ring-2 ring-red-500 ring-offset-1" /><span>Red ring = Newly selected</span></span>
               <span className="flex items-center gap-1.5"><span className="inline-block w-3.5 h-3.5 rounded-[3px] ring-2 ring-green-500 ring-offset-1" /><span>Green ring = Unchecked</span></span>
-              <span className="text-slate-400 italic ml-auto">{profileMode === 'create' ? "All checked documents sent to backend." : "Only red/green changes sent to backend."}</span>
+              <span className="text-slate-400 italic ml-auto">{profileMode === 'create' ? "All checked documents sent to backend." : profileMode === 'add_sources' || profileMode === 'remove_sources' ? "Changes to sources will be saved directly to the database." : "Only red/green changes sent to backend."}</span>
             </div>
           )}
           
@@ -742,15 +777,6 @@ const InstitutionDocuments = () => {
                   (doc.name && verifiedDocs[doc.name]) || 
                   false;
 
-                  console.log("DOC DEBUG =>", {
-                    docName: doc.name,
-                    isVerifyingDocs,
-                    isVerified,
-                    isProcessing,
-                    shouldShowPlus: !isVerifyingDocs && !isVerified,
-                    doc,
-                  });
-
                   return (
                     <Table.Tr key={doc.id}>
                       <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs w-[40px]">{!showTrash && !doc.is_deleted && (<FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={selectedRows.includes(doc.id)} onChange={() => setSelectedRows(p => p.includes(doc.id) ? p.filter(id => id !== doc.id) : [...p, doc.id])} /></FormCheck>)}</Table.Td>
@@ -759,7 +785,26 @@ const InstitutionDocuments = () => {
                       <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.year || "-"}</Table.Td>
                       <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs truncate">{doc.created_by_name || "-"}</Table.Td>
                       <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.date_created ? new Date(doc.date_created).toLocaleDateString() : "-"}</Table.Td>
-                      {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 bg-white border-slate-200/80 text-center"><div className={`flex justify-center ${isRedCheckbox(doc, c.key) ? "rounded ring-2 ring-red-500 ring-offset-1" : isGreenCheckbox(doc, c.key) ? "rounded ring-2 ring-green-500 ring-offset-1" : ""}`}><FormCheck className="flex justify-center"><FormCheck.Input type="checkbox" checked={isCheckedForSection(doc, c.key)} disabled={linkingInProgress[`${doc.id}-${c.key}`] || !isAnalystOrAdmin || !profileMode || (profileMode === 'update' && isCheckedForSection(doc, c.key) && !isRedCheckbox(doc, c.key)) || (profileMode === 'voting' && c.key !== 'voting_guidelines')} onChange={() => handleLinkToProfile(doc, c.key, isCheckedForSection(doc, c.key))} /></FormCheck></div></Table.Td>)}
+                      {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 bg-white border-slate-200/80 text-center">
+                        <div className={`flex justify-center ${isRedCheckbox(doc, c.key) ? "rounded ring-2 ring-red-500 ring-offset-1" : isGreenCheckbox(doc, c.key) ? "rounded ring-2 ring-green-500 ring-offset-1" : ""}`}>
+                          <FormCheck className="flex justify-center">
+                            <FormCheck.Input 
+                              type="checkbox" 
+                              checked={isCheckedForSection(doc, c.key)} 
+                              disabled={
+                                linkingInProgress[`${doc.id}-${c.key}`] || 
+                                !isAnalystOrAdmin || 
+                                !profileMode || 
+                                (profileMode === 'update' && isCheckedForSection(doc, c.key) && !isRedCheckbox(doc, c.key)) || 
+                                (profileMode === 'voting' && c.key !== 'voting_guidelines') ||
+                                (profileMode === 'add_sources' && isCheckedForSection(doc, c.key) && !isRedCheckbox(doc, c.key)) ||
+                                (profileMode === 'remove_sources' && !isCheckedForSection(doc, c.key) && !isGreenCheckbox(doc, c.key))
+                              } 
+                              onChange={() => handleLinkToProfile(doc, c.key, isCheckedForSection(doc, c.key))} 
+                            />
+                          </FormCheck>
+                        </div>
+                      </Table.Td>)}
                     <Table.Td className="py-1.5 bg-white border-slate-200/80"><span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800`}>{doc.priority || "-"}</span></Table.Td>
                     <Table.Td className="py-1.5 bg-white border-slate-200/80">
                       <div className="flex gap-2">

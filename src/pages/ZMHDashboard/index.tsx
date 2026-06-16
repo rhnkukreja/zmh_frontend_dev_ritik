@@ -38,6 +38,7 @@ import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-
 import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
 import { toast } from "react-toastify";
 import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
+import {  pollWhaleWisdomStatus } from "@/pages/AIChatbot/api";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -177,7 +178,10 @@ function Main() {
         // from those that returned real data.
         const pending: string[] = [];
         Object.entries(bulkResults || {}).forEach(([name, info]: [string, any]) => {
-          if (info?.status === "scraping") pending.push(name);
+          // 🌟 FIX: The backend returns an error string when it kicks off a background scrape, not a status!
+          if (info?.error === "Not found in S3 cache." || info?.status === "scraping") {
+            pending.push(name);
+          }
         });
 
         setAutoScrapedData(prev => ({ ...prev, ...bulkResults }));
@@ -198,25 +202,45 @@ function Main() {
 
     const poll = async () => {
       const names = Array.from(pendingInvestors);
+      const stillPending: string[] = [];
+      const newResults: Record<string, any> = {};
+
       try {
-        const results = await scrapeBulkWhaleWisdom(names.map(name => ({ name, link: "" })));
-        const stillPending: string[] = [];
+        // Run completely in parallel using Promise.all
+        await Promise.all(
+          names.map(async (name) => {
+            try {
+              // Hit the lightweight status endpoint, not the heavy bulk endpoint
+              const response = await pollWhaleWisdomStatus(name);
 
-        Object.entries(results || {}).forEach(([name, info]: [string, any]) => {
-          // Keep polling only if still scraping; "scrape_failed" means stop.
-          if (info?.status === "scraping") {
-            stillPending.push(name);
-          }
-        });
+              // If the backend has finished scraping (success or failed)
+              if (response.status === "success" || response.status === "failed") {
+                newResults[name] = { ...response.data, status: response.status, error: null };
+              } else {
+                // If it's still "scraping", keep it in the queue for the next tick
+                stillPending.push(name);
+              }
+            } catch (error) {
+              console.error(`Polling failed for ${name}:`, error);
+              stillPending.push(name); // Keep trying on network blips
+            }
+          })
+        );
 
-        setAutoScrapedData(prev => ({ ...prev, ...results }));
+        // Batch update the UI with any newly finished data
+        if (Object.keys(newResults).length > 0) {
+          setAutoScrapedData((prev) => ({ ...prev, ...newResults }));
+        }
+
+        // Update the queue with names that are still processing
         setPendingInvestors(new Set(stillPending));
-      } catch {
-        // Keep polling even on transient errors.
+      } catch (error) {
+        console.error("Critical polling error", error);
       }
     };
 
     pollTimerRef.current = setTimeout(poll, 6000);
+    
     return () => {
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     };

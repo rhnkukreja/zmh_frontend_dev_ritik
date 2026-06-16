@@ -187,6 +187,11 @@ const AddEngagementDetailsModal = ({
   }, [visible]);
 
   const onSubmit = async (data: EngagementDetailsFormData) => {
+    //Adding a new check to make it mandatory to upload a document along with the excel file.
+    if (!uploadedDocument) {
+      toast.error("Please upload a document");
+      return;
+    }
     if (!documentFile) {
       toast.error("Please upload an Excel file");
       return;
@@ -427,7 +432,7 @@ const AddEngagementDetailsModal = ({
 
           <div className="col-span-12">
             <label className="block mb-1 text-sm font-medium">
-              Upload Document
+              Upload Document <span className="text-red-500">*</span>
             </label>
             <Dropzone
               ref={documentDropzoneRef}
