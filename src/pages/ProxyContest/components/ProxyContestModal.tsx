@@ -7,6 +7,7 @@ import TomSelect from "@/components/Base/TomSelect";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import { proxyContextService } from "@/services/proxyContext";
+import { proxyContestAIService } from "@/services/proxyContestAI";
 import { toast } from "react-toastify";
 
 interface CompanyOption {
@@ -349,6 +350,11 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
     split: false,
   });
 
+  // ── Exclusion state ────────────────────────────────────────────────────────
+  const [excluded, setExcluded] = useState(false);
+  const [exclusionId, setExclusionId] = useState<number | undefined>(undefined);
+  const [exclusionLoading, setExclusionLoading] = useState(false);
+
   const allDocumentEntries = useMemo(
     () => [
       {
@@ -430,9 +436,11 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             ? initialData.documents.filter(Boolean)
             : [];
 
+          let effectiveYear = "";
           if (docs.length > 0) {
             const firstDoc = docs[0];
-            setYear(firstDoc.year || fetchedYears[0] || "");
+            effectiveYear = firstDoc.year || fetchedYears[0] || "";
+            setYear(effectiveYear);
             setKeyword(firstDoc.keyword || fetchedKeywords[0] || "");
             setActivistName(firstDoc.activistName || "");
             setDocumentDate(firstDoc.documentDate || firstDoc.documentName || "");
@@ -455,7 +463,8 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             extraDocumentIdRef.current = restDocs.length + 1;
           } else {
             // No documents exist - initialize with dropdown defaults for adding new ones
-            setYear(fetchedYears[0] || "");
+            effectiveYear = fetchedYears[0] || "";
+            setYear(effectiveYear);
             setKeyword(fetchedKeywords[0] || "");
             setActivistName("");
             setDocumentDate("");
@@ -479,6 +488,31 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             activist: Boolean(initialData.advisory?.gl?.activist),
             split: Boolean(initialData.advisory?.gl?.split),
           });
+
+          // Check if company-year is excluded (use effectiveYear: the `year`
+          // state is not yet updated within this same effect run).
+          if (initialData.company?.id && effectiveYear) {
+            setExclusionLoading(true);
+            proxyContestAIService.getSettledExclusions({
+              company_id: initialData.company.id,
+              year: Number(effectiveYear),
+            }).then((data: any) => {
+              const exclusion = data?.results?.[0];
+              if (exclusion?.exclude) {
+                setExcluded(true);
+                setExclusionId(exclusion.id);
+              } else {
+                setExcluded(false);
+                setExclusionId(undefined);
+              }
+            }).catch(() => {
+              // silent fail - assume not excluded
+              setExcluded(false);
+              setExclusionId(undefined);
+            }).finally(() => {
+              setExclusionLoading(false);
+            });
+          }
         } else {
           setYear((prev) => prev || fetchedYears[0] || "");
           setKeyword((prev) => prev || fetchedKeywords[0] || "");
@@ -509,6 +543,8 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
       extraDocumentIdRef.current = 1;
       setIss({ id: undefined, management: false, activist: false, split: false });
       setGl({ id: undefined, management: false, activist: false, split: false });
+      setExcluded(false);
+      setExclusionId(undefined);
     }
   }, [open]);
 
@@ -664,6 +700,27 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
       } else if (!isAdvisoryOnlyEdit) {
         // Only create new if not in advisory-only mode
         await proxyContextService.createProxyAdvisoryRecommendation(glPayload);
+      }
+
+      // Handle exclusion status for edit mode
+      if (mode === "edit" && selectedCompany?.id && year) {
+        try {
+          if (excluded && !exclusionId) {
+            // Create new exclusion
+            await proxyContestAIService.createSettledExclusion({
+              company_id: selectedCompany.id,
+              year: Number(year),
+              exclude: true,
+              reason: "Excluded via Edit Proxy Contest modal",
+            });
+          } else if (!excluded && exclusionId) {
+            // Remove exclusion
+            await proxyContestAIService.deleteSettledExclusion(exclusionId);
+          }
+        } catch (exclusionError) {
+          console.error("Error updating exclusion status:", exclusionError);
+          // Don't block success toast for main operation
+        }
       }
 
       toast.success(mode === "edit" ? "Proxy context updated successfully." : "Proxy context added successfully.");
@@ -849,6 +906,37 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                 </div>
 
               </div>
+
+              {/* Exclusion Toggle - Edit Mode Only */}
+              {mode === "edit" && selectedCompany?.id && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 md:p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-amber-800">Exclude from Proxy Contest</h3>
+                      <p className="text-xs text-amber-600 mt-0.5">
+                        When enabled, this company-year will be hidden from the Proxy Contest dashboard by default.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {exclusionLoading && (
+                        <Lucide icon="Loader" className="w-4 h-4 animate-spin text-amber-600" />
+                      )}
+                      <label className="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={excluded}
+                          onChange={(e) => setExcluded(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        <span className="ms-3 text-sm font-medium text-amber-800">
+                          {excluded ? "Excluded" : "Active"}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-xl border border-slate-200 bg-white p-4 md:p-5">
                 <div className="flex items-center justify-between mb-4">

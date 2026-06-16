@@ -565,7 +565,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
 
                 <div className="grid gap-6 grid-cols-1">
                   <div className="col-span-1">
-                    <TableWrapper isLoading={investorCardLoading}>
+                    <TableWrapper>
                       <div
                         className={clsx([
                           locationPathName === "/" &&
@@ -682,7 +682,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
                               currentHoldings.map(
                                 (dashboard: CompanyDashboard, index: number) => (
                                   <Table.Tr
-                                    key={dashboard.filer_id}
+                                    key={`${dashboard.filer_id ?? dashboard.institution_name ?? "row"}-${index}`}
                                     className="row [&_td]:last:border-b-0"
                                   >
                                     {dashboard?.institution_name && (
@@ -726,7 +726,7 @@ const isActivelyScraping =
                 </sup>
               )}
             
-            {/* 🌟 3. Make the name clickable using the Dynamic ID! */}
+            {/* 🌟 3. Make the name clickable only when is_doc is true */}
             <h1
               onClick={() =>
                                                       dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
@@ -1079,16 +1079,6 @@ const isActivelyScraping =
             </footer>
           </div>
         </>
-      )}
-
-      {dashboardDataList?.length === 0 && investorCardLoading && (
-        <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-          <LoadingIcon
-            color="#800000"
-            icon="three-dots"
-            className="w-16 h-16"
-          />
-        </div>
       )}
 
       {dashboardDataList?.length === 0 && !investorCardLoading && (

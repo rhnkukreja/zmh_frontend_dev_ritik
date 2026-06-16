@@ -139,6 +139,20 @@ function BulletList({ items }: { items?: string[] }) {
   );
 }
 
+// When Say-on-Pay support is 0% for a year, the proposal was not on the ballot.
+// Replace "<year> Support: 0.0%" with an explanatory message. The year is taken
+// from the bullet itself, so it stays dynamic for any year (2025, 2026, ...).
+function transformSayOnPayBullets(items?: string[]): string[] | undefined {
+  if (!items) return items;
+  return items.map((item) => {
+    const match = item.match(/(\d{4})\s+Support:\s*([\d.]+)\s*%/i);
+    if (match && parseFloat(match[2]) === 0) {
+      return `Say on Pay not on ballot at ${match[1]} shareholder meeting`;
+    }
+    return item;
+  });
+}
+
 function ProposalList({ items }: { items?: string[] }) {
   if (!items || items.length === 0) return null;
 
@@ -627,7 +641,7 @@ export default function CompanyOverviewSummaryTab({
 
               {report.sop ? (
                 <CollapsibleCard title="Executive Compensation (Say-on-Pay)" iconKey="sop">
-                  <BulletList items={report.sop.headlineBullets} />
+                  <BulletList items={transformSayOnPayBullets(report.sop.headlineBullets)} />
                   <RationaleList items={report.sop.rationales} summary={report.sop.rationaleSummary} />
                 </CollapsibleCard>
               ) : null}

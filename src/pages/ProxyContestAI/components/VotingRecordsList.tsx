@@ -56,6 +56,8 @@ interface VotingRecordsListProps {
   vrLoading?: boolean;
   page: number;
   onPageChange: (p: number) => void;
+  onDownload?: () => void;
+  downloading?: boolean;
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
@@ -350,6 +352,8 @@ const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
   vrLoading,
   page,
   onPageChange,
+  onDownload,
+  downloading,
 }) => {
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
   const [allExpanded, setAllExpanded] = useState(false);
@@ -405,13 +409,29 @@ const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
           Voting Records
           <span className="text-xs text-slate-400 font-normal">({votingRecords.total_companies ?? votingRecords.count} total companies)</span>
         </h3>
-        <button
-          onClick={handleExpandAll}
-          className="flex items-center gap-1.5 px-4 py-1.5 bg-primary text-white text-xs font-semibold rounded-full hover:bg-primary/90 transition-colors"
-        >
-          <Lucide icon={allExpanded ? "ChevronsUp" : "ChevronsDown"} className="w-3.5 h-3.5" />
-          {allExpanded ? "Collapse All" : "Expand All"}
-        </button>
+        <div className="flex items-center gap-2">
+          {onDownload && (
+            <button
+              onClick={onDownload}
+              disabled={downloading}
+              className="flex items-center gap-2 px-3 py-1.5 bg-primary border border-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {downloading ? (
+                <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+              ) : (
+                <Lucide icon="Download" className="w-4 h-4" />
+              )}
+              {downloading ? "Downloading..." : "Download Now"}
+            </button>
+          )}
+          <button
+            onClick={handleExpandAll}
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary border border-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Lucide icon={allExpanded ? "ChevronsUp" : "ChevronsDown"} className="w-4 h-4" />
+            {allExpanded ? "Collapse All" : "Expand All"}
+          </button>
+        </div>
       </div>
 
       {/* Accordion list */}

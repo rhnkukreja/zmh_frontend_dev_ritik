@@ -37,6 +37,7 @@ import AddEngagementDetailsModal from "@/pages/PeerAnalysis/components/AddEngage
 import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
 import AddNewInvesterProfile from "@/pages/InvestorProfiles/components/AddNewInvester";
 import NotificationsManager from "./components/NotificationsManager";
+import KeyOverboardingPolicyModal from "./components/KeyOverboardingPolicyModal";
 
 interface InstituteFilter {
   region: string[];
@@ -102,6 +103,7 @@ function Main() {
   const [selectedInstitutionIdForProfile, setSelectedInstitutionIdForProfile] =
     useState<number | null>(null);
   const [notificationsManagerVisible, setNotificationsManagerVisible] = useState<boolean>(false);
+  const [keyOverboardingPolicyVisible, setKeyOverboardingPolicyVisible] = useState<boolean>(false);
 
   useEffect(() => {
     const dynamicURL = createDynamicURL(
@@ -224,6 +226,14 @@ function Main() {
           <div className="font-semibold text-xl ">Admin Panel</div>
           {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
             <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 md:ml-auto">
+              <Button
+                onClick={() => setKeyOverboardingPolicyVisible(true)}
+                variant="outline-primary"
+                className="h-10"
+              >
+                <Lucide icon="FileText" className="stroke-[1.3] w-4 h-4 mr-2" />{" "}
+                Add/Update Key Overboarding Policy
+              </Button>
               <Button
                 onClick={() => {
                   setAddEditInstitutionVisible(true);
@@ -816,6 +826,10 @@ function Main() {
         {notificationsManagerVisible && (
           <NotificationsManager visible={notificationsManagerVisible} setVisible={setNotificationsManagerVisible} />
         )}
+        <KeyOverboardingPolicyModal
+          visible={keyOverboardingPolicyVisible}
+          setVisible={setKeyOverboardingPolicyVisible}
+        />
       </div>
     </div>
   );
