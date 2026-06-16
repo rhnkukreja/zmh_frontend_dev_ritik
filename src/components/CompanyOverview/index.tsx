@@ -1693,41 +1693,44 @@ export default function CompanyOverview() {
   return (
     <>
       {shouldShowInitialOverviewLoading ? (
-        <>
-          {/* STICKY COMPANY OVERVIEW TABS - Static Content */}
-          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
-            <button
-              onClick={() => setActiveOverviewTab('investor_summary')}
-              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
-                  ? 'border-primary text-primary bg-white'
-                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
-            >
-              Summary
-            </button>
+  <>
+    {/* STICKY COMPANY OVERVIEW TABS - Static Content
+    <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
+      <button
+        onClick={() => setActiveOverviewTab('investor_summary')}
+        className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${
+          activeOverviewTab === 'investor_summary'
+            ? 'border-primary text-primary bg-white'
+            : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+        }`}
+      >
+        Summary
+      </button>
 
-            <button
-              onClick={() => setActiveOverviewTab('governance')}
-              className={`relative flex items-center justify-center gap-2 rounded-lg border px-5 py-2 text-[14px] font-semibold transition-colors ${activeOverviewTab === 'governance'
-                  ? 'border-primary text-primary bg-white'
-                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
-            >
-              <span>Governance Profile</span>
-            </button>
+      <button
+        onClick={() => setActiveOverviewTab('governance')}
+        className={`relative flex items-center justify-center gap-2 rounded-lg border px-5 py-2 text-[14px] font-semibold transition-colors ${
+          activeOverviewTab === 'governance'
+            ? 'border-primary text-primary bg-white'
+            : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+        }`}
+      >
+        <span>Governance Profile</span>
+      </button>
 
-            {canViewCompensation && (
-              <button
-                onClick={() => setActiveOverviewTab('compensation')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Compensation
-              </button>
-            )}
-          </div>
+      {canViewCompensation && (
+        <button
+          onClick={() => setActiveOverviewTab('compensation')}
+          className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${
+            activeOverviewTab === 'compensation'
+              ? 'border-primary text-primary bg-white'
+              : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
+          }`}
+        >
+          Compensation
+        </button>
+      )}
+    </div> */}
           <div className="mx-auto space-y-6">
             {renderActiveOverviewContent()}
           </div>
@@ -1745,7 +1748,7 @@ export default function CompanyOverview() {
         <>
           {/* STICKY COMPANY OVERVIEW TABS */}
           {/* Note: You may need to adjust "top-[180px]" up or down depending on the exact pixel height of your main header */}
-          <div className="sticky top-[220px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
+          <div className="sticky top-[150px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
             <button
               onClick={() => setActiveOverviewTab('investor_summary')}
               className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'

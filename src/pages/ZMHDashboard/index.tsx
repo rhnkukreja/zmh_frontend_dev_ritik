@@ -38,6 +38,7 @@ import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-
 import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
 import { toast } from "react-toastify";
 import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
+import {  pollWhaleWisdomStatus } from "@/pages/AIChatbot/api";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -147,14 +148,16 @@ function Main() {
   const [autoScrapeQueue, setAutoScrapeQueue] = useState<string[]>([]);
   const autoScrapeInProgress = useRef(false);
   const processedInstitutions = useRef<Set<string>>(new Set());
+  // Names that the backend is still scraping in the background — show spinners for these.
+  const [pendingInvestors, setPendingInvestors] = useState<Set<string>>(new Set());
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 1. Populate the Queue when data loads
-useEffect(() => {
+  // Initial bulk fetch on data load.
+  useEffect(() => {
     const processBulkScrape = async () => {
       const currentData = dashboardDataList?.all_year_data?.[0]?.holdings_data;
       if (!currentData || currentData.length === 0) return;
 
-      // 1. Get unique institutions that need scraping
       const uniqueMissingProfiles = Array.from(new Set(
         currentData
           .filter((d: any) => !d.investor_profile_id && !processedInstitutions.current.has(d.institution_name))
@@ -163,26 +166,28 @@ useEffect(() => {
 
       if (uniqueMissingProfiles.length === 0) return;
 
-      // Mark them as processed so we don't try again
       uniqueMissingProfiles.forEach((name) => processedInstitutions.current.add(name));
 
       try {
-        // 🌟 2. Format the payload with empty links! 
-        // We skip searching on the frontend entirely.
-        const validInvestorsToScrape = uniqueMissingProfiles.map(name => ({
-           name: name,
-           link: "" 
-        }));
+        const validInvestorsToScrape = uniqueMissingProfiles.map(name => ({ name, link: "" }));
 
-        // 🌟 3. SEND DIRECTLY TO THE PARALLEL BACKEND ENDPOINT! 🚀
-        if (validInvestorsToScrape.length > 0) {
-          console.log(`🚀 Sending ${validInvestorsToScrape.length} investors to Parallel Bulk Scraper...`);
-          const bulkResults = await scrapeBulkWhaleWisdom(validInvestorsToScrape); 
-          
-          // 4. Update the state all at once!
-          setAutoScrapedData(prev => ({ ...prev, ...bulkResults }));
+        console.log(`🚀 Sending ${validInvestorsToScrape.length} investors to Parallel Bulk Scraper...`);
+        const bulkResults = await scrapeBulkWhaleWisdom(validInvestorsToScrape);
+
+        // Separate investors the backend is still scraping (background task, no data yet)
+        // from those that returned real data.
+        const pending: string[] = [];
+        Object.entries(bulkResults || {}).forEach(([name, info]: [string, any]) => {
+          // 🌟 FIX: The backend returns an error string when it kicks off a background scrape, not a status!
+          if (info?.error === "Not found in S3 cache." || info?.status === "scraping") {
+            pending.push(name);
+          }
+        });
+
+        setAutoScrapedData(prev => ({ ...prev, ...bulkResults }));
+        if (pending.length > 0) {
+          setPendingInvestors(new Set(pending));
         }
-
       } catch (error) {
         console.error("Bulk auto-scrape process failed:", error);
       }
@@ -190,6 +195,56 @@ useEffect(() => {
 
     processBulkScrape();
   }, [dashboardDataList]);
+
+  // Poll every 6 seconds for investors the backend is still scraping.
+  useEffect(() => {
+    if (pendingInvestors.size === 0) return;
+
+    const poll = async () => {
+      const names = Array.from(pendingInvestors);
+      const stillPending: string[] = [];
+      const newResults: Record<string, any> = {};
+
+      try {
+        // Run completely in parallel using Promise.all
+        await Promise.all(
+          names.map(async (name) => {
+            try {
+              // Hit the lightweight status endpoint, not the heavy bulk endpoint
+              const response = await pollWhaleWisdomStatus(name);
+
+              // If the backend has finished scraping (success or failed)
+              if (response.status === "success" || response.status === "failed") {
+                newResults[name] = { ...response.data, status: response.status, error: null };
+              } else {
+                // If it's still "scraping", keep it in the queue for the next tick
+                stillPending.push(name);
+              }
+            } catch (error) {
+              console.error(`Polling failed for ${name}:`, error);
+              stillPending.push(name); // Keep trying on network blips
+            }
+          })
+        );
+
+        // Batch update the UI with any newly finished data
+        if (Object.keys(newResults).length > 0) {
+          setAutoScrapedData((prev) => ({ ...prev, ...newResults }));
+        }
+
+        // Update the queue with names that are still processing
+        setPendingInvestors(new Set(stillPending));
+      } catch (error) {
+        console.error("Critical polling error", error);
+      }
+    };
+
+    pollTimerRef.current = setTimeout(poll, 6000);
+    
+    return () => {
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    };
+  }, [pendingInvestors]);
 
   // 2. Process the Queue sequentially in the background
   useEffect(() => {
@@ -454,7 +509,7 @@ useEffect(() => {
           {activeTab === 'ownership' && (
             <div id="ownership" className="col-span-12 xl:col-span-12">
               {/* 🌟 PASS AUTOSCRAPEDDATA HERE */}
-              <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} autoScrapedData={autoScrapedData} />
+              <InvestorCard onLoaded={() => setIsOwnershipLoaded(true)} autoScrapedData={autoScrapedData} pendingInvestors={pendingInvestors} />
             </div>
           )}
 
