@@ -141,10 +141,17 @@ const DetailCaseStudies = () => {
             <div className="grid grid-cols-1  gap-4">
               {singleCaseStudy?.engagement_details && (
                 <div>
-                  <h3 className="font-semibold min-w-[150px]  mb-2">
+                  <h3 className="font-semibold min-w-[150px] mb-2">
                     Engagement/Voting Details
                   </h3>
-                  <p>{singleCaseStudy?.engagement_details}</p>
+                  {singleCaseStudy.engagement_details.split('\n').map((paragraph, index) => (
+                    // Only render the paragraph if it's not an empty string
+                    paragraph.trim() !== '' && (
+                      <p key={index} className="mb-3 text-justify">
+                        {paragraph}
+                      </p>
+                    )
+                  ))}
                 </div>
               )}
             </div>
@@ -155,13 +162,13 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Rationale
                   </h3>
-                  <p>{singleCaseStudy?.voting_rationale}</p>
+                  <p className="whitespace-pre-line text-justify">{singleCaseStudy?.voting_rationale}</p>
                 </div>
               )}
               {singleCaseStudy?.voting_details && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Details</h3>
-                  <p className="whitespace-pre-line">{singleCaseStudy?.voting_details}</p>
+                  <p className="whitespace-pre-line text-justify">{singleCaseStudy?.voting_details}</p>
                 </div>
               )}
             </div>
