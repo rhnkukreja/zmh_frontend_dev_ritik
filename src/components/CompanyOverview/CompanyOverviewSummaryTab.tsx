@@ -265,11 +265,14 @@ function ProposalVotesList({ proposals }: {
         const isGreen = supportPercent >= 50;
 
         // Ensure safe rendering to avoid empty pills
-        const renderText = isNaN(supportPercent) || !displayPercentage || displayPercentage === "-" 
-          ? "-" 
+        const renderText = isNaN(supportPercent) || !displayPercentage || displayPercentage === "-" || displayPercentage.trim() === ""
+          ? "Not presented" 
           : (displayPercentage.includes("%") ? displayPercentage : `${displayPercentage}%`);
 
-        const pillClass = isGreen
+        // If it's not presented, make it a neutral gray pill. Otherwise, color it green or red based on support.
+        const pillClass = renderText === "Not presented"
+          ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[15px] font-semibold text-slate-700"
+          : isGreen
           ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700"
           : "rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[15px] font-semibold text-red-700";
 
