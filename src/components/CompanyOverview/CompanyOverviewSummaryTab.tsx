@@ -708,7 +708,7 @@ export default function CompanyOverviewSummaryTab({
 
               {report.shareholderProposals ? (
                 <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
-                  <BulletList items={report.shareholderProposals.headlineBullets} />
+                  {/* <BulletList items={report.shareholderProposals.headlineBullets} /> */}
                   {report.shareholderProposals.proposalVotes?.length ? (
                     <>
                       <Separator className="my-4" />
