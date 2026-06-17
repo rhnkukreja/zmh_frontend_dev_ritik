@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAppSelector } from "@/stores/hooks";
 import {
   BarChart2,
   BarChart3,
@@ -209,14 +210,69 @@ function ProposalVotesList({ proposals }: {
     }>;
   }>;
 }) {
+  // 1. Pull the detailed AGM data from Redux to use as a fallback source
+  const { agmSummaryDetails } = useAppSelector((state: any) => state.dashboard);
+
+  // 2. Helper function to find the missing percentage via text match
+  const getFallbackPercentage = (proposalName: string) => {
+    if (!agmSummaryDetails?.proposals?.length || !agmSummaryDetails?.proposals_headers?.length) {
+      return null;
+    }
+
+    const headers = agmSummaryDetails.proposals_headers;
+    const nameCol = headers[0]?.field;
+    const pctCol = headers[headers.length - 1]?.field; // The last column holds the %
+
+    if (!nameCol || !pctCol) return null;
+
+    // Tokenize to ignore minor naming differences (e.g., "Report on..." vs "Requesting a Report on...")
+    const tokenize = (str: string) => 
+      str.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 3);
+    
+    const targetTokens = tokenize(proposalName);
+    let bestMatch = null;
+    let maxScore = 0;
+
+    agmSummaryDetails.proposals.forEach((p: any) => {
+      const tokens = tokenize(String(p[nameCol] || ""));
+      const score = targetTokens.filter(t => tokens.includes(t)).length;
+
+      if (score > maxScore) {
+        maxScore = score;
+        bestMatch = p[pctCol];
+      }
+    });
+
+    // If we matched at least 2 significant words, consider it a safe match
+    return maxScore >= 2 ? bestMatch : null;
+  };
+
   if (!proposals || proposals.length === 0) return null;
 
   return (
     <div className="space-y-4">
       {proposals.map((proposal, index) => {
-        const supportPercent = parseFloat(proposal.outcome_percentage);
+        // 3. Try original percentage, if empty/invalid, use the fallback
+        let displayPercentage = proposal.outcome_percentage;
+        if (!displayPercentage || displayPercentage === "-" || displayPercentage.trim() === "") {
+          const fallback = getFallbackPercentage(proposal.proposal_name);
+          if (fallback) displayPercentage = fallback;
+        }
+
+        // Clean string and parse
+        const numericString = displayPercentage?.replace('%', '') || "0";
+        const supportPercent = parseFloat(numericString);
         const isGreen = supportPercent >= 50;
-        const pillClass = isGreen
+
+        // Ensure safe rendering to avoid empty pills
+        const renderText = isNaN(supportPercent) || !displayPercentage || displayPercentage === "-" || displayPercentage.trim() === ""
+          ? "Not presented" 
+          : (displayPercentage.includes("%") ? displayPercentage : `${displayPercentage}%`);
+
+        // If it's not presented, make it a neutral gray pill. Otherwise, color it green or red based on support.
+        const pillClass = renderText === "Not presented"
+          ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[15px] font-semibold text-slate-700"
+          : isGreen
           ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700"
           : "rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[15px] font-semibold text-red-700";
 
@@ -229,7 +285,7 @@ function ProposalVotesList({ proposals }: {
                   <span className="font-medium">Proponent:</span> {proposal.proponent}
                 </div>
               </div>
-              <div className={pillClass}>{proposal.outcome_percentage}</div>
+              <div className={pillClass}>{renderText}</div>
             </div>
 
             {proposal.institution_votes?.length > 0 && (
@@ -655,7 +711,7 @@ export default function CompanyOverviewSummaryTab({
 
               {report.shareholderProposals ? (
                 <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
-                  <BulletList items={report.shareholderProposals.headlineBullets} />
+                  {/* <BulletList items={report.shareholderProposals.headlineBullets} /> */}
                   {report.shareholderProposals.proposalVotes?.length ? (
                     <>
                       <Separator className="my-4" />
