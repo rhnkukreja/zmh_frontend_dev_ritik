@@ -52,7 +52,11 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
     tabType === "top20" ? votingRationaleTop20 : votingRationaleAllInvestors;
 
   useEffect(() => {
-    const groupedQuestions = currentVotingRationale?.reduce(
+    // 1. Safely ensure currentVotingRationale is an array before trying to reduce it
+    const safeRationale = Array.isArray(currentVotingRationale) ? currentVotingRationale : [];
+
+    // 2. Run the reduce function on the guaranteed array
+    const groupedQuestions = safeRationale.reduce(
       (acc: any, question: any) => {
         const investorName = question?.investor_name;
         if (!acc[investorName]) {
@@ -66,19 +70,6 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
 
     setGroupVotingRationale(groupedQuestions);
   }, [currentVotingRationale]);
-
-  useEffect(() => {
-    if (groupVotingRationale) {
-      const initialOpenGroups = Object.keys(groupVotingRationale).reduce(
-        (acc, investorName) => {
-          acc[investorName] = openGroups[investorName] ?? false;
-          return acc;
-        },
-        {} as { [key: string]: boolean }
-      );
-      setOpenGroups(initialOpenGroups);
-    }
-  }, [groupVotingRationale]);
 
   const toggleGroup = (investorName: string) => {
     setOpenGroups((prevState) => ({
