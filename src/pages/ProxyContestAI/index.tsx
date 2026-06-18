@@ -11,6 +11,10 @@ import ProxyContestModal from "../ProxyContest/components/ProxyContestModal";
 import ActivistIntelligenceDashboard from "../AIChatbot/ActivistDashboard"; 
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
+import { Popover, Dialog } from "@/components/Base/Headless"; 
 
 type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
 
@@ -545,6 +549,42 @@ function ProxyContestAI() {
   const curToggleIss     = activeTab === "overview" ? ovToggleIss     : dtToggleIss;
   const curToggleGl      = activeTab === "overview" ? ovToggleGl      : dtToggleGl;
 
+
+  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
+  const [newInvestorName, setNewInvestorName] = useState<string>("");
+  const [selectedJsonFile, setSelectedJsonFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  const handleJsonUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newInvestorName || !selectedJsonFile) {
+      toast.error("Please provide both an investor name and a profile JSON file.");
+      return;
+    }
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("investor_name", newInvestorName);
+    formData.append("file", selectedJsonFile);
+
+    try {
+      await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      toast.success("Profile uploaded and indexed onto S3 bucket cluster.");
+      setUploadModalOpen(false);
+      setNewInvestorName("");
+      setSelectedJsonFile(null);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to successfully upload profile schema.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
   return (
     <div className="flex flex-col" style={{ minHeight: "calc(100vh - 7rem)" }}>
 
@@ -554,15 +594,59 @@ function ProxyContestAI() {
         className="sticky z-30 bg-[#f1f5f9]"
         style={{ top: "4rem" }}
       >
-        {/* Page header card */}
+       {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-slate-800">Proxy Contest</h2>
-          {isAdminOrAnalyst && (
-            <Button variant="primary" onClick={() => setAddModalOpen(true)}>
-              <Lucide icon="Plus" className="w-4 h-4 mr-1.5" />
-              Add Proxy Contest
-            </Button>
-          )}
+          
+          <div className="flex items-center gap-3">
+            {/* 
+               PRODUCTION BOUNDARY GATING: 
+               Verifies the global store credentials so that only authenticated Admins 
+               or Analysts can view or use the system mode toggle.
+            */}
+            {activeTab === "activist_profile" && (user?.user_type === "Admin" || user?.user_type === "Analyst") && (
+              <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 h-[38px] items-center">
+                <button
+                  onClick={() => setIsAdminMode(false)}
+                  className={clsx(
+                    "px-4 py-1 text-sm font-semibold rounded-md transition-all duration-200",
+                    !isAdminMode ? "bg-[#10b981] text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  User View
+                </button>
+                <button
+                  onClick={() => setIsAdminMode(true)}
+                  className={clsx(
+                    "px-4 py-1 text-sm font-semibold rounded-md transition-all duration-200",
+                    isAdminMode ? "bg-[#8b1828] text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  Admin View
+                </button>
+              </div>
+            )}
+
+            {/* Show Upload Button ONLY in Admin Mode */}
+            {activeTab === "activist_profile" && isAdminMode && (
+              <Button
+                variant="outline-primary"
+                onClick={() => setUploadModalOpen(true)}
+                className="flex items-center gap-2 !border-[#8b1828] !text-[#8b1828] hover:!bg-[#8b1828] hover:!text-white hover:!opacity-100 h-[38px] transition-colors"
+              >
+                <Lucide icon="UploadCloud" className="w-4 h-4" />
+                Upload Proxy Contest Profile
+              </Button>
+            )}
+
+            {/* Existing Add Proxy Contest Button */}
+            {isAdminOrAnalyst && (
+              <Button variant="primary" onClick={() => setAddModalOpen(true)}>
+                <Lucide icon="Plus" className="w-4 h-4 mr-1.5" />
+                Add Proxy Contest
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Tabs + Hide/Show Filters */}
@@ -737,13 +821,50 @@ function ProxyContestAI() {
             <ActivistIntelligenceDashboard />
           )} */}
 
-          {activeTab === "activist_profile" && (
-            <ActivistIntelligenceDashboard />
-          )}
-
-
+          {/* ── PASS THE MODE TOGGLE DOWN AS A LIFETIME PROP ── */}
+{activeTab === "activist_profile" && (
+  <ActivistIntelligenceDashboard isAdminMode={isAdminMode} />
+)}
         </div>
       </div>
+      
+      {/* Upload Investor JSON Modal */}
+      {uploadModalOpen && (
+        <Dialog open={uploadModalOpen} onClose={() => setUploadModalOpen(false)}>
+          <Dialog.Panel className="p-6">
+            <div className="flex items-center justify-between mb-5 border-b border-slate-200 pb-3">
+              <h2 className="text-lg font-bold text-[#8b1828]">Upload Investor Profile Payload</h2>
+              <button onClick={() => setUploadModalOpen(false)} className="text-slate-400 hover:text-slate-800 transition-colors">
+                <Lucide icon="X" className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleJsonUploadSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">
+                  Investor Name <span className="text-danger">*</span>
+                </label>
+                <input type="text" required value={newInvestorName} onChange={(e) => setNewInvestorName(e.target.value)} placeholder="e.g. Elliott Investment Management" className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">
+                  Select JSON File <span className="text-danger">*</span>
+                </label>
+                <input type="file" required accept=".json" onChange={(e) => setSelectedJsonFile(e.target.files?.[0] || null)} className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none" />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-8 border-t border-slate-100 pt-5">
+                <Button type="button" variant="outline-secondary" onClick={() => setUploadModalOpen(false)}>Cancel</Button>
+                <Button type="submit" variant="primary" disabled={isUploading} className="min-w-[150px] bg-[#8b1828]">
+                  {isUploading ? "Uploading..." : "Publish to Cluster"}
+                </Button>
+              </div>
+            </form>
+          </Dialog.Panel>
+        </Dialog>
+      )}
+
       {/* Add Proxy Contest modal — Admin / Analyst only */}
       {isAdminOrAnalyst && (
         <ProxyContestModal

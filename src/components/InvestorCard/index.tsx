@@ -158,19 +158,38 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   }, [pollingSet]);
 
   // Helper to normalize names
-  const getNormalizedScrapedInfo = (name: string) => {
-    if (!name) return {};
-    const cleanStr = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const target = cleanStr(name);
-    
-    const liveKey = Object.keys(liveData).find(k => cleanStr(k) === target);
-    const autoKey = Object.keys(autoScrapedData).find(k => cleanStr(k) === target);
-    
-    return {
-      ...(autoKey ? autoScrapedData[autoKey] : {}),
-      ...(liveKey ? liveData[liveKey] : {})
-    };
+  const normalizeInstitutionName = (name: string) => {
+  return (name || "")
+    .toLowerCase()
+    // Strips out legal entities AND generic financial words so "Boothbay Fund Management" matches "Boothbay"
+    .replace(
+      /\b(lp|l\.p\.|llc|l\.l\.c\.|llp|l\.l\.p\.|inc|inc\.|corp|corp\.|corporation|co|co\.|company|ltd|ltd\.|management|mgt|capital|cap|partners|fund|funds|group|asset|assets|investment|investments|holdings)\b/g,
+      ""
+    )
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+};
+
+const getNormalizedScrapedInfo = (name: string) => {
+  if (!name) return {};
+
+  const target = normalizeInstitutionName(name);
+
+  const liveKey = Object.keys(liveData).find(
+    (k) => normalizeInstitutionName(k) === target
+  );
+
+  const autoKey = Object.keys(autoScrapedData).find(
+    (k) => normalizeInstitutionName(k) === target
+  );
+
+
+  return {
+    ...(autoKey ? autoScrapedData[autoKey] : {}),
+    ...(liveKey ? liveData[liveKey] : {}),
   };
+};
 
   const handleViewSummary = async (institutionName: string | undefined) => {
     if (!institutionName) return;
@@ -699,52 +718,63 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
         
         {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
         {(() => {
-                                                const name = dashboard?.institution_name;
-                                                const scrapedInfo = getNormalizedScrapedInfo(name);
-                                                const dynInstId = dashboard?.institution_id || scrapedInfo?.institution_id;
-                                                
-                                                const hasLiveResult = Object.keys(liveData).some(k => 
-  k.toLowerCase().replace(/[^a-z0-9]/g, '') === name.toLowerCase().replace(/[^a-z0-9]/g, '')
-);
+  const name = dashboard?.institution_name;
+  const scrapedInfo = getNormalizedScrapedInfo(name);
+  
+  // 1. Broaden the ID extraction to catch IDs that might be named differently
+  const dynInstId = 
+    dashboard?.institution_id || 
+    scrapedInfo?.institution_id || 
+    scrapedInfo?.id || 
+    dashboard?.investor_profile_id;
+    
+  const hasLiveResult = Object.keys(liveData).some(k => 
+    k.toLowerCase().replace(/[^a-z0-9]/g, '') === name.toLowerCase().replace(/[^a-z0-9]/g, '')
+  );
 
-const isActivelyScraping = 
-  !hasLiveResult &&   // ← KEY FIX: live result means done, stop spinning
-  (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
-  scrapedInfo.status !== "success" && 
-  scrapedInfo.status !== "failed";
-          
-          return (
-            <>
-                                                    {!dynInstId && !isActivelyScraping && (
-                <sup
-                  className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
-                  onClick={() => {
-                    window.scrollBy({ top: 350, behavior: "smooth" });
-                  }}
-                >
-                  *
-                </sup>
-              )}
-            
-            {/* 🌟 3. Make the name clickable only when is_doc is true */}
-            <h1
-              onClick={() =>
-                                                      dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
-              }
-              className={clsx([
-                "cell whitespace-nowrap capitalize text-wrap font-semibold",
-                dashboard?.is_doc === true && dynInstId && "cursor-pointer underline",
-              ])}
-            >
-              {dashboard?.institution_name}
-            </h1>
+  const isActivelyScraping = 
+    !hasLiveResult &&
+    (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
+    scrapedInfo.status !== "success" && 
+    scrapedInfo.status !== "failed";
+    
+  // 2. NEW: Add a robust fallback check. If it's flagged as "Internal" or has a document, it IS in the DB!
+  const rawProxy = scrapedInfo?.proxy_influence || dashboard?.proxy_advisor_influence;
+  const isInternallyCovered = typeof rawProxy === 'string' && rawProxy.toLowerCase().includes('internal');
+  const isCoveredInDB = Boolean(dynInstId || dashboard?.is_doc === true || isInternallyCovered);
 
-                                                  {isActivelyScraping && (
-                                                     <Lucide icon="Loader2" className="w-4 h-4 ml-2 text-red-700 animate-spin inline-block" />
-                                                  )}
-          </>
-        );
-      })()}
+  return (
+    <>
+      {/* 3. Use isCoveredInDB instead of just dynInstId to hide the asterisk */}
+      {!isCoveredInDB && !isActivelyScraping && (
+        <sup
+          className="cursor-pointer text-lg absolute left-2 top-1 text-red-500"
+          onClick={() => {
+            window.scrollBy({ top: 350, behavior: "smooth" });
+          }}
+        >
+          *
+        </sup>
+      )}
+    
+      <h1
+        onClick={() =>
+          dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
+        }
+        className={clsx([
+          "cell whitespace-nowrap capitalize text-wrap font-semibold",
+          dashboard?.is_doc === true && dynInstId && "cursor-pointer underline",
+        ])}
+      >
+        {dashboard?.institution_name}
+      </h1>
+
+      {isActivelyScraping && (
+         <Lucide icon="Loader2" className="w-4 h-4 ml-2 text-red-700 animate-spin inline-block" />
+      )}
+    </>
+  );
+})()}
 
       {dashboard?.flag_13d === true && (
         <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
@@ -791,7 +821,7 @@ const isActivelyScraping =
 
                                                 if (isActivelyScraping) {
             return (
-              <Tippy content="Fetching SEC details..." options={{ theme: "light" }}>
+              <Tippy content="Searching" options={{ theme: "light" }}>
                 <div className="flex items-center justify-center w-6 h-6 text-primary">
                   <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
                 </div>
@@ -801,24 +831,22 @@ const isActivelyScraping =
 
                                                 if (isInS3 && hasContent) {
             return (
-                                                    <Tippy content="View" options={{ theme: "light" }}>
-                <div
-                  className="w-5 h-5"
-                  onClick={() => {
-                    if (!summaryLoading) {
-                      handleViewSummary(name);
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
-                    {summaryLoading && activeInstitutionName === name ? (
-                      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-                    ) : (
-                      <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
-                    )}
-                  </div>
-                </div>
-              </Tippy>
+                                                   <div
+  className="w-5 h-5"
+  onClick={() => {
+    if (!summaryLoading) {
+      handleViewSummary(name);
+    }
+  }}
+>
+  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
+    {summaryLoading && activeInstitutionName === name ? (
+      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+    ) : (
+      <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
+    )}
+  </div>
+</div>
             );
           }
           return <div className="w-6 h-6" />;

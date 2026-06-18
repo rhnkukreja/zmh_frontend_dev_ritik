@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
+import { useAppSelector } from "@/stores/hooks";
 
 // ─── Module-level cache (survives tab switches, clears on page refresh) ───────
 const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -47,19 +48,15 @@ const formatLargeUSD = (value: any) => {
 const normaliseProfile = (raw: any) => {
   if (!raw) return null;
 
-const stripCitations = (text: any): string => {
+  const stripCitations = (text: any): string => {
   if (typeof text !== "string") return "";
-  return text
-    // [cite: 6], [cite: 6.], [cite: 6, 7], unclosed variants
-    .replace(/\[cite:[^\]]*\]?/gi, "")
-    // Standard numeric: [1], [1,2], [1-3]
-    .replace(/\[\d[\d,\s\-]*\]/g, "")
-    // Trailing whitespace before punctuation after removal
-    .replace(/\s+([.,;!?])/g, "$1")
-    .trim();
-};
 
-// ── Summary text ──────────────────────────────────────────────────────────
+  return text
+    .replace(/\[cite:[^\]]*\]/gi, "")
+    .replace(/\[[0-9,\-\s]+\]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.,;!?])/g, "$1");
+};
   const rawSummary =
     typeof raw.investor_summary === "string"
       ? raw.investor_summary
@@ -70,24 +67,16 @@ const stripCitations = (text: any): string => {
           
   const summary = stripCitations(rawSummary);
 
+  // 🛑 REMOVED .filter(Boolean) SO EMPTY ROWS DON'T DISAPPEAR
   const summaryPoints = (raw.activist_investor_summary?.summary_points || [])
-    .map((pt: any) => stripCitations(pt))
-    .filter(Boolean);
+    .map((pt: any) => stripCitations(pt));
 
-  const legalName =
-    raw.activist_investor_summary?.legal_name ||
-    raw.activist_investor_summary?.brand_name ||
-    "Activist Profile";
-
+  const legalName = raw.activist_investor_summary?.legal_name || raw.activist_investor_summary?.brand_name || "Activist Profile";
   const founded  = raw.activist_investor_summary?.founded || "N/A";
   const hq       = raw.activist_investor_summary?.headquarters || "N/A";
 
-  // ── Personnel ─────────────────────────────────────────────────────────────
-  const personnel = (
-    raw.nominees_and_visible_personnel ||
-    raw.visible_personnel ||
-    []
-  ).map((p: any) => ({
+  // ── RESTORED MISSING DATA ──
+  const personnel = (raw.nominees_and_visible_personnel || raw.visible_personnel || []).map((p: any) => ({
     name:        p.name || "Unknown",
     category:    p.category || "visible_personnel",
     role:        p.role_or_context || p.role || p.current_title || "",
@@ -96,7 +85,6 @@ const stripCitations = (text: any): string => {
     sources:     p.source_set || [],
   }));
 
-  // ── 13F snapshot ──────────────────────────────────────────────────────────
   const snap13f = raw.latest_13f_snapshot || {};
   const snapshot = {
     filing_date:      snap13f.filing_date || snap13f.report_period_end || "N/A",
@@ -108,12 +96,7 @@ const stripCitations = (text: any): string => {
     portfolio_note:   snap13f.reported_13f_portfolio_value_note || "",
   };
 
-  // ── Campaigns ─────────────────────────────────────────────────────────────
-  const campaigns = (
-    raw.campaign_registry ||
-    raw.campaign_history ||
-    []
-  ).map((c: any) => ({
+  const campaigns = (raw.campaign_registry || raw.campaign_history || []).map((c: any) => ({
     target_company:  c.target_company || "Unknown",
     start_date:      c.campaign_start_date || c.start_year || "N/A",
     start_year:      (c.campaign_start_date || c.start_year || "N/A").toString().slice(0, 4),
@@ -126,18 +109,15 @@ const stripCitations = (text: any): string => {
     sources:         c.source_set || [],
   }));
 
-  // ── Observations ──────────────────────────────────────────────────────────
   const rawObservations =
     raw.key_cross_campaign_observations ||
     raw.custom_observations ||
     raw.investor_profile_analysis ||
     [];
     
-  const observations = rawObservations
-    .map((obs: any) => stripCitations(obs))
-    .filter(Boolean);
+  // 🛑 REMOVED .filter(Boolean) HERE TOO
+  const observations = rawObservations.map((obs: any) => stripCitations(obs));
 
-  // ── Source inventory ──────────────────────────────────────────────────────
   const sources = raw.source_inventory || [];
 
   return {
@@ -146,9 +126,9 @@ const stripCitations = (text: any): string => {
     hq,
     summary,
     summaryPoints,
-    personnel,
-    snapshot,
-    campaigns,
+    personnel, // 👈 RESTORED
+    snapshot,  // 👈 RESTORED
+    campaigns, // 👈 RESTORED
     observations,
     sources,
   };
@@ -301,17 +281,69 @@ const ActivistDashboardSkeleton = () => (
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-const ActivistIntelligenceDashboard = () => {
+const ActivistIntelligenceDashboard = ({ isAdminMode = false }: { isAdminMode?: boolean }) => {
+  // Pull the logged-in session securely from the Redux store
+  const { user } = useAppSelector((state: any) => state.authentiction);
+  const isActualAdmin = user?.user_type === "Admin" || user?.user_type === "Analyst";
+
+  // The Edit button should only show up if the toggle is set to "Admin View" AND the user has permissions
+  const showEditButton = isAdminMode && isActualAdmin;
+
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
   const [investorKeys, setInvestorKeys] = useState<string[]>([]);
   const [activeInvestorKey, setActiveInvestorKey] = useState("");
   
   const [activeTab, setActiveTab] = useState("summary");
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [newInvestorName, setNewInvestorName] = useState("");
+  const [selectedJsonFile, setSelectedJsonFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+
+  const [rawProfile, setRawProfile] = useState<any>(null); 
+  const [isEditMode, setIsEditMode] = useState(false);     
+  const [isSaving, setIsSaving] = useState(false);
+
   const [profile, setProfile]   = useState<any>(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
+
+const handleSummaryTextChange = (val: string) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 Deep copy fixes nested state bugs
+    if (typeof updatedRaw.investor_summary === "string") {
+      updatedRaw.investor_summary = val;
+    } else if (updatedRaw.activist_investor_summary) {
+      updatedRaw.activist_investor_summary.investment_focus = val;
+    } else {
+      updatedRaw.investor_summary = val;
+    }
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
+  };
+
+  const handleSummaryPointChange = (index: number, val: string) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
+    if (!updatedRaw.activist_investor_summary) updatedRaw.activist_investor_summary = {};
+    if (!Array.isArray(updatedRaw.activist_investor_summary.summary_points)) {
+      updatedRaw.activist_investor_summary.summary_points = [];
+    }
+    updatedRaw.activist_investor_summary.summary_points[index] = val;
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
+  };
+
+  const handle13fMetaChange = (field: string, val: any) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
+    if (!updatedRaw.latest_13f_snapshot) updatedRaw.latest_13f_snapshot = {};
+    updatedRaw.latest_13f_snapshot[field] = val;
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
+  };
 
   useEffect(() => {
     const fetchAllProfiles = async () => {
@@ -347,7 +379,9 @@ const ActivistIntelligenceDashboard = () => {
     if (!activeInvestorKey) return;
 
     const fetchSingleProfile = async () => {
+      // FIX: Ensure rawProfile state is populated even when utilizing cache
       if (profilesCache[activeInvestorKey]) {
+        setRawProfile(profilesCache[activeInvestorKey]);
         setProfile(normaliseProfile(profilesCache[activeInvestorKey]));
         return;
       }
@@ -359,6 +393,7 @@ const ActivistIntelligenceDashboard = () => {
         const profileData = response.data?.data || response.data;
 
         setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: profileData }));
+        setRawProfile(profileData);
 
         const normalised = normaliseProfile(profileData);
         setProfile(normalised);
@@ -371,7 +406,7 @@ const ActivistIntelligenceDashboard = () => {
     };
 
     fetchSingleProfile();
-  }, [activeInvestorKey]);
+  }, [activeInvestorKey, profilesCache]);
 
   const formatKeyToLabel = (keyStr: string) => {
     if (!keyStr) return "";
@@ -414,6 +449,71 @@ const ActivistIntelligenceDashboard = () => {
   const visiblePersonnel = profile.personnel.filter((p: any) => p.category === "visible_personnel");
   const nominees = profile.personnel.filter((p: any) => p.category === "nominee_or_outcome_director");
 
+// Helper to find which key the raw JSON uses for observations
+  const getObservationKey = (raw: any) => {
+    // 🛑 FIXED: Prioritize the keys in the exact same order the UI reads them!
+    if (raw.key_cross_campaign_observations) return "key_cross_campaign_observations";
+    if (raw.custom_observations) return "custom_observations";
+    if (raw.investor_profile_analysis) return "investor_profile_analysis";
+    return "key_cross_campaign_observations"; // Default fallback
+  };
+
+  const handleObservationChange = (index: number, val: string) => {
+  if (!rawProfile) return;
+  const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 deep copy, same as other handlers
+  const key = getObservationKey(updatedRaw);
+  if (!Array.isArray(updatedRaw[key])) updatedRaw[key] = [];
+  updatedRaw[key][index] = val;
+  setRawProfile(updatedRaw);
+  setProfile(normaliseProfile(updatedRaw));
+};
+
+  const addObservation = () => {
+  if (!rawProfile) return;
+  const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 deep copy
+  const key = getObservationKey(updatedRaw);
+  if (!Array.isArray(updatedRaw[key])) updatedRaw[key] = [];
+  updatedRaw[key].push("");
+  setRawProfile(updatedRaw);
+  setProfile(normaliseProfile(updatedRaw));
+};
+
+  const removeObservation = (index: number) => {
+  if (!rawProfile) return;
+  const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 deep copy
+  const key = getObservationKey(updatedRaw);
+  if (!Array.isArray(updatedRaw[key])) return;
+  updatedRaw[key].splice(index, 1);
+  setRawProfile(updatedRaw);
+  setProfile(normaliseProfile(updatedRaw));
+};
+
+  // The final save push to the upcoming FastAPI backend
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      await axios.put(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`, rawProfile);
+      setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: rawProfile }));
+      setIsEditMode(false);
+      // Optional: Add a nice toast notification here
+    } catch (err) {
+      console.error("Failed to save:", err);
+      alert("Failed to save profile changes.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSummaryMetaChange = (field: string, val: any) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
+    if (!updatedRaw.activist_investor_summary) updatedRaw.activist_investor_summary = {};
+    updatedRaw.activist_investor_summary[field] = val;
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
+  };
+
+
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
 
@@ -439,9 +539,13 @@ const ActivistIntelligenceDashboard = () => {
             gap: 16,
             borderRadius: "10px 10px 0 0" 
           }}>
-            <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0 }}>
-               {profile.legalName}
-            </h1>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0 }}>
+                 {profile.legalName}
+              </h1>
+              
+
+            </div>
             
             <InvestorTrigger
               label={formatKeyToLabel(activeInvestorKey)}
@@ -497,42 +601,44 @@ const ActivistIntelligenceDashboard = () => {
                 overflow: "hidden",
               }}>
                 {investorKeys
-                  .filter((k) => formatKeyToLabel(k).toLowerCase().includes(selectorSearch.toLowerCase()))
-                  .map((key) => {
-                    const isActive = key === activeInvestorKey;
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
-                        style={{
-                          padding: "11px 16px",
-                          fontSize: 13,
-                          textAlign: "left",
-                          background: isActive ? "#fdf2f2" : "#fff",
-                          color: isActive ? THEME_MAROON : "#374151",
-                          fontWeight: isActive ? 600 : 400,
-                          border: "none",
-                          borderRight: "1px solid #f3f4f6",
-                          borderBottom: "1px solid #f3f4f6",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 8,
-                          transition: "background 0.1s",
-                        }}
-                        onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
-                        onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}
-                      >
-                        {formatKeyToLabel(key)}
-                        {isActive && (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </button>
-                    );
-                  })}
+  .filter((k) => formatKeyToLabel(k).toLowerCase().includes(selectorSearch.toLowerCase()))
+  .map((key) => {
+    const isActive = key === activeInvestorKey;
+    return (
+      <button
+        key={key}
+        onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
+        style={{
+          padding: "11px 16px",
+          fontSize: 13,
+          textAlign: "left",
+          background: isActive ? "#fdf2f2" : "#fff",
+          color: isActive ? THEME_MAROON : "#374151",
+          fontWeight: isActive ? 600 : 400,
+          border: "none",
+          borderRight: "1px solid #f3f4f6",
+          borderBottom: "1px solid #f3f4f6",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start", // 👈 CHANGED: from "space-between" to "flex-start"
+          gap: 8,
+          transition: "background 0.1s",
+        }}
+        onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
+        onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}
+      >
+        {/* 👈 CHANGED: Checkmark SVG moved above the text */}
+        {isActive && (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+        
+        {formatKeyToLabel(key)}
+      </button>
+    );
+  })}
               </div>
             </div>
           )}
@@ -540,25 +646,100 @@ const ActivistIntelligenceDashboard = () => {
 
         {/* ── Profile Header Info ── */}
         <div style={{ padding: "20px 24px" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: THEME_MAROON, background: "#fdf2f2", border: `1px solid ${THEME_MAROON}40`, borderRadius: 999, padding: "2px 10px", fontWeight: 500, marginBottom: 12 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            Updated May 2026
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: THEME_MAROON, background: "#fdf2f2", border: `1px solid ${THEME_MAROON}40`, borderRadius: 999, padding: "2px 10px", fontWeight: 500 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Updated May 2026
+            </div>
+
+              {/* ── Edit Mode Controls ── */}
+            {showEditButton && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {isEditMode && (
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    style={{
+                      background: "#10b981", color: "white", border: "none",
+                      padding: "6px 14px", borderRadius: 6, fontSize: 12,
+                      fontWeight: 600, cursor: isSaving ? "wait" : "pointer",
+                      display: "flex", alignItems: "center", gap: 6,
+                      boxShadow: "0 1px 3px rgba(16,185,129,0.3)",
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsEditMode((v) => !v)}
+                  style={{
+                    padding: "6px 14px", fontSize: 12, fontWeight: 600,
+                    borderRadius: 6, cursor: "pointer",
+                    border: isEditMode ? `1px solid ${THEME_MAROON}` : "1px solid #e5e7eb",
+                    background: isEditMode ? "#fdf2f2" : "white",
+                    color: isEditMode ? THEME_MAROON : "#374151",
+                    display: "flex", alignItems: "center", gap: 6,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121  3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  {isEditMode ? "Editing…" : "Edit Mode"}
+                </button>
+              </div>
+            )}
           </div>
-          
+
           <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px" }}>
             {profile.hq}
           </p>
-          <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{profile.summary}</p>
-          
+
+          {/* Summary text — editable in Edit Mode */}
+          {isEditMode ? (
+            <textarea
+              value={profile.summary}
+              onChange={(e) => handleSummaryTextChange(e.target.value)}
+              style={{
+                width: "100%", padding: "10px 12px", fontSize: 14,
+                fontWeight: 500, color: "#111827", lineHeight: 1.6,
+                border: "1px solid #d1d5db", borderRadius: 6,
+                resize: "vertical", fontFamily: "inherit",
+                boxSizing: "border-box", minHeight: 80,
+                background: "#fafafa",
+              }}
+            />
+          ) : (
+            <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{profile.summary}</p>
+          )}
+
+          {/* Summary bullet points — editable in Edit Mode */}
           {profile.summaryPoints.length > 0 && (
             <ul style={{ marginTop: 16, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
               {profile.summaryPoints.map((pt: string, i: number) => (
                 <li key={i} style={{ display: "flex", alignItems: "flex-start", fontSize: 13, color: "#4b5563", lineHeight: 1.5 }}>
-                  <span style={{ color: THEME_MAROON, marginRight: 8, fontSize: 16, lineHeight: 1 }}>▸</span>
-                  {pt}
+                  <span style={{ color: THEME_MAROON, marginRight: 8, fontSize: 16, lineHeight: 1, marginTop: isEditMode ? 8 : 0, flexShrink: 0 }}>▸</span>
+                  {isEditMode ? (
+                    <textarea
+                      value={pt}
+                      onChange={(e) => handleSummaryPointChange(i, e.target.value)}
+                      style={{
+                        flex: 1, padding: "6px 10px", fontSize: 13,
+                        border: "1px solid #d1d5db", borderRadius: 6,
+                        resize: "vertical", fontFamily: "inherit",
+                        lineHeight: 1.5, minHeight: 48, background: "#fafafa",
+                      }}
+                    />
+                  ) : (
+                    <span>{pt}</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -603,29 +784,97 @@ const ActivistIntelligenceDashboard = () => {
               {/* ZMH Style Unified Metrics Row */}
               <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid #e5e7eb", paddingBottom: 24, marginBottom: 24 }}>
                 {[
-                  { label: "13F Portfolio Value", value: formatLargeUSD(profile.snapshot.portfolio_value) },
-                  { label: "Tracked Campaigns",   value: campaigns.length },
-                  { label: "Active / Open",        value: activeCampaigns },
-                  { label: "Personnel Tracked",    value: profile.personnel.length },
+                  { 
+                    label: "13F Portfolio Value", 
+                    value: formatLargeUSD(profile.snapshot.portfolio_value),
+                    raw: rawProfile?.latest_13f_snapshot?.reported_13f_portfolio_value_usd || "",
+                    onChange: (v: any) => handle13fMetaChange("reported_13f_portfolio_value_usd", Number(v))
+                  },
+                  { 
+                    label: "Tracked Campaigns",   
+                    value: rawProfile?.activist_investor_summary?.tracked_campaigns_override ?? campaigns.length,
+                    raw: rawProfile?.activist_investor_summary?.tracked_campaigns_override ?? campaigns.length,
+                    onChange: (v: any) => handleSummaryMetaChange("tracked_campaigns_override", Number(v))
+                  },
+                  { 
+                    label: "Active / Open",        
+                    value: rawProfile?.activist_investor_summary?.active_campaigns_override ?? activeCampaigns,
+                    raw: rawProfile?.activist_investor_summary?.active_campaigns_override ?? activeCampaigns,
+                    onChange: (v: any) => handleSummaryMetaChange("active_campaigns_override", Number(v))
+                  },
+                  { 
+                    label: "Personnel Tracked",    
+                    value: rawProfile?.activist_investor_summary?.personnel_tracked_override ?? profile.personnel.length,
+                    raw: rawProfile?.activist_investor_summary?.personnel_tracked_override ?? profile.personnel.length,
+                    onChange: (v: any) => handleSummaryMetaChange("personnel_tracked_override", Number(v))
+                  },
                 ].map((card, i, arr) => (
                   <div key={i} style={{ flex: "1 1 200px", borderRight: i !== arr.length - 1 ? "1px solid #e5e7eb" : "none", padding: "0 16px" }}>
                     <p style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{card.label}</p>
-                    <p style={{ fontSize: 28, fontWeight: 400, color: "#111827", margin: 0, fontFamily: "Georgia, serif" }}>{card.value}</p>
+                    
+                    {/* THE SWAP: Inputs vs Static Text */}
+                    {isEditMode ? (
+                      <input 
+                        type="number" 
+                        value={card.raw}
+                        onChange={(e) => card.onChange(e.target.value)}
+                        style={{
+                          width: "100%", padding: "6px 8px", fontSize: 18, fontWeight: 600,
+                          border: "1px solid #d1d5db", borderRadius: 6, outline: "none",
+                          background: "#fff", color: "#111827", fontFamily: "Georgia, serif"
+                        }}
+                      />
+                    ) : (
+                      <p style={{ fontSize: 28, fontWeight: 400, color: "#111827", margin: 0, fontFamily: "Georgia, serif" }}>{card.value}</p>
+                    )}
                   </div>
                 ))}
               </div>
 
-              {profile.observations.length > 0 && (
+              {(profile.observations.length > 0 || isEditMode) && (
                 <div style={{ marginBottom: 32 }}>
                   <SectionHeader title="Key Cross-Campaign Observations" />
                   <ul style={{ padding: 0, margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
                     {profile.observations.map((obs: string, i: number) => (
                       <li key={i} style={{ display: "flex", alignItems: "flex-start", paddingBottom: 14, borderBottom: i !== profile.observations.length - 1 ? "1px solid #f3f4f6" : "none" }}>
-                        <span style={{ color: THEME_MAROON, marginRight: 10, fontSize: 16, lineHeight: 1 }}>▸</span>
-                        <span style={{ fontSize: 13, color: "#4b5563", lineHeight: 1.55 }}>{obs}</span>
+                        <span style={{ color: THEME_MAROON, marginRight: 10, fontSize: 16, lineHeight: 1, marginTop: isEditMode ? 8 : 0 }}>▸</span>
+                        
+                        {/* THE SWAP: Edit Mode vs View Mode */}
+                        {isEditMode ? (
+                          <div style={{ display: "flex", flex: 1, gap: 12 }}>
+                            <textarea
+                              value={obs}
+                              onChange={(e) => handleObservationChange(i, e.target.value)}
+                              style={{ 
+                                flex: 1, padding: "8px 12px", fontSize: 13, borderRadius: 6, 
+                                border: "1px solid #d1d5db", minHeight: 60, resize: "vertical",
+                                fontFamily: "inherit"
+                              }}
+                            />
+                            <button 
+                              onClick={() => removeObservation(i)} 
+                              style={{ background: "#fee2e2", border: "none", color: "#dc2626", borderRadius: 6, padding: "8px 12px", cursor: "pointer", height: "fit-content", fontSize: 12, fontWeight: 600 }}
+                            >
+                              Trash
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 13, color: "#4b5563", lineHeight: 1.55 }}>{obs}</span>
+                        )}
                       </li>
                     ))}
                   </ul>
+
+                  {/* Add Button */}
+                  {isEditMode && (
+                    <button 
+                      onClick={addObservation} 
+                      style={{ marginTop: 16, padding: "8px 16px", background: "#f3f4f6", border: "1px dashed #d1d5db", borderRadius: 6, color: "#374151", cursor: "pointer", fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                      Add Observation
+                    </button>
+                  )}
                 </div>
               )}
 
