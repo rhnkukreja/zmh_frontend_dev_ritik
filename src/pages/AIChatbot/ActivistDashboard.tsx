@@ -601,42 +601,44 @@ const handleSummaryTextChange = (val: string) => {
                 overflow: "hidden",
               }}>
                 {investorKeys
-                  .filter((k) => formatKeyToLabel(k).toLowerCase().includes(selectorSearch.toLowerCase()))
-                  .map((key) => {
-                    const isActive = key === activeInvestorKey;
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
-                        style={{
-                          padding: "11px 16px",
-                          fontSize: 13,
-                          textAlign: "left",
-                          background: isActive ? "#fdf2f2" : "#fff",
-                          color: isActive ? THEME_MAROON : "#374151",
-                          fontWeight: isActive ? 600 : 400,
-                          border: "none",
-                          borderRight: "1px solid #f3f4f6",
-                          borderBottom: "1px solid #f3f4f6",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 8,
-                          transition: "background 0.1s",
-                        }}
-                        onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
-                        onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}
-                      >
-                        {formatKeyToLabel(key)}
-                        {isActive && (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
-                      </button>
-                    );
-                  })}
+  .filter((k) => formatKeyToLabel(k).toLowerCase().includes(selectorSearch.toLowerCase()))
+  .map((key) => {
+    const isActive = key === activeInvestorKey;
+    return (
+      <button
+        key={key}
+        onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
+        style={{
+          padding: "11px 16px",
+          fontSize: 13,
+          textAlign: "left",
+          background: isActive ? "#fdf2f2" : "#fff",
+          color: isActive ? THEME_MAROON : "#374151",
+          fontWeight: isActive ? 600 : 400,
+          border: "none",
+          borderRight: "1px solid #f3f4f6",
+          borderBottom: "1px solid #f3f4f6",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start", // 👈 CHANGED: from "space-between" to "flex-start"
+          gap: 8,
+          transition: "background 0.1s",
+        }}
+        onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
+        onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}
+      >
+        {/* 👈 CHANGED: Checkmark SVG moved above the text */}
+        {isActive && (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+        
+        {formatKeyToLabel(key)}
+      </button>
+    );
+  })}
               </div>
             </div>
           )}
