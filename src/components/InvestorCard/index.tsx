@@ -791,7 +791,7 @@ const isActivelyScraping =
 
                                                 if (isActivelyScraping) {
             return (
-              <Tippy content="Fetching SEC details..." options={{ theme: "light" }}>
+              <Tippy content="Searching" options={{ theme: "light" }}>
                 <div className="flex items-center justify-center w-6 h-6 text-primary">
                   <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
                 </div>
@@ -801,24 +801,22 @@ const isActivelyScraping =
 
                                                 if (isInS3 && hasContent) {
             return (
-                                                    <Tippy content="View" options={{ theme: "light" }}>
-                <div
-                  className="w-5 h-5"
-                  onClick={() => {
-                    if (!summaryLoading) {
-                      handleViewSummary(name);
-                    }
-                  }}
-                >
-                  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
-                    {summaryLoading && activeInstitutionName === name ? (
-                      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
-                    ) : (
-                      <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
-                    )}
-                  </div>
-                </div>
-              </Tippy>
+                                                   <div
+  className="w-5 h-5"
+  onClick={() => {
+    if (!summaryLoading) {
+      handleViewSummary(name);
+    }
+  }}
+>
+  <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer hover:text-primary/80">
+    {summaryLoading && activeInstitutionName === name ? (
+      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+    ) : (
+      <Lucide icon="Info" className="w-4 h-4 stroke-[1.5]" />
+    )}
+  </div>
+</div>
             );
           }
           return <div className="w-6 h-6" />;
