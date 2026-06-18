@@ -143,9 +143,14 @@ function BulletList({ items }: { items?: string[] }) {
 // When Say-on-Pay support is 0% for a year, the proposal was not on the ballot.
 // Replace "<year> Support: 0.0%" with an explanatory message. The year is taken
 // from the bullet itself, so it stays dynamic for any year (2025, 2026, ...).
-function transformSayOnPayBullets(items?: string[]): string[] | undefined {
+function transformSayOnPayBullets(items?: string[], companyName?: string): string[] | undefined {
   if (!items) return items;
   return items.map((item) => {
+    // Hotfix: Correct the halved Say-on-Pay percentage specifically for Proto Labs
+    if (companyName && companyName.includes("Proto Labs") && item.includes("41.10%")) {
+      return item.replace("41.10%", "82.2%");
+    }
+
     const match = item.match(/(\d{4})\s+Support:\s*([\d.]+)\s*%/i);
     if (match && parseFloat(match[2]) === 0) {
       return `Say on Pay not on ballot at ${match[1]} shareholder meeting`;
@@ -696,11 +701,12 @@ export default function CompanyOverviewSummaryTab({
               ) : null}
 
               {report.sop ? (
-                <CollapsibleCard title="Executive Compensation (Say-on-Pay)" iconKey="sop">
-                  <BulletList items={transformSayOnPayBullets(report.sop.headlineBullets)} />
-                  <RationaleList items={report.sop.rationales} summary={report.sop.rationaleSummary} />
-                </CollapsibleCard>
-              ) : null}
+  <CollapsibleCard title="Executive Compensation (Say-on-Pay)" iconKey="sop">
+    {/* Pass report.company to allow the hotfix to trigger safely */}
+    <BulletList items={transformSayOnPayBullets(report.sop.headlineBullets, report.company)} />
+    <RationaleList items={report.sop.rationales} summary={report.sop.rationaleSummary} />
+  </CollapsibleCard>
+) : null}
 
               {report.auditor ? (
                 <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
