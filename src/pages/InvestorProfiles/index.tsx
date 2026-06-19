@@ -562,136 +562,153 @@ function Main() {
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {loading ? (
-                      <>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-                          <Table.Tr key={i} className="intro-x">
-                            <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
-                              <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[80%]" />
-                            </Table.Td>
-                            <Table.Td className="py-4 px-4 bg-white shadow-md">
-                              <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[60%]" />
-                            </Table.Td>
-                            <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
-                            </Table.Td>
-                            <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
-                            </Table.Td>
-                            <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
-                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
-                            </Table.Td>
-                            <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
-                              <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </>
-                    ) : investersProfile?.length > 0 ? (
-                      investersProfile.map((profile: InvestersProfile, index: number) => (
-                        <Table.Tr
-                          key={`${profile.institution_id || "no-inst"}-${profile.investor_profile_id || "no-profile"}-${profile.institution || profile.institution_name || "unknown"}-${index}`}
-                          className="intro-x"
-                        >
-                          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
-                            <div className="flex items-center gap-2.5">
-                              {profile.investor_profile_id ? (
-                                <input
-                                  type="checkbox"
-                                  checked={selectedProfileIds.has(profile.investor_profile_id)}
-                                  onChange={() => toggleProfileSelection(profile.investor_profile_id!, profile.institution || profile.institution_name || '', profile.region)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-4 h-4 flex-none rounded border-slate-300 text-primary accent-primary cursor-pointer"
-                                />
-                              ) : (
-                                <div className="w-4 h-4 flex-none" />
-                              )}
-                              <span
-                                onClick={() => {
-                                  if (profile.investor_profile_id) {
-                                    gotoDetailPage(profile.investor_profile_id);
-                                  }
-                                }}
-                                className={`font-semibold text-[0.94rem] transition-colors ${profile.investor_profile_id
-                                    ? "cursor-pointer hover:text-primary"
-                                    : "cursor-default"
-                                  }`}
-                              >
-                                {profile.institution || profile.institution_name}
-                                {profile.region?.toUpperCase() === "EMEA" ? ` (${profile?.region})` : ""}
-                              </span>
-                            </div>
-                          </Table.Td>
-                          <Table.Td className="py-4 px-4 bg-white shadow-md">
-                            <span className="text-slate-600 text-sm font-medium">
-                              {profile.proxy_advisor_influence || '—'}
-                            </span>
-                          </Table.Td>
-                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                            <Lucide
-                              onClick={() => gotoDetailPage(profile.investor_profile_id)}
-                              icon="Briefcase"
-                              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.investor_profile_id
-                                  ? 'cursor-pointer hover:text-primary'
-                                  : 'opacity-30 cursor-not-allowed'
-                                }`}
-                            />
-                          </Table.Td>
-                          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
-                            <Lucide
-                              onClick={() => handleVotingGuidelinesClick(profile)}
-                              icon="Vote"
-                              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0
-                                  ? 'cursor-pointer hover:text-primary'
-                                  : 'opacity-30 cursor-not-allowed'
-                                }`}
-                            />
-                          </Table.Td>
-                          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
-                            <Lucide
-                              onClick={() => {
-                                if (profile.is_document) {
-                                  handleDocumentsClick(String(profile.id));
-                                }
-                              }}
-                              icon="FileText"
-                              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.is_document
-                                  ? 'cursor-pointer hover:text-primary'
-                                  : 'opacity-30 cursor-not-allowed'
-                                }`}
-                            />
-                          </Table.Td>
-                          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
-                            <button
-                              disabled={!profile.investor_profile_id}
-                                onClick={(e) => {
-                                e.stopPropagation();
-                                const id = profile.investor_profile_id;
-                                if (!id) return;
-                                toggleProfileSelection(id, profile.institution || profile.institution_name || '', profile.region);
-                              }}
-                              className={`p-1 ${profile.investor_profile_id ? 'cursor-pointer' : 'cursor-not-allowed opacity-30'}`}
-                              aria-label="Toggle download"
-                            >
-                              <Lucide icon="FileDown" className={`w-4 h-4 stroke-[1.3] ${profile.investor_profile_id && selectedProfileIds.has(profile.investor_profile_id) ? 'text-primary' : profile.investor_profile_id ? 'hover:text-primary' : ''}`} />
-                            </button>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))
-                    ) : (
-                      <Table.Tr>
-                        <Table.Td colSpan={5} className="py-12 text-center bg-white shadow-md rounded-md">
-                          <div className="flex flex-col items-center justify-center">
-                            <Lucide icon="FileSearch" className="w-12 h-12 text-gray-300 mb-2" />
-                            <div className="text-lg font-medium">No data found</div>
-                            <div className="text-sm text-gray-500 mt-1">
-                              Try adjusting your filters or search criteria
-                            </div>
-                          </div>
-                        </Table.Td>
-                      </Table.Tr>
-                    )}
-                  </Table.Tbody>
+  {loading ? (
+    <>
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+        <Table.Tr key={i} className="intro-x">
+          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
+            <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[80%]" />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md">
+            <div className="h-5 rounded-md bg-slate-200 animate-pulse w-[60%]" />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+            <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+            <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
+            <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
+            <div className="h-5 w-5 rounded-full bg-slate-200 animate-pulse mx-auto" />
+          </Table.Td>
+        </Table.Tr>
+      ))}
+    </>
+  ) : investersProfile?.length > 0 ? (
+    investersProfile.map((profile: InvestersProfile, index: number) => {
+      // 1. Identify the institution name
+      const instName = profile.institution || profile.institution_name;
+      
+      // 2. Check if it's one of the Vanguard aliases missing from the DB
+      const isVanguardAlias = 
+        instName === "Vanguard Capital Management" || 
+        instName === "Vanguard Portfolio Management";
+        
+      // 3. Override the ID with 27 if it's an alias, otherwise use the actual ID
+      const activeProfileId = isVanguardAlias ? 27 : profile.investor_profile_id;
+
+      return (
+        <Table.Tr
+          key={`${profile.institution_id || "no-inst"}-${activeProfileId || "no-profile"}-${instName || "unknown"}-${index}`}
+          className="intro-x"
+        >
+          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-l-md">
+            <div className="flex items-center gap-2.5">
+              {activeProfileId ? (
+                <input
+                  type="checkbox"
+                  checked={selectedProfileIds.has(activeProfileId)}
+                  onChange={() => toggleProfileSelection(activeProfileId, instName || '', profile.region)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-4 h-4 flex-none rounded border-slate-300 text-primary accent-primary cursor-pointer"
+                />
+              ) : (
+                <div className="w-4 h-4 flex-none" />
+              )}
+              <span
+                onClick={() => {
+                  if (activeProfileId) {
+                    gotoDetailPage(activeProfileId);
+                  }
+                }}
+                className={`font-semibold text-[0.94rem] transition-colors ${activeProfileId
+                    ? "cursor-pointer hover:text-primary"
+                    : "cursor-default"
+                  }`}
+              >
+                {instName}
+                {profile.region?.toUpperCase() === "EMEA" ? ` (${profile?.region})` : ""}
+              </span>
+            </div>
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md">
+            <span className="text-slate-600 text-sm font-medium">
+              {profile.proxy_advisor_influence || '—'}
+            </span>
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+            <Lucide
+              onClick={() => {
+                if (activeProfileId) gotoDetailPage(activeProfileId);
+              }}
+              icon="Briefcase"
+              className={`w-4 h-4 stroke-[1.3] mx-auto ${activeProfileId
+                  ? 'cursor-pointer hover:text-primary'
+                  : 'opacity-30 cursor-not-allowed'
+                }`}
+            />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md text-center">
+            <Lucide
+              onClick={() => handleVotingGuidelinesClick(profile)}
+              icon="Vote"
+              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.voting_guideline_docs && profile.voting_guideline_docs.length > 0
+                  ? 'cursor-pointer hover:text-primary'
+                  : 'opacity-30 cursor-not-allowed'
+                }`}
+            />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
+            <Lucide
+              onClick={() => {
+                if (profile.is_document) {
+                  handleDocumentsClick(String(profile.id));
+                }
+              }}
+              icon="FileText"
+              className={`w-4 h-4 stroke-[1.3] mx-auto ${profile.is_document
+                  ? 'cursor-pointer hover:text-primary'
+                  : 'opacity-30 cursor-not-allowed'
+                }`}
+            />
+          </Table.Td>
+          <Table.Td className="py-4 px-4 bg-white shadow-md rounded-r-md text-center">
+            <button
+              disabled={!activeProfileId}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!activeProfileId) return;
+                toggleProfileSelection(activeProfileId, instName || '', profile.region);
+              }}
+              className={`p-1 ${activeProfileId ? 'cursor-pointer' : 'cursor-not-allowed opacity-30'}`}
+              aria-label="Toggle download"
+            >
+              <Lucide 
+                icon="FileDown" 
+                className={`w-4 h-4 stroke-[1.3] ${activeProfileId && selectedProfileIds.has(activeProfileId) ? 'text-primary' : activeProfileId ? 'hover:text-primary' : ''}`} 
+              />
+            </button>
+          </Table.Td>
+        </Table.Tr>
+      );
+    })
+  ) : (
+    <Table.Tr>
+      <Table.Td colSpan={6} className="py-12 text-center bg-white shadow-md rounded-md">
+        <div className="flex flex-col items-center justify-center">
+          <Lucide icon="FileSearch" className="w-12 h-12 text-gray-300 mb-2" />
+          <div className="text-lg font-medium">No data found</div>
+          <div className="text-sm text-gray-500 mt-1">
+            Try adjusting your filters or search criteria
+          </div>
+        </div>
+      </Table.Td>
+    </Table.Tr>
+  )}
+</Table.Tbody>
                 </Table>
                 {/* <Tab.Group>
                   <Tab.List variant="link-tabs">

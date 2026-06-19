@@ -288,6 +288,7 @@ function ProxyContestAI() {
 
   // ── Refetch filters when switching tabs ──────────────────────────────────────
   const prevTab = useRef<ProxyContestTabKey>("activist_profile");
+  
   useEffect(() => {
     if (prevTab.current === activeTab) return;
     prevTab.current = activeTab;
@@ -300,7 +301,11 @@ function ProxyContestAI() {
   // When the loaded filter options no longer contain a selected company (e.g. it
   // doesn't exist for the current year/institution selection), drop that
   // company_id and re-call the data API without it so the flow doesn't get stuck
-  // sending a company that no longer exists in the filter options.
+  // sending a company that no longer exists in the filter options.`
+
+ 
+
+
   useEffect(() => {
     if (filtersLoading || !filtersData || !Array.isArray(filtersData.companies)) return;
     const validIds = new Set<number>(
@@ -553,32 +558,40 @@ function ProxyContestAI() {
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
   const [newInvestorName, setNewInvestorName] = useState<string>("");
-  const [selectedJsonFile, setSelectedJsonFile] = useState<File | null>(null);
+  const [selectedJsonFiles, setSelectedJsonFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [previewData, setPreviewData] = useState<any>(null);
 
-  const handleJsonUploadSubmit = async (e: React.FormEvent) => {
+ const handleJsonUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newInvestorName || !selectedJsonFile) {
-      toast.error("Please provide both an investor name and a profile JSON file.");
+    if (!newInvestorName || selectedJsonFiles.length === 0) {
+      toast.error("Please provide both an investor name and select at least one JSON file.");
       return;
     }
     setIsUploading(true);
     const formData = new FormData();
     formData.append("investor_name", newInvestorName);
-    formData.append("file", selectedJsonFile);
+    
+    selectedJsonFiles.forEach(file => {
+      formData.append("files", file);
+    });
 
     try {
-      await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/upload`, formData, {
+      // 🛑 1. Hit the PREVIEW endpoint instead of upload
+      const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/preview-multi`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
-      toast.success("Profile uploaded and indexed onto S3 bucket cluster.");
+      
+      // 🛑 2. Save the preview data to state to pass to the Dashboard
+      setPreviewData(response.data?.data);
+      
+      toast.info("Preview generated! Please review and click 'Approve & Publish' below.");
       setUploadModalOpen(false);
       setNewInvestorName("");
-      setSelectedJsonFile(null);
-      window.location.reload();
+      setSelectedJsonFiles([]); 
     } catch (err) {
       console.error(err);
-      toast.error("Failed to successfully upload profile schema.");
+      toast.error("Failed to generate profile preview.");
     } finally {
       setIsUploading(false);
     }
@@ -635,7 +648,7 @@ function ProxyContestAI() {
                 className="flex items-center gap-2 !border-[#8b1828] !text-[#8b1828] hover:!bg-[#8b1828] hover:!text-white hover:!opacity-100 h-[38px] transition-colors"
               >
                 <Lucide icon="UploadCloud" className="w-4 h-4" />
-                Upload Proxy Contest Profile
+                Upload Activist Profile
               </Button>
             )}
 
@@ -823,7 +836,11 @@ function ProxyContestAI() {
 
           {/* ── PASS THE MODE TOGGLE DOWN AS A LIFETIME PROP ── */}
 {activeTab === "activist_profile" && (
-  <ActivistIntelligenceDashboard isAdminMode={isAdminMode} />
+  <ActivistIntelligenceDashboard 
+    isAdminMode={isAdminMode} 
+    externalPreviewData={previewData}
+    onPreviewPublished={() => setPreviewData(null)}
+  />
 )}
         </div>
       </div>
@@ -832,33 +849,90 @@ function ProxyContestAI() {
       {uploadModalOpen && (
         <Dialog open={uploadModalOpen} onClose={() => setUploadModalOpen(false)}>
           <Dialog.Panel className="p-6">
-            <div className="flex items-center justify-between mb-5 border-b border-slate-200 pb-3">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
               <h2 className="text-lg font-bold text-[#8b1828]">Upload Investor Profile Payload</h2>
               <button onClick={() => setUploadModalOpen(false)} className="text-slate-400 hover:text-slate-800 transition-colors">
                 <Lucide icon="X" className="w-5 h-5" />
               </button>
             </div>
             
+            {/* ADDED INSTRUCTIONAL TEXT HERE */}
+            <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">
+              Upload distinct data files (13F, Campaigns, Investor Profile). The Engine will synthesize the data and index it onto the cluster.
+            </p>
+            
             <form onSubmit={handleJsonUploadSubmit} className="space-y-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">
                   Investor Name <span className="text-danger">*</span>
                 </label>
-                <input type="text" required value={newInvestorName} onChange={(e) => setNewInvestorName(e.target.value)} placeholder="e.g. Elliott Investment Management" className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none" />
+                <input 
+                  type="text" 
+                  required 
+                  value={newInvestorName} 
+                  onChange={(e) => setNewInvestorName(e.target.value)} 
+                  placeholder="e.g. Elliott Investment Management" 
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none" 
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">
-                  Select JSON File <span className="text-danger">*</span>
+                  Data Modules (.json fragments) <span className="text-danger">*</span>
                 </label>
-                <input type="file" required accept=".json" onChange={(e) => setSelectedJsonFile(e.target.files?.[0] || null)} className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none" />
+                <input 
+                  type="file" 
+                  multiple 
+                  accept=".json" 
+                  value={""} // Prevents overwrite bug if selecting the same file twice
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      const newFiles = Array.from(e.target.files);
+                      setSelectedJsonFiles((prevFiles) => [...prevFiles, ...newFiles]);
+                    }
+                  }} 
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md outline-none text-sm text-slate-600" 
+                />
               </div>
 
+              {/* Visual list of currently queued files */}
+              {selectedJsonFiles.length > 0 && (
+                <div className="mt-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="text-xs font-bold text-slate-700 mb-2">
+                    Selected Files ({selectedJsonFiles.length}):
+                  </p>
+                  <ul className="flex flex-col gap-2">
+                    {selectedJsonFiles.map((file, idx) => (
+                      <li key={idx} className="flex justify-between items-center text-xs text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-md shadow-sm">
+                        <span className="truncate pr-4">{file.name}</span>
+                        <button 
+                          type="button"
+                          onClick={() => setSelectedJsonFiles(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-[#8b1828] font-bold hover:underline shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 mt-8 border-t border-slate-100 pt-5">
-                <Button type="button" variant="outline-secondary" onClick={() => setUploadModalOpen(false)}>Cancel</Button>
-                <Button type="submit" variant="primary" disabled={isUploading} className="min-w-[150px] bg-[#8b1828]">
-                  {isUploading ? "Uploading..." : "Publish to Cluster"}
+                <Button 
+                  type="button" 
+                  variant="outline-secondary" 
+                  onClick={() => {
+                    setUploadModalOpen(false);
+                    setSelectedJsonFiles([]);
+                    setNewInvestorName("");
+                  }}
+                >
+                  Cancel
                 </Button>
+                <Button type="submit" variant="primary" disabled={isUploading} className="min-w-[150px] bg-[#8b1828]">
+  {isUploading ? "Processing..." : "Generate Preview"}
+</Button>
               </div>
             </form>
           </Dialog.Panel>
