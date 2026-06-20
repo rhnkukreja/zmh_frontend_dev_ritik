@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
 import { useAppSelector } from "@/stores/hooks";
@@ -52,10 +52,8 @@ const normaliseProfile = (raw: any) => {
   if (typeof text !== "string") return "";
 
   return text
-    .replace(/\[cite:[^\]]*\]/gi, "")
-    .replace(/\[[0-9,\-\s]+\]/g, "")
-    .replace(/\s{2,}/g, " ")
-    .replace(/\s+([.,;!?])/g, "$1");
+    .replace(/\]*\]/gi, "")
+    .replace(/\[[0-9,\-\s]+\]/g, "");
 };
   const rawSummary =
     typeof raw.investor_summary === "string"
@@ -126,9 +124,9 @@ const normaliseProfile = (raw: any) => {
     hq,
     summary,
     summaryPoints,
-    personnel, // 👈 RESTORED
-    snapshot,  // 👈 RESTORED
-    campaigns, // 👈 RESTORED
+    personnel,
+    snapshot,
+    campaigns,
     observations,
     sources,
   };
@@ -237,8 +235,6 @@ const Bone = ({ w = "100%", h = 14, radius = 6, mb = 0 }: { w?: string | number;
 const ActivistDashboardSkeleton = () => (
   <div style={{ padding: 24, width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
     <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 10, overflow: "hidden", boxShadow: "0 1px 3px #0000000a" }}>
-
-      {/* Header bar */}
       <div style={{ background: THEME_MAROON, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
         <Bone w={200} h={22} radius={4} />
         <Bone w={240} h={36} radius={6} />
@@ -281,7 +277,15 @@ const ActivistDashboardSkeleton = () => (
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-const ActivistIntelligenceDashboard = ({ isAdminMode = false }: { isAdminMode?: boolean }) => {
+const ActivistIntelligenceDashboard = ({ 
+  isAdminMode = false,
+  externalPreviewData = null,
+  onPreviewPublished = () => {}
+}: { 
+  isAdminMode?: boolean;
+  externalPreviewData?: any;
+  onPreviewPublished?: () => void;
+}) => {
   // Pull the logged-in session securely from the Redux store
   const { user } = useAppSelector((state: any) => state.authentiction);
   const isActualAdmin = user?.user_type === "Admin" || user?.user_type === "Analyst";
@@ -296,13 +300,14 @@ const ActivistIntelligenceDashboard = ({ isAdminMode = false }: { isAdminMode?: 
   const [activeTab, setActiveTab] = useState("summary");
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [newInvestorName, setNewInvestorName] = useState("");
-  const [selectedJsonFile, setSelectedJsonFile] = useState<File | null>(null);
+  const [selectedJsonFiles, setSelectedJsonFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
 
   const [rawProfile, setRawProfile] = useState<any>(null); 
   const [isEditMode, setIsEditMode] = useState(false);     
   const [isSaving, setIsSaving] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const [profile, setProfile]   = useState<any>(null);
   const [loading, setLoading]   = useState(true);
@@ -310,16 +315,144 @@ const ActivistIntelligenceDashboard = ({ isAdminMode = false }: { isAdminMode?: 
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
 
-const handleSummaryTextChange = (val: string) => {
-    if (!rawProfile) return;
-    const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 Deep copy fixes nested state bugs
-    if (typeof updatedRaw.investor_summary === "string") {
-      updatedRaw.investor_summary = val;
-    } else if (updatedRaw.activist_investor_summary) {
-      updatedRaw.activist_investor_summary.investment_focus = val;
-    } else {
-      updatedRaw.investor_summary = val;
+  const formatKeyToLabel = (keyStr: string) => {
+    if (!keyStr) return "";
+    return keyStr
+      .replace('-profile', '')
+      .split(/[-_]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
+  const fetchAllProfiles = useCallback(async (keyToSelect?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles`;
+      const response = await axios.get(url, { params: { t: Date.now() } });
+      
+      let discoveredKeys = response.data?.data || response.data; 
+      if (discoveredKeys && typeof discoveredKeys === 'object' && !Array.isArray(discoveredKeys)) {
+          discoveredKeys = Object.keys(discoveredKeys);
+      }
+
+      if (!Array.isArray(discoveredKeys) || discoveredKeys.length === 0) {
+        throw new Error("No profiles available in the designated S3 cluster prefix.");
+      }
+
+      setInvestorKeys(discoveredKeys);
+      if (keyToSelect && discoveredKeys.includes(keyToSelect)) {
+        setActiveInvestorKey(keyToSelect);
+      } else if (!activeInvestorKey) {
+        setActiveInvestorKey(discoveredKeys[0]); 
+      }
+    } catch (err: any) {
+      console.error("[ActivistDashboard] index assembly failure:", err);
+      setError(err.response?.data?.detail || err.message || "Failed to load dynamic profile index.");
+    } finally {
+      setLoading(false); 
     }
+  }, [activeInvestorKey]);
+
+  useEffect(() => {
+    if (externalPreviewData) {
+      setRawProfile(externalPreviewData);
+      setProfile(normaliseProfile(externalPreviewData));
+      setIsPreviewMode(true);
+      setIsEditMode(true);
+    }
+  }, [externalPreviewData]);
+
+  useEffect(() => {
+    fetchAllProfiles();
+  }, [fetchAllProfiles]);
+
+  useEffect(() => {
+    if (!activeInvestorKey) return;
+
+    const fetchSingleProfile = async () => {
+      setIsPreviewMode(false); 
+      setIsEditMode(false);
+
+      // FIX: Ensure rawProfile state is populated even when utilizing cache
+      if (profilesCache[activeInvestorKey]) {
+        setRawProfile(profilesCache[activeInvestorKey]);
+        setProfile(normaliseProfile(profilesCache[activeInvestorKey]));
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`;
+        const response = await axios.get(url, { params: { t: Date.now() } });
+        const profileData = response.data?.data || response.data;
+
+        setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: profileData }));
+        setRawProfile(profileData);
+        setProfile(normaliseProfile(profileData));
+      } catch (err) {
+        console.error("[Fetch Profile Error]:", err);
+        setError("Failed to fetch the selected investor profile data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSingleProfile();
+  }, [activeInvestorKey]);
+
+ const handleUpload = async () => {
+    if (!newInvestorName.trim()) {
+      alert("Please enter a clear Investor Name.");
+      return;
+    }
+    if (selectedJsonFiles.length === 0) {
+      alert("Please select at least one data file.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("investor_name", newInvestorName);
+      selectedJsonFiles.forEach(file => {
+        formData.append("files", file);
+      });
+
+      // 🛑 1. Call the PREVIEW endpoint instead of upload-multi
+      const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/preview-multi`;
+      const response = await axios.post(url, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // 🛑 2. Load the preview data directly into the UI state
+      const previewData = response.data?.data;
+      setRawProfile(previewData);
+      setProfile(normaliseProfile(previewData));
+      
+      // 🛑 3. Turn on Preview and Edit modes
+      setIsPreviewMode(true);
+      setIsEditMode(true);
+
+      setUploadModalOpen(false);
+      setNewInvestorName("");
+      setSelectedJsonFiles([]);
+      
+    } catch (err) {
+      console.error("Preview generation failed:", err);
+      alert("Failed to generate preview. Check your JSON files.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // State handlers for text mutation
+  const handleSummaryTextChange = (val: string) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
+    if (typeof updatedRaw.investor_summary === "string") updatedRaw.investor_summary = val;
+    else if (updatedRaw.activist_investor_summary) updatedRaw.activist_investor_summary.investment_focus = val;
+    else updatedRaw.investor_summary = val;
     setRawProfile(updatedRaw);
     setProfile(normaliseProfile(updatedRaw));
   };
@@ -328,9 +461,7 @@ const handleSummaryTextChange = (val: string) => {
     if (!rawProfile) return;
     const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
     if (!updatedRaw.activist_investor_summary) updatedRaw.activist_investor_summary = {};
-    if (!Array.isArray(updatedRaw.activist_investor_summary.summary_points)) {
-      updatedRaw.activist_investor_summary.summary_points = [];
-    }
+    if (!Array.isArray(updatedRaw.activist_investor_summary.summary_points)) updatedRaw.activist_investor_summary.summary_points = [];
     updatedRaw.activist_investor_summary.summary_points[index] = val;
     setRawProfile(updatedRaw);
     setProfile(normaliseProfile(updatedRaw));
@@ -345,79 +476,80 @@ const handleSummaryTextChange = (val: string) => {
     setProfile(normaliseProfile(updatedRaw));
   };
 
-  useEffect(() => {
-    const fetchAllProfiles = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles`;
-        const response = await axios.get(url);
-        
-        let discoveredKeys = response.data?.data || response.data; 
-        
-        if (discoveredKeys && typeof discoveredKeys === 'object' && !Array.isArray(discoveredKeys)) {
-            discoveredKeys = Object.keys(discoveredKeys);
-        }
-
-        if (!Array.isArray(discoveredKeys) || discoveredKeys.length === 0) {
-          throw new Error("No profiles available in the designated S3 cluster prefix.");
-        }
-
-        setInvestorKeys(discoveredKeys);
-        setActiveInvestorKey(discoveredKeys[0]); 
-
-      } catch (err: any) {
-        console.error("[ActivistDashboard] index assembly failure:", err);
-        setError(err.response?.data?.detail || err.message || "Failed to load dynamic profile index.");
-        setLoading(false); 
-      }
-    };
-    fetchAllProfiles();
-  }, []);
-
-  useEffect(() => {
-    if (!activeInvestorKey) return;
-
-    const fetchSingleProfile = async () => {
-      // FIX: Ensure rawProfile state is populated even when utilizing cache
-      if (profilesCache[activeInvestorKey]) {
-        setRawProfile(profilesCache[activeInvestorKey]);
-        setProfile(normaliseProfile(profilesCache[activeInvestorKey]));
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`;
-        const response = await axios.get(url);
-        const profileData = response.data?.data || response.data;
-
-        setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: profileData }));
-        setRawProfile(profileData);
-
-        const normalised = normaliseProfile(profileData);
-        setProfile(normalised);
-      } catch (err) {
-        console.error("[Fetch Profile Error]:", err);
-        setError("Failed to fetch the selected investor profile data.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSingleProfile();
-  }, [activeInvestorKey, profilesCache]);
-
-  const formatKeyToLabel = (keyStr: string) => {
-    if (!keyStr) return "";
-    return keyStr
-      .replace('-profile', '')
-      .split(/[-_]/)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+  const handleSummaryMetaChange = (field: string, val: any) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
+    if (!updatedRaw.activist_investor_summary) updatedRaw.activist_investor_summary = {};
+    updatedRaw.activist_investor_summary[field] = val;
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
   };
 
-  if (loading) {
+  const getObservationKey = (raw: any) => {
+    // 🛑 FIXED: Prioritize the keys in the exact same order the UI reads them!
+    if (raw.key_cross_campaign_observations) return "key_cross_campaign_observations";
+    if (raw.custom_observations) return "custom_observations";
+    if (raw.investor_profile_analysis) return "investor_profile_analysis";
+    return "key_cross_campaign_observations"; // Default fallback
+  };
+
+  const handleObservationChange = (index: number, val: string) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
+    const key = getObservationKey(updatedRaw);
+    if (!Array.isArray(updatedRaw[key])) updatedRaw[key] = [];
+    updatedRaw[key][index] = val;
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
+  };
+
+  const addObservation = () => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); 
+    const key = getObservationKey(updatedRaw);
+    if (!Array.isArray(updatedRaw[key])) updatedRaw[key] = [];
+    updatedRaw[key].push("");
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
+  };
+
+  const removeObservation = (index: number) => {
+    if (!rawProfile) return;
+    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
+    const key = getObservationKey(updatedRaw);
+    if (!Array.isArray(updatedRaw[key])) return;
+    updatedRaw[key].splice(index, 1);
+    setRawProfile(updatedRaw);
+    setProfile(normaliseProfile(updatedRaw));
+  };
+
+  // The final save push to the upcoming FastAPI backend
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      if (isPreviewMode) {
+        await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles`, rawProfile);
+        setIsPreviewMode(false);
+        
+        // 🛑 CLEAR PREVIEW FROM index.tsx
+        onPreviewPublished(); 
+        
+        const newSlug = rawProfile.metadata?.slug + "-profile";
+        await fetchAllProfiles(newSlug);
+        alert("Profile Approved and Published to S3!");
+      } else {
+        await axios.put(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`, rawProfile);
+        setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: rawProfile }));
+      }
+      setIsEditMode(false);
+    } catch (err) {
+      alert("Failed to save profile changes.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading && !profile) {
     return <ActivistDashboardSkeleton />;
   }
 
@@ -430,9 +562,7 @@ const handleSummaryTextChange = (val: string) => {
   }
 
   const campaigns = profile.campaigns || [];
-  const activeCampaigns = campaigns.filter(
-    (c: any) => c.normalized_status === "open" || c.normalized_status === "active"
-  ).length;
+  const activeCampaigns = campaigns.filter((c: any) => c.normalized_status === "open" || c.normalized_status === "active").length;
 
   const statusGroups: Record<string, number> = campaigns.reduce((acc: Record<string, number>, c: any) => {
     const key = c.normalized_status || "closed";
@@ -449,96 +579,15 @@ const handleSummaryTextChange = (val: string) => {
   const visiblePersonnel = profile.personnel.filter((p: any) => p.category === "visible_personnel");
   const nominees = profile.personnel.filter((p: any) => p.category === "nominee_or_outcome_director");
 
-// Helper to find which key the raw JSON uses for observations
-  const getObservationKey = (raw: any) => {
-    // 🛑 FIXED: Prioritize the keys in the exact same order the UI reads them!
-    if (raw.key_cross_campaign_observations) return "key_cross_campaign_observations";
-    if (raw.custom_observations) return "custom_observations";
-    if (raw.investor_profile_analysis) return "investor_profile_analysis";
-    return "key_cross_campaign_observations"; // Default fallback
-  };
-
-  const handleObservationChange = (index: number, val: string) => {
-  if (!rawProfile) return;
-  const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 deep copy, same as other handlers
-  const key = getObservationKey(updatedRaw);
-  if (!Array.isArray(updatedRaw[key])) updatedRaw[key] = [];
-  updatedRaw[key][index] = val;
-  setRawProfile(updatedRaw);
-  setProfile(normaliseProfile(updatedRaw));
-};
-
-  const addObservation = () => {
-  if (!rawProfile) return;
-  const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 deep copy
-  const key = getObservationKey(updatedRaw);
-  if (!Array.isArray(updatedRaw[key])) updatedRaw[key] = [];
-  updatedRaw[key].push("");
-  setRawProfile(updatedRaw);
-  setProfile(normaliseProfile(updatedRaw));
-};
-
-  const removeObservation = (index: number) => {
-  if (!rawProfile) return;
-  const updatedRaw = JSON.parse(JSON.stringify(rawProfile)); // 👈 deep copy
-  const key = getObservationKey(updatedRaw);
-  if (!Array.isArray(updatedRaw[key])) return;
-  updatedRaw[key].splice(index, 1);
-  setRawProfile(updatedRaw);
-  setProfile(normaliseProfile(updatedRaw));
-};
-
-  // The final save push to the upcoming FastAPI backend
-  const handleSaveProfile = async () => {
-    setIsSaving(true);
-    try {
-      await axios.put(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`, rawProfile);
-      setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: rawProfile }));
-      setIsEditMode(false);
-      // Optional: Add a nice toast notification here
-    } catch (err) {
-      console.error("Failed to save:", err);
-      alert("Failed to save profile changes.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleSummaryMetaChange = (field: string, val: any) => {
-    if (!rawProfile) return;
-    const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
-    if (!updatedRaw.activist_investor_summary) updatedRaw.activist_investor_summary = {};
-    updatedRaw.activist_investor_summary[field] = val;
-    setRawProfile(updatedRaw);
-    setProfile(normaliseProfile(updatedRaw));
-  };
-
-
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
 
       <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 1px 3px #0000000a", position: "relative" }}>
         
         {/* ── STICKY HEADER WRAPPER ── */}
-        <div style={{ 
-          position: "sticky", 
-          top: "200px", 
-          zIndex: 40, 
-          borderRadius: "10px 10px 0 0",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-        }}>
+        <div style={{ position: "sticky", top: "200px", zIndex: 40, borderRadius: "10px 10px 0 0", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
           
-          {/* ── Maroon ZMH Header ── */}
-          <div style={{ 
-            background: THEME_MAROON, 
-            padding: "16px 24px", 
-            display: "flex", 
-            justifyContent: "space-between", 
-            alignItems: "center", 
-            flexWrap: "wrap", 
-            gap: 16,
-            borderRadius: "10px 10px 0 0" 
-          }}>
+          <div style={{ background: THEME_MAROON, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, borderRadius: "10px 10px 0 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0 }}>
                  {profile.legalName}
@@ -547,32 +596,20 @@ const handleSummaryTextChange = (val: string) => {
 
             </div>
             
-            <InvestorTrigger
-              label={formatKeyToLabel(activeInvestorKey)}
-              open={selectorOpen}
-              onClick={() => { setSelectorOpen((v) => !v); setSelectorSearch(""); }}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <InvestorTrigger
+                label={formatKeyToLabel(activeInvestorKey)}
+                open={selectorOpen}
+                onClick={() => { setSelectorOpen((v) => !v); setSelectorSearch(""); }}
+              />
+            </div>
           </div>
 
-          {/* ── Inline investor picker (Rendered Absolute to the sticky header) ── */}
+          {/* ── Inline investor picker ── */}
           {selectorOpen && (
-            <div style={{ 
-              position: "absolute", 
-              top: "100%", // Renders exactly below the maroon header
-              left: 0, right: 0, 
-              borderBottom: "1px solid #e5e7eb", 
-              background: "#f9fafb", 
-              padding: "16px 24px",
-              borderBottomLeftRadius: 10,
-              borderBottomRightRadius: 10,
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)"
-            }}>
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, borderBottom: "1px solid #e5e7eb", background: "#f9fafb", padding: "16px 24px", borderBottomLeftRadius: 10, borderBottomRightRadius: 10, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}>
               <div style={{ position: "relative", marginBottom: 14 }}>
-                <svg
-                  width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
                   <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <input
@@ -580,65 +617,31 @@ const handleSummaryTextChange = (val: string) => {
                   value={selectorSearch}
                   onChange={(e) => setSelectorSearch(e.target.value)}
                   placeholder="Search investors..."
-                  style={{
-                    width: "100%", padding: "9px 12px 9px 36px", fontSize: 13,
-                    border: "1px solid #e5e7eb", borderRadius: 8, outline: "none",
-                    boxSizing: "border-box", color: "#111827", background: "#fff",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-                  }}
+                  style={{ width: "100%", padding: "9px 12px 9px 36px", fontSize: 13, border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", boxSizing: "border-box", color: "#111827", background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
                 />
               </div>
 
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                gap: 0,
-                maxHeight: 300,
-                overflowY: "auto",
-                border: "1px solid #e5e7eb",
-                borderRadius: 10,
-                background: "#fff",
-                overflow: "hidden",
-              }}>
-                {investorKeys
-  .filter((k) => formatKeyToLabel(k).toLowerCase().includes(selectorSearch.toLowerCase()))
-  .map((key) => {
-    const isActive = key === activeInvestorKey;
-    return (
-      <button
-        key={key}
-        onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
-        style={{
-          padding: "11px 16px",
-          fontSize: 13,
-          textAlign: "left",
-          background: isActive ? "#fdf2f2" : "#fff",
-          color: isActive ? THEME_MAROON : "#374151",
-          fontWeight: isActive ? 600 : 400,
-          border: "none",
-          borderRight: "1px solid #f3f4f6",
-          borderBottom: "1px solid #f3f4f6",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-start", // 👈 CHANGED: from "space-between" to "flex-start"
-          gap: 8,
-          transition: "background 0.1s",
-        }}
-        onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
-        onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}
-      >
-        {/* 👈 CHANGED: Checkmark SVG moved above the text */}
-        {isActive && (
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        )}
-        
-        {formatKeyToLabel(key)}
-      </button>
-    );
-  })}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 0, maxHeight: 300, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", overflow: "hidden" }}>
+                {investorKeys.filter((k) => formatKeyToLabel(k).toLowerCase().includes(selectorSearch.toLowerCase())).map((key) => {
+                  const isActive = key === activeInvestorKey;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
+                      style={{
+                        padding: "11px 16px", fontSize: 13, textAlign: "left",
+                        background: isActive ? "#fdf2f2" : "#fff", color: isActive ? THEME_MAROON : "#374151",
+                        fontWeight: isActive ? 600 : 400, border: "none", borderRight: "1px solid #f3f4f6", borderBottom: "1px solid #f3f4f6",
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 8, transition: "background 0.1s",
+                      }}
+                      onMouseEnter={(e) => { if (!isActive) (e.currentTarget.style.background = "#f9fafb"); }}
+                      onMouseLeave={(e) => { if (!isActive) (e.currentTarget.style.background = "#fff"); }}
+                    >
+                      {isActive && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12" /></svg>}
+                      {formatKeyToLabel(key)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -649,33 +652,50 @@ const handleSummaryTextChange = (val: string) => {
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: THEME_MAROON, background: "#fdf2f2", border: `1px solid ${THEME_MAROON}40`, borderRadius: 999, padding: "2px 10px", fontWeight: 500 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
+                <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
               </svg>
-              Updated May 2026
+              Updated Framework
             </div>
 
               {/* ── Edit Mode Controls ── */}
-            {showEditButton && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {isEditMode && (
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={isSaving}
-                    style={{
-                      background: "#10b981", color: "white", border: "none",
-                      padding: "6px 14px", borderRadius: 6, fontSize: 12,
-                      fontWeight: 600, cursor: isSaving ? "wait" : "pointer",
-                      display: "flex", alignItems: "center", gap: 6,
-                      boxShadow: "0 1px 3px rgba(16,185,129,0.3)",
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    {isSaving ? "Saving..." : "Save Changes"}
-                  </button>
-                )}
+{showEditButton && (
+  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    
+    {/* ── ADD THIS NEW BUTTON HERE ── */}
+    {/* <button
+      onClick={() => setUploadModalOpen(true)}
+      style={{
+        padding: "6px 14px", fontSize: 12, fontWeight: 600,
+        borderRadius: 6, cursor: "pointer",
+        border: "1px solid #e5e7eb",
+        background: "white", color: "#374151",
+        display: "flex", alignItems: "center", gap: 6,
+        transition: "all 0.15s",
+      }}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Add Profile
+    </button> */}
+    {/* ── END OF NEW BUTTON ── */}
+
+    {isEditMode && (
+  <button
+    onClick={handleSaveProfile}
+    disabled={isSaving}
+    style={{
+      background: "#10b981", color: "white", border: "none", padding: "6px 14px", borderRadius: 6, fontSize: 12,
+      fontWeight: 600, cursor: isSaving ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 1px 3px rgba(16,185,129,0.3)",
+    }}
+  >
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+    {/* 🛑 DYNAMIC TEXT CHANGE HERE */}
+    {isSaving ? "Processing..." : (isPreviewMode ? "Approve & Publish to S3" : "Save Changes")}
+  </button>
+)}
                 <button
                   onClick={() => setIsEditMode((v) => !v)}
                   style={{
@@ -698,9 +718,7 @@ const handleSummaryTextChange = (val: string) => {
             )}
           </div>
 
-          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px" }}>
-            {profile.hq}
-          </p>
+          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px" }}>{profile.hq}</p>
 
           {/* Summary text — editable in Edit Mode */}
           {isEditMode ? (
@@ -708,12 +726,8 @@ const handleSummaryTextChange = (val: string) => {
               value={profile.summary}
               onChange={(e) => handleSummaryTextChange(e.target.value)}
               style={{
-                width: "100%", padding: "10px 12px", fontSize: 14,
-                fontWeight: 500, color: "#111827", lineHeight: 1.6,
-                border: "1px solid #d1d5db", borderRadius: 6,
-                resize: "vertical", fontFamily: "inherit",
-                boxSizing: "border-box", minHeight: 80,
-                background: "#fafafa",
+                width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 500, color: "#111827", lineHeight: 1.6,
+                border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", minHeight: 80, background: "#fafafa",
               }}
             />
           ) : (
@@ -727,16 +741,7 @@ const handleSummaryTextChange = (val: string) => {
                 <li key={i} style={{ display: "flex", alignItems: "flex-start", fontSize: 13, color: "#4b5563", lineHeight: 1.5 }}>
                   <span style={{ color: THEME_MAROON, marginRight: 8, fontSize: 16, lineHeight: 1, marginTop: isEditMode ? 8 : 0, flexShrink: 0 }}>▸</span>
                   {isEditMode ? (
-                    <textarea
-                      value={pt}
-                      onChange={(e) => handleSummaryPointChange(i, e.target.value)}
-                      style={{
-                        flex: 1, padding: "6px 10px", fontSize: 13,
-                        border: "1px solid #d1d5db", borderRadius: 6,
-                        resize: "vertical", fontFamily: "inherit",
-                        lineHeight: 1.5, minHeight: 48, background: "#fafafa",
-                      }}
-                    />
+                    <textarea value={pt} onChange={(e) => handleSummaryPointChange(i, e.target.value)} style={{ flex: 1, padding: "6px 10px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, minHeight: 48, background: "#fafafa" }} />
                   ) : (
                     <span>{pt}</span>
                   )}
@@ -753,22 +758,15 @@ const handleSummaryTextChange = (val: string) => {
             { id: "campaigns", label: "Campaigns" },
             { id: "holdings",  label: "13F Holdings" },
             { id: "personnel", label: "Personnel" },
-            { id: "sources",   label: "Sources" }, // <── ADDED SOURCES TAB BACK
+            { id: "sources",   label: "Sources" }, 
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: "16px 4px",
-                border: "none",
-                cursor: "pointer",
-                background: "transparent",
-                color: activeTab === tab.id ? THEME_MAROON : "#6b7280",
-                fontWeight: activeTab === tab.id ? 600 : 500,
-                borderBottom: activeTab === tab.id ? `2px solid ${THEME_MAROON}` : "2px solid transparent",
-                transition: "all 0.2s ease",
-                marginBottom: "-1px",
-                fontSize: 13
+                padding: "16px 4px", border: "none", cursor: "pointer", background: "transparent",
+                color: activeTab === tab.id ? THEME_MAROON : "#6b7280", fontWeight: activeTab === tab.id ? 600 : 500,
+                borderBottom: activeTab === tab.id ? `2px solid ${THEME_MAROON}` : "2px solid transparent", transition: "all 0.2s ease", marginBottom: "-1px", fontSize: 13
               }}
             >
               {tab.label}
@@ -784,46 +782,15 @@ const handleSummaryTextChange = (val: string) => {
               {/* ZMH Style Unified Metrics Row */}
               <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid #e5e7eb", paddingBottom: 24, marginBottom: 24 }}>
                 {[
-                  { 
-                    label: "13F Portfolio Value", 
-                    value: formatLargeUSD(profile.snapshot.portfolio_value),
-                    raw: rawProfile?.latest_13f_snapshot?.reported_13f_portfolio_value_usd || "",
-                    onChange: (v: any) => handle13fMetaChange("reported_13f_portfolio_value_usd", Number(v))
-                  },
-                  { 
-                    label: "Tracked Campaigns",   
-                    value: rawProfile?.activist_investor_summary?.tracked_campaigns_override ?? campaigns.length,
-                    raw: rawProfile?.activist_investor_summary?.tracked_campaigns_override ?? campaigns.length,
-                    onChange: (v: any) => handleSummaryMetaChange("tracked_campaigns_override", Number(v))
-                  },
-                  { 
-                    label: "Active / Open",        
-                    value: rawProfile?.activist_investor_summary?.active_campaigns_override ?? activeCampaigns,
-                    raw: rawProfile?.activist_investor_summary?.active_campaigns_override ?? activeCampaigns,
-                    onChange: (v: any) => handleSummaryMetaChange("active_campaigns_override", Number(v))
-                  },
-                  { 
-                    label: "Personnel Tracked",    
-                    value: rawProfile?.activist_investor_summary?.personnel_tracked_override ?? profile.personnel.length,
-                    raw: rawProfile?.activist_investor_summary?.personnel_tracked_override ?? profile.personnel.length,
-                    onChange: (v: any) => handleSummaryMetaChange("personnel_tracked_override", Number(v))
-                  },
+                  { label: "13F Portfolio Value", value: formatLargeUSD(profile.snapshot.portfolio_value), raw: rawProfile?.latest_13f_snapshot?.reported_13f_portfolio_value_usd ?? "", onChange: (v: any) => handle13fMetaChange("reported_13f_portfolio_value_usd", v === "" ? "" : Number(v)) },
+                  { label: "Tracked Campaigns", value: rawProfile?.activist_investor_summary?.tracked_campaigns_override ?? campaigns.length, raw: rawProfile?.activist_investor_summary?.tracked_campaigns_override ?? campaigns.length, onChange: (v: any) => handleSummaryMetaChange("tracked_campaigns_override", v === "" ? "" : Number(v)) },
+                  { label: "Active / Open", value: rawProfile?.activist_investor_summary?.active_campaigns_override ?? activeCampaigns, raw: rawProfile?.activist_investor_summary?.active_campaigns_override ?? activeCampaigns, onChange: (v: any) => handleSummaryMetaChange("active_campaigns_override", v === "" ? "" : Number(v)) },
+                  { label: "Personnel Tracked", value: rawProfile?.activist_investor_summary?.personnel_tracked_override ?? profile.personnel.length, raw: rawProfile?.activist_investor_summary?.personnel_tracked_override ?? profile.personnel.length, onChange: (v: any) => handleSummaryMetaChange("personnel_tracked_override", v === "" ? "" : Number(v)) },
                 ].map((card, i, arr) => (
                   <div key={i} style={{ flex: "1 1 200px", borderRight: i !== arr.length - 1 ? "1px solid #e5e7eb" : "none", padding: "0 16px" }}>
                     <p style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{card.label}</p>
-                    
-                    {/* THE SWAP: Inputs vs Static Text */}
                     {isEditMode ? (
-                      <input 
-                        type="number" 
-                        value={card.raw}
-                        onChange={(e) => card.onChange(e.target.value)}
-                        style={{
-                          width: "100%", padding: "6px 8px", fontSize: 18, fontWeight: 600,
-                          border: "1px solid #d1d5db", borderRadius: 6, outline: "none",
-                          background: "#fff", color: "#111827", fontFamily: "Georgia, serif"
-                        }}
-                      />
+                      <input type="number" value={card.raw} onChange={(e) => card.onChange(e.target.value)} style={{ width: "100%", padding: "6px 8px", fontSize: 18, fontWeight: 600, border: "1px solid #d1d5db", borderRadius: 6, outline: "none", background: "#fff", color: "#111827", fontFamily: "Georgia, serif" }} />
                     ) : (
                       <p style={{ fontSize: 28, fontWeight: 400, color: "#111827", margin: 0, fontFamily: "Georgia, serif" }}>{card.value}</p>
                     )}
@@ -842,21 +809,8 @@ const handleSummaryTextChange = (val: string) => {
                         {/* THE SWAP: Edit Mode vs View Mode */}
                         {isEditMode ? (
                           <div style={{ display: "flex", flex: 1, gap: 12 }}>
-                            <textarea
-                              value={obs}
-                              onChange={(e) => handleObservationChange(i, e.target.value)}
-                              style={{ 
-                                flex: 1, padding: "8px 12px", fontSize: 13, borderRadius: 6, 
-                                border: "1px solid #d1d5db", minHeight: 60, resize: "vertical",
-                                fontFamily: "inherit"
-                              }}
-                            />
-                            <button 
-                              onClick={() => removeObservation(i)} 
-                              style={{ background: "#fee2e2", border: "none", color: "#dc2626", borderRadius: 6, padding: "8px 12px", cursor: "pointer", height: "fit-content", fontSize: 12, fontWeight: 600 }}
-                            >
-                              Trash
-                            </button>
+                            <textarea value={obs} onChange={(e) => handleObservationChange(i, e.target.value)} style={{ flex: 1, padding: "8px 12px", fontSize: 13, borderRadius: 6, border: "1px solid #d1d5db", minHeight: 60, resize: "vertical", fontFamily: "inherit" }} />
+                            <button onClick={() => removeObservation(i)} style={{ background: "#fee2e2", border: "none", color: "#dc2626", borderRadius: 6, padding: "8px 12px", cursor: "pointer", height: "fit-content", fontSize: 12, fontWeight: 600 }}>Trash</button>
                           </div>
                         ) : (
                           <span style={{ fontSize: 13, color: "#4b5563", lineHeight: 1.55 }}>{obs}</span>
@@ -867,10 +821,7 @@ const handleSummaryTextChange = (val: string) => {
 
                   {/* Add Button */}
                   {isEditMode && (
-                    <button 
-                      onClick={addObservation} 
-                      style={{ marginTop: 16, padding: "8px 16px", background: "#f3f4f6", border: "1px dashed #d1d5db", borderRadius: 6, color: "#374151", cursor: "pointer", fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}
-                    >
+                    <button onClick={addObservation} style={{ marginTop: 16, padding: "8px 16px", background: "#f3f4f6", border: "1px dashed #d1d5db", borderRadius: 6, color: "#374151", cursor: "pointer", fontSize: 13, fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                       Add Observation
                     </button>
@@ -889,9 +840,7 @@ const handleSummaryTextChange = (val: string) => {
                       </div>
                       <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 10px", fontWeight: 500 }}>Started: {c.start_year}</p>
                       <div style={{ display: "flex", flexWrap: "wrap" }}>
-                        {(c.main_issues || []).slice(0, 3).map((issue: string, j: number) => (
-                          <Tag key={j} text={issue} />
-                        ))}
+                        {(c.main_issues || []).slice(0, 3).map((issue: string, j: number) => <Tag key={j} text={issue} />)}
                       </div>
                     </div>
                   ))}
@@ -904,11 +853,7 @@ const handleSummaryTextChange = (val: string) => {
             <>
               <SectionHeader title="Campaigns Overview" />
               <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
-
-                {/* ── Left panel: analytics ── */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: "0 0 260px", minWidth: 240 }}>
-
-                  {/* Status breakdown */}
                   <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 18px" }}>
                     <p style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Status Breakdown</p>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -935,22 +880,15 @@ const handleSummaryTextChange = (val: string) => {
                       <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{campaigns.length}</span>
                     </div>
                   </div>
-                </div>{/* end left panel */}
+                </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ overflowX: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-                      <colgroup>
-                        <col style={{ width: "20%" }} />
-                        <col style={{ width: "10%" }} />
-                        <col style={{ width: "15%" }} />
-                        <col style={{ width: "55%" }} />
-                      </colgroup>
+                      <colgroup><col style={{ width: "20%" }} /><col style={{ width: "10%" }} /><col style={{ width: "15%" }} /><col style={{ width: "55%" }} /></colgroup>
                       <thead>
                         <tr style={{ background: "#fafafa", borderBottom: "1px solid #e5e7eb" }}>
-                          {["Target", "Year", "Status", "Issues"].map((h) => (
-                            <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: "left", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
-                          ))}
+                          {["Target", "Year", "Status", "Issues"].map((h) => <th key={h} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: "left", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>)}
                         </tr>
                       </thead>
                       <tbody>
@@ -960,16 +898,8 @@ const handleSummaryTextChange = (val: string) => {
                             <td style={{ padding: "14px 16px", fontSize: 13, color: "#6b7280" }}>{c.start_year}</td>
                             <td style={{ padding: "14px 16px" }}><StatusBadge status={c.normalized_status} /></td>
                             <td style={{ padding: "14px 16px" }}>
-                              {c.main_issues.length > 0 && (
-                                <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.campaign_form.length > 0 ? 6 : 0 }}>
-                                  {c.main_issues.map((issue: string, j: number) => <Tag key={j} text={issue} />)}
-                                </div>
-                              )}
-                              {c.campaign_form.length > 0 && (
-                                <div style={{ display: "flex", flexWrap: "wrap" }}>
-                                  {c.campaign_form.map((form: string, j: number) => <Tag key={j} text={form} color="#fdf2f2" textColor={THEME_MAROON} />)}
-                                </div>
-                              )}
+                              {c.main_issues.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.campaign_form.length > 0 ? 6 : 0 }}>{c.main_issues.map((issue: string, j: number) => <Tag key={j} text={issue} />)}</div>}
+                              {c.campaign_form.length > 0 && <div style={{ display: "flex", flexWrap: "wrap" }}>{c.campaign_form.map((form: string, j: number) => <Tag key={j} text={form} color="#fdf2f2" textColor={THEME_MAROON} />)}</div>}
                               {c.nominees.length > 0 && <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {c.nominees.join(", ")}</p>}
                             </td>
                           </tr>
@@ -1000,37 +930,21 @@ const handleSummaryTextChange = (val: string) => {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ background: "#fafafa", borderBottom: "1px solid #e5e7eb" }}>
-                      {[
-                        { label: "Issuer",  align: "left"  },
-                        { label: "Ticker",  align: "left"  },
-                        { label: "Shares",  align: "right" },
-                        { label: "Value",   align: "right" },
-                        { label: "Type",    align: "left"  },
-                      ].map((h) => (
-                        <th key={h.label} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: h.align as any, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h.label}</th>
-                      ))}
+                      {[{ label: "Issuer", align: "left" }, { label: "Ticker", align: "left" }, { label: "Shares", align: "right" }, { label: "Value", align: "right" }, { label: "Type", align: "left" }].map((h) => <th key={h.label} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: h.align as any, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h.label}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {profile.snapshot.holdings.map((h: any, i: number) => {
                       const isOption = h.security_type?.toLowerCase().includes("option") || h.security_type?.toLowerCase().includes("put");
                       const sharesRaw = h.shares_or_principal;
-                      // Ensure "shares" text is removed completely and numbers formatted cleanly
-                      const sharesDisplay = typeof sharesRaw === "number"
-                        ? sharesRaw.toLocaleString()
-                        : sharesRaw ? String(sharesRaw).replace(/\s*shares/gi, '') : "N/A";
-                        
+                      const sharesDisplay = typeof sharesRaw === "number" ? sharesRaw.toLocaleString() : sharesRaw ? String(sharesRaw).replace(/\s*shares/gi, '') : "N/A";
                       return (
                         <tr key={i} style={{ borderBottom: i !== profile.snapshot.holdings.length - 1 ? "1px solid #f3f4f6" : "none" }}>
                           <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: "#111827" }}>{h.issuer}</td>
                           <td style={{ padding: "12px 16px", fontSize: 12, color: THEME_MAROON, fontWeight: 500 }}>{h.ticker_or_symbol}</td>
                           <td style={{ padding: "12px 16px", fontSize: 12, color: "#6b7280", textAlign: "right" }}>{sharesDisplay}</td>
                           <td style={{ padding: "12px 16px", fontSize: 13, color: "#111827", fontWeight: 500, textAlign: "right" }}>{formatUSD(h.value_usd_thousands)}</td>
-                          <td style={{ padding: "12px 16px" }}>
-                            <span style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 999, background: isOption ? "#fef3c7" : "#f3f4f6", color: isOption ? "#d97706" : "#4b5563" }}>
-                              {h.security_type}
-                            </span>
-                          </td>
+                          <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 999, background: isOption ? "#fef3c7" : "#f3f4f6", color: isOption ? "#d97706" : "#4b5563" }}>{h.security_type}</span></td>
                         </tr>
                       );
                     })}
@@ -1045,17 +959,13 @@ const handleSummaryTextChange = (val: string) => {
               {visiblePersonnel.length > 0 && (
                 <div>
                   <SectionHeader title="Management & Key Personnel" />
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-                    {visiblePersonnel.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#fdf2f2" textColor={THEME_MAROON} />)}
-                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>{visiblePersonnel.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#fdf2f2" textColor={THEME_MAROON} />)}</div>
                 </div>
               )}
               {nominees.length > 0 && (
                 <div>
                   <SectionHeader title="Nominees & Settlement Directors" />
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-                    {nominees.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#f0fdf4" textColor="#166534" />)}
-                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>{nominees.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#f0fdf4" textColor="#166534" />)}</div>
                 </div>
               )}
             </div>
@@ -1078,20 +988,7 @@ const handleSummaryTextChange = (val: string) => {
                         <span style={{ color: THEME_MAROON, marginRight: 10, fontSize: 16, lineHeight: 1 }}>▸</span>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: 13, color: "#4b5563", margin: 0, lineHeight: 1.55 }}>
-                            {url ? (
-                              <a 
-                                href={url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                style={{ color: "#2e50cdcf", textDecoration: "none", fontWeight: 500 }}
-                                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-                                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
-                              >
-                                {title}
-                              </a>
-                            ) : (
-                              <span>{title}</span>
-                            )}
+                            {url ? <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: "#2e50cdcf", textDecoration: "none", fontWeight: 500 }} onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")} onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}>{title}</a> : <span>{title}</span>}
                           </p>
                           {date && <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>{date}</p>}
                         </div>
@@ -1099,15 +996,63 @@ const handleSummaryTextChange = (val: string) => {
                     );
                   })}
                 </ul>
-              ) : (
-                <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No source documents indexed for this profile.</p>
-              )}
+              ) : <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No source documents indexed for this profile.</p>}
             </div>
           )}
           {/* ── END SOURCES TAB CONTENT ── */}
 
         </div>
       </div>
+
+      {/* ── NEW MULTI-FILE UPLOAD MODAL ── */}
+      {uploadModalOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+            <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Compile New Profile</h2>
+            <p style={{ margin: "0 0 24px", color: "#6b7280", fontSize: 13 }}>Upload distinct data modules (13F, Campaigns, Overviews). The backend engine will synthesize them into a standard matrix.</p>
+            
+            <label style={{ display: "block", marginBottom: 16, fontSize: 13, fontWeight: 600, color: "#374151" }}>
+              Investor Entity Name
+              <input 
+                value={newInvestorName}
+                onChange={(e) => setNewInvestorName(e.target.value)}
+                placeholder="e.g. Elliott Investment Management"
+                style={{ width: "100%", marginTop: 8, padding: "10px 14px", border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box", fontSize: 14 }}
+              />
+            </label>
+
+            <label style={{ display: "block", marginBottom: 28, fontSize: 13, fontWeight: 600, color: "#374151" }}>
+              Data Modules (.json fragments)
+              <input 
+                type="file"
+                multiple
+                accept=".json"
+                onChange={(e) => {
+                  if (e.target.files) setSelectedJsonFiles(Array.from(e.target.files));
+                }}
+                style={{ width: "100%", marginTop: 8, fontSize: 13, color: "#4b5563" }}
+              />
+            </label>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button 
+                onClick={() => { setUploadModalOpen(false); setSelectedJsonFiles([]); setNewInvestorName(""); }} 
+                style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, color: "#374151" }}
+              >
+                Cancel
+              </button>
+              <button 
+    onClick={handleUpload} 
+    disabled={isUploading} 
+    style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: isUploading ? "wait" : "pointer", fontWeight: 600, opacity: isUploading ? 0.7 : 1 }}
+  >
+    {isUploading ? "Processing..." : "Generate Preview"}
+  </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
@@ -1115,22 +1060,10 @@ const handleSummaryTextChange = (val: string) => {
 // ─── PersonnelCard sub-component ─────────────────────────────────────────────
 
 const PersonnelCard = ({ person, accentColor = "#f3f4f6", textColor = "#374151" }: { person: any, accentColor?: string, textColor?: string }) => {
-  const initials = person.name
-    .split(" ")
-    .slice(0, 2)
-    .map((w: string) => w[0])
-    .join("")
-    .toUpperCase();
-
+  const initials = person.name.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
   return (
     <div style={{ border: `1px solid #e5e7eb`, borderRadius: 8, padding: "16px", display: "flex", gap: 14, alignItems: "flex-start", background: "#fafafa" }}>
-      <div style={{
-        width: 44, height: 44, borderRadius: "50%", background: accentColor,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 14, fontWeight: 700, color: textColor, flexShrink: 0,
-      }}>
-        {initials}
-      </div>
+      <div style={{ width: 44, height: 44, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: textColor, flexShrink: 0 }}>{initials}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px" }}>{person.name}</p>
         <p style={{ fontSize: 12, color: "#6b7280", margin: 0, lineHeight: 1.4 }}>{person.role}</p>
