@@ -48,12 +48,16 @@ const formatLargeUSD = (value: any) => {
 const normaliseProfile = (raw: any) => {
   if (!raw) return null;
 
-  const stripCitations = (text: any): string => {
+const stripCitations = (text: any): string => {
   if (typeof text !== "string") return "";
 
   return text
-    .replace(/\]*\]/gi, "")
-    .replace(/\[[0-9,\-\s]+\]/g, "");
+    .replace(/\[(?:cite|citation|citations):\s*.*?\]/gi, "")
+    .replace(/\[[\d,\s-]+\]/g, "")
+    .replace(/(?:cite|citation|citations):\s*[\d,\s-]+/gi, "")
+    .replace(/\[\s*\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 };
   const rawSummary =
     typeof raw.investor_summary === "string"
