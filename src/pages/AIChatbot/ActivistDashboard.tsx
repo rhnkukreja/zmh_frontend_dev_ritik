@@ -52,8 +52,12 @@ const normaliseProfile = (raw: any) => {
   if (typeof text !== "string") return "";
 
   return text
-    .replace(/\]*\]/gi, "")
-    .replace(/\[[0-9,\-\s]+\]/g, "");
+    .replace(/\[(?:cite|citation|citations):\s*.*?\]/gi, "")
+    .replace(/\[[\d,\s-]+\]/g, "")
+    .replace(/(?:cite|citation|citations):\s*[\d,\s-]+/gi, "")
+    .replace(/\[\s*\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 };
   const rawSummary =
     typeof raw.investor_summary === "string"
