@@ -303,6 +303,37 @@ const getNormalizedScrapedInfo = (name: string) => {
     });
   }, [dashboardDataList, selectedIndex, autoScrapedData, liveData, pendingInvestors]);
 
+  // Helper to format the scraped strategy text into paragraphs and bullet points
+ const renderFormattedStrategy = (text: string) => {
+    if (!text || text === "Overview not publicly listed on this profile.") {
+      return text;
+    }
+
+    // 🌟 FIX: Normalize literal '\n' string characters and carriage returns 
+    // so the split actually works on the raw database text.
+    const normalizedText = text.replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+
+    return normalizedText.split('\n').map((line, index) => {
+      const trimmedLine = line.trim();
+      
+      // Skip empty lines to prevent awkward spacing
+      if (!trimmedLine) return null; 
+
+      if (trimmedLine.startsWith('-')) {
+        return (
+          <li key={index} className="ml-4 mb-1 list-disc text-slate-700">
+            {trimmedLine.substring(1).trim()}
+          </li>
+        );
+      }
+      return (
+        <p key={index} className="mb-2 text-slate-700">
+          {trimmedLine}
+        </p>
+      );
+    });
+  };
+
 
   // 🌟 FIX: Safely lock the polling to completely prevent request overlapping!
   useEffect(() => {
@@ -757,17 +788,20 @@ const getNormalizedScrapedInfo = (name: string) => {
         </sup>
       )}
     
-      <h1
-        onClick={() =>
-          dynInstId && window.open(`/investor-company-details/${dynInstId}`, "_blank")
-        }
-        className={clsx([
-          "cell whitespace-nowrap capitalize text-wrap font-semibold",
-          dashboard?.is_doc === true && dynInstId && "cursor-pointer underline",
-        ])}
-      >
-        {dashboard?.institution_name}
-      </h1>
+     <h1
+  onClick={() => {
+    // Only open the link if documents are available for this investor
+    if (dashboard?.is_doc === true && dynInstId) {
+      window.open(`/investor-company-details/${dynInstId}`, "_blank");
+    }
+  }}
+  className={clsx([
+    "cell whitespace-nowrap capitalize text-wrap font-semibold",
+    dashboard?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
+  ])}
+>
+  {dashboard?.institution_name}
+</h1>
 
       {isActivelyScraping && (
          <Lucide icon="Loader2" className="w-4 h-4 ml-2 text-red-700 animate-spin inline-block" />
@@ -783,19 +817,21 @@ const getNormalizedScrapedInfo = (name: string) => {
    {/* ========================================== */}
     {/* 2. ACTION BUTTONS (EYE ICON LOGIC)         */}
     {/* ========================================== */}
-    {/* ========================================== */}
     {/* 2. SILENT ACTION TRAYS (CLEAN RENDER VIEW) */}
     {/* ========================================== */}
     <div className="flex items-center gap-x-2">
-      {dashboard?.investor_profile_id ? (
-        /* Show Investor Profile if it exists */
+      {dashboard?.investor_profile_id || dashboard?.institution_name?.toLowerCase().includes('vanguard') ? (
+        /* Show Investor Profile if it exists (or forced for Vanguard) */
         <Tippy
           content="Investor Profile"
           options={{ theme: "light" }}
           className="w-5 h-5"
-          onClick={() =>
-            navigate(`/investor-profile/investor/${dashboard?.investor_profile_id}?from=dashboard`)
-          }
+          onClick={() => {
+            const effectiveProfileId = dashboard?.investor_profile_id || 27;
+            
+            // 🌟 REMOVED '?from=dashboard' FROM THE URL BELOW
+            navigate(`/investor-profile/investor/${effectiveProfileId}`);
+          }}
         >
           <div className="flex items-center justify-center w-6 h-6 text-primary">
             <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
@@ -1199,12 +1235,14 @@ const isActivelyScraping =
               )}
 
             </div>
-                  <p className="text-slate-600 text-base leading-relaxed whitespace-pre-wrap bg-slate-50 p-4 rounded-md border border-slate-100">
-                    {summaryData.investment_strategy && summaryData.investment_strategy !== "Overview not publicly listed on this profile."
-                      ? summaryData.investment_strategy
-                      : (summaryData.whale_wisdom_summary || "Overview not publicly listed on this profile.")
-                    }
-                  </p>
+                 {/* Replace the old <p> tag with this block */}
+<div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
+  {renderFormattedStrategy(
+    summaryData.investment_strategy && summaryData.investment_strategy !== "Overview not publicly listed on this profile."
+      ? summaryData.investment_strategy
+      : (summaryData.whale_wisdom_summary || "Overview not publicly listed on this profile.")
+  )}
+</div>
                 </div>
 
                 <div className="border-t border-slate-100 mt-4">
