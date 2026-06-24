@@ -853,7 +853,10 @@ const isActivelyScraping =
   scrapedInfo.status !== "failed";
 
                                                 const isInS3 = scrapedInfo && Object.keys(scrapedInfo).length > 0 && !scrapedInfo.error;
-                                                const hasContent = !!(scrapedInfo?.brochure_url || scrapedInfo?.adv_pdf_s3_url || scrapedInfo?.investment_strategy || scrapedInfo?.whale_wisdom_summary);
+                                                const NOT_LISTED = "Overview not publicly listed on this profile.";
+                                                const hasActualStrategy = scrapedInfo?.investment_strategy && scrapedInfo.investment_strategy !== NOT_LISTED;
+                                                const hasActualSummary = scrapedInfo?.whale_wisdom_summary && scrapedInfo.whale_wisdom_summary !== NOT_LISTED;
+                                                const hasContent = !!(scrapedInfo?.brochure_url || scrapedInfo?.adv_pdf_s3_url || hasActualStrategy || hasActualSummary);
 
                                                 if (isActivelyScraping) {
             return (

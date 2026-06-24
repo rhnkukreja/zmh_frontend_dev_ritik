@@ -257,25 +257,71 @@ function ProposalVotesList({ proposals }: {
   return (
     <div className="space-y-4">
       {proposals.map((proposal, index) => {
-        // 3. Try original percentage, if empty/invalid, use the fallback
+        // 1. Gather all potential fields where the backend might hide the status
+        const allFields = [
+            proposal.outcome_percentage,
+            proposal.vote_outcome,
+            (proposal as any).status
+        ].map(val => String(val || "").trim().toLowerCase());
+
         let displayPercentage = proposal.outcome_percentage;
-        if (!displayPercentage || displayPercentage === "-" || displayPercentage.trim() === "") {
-          const fallback = getFallbackPercentage(proposal.proposal_name);
-          if (fallback) displayPercentage = fallback;
+
+        // 2. Forcefully prioritize Withdrawn/Omitted if they exist in ANY field
+        if (allFields.some(f => f.includes("withdrawn"))) {
+            displayPercentage = "Withdrawn";
+        } else if (allFields.some(f => f.includes("omitted"))) {
+            displayPercentage = "Omitted";
+        } else {
+            // 3. Try the fallback if the current value is a known placeholder
+            const isPlaceholder = !displayPercentage ||
+                      displayPercentage === "-" ||
+                      displayPercentage.trim() === "" ||
+                      displayPercentage.includes("Meeting not held");
+
+            if (isPlaceholder) {
+                const fallback = getFallbackPercentage(proposal.proposal_name);
+                if (fallback) {
+                    displayPercentage = fallback;
+                } else if (
+                    !proposal.outcome_percentage && !proposal.vote_outcome && !(proposal as any).status &&
+                    agmSummaryDetails?.proposals?.length > 0
+                ) {
+                    displayPercentage = "Withdrawn";
+                }
+            }
         }
 
-        // Clean string and parse
-        const numericString = displayPercentage?.replace('%', '') || "0";
+        // 4. Clean string and parse
+        const stringVal = String(displayPercentage || "").trim();
+        const numericString = stringVal.replace('%', '');
         const supportPercent = parseFloat(numericString);
-        const isGreen = supportPercent >= 50;
+        
+        // 5. Determine if it's a real number (and not just letters)
+        const isNumeric = !isNaN(supportPercent) && stringVal !== "" && !/[a-zA-Z]/.test(numericString);
+        const isGreen = isNumeric && supportPercent >= 50;
 
-        // Ensure safe rendering to avoid empty pills
-        const renderText = isNaN(supportPercent) || !displayPercentage || displayPercentage === "-" || displayPercentage.trim() === ""
-          ? "Not presented" 
-          : (displayPercentage.includes("%") ? displayPercentage : `${displayPercentage}%`);
+        // 6. Finalize the exact text to render
+        // Default to "Not presented" — both Withdrawn and Not Presented proposals come back
+        // with all-null fields from the company_report API, so we cannot distinguish them here.
+        // "Withdrawn" is set either by the allFields check above (step 2) or by getFallbackPercentage
+        // returning "Withdrawn" from agmSummaryDetails (step 3).
+        let renderText = "Not presented";
+        if (stringVal && stringVal !== "-") {
+            if (stringVal.toLowerCase().includes("withdrawn")) {
+                renderText = "Withdrawn";
+            } else if (stringVal.toLowerCase().includes("omitted")) {
+                renderText = "Omitted";
+            } else if (stringVal.toLowerCase().includes("meeting not held") || stringVal.toLowerCase().includes("not presented")) {
+                renderText = "Not presented";
+            } else {
+                renderText = isNumeric 
+                    ? (stringVal.includes("%") ? stringVal : `${stringVal}%`)
+                    : stringVal; 
+            }
+        }
 
-        // If it's not presented, make it a neutral gray pill. Otherwise, color it green or red based on support.
-        const pillClass = renderText === "Not presented"
+        // 7. Apply the correct pill class
+        const pillClass = (!isNumeric || renderText === "Withdrawn" || renderText === "Omitted" || renderText === "Not presented")
           ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[15px] font-semibold text-slate-700"
           : isGreen
           ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700"
@@ -716,25 +762,43 @@ export default function CompanyOverviewSummaryTab({
               ) : null}
 
               {report.shareholderProposals ? (
-                <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
-                  {/* <BulletList items={report.shareholderProposals.headlineBullets} /> */}
-                  {report.shareholderProposals.proposalVotes?.length ? (
-                    <>
-                      <Separator className="my-4" />
-                      <div className="mb-3 text-[15px] font-semibold text-slate-500">
-                        Proposal Details with Top Investor Votes
-                      </div>
-                      <ProposalVotesList proposals={report.shareholderProposals.proposalVotes} />
-                    </>
-                  ) : report.shareholderProposals.selected?.length ? (
-                    <>
-                      <Separator className="my-4" />
-                      <div className="mb-3 text-[15px] font-semibold text-slate-500">Selected proposal results</div>
-                      <ProposalList items={report.shareholderProposals.selected} />
-                    </>
-                  ) : null}
-                </CollapsibleCard>
-              ) : null}
+  <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
+    
+    {/* 1. Check if the paginated 'results' format is coming from the API */}
+    {(report.shareholderProposals as any).results?.length ? (
+      <>
+        <Separator className="my-4" />
+        <div className="mb-3 text-[15px] font-semibold text-slate-500">
+          Shareholder Proposals
+        </div>
+        <ProposalVotesList
+          proposals={(report.shareholderProposals as any).results.map((p: any) => ({
+            proposal_name: p.initiative || "Stockholder Proposal",
+            proponent: p.proponent_name || p.proponent || "-",
+            outcome_percentage: p.outcome_percentage || null,
+            vote_outcome: p.vote_outcome || p.status || null, // <--- THE FIX
+            year: p.year
+          }))}
+        />
+      </>
+    ) : report.shareholderProposals.proposalVotes?.length ? (
+      <>
+        <Separator className="my-4" />
+        <div className="mb-3 text-[15px] font-semibold text-slate-500">
+          Proposal Details with Top Investor Votes
+        </div>
+        <ProposalVotesList proposals={report.shareholderProposals.proposalVotes} />
+      </>
+    ) : report.shareholderProposals.selected?.length ? (
+      <>
+        <Separator className="my-4" />
+        <div className="mb-3 text-[15px] font-semibold text-slate-500">Selected proposal results</div>
+        <ProposalList items={report.shareholderProposals.selected} />
+      </>
+    ) : null}
+
+  </CollapsibleCard>
+) : null}
 
               {report.esg ? (
                 <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
