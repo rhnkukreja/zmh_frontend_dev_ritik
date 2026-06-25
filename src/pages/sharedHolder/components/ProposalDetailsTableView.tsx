@@ -280,12 +280,15 @@ const getLiveSupportPercentage = (proposal: any) => {
                                         <span className="font-medium text-sm">{proposal?.category || "-"}</span>
                                     </StandardizedTable.Cell>
                                     <StandardizedTable.Cell className="text-center">
-                                        <span className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium ${proposal?.color_name} text-center`,])}>
-                                            {/* Pass the entire proposal row into the matching layer */}
-                                            
-                                            {getLiveSupportPercentage(proposal)}
-                                        </span>
-                                    </StandardizedTable.Cell>
+                                    <span className={clsx([
+                                        "py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium text-center", 
+                                     proposal?.color_name,
+                                     // Check if the parsed number is less than 50 and apply the red text class
+                                     parseFloat(String(getLiveSupportPercentage(proposal))) < 50 ? "text-red-600" : ""
+                                    ])}>
+                                     {getLiveSupportPercentage(proposal)}
+                                     </span>
+                                     </StandardizedTable.Cell>
                                     <StandardizedTable.Cell className="text-center">
                                         {proposal?.vote_details?.length > 0 && (
                                             <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">
