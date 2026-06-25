@@ -6,6 +6,7 @@ import {
   fetchInstitutions,
   getSingleInstitution,
 } from "@/stores/institutionSlice";
+import { patchInstitutionInDashboard } from "@/stores/dashboardSlice";
 import { Institutions } from "@/types/institutions";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
@@ -306,6 +307,13 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
             ? "Institution updated successfully"
             : "Institution saved successfully"
         );
+        if (selectedInstitution) {
+          dispatch(patchInstitutionInDashboard({
+            institutionName: data.institution,
+            proxyAdvisorInfluence: proxyAdvisoryOptions.join(", "),
+            unpriSignatory: !!data.unpri_signatory,
+          }));
+        }
       }
     } catch (error) {
       toast.error("Failed to save institution");
