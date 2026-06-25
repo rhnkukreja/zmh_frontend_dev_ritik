@@ -483,6 +483,43 @@ const companySlice = createSlice({
       state.institutionStats = null;
       state.institutionStatsLoading = false;
     },
+    patchInstitutionInDashboard(
+      state,
+      action: PayloadAction<{
+        institutionName: string;
+        proxyAdvisorInfluence: string;
+        unpriSignatory: boolean;
+      }>
+    ) {
+      const { institutionName, proxyAdvisorInfluence, unpriSignatory } = action.payload;
+      const nameLower = institutionName.toLowerCase();
+      const patchHoldings = (holdings: any[]) => {
+        holdings.forEach((h) => {
+          if (h.institution_name?.toLowerCase() === nameLower) {
+            h.proxy_advisor_influence = proxyAdvisorInfluence;
+            h.unpri_signatory = unpriSignatory;
+          }
+        });
+      };
+      const list = state.dashboardDataList as any;
+      if (list?.all_year_data) {
+        list.all_year_data.forEach((yearData: any) => {
+          if (Array.isArray(yearData.holdings_data)) {
+            patchHoldings(yearData.holdings_data);
+          }
+        });
+      }
+      // Keep resultsCache in sync so navigating back doesn't revert the patch
+      Object.values(state.resultsCache).forEach((cached: any) => {
+        if (cached?.dashboardDataList?.all_year_data) {
+          cached.dashboardDataList.all_year_data.forEach((yearData: any) => {
+            if (Array.isArray(yearData.holdings_data)) {
+              patchHoldings(yearData.holdings_data);
+            }
+          });
+        }
+      });
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -989,4 +1026,5 @@ export const {
   loadFromCache,
   setModulesCount,
   resetInstitutionStats,
+  patchInstitutionInDashboard,
 } = companySlice.actions;
