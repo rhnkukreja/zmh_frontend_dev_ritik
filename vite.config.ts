@@ -15,7 +15,7 @@ export default defineConfig({
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-xlsx": ["xlsx"],
-          "vendor-charts": ["chart.js", "react-chartjs-2"],
+          "vendor-charts": ["chart.js"],
         },
       },
     },

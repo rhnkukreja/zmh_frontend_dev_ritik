@@ -309,7 +309,8 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
         );
         if (selectedInstitution) {
           dispatch(patchInstitutionInDashboard({
-            institutionName: data.institution,
+            // 🛠️ FIX: Use the original name so the Redux reducer can find the correct row!
+            institutionName: selectedInstitution.institution, 
             proxyAdvisorInfluence: proxyAdvisoryOptions.join(", "),
             unpriSignatory: !!data.unpri_signatory,
           }));
