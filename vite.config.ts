@@ -9,6 +9,16 @@ export default defineConfig({
     commonjsOptions: {
       include: ["tailwind.config.js", "node_modules/**"],
     },
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-xlsx": ["xlsx"],
+          "vendor-charts": ["chart.js", "react-chartjs-2"],
+        },
+      },
+    },
   },
   optimizeDeps: {
     include: ["tailwind-config"],
