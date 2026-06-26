@@ -947,8 +947,12 @@ const isActivelyScraping =
                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
                                                     <div className="whitespace-nowrap">
                                                       {(() => {
-                                                        const scrapedInfo = getNormalizedScrapedInfo(dashboard?.institution_name);
-                                                        const rawProxy = scrapedInfo?.proxy_influence || dashboard?.proxy_advisor_influence;
+  const scrapedInfo = getNormalizedScrapedInfo(dashboard?.institution_name);
+  
+  // 🛠️ FIX: The manual DB edit must take precedence over the scraped info!
+  const rawProxy = dashboard?.proxy_advisor_influence || scrapedInfo?.proxy_influence;
+
+  // 2. If it's missing OR says "Not Disclosed", safely render a dash
 
                                                         // 2. If it's missing OR says "Not Disclosed", safely render a dash
                                                         if (!rawProxy || rawProxy === "Not Disclosed" || rawProxy.toLowerCase() === "not disclosed") {
