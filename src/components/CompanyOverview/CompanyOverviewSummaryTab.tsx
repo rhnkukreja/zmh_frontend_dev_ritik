@@ -625,6 +625,13 @@ export default function CompanyOverviewSummaryTab({
             </Card>
 
             <div className="space-y-6 md:col-span-8">
+              {!report.board && !report.sop && !report.auditor && !report.shareholderProposals && !report.esg && !report.proxy && (
+                <div className="h-52 flex items-center justify-center rounded-2xl border border-slate-200 bg-white">
+                  <p className="font-semibold text-slate-500">
+                    No Company Overview data found for {report.company}.
+                  </p>
+                </div>
+              )}
               {report.board ? (
                 <CollapsibleCard title="Board of Directors" iconKey="board">
                   <BulletList items={report.board.headlineBullets} />

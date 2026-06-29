@@ -727,6 +727,14 @@ const getNormalizedScrapedInfo = (name: string) => {
                                 </Table.Tr>
                               ))}
 
+                            {!investorCardLoading && currentHoldings.length === 0 && (
+                              <Table.Tr className="row">
+                                <Table.Td colSpan={9} className="py-10 text-center font-semibold text-slate-500">
+                                  No Ownership data found for this company.
+                                </Table.Td>
+                              </Table.Tr>
+                            )}
+
                             {!investorCardLoading &&
                               currentHoldings.length > 0 &&
                               currentHoldings.map(
