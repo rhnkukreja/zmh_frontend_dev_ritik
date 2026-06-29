@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
@@ -86,6 +86,7 @@ const AddDocumentModal = ({
 }: AddDocumentModalProps) => {
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   const {
     control,
@@ -115,6 +116,8 @@ const AddDocumentModal = ({
       return;
     }
 
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setLoading(true);
 
     try {
@@ -184,6 +187,7 @@ const AddDocumentModal = ({
       toast.error(err?.response?.data?.message || "Failed to upload document");
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
     }
   };
 
