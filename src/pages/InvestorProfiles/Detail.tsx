@@ -348,10 +348,9 @@ function Main() {
   );
 
   const backToPreviousPage = () => {
-    if (from) {
-      // If we came from the dashboard with a specific 'from' flag, handle it.
-      // However, check if handleBack can handle it if we passed state.
-      // Since Dashboard was updated to pass state, handleBack should work.
+    if (from === 'ownership') {
+      navigate('/', { state: { activeTab: 'ownership' } });
+    } else if (from) {
       handleBack("/");
     } else {
       handleBack(`/investor-company-details/${params.id}`);
