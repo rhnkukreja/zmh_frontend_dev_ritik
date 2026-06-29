@@ -727,6 +727,14 @@ const getNormalizedScrapedInfo = (name: string) => {
                                 </Table.Tr>
                               ))}
 
+                            {!investorCardLoading && currentHoldings.length === 0 && (
+                              <Table.Tr className="row">
+                                <Table.Td colSpan={9} className="py-10 text-center font-semibold text-slate-500">
+                                  No Ownership data found for this company.
+                                </Table.Td>
+                              </Table.Tr>
+                            )}
+
                             {!investorCardLoading &&
                               currentHoldings.length > 0 &&
                               currentHoldings.map(
@@ -792,7 +800,7 @@ const getNormalizedScrapedInfo = (name: string) => {
   onClick={() => {
     // Only open the link if documents are available for this investor
     if (dashboard?.is_doc === true && dynInstId) {
-      window.open(`/investor-company-details/${dynInstId}`, "_blank");
+      window.open(`/investor-company-details/${dynInstId}?from=ownership`, "_blank");
     }
   }}
   className={clsx([
@@ -828,9 +836,7 @@ const getNormalizedScrapedInfo = (name: string) => {
           className="w-5 h-5"
           onClick={() => {
             const effectiveProfileId = dashboard?.investor_profile_id || 27;
-            
-            // 🌟 REMOVED '?from=dashboard' FROM THE URL BELOW
-            navigate(`/investor-profile/investor/${effectiveProfileId}`);
+            window.open(`/investor-profile/investor/${effectiveProfileId}?from=ownership`, "_blank");
           }}
         >
           <div className="flex items-center justify-center w-6 h-6 text-primary">

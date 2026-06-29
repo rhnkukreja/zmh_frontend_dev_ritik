@@ -6,7 +6,7 @@ import Lucide from "@/components/Base/Lucide";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { bytesToMB, createDynamicURL } from "@/utils/helper";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Controller,
   FieldErrors,
@@ -89,11 +89,57 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const {
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
     watch,
   } = useForm<AddShareholderType>({
     defaultValues: defaultValues,
   });
+
+  const [isPredicting, setIsPredicting] = useState(false);
+  const [predictError, setPredictError] = useState<string | null>(null);
+  const pendingSubCategoryRef = useRef<string | null>(null);
+
+  const handlePredictCategory = async (text: string) => {
+    if (!text || text.trim() === "") return;
+
+    setIsPredicting(true);
+    setPredictError(null);
+    try {
+      const res = await axiosInstance.post('/shareholder_proposal/predict-category/', {
+        proposal_text: text
+      });
+
+      const { category, sub_category } = res.data;
+
+      if (!category) {
+        setPredictError("Could not predict — please select manually");
+        return;
+      }
+
+      // Step 1: set category
+      setValue('category', category, { shouldValidate: true });
+
+      // Step 2: fetch sub-categories for the predicted category
+      const subCatRes = await shareHolderProposalService.getShareHolderDropdownValues({ category });
+      if (subCatRes.result) {
+        setapiSubCategoryDropdown({ sub_category: subCatRes.result?.sub_category });
+      }
+
+      // Step 3: store pending sub-category — the useEffect above applies it
+      // after the new options have rendered into the DOM
+      if (sub_category) {
+        pendingSubCategoryRef.current = sub_category;
+      } else {
+        setPredictError("Category predicted — sub-category could not be determined, please select manually");
+      }
+    } catch (error) {
+      console.error("Failed to predict categories:", error);
+      setPredictError("Could not predict — please select manually");
+    } finally {
+      setIsPredicting(false);
+    }
+  };
 
   const navigate = useNavigate();
 
@@ -103,6 +149,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const yearValue = watch("year");
   const companyValue = watch("company");
   const categoryValue = watch("category");
+  const proposalTextValue = watch("proposal_text");
 
   const { companyGlobalSearchName } = useAppSelector(
     (state) => state.authentiction
@@ -158,6 +205,15 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const [apiSubCategoryDropdown, setapiSubCategoryDropdown] = useState<any>({
     sub_category: [],
   });
+
+  // Apply pending sub-category after new sub-category options render into the DOM
+  useEffect(() => {
+    if (pendingSubCategoryRef.current) {
+      setValue('sub_category', pendingSubCategoryRef.current, { shouldValidate: true });
+      pendingSubCategoryRef.current = null;
+    }
+  }, [apiSubCategoryDropdown]);
+
   const [apiNoActionDropdown, setapiNoActionDropdown] = useState<any>({
     proposals: [],
   });
@@ -425,13 +481,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   <Controller
                     name="link_to_filing"
                     control={control}
-                    // rules={{
-                    //   required: "Proposal Link is required",
-                    //   // pattern: {
-                    //   //   value: /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\w\-.~:?#[\]@!$&'()*+,;=]*)*\/?$/,
-                    //   //   message: "Please enter a valid URL",
-                    //   // },
-                    // }}
                     rules={{
                       required: !noShareholderProposalValue
                         ? "Proposal Link is required"
@@ -455,101 +504,162 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Category
-                  </FormCheck.Label>
-
-                  <div className="mt-2">
-                    <Controller
-                      name="category"
-                      control={control}
-                      rules={{
-                        required: !noShareholderProposalValue
-                          ? "Category is required"
-                          : false,
-                      }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
-                          <TomSelect
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                              // getSubCategoryDropdown(e?.target?.value);
-                            }}
-                            options={{
-                              placeholder: "Select Category",
-                            }}
-                            className="w-full text-left"
-                          >
-                            {apiDropdownOptions?.category?.map(
-                              (category: string) => {
-                                return (
-                                  <option value={category}>{category}</option>
-                                );
-                              }
-                            )}
-                          </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
+              {/* ========================================== */}
+              {/* 1. PROPOSAL TEXT (MOVED UP HERE)           */}
+              {/* ========================================== */}
+              <div>
+                <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
+                  Proposal Text
+                </FormCheck.Label>
+                <Controller
+                  name="proposal_text"
+                  control={control}
+                  rules={{
+                    required: !noShareholderProposalValue ? true : false,
+                  }}
+                  render={({ field }) => (
+                    <textarea
+                      {...field}
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      rows={7}
+                      placeholder="Paste your proposal text here..."
                     />
-                  </div>
-                </div>
-
-                <div className="flex-1 w-full">
-                  <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
-                    Sub Category
-                  </FormCheck.Label>
-
-                  <div className="mt-2">
-                    <Controller
-                      name="sub_category"
-                      control={control}
-                      rules={{
-                        required: !noShareholderProposalValue
-                          ? "Sub Category is required"
-                          : false,
-                      }}
-                      render={({ field, fieldState: { error } }) => (
-                        <>
-                          <TomSelect
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(e.target.value);
-                            }}
-                            options={{
-                              placeholder: "Select Sub Category",
-                            }}
-                            className="w-full text-left"
-                          >
-                            {apiSubCategoryDropdown?.sub_category?.map(
-                              (sub_category: string) => {
-                                return (
-                                  <option value={sub_category}>
-                                    {sub_category}
-                                  </option>
-                                );
-                              }
-                            )}
-                          </TomSelect>
-                          {error && (
-                            <Error className="text-red-600 mt-2">
-                              {error.message}
-                            </Error>
-                          )}
-                        </>
-                      )}
-                    />
-                  </div>
+                  )}
+                />
+                {errors.proposal_text && (
+                  <Error className="lg:max-w-[50%]">
+                    Proposal Text is required
+                  </Error>
+                )}
+                <div className="mt-2 flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline-secondary"
+                    disabled={isPredicting}
+                    onClick={() => handlePredictCategory(proposalTextValue ?? "")}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    {isPredicting ? (
+                      <>
+                        <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                        Predicting...
+                      </>
+                    ) : (
+                      <>
+                        <Lucide icon="Sparkles" className="w-4 h-4" />
+                        Predict Category
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
 
+              {/* ========================================== */}
+              {/* 2. CATEGORY & SUB CATEGORY                 */}
+              {/* ========================================== */}
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
+                  <div className="flex-1 w-full">
+                    <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                      Category
+                    </FormCheck.Label>
+
+                    <div className={`mt-2 ${isPredicting ? "opacity-50 pointer-events-none" : ""}`}>
+                      <Controller
+                        name="category"
+                        control={control}
+                        rules={{
+                          required: !noShareholderProposalValue
+                            ? "Category is required"
+                            : false,
+                        }}
+                        render={({ field, fieldState: { error } }) => (
+                          <>
+                            <TomSelect
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                                // getSubCategoryDropdown(e?.target?.value);
+                              }}
+                              options={{
+                                placeholder: "Select Category",
+                              }}
+                              className="w-full text-left"
+                            >
+                              {apiDropdownOptions?.category?.map(
+                                (category: string) => {
+                                  return (
+                                    <option key={category} value={category}>{category}</option>
+                                  );
+                                }
+                              )}
+                            </TomSelect>
+                            {error && (
+                              <Error className="text-red-600 mt-2">
+                                {error.message}
+                              </Error>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 w-full">
+                    <FormCheck.Label className="block  font-semibold text-gray-800 mb-2 text-left">
+                      Sub Category
+                    </FormCheck.Label>
+
+                    <div className={`mt-2 ${isPredicting ? "opacity-50 pointer-events-none" : ""}`}>
+                      <Controller
+                        name="sub_category"
+                        control={control}
+                        rules={{
+                          required: !noShareholderProposalValue
+                            ? "Sub Category is required"
+                            : false,
+                        }}
+                        render={({ field, fieldState: { error } }) => (
+                          <>
+                            <TomSelect
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                              }}
+                              options={{
+                                placeholder: "Select Sub Category",
+                              }}
+                              className="w-full text-left"
+                            >
+                              {apiSubCategoryDropdown?.sub_category?.map(
+                                (sub_category: string) => {
+                                  return (
+                                    <option key={sub_category} value={sub_category}>
+                                      {sub_category}
+                                    </option>
+                                  );
+                                }
+                              )}
+                            </TomSelect>
+                            {error && (
+                              <Error className="text-red-600 mt-2">
+                                {error.message}
+                              </Error>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {predictError && (
+                  <p className="text-amber-600 text-sm">{predictError}</p>
+                )}
+              </div>
+
+              {/* ========================================== */}
+              {/* 3. PROPOSAL NUMBER & PROPOSAL NAME         */}
+              {/* ========================================== */}
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
@@ -607,9 +717,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                 </div>
               </div>
 
-              <div>
+              {/* <div>
                 <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                  Proposal Text
+                  Proposal Text {isPredicting && <span className="text-blue-500 text-sm ml-2">(AI is classifying...)</span>}
                 </FormCheck.Label>
                 <Controller
                   name="proposal_text"
@@ -622,7 +732,18 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       {...field}
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                       rows={7}
-                      placeholder="Enter your proposal text here"
+                      placeholder="Paste your proposal text here. Click outside the box to auto-categorize..."
+                      onBlur={(e) => {
+                        field.onBlur(); // Keep React-Hook-Form happy
+                        handlePredictCategory(e.target.value); // Trigger the LLM!
+                      }}
+                      onKeyDown={(e) => {
+                         // Optional: Trigger on Shift + Enter
+                         if (e.key === 'Enter' && e.shiftKey) {
+                             e.preventDefault();
+                             handlePredictCategory(field.value);
+                         }
+                      }}
                     />
                   )}
                 />
@@ -631,7 +752,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                     Proposal Text is required
                   </Error>
                 )}
-              </div>
+              </div> */}
 
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="flex-1 w-full">

@@ -68,9 +68,14 @@ function Main() {
   // Active tab state - default based on user role
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(
-    location.state?.activeTab || 'company-overview'
-  );
+  const [activeTab, setActiveTab] = useState(() => {
+    const ssReturnTab = sessionStorage.getItem('dashboardReturnTab');
+    if (ssReturnTab) {
+      sessionStorage.removeItem('dashboardReturnTab');
+      return ssReturnTab;
+    }
+    return location.state?.activeTab || 'company-overview';
+  });
 
   // Apply activeTab from navigation state only once on mount (for back button)
   useEffect(() => {
