@@ -796,20 +796,28 @@ const getNormalizedScrapedInfo = (name: string) => {
         </sup>
       )}
     
-     <h1
-  onClick={() => {
-    // Only open the link if documents are available for this investor
-    if (dashboard?.is_doc === true && dynInstId) {
-      window.open(`/investor-company-details/${dynInstId}?from=ownership`, "_blank");
-    }
-  }}
-  className={clsx([
-    "cell whitespace-nowrap capitalize text-wrap font-semibold",
-    dashboard?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
-  ])}
->
-  {dashboard?.institution_name}
-</h1>
+     <div className="flex flex-col">
+  <h1
+    onClick={() => {
+      // Only open the link if documents are available for this investor
+      if (dashboard?.is_doc === true && dynInstId) {
+        window.open(`/investor-company-details/${dynInstId}?from=ownership`, "_blank");
+      }
+    }}
+    className={clsx([
+      "cell whitespace-nowrap capitalize text-wrap font-semibold",
+      dashboard?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
+    ])}
+  >
+    {dashboard?.institution_name}
+  </h1>
+
+  {selectedIndex === 0 && [760129, 743356].includes(dashboard?.filer_id) && (
+    <div className="text-xs text-gray-900 mt-0.5">
+      (Voting data for The Vanguard Group)
+    </div>
+  )}
+</div>
 
       {isActivelyScraping && (
          <Lucide icon="Loader2" className="w-4 h-4 ml-2 text-red-700 animate-spin inline-block" />
