@@ -19,6 +19,7 @@ import { useAppDispatch } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { setPage, setTabs } from "@/stores/shareholderProposalSlice";
 
+
 type ProposalDetailsTableViewProps = {
     loading: boolean;
     loadingDownload: boolean;
@@ -67,6 +68,7 @@ function ProposalDetailsTableView({
     const pageParam = searchParams.get("page");
 
     const { tab: reduxTab } = useAppSelector((state) => state.sharedHolderNoAction);
+    const { agmSummaryDetails } = useAppSelector((state) => state.dashboard);
     const selectedTab = reduxTab
         ? reduxTab
         : url?.includes("withdrawn")
@@ -96,6 +98,62 @@ function ProposalDetailsTableView({
         }
     };
 
+const getLiveSupportPercentage = (proposal: any) => {
+        const originalVal = proposal?.outcome_percentage;
+        const placeholderText = "Meeting not held or results not available";
+
+        // 1. Check if the original data is a VALID percentage (e.g., 95.0%, 43.36%)
+        const isPlaceholder = 
+            !originalVal || 
+            originalVal.trim() === "" || 
+            originalVal.trim() === placeholderText;
+
+        // 🛑 CRITICAL FIX: If it is already a real percentage, RETURN IT IMMEDIATELY! Do not overwrite!
+        if (!isPlaceholder) {
+            return originalVal;
+        }
+
+        // 2. ONLY if it is the placeholder, try to map from the 8-K Meeting Results tab
+        if (agmSummaryDetails?.proposals?.length > 0 && agmSummaryDetails?.proposals_headers?.length > 0) {
+            const headers = agmSummaryDetails.proposals_headers;
+            const nameKey = headers[0]?.field;
+            const pctKey = headers[headers.length - 1]?.field;
+
+            if (nameKey && pctKey) {
+                const tokenize = (str: string) => 
+                    (str || "").toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, '')
+                    .split(/\s+/)
+                    .filter(w => w.length > 3); 
+
+                const targetTokens = tokenize(proposal?.proposal_name || "");
+                
+                if (targetTokens.length > 0) {
+                    let bestMatchVal = null;
+                    let maxScore = 0;
+
+                    agmSummaryDetails.proposals.forEach((p: any) => {
+                        const meetingTokens = tokenize(String(p[nameKey] || ""));
+                        const score = targetTokens.filter(t => meetingTokens.includes(t)).length;
+
+                        if (score > maxScore) {
+                            maxScore = score;
+                            bestMatchVal = p[pctKey];
+                        }
+                    });
+
+                    // If matched safely, return the new mapped percentage!
+                    if (maxScore >= 2 && bestMatchVal) {
+                        return bestMatchVal;
+                    }
+                }
+            }
+        }
+
+        // 3. Fallback to placeholder if nothing was found
+        return placeholderText;
+    };
+    
     return (
         <div className={clsx([tableOnlyView ? "p-5" : ""])}>
             <div>
@@ -222,10 +280,15 @@ function ProposalDetailsTableView({
                                         <span className="font-medium text-sm">{proposal?.category || "-"}</span>
                                     </StandardizedTable.Cell>
                                     <StandardizedTable.Cell className="text-center">
-                                        <span className={clsx([`py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium ${proposal?.color_name} text-center`,])}>
-                                            {proposal?.outcome_percentage}
-                                        </span>
-                                    </StandardizedTable.Cell>
+                                    <span className={clsx([
+                                        "py-2 border-dashed dark:bg-darkmode-600 text-wrap font-medium text-center", 
+                                     proposal?.color_name,
+                                     // Check if the parsed number is less than 50 and apply the red text class
+                                     parseFloat(String(getLiveSupportPercentage(proposal))) < 50 ? "text-red-600" : ""
+                                    ])}>
+                                     {getLiveSupportPercentage(proposal)}
+                                     </span>
+                                     </StandardizedTable.Cell>
                                     <StandardizedTable.Cell className="text-center">
                                         {proposal?.vote_details?.length > 0 && (
                                             <div className="flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150">

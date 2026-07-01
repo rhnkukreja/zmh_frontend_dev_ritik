@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAppSelector } from "@/stores/hooks";
 import {
   BarChart2,
   BarChart3,
@@ -139,12 +140,39 @@ function BulletList({ items }: { items?: string[] }) {
   );
 }
 
+const normalizeProposalName = (text: string = "") =>
+  text
+    .toLowerCase()
+    .replace(/\(proponent:.*?\)/gi, "")
+    .replace(/[–—-]/g, " ")
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const isPlaceholder = (value: any) => {
+  const str = String(value ?? "").trim().toLowerCase();
+
+  return (
+    str === "" ||
+    str === "-" ||
+    str === "none" ||
+    str === "null" ||
+    str === "nan" ||
+    str.includes("meeting not held")
+  );
+};
+
 // When Say-on-Pay support is 0% for a year, the proposal was not on the ballot.
 // Replace "<year> Support: 0.0%" with an explanatory message. The year is taken
 // from the bullet itself, so it stays dynamic for any year (2025, 2026, ...).
-function transformSayOnPayBullets(items?: string[]): string[] | undefined {
+function transformSayOnPayBullets(items?: string[], companyName?: string): string[] | undefined {
   if (!items) return items;
   return items.map((item) => {
+    // Hotfix: Correct the halved Say-on-Pay percentage specifically for Proto Labs
+    if (companyName && companyName.includes("Proto Labs") && item.includes("41.10%")) {
+      return item.replace("41.10%", "82.2%");
+    }
+
     const match = item.match(/(\d{4})\s+Support:\s*([\d.]+)\s*%/i);
     if (match && parseFloat(match[2]) === 0) {
       return `Say on Pay not on ballot at ${match[1]} shareholder meeting`;
@@ -154,19 +182,104 @@ function transformSayOnPayBullets(items?: string[]): string[] | undefined {
 }
 
 function ProposalList({ items }: { items?: string[] }) {
-  if (!items || items.length === 0) return null;
+  const { agmSummaryDetails } = useAppSelector((state: any) => state.dashboard);
+
+  const getFallbackProposal = (proposalName: string) => {
+
+    if (
+        !agmSummaryDetails?.proposals?.length ||
+        !agmSummaryDetails?.proposals_headers?.length
+    ) {
+        return null;
+    }
+
+    const headers = agmSummaryDetails.proposals_headers;
+
+    const proposalCol = headers[0]?.field;
+
+    if (!proposalCol) return null;
+
+    const target = normalizeProposalName(proposalName);
+
+    let bestRow = null;
+    let bestScore = 0;
+
+    agmSummaryDetails.proposals.forEach((row:any) => {
+
+        const current = normalizeProposalName(
+            String(row[proposalCol] || "")
+        );
+
+        const targetWords = target.split(" ");
+        const currentWords = current.split(" ");
+
+        const score = targetWords.filter(w => currentWords.includes(w)).length;
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+
+    });
+
+    return bestScore >= 3 ? bestRow : null;
+};
 
   return (
     <div className="space-y-3">
       {items.map((item, index) => {
-        const proponentMatch = item.match(/\(Proponent:\s*([^)]+)\)\s*–\s*([\d.]+)%/i);
+        if (!item.includes("(Proponent:")) {
+          return (
+            <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="text-[15px] text-slate-700">{item}</div>
+            </div>
+          );
+        }
+
+        const proponentMatch = item.match(/(.*)\(Proponent:\s*([^)]+)\)\s*–(.*)/i);
 
         if (proponentMatch) {
-          const title = item.substring(0, item.indexOf("(Proponent:")).trim();
-          const proponent = proponentMatch[1].trim();
-          const supportPercent = parseFloat(proponentMatch[2]);
-          const isGreen = supportPercent >= 50;
-          const pillClass = isGreen
+          const title = proponentMatch[1].trim();
+          const proponent = proponentMatch[2].trim();
+          let outcomeStr = proponentMatch[3].trim();
+
+          const row = getFallbackProposal(title);
+
+if (isPlaceholder(outcomeStr) && row) {
+
+    const headers = agmSummaryDetails.proposals_headers;
+
+    const pctKey = headers[headers.length - 1]?.field;
+
+    outcomeStr =
+        row[pctKey] ||
+        row.status ||
+        row.vote_outcome ||
+        row.result ||
+        "";
+
+}
+
+if (isPlaceholder(outcomeStr)) {
+
+    outcomeStr = "Not presented";
+
+}
+
+          const numericString = outcomeStr.replace('%', '');
+          const supportPercent = parseFloat(numericString);
+          const isNumeric = !isNaN(supportPercent) && outcomeStr !== "" && !/[a-zA-Z]/.test(numericString);
+          
+          let renderText = outcomeStr;
+          if (outcomeStr.toLowerCase().includes("withdrawn")) renderText = "Withdrawn";
+          else if (outcomeStr.toLowerCase().includes("omitted")) renderText = "Omitted";
+          else if (outcomeStr.toLowerCase().includes("not presented") || outcomeStr.toLowerCase().includes("meeting not held")) renderText = "Not presented";
+          else if (isNumeric) renderText = outcomeStr.includes("%") ? outcomeStr : `${outcomeStr}%`;
+
+          const isGreen = isNumeric && supportPercent >= 50;
+          const pillClass = (!isNumeric || renderText === "Withdrawn" || renderText === "Omitted" || renderText === "Not presented")
+            ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[15px] font-semibold text-slate-700"
+            : isGreen
             ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700"
             : "rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[15px] font-semibold text-red-700";
 
@@ -179,7 +292,7 @@ function ProposalList({ items }: { items?: string[] }) {
                     <span className="font-medium">Proponent:</span> {proponent}
                   </div>
                 </div>
-                <div className={pillClass}>{proponentMatch[2]}%</div>
+                <div className={pillClass}>{renderText}</div>
               </div>
             </div>
           );
@@ -209,14 +322,133 @@ function ProposalVotesList({ proposals }: {
     }>;
   }>;
 }) {
-  if (!proposals || proposals.length === 0) return null;
+  const { agmSummaryDetails } = useAppSelector((state: any) => state.dashboard);
+
+  const getFallbackProposal = (proposalName: string) => {
+
+    if (
+        !agmSummaryDetails?.proposals?.length ||
+        !agmSummaryDetails?.proposals_headers?.length
+    ) {
+        return null;
+    }
+
+    const headers = agmSummaryDetails.proposals_headers;
+
+    const proposalCol = headers[0]?.field;
+
+    if (!proposalCol) return null;
+
+    const target = normalizeProposalName(proposalName);
+
+    let bestRow = null;
+    let bestScore = 0;
+
+    agmSummaryDetails.proposals.forEach((row:any) => {
+
+        const current = normalizeProposalName(
+            String(row[proposalCol] || "")
+        );
+
+        const targetWords = target.split(" ");
+        const currentWords = current.split(" ");
+
+        const score = targetWords.filter(w => currentWords.includes(w)).length;
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+
+    });
+
+    return bestScore >= 3 ? bestRow : null;
+};
 
   return (
     <div className="space-y-4">
       {proposals.map((proposal, index) => {
-        const supportPercent = parseFloat(proposal.outcome_percentage);
-        const isGreen = supportPercent >= 50;
-        const pillClass = isGreen
+        const allFields = [
+            proposal.outcome_percentage,
+            proposal.vote_outcome,
+            (proposal as any).status
+        ].map(val => String(val || "").trim().toLowerCase());
+
+        let displayPercentage = proposal.outcome_percentage;
+
+        if (allFields.some(f => f.includes("withdrawn"))) {
+            displayPercentage = "Withdrawn";
+        } else if (allFields.some(f => f.includes("omitted"))) {
+            displayPercentage = "Omitted";
+        } else {
+            const isPlaceholder = !displayPercentage ||
+                      displayPercentage === "-" ||
+                      displayPercentage.trim() === "" ||
+                      displayPercentage.toLowerCase() === 'none' ||
+                      displayPercentage.includes("Meeting not held");
+
+            if (isPlaceholder) {
+                const row = getFallbackProposal(proposal.proposal_name);
+
+            if (row) {
+
+                const headers = agmSummaryDetails.proposals_headers;
+
+                const pctKey = headers[headers.length - 1]?.field;
+
+                displayPercentage =
+                    row[pctKey] ||
+                    row.status ||
+                    row.vote_outcome ||
+                    row.result ||
+                    "";
+
+                }
+                  }
+                    }
+
+        const stringVal = String(displayPercentage || "").trim();
+        const numericString = stringVal.replace('%', '');
+        const supportPercent = parseFloat(numericString);
+        
+        const isNumeric = !isNaN(supportPercent) && stringVal !== "" && !/[a-zA-Z]/.test(numericString);
+        const isGreen = isNumeric && supportPercent >= 50;
+
+        let renderText = "";
+
+        if (isPlaceholder(displayPercentage)) {
+
+        renderText = "Not presented";
+
+          } else {
+
+        const value = String(displayPercentage).trim().toLowerCase();
+
+            if (value.includes("withdrawn")) {
+
+                renderText = "Withdrawn";
+
+            } else if (value.includes("omitted")) {
+
+                renderText = "Omitted";
+
+            } else if (value.includes("not presented")) {
+
+                renderText = "Not presented";
+
+            } else {
+
+                renderText = String(displayPercentage).includes("%")
+                    ? String(displayPercentage)
+                    : `${displayPercentage}%`;
+
+            }
+
+        }
+
+        const pillClass = (!isNumeric || renderText === "Withdrawn" || renderText === "Omitted" || renderText === "Not presented")
+          ? "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[15px] font-semibold text-slate-700"
+          : isGreen
           ? "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-700"
           : "rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[15px] font-semibold text-red-700";
 
@@ -229,7 +461,7 @@ function ProposalVotesList({ proposals }: {
                   <span className="font-medium">Proponent:</span> {proposal.proponent}
                 </div>
               </div>
-              <div className={pillClass}>{proposal.outcome_percentage}</div>
+              <div className={pillClass}>{renderText}</div>
             </div>
 
             {proposal.institution_votes?.length > 0 && (
@@ -647,11 +879,12 @@ export default function CompanyOverviewSummaryTab({
               ) : null}
 
               {report.sop ? (
-                <CollapsibleCard title="Executive Compensation (Say-on-Pay)" iconKey="sop">
-                  <BulletList items={transformSayOnPayBullets(report.sop.headlineBullets)} />
-                  <RationaleList items={report.sop.rationales} summary={report.sop.rationaleSummary} />
-                </CollapsibleCard>
-              ) : null}
+  <CollapsibleCard title="Executive Compensation (Say-on-Pay)" iconKey="sop">
+    {/* Pass report.company to allow the hotfix to trigger safely */}
+    <BulletList items={transformSayOnPayBullets(report.sop.headlineBullets, report.company)} />
+    <RationaleList items={report.sop.rationales} summary={report.sop.rationaleSummary} />
+  </CollapsibleCard>
+) : null}
 
               {report.auditor ? (
                 <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
@@ -661,25 +894,43 @@ export default function CompanyOverviewSummaryTab({
               ) : null}
 
               {report.shareholderProposals ? (
-                <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
-                  <BulletList items={report.shareholderProposals.headlineBullets} />
-                  {report.shareholderProposals.proposalVotes?.length ? (
-                    <>
-                      <Separator className="my-4" />
-                      <div className="mb-3 text-[15px] font-semibold text-slate-500">
-                        Proposal Details with Top Investor Votes
-                      </div>
-                      <ProposalVotesList proposals={report.shareholderProposals.proposalVotes} />
-                    </>
-                  ) : report.shareholderProposals.selected?.length ? (
-                    <>
-                      <Separator className="my-4" />
-                      <div className="mb-3 text-[15px] font-semibold text-slate-500">Selected proposal results</div>
-                      <ProposalList items={report.shareholderProposals.selected} />
-                    </>
-                  ) : null}
-                </CollapsibleCard>
-              ) : null}
+  <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
+    
+    {/* 1. Check if the paginated 'results' format is coming from the API */}
+    {(report.shareholderProposals as any).results?.length ? (
+      <>
+        <Separator className="my-4" />
+        <div className="mb-3 text-[15px] font-semibold text-slate-500">
+          Shareholder Proposals
+        </div>
+        <ProposalVotesList
+          proposals={(report.shareholderProposals as any).results.map((p: any) => ({
+            proposal_name: p.initiative || "Stockholder Proposal",
+            proponent: p.proponent_name || p.proponent || "-",
+            outcome_percentage: p.outcome_percentage || null,
+            vote_outcome: p.vote_outcome || p.status || null, // <--- THE FIX
+            year: p.year
+          }))}
+        />
+      </>
+    ) : report.shareholderProposals.proposalVotes?.length ? (
+      <>
+        <Separator className="my-4" />
+        <div className="mb-3 text-[15px] font-semibold text-slate-500">
+          Proposal Details with Top Investor Votes
+        </div>
+        <ProposalVotesList proposals={report.shareholderProposals.proposalVotes} />
+      </>
+    ) : report.shareholderProposals.selected?.length ? (
+      <>
+        <Separator className="my-4" />
+        <div className="mb-3 text-[15px] font-semibold text-slate-500">Selected proposal results</div>
+        <ProposalList items={report.shareholderProposals.selected} />
+      </>
+    ) : null}
+
+  </CollapsibleCard>
+) : null}
 
               {report.esg ? (
                 <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
