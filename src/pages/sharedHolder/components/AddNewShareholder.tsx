@@ -99,18 +99,19 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const [isPredicting, setIsPredicting] = useState(false);
   const [predictError, setPredictError] = useState<string | null>(null);
   const pendingSubCategoryRef = useRef<string | null>(null);
+  const lastPredictedTextRef = useRef<string | null>(null);
 
   const handlePredictCategory = async (text: string) => {
     if (!text || text.trim() === "") return;
 
+    // 2. ADD THIS GUARD CHECK: 
+    // Stop the function if the text hasn't changed since the last API call
+    if (text === lastPredictedTextRef.current) return;
+
     setIsPredicting(true);
     setPredictError(null);
     try {
-      const res = await axiosInstance.post('/shareholder_proposal/predict-category/', {
-        proposal_text: text
-      });
-
-      const { category, sub_category } = res.data;
+      const { category, sub_category } = await shareHolderProposalService.predictCategory(text);
 
       if (!category) {
         setPredictError("Could not predict — please select manually");
@@ -133,6 +134,11 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       } else {
         setPredictError("Category predicted — sub-category could not be determined, please select manually");
       }
+
+      // 3. SAVE THE TEXT ON SUCCESS
+      // This prevents the same text from being sent again on the next onBlur
+      lastPredictedTextRef.current = text;
+
     } catch (error) {
       console.error("Failed to predict categories:", error);
       setPredictError("Could not predict — please select manually");
@@ -509,7 +515,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               {/* ========================================== */}
               <div>
                 <FormCheck.Label className="block font-semibold text-gray-800 mb-2 text-left">
-                  Proposal Text
+                  Proposal Text {isPredicting && <span className="text-blue-500 text-sm ml-2">(Classifying the Proposal Text...)</span>}
                 </FormCheck.Label>
                 <Controller
                   name="proposal_text"
@@ -523,6 +529,22 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                       rows={7}
                       placeholder="Paste your proposal text here..."
+                      
+                      // 1. TRIGGER ON CLICKING OUTSIDE (BLANK SPACE)
+                      onBlur={(e) => {
+                        field.onBlur(); // Keeps React-Hook-Form's validation working
+                        handlePredictCategory(e.target.value); // Triggers the LLM call
+                      }}
+
+                      // 2. TRIGGER ON ENTER PRESS
+                      onKeyDown={(e) => {
+                        // Triggers LLM on 'Enter'. 
+                        // (Analysts can use 'Shift + Enter' if they need to add a new line to the text)
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handlePredictCategory(field.value);
+                        }
+                      }}
                     />
                   )}
                 />
@@ -532,7 +554,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                   </Error>
                 )}
                 <div className="mt-2 flex items-center gap-3">
-                  <Button
+                  {/* <Button
                     type="button"
                     variant="outline-secondary"
                     disabled={isPredicting}
@@ -550,7 +572,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                         Predict Category
                       </>
                     )}
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
 

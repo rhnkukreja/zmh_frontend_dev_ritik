@@ -207,6 +207,16 @@ class ShareHolderProposalService {
     const response = await axiosInstance.delete(`/shareholder_proposal/def14a/${id}/`);
     return response.data;
   }
+
+  public async predictCategory(proposalText: string): Promise<{
+    category: string;
+    sub_category: string;
+  }> {
+    const response = await axiosInstance.post(`/shareholder_proposal/predict-category/`, {
+      proposal_text: proposalText,
+    });
+    return response.data;
+  }
 }
 
 export const shareHolderProposalService = new ShareHolderProposalService();
