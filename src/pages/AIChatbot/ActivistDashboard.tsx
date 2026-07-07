@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
 import { useAppSelector } from "@/stores/hooks";
@@ -281,14 +281,16 @@ const ActivistDashboardSkeleton = () => (
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-const ActivistIntelligenceDashboard = ({ 
+const ActivistIntelligenceDashboard = ({
   isAdminMode = false,
   externalPreviewData = null,
-  onPreviewPublished = () => {}
-}: { 
+  onPreviewPublished = () => {},
+  openGenerateModalSignal = 0,
+}: {
   isAdminMode?: boolean;
   externalPreviewData?: any;
   onPreviewPublished?: () => void;
+  openGenerateModalSignal?: number;
 }) => {
   // Pull the logged-in session securely from the Redux store
   const { user } = useAppSelector((state: any) => state.authentiction);
@@ -306,6 +308,21 @@ const ActivistIntelligenceDashboard = ({
   const [newInvestorName, setNewInvestorName] = useState("");
   const [selectedJsonFiles, setSelectedJsonFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
+  const [generateInvestorName, setGenerateInvestorName] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateStep, setGenerateStep] = useState("");
+
+  // ── External trigger: opens the Generate Profile modal from the "Add Proxy
+  // Contest" split-button dropdown outside this component ──
+  const consumedGenerateSignal = useRef(0);
+  useEffect(() => {
+    if (openGenerateModalSignal && openGenerateModalSignal !== consumedGenerateSignal.current) {
+      consumedGenerateSignal.current = openGenerateModalSignal;
+      setGenerateModalOpen(true);
+    }
+  }, [openGenerateModalSignal]);
 
 
   const [rawProfile, setRawProfile] = useState<any>(null); 
@@ -347,8 +364,11 @@ const ActivistIntelligenceDashboard = ({
       setInvestorKeys(discoveredKeys);
       if (keyToSelect && discoveredKeys.includes(keyToSelect)) {
         setActiveInvestorKey(keyToSelect);
-      } else if (!activeInvestorKey) {
-        setActiveInvestorKey(discoveredKeys[0]); 
+      } else if (!activeInvestorKey || (keyToSelect && !discoveredKeys.includes(activeInvestorKey))) {
+        // Either nothing selected yet, or the key we wanted (or the one
+        // already active) isn't actually present in S3 — fall back to the
+        // first profile that is, instead of showing a stale/missing one.
+        setActiveInvestorKey(discoveredKeys[0]);
       }
     } catch (err: any) {
       console.error("[ActivistDashboard] index assembly failure:", err);
@@ -395,8 +415,17 @@ const ActivistIntelligenceDashboard = ({
         setRawProfile(profileData);
         setProfile(normaliseProfile(profileData));
       } catch (err) {
-        console.error("[Fetch Profile Error]:", err);
-        setError("Failed to fetch the selected investor profile data.");
+        console.error(`[Fetch Profile Error] '${activeInvestorKey}' not found in S3:`, err);
+
+        // The selected key doesn't have a matching file in S3 (stale slug, deleted
+        // profile, etc). Rather than dead-ending on an error screen, fall back to
+        // the first profile that does exist so the dashboard still shows something.
+        const fallbackKey = investorKeys.find((k) => k !== activeInvestorKey);
+        if (fallbackKey) {
+          setActiveInvestorKey(fallbackKey);
+        } else {
+          setError("Failed to fetch the selected investor profile data.");
+        }
       } finally {
         setLoading(false);
       }
@@ -447,6 +476,65 @@ const ActivistIntelligenceDashboard = ({
       alert("Failed to generate preview. Check your JSON files.");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // Kicks off the automated scrape pipeline for a fund name, then polls until it
+  // finishes and loads the result into the SAME preview/edit/approve flow the
+  // manual file-upload path already uses — nothing gets saved to S3 until the
+  // user clicks "Approve & Publish".
+  const handleGenerateProfile = async () => {
+    if (!generateInvestorName.trim()) {
+      alert("Please enter a fund name.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerateStep("Starting...");
+    try {
+      const startUrl = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`;
+      const startRes = await axios.post(startUrl, { investor_name: generateInvestorName });
+      const slug = startRes.data?.slug;
+      if (!slug) throw new Error("No job slug returned by the server.");
+
+      const statusUrl = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${slug}/status`;
+      const POLL_INTERVAL_MS = 5000;
+
+      await new Promise<void>((resolve, reject) => {
+        const poll = async () => {
+          try {
+            const statusRes = await axios.get(statusUrl, { params: { t: Date.now() } });
+            const { state, step, data, message } = statusRes.data || {};
+
+            if (state === "done") {
+              setRawProfile(data);
+              setProfile(normaliseProfile(data));
+              setIsPreviewMode(true);
+              setIsEditMode(true);
+              resolve();
+              return;
+            }
+            if (state === "error") {
+              reject(new Error(message || "Profile generation failed."));
+              return;
+            }
+            setGenerateStep(step || "Working...");
+            setTimeout(poll, POLL_INTERVAL_MS);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        poll();
+      });
+
+      setGenerateModalOpen(false);
+      setGenerateInvestorName("");
+    } catch (err: any) {
+      console.error("Profile generation failed:", err);
+      alert(err?.message || "Failed to generate profile. Please try again.");
+    } finally {
+      setIsGenerating(false);
+      setGenerateStep("");
     }
   };
 
@@ -527,6 +615,50 @@ const ActivistIntelligenceDashboard = ({
     setProfile(normaliseProfile(updatedRaw));
   };
 
+  // Cancels a generated/uploaded preview without publishing anything to S3,
+  // and restores whichever profile was showing before the preview started.
+  const handleDiscardPreview = async () => {
+    // If this preview came from the auto-generate pipeline, it left a
+    // job-status scratch file in S3 (used for progress polling) — clean it
+    // up so discarding truly leaves no trace behind.
+    const discardedSlug = rawProfile?.metadata?.slug;
+    if (discardedSlug) {
+      axios.delete(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${discardedSlug}`).catch((err) => {
+        console.error("[Discard Preview] Failed to clean up job-status file:", err);
+      });
+    }
+
+    setIsPreviewMode(false);
+    setIsEditMode(false);
+    onPreviewPublished();
+
+    if (activeInvestorKey && profilesCache[activeInvestorKey]) {
+      setRawProfile(profilesCache[activeInvestorKey]);
+      setProfile(normaliseProfile(profilesCache[activeInvestorKey]));
+      return;
+    }
+
+    if (activeInvestorKey) {
+      try {
+        setLoading(true);
+        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`;
+        const response = await axios.get(url, { params: { t: Date.now() } });
+        const profileData = response.data?.data || response.data;
+        setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: profileData }));
+        setRawProfile(profileData);
+        setProfile(normaliseProfile(profileData));
+      } catch (err) {
+        console.error("[Discard Preview] Failed to restore prior profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setRawProfile(null);
+      setProfile(null);
+      fetchAllProfiles();
+    }
+  };
+
   // The final save push to the upcoming FastAPI backend
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -602,7 +734,7 @@ const ActivistIntelligenceDashboard = ({
             
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <InvestorTrigger
-                label={formatKeyToLabel(activeInvestorKey)}
+                label={isPreviewMode ? profile.legalName : formatKeyToLabel(activeInvestorKey)}
                 open={selectorOpen}
                 onClick={() => { setSelectorOpen((v) => !v); setSelectorSearch(""); }}
               />
@@ -664,25 +796,6 @@ const ActivistIntelligenceDashboard = ({
               {/* ── Edit Mode Controls ── */}
 {showEditButton && (
   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-    
-    {/* ── ADD THIS NEW BUTTON HERE ── */}
-    {/* <button
-      onClick={() => setUploadModalOpen(true)}
-      style={{
-        padding: "6px 14px", fontSize: 12, fontWeight: 600,
-        borderRadius: 6, cursor: "pointer",
-        border: "1px solid #e5e7eb",
-        background: "white", color: "#374151",
-        display: "flex", alignItems: "center", gap: 6,
-        transition: "all 0.15s",
-      }}
-    >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
-      Add Profile
-    </button> */}
-    {/* ── END OF NEW BUTTON ── */}
 
     {isEditMode && (
   <button
@@ -698,6 +811,21 @@ const ActivistIntelligenceDashboard = ({
     </svg>
     {/* 🛑 DYNAMIC TEXT CHANGE HERE */}
     {isSaving ? "Processing..." : (isPreviewMode ? "Approve & Publish to S3" : "Save Changes")}
+  </button>
+)}
+    {isPreviewMode && (
+  <button
+    onClick={handleDiscardPreview}
+    disabled={isSaving}
+    style={{
+      background: "white", color: "#dc2626", border: "1px solid #dc2626", padding: "6px 14px", borderRadius: 6, fontSize: 12,
+      fontWeight: 600, cursor: isSaving ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6,
+    }}
+  >
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+    Discard
   </button>
 )}
                 <button
@@ -1052,6 +1180,55 @@ const ActivistIntelligenceDashboard = ({
   >
     {isUploading ? "Processing..." : "Generate Preview"}
   </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── GENERATE PROFILE MODAL ── */}
+      {generateModalOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+            <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Generate New Profile</h2>
+            <p style={{ margin: "0 0 24px", color: "#6b7280", fontSize: 13 }}>
+              Enter an activist fund's legal name — the AI will resolve its 13F filings, campaign
+              history, and personnel automatically. This can take a few minutes.
+            </p>
+
+            <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
+              Investor Entity Name
+              <input
+                value={generateInvestorName}
+                onChange={(e) => setGenerateInvestorName(e.target.value)}
+                placeholder="e.g. Elliott Investment Management"
+                disabled={isGenerating}
+                style={{ width: "100%", marginTop: 8, padding: "10px 14px", border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box", fontSize: 14 }}
+              />
+            </label>
+
+            {isGenerating && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
+                <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <span style={{ fontSize: 12, color: "#374151" }}>Generating profile, this can take a few minutes...</span>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button
+                onClick={() => { setGenerateModalOpen(false); setGenerateInvestorName(""); }}
+                disabled={isGenerating}
+                style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: isGenerating ? "not-allowed" : "pointer", fontWeight: 600, color: "#374151", opacity: isGenerating ? 0.6 : 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGenerateProfile}
+                disabled={isGenerating}
+                style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: isGenerating ? "wait" : "pointer", fontWeight: 600, opacity: isGenerating ? 0.7 : 1 }}
+              >
+                {isGenerating ? "Generating..." : "Generate & Preview"}
+              </button>
             </div>
           </div>
         </div>
