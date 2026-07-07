@@ -796,28 +796,20 @@ const getNormalizedScrapedInfo = (name: string) => {
         </sup>
       )}
     
-     <div className="flex flex-col">
-  <h1
-    onClick={() => {
-      // Only open the link if documents are available for this investor
-      if (dashboard?.is_doc === true && dynInstId) {
-        window.open(`/investor-company-details/${dynInstId}?from=ownership`, "_blank");
-      }
-    }}
-    className={clsx([
-      "cell whitespace-nowrap capitalize text-wrap font-semibold",
-      dashboard?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
-    ])}
-  >
-    {dashboard?.institution_name}
-  </h1>
-
-  {selectedIndex === 0 && [760129, 743356].includes(dashboard?.filer_id) && (
-    <div className="text-xs text-gray-900 mt-0.5">
-      (Voting data for The Vanguard Group)
-    </div>
-  )}
-</div>
+     <h1
+  onClick={() => {
+    // Only open the link if documents are available for this investor
+    if (dashboard?.is_doc === true && dynInstId) {
+      window.open(`/investor-company-details/${dynInstId}`, "_blank");
+    }
+  }}
+  className={clsx([
+    "cell whitespace-nowrap capitalize text-wrap font-semibold",
+    dashboard?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
+  ])}
+>
+  {dashboard?.institution_name}
+</h1>
 
       {isActivelyScraping && (
          <Lucide icon="Loader2" className="w-4 h-4 ml-2 text-red-700 animate-spin inline-block" />
@@ -844,7 +836,9 @@ const getNormalizedScrapedInfo = (name: string) => {
           className="w-5 h-5"
           onClick={() => {
             const effectiveProfileId = dashboard?.investor_profile_id || 27;
-            window.open(`/investor-profile/investor/${effectiveProfileId}?from=ownership`, "_blank");
+            
+            // 🌟 REMOVED '?from=dashboard' FROM THE URL BELOW
+            navigate(`/investor-profile/investor/${effectiveProfileId}`);
           }}
         >
           <div className="flex items-center justify-center w-6 h-6 text-primary">

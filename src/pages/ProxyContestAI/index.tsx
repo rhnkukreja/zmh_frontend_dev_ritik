@@ -14,7 +14,7 @@ import { RootState } from "@/stores/store";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
-import { Popover, Dialog } from "@/components/Base/Headless"; 
+import { Popover, Dialog, Menu } from "@/components/Base/Headless";
 
 type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
 
@@ -58,6 +58,8 @@ function ProxyContestAI() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [generateProfileSignal, setGenerateProfileSignal] = useState(0);
+  const [splitAction, setSplitAction] = useState<"add" | "generate">("add");
   const [editInitialData, setEditInitialData] = useState<any>(null);
 
   // ── Edit handler ─────────────────────────────────────────────────────────────
@@ -652,12 +654,72 @@ function ProxyContestAI() {
               </Button>
             )}
 
-            {/* Existing Add Proxy Contest Button */}
+            {/* Add Proxy Contest split button — main action + dropdown for related actions */}
             {isAdminOrAnalyst && (
-              <Button variant="primary" onClick={() => setAddModalOpen(true)}>
-                <Lucide icon="Plus" className="w-4 h-4 mr-1.5" />
-                Add Proxy Contest
-              </Button>
+              <div className="inline-flex h-[38px] rounded-md shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (splitAction === "add") {
+                      setAddModalOpen(true);
+                    } else {
+                      setActiveTabPersisted("activist_profile");
+                      setGenerateProfileSignal((v) => v + 1);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 text-sm font-medium text-white bg-primary border border-primary rounded-l-md hover:bg-primary/90 transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+                >
+                  <Lucide icon={splitAction === "add" ? "Plus" : "Sparkles"} className="w-4 h-4" />
+                  {splitAction === "add" ? "Add Proxy Contest" : "Generate Activism Profile"}
+                </button>
+                <Menu as="div" className="relative flex">
+                  <Menu.Button
+                    as="button"
+                    className="flex items-center justify-center w-9 h-full bg-primary border border-l-0 border-primary rounded-r-md text-white hover:bg-primary/90 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+                  >
+                    <Lucide icon="ChevronDown" className="w-4 h-4" />
+                  </Menu.Button>
+                  {/* ── UPDATE THIS SECTION IN YOUR CODE ── */}
+                  <Menu.Items placement="bottom-end" className="w-[200px] mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-1 z-40">
+                  {splitAction !== "add" && (
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          className={clsx(
+                            "w-full px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-slate-700 whitespace-nowrap text-left",
+                            active ? "bg-slate-100 text-slate-900" : "bg-white"
+                          )}
+                          onClick={() => setSplitAction("add")}
+                        >
+                          Add Proxy Contest
+                        </button>
+                      )}
+                    </Menu.Item>
+                  )}
+                  {splitAction !== "generate" && (
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          className={clsx(
+                            "w-full px-3 py-9.5 text-xs font-medium rounded-md transition-colors text-slate-700 whitespace-nowrap text-left",
+                            active ? "bg-slate-100 text-slate-900" : "bg-white"
+                          )}
+                          onClick={() => {
+                            setSplitAction("generate");
+                            setActiveTabPersisted("activist_profile");
+                            setGenerateProfileSignal((v) => v + 1);
+                          }}
+                        >
+                          Generate Activism Profile
+                        </button>
+                      )}
+                    </Menu.Item>
+                  )}
+                </Menu.Items>
+                </Menu>
+              </div>
             )}
           </div>
         </div>
@@ -836,10 +898,11 @@ function ProxyContestAI() {
 
           {/* ── PASS THE MODE TOGGLE DOWN AS A LIFETIME PROP ── */}
 {activeTab === "activist_profile" && (
-  <ActivistIntelligenceDashboard 
-    isAdminMode={isAdminMode} 
+  <ActivistIntelligenceDashboard
+    isAdminMode={isAdminMode}
     externalPreviewData={previewData}
     onPreviewPublished={() => setPreviewData(null)}
+    openGenerateModalSignal={generateProfileSignal}
   />
 )}
         </div>
