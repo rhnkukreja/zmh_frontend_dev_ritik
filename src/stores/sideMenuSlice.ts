@@ -27,12 +27,8 @@ const initialState: any = {
     //   title: "Company Profile",
     //   // badge: 4,
     // },
-    {
-      // icon: CompanyIcon,
-      icon: "Building2",
-      pathname: "/",
-      title: "Company Search",
-    },
+    // Company Search removed: the Security Analysis section (Koyfin-style)
+    // and the global top search bar now cover this entry point.
     // {
     //   icon: "ActivitySquare",
     //   pathname: "/dashboard-overview-2",

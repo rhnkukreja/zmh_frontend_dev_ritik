@@ -74,6 +74,7 @@ import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
 import SearchWidgetIframe from "@/components/SearchWidget";
+import DashboardSidebarNav from "./components/DashboardSidebarNav";
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -118,6 +119,9 @@ function Main() {
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
+  // Embed mode: renders the routed page without the app chrome (sidebar/topbar)
+  // so it can be shown inside an in-page panel/iframe instead of a new tab.
+  const isEmbedMode = new URLSearchParams(location.search).get("embed") === "1";
 
   const [topBarActive, setTopBarActive] = useState(false);
 
@@ -477,8 +481,8 @@ function Main() {
   };
 
 
-  return isCompanyReportPage ? (
-    <div>
+  return isCompanyReportPage || isEmbedMode ? (
+    <div className={clsx({ "h-full": isEmbedMode })}>
       <Outlet />
     </div>
   ) : (
@@ -571,6 +575,8 @@ function Main() {
             ])}
           >
             <ul className="scrollable">
+              {/* Koyfin-style dashboard navigation for the selected company */}
+              <DashboardSidebarNav />
               {/* BEGIN: First Child */}
               {formattedMenu.map((menu, menuKey) =>
                 typeof menu == "string" ? (

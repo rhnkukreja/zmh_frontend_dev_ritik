@@ -28,6 +28,7 @@ import domainNotesReducer from "./domainNotesSlice";
 import vdsEuropeanReducer from "./vdsEuropeanSlice";
 import realTimeReducer from "./realTimeDataSlice";
 import companyReportReducer from "./companyReportSlice";
+import dashboardNavReducer from "./dashboardNavSlice";
 
 
 import { PersistPartial } from "redux-persist/es/persistReducer";
@@ -68,6 +69,7 @@ const slices = {
   realTime: realTimeReducer,
   companyReport: companyReportReducer,
   globalNotifications: globalNotificationsReducer,
+  dashboardNav: dashboardNavReducer,
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(

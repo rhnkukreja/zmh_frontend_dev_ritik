@@ -22,6 +22,7 @@ import { baseURL } from "@/constant";
 import pdfMake from "pdfmake/build/pdfmake";
 import CompensationTab from './CompensationTab';
 import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
+import { selectDashboardNav } from "@/stores/dashboardNavSlice";
 
 const cx = (...classes: Array<string | undefined | false>) =>
   classes.filter(Boolean).join(" ");
@@ -1039,7 +1040,19 @@ export default function CompanyOverview() {
   const lastRequestedYearRef = useRef<string>("");
   const isCompanyYearsLoadingRef = useRef(false);
 
-  const [activeOverviewTab, setActiveOverviewTab] = useState<'investor_summary' | 'compensation' | 'governance'>('investor_summary');
+  // Active sub-tab is now driven by the Koyfin-style sidebar (Redux) instead
+  // of local state, so there's a single source of truth and no duplicate
+  // tab bar rendered on the page.
+  const { activeSection: activeDashboardSection, activeSubSection } = useAppSelector(selectDashboardNav);
+  const activeOverviewTab: 'investor_summary' | 'compensation' | 'governance' = (() => {
+    // Map top-level sections to the appropriate internal tab
+    if (activeDashboardSection === 'governance-profile') return 'governance';
+    if (activeDashboardSection === 'compensation') return 'compensation';
+    if (activeDashboardSection === 'company-overview') {
+      return (activeSubSection as 'investor_summary' | 'compensation' | 'governance') || 'investor_summary';
+    }
+    return 'investor_summary';
+  })();
 
   const canViewRestrictedTabs = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
   const canViewCompensation = user?.user_type === 'Admin' || user?.user_type === 'Analyst';
@@ -1746,43 +1759,6 @@ export default function CompanyOverview() {
         </div>
       ) : (
         <>
-          {/* STICKY COMPANY OVERVIEW TABS */}
-          {/* Note: You may need to adjust "top-[180px]" up or down depending on the exact pixel height of your main header */}
-          <div className="sticky top-[150px] z-40 flex items-center justify-start gap-3 py-5 mb-3 bg-white ps-6 pr-6 shadow-lg border-b border-slate-200 w-full">
-            <button
-              onClick={() => setActiveOverviewTab('investor_summary')}
-              className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'investor_summary'
-                  ? 'border-primary text-primary bg-white'
-                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
-            >
-              Summary
-            </button>
-
-            <button
-              onClick={() => setActiveOverviewTab('governance')}
-              className={`relative flex items-center justify-center gap-2 rounded-lg border px-5 py-2 text-[14px] font-semibold transition-colors ${activeOverviewTab === 'governance'
-                  ? 'border-primary text-primary bg-white'
-                  : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
-            >
-              <span>Governance Profile</span>
-            </button>
-
-            {canViewCompensation && (
-              <button
-                onClick={() => setActiveOverviewTab('compensation')}
-                className={`px-5 py-2 rounded-lg border font-semibold text-[14px] transition-colors ${activeOverviewTab === 'compensation'
-                    ? 'border-primary text-primary bg-white'
-                    : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300'
-                  }`}
-              >
-                Compensation
-              </button>
-            )}
-          </div>
-
-
           <div className="mx-auto space-y-6">
             {activeOverviewTab === 'investor_summary' && filtered.length === 0 ? (
               <Card className="rounded-2xl">
