@@ -17,6 +17,7 @@ import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { convertToTitleCase } from "@/utils/helper";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
+import { Dialog } from "@/components/Base/Headless";
 import {
   AddNoActionType,
   AddShareholderType,
@@ -82,6 +83,34 @@ const DetailShareHolder = () => {
     useState<boolean>(false);
   const [addNewNoActionModalVisible, setAddNewNoActionModalVisible] =
     useState<boolean>(false);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteProposal = async () => {
+    try {
+      setIsDeleting(true);
+      if (selectedTab === "proposal") {
+        await shareHolderProposalService.deleteShareHolderProposal(params.id!);
+        toast.success("Shareholder Proposal deleted successfully");
+      }
+      setIsDeleteModalOpen(false);
+      dispatch(setPage(page));
+      dispatch(setTabs(selectedTab));
+      navigate("/shareholder-proposal", { state: { isBackToShareholderPage: true } });
+    } catch (error) {
+      console.error("Error deleting proposal:", error);
+      toast.error("Failed to delete. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!addNewShareholderModalVisible && selectedShareholderProposal) {
+      dispatch(getSingleShareHolderData({ url: url!, id: Number(params.id!) }));
+    }
+  }, [addNewShareholderModalVisible]);
 
   const onEditProposalClickHandler = (detail: any, detailType: string) => {
     if (detailType === "Shareholder Proposal Details") {
@@ -196,6 +225,17 @@ const DetailShareHolder = () => {
                   />
                 </div>
               </Tippy>
+              {selectedTab === "proposal" && (
+                <Tippy content="Delete" options={{ theme: "light" }}>
+                  <div className="cursor-pointer box p-2">
+                    <Lucide
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      icon="Trash2"
+                      className="w-4 h-4 mr-1.5 stroke-[1.3] text-danger "
+                    />
+                  </div>
+                </Tippy>
+              )}
             </div>
           )}
         </div>
@@ -540,6 +580,48 @@ const DetailShareHolder = () => {
           setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
           selectedShareholderWithdrawn={selectedShareholderWithdrawn}
         />
+      )}
+
+      {isDeleteModalOpen && (
+        <Dialog
+          size="md"
+          open={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+          }}
+        >
+          <Dialog.Panel className="p-0 text-center">
+            <div className="p-5 text-center">
+              <Lucide icon="XCircle" className="w-16 h-16 mx-auto mt-3 text-danger" />
+              <div className="mt-5 text-3xl">Are you sure?</div>
+              <div className="mt-2 text-slate-500">
+                Do you really want to delete this shareholder proposal? <br />
+                This action cannot be undone.
+              </div>
+            </div>
+            <div className="px-5 pb-8 text-center">
+              <Button
+                variant="outline-secondary"
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                }}
+                className="w-24 mr-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                type="button"
+                className="w-24"
+                onClick={handleDeleteProposal}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
       )}
     </>
   );

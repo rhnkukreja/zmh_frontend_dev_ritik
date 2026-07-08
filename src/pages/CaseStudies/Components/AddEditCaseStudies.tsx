@@ -34,6 +34,7 @@ interface AddNewCaseStudiesProps {
   setAddNewCaseStudyModalVisible: (visible: boolean) => void;
   selectedCaseStudies: any | null;
   isProxyContext?: boolean;
+  onAfterSave?: () => void;
 }
 
 const holdingTypesDropdown = ["Equity", "Debt/fixed income", "Private company"];
@@ -43,6 +44,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   setAddNewCaseStudyModalVisible,
   selectedCaseStudies,
   isProxyContext = false,
+  onAfterSave,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const location = useLocation();
@@ -318,6 +320,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
             )
           )
         );
+        if (onAfterSave) {
+          onAfterSave();
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
