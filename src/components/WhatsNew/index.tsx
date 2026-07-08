@@ -22,7 +22,6 @@ import { baseURL } from "@/constant";
 
 interface EmailAlert {
   id: number;
-  company_name: string;
   date: string;
   time: string;
   alert_name: string;
@@ -31,8 +30,8 @@ interface EmailAlert {
   date_created: string;
   date_updated: string;
   user: number;
-  company: number;
-  institution: number | null;
+  companies: Array<number | string>;
+  institutions: Array<number | string>;
 }
 
 interface GetHelpProps {
@@ -122,8 +121,15 @@ const GetWhatsNew = ({
       alert_name: alert.alert_name,
       modules: alert.modules,
       schedule: alert.schedule,
-      company: [{ value: alert.company, label: alert.company_name }],
-      institution: alert.institution ? [{ value: alert.institution, label: String(alert.institution) }] : []
+      company: Array.isArray(alert.companies)
+        ? alert.companies.map((c: any) => ({ value: c, label: String(c) }))
+        : [],
+      institution: Array.isArray(alert.institutions)
+        ? alert.institutions.map((i: any) => {
+            const match = institutionOptions.find((opt: any) => String(opt.value) === String(i));
+            return match ? match : { value: i, label: String(i) };
+          })
+        : []
     });
     // Switch to form tab for editing
     setActiveTab(0);
@@ -149,8 +155,8 @@ const GetWhatsNew = ({
         modules: data.modules || null,
         schedule: data.schedule || "",
         user: null, // You might want to get this from auth context
-        company: Array.isArray(data.company) ? data.company.map((c: any) => c.value) : [],
-        institution: Array.isArray(data.institution) ? data.institution.map((i: any) => i.value) : []
+        companies: Array.isArray(data.company) ? data.company.map((c: any) => c.value) : [],
+        institutions: Array.isArray(data.institution) ? data.institution.map((i: any) => i.value) : []
       };
 
       console.log("Sending data to backend:", formattedData);
