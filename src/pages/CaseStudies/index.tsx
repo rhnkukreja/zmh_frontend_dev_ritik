@@ -26,7 +26,7 @@ import {
   selectUnSelectAllCompany,
   resetPage,
 } from "@/stores/caseStudySlice";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { commonService } from "@/services/common";
 import { axiosInstance } from "@/services";
@@ -70,6 +70,7 @@ interface CaseStudyFilter {
 function CaseStudies() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     loading,
@@ -204,6 +205,26 @@ function CaseStudies() {
   const fetchKeywordSuggestions = (searchTerm: string) => {
     debouncedFetchKeywordSuggestions(searchTerm);
   };
+
+  useEffect(() => {
+    const state: any = location.state;
+    if (state?.refresh) {
+      const hasSelectedCompanies =
+        Array.isArray(filters?.global_search) && filters.global_search.length > 0;
+      const apiFilters =
+        isAllCompanySelected && !hasSelectedCompanies
+          ? { ...filters, global_search: undefined }
+          : filters;
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/case_studies/`,
+        apiFilters,
+        undefined,
+        page
+      );
+      dispatch(fetchCaseStudies(dynamicURL));
+      navigate(location.pathname + location.search, { replace: true, state: {} });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     const institutionParam = searchParams.get("institution_name");

@@ -5,8 +5,13 @@ import { getSingleSingleCaseStudy } from "@/stores/caseStudySlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
 import { ChevronLeft } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import AddNewCaseStudies from "./Components/AddEditCaseStudies";
+import { Dialog } from "@/components/Base/Headless";
+import { caseStudiesService } from "@/services/caseStudies";
+import { toast } from "react-toastify";
+import Tippy from "@/components/Base/Tippy";
 
 const DetailCaseStudies = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -18,6 +23,7 @@ const DetailCaseStudies = () => {
   const { singleCaseStudy, loading } = useAppSelector(
     (state) => state.caseStudies
   );
+  const { user } = useAppSelector((state) => state.authentiction);
 
   useEffect(() => {
     dispatch(getSingleSingleCaseStudy(Number(params.id!)));
@@ -25,6 +31,30 @@ const DetailCaseStudies = () => {
 
   const backToPreviousPage = () => {
     navigate(fromTab ? `/case-studies?tab=${fromTab}` : `/case-studies`);
+  };
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleEdit = () => {
+    setEditOpen(true);
+  };
+
+  const handleDeleted = async () => {
+    try {
+      setIsDeleting(true);
+      await caseStudiesService.deleteCaseStudy(Number(params.id!));
+      toast.success("Case Study deleted successfully");
+      setIsDeleteModalOpen(false);
+      const path = fromTab ? `/case-studies?tab=${fromTab}` : `/case-studies`;
+      navigate(path, { state: { refresh: true } });
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Something went wrong!");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -35,7 +65,7 @@ const DetailCaseStudies = () => {
         className="bg-theme-2 border-bg-theme-2 mb-4"
       >
         <ChevronLeft
-          className="roup-[.mode--light]:text-white text-white"
+          className="group-[.mode--light]:text-white text-white"
           size={18}
           strokeWidth={1.5}
         />
@@ -44,6 +74,20 @@ const DetailCaseStudies = () => {
       <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
           <h1 className="font-semibold" style={{fontSize: '18px'}}>Case Studies</h1>
+          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+            <div className="flex items-center gap-3">
+              <Tippy content="Edit" options={{ theme: "light" }}>
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                  <Lucide icon="PenLine" className="text-primary" onClick={handleEdit} />
+                </div>
+              </Tippy>
+              <Tippy content="Delete" options={{ theme: "light" }}>
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                  <Lucide icon="Trash2" className="text-danger" onClick={() => setIsDeleteModalOpen(true)} />
+                </div>
+              </Tippy>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -253,6 +297,59 @@ const DetailCaseStudies = () => {
           </div>
         )}
       </div>
+
+      {editOpen && (
+        <AddNewCaseStudies
+          addNewCaseStudyModalVisible={editOpen}
+          setAddNewCaseStudyModalVisible={setEditOpen}
+          selectedCaseStudies={singleCaseStudy}
+          onAfterSave={() => {
+            dispatch(getSingleSingleCaseStudy(Number(params.id!)));
+          }}
+        />
+      )}
+
+      {isDeleteModalOpen && (
+        <Dialog
+          size="md"
+          open={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+          }}
+        >
+          <Dialog.Panel className="p-0 text-center">
+            <div className="p-5 text-center">
+              <Lucide icon="XCircle" className="w-16 h-16 mx-auto mt-3 text-danger" />
+              <div className="mt-5 text-3xl">Are you sure?</div>
+              <div className="mt-2 text-slate-500">
+                Do you really want to delete this case study? <br />
+                This action cannot be undone.
+              </div>
+            </div>
+            <div className="px-5 pb-8 text-center">
+              <Button
+                variant="outline-secondary"
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                }}
+                className="w-24 mr-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                type="button"
+                className="w-24"
+                onClick={handleDeleted}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
     </>
   );
 };
