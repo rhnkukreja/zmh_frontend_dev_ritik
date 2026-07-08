@@ -102,57 +102,78 @@ const getLiveSupportPercentage = (proposal: any) => {
         const originalVal = proposal?.outcome_percentage;
         const placeholderText = "Meeting not held or results not available";
 
-        // 1. Check if the original data is a VALID percentage (e.g., 95.0%, 43.36%)
-        const isPlaceholder = 
-            !originalVal || 
-            originalVal.trim() === "" || 
-            originalVal.trim() === placeholderText;
+        const isPlaceholder =
+          !originalVal ||
+          originalVal.trim() === "" ||
+          originalVal.trim() === placeholderText;
 
-        // 🛑 CRITICAL FIX: If it is already a real percentage, RETURN IT IMMEDIATELY! Do not overwrite!
         if (!isPlaceholder) {
-            return originalVal;
+          return originalVal;
         }
 
-        // 2. ONLY if it is the placeholder, try to map from the 8-K Meeting Results tab
-        if (agmSummaryDetails?.proposals?.length > 0 && agmSummaryDetails?.proposals_headers?.length > 0) {
-            const headers = agmSummaryDetails.proposals_headers;
-            const nameKey = headers[0]?.field;
-            const pctKey = headers[headers.length - 1]?.field;
+        let sameCompany = false;
+        let sameYear = true;
+        try {
+          const compObj = agmSummaryDetails?.company?.[0] || null;
+          const agmCompanyName = compObj ? Object.keys(compObj)[0] : null;
+          const currentCompany = companyGlobalSearchName || "";
+          if (agmCompanyName && currentCompany) {
+            const a = agmCompanyName.toLowerCase();
+            const b = currentCompany.toLowerCase();
+            sameCompany = a.includes(b) || b.includes(a);
+          }
+          const agmYear = String(agmSummaryDetails?.Year ?? "");
+          const rowYear = String(proposal?.proxy_season || proposal?.year || "");
+          if (agmYear && rowYear && agmYear !== rowYear) {
+            sameYear = false;
+          }
+        } catch {}
 
-            if (nameKey && pctKey) {
-                const tokenize = (str: string) => 
-                    (str || "").toLowerCase()
-                    .replace(/[^a-z0-9\s]/g, '')
-                    .split(/\s+/)
-                    .filter(w => w.length > 3); 
+        if (!sameCompany || !sameYear) {
+          return placeholderText;
+        }
 
-                const targetTokens = tokenize(proposal?.proposal_name || "");
-                
-                if (targetTokens.length > 0) {
-                    let bestMatchVal = null;
-                    let maxScore = 0;
+        if (
+          agmSummaryDetails?.proposals?.length > 0 &&
+          agmSummaryDetails?.proposals_headers?.length > 0
+        ) {
+          const headers = agmSummaryDetails.proposals_headers;
+          const nameKey = headers[0]?.field;
+          const pctKey = headers[headers.length - 1]?.field;
 
-                    agmSummaryDetails.proposals.forEach((p: any) => {
-                        const meetingTokens = tokenize(String(p[nameKey] || ""));
-                        const score = targetTokens.filter(t => meetingTokens.includes(t)).length;
+          if (nameKey && pctKey) {
+            const tokenize = (str: string) =>
+              (str || "")
+                .toLowerCase()
+                .replace(/[^a-z0-9\s]/g, "")
+                .split(/\s+/)
+                .filter((w) => w.length > 3);
 
-                        if (score > maxScore) {
-                            maxScore = score;
-                            bestMatchVal = p[pctKey];
-                        }
-                    });
+            const targetTokens = tokenize(proposal?.proposal_name || "");
 
-                    // If matched safely, return the new mapped percentage!
-                    if (maxScore >= 2 && bestMatchVal) {
-                        return bestMatchVal;
-                    }
+            if (targetTokens.length > 0) {
+              let bestMatchVal: any = null;
+              let maxScore = 0;
+
+              agmSummaryDetails.proposals.forEach((p: any) => {
+                const meetingTokens = tokenize(String(p[nameKey] || ""));
+                const score = targetTokens.filter((t) => meetingTokens.includes(t)).length;
+
+                if (score > maxScore) {
+                  maxScore = score;
+                  bestMatchVal = p[pctKey];
                 }
+              });
+
+              if (maxScore >= 2 && bestMatchVal) {
+                return bestMatchVal;
+              }
             }
+          }
         }
 
-        // 3. Fallback to placeholder if nothing was found
         return placeholderText;
-    };
+      };
     
     return (
         <div className={clsx([tableOnlyView ? "p-5" : ""])}>

@@ -32,6 +32,7 @@ interface CompanySelectProps {
   currentCompany?: string;
   currentFilters?: any;
   year?: string; // Add year parameter
+  showDefaultOptions?: boolean;
 }
 
 const fetchOptions = async (
@@ -110,10 +111,11 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   currentCompany = "",
   currentFilters,
   year,
+  showDefaultOptions = true,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
-  const [isLoadingDefault, setIsLoadingDefault] = useState(true);
+  const [isLoadingDefault, setIsLoadingDefault] = useState(showDefaultOptions);
   const [isFocused, setIsFocused] = useState(false);
 
   const loadOptions = useCallback(
@@ -155,15 +157,19 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   );
 
   useEffect(() => {
+    if (!showDefaultOptions) {
+      setDefaultOptions([]);
+      setIsLoadingDefault(false);
+      return;
+    }
+
     const fetchDefaultOptions = async () => {
       try {
         setIsLoadingDefault(true);
-        // Always ensure year parameter is included for NPX-related components
         const yearParam = year || 
                          (window.location.search.includes('year=') ? 
                           new URLSearchParams(window.location.search).get('year') : 
                           '2024');
-                          
         const options = await fetchOptions(
           "a",
           isInstitution,
@@ -173,25 +179,19 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           isHideCurrentCompany,
           currentCompany,
           currentFilters,
-          yearParam // Always pass year parameter
+          yearParam
         );
         setDefaultOptions(options);
       } catch (error) {
         console.error("Error fetching default options:", error);
-        setDefaultOptions([]); // Set empty array on error
+        setDefaultOptions([]);
       } finally {
         setIsLoadingDefault(false);
       }
     };
 
-    // Fetch options when component mounts or when critical props change
     fetchDefaultOptions();
-    
-  }, [
-    // Always include companyGlobalSearchName and year in dependencies
-    companyGlobalSearchName,
-    year
-  ]); // Refresh options when company or year changes
+  }, [companyGlobalSearchName, year, showDefaultOptions, isInstitution, exactUrl, arrayKeyName, isHideCurrentCompany, currentCompany, currentFilters]);
   const onChangeSelect = (newValue: MultiValue<OptionType>) => {
     onChange(newValue as OptionType[]);
     // Clear input value after selection
@@ -321,9 +321,9 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       styles={customStyles}
       isMulti={isMulti}
       loadOptions={loadOptions}
-      defaultOptions={isLoadingDefault ? true : (defaultOptions?.length ? defaultOptions?.slice(0,5) : false)}
+      defaultOptions={showDefaultOptions ? (isLoadingDefault ? true : (defaultOptions?.length ? defaultOptions?.slice(0,5) : false)) : false}
       placeholder={
-        isLoadingDefault 
+        showDefaultOptions && isLoadingDefault 
           ? "Loading..." 
           : placeholder
           ? placeholder
@@ -341,10 +341,11 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       onChange={onChangeSelect}
       menuPortalTarget={document.body}
       isClearable={isClearable}
-      isLoading={isLoadingDefault}
+      isLoading={showDefaultOptions ? isLoadingDefault : false}
       openMenuOnFocus={true}
       openMenuOnClick={true}
       controlShouldRenderValue={true} // Always render the selected value
+      noOptionsMessage={() => (inputValue && inputValue.length > 0 ? 'No options' : 'Type to search')}
     />
   );
 };

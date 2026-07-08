@@ -14,9 +14,11 @@ import { commonService } from "@/services/common";
 import { toast } from "react-toastify";
 import Lucide from "../Base/Lucide";
 import CompanySelect from "../ReactSelectAsync";
+import MultiSelectDropdown from "../Base/MultiSelect";
 import LoadingIcon from "../Base/LoadingIcon";
 import Tippy from "../Base/Tippy";
 import { axiosInstance } from "@/services";
+import { baseURL } from "@/constant";
 
 interface EmailAlert {
   id: number;
@@ -47,6 +49,9 @@ const GetWhatsNew = ({
   const [loadingAlerts, setLoadingAlerts] = useState(false);
   const [editingAlert, setEditingAlert] = useState<EmailAlert | null>(null);
   const [activeTab, setActiveTab] = useState(0); // 0 for form, 1 for table
+  const [institutionOptions, setInstitutionOptions] = useState<any[]>([]);
+  const [institutionLoading, setInstitutionLoading] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const {
     control,
     handleSubmit,
@@ -68,6 +73,34 @@ const GetWhatsNew = ({
     }
   };
 
+  const fetchInstitutions = async () => {
+    setInstitutionLoading(true);
+    try {
+      let data: any;
+      try {
+        const res1 = await axiosInstance.get(`${baseURL}/institute/?institution_type=investor&all=true`);
+        data = res1.data;
+      } catch (e) {
+        const res2 = await fetch(`${baseURL}/institute/?institution_type=investor&all=true`);
+        data = await res2.json();
+      }
+      const list = Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
+      const opts = list
+        .map((x: any) => {
+          const value = x?.id ?? x?.value ?? x?.pk ?? x?.institute_id ?? x;
+          const rawLabel = x?.institution ?? x?.name ?? x?.label ?? x?.institution_name ?? (typeof x === 'string' ? x : (x?.toString ? x.toString() : ''));
+          const label = typeof rawLabel === 'string' ? rawLabel : String(rawLabel);
+          return { value, label };
+        })
+        .filter((o: any) => o && o.label);
+      setInstitutionOptions(opts);
+    } catch (e) {
+      setInstitutionOptions([]);
+    } finally {
+      setInstitutionLoading(false);
+    }
+  };
+
   // Delete email alert
   const handleDeleteAlert = async (id: number) => {
     try {
@@ -83,12 +116,14 @@ const GetWhatsNew = ({
   // Update email alert
   const handleUpdateAlert = async (alert: EmailAlert) => {
     setEditingAlert(alert);
+    setFormMode('edit');
     // Populate form with existing data
     reset({
       alert_name: alert.alert_name,
       modules: alert.modules,
       schedule: alert.schedule,
-      company: { value: alert.company, label: alert.company_name }
+      company: [{ value: alert.company, label: alert.company_name }],
+      institution: alert.institution ? [{ value: alert.institution, label: String(alert.institution) }] : []
     });
     // Switch to form tab for editing
     setActiveTab(0);
@@ -97,6 +132,11 @@ const GetWhatsNew = ({
   useEffect(() => {
     if (whatsNewFormVisible) {
       fetchEmailAlerts();
+      fetchInstitutions();
+      setEditingAlert(null);
+      setFormMode('create');
+      setActiveTab(0);
+      reset({ alert_name: "", modules: [], schedule: "", company: [], institution: [] });
     }
   }, [whatsNewFormVisible]);
 
@@ -109,8 +149,8 @@ const GetWhatsNew = ({
         modules: data.modules || null,
         schedule: data.schedule || "",
         user: null, // You might want to get this from auth context
-        company: data.company?.value || null,
-        institution: null // Add institution field to form if needed
+        company: Array.isArray(data.company) ? data.company.map((c: any) => c.value) : [],
+        institution: Array.isArray(data.institution) ? data.institution.map((i: any) => i.value) : []
       };
 
       console.log("Sending data to backend:", formattedData);
@@ -155,6 +195,7 @@ const GetWhatsNew = ({
         onClose={() => {
           setWhatsNewFormVisible(false);
           setEditingAlert(null);
+          setFormMode('create');
           setActiveTab(0);
           reset();
         }}
@@ -162,13 +203,26 @@ const GetWhatsNew = ({
         <Dialog.Panel className="text-center">
           <Dialog.Title className="rounded-t-md to-[#000000CC] from-[#9F1239]">
             <h2 className="mr-auto text-md font-semibold">
-              {editingAlert ? "Edit Email Alert" : "Email Alert"}
+              {formMode === 'edit' ? "Edit Email Alert" : "Email Alert"}
             </h2>
+            {formMode === 'edit' && (
+              <button
+                onClick={() => {
+                  setEditingAlert(null);
+                  setFormMode('create');
+                  reset({ alert_name: "", modules: [], schedule: "", company: [], institution: [] });
+                }}
+                className="px-3 py-1 mr-10 rounded-md border border-primary text-primary hover:bg-primary/10"
+              >
+                Create Alert
+              </button>
+            )}
             <div
               onClick={() => {
                 reset();
                 setWhatsNewFormVisible(false);
                 setEditingAlert(null);
+                setFormMode('create');
                 setActiveTab(0);
               }}
               className="absolute top-0 right-0 mt-2 mr-3 cursor-pointer"
@@ -179,7 +233,7 @@ const GetWhatsNew = ({
           
           <Dialog.Description className="px-6 py-4">
             {/* Tab Navigation */}
-            <Tab.Group selectedIndex={activeTab} onChange={setActiveTab}>
+            <Tab.Group selectedIndex={activeTab} onChange={(i) => { setActiveTab(i); if (i === 0) { setEditingAlert(null); setFormMode('create'); } }}>
               <Tab.List className="flex mb-6 gap-2 border-none">
                 <Tab>
                   {({ selected }) => (
@@ -190,7 +244,7 @@ const GetWhatsNew = ({
                           : 'text-gray-600 border border-primary hover:text-primary hover:bg-primary/10'
                       }`}
                     >
-                      {editingAlert ? "Edit Alert" : "Create Alert"}
+                      {formMode === 'edit' ? "Edit Alert" : "Create Alert"}
                     </button>
                   )}
                 </Tab>
@@ -216,7 +270,7 @@ const GetWhatsNew = ({
                       <div className="grid grid-cols-1 gap-4">
                         <div className="w-full">
                           <FormCheck.Label className="block text-[0.9rem] font-semibold text-slate-500 mb-2 text-left">
-                            Alert Name
+                            Alert Name*
                           </FormCheck.Label>
                           <Controller
                             name="alert_name"
@@ -244,14 +298,16 @@ const GetWhatsNew = ({
                         
                         <div className="w-full">
                           <FormCheck.Label className="block text-[0.9rem] font-semibold text-slate-500 mb-2 text-left">
-                            Modules
+                            Modules*
                           </FormCheck.Label>
                           <div className="grid grid-cols-2 gap-4">
                             <Controller
                               name="modules"
                               control={control}
                               defaultValue={[]}
-                              rules={{}}
+                              rules={{
+                                validate: (v) => (v && v.length > 0) || "Select at least one module",
+                              }}
                               render={({ field, fieldState: { error } }) => (
                                 <>
                                   {[
@@ -315,7 +371,8 @@ const GetWhatsNew = ({
                                     <CompanySelect
                                       value={field.value}
                                       onChange={field.onChange}
-                                      isMulti={false}
+                                      isMulti={true}
+                                      showDefaultOptions={false}
                                       className="mt-1"
                                     />
                                     {error && (
@@ -333,12 +390,12 @@ const GetWhatsNew = ({
                           
                           <div className="w-full">
                             <FormCheck.Label className="block text-[0.9rem] font-semibold text-slate-500 mb-2 text-left">
-                              Schedule
+                              Schedule*
                             </FormCheck.Label>
                             <Controller
                               name="schedule"
                               control={control}
-                              rules={{}}
+                              rules={{ required: "Schedule is required" }}
                               render={({ field, fieldState: { error } }) => (
                                 <>
                                   <div className="flex flex-col sm:flex-row py-2">
@@ -401,6 +458,37 @@ const GetWhatsNew = ({
                             />
                           </div>
                         </div>
+
+                        <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="w-full">
+                            <FormCheck.Label className="block text-[0.9rem] font-semibold text-slate-500 mb-2 text-left">
+                              Institution
+                            </FormCheck.Label>
+                            <Controller
+                              name="institution"
+                              control={control}
+                              defaultValue={[]}
+                              render={({ field, fieldState: { error } }) => (
+                                <>
+                                  <MultiSelectDropdown
+                                    data={institutionOptions}
+                                    loading={institutionLoading}
+                                    selectedOption={field.value || []}
+                                    onChange={(opts) => field.onChange(opts)}
+                                    placeholder={institutionLoading ? "Loading options..." : "Select Institution"}
+                                    alignLeft
+                                    size="compact"
+                                  />
+                                  {error && (
+                                    <Error className="text-red-600 mt-2">
+                                      {error.message}
+                                    </Error>
+                                  )}
+                                </>
+                              )}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
@@ -410,6 +498,7 @@ const GetWhatsNew = ({
                           reset();
                           setWhatsNewFormVisible(false);
                           setEditingAlert(null);
+                          setFormMode('create');
                           setActiveTab(0);
                         }}
                         type="button"
@@ -432,7 +521,7 @@ const GetWhatsNew = ({
                             }`}
                           />
                         )}
-                        {editingAlert ? "Update" : "Submit"}
+                        {formMode === 'edit' ? "Update" : "Submit"}
                       </Button>
                     </div>
                   </form>
@@ -466,9 +555,6 @@ const GetWhatsNew = ({
                                   Alert Name
                                 </th>
                                 <th className="text-left py-2 px-3 font-medium text-slate-600 dark:text-slate-400 text-sm">
-                                  Company Name
-                                </th>
-                                <th className="text-left py-2 px-3 font-medium text-slate-600 dark:text-slate-400 text-sm">
                                   Schedule
                                 </th>
                                 <th className="text-left py-2 px-3 font-medium text-slate-600 dark:text-slate-400 text-sm">
@@ -488,11 +574,6 @@ const GetWhatsNew = ({
                                   <td className="py-3 px-3 text-left">
                                     <div className="font-medium text-slate-800 dark:text-slate-200 text-sm">
                                       {alert.alert_name}
-                                    </div>
-                                  </td>
-                                  <td className="py-3 px-3 text-left">
-                                    <div className="text-slate-600 dark:text-slate-400 text-sm">
-                                      {alert.company_name}
                                     </div>
                                   </td>
                                   <td className="py-3 px-3 text-left">
