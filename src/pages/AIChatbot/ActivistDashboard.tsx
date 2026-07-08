@@ -59,14 +59,22 @@ const normaliseProfile = (raw: any) => {
     .replace(/\s+/g, " ")
     .trim();
 };
+  // activist_playbook is synthesized purely from this profile's own
+  // campaign_history + 13F data (no external web search), so it's still
+  // reliable even on runs where the firm-bio web search came back empty —
+  // used below as a fallback for the summary text and observations list.
+  const playbook = raw.activist_playbook || {};
+
   const rawSummary =
     typeof raw.investor_summary === "string"
       ? raw.investor_summary
       : raw.activist_investor_summary?.investment_focus ||
         (typeof raw.activist_investor_summary === "string"
           ? raw.activist_investor_summary
-          : "");
-          
+          : "") ||
+        playbook.campaign_style ||
+        "";
+
   const summary = stripCitations(rawSummary);
 
   // 🛑 REMOVED .filter(Boolean) SO EMPTY ROWS DON'T DISAPPEAR
@@ -111,12 +119,25 @@ const normaliseProfile = (raw: any) => {
     sources:         c.source_set || [],
   }));
 
+  const playbookObservations = [
+    playbook.governance_philosophy,
+    playbook.board_representation_strategy,
+    playbook.operational_focus,
+    Array.isArray(playbook.recurring_investment_themes) && playbook.recurring_investment_themes.length > 0
+      ? `Recurring investment themes: ${playbook.recurring_investment_themes.join(", ")}.`
+      : null,
+    Array.isArray(playbook.preferred_sectors) && playbook.preferred_sectors.length > 0
+      ? `Preferred sectors: ${playbook.preferred_sectors.join(", ")}.`
+      : null,
+  ].filter(Boolean);
+
   const rawObservations =
     raw.key_cross_campaign_observations ||
     raw.custom_observations ||
-    raw.investor_profile_analysis ||
-    [];
-    
+    (Array.isArray(raw.investor_profile_analysis) && raw.investor_profile_analysis.length > 0
+      ? raw.investor_profile_analysis
+      : playbookObservations);
+
   // 🛑 REMOVED .filter(Boolean) HERE TOO
   const observations = rawObservations.map((obs: any) => stripCitations(obs));
 
