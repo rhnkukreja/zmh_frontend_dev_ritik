@@ -32,6 +32,8 @@ interface EmailAlert {
   user: number;
   companies: Array<number | string>;
   institutions: Array<number | string>;
+  companies_name?: string[];
+  institutions_name?: string[];
 }
 
 interface GetHelpProps {
@@ -63,7 +65,10 @@ const GetWhatsNew = ({
     setLoadingAlerts(true);
     try {
       const response = await axiosInstance.get("/notifications/email_alert/");
-      setEmailAlerts(response.data.results || []);
+      const results = Array.isArray(response?.data?.results)
+        ? response.data.results
+        : [];
+      setEmailAlerts(results as EmailAlert[]);
     } catch (error) {
       console.error("Error fetching email alerts:", error);
       toast.error("Failed to fetch email alerts");
@@ -122,10 +127,22 @@ const GetWhatsNew = ({
       modules: alert.modules,
       schedule: alert.schedule,
       company: Array.isArray(alert.companies)
-        ? alert.companies.map((c: any) => ({ value: c, label: String(c) }))
+        ? alert.companies.map((c: any, idx: number) => ({
+            value: c,
+            label:
+              (Array.isArray(alert.companies_name) && alert.companies_name[idx])
+                ? String(alert.companies_name[idx])
+                : String(c),
+          }))
         : [],
       institution: Array.isArray(alert.institutions)
-        ? alert.institutions.map((i: any) => {
+        ? alert.institutions.map((i: any, idx: number) => {
+            const nameFromPayload = Array.isArray(alert.institutions_name)
+              ? alert.institutions_name[idx]
+              : undefined;
+            if (nameFromPayload) {
+              return { value: i, label: String(nameFromPayload) };
+            }
             const match = institutionOptions.find((opt: any) => String(opt.value) === String(i));
             return match ? match : { value: i, label: String(i) };
           })
