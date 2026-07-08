@@ -11,6 +11,7 @@ import AddNewCaseStudies from "./Components/AddEditCaseStudies";
 import { Dialog } from "@/components/Base/Headless";
 import { caseStudiesService } from "@/services/caseStudies";
 import { toast } from "react-toastify";
+import Tippy from "@/components/Base/Tippy";
 
 const DetailCaseStudies = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -46,7 +47,8 @@ const DetailCaseStudies = () => {
       await caseStudiesService.deleteCaseStudy(Number(params.id!));
       toast.success("Case Study deleted successfully");
       setIsDeleteModalOpen(false);
-      navigate(fromTab ? `/case-studies?tab=${fromTab}` : `/case-studies`);
+      const path = fromTab ? `/case-studies?tab=${fromTab}` : `/case-studies`;
+      navigate(path, { state: { refresh: true } });
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Something went wrong!");
@@ -63,7 +65,7 @@ const DetailCaseStudies = () => {
         className="bg-theme-2 border-bg-theme-2 mb-4"
       >
         <ChevronLeft
-          className="roup-[.mode--light]:text-white text-white"
+          className="group-[.mode--light]:text-white text-white"
           size={18}
           strokeWidth={1.5}
         />
@@ -73,21 +75,17 @@ const DetailCaseStudies = () => {
         <div className="flex flex-row  justify-between items-center pb-3 mb-2 border-b border-gray-200">
           <h1 className="font-semibold" style={{fontSize: '18px'}}>Case Studies</h1>
           {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleEdit}
-                variant="primary"
-                className="text-white px-4 py-1.5 text-sm"
-              >
-                Edit
-              </Button>
-              <Button
-                onClick={() => setIsDeleteModalOpen(true)}
-                variant="danger"
-                className="px-4 py-1.5 text-sm"
-              >
-                Delete
-              </Button>
+            <div className="flex items-center gap-3">
+              <Tippy content="Edit" options={{ theme: "light" }}>
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                  <Lucide icon="PenLine" className="text-primary" onClick={handleEdit} />
+                </div>
+              </Tippy>
+              <Tippy content="Delete" options={{ theme: "light" }}>
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
+                  <Lucide icon="Trash2" className="text-danger" onClick={() => setIsDeleteModalOpen(true)} />
+                </div>
+              </Tippy>
             </div>
           )}
         </div>
