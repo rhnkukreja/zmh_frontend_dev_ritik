@@ -74,7 +74,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "shareholder-meeting-results",
-    label: "Shareholder Meeting Results",
+    label: "Shareholder Meeting",
     icon: Vote,
     group: "Company",
     subItems: [],
