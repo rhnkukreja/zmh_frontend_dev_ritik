@@ -115,7 +115,7 @@ const VdsProxyVotingTable = () => {
 
     tab,
   } = useAppSelector((state) => state.dashboard);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // Ref to track last API call parameters to prevent duplicates
   const lastApiCallRef = useRef<{
@@ -127,6 +127,7 @@ const VdsProxyVotingTable = () => {
 
   const {
     companyGlobalSearchName,
+    companyGlobalSearchId,
     companyGlobalSearchTicker,
     isCompanySelected,
   } = useAppSelector((state: RootState) => state.authentiction);
@@ -135,7 +136,8 @@ const VdsProxyVotingTable = () => {
   const yearTicker = searchParams.get("year")!;
 
   const [filter, setFilter] = useState<any>([]);
-  const [meetingDate, setMeetingDate] = useState('');
+  const meetingDate = searchParams.get("meeting_date") || "";
+  const [activeVdsView, setActiveVdsView] = useState<"voting-data" | "voting-rationale">("voting-data");
 
   const emptyStateAnimationStyle: React.CSSProperties = {
     animationDelay: "120ms",
@@ -150,14 +152,14 @@ const VdsProxyVotingTable = () => {
 
   // Clean data loading function for Top-20 tab
   const loadTop20Data = useCallback(() => {
-    if (!companyGlobalSearchTicker || !yearTicker) return;
+    if (!companyGlobalSearchId || !meetingDate) return;
 
     // Check if we've already made this exact API call
     const currentCall = {
       company: companyGlobalSearchTicker,
       year: yearTicker,
       tab: 'Top-20',
-      filter: ''
+      filter: meetingDate || ''
     };
 
     if (lastApiCallRef.current && 
@@ -169,7 +171,7 @@ const VdsProxyVotingTable = () => {
       return;
     }
 
-    console.log('🚀 Loading Top-20 data for:', companyGlobalSearchTicker, yearTicker);
+    console.log('🚀 Loading Top-20 data for:', companyGlobalSearchId, meetingDate);
     
     // Update the ref to track this API call
     lastApiCallRef.current = currentCall;
@@ -178,7 +180,11 @@ const VdsProxyVotingTable = () => {
     const fetchPromise = dispatch(
       fetchVdsProxyDashboard(
         createDynamicURL(
-          `${baseURL}/vds_proxy_voting/?ticker=${companyGlobalSearchTicker}&year=${yearTicker}`
+          `${baseURL}/vds_proxy_voting/`,
+          {
+            company_id: companyGlobalSearchId,
+            meeting_date: meetingDate,
+          }
         )
       )
     );
@@ -186,8 +192,8 @@ const VdsProxyVotingTable = () => {
     const rationalePromise = dispatch(
       getProxyVotingRationaleTop20(
         createDynamicURL(`/vds_proxy_voting_rationale/`, {
-          ticker: companyGlobalSearchTicker,
-          year: yearTicker,
+          company_id: companyGlobalSearchId,
+          meeting_date: meetingDate,
         })
       )
     );
@@ -209,13 +215,13 @@ const VdsProxyVotingTable = () => {
     }).catch(error => {
       console.warn('Failed to cache Top-20 data:', error);
     });
-  }, [companyGlobalSearchTicker, yearTicker, dispatch]);
+  }, [companyGlobalSearchId, meetingDate, companyGlobalSearchTicker, yearTicker, dispatch]);
 
   // Clean data loading function for All-Investor tab
   const loadAllInvestorData = useCallback(() => {
-    if (!companyGlobalSearchTicker || !yearTicker) return;
+    if (!companyGlobalSearchId || !meetingDate) return;
 
-    const filterString = filter?.length > 0 ? JSON.stringify(filter.sort()) : '';
+    const filterString = (filter?.length > 0 ? JSON.stringify(filter.sort()) : '') + `|${meetingDate}`;
     const institutionName = filter?.length > 0 ? filter : "Top 10";
     
     // Check if we've already made this exact API call
@@ -235,7 +241,7 @@ const VdsProxyVotingTable = () => {
       return;
     }
     
-    console.log('🚀 Loading All-Investor data for:', companyGlobalSearchTicker, yearTicker, 'with filters:', filter);
+    console.log('🚀 Loading All-Investor data for:', companyGlobalSearchId, meetingDate, 'with filters:', filter);
 
     // Update the ref to track this API call
     lastApiCallRef.current = currentCall;
@@ -244,8 +250,8 @@ const VdsProxyVotingTable = () => {
     const fetchPromise = dispatch(
       fetchVdsProxyAllInvestor(
         createDynamicURL(`${baseURL}/vds_proxy_voting/`, {
-          ticker: companyGlobalSearchTicker,
-          year: yearTicker,
+          company_id: companyGlobalSearchId,
+          meeting_date: meetingDate,
           institution_name: institutionName,
         })
       )
@@ -254,8 +260,8 @@ const VdsProxyVotingTable = () => {
     const rationalePromise = dispatch(
       getProxyVotingRationaleAllInvestors(
         createDynamicURL(`/vds_proxy_voting_rationale/`, {
-          ticker: companyGlobalSearchTicker,
-          year: yearTicker,
+          company_id: companyGlobalSearchId,
+          meeting_date: meetingDate,
           institution_name: institutionName,
         })
       )
@@ -279,13 +285,13 @@ const VdsProxyVotingTable = () => {
     }).catch(error => {
       console.warn('Failed to cache All-Investor data:', error);
     });
-  }, [companyGlobalSearchTicker, yearTicker, filter, dispatch]);
+  }, [companyGlobalSearchId, meetingDate, filter, dispatch, companyGlobalSearchTicker, yearTicker]);
 
   // Single effect to handle data loading - prevents duplicate API calls
   useEffect(() => {
-    if (!companyGlobalSearchTicker || !yearTicker) return;
+    if (!companyGlobalSearchId || !meetingDate) return;
 
-    console.log('📊 Loading data for:', companyGlobalSearchTicker, yearTicker, 'tab:', tab);
+    console.log('📊 Loading data for:', companyGlobalSearchId, meetingDate, 'tab:', tab);
     
     // Load data based on current tab
     if (tab === "Top-20") {
@@ -293,7 +299,7 @@ const VdsProxyVotingTable = () => {
     } else if (tab === "All-Investor") {
       loadAllInvestorData();
     }
-  }, [companyGlobalSearchTicker, yearTicker, tab, loadTop20Data, loadAllInvestorData]);
+  }, [companyGlobalSearchId, meetingDate, tab, loadTop20Data, loadAllInvestorData]);
 
   // Separate effect to clear cache only when company changes (not year or tab)
   useEffect(() => {
@@ -393,6 +399,7 @@ const VdsProxyVotingTable = () => {
   const [apiDropdownOptions, setApiDropdownOptions] = useState<any>([]);
 
   const getAllInstitutionDropdown = async () => {
+    if (!yearTicker) return;
     try {
       const res = await dashboardService.getInstitution({
         company_name: [companyGlobalSearchName],
@@ -401,7 +408,13 @@ const VdsProxyVotingTable = () => {
       if (res.result?.institutes) {
         setApiDropdownOptions(res.result?.institutes);
       }
-      setMeetingDate(res.result?.meeting_date);
+      if (!meetingDate && res.result?.meeting_date) {
+        setSearchParams((previousParams) => {
+          const params = new URLSearchParams(previousParams);
+          params.set("meeting_date", String(res.result.meeting_date));
+          return params;
+        });
+      }
     } catch (error) {
       return error;
     } finally {
@@ -411,7 +424,7 @@ const VdsProxyVotingTable = () => {
 
   useEffect(() => {
     getAllInstitutionDropdown();
-  }, [companyGlobalSearchTicker]);
+  }, [companyGlobalSearchTicker, yearTicker]);
 
   const onSubmit = async (investorProfileFilter: any) => {
     if (investorProfileFilter?.institution) {
@@ -436,57 +449,52 @@ const VdsProxyVotingTable = () => {
   };
 
   const getSelectedTabIndex = () => {
-    const tabIndex = tab === "Top-20" ? 0 : tab === "All-Investor" ? 1 : -1;
+    const tabIndex = tab === "Top-20" ? 0 : tab === "All-Investor" ? 1 : 0;
     return tabIndex;
   };
 
   return (
     <>
-      <div className="flex justify-between items-center mb-1">
-        <Button
-          onClick={() => {
-            navigate("/", {
-              state: {
-                activeTab: "shareholder-meeting-results"
-              }
-            });
-          }}
-          variant="primary"
-          className="bg-theme-2 border-bg-theme-2"
-        >
-          <ChevronLeft
-            className="group-[.mode--light]:text-white text-white"
-            size={18}
-            strokeWidth={1.5}
-          />
-          Back
-        </Button>
-        
-        <Button
-          onClick={() => {
-            const votingRationaleSection = document.querySelector('[data-voting-rationale]');
-            if (votingRationaleSection) {
-              votingRationaleSection.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'start'
-              });
-            }
-          }}
-          className="px-5 py-2 rounded flex gap-2 items-center border border-primary text-primary"
-        >
-          <span>Voting Rationale</span>
-          <Lucide 
-            icon="ChevronDown" 
-            className="w-4 h-4" 
-          />
-        </Button>
-      </div>
-
       <div className="p-5 mt-1 box">
         <div className="w-full">
           <>
-            <Tab.Group selectedIndex={getSelectedTabIndex()}>
-              <Tab.List variant="link-tabs">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+              <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="VDS views">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeVdsView === "voting-data"}
+                  onClick={() => setActiveVdsView("voting-data")}
+                  className={clsx(
+                    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+                    activeVdsView === "voting-data"
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  <Lucide icon="BarChart3" className="w-4 h-4" />
+                  Voting Data
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeVdsView === "voting-rationale"}
+                  onClick={() => setActiveVdsView("voting-rationale")}
+                  className={clsx(
+                    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+                    activeVdsView === "voting-rationale"
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  <Lucide icon="FileText" className="w-4 h-4" />
+                  Voting Rationale
+                </button>
+              </div>
+            </div>
+
+            <Tab.Group defaultIndex={getSelectedTabIndex()}>
+              <Tab.List variant="link-tabs" className="mt-4">
                 <Tab>
                   <Tab.Button
                     className="w-full py-2"
@@ -518,18 +526,8 @@ const VdsProxyVotingTable = () => {
 
               <Tab.Panels className="mt-5">
                 <Tab.Panel className="leading-relaxed">
-                  <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-3">
-                   <span>
-                   <div className="flex items-center gap-2">
-                     <h1 className="text-lg font-bold">Proxy Voting</h1>
-                   </div>
-                   {
-                         meetingDate &&
-                        <p className=" italic"> Meeting Date: {meetingDate} </p>
-                      }
-                   </span>
-                    {tab === "Top-20" &&
-                      vdsProxyDetails?.vds_report_headers?.length > 0 && (
+                  <div className="flex justify-end items-center gap-4 mb-3 xs:mt-4 md:mt-0">
+                    {activeVdsView === "voting-data" && vdsProxyDetails?.vds_report_headers?.length > 0 && (
                         <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
                           {
                             yearTicker !== "2025" &&
@@ -555,6 +553,7 @@ const VdsProxyVotingTable = () => {
                       )}
                   </div>
 
+                  <div className={activeVdsView === "voting-data" ? "block" : "hidden"}>
                   <TableWrapper
                     isLoading={vdsProxyLoading}
                     rows={8}
@@ -754,13 +753,17 @@ const VdsProxyVotingTable = () => {
                       )}
                   </TableWrapper>
 
-                  <div data-voting-rationale>
-                    <VotingRationale 
-                      meetingDate={meetingDate} 
-                      tabType="top20"
-                      parentLoading={vdsProxyLoading} // Pass parent loading state
-                    />
                   </div>
+
+                  {activeVdsView === "voting-rationale" && (
+                    <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" data-voting-rationale>
+                      <VotingRationale
+                        meetingDate={meetingDate}
+                        tabType="top20"
+                        parentLoading={vdsProxyLoading}
+                      />
+                    </div>
+                  )}
                 </Tab.Panel>
                 
                 <Tab.Panel className="leading-relaxed">
@@ -824,20 +827,8 @@ const VdsProxyVotingTable = () => {
                     </div>
                   </form>
                   </div>
-                  <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h1 className="text-lg font-bold">
-                          Proxy Voting
-                        </h1>
-                      </div>
-                      {
-                         meetingDate &&
-                        <p className="text-sm italic text-slate-600 dark:text-slate-400 mt-1"> Meeting Date: {meetingDate} </p>
-                      }
-                    </div>
-
-                    {vdsProxyAllInvestorDetails?.vds_report?.length > 0 && (
+                  <div className="flex justify-end items-center gap-4 mb-4 xs:mt-4 md:mt-0">
+                    {activeVdsView === "voting-data" && vdsProxyAllInvestorDetails?.vds_report?.length > 0 && (
                       <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
                         <Tippy
                           content="Download Excel"
@@ -854,6 +845,7 @@ const VdsProxyVotingTable = () => {
                     )}
                   </div>
 
+                  <div className={activeVdsView === "voting-data" ? "block" : "hidden"}>
                   <TableWrapper
                     isLoading={vdsProxyAllInvestorLoading}
                     rows={8}
@@ -1069,15 +1061,19 @@ const VdsProxyVotingTable = () => {
                         </div>
                       </div>
                     )}
-
-                  <div data-voting-rationale>
-                    <VotingRationale 
-                      meetingDate={meetingDate} 
-                      filter={filter} 
-                      tabType="allInvestors"
-                      parentLoading={vdsProxyAllInvestorLoading} // Pass parent loading state
-                    />
                   </div>
+
+                  {activeVdsView === "voting-rationale" && (
+                    <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" data-voting-rationale>
+                      <VotingRationale
+                        meetingDate={meetingDate}
+                        filter={filter}
+                        tabType="allInvestors"
+                        parentLoading={vdsProxyAllInvestorLoading}
+                      />
+                    </div>
+                  )}
+
                 </Tab.Panel>
               </Tab.Panels>
             </Tab.Group>

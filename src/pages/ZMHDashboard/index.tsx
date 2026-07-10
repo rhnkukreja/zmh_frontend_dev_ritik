@@ -23,6 +23,7 @@ import CompanyOverview from "@/components/CompanyOverview";
 import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
 import InvestorOverview from "@/components/InvestorOverview";
 import VdsProxyVoting from "@/pages/VdsProxyVoting";
+import MeetingYearSelector from "@/pages/VdsProxyVoting/MeetingYearSelector";
 import NPXPage from "@/pages/NPX";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
@@ -37,7 +38,7 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
-import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-react";
+import { FileText, Building2, Users, Vote, TrendingUp, BarChart3, Scale } from "lucide-react";
 import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
 import { toast } from "react-toastify";
 import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
@@ -427,7 +428,9 @@ function Main() {
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
           <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <div className="flex items-start gap-2.5">
-              {(activeTab === 'company-overview' || activeTab === 'governance-profile' || activeTab === 'compensation') && <Building2 className="w-5 h-5 text-primary mt-[2px]" />}
+              {activeTab === 'company-overview' && <Building2 className="w-5 h-5 text-primary mt-[2px]" />}
+              {activeTab === 'governance-profile' && <Scale className="w-5 h-5 text-primary mt-[2px]" />}
+              {activeTab === 'compensation' && <Building2 className="w-5 h-5 text-primary mt-[2px]" />}
               {activeTab === 'investor-overview' && <BarChart3 className="w-5 h-5 text-primary mt-[2px]" />}
               {activeTab === 'ownership' && <Users className="w-5 h-5 text-primary mt-[2px]" />}
               {activeTab === 'shareholder-meeting-results' && <Vote className="w-5 h-5 text-primary mt-[2px]" />}
@@ -440,14 +443,20 @@ function Main() {
                   {activeTab === 'investor-overview' && 'Investor Insight'}
                   {activeTab === 'ownership' && 'Ownership'}
                   {activeTab === 'shareholder-meeting-results' && 'Shareholder Meeting Results'}
-                  {activeTab === 'voting-data' && (activeVotingSubTab === 'npx' ? 'N-PX' : 'Voting Data')}
+                  {activeTab === 'voting-data' && (activeVotingSubTab === 'npx' ? 'N-PX' : 'VDS')}
                 </h2>
                 {activeTab === 'shareholder-meeting-results' && meetingDateHeader && (
                   <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
                 )}
               </div>
             </div>
-            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
+            {activeTab === 'voting-data' && (
+              <MeetingYearSelector
+                key={activeVotingSubTab}
+                source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
+              />
+            )}
+            {companyGlobalSearchTicker && activeTab === 'company-overview' && (
               <button
                 className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
                 onClick={handleGenerateReport}

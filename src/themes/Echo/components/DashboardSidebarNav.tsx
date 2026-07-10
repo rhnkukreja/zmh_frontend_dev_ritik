@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import clsx from "clsx";
 import {
@@ -8,6 +8,9 @@ import {
   Vote,
   ChevronRight,
   LucideIcon,
+  PieChart,
+  Scale,
+  Target,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -27,7 +30,10 @@ interface SectionDef {
   key: DashboardSection;
   label: string;
   icon: LucideIcon;
+  group: string;
   subItems: SubItem[];
+  subSection?: string;
+  route?: string;
   // Sub-item that should appear active when the user hasn't explicitly
   // clicked a sub-item yet (matches each component's own default tab).
   defaultSubKey?: string;
@@ -40,53 +46,73 @@ interface SectionDef {
 const BASE_SECTIONS: SectionDef[] = [
   {
     key: "company-overview",
-    label: "Company Overview",
+    label: "Overview",
     icon: Building2,
+    group: "Company",
     subItems: [],
   },
   {
     key: "governance-profile",
     label: "Governance Profile",
-    icon: Building2,
+    icon: Scale,
+    group: "Company",
     subItems: [],
   },
   {
     key: "compensation",
     label: "Compensation",
     icon: Building2,
+    group: "Company",
     subItems: [],
   },
   {
     key: "ownership",
     label: "Ownership",
     icon: Users,
+    group: "Company",
     subItems: [],
   },
   {
     key: "shareholder-meeting-results",
-    label: "Shareholder Meeting",
+    label: "Shareholder Meeting Results",
     icon: Vote,
+    group: "Company",
     subItems: [],
   },
   {
     key: "voting-data",
     label: "Voting Data",
     icon: Vote,
+    group: "Company",
     subItems: [
-      { key: "vds", label: "Voting Data" },
+      { key: "vds", label: "VDS" },
       { key: "npx", label: "N-PX" },
     ],
     defaultSubKey: "vds",
   },
   {
     key: "investor-overview",
-    label: "Investor Insight",
+    label: "Overview",
     icon: BarChart3,
-    subItems: [
-      { key: "voting_rationale", label: "Overview" },
-      { key: "engagement_priorities", label: "Engagement Priorities" },
-    ],
-    defaultSubKey: "voting_rationale",
+    group: "Institution Insights",
+    subSection: "voting_rationale",
+    subItems: [],
+  },
+  {
+    key: "investor-overview",
+    label: "Engagement Priorities",
+    icon: Target,
+    group: "Institution Insights",
+    subSection: "engagement_priorities",
+    subItems: [],
+  },
+  {
+    key: "investor-overview",
+    label: "Aggregate Voting",
+    icon: PieChart,
+    group: "Institution Insights",
+    route: "/voting-data",
+    subItems: [],
   },
 ];
 
@@ -128,9 +154,25 @@ const DashboardSidebarNav = () => {
   });
 
   const handleSectionClick = (section: SectionDef) => {
-    dispatch(setActiveSection(section.key));
+    if (section.route) {
+      dispatch(setActiveSection(section.key));
+      navigate(`${section.route}?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`);
+      setExpanded(section.key);
+      return;
+    }
+
+    if (section.subSection) {
+      dispatch(
+        setActiveSubSection({
+          section: section.key,
+          subSection: section.subSection,
+        })
+      );
+    } else {
+      dispatch(setActiveSection(section.key));
+    }
+
     goToDashboard();
-    // Toggle expansion; keep it open if it becomes the active section.
     setExpanded((prev) => (prev === section.key ? null : section.key));
   };
 
@@ -145,14 +187,27 @@ const DashboardSidebarNav = () => {
       {/* Spacer to prevent first item from sitting under the header block */}
       <li className="mt-2" aria-hidden="true" />
       {/* Sections */}
-      {sections.map((section) => {
+      {sections.map((section, sectionIndex) => {
         const Icon = section.icon;
-        const isActive = location.pathname === "/" && activeSection === section.key;
+        const previousSection = sections[sectionIndex - 1];
+        const isActive = section.route
+          ? location.pathname === section.route
+          : location.pathname === "/" &&
+            activeSection === section.key &&
+            (!section.subSection ||
+              activeSubSection === section.subSection ||
+              (section.subSection === "voting_rationale" && !activeSubSection));
         const isExpanded = expanded === section.key;
         const hasSubs = section.subItems.length > 0;
 
         return (
-          <li key={section.key}>
+          <Fragment key={`${section.key}-${section.label}`}>
+            {section.group !== previousSection?.group && (
+              <li className="side-menu__divider side-menu__section-label">
+                {section.group}
+              </li>
+            )}
+            <li>
             <a
               href=""
               onClick={(e) => {
@@ -215,7 +270,8 @@ const DashboardSidebarNav = () => {
                 })}
               </ul>
             )}
-          </li>
+            </li>
+          </Fragment>
         );
       })}
     </>

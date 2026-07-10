@@ -1,7 +1,7 @@
 import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
-import React, { useState, useEffect, createRef, useRef } from "react";
+import React, { Fragment, useState, useEffect, createRef, useRef } from "react";
 import type { MouseEvent } from "react";
 
 declare global {
@@ -75,6 +75,45 @@ import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
 import SearchWidgetIframe from "@/components/SearchWidget";
 import DashboardSidebarNav from "./components/DashboardSidebarNav";
+
+const getSidebarGroup = (menu: string | FormattedMenu) => {
+  if (typeof menu === "string") {
+    return menu === "Admin" ? "Administration" : "";
+  }
+
+  if (
+    [
+      "Investor Profile",
+      "Case Studies",
+      "Engagement Details",
+      "Shareholder Proposals",
+      "Aggregate Voting",
+    ].includes(menu.title)
+  ) {
+    return "Shared Research";
+  }
+
+  if (menu.title === "Proxy Contest") return "Proxy Contest";
+
+  if (
+    [
+      "Custom Reports",
+      "Podcasts",
+      "Newsletter",
+      "Email Alert",
+      "Knowledge Base",
+      "Help",
+    ].includes(menu.title)
+  ) {
+    return "User Tools";
+  }
+
+  if (["Admin Panel", "Company", "User Detail", "User Management"].includes(menu.title)) {
+    return "Administration";
+  }
+
+  return "";
+};
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -578,19 +617,26 @@ function Main() {
               {/* Koyfin-style dashboard navigation for the selected company */}
               <DashboardSidebarNav />
               {/* BEGIN: First Child */}
-              {formattedMenu.map((menu, menuKey) =>
-                typeof menu == "string" ? (
-                  <li className="side-menu__divider" key={menuKey}>
-                    {user.user_type === "Analyst" ? (
-                      <>{menu}</>
-                    ) : user.user_type !== "Analyst" && menu === "Admin" ? (
-                      <>{ }</>
-                    ) : (
-                      <>{menu}</>
+              {formattedMenu.map((menu, menuKey) => {
+                const currentGroup = getSidebarGroup(menu);
+                const previousGroup =
+                  menuKey > 0 ? getSidebarGroup(formattedMenu[menuKey - 1]) : "";
+                const showGroupHeading =
+                  currentGroup &&
+                  currentGroup !== previousGroup &&
+                  (currentGroup !== "Administration" ||
+                    user.user_type === "Admin" ||
+                    user.user_type === "Analyst");
+
+                return (
+                  <Fragment key={menuKey}>
+                    {showGroupHeading && (
+                      <li className="side-menu__divider side-menu__section-label">
+                        {currentGroup}
+                      </li>
                     )}
-                  </li>
-                ) : (
-                  <li key={menuKey}>
+                    {typeof menu == "string" ? null : (
+                  <li>
                     <a
                       href=""
                       className={clsx([
@@ -627,7 +673,7 @@ function Main() {
                               <Lucide
                                 icon={menu?.icon}
                                 className={clsx(
-                                  "side-menu__link__icon side-menu__link--active",
+                                  "side-menu__link__icon",
                                   menu.title === "Admin Panel" && "w-6 h-6"
                                 )}
                               />
@@ -842,8 +888,10 @@ function Main() {
                     )}
                     {/* END: Second Child */}
                   </li>
-                )
-              )}
+                    )}
+                  </Fragment>
+                );
+              })}
               {/* END: First Child */}
             </ul>
           </div>
