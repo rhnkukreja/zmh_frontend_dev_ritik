@@ -802,7 +802,7 @@ function Main() {
                               </div>
                               {subMenu.badge && (
                                 typeof subMenu.badge === "string" ? (
-                                  <span className="ml-auto inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[9px] font-bold uppercase tracking-wide text-white leading-none">
+                                  <span className="ml-auto inline-flex items-center rounded-md bg-gradient-to-r from-orange-500 to-orange-400 px-[7px] py-[2px] text-[9px] font-semibold uppercase tracking-wider text-white shadow-sm leading-none">
                                     {subMenu.badge}
                                   </span>
                                 ) : (

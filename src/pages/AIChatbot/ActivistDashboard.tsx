@@ -741,8 +741,8 @@ const ActivistIntelligenceDashboard = ({
 
       <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 1px 3px #0000000a", position: "relative" }}>
         
-        {/* ── STICKY HEADER WRAPPER ── */}
-        <div style={{ position: "sticky", top: "200px", zIndex: 40, borderRadius: "10px 10px 0 0", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
+        {/* ── COMPANY HEADER ── */}
+        <div style={{ borderRadius: "10px 10px 0 0" }}>
           
           <div style={{ background: THEME_MAROON, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, borderRadius: "10px 10px 0 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
