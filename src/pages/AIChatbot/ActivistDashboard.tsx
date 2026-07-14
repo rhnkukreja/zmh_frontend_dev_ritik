@@ -706,7 +706,7 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  if (loading && !profile) {
+  if (loading || (!profile && !error)) {
     return <ActivistDashboardSkeleton />;
   }
 
