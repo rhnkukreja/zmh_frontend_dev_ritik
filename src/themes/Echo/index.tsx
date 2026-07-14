@@ -801,9 +801,15 @@ function Main() {
                                 {subMenu.title}
                               </div>
                               {subMenu.badge && (
-                                <div className="side-menu__link__badge">
-                                  {subMenu.badge}
-                                </div>
+                                typeof subMenu.badge === "string" ? (
+                                  <span className="ml-auto inline-flex items-center rounded-full bg-orange-500 px-[6px] py-[2px] text-[9px] font-bold uppercase tracking-wide text-white leading-none">
+                                    {subMenu.badge}
+                                  </span>
+                                ) : (
+                                  <div className="side-menu__link__badge">
+                                    {subMenu.badge}
+                                  </div>
+                                )
                               )}
                               {subMenu.subMenu && (
                                 <Lucide
@@ -942,8 +948,6 @@ function Main() {
 
                 {[
                   "/notes",
-                  "/proxy-contest",
-                  "/proxy-contest-ai",
                   "/proxy-contest-detail",
                   "/voting-data",
                   "/investor-profile",

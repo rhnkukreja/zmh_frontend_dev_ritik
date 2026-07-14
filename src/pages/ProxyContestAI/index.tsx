@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
@@ -47,14 +48,30 @@ function ProxyContestAI() {
   const isAdmin = user?.user_type === "Admin";
   const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") as ProxyContestTabKey | null;
   const [activeTab, setActiveTab] = useState<ProxyContestTabKey>(() => {
+    if (tabFromUrl && ["activist_profile", "overview", "detailed"].includes(tabFromUrl)) return tabFromUrl;
     const saved = loadF("activeTab");
     return (saved as ProxyContestTabKey) ?? "activist_profile";
   });
   const setActiveTabPersisted = (tab: ProxyContestTabKey) => {
     setActiveTab(tab);
     saveF("activeTab", tab);
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.set("tab", tab);
+      return p;
+    }, { replace: true });
   };
+
+  // Sync activeTab when URL param changes (e.g. sidebar sub-item click)
+  useEffect(() => {
+    if (tabFromUrl && ["activist_profile", "overview", "detailed"].includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl as ProxyContestTabKey);
+      saveF("activeTab", tabFromUrl);
+    }
+  }, [tabFromUrl]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -611,14 +628,10 @@ function ProxyContestAI() {
       >
        {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-2xl font-bold text-slate-800">
-            <span className="text-slate-400">Shared Research</span>
-            <Lucide icon="ChevronRight" className="w-5 h-5 text-slate-300" />
-            <span>Proxy Contest</span>
-            <Lucide icon="ChevronRight" className="w-5 h-5 text-slate-300" />
-            <span className="text-primary">
-              {tabs.find((tabItem) => tabItem.key === activeTab)?.label}
-            </span>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+            <span className="text-slate-500">Proxy Contest</span>
+            <span className="text-slate-400">›</span>
+            <span>{tabs.find((t) => t.key === activeTab)?.label ?? "Activist Profile"}</span>
           </h2>
           
           <div className="flex items-center gap-3">
@@ -732,58 +745,32 @@ function ProxyContestAI() {
           </div>
         </div>
 
-        {/* Tabs + Hide/Show Filters */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1">
-            {tabs.map((tabItem) => (
+        {/* Filter toggle — kept for non-activist tabs */}
+        {activeTab !== "activist_profile" && (
+          <div className="flex items-center justify-end mb-3 gap-2">
+            {isAdminOrAnalyst && (
               <button
-                key={tabItem.key}
-                onClick={() => setActiveTabPersisted(tabItem.key)}
+                onClick={toggleIncludeSettled}
                 className={clsx(
-                  "relative px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150",
-                  activeTab === tabItem.key
-                    ? "bg-primary text-white shadow"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  "flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors whitespace-nowrap",
+                  includeSettled
+                    ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                    : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
                 )}
               >
-                <span className="flex items-center gap-1.5">
-                  <Lucide icon={tabItem.icon as any} className="w-4 h-4" />
-                  {tabItem.label}
-                </span>
-                {(tabItem.key === "overview" || tabItem.key === "activist_profile") && (
-                  <span className="pointer-events-none absolute -top-2 -right-2 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
-                    BETA
-                  </span>
-                )}
+                <Lucide icon={includeSettled ? "EyeOff" : "Eye"} className="w-4 h-4" />
+                {includeSettled ? "Including Settled" : "Include Settled"}
               </button>
-            ))}
+            )}
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
+            >
+              <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
+              {sidebarOpen ? "Hide Filters" : "Show Filters"}
+            </button>
           </div>
-          {activeTab !== "activist_profile" && (
-            <div className="flex items-center gap-2">
-              {isAdminOrAnalyst && (
-                <button
-                  onClick={toggleIncludeSettled}
-                  className={clsx(
-                    "flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors whitespace-nowrap",
-                    includeSettled
-                      ? "border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
-                      : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
-                  )}
-                >
-                  <Lucide icon={includeSettled ? "EyeOff" : "Eye"} className="w-4 h-4" />
-                  {includeSettled ? "Including Settled" : "Include Settled"}
-                </button>
-              )}
-              <button
-                onClick={() => setSidebarOpen((v) => !v)}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors whitespace-nowrap"
-              >
-                <Lucide icon={sidebarOpen ? "PanelLeftClose" : "PanelLeftOpen"} className="w-4 h-4" />
-                {sidebarOpen ? "Hide Filters" : "Show Filters"}
-              </button>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Active filter chips */}
         {activeChips.length > 0 && activeTab !== "activist_profile" && (

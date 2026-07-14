@@ -5,7 +5,7 @@ import { AppIconName } from "@/components/Base/Lucide";
 export interface Menu {
   icon: AppIconName;
   title: string;
-  badge?: number;
+  badge?: number | string;
   pathname?: string;
   subMenu?: Menu[];
   ignore?: boolean;
@@ -110,6 +110,25 @@ const initialState: any = {
       icon: "ShieldAlert",
       pathname: "/proxy-contest",
       title: "Proxy Contest",
+      subMenu: [
+        {
+          icon: "UserRound",
+          pathname: "/proxy-contest?tab=activist_profile",
+          title: "Activist Profile",
+          badge: "Beta",
+        },
+        {
+          icon: "BarChart3",
+          pathname: "/proxy-contest?tab=overview",
+          title: "Voting Analytics",
+          badge: "Beta",
+        },
+        {
+          icon: "Table",
+          pathname: "/proxy-contest?tab=detailed",
+          title: "Campaign Details",
+        },
+      ],
     },
     
     // {
