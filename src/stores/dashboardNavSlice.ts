@@ -18,30 +18,8 @@ export interface DashboardNavState {
   activeSubSection: string | null;
 }
 
-const STORAGE_KEY = "dashboardActiveSection";
-
-const getInitialSection = (): DashboardSection => {
-  try {
-    const stored = sessionStorage.getItem(STORAGE_KEY) as DashboardSection | null;
-    if (
-      stored === "company-overview" ||
-      stored === "governance-profile" ||
-      stored === "compensation" ||
-      stored === "investor-overview" ||
-      stored === "ownership" ||
-      stored === "shareholder-meeting-results" ||
-      stored === "voting-data"
-    ) {
-      return stored;
-    }
-  } catch {
-    // ignore storage access errors
-  }
-  return "company-overview";
-};
-
 const initialState: DashboardNavState = {
-  activeSection: getInitialSection(),
+  activeSection: "company-overview",
   activeSubSection: null,
 };
 
@@ -52,11 +30,6 @@ export const dashboardNavSlice = createSlice({
     setActiveSection: (state, action: PayloadAction<DashboardSection>) => {
       state.activeSection = action.payload;
       state.activeSubSection = null;
-      try {
-        sessionStorage.setItem(STORAGE_KEY, action.payload);
-      } catch {
-        // ignore storage access errors
-      }
     },
     setActiveSubSection: (
       state,
@@ -64,11 +37,6 @@ export const dashboardNavSlice = createSlice({
     ) => {
       state.activeSection = action.payload.section;
       state.activeSubSection = action.payload.subSection;
-      try {
-        sessionStorage.setItem(STORAGE_KEY, action.payload.section);
-      } catch {
-        // ignore storage access errors
-      }
     },
   },
 });

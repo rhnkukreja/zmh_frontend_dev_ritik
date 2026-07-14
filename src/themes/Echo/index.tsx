@@ -1240,6 +1240,8 @@ function Main() {
                           className={`${active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                             } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                           onClick={() => {
+                            sessionStorage.removeItem('redirectPath');
+                            sessionStorage.removeItem('dashboardActiveSection');
                             navigate("/login");
                             dispatch(logout());
                             persistor.purge();

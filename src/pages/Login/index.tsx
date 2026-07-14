@@ -110,13 +110,13 @@ const Main: React.FC = () => {
         dispatch(setFinhub(response?.finnhub));
       }
 
-      const redirectPath = sessionStorage.getItem('redirectPath') || '/';
+      const redirectPath = sessionStorage.getItem('redirectPath');
       sessionStorage.removeItem('redirectPath');
 
-      if (redirectPath) {
+      // Only use redirectPath if it's a real deep-link (not root or voting-data stale path)
+      if (redirectPath && redirectPath !== '/' && !redirectPath.startsWith('/voting-data')) {
         navigate(redirectPath);
-      }
-      else {
+      } else {
         navigate(`/?ticker=${response?.company_ticker}`);
       }
 
