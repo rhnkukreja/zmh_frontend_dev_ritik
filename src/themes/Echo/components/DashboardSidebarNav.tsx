@@ -11,6 +11,8 @@ import {
   PieChart,
   Scale,
   Target,
+  Briefcase,
+  CalendarCheck,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -61,7 +63,7 @@ const BASE_SECTIONS: SectionDef[] = [
   {
     key: "compensation",
     label: "Compensation",
-    icon: Building2,
+    icon: Briefcase,
     group: "Company",
     subItems: [],
   },
@@ -75,7 +77,7 @@ const BASE_SECTIONS: SectionDef[] = [
   {
     key: "shareholder-meeting-results",
     label: "Shareholder Meeting",
-    icon: Vote,
+    icon: CalendarCheck,
     group: "Company",
     subItems: [],
   },
@@ -136,11 +138,12 @@ const DashboardSidebarNav = () => {
   // Only show this navigation once a company has been selected.
   if (!companyGlobalSearchTicker) return null;
 
-  const goToDashboard = () => {
-    const onDashboard = location.pathname === "/";
-    if (!onDashboard) {
-      navigate(`/?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`);
-    }
+  const goToDashboard = (preserveDashboardParams = false) => {
+    const params = preserveDashboardParams
+      ? new URLSearchParams(location.search)
+      : new URLSearchParams();
+    params.set("ticker", companyGlobalSearchTicker);
+    navigate(`/?${params.toString()}`, { replace: true });
   };
 
   // Build sections dynamically based on user role and required ordering.
@@ -178,7 +181,7 @@ const DashboardSidebarNav = () => {
 
   const handleSubItemClick = (section: SectionDef, sub: SubItem) => {
     dispatch(setActiveSubSection({ section: section.key, subSection: sub.key }));
-    goToDashboard();
+    goToDashboard(section.key === "voting-data");
     setExpanded(section.key);
   };
 

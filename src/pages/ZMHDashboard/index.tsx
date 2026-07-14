@@ -38,7 +38,19 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
-import { FileText, Building2, Users, Vote, TrendingUp, BarChart3, Scale } from "lucide-react";
+import {
+  FileText,
+  Building2,
+  Users,
+  Vote,
+  TrendingUp,
+  BarChart3,
+  Scale,
+  Briefcase,
+  CalendarCheck,
+  ChevronRight,
+  Target,
+} from "lucide-react";
 import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
 import { toast } from "react-toastify";
 import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
@@ -75,6 +87,28 @@ function Main() {
   const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
   const activeTab = activeSection;
   const activeVotingSubTab = activeTab === 'voting-data' ? (activeSubSection ?? 'vds') : null;
+  const headerGroup = activeTab === 'investor-overview' ? 'Institution Insights' : 'Company';
+  const headerLabel =
+    activeTab === 'company-overview' ? 'Overview' :
+    activeTab === 'governance-profile' ? 'Governance Profile' :
+    activeTab === 'compensation' ? 'Compensation' :
+    activeTab === 'investor-overview'
+      ? activeSubSection === 'engagement_priorities'
+        ? 'Engagement Priorities'
+        : activeSubSection === 'reporting_expectations'
+          ? 'Reporting Expectations'
+          : 'Overview'
+      : activeTab === 'ownership' ? 'Ownership' :
+      activeTab === 'shareholder-meeting-results' ? 'Shareholder Meeting' :
+      activeTab === 'voting-data' ? 'Voting Data' : 'Overview';
+  const HeaderIcon =
+    activeTab === 'company-overview' ? Building2 :
+    activeTab === 'governance-profile' ? Scale :
+    activeTab === 'compensation' ? Briefcase :
+    activeTab === 'investor-overview'
+      ? activeSubSection === 'engagement_priorities' ? Target : BarChart3
+      : activeTab === 'ownership' ? Users :
+      activeTab === 'shareholder-meeting-results' ? CalendarCheck : Vote;
 
   // Apply active section from back-navigation state / sessionStorage once on mount.
   useEffect(() => {
@@ -428,22 +462,17 @@ function Main() {
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
           <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
             <div className="flex items-start gap-2.5">
-              {activeTab === 'company-overview' && <Building2 className="w-5 h-5 text-primary mt-[2px]" />}
-              {activeTab === 'governance-profile' && <Scale className="w-5 h-5 text-primary mt-[2px]" />}
-              {activeTab === 'compensation' && <Building2 className="w-5 h-5 text-primary mt-[2px]" />}
-              {activeTab === 'investor-overview' && <BarChart3 className="w-5 h-5 text-primary mt-[2px]" />}
-              {activeTab === 'ownership' && <Users className="w-5 h-5 text-primary mt-[2px]" />}
-              {activeTab === 'shareholder-meeting-results' && <Vote className="w-5 h-5 text-primary mt-[2px]" />}
-              {activeTab === 'voting-data' && <Vote className="w-5 h-5 text-primary mt-[2px]" />}
+              <HeaderIcon className="w-5 h-5 text-primary mt-[2px]" />
               <div>
-                <h2 className="text-lg font-bold text-gray-900">
-                  {activeTab === 'company-overview' && 'Company Overview'}
-                  {activeTab === 'governance-profile' && 'Governance Profile'}
-                  {activeTab === 'compensation' && 'Compensation'}
-                  {activeTab === 'investor-overview' && 'Investor Insight'}
-                  {activeTab === 'ownership' && 'Ownership'}
-                  {activeTab === 'shareholder-meeting-results' && 'Shareholder Meeting Results'}
-                  {activeTab === 'voting-data' && (activeVotingSubTab === 'npx' ? 'N-PX' : 'VDS')}
+                <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                  <span className="text-slate-500">{headerGroup}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  <span>{headerLabel}</span>
+                  {activeTab === 'voting-data' && (
+                    <span className="text-sm font-medium text-slate-500">
+                      ({activeVotingSubTab === 'npx' ? 'N-PX' : 'VDS'})
+                    </span>
+                  )}
                 </h2>
                 {activeTab === 'shareholder-meeting-results' && meetingDateHeader && (
                   <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>

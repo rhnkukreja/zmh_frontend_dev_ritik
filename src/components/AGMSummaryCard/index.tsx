@@ -25,7 +25,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const location = useLocation();
   const locationPathName = location?.pathname;
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const dispatch: AppDispatch = useAppDispatch();
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch, agmRequestStatus, agmHasData, agmErrorMessage } =
     useAppSelector((state) => state.dashboard);
@@ -98,12 +98,24 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   // Keep selectedYear in sync with loaded agmSummaryDetails, but do NOT reset refs here
   useEffect(() => {
-    if (agmSummaryDetails?.Year && selectedYear !== agmSummaryDetails.Year.toString()) {
-      setSelectedYear(agmSummaryDetails.Year.toString());
-    } else if (!selectedYear && agmSummaryDetails?.total_year?.length > 0) {
-      setSelectedYear(agmSummaryDetails.total_year[0].toString());
+    const availableYears = Array.isArray(agmSummaryDetails?.total_year)
+      ? agmSummaryDetails.total_year
+          .map((year: any) => year.toString())
+          .sort((a: string, b: string) => Number(b) - Number(a))
+      : [];
+    const latestYear = availableYears[0] || agmSummaryDetails?.Year?.toString();
+
+    if (!selectedYear && latestYear) {
+      setSelectedYear(latestYear);
+      if (yearFromQuery !== latestYear) {
+        setSearchParams((previousParams) => {
+          const params = new URLSearchParams(previousParams);
+          params.set("year", latestYear);
+          return params;
+        }, { replace: true });
+      }
     }
-  }, [agmSummaryDetails]);
+  }, [agmSummaryDetails, selectedYear, yearFromQuery, setSearchParams]);
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -667,6 +679,11 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   const handleAGMYearTab = (tab: string) => {
     setSelectedYear(tab);
+    setSearchParams((previousParams) => {
+      const params = new URLSearchParams(previousParams);
+      params.set("year", tab);
+      return params;
+    }, { replace: true });
   };
 
   const handleRetryAGMFetch = () => {
@@ -684,7 +701,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     if (!agmSummaryDetails?.total_year?.length) return [];
 
     // Return the actual years that have data
-    return agmSummaryDetails.total_year.map((year: any) => year.toString());
+    return agmSummaryDetails.total_year
+      .map((year: any) => year.toString())
+      .sort((a: string, b: string) => Number(b) - Number(a));
   };
 
   const getSelectedTabIndex = () => {
@@ -733,9 +752,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         <div className="p-5 mt-3.5 box ">
           <div className="w-full">
             <>
-              <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
+              <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
                 {/* Left: Year tabs on top row */}
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex items-center gap-3 shrink-0">
                   {agmSummaryDetails.total_year?.length > 0 && (
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                       <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
@@ -758,7 +777,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   )}
                 </div>
                 {/* Right: Actions on top row */}
-                <div className="flex items-center gap-2 xs:mt-4 md:mt-0">
+                <div className="flex items-center gap-2 shrink-0 xs:mt-4 md:mt-0">
                   {!isMeetingModal && (
                     <>
                       <button
@@ -796,8 +815,8 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                     </>
                   )}
                 </div>
-                <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                  <div className="flex justify-between items-center gap-2">
+                <div className="flex items-center gap-4 ml-auto xs:mt-4 md:mt-0">
+                  <div className="flex items-center gap-2">
                     <h4
                       className="font-semibold cursor-pointer"
                       onClick={() => {
@@ -1012,24 +1031,39 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       {!agmSummaryDetails && loading && (
         <div className="p-5 mt-3.5 box bg-white">
           <div className="w-full">
-            <div className="flex justify-between items-center xs:flex-col md:flex-row py-3 gap-4">
-              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                <span>
-                  <h1 className="text-lg font-bold">Shareholder Meeting Summary</h1>
-                  <p className="italic flex items-center gap-2">
-                    <span>Meeting Date:</span>
-                    <span className="inline-block h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                  </p>
-                </span>
+            <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
+              <div className="shrink-0">
+                <h1 className="text-lg font-bold">Shareholder Meeting</h1>
+                <p className="italic flex items-center gap-2">
+                  <span>Meeting Date:</span>
+                  <span className="inline-block h-4 w-28 rounded bg-slate-200 animate-pulse" />
+                </p>
               </div>
 
-              <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                <div className="flex justify-between items-center gap-2">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <span>*Quorum:</span>
-                    <span className="inline-block h-4 w-20 rounded bg-slate-200 animate-pulse" />
-                  </h4>
-                </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <Tab.Group selectedIndex={0} defaultIndex={0}>
+                  <Tab.List variant="boxed-tabs" className="flex border-none bg-transparent">
+                    {[1, 2].map((tab) => (
+                      <Tab key={tab} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem]">
+                        <Tab.Button
+                          className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10"
+                          as="button"
+                        >
+                          <span className="inline-block h-4 w-12 rounded bg-slate-200 animate-pulse" />
+                        </Tab.Button>
+                      </Tab>
+                    ))}
+                  </Tab.List>
+                </Tab.Group>
+                <span className="inline-block h-10 w-10 rounded-md bg-slate-200 animate-pulse" />
+                <span className="inline-block h-10 w-10 rounded-md bg-slate-200 animate-pulse" />
+              </div>
+
+              <div className="flex items-center gap-4 ml-auto">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <span>*Quorum:</span>
+                  <span className="inline-block h-4 w-20 rounded bg-slate-200 animate-pulse" />
+                </h4>
                 <div className="box p-[5px] opacity-70">
                   <img alt="download-icon" src={downloadIcon} />
                 </div>
@@ -1039,23 +1073,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   </div>
                 )}
               </div>
-            </div>
-
-            <div>
-              <Tab.Group selectedIndex={0} defaultIndex={0}>
-                <Tab.List variant="boxed-tabs" className="w-[100px] border-none bg-transparent">
-                  {[1, 2].map((tab) => (
-                    <Tab key={tab} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem]">
-                      <Tab.Button
-                        className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10"
-                        as="button"
-                      >
-                        <span className="inline-block h-4 w-12 rounded bg-slate-200 animate-pulse" />
-                      </Tab.Button>
-                    </Tab>
-                  ))}
-                </Tab.List>
-              </Tab.Group>
             </div>
 
             <div className="mt-5">

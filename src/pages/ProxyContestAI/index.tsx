@@ -611,7 +611,15 @@ function ProxyContestAI() {
       >
        {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">Proxy Contest</h2>
+          <h2 className="flex items-center gap-2 text-2xl font-bold text-slate-800">
+            <span className="text-slate-400">Shared Research</span>
+            <Lucide icon="ChevronRight" className="w-5 h-5 text-slate-300" />
+            <span>Proxy Contest</span>
+            <Lucide icon="ChevronRight" className="w-5 h-5 text-slate-300" />
+            <span className="text-primary">
+              {tabs.find((tabItem) => tabItem.key === activeTab)?.label}
+            </span>
+          </h2>
           
           <div className="flex items-center gap-3">
             {/* 

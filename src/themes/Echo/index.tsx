@@ -88,12 +88,11 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
       "Engagement Details",
       "Shareholder Proposals",
       "Aggregate Voting",
+      "Proxy Contest",
     ].includes(menu.title)
   ) {
     return "Shared Research";
   }
-
-  if (menu.title === "Proxy Contest") return "Proxy Contest";
 
   if (
     [
@@ -131,6 +130,12 @@ function Main() {
     localStorage.setItem("compactMenu", val.toString());
     dispatch(setCompactMenuStore(val));
   };
+
+  useEffect(() => {
+    if (user?.user_id) {
+      dispatch(setCompactMenuStore(false));
+    }
+  }, [dispatch, user?.user_id]);
 
   const [selectedText, setSelectedText] = useState<string>("");
   const [noteText, setNoteText] = useState<string>("");
@@ -185,12 +190,6 @@ function Main() {
     (state: RootState) => state.authentiction
   );
 
-  const compactLayout = () => {
-    if (window.innerWidth <= 1600) {
-      setCompactMenu(true);
-    }
-  };
-
   const requestFullscreen = () => {
     const el = document.documentElement;
     if (el.requestFullscreen) {
@@ -204,11 +203,6 @@ function Main() {
     }
 
     setFormattedMenu(filterMenu(sideMenu()));
-    compactLayout();
-
-    window.onresize = () => {
-      compactLayout();
-    };
 
     // Fix table border issues
     const fixTableStyles = () => {
