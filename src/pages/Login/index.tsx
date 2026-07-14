@@ -22,6 +22,7 @@ import {
   setDashboardGlobalSearch,
   setFinhub,
 } from "@/stores/authenticationSlice";
+import { setActiveSection } from "@/stores/dashboardNavSlice";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
 
@@ -109,6 +110,9 @@ const Main: React.FC = () => {
       } else if (response?.finnhub) {
         dispatch(setFinhub(response?.finnhub));
       }
+
+      // Always reset dashboard to Overview on login regardless of previous session
+      dispatch(setActiveSection("company-overview"));
 
       const redirectPath = sessionStorage.getItem('redirectPath');
       sessionStorage.removeItem('redirectPath');
