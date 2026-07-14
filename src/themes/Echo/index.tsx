@@ -751,8 +751,11 @@ function Main() {
                       )}
                       {menu.subMenu && (
                         <Lucide
-                          icon="ChevronDown"
-                          className="side-menu__link__chevron"
+                          icon="ChevronRight"
+                          className={clsx([
+                            "side-menu__link__chevron transition-transform duration-200",
+                            { "rotate-90": menu.activeDropdown },
+                          ])}
                         />
                       )}
                     </a>

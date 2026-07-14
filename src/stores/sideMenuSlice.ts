@@ -108,7 +108,7 @@ const initialState: any = {
     // },
     {
       icon: "ShieldAlert",
-      pathname: "/proxy-contest?tab=activist_profile",
+      pathname: "/proxy-contest",
       title: "Proxy Contest",
       subMenu: [
         {
