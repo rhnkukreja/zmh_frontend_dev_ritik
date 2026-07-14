@@ -1031,19 +1031,13 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       {!agmSummaryDetails && loading && (
         <div className="p-5 mt-3.5 box bg-white">
           <div className="w-full">
+            {/* Skeleton row: matches real loaded UI — year tabs | 8-K | chart | quorum | download | open */}
             <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
-              <div className="shrink-0">
-                <h1 className="text-lg font-bold">Shareholder Meeting</h1>
-                <p className="italic flex items-center gap-2">
-                  <span>Meeting Date:</span>
-                  <span className="inline-block h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                </p>
-              </div>
-
+              {/* Year tab skeletons */}
               <div className="flex items-center gap-3 shrink-0">
                 <Tab.Group selectedIndex={0} defaultIndex={0}>
-                  <Tab.List variant="boxed-tabs" className="flex border-none bg-transparent">
-                    {[1, 2].map((tab) => (
+                  <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
+                    {[1, 2, 3].map((tab) => (
                       <Tab key={tab} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem]">
                         <Tab.Button
                           className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10"
@@ -1055,10 +1049,13 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                     ))}
                   </Tab.List>
                 </Tab.Group>
-                <span className="inline-block h-10 w-10 rounded-md bg-slate-200 animate-pulse" />
+                {/* 8-K button skeleton */}
+                <span className="inline-block h-10 w-12 rounded-md bg-slate-200 animate-pulse" />
+                {/* Chart button skeleton */}
                 <span className="inline-block h-10 w-10 rounded-md bg-slate-200 animate-pulse" />
               </div>
 
+              {/* Right side: quorum + download + open-tab */}
               <div className="flex items-center gap-4 ml-auto">
                 <h4 className="font-semibold flex items-center gap-2">
                   <span>*Quorum:</span>
