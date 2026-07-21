@@ -14,8 +14,8 @@ import {
   Briefcase,
   CalendarCheck,
   FileSearch2,
+  Files,
   Network,
-  Hand,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -123,7 +123,7 @@ const BASE_SECTIONS: SectionDef[] = [
   {
     key: "company-shareholder-proposals",
     label: "Shareholder Proposals",
-    icon: Hand,
+    icon: Files,
     group: "Company",
     subItems: [],
     route: "/shareholder-proposal?source=company",

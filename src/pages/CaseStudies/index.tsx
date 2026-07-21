@@ -12,7 +12,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { convertToTitleCase, countValidFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, SaveAll } from "lucide-react";
+import { ChevronRight, FileSearch2, FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -656,70 +656,67 @@ function CaseStudies() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          {/* Sticky Top Heading */}
-          <div className="w-full p-4 sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md mb-2" style={{ top: '4rem' }}>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Case Studies
-            </h1>
-          </div>
-          {/* Sticky Header with Tabs - Dashboard Style */}
-          <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: '7rem' }}>
-            <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-                {!isCompanySource && (
-                  <button
-                    onClick={() => setActiveTab("overview")}
-                    className={`relative px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "overview"
-                        ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                  >
-                    <Lucide icon="LayoutGrid" className="w-4 h-4" />
-                    Overview
-                    <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                      BETA
-                    </span>
-                  </button>
-                )}
-                {isCompanySource && (
-                  <button
-                    onClick={() => {
-                      setActiveTab("specific");
-                      if (isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: false } });
-                      }
-                    }}
-                    className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "specific"
-                        ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                  >
-                    <Lucide icon="Building2" className="w-4 h-4" />
-                    Company Specific
-                  </button>
-                )}
-                {!isCompanySource && (
-                  <button
-                    onClick={() => {
-                      setActiveTab("all");
-                      if (!isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: true } });
-                      }
-                    }}
-                    className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "all"
-                        ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                  >
-                    <Lucide icon="Building" className="w-4 h-4" />
-                    View All Companies
-                  </button>
-                )}
+          {!isCompanySource && (
+            <>
+              {/* Sticky Top Heading */}
+              <div className="w-full p-4 sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md mb-2" style={{ top: '4rem' }}>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Case Studies
+                </h1>
               </div>
-            </div>
-          </div>
+              {/* Sticky Header with Tabs - Dashboard Style */}
+              <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: '7rem' }}>
+                <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                  <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
+                    <button
+                      onClick={() => setActiveTab("overview")}
+                      className={`relative px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "overview"
+                          ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                        }`}
+                    >
+                      <Lucide icon="LayoutGrid" className="w-4 h-4" />
+                      Overview
+                      <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                        BETA
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setActiveTab("all");
+                        if (!isAllCompanySelected) {
+                          handleViewAllChange({ target: { checked: true } });
+                        }
+                      }}
+                      className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "all"
+                          ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                        }`}
+                    >
+                      <Lucide icon="Building" className="w-4 h-4" />
+                      View All Companies
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
           {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
+            {isCompanySource && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div className="flex items-start gap-2.5">
+                  <FileSearch2 className="w-5 h-5 text-primary mt-[2px]" />
+                  <div>
+                    <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                      <span className="text-slate-500">Company</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      <span>Case Studies</span>
+                    </h2>
+                  </div>
+                </div>
+              </div>
+            )}
             {/* Overview Tab - Case Studies AI */}
             {activeTab === "overview" && (
               <CaseStudiesAI />

@@ -282,9 +282,11 @@ function Main() {
     }
   };
 
+  const isCompanySpecificView =
+    new URLSearchParams(location.search).get("source") === "company";
   const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
     location.pathname.includes(route)
-  );
+  ) && !isCompanySpecificView;
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
