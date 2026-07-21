@@ -46,7 +46,7 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import AddEngagementDetailsModal from "./components/AddEngagementDetailsModal";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 
 interface PeerAnalysisFilter {
@@ -64,6 +64,9 @@ function PeerAnalysis() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get("source") || "";
+  const isCompanySource = source === "company";
   const [tableOnlyView, setTableOnlyView] = useState<boolean>(false);
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
@@ -186,8 +189,15 @@ function PeerAnalysis() {
     const gsParam = searchParams.get("global_search");
     const pageParam = searchParams.get("page");
     const allCompaniesParam = searchParams.get("allCompanies");
+    const sourceParam = searchParams.get("source");
 
     setTableOnlyView(viewParam === "table-only");
+
+    if (sourceParam === "company") {
+      dispatch(selectUnSelectAllCompany(false));
+    } else if (sourceParam === "shared") {
+      dispatch(selectUnSelectAllCompany(true));
+    }
 
     if (gsParam) {
       try {
@@ -571,32 +581,20 @@ function PeerAnalysis() {
                   <div className="font-semibold text-lg">Engagement Details</div>
                 )}
                 <div className="flex gap-3 px-4 py-4">
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: false } });
-                      }
-                    }}
-                  >
-                    {companyGlobalSearchName || "Company"}
-                  </button>
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (!isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: true } });
-                      }
-                    }}
-                  >
-                    View For All Companies
-                  </button>
+                  {isCompanySource && (
+                    <button
+                      className="px-5 py-2 rounded-t-lg font-semibold transition-all bg-primary text-white shadow"
+                    >
+                      Company Specific
+                    </button>
+                  )}
+                  {!isCompanySource && (
+                    <button
+                      className="px-5 py-2 rounded-t-lg font-semibold transition-all bg-primary text-white shadow"
+                    >
+                      All View
+                    </button>
+                  )}
                 </div>
               </>
             )}

@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import {
   countValidFilters,
@@ -91,6 +91,9 @@ function ShareHolderProposal() {
     (state) => state.authentiction
   );
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get("source") || "";
+  const isCompanySource = source === "company";
   const { isBackToShareholderPage } = location.state || {};
 
   useEffect(() => {
@@ -134,6 +137,15 @@ function ShareHolderProposal() {
       if (!isNaN(parsedPage) && parsedPage > 0) {
         dispatch(setPage(parsedPage));
       }
+    }
+
+    const sourceParam = searchParams.get("source");
+    if (sourceParam === "company") {
+      dispatch(selectUnSelectAllCompany(false));
+      dispatch(setTabs("proposal"));
+      setTempTab("proposal");
+    } else if (sourceParam === "shared") {
+      dispatch(selectUnSelectAllCompany(true));
     }
   }, [dispatch, location.search]);
 
@@ -1079,65 +1091,20 @@ function ShareHolderProposal() {
                 ) : null
               )}
               <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                <button
-                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                    ? "bg-primary text-white shadow"
-                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
-                  onClick={async (e) => {
-                    try {
-                      // Clear year filters and reset form when switching to company view
-                      setValue("year", []);
-                      resetFormValues();
-                      dispatch(resetFilter());
-                      setProposalsAnalytics(null);
-
-                      dispatch(selectUnSelectAllCompany(false));
-                      dispatch(
-                        modifyRoute({
-                          route: "shareholder-proposal",
-                          type: true,
-                        })
-                      );
-                    } catch (error) { }
-                  }}
-                >
-
-                  {finhub?.name || companyGlobalSearchName} {" "}
-                  {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
-                </button>
-                <button
-                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                    ? "bg-primary text-white shadow"
-                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
-                  onClick={async (e) => {
-                    try {
-                      // Set default years (current year and previous year) when switching to View All
-                      const currentYear = new Date().getFullYear();
-                      const defaultYears = [(currentYear - 1).toString(), currentYear.toString()];
-
-                      // Reset analytics state first
-                      setProposalsAnalytics(null);
-
-                      // Clear other filters and set default years
-                      resetFormValues();
-                      setValue("year", defaultYears);
-                      dispatch(resetFilter());
-                      dispatch(setAllFilters({ year: defaultYears }));
-
-                      dispatch(selectUnSelectAllCompany(true));
-                      dispatch(
-                        modifyRoute({
-                          route: "shareholder-proposal",
-                          type: true,
-                        })
-                      );
-                    } catch (error) { }
-                  }}
-                >
-                  View for All Companies
-                </button>
+                {isCompanySource && (
+                  <button
+                    className="px-5 py-2 rounded-t-lg font-semibold transition-all bg-primary text-white shadow"
+                  >
+                    Company Specific
+                  </button>
+                )}
+                {!isCompanySource && (
+                  <button
+                    className="px-5 py-2 rounded-t-lg font-semibold transition-all bg-primary text-white shadow"
+                  >
+                    All View
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -2286,7 +2253,7 @@ function ShareHolderProposal() {
                         <div className="flex items-center justify-center ">
                           All Proposals
                           <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
                           font-semibold text-white text-[11px] ml-2
                            flex items-center justify-center"
                           >
@@ -2309,7 +2276,7 @@ function ShareHolderProposal() {
                         <div className="flex items-center justify-center ">
                           No Action Letter
                           <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
                           font-semibold text-white text-[11px] ml-2
                            flex items-center justify-center"
                           >
@@ -2334,7 +2301,7 @@ function ShareHolderProposal() {
                         <div className="flex items-center justify-center ">
                           Withdrawn (Proponent Disclosure)
                           <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
                           font-semibold text-white text-[11px] ml-2
                            flex items-center justify-center"
                           >

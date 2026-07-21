@@ -13,6 +13,9 @@ import {
   Target,
   Briefcase,
   CalendarCheck,
+  FileSearch2,
+  Network,
+  Hand,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -39,6 +42,11 @@ interface SectionDef {
   // Sub-item that should appear active when the user hasn't explicitly
   // clicked a sub-item yet (matches each component's own default tab).
   defaultSubKey?: string;
+  // When true, clicking this external-route item won't change the dashboard's
+  // active section (the dashboard has no matching tab for it).
+  preserveActiveSection?: boolean;
+  // Optional count badge key pulled from modulesData.
+  countKey?: "case_studies" | "engagement_details" | "shareholder_proposal";
 }
 
 // Koyfin-style navigation for the main dashboard.
@@ -93,6 +101,36 @@ const BASE_SECTIONS: SectionDef[] = [
     defaultSubKey: "vds",
   },
   {
+    key: "company-case-studies",
+    label: "Case Studies",
+    icon: FileSearch2,
+    group: "Company",
+    subItems: [],
+    route: "/case-studies?tab=specific&source=company",
+    preserveActiveSection: true,
+    countKey: "case_studies",
+  },
+  {
+    key: "company-engagement-details",
+    label: "Engagement Details",
+    icon: Network,
+    group: "Company",
+    subItems: [],
+    route: "/engagement-detail?source=company",
+    preserveActiveSection: true,
+    countKey: "engagement_details",
+  },
+  {
+    key: "company-shareholder-proposals",
+    label: "Shareholder Proposals",
+    icon: Hand,
+    group: "Company",
+    subItems: [],
+    route: "/shareholder-proposal?source=company",
+    preserveActiveSection: true,
+    countKey: "shareholder_proposal",
+  },
+  {
     key: "investor-overview",
     label: "Overview",
     icon: BarChart3,
@@ -118,7 +156,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
 ];
 
-const DashboardSidebarNav = () => {
+const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -158,8 +196,13 @@ const DashboardSidebarNav = () => {
 
   const handleSectionClick = (section: SectionDef) => {
     if (section.route) {
-      dispatch(setActiveSection(section.key));
-      navigate(`${section.route}?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`);
+      if (!section.preserveActiveSection) {
+        dispatch(setActiveSection(section.key));
+      }
+      const [basePath, existingQuery] = section.route.split("?");
+      const params = new URLSearchParams(existingQuery || "");
+      params.set("ticker", companyGlobalSearchTicker);
+      navigate(`${basePath}?${params.toString()}`);
       setExpanded(section.key);
       return;
     }
@@ -193,8 +236,17 @@ const DashboardSidebarNav = () => {
       {sections.map((section, sectionIndex) => {
         const Icon = section.icon;
         const previousSection = sections[sectionIndex - 1];
+        const routeBasePath = section.route ? section.route.split("?")[0] : undefined;
+        const routeQuery = section.route ? section.route.split("?")[1] : undefined;
+        const routeParams = routeQuery ? new URLSearchParams(routeQuery) : null;
+        const currentParams = new URLSearchParams(location.search);
+        const routeQueryMatches = routeParams
+          ? Array.from(routeParams.entries()).every(
+              ([key, value]) => currentParams.get(key) === value
+            )
+          : true;
         const isActive = section.route
-          ? location.pathname === section.route
+          ? location.pathname === routeBasePath && routeQueryMatches
           : location.pathname === "/" &&
             activeSection === section.key &&
             (!section.subSection ||
@@ -202,6 +254,7 @@ const DashboardSidebarNav = () => {
               (section.subSection === "voting_rationale" && !activeSubSection));
         const isExpanded = expanded === section.key;
         const hasSubs = section.subItems.length > 0;
+        const countValue = section.countKey ? modulesData?.[section.countKey] : null;
 
         return (
           <Fragment key={`${section.key}-${section.label}`}>
@@ -222,7 +275,16 @@ const DashboardSidebarNav = () => {
                 { "side-menu__link--active": isActive },
               ])}
             >
-              <Icon className="side-menu__link__icon w-[18px] h-[18px]" />
+              <span className="relative">
+                <Icon className="side-menu__link__icon w-[18px] h-[18px]" />
+                {countValue > 0 && (
+                  <span
+                    className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-2 text-[10px] font-semibold text-white top-0 flex items-center justify-center position-set"
+                  >
+                    {countValue}
+                  </span>
+                )}
+              </span>
               <div className="side-menu__link__title link_color">
                 {section.label}
               </div>

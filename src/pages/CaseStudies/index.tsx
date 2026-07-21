@@ -104,6 +104,8 @@ function CaseStudies() {
   const [activeTab, setActiveTab] = useState<"overview" | "specific" | "all">(
     (searchParams.get("tab") as any) || "overview"
   );
+  const source = searchParams.get("source") || "";
+  const isCompanySource = source === "company";
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
@@ -229,6 +231,7 @@ function CaseStudies() {
   useEffect(() => {
     const institutionParam = searchParams.get("institution_name");
     const tabParam = searchParams.get("tab");
+    const sourceParam = searchParams.get("source");
 
     if (institutionParam) {
       dispatch(
@@ -238,7 +241,14 @@ function CaseStudies() {
       if (!tabParam) setActiveTab("specific");
     }
 
-    if (
+    if (sourceParam === "shared") {
+      setActiveTab("overview");
+      dispatch(selectUnSelectAllCompany(true));
+    } else if (sourceParam === "company") {
+      const companyTab = tabParam === "overview" || tabParam === "all" ? "specific" : tabParam || "specific";
+      setActiveTab(companyTab as any);
+      dispatch(selectUnSelectAllCompany(false));
+    } else if (
       tabParam &&
       (tabParam === "overview" ||
         tabParam === "specific" ||
@@ -656,49 +666,55 @@ function CaseStudies() {
           <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: '7rem' }}>
             <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-                <button
-                  onClick={() => setActiveTab("overview")}
-                  className={`relative px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "overview"
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  <Lucide icon="LayoutGrid" className="w-4 h-4" />
-                  Overview
-                  <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                    BETA
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab("specific");
-                    if (isAllCompanySelected) {
-                      handleViewAllChange({ target: { checked: false } });
-                    }
-                  }}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "specific"
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  <Lucide icon="Building2" className="w-4 h-4" />
-                  {companyGlobalSearchName || "Specific Company"}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab("all");
-                    if (!isAllCompanySelected) {
-                      handleViewAllChange({ target: { checked: true } });
-                    }
-                  }}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "all"
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  <Lucide icon="Building" className="w-4 h-4" />
-                  View All Companies
-                </button>
+                {!isCompanySource && (
+                  <button
+                    onClick={() => setActiveTab("overview")}
+                    className={`relative px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "overview"
+                        ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
+                  >
+                    <Lucide icon="LayoutGrid" className="w-4 h-4" />
+                    Overview
+                    <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
+                      BETA
+                    </span>
+                  </button>
+                )}
+                {isCompanySource && (
+                  <button
+                    onClick={() => {
+                      setActiveTab("specific");
+                      if (isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: false } });
+                      }
+                    }}
+                    className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "specific"
+                        ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
+                  >
+                    <Lucide icon="Building2" className="w-4 h-4" />
+                    Company Specific
+                  </button>
+                )}
+                {!isCompanySource && (
+                  <button
+                    onClick={() => {
+                      setActiveTab("all");
+                      if (!isAllCompanySelected) {
+                        handleViewAllChange({ target: { checked: true } });
+                      }
+                    }}
+                    className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "all"
+                        ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      }`}
+                  >
+                    <Lucide icon="Building" className="w-4 h-4" />
+                    View All Companies
+                  </button>
+                )}
               </div>
             </div>
           </div>

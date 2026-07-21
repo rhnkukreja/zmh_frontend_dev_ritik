@@ -72,7 +72,7 @@ const initialState: any = {
     },
     {
       icon: "FileSearch2",
-      pathname: "/case-studies",
+      pathname: "/case-studies?source=shared",
       title: "Case Studies",
     },
     // {
@@ -88,7 +88,7 @@ const initialState: any = {
     // },
     {
       icon: "Network",
-      pathname: "/engagement-detail",
+      pathname: "/engagement-detail?source=shared",
       title: "Engagement Details",
     },
     // {
@@ -98,7 +98,7 @@ const initialState: any = {
     // },
     {
       icon: "Hand",
-      pathname: "/shareholder-proposal",
+      pathname: "/shareholder-proposal?source=shared",
       title: "Shareholder Proposals",
     },
     // {

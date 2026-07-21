@@ -609,7 +609,7 @@ function Main() {
           >
             <ul className="scrollable">
               {/* Koyfin-style dashboard navigation for the selected company */}
-              <DashboardSidebarNav />
+              <DashboardSidebarNav modulesData={modulesData} />
               {/* BEGIN: First Child */}
               {formattedMenu.map((menu, menuKey) => {
                 const currentGroup = getSidebarGroup(menu);
@@ -678,26 +678,6 @@ function Main() {
                              font-semibold text-white top-0 flex items-center justify-center position-set"
                                   ></span>
                                 )}
-
-                              {menu.title === "Case Studies" &&
-                                modulesData?.case_studies > 0 && (
-                                  <span
-                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
-                               font-semibold text-white top-0 flex items-center justify-center position-set"
-                                  >
-                                    {modulesData?.case_studies}
-                                  </span>
-                                )}
-
-                              {menu.title === "Engagement Details" &&
-                                modulesData?.engagement_details > 0 && (
-                                  <span
-                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
-                               font-semibold text-white top-0 flex items-center justify-center position-set"
-                                  >
-                                    {modulesData?.engagement_details}
-                                  </span>
-                                )}
                             </span>
                           </>
                         )}
@@ -722,14 +702,6 @@ function Main() {
                                 <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
                               </svg>
 
-                              {modulesData?.shareholder_proposal > 0 && (
-                                <span
-                                  className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
-                             font-semibold text-white top-0 flex items-center justify-center position-set"
-                                >
-                                  {modulesData?.shareholder_proposal}
-                                </span>
-                              )}
                             </span>
                           </>
                         )}

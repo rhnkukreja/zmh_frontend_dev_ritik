@@ -9,7 +9,10 @@ export type DashboardSection =
   | "investor-overview"
   | "ownership"
   | "shareholder-meeting-results"
-  | "voting-data";
+  | "voting-data"
+  | "company-case-studies"
+  | "company-engagement-details"
+  | "company-shareholder-proposals";
 
 export interface DashboardNavState {
   activeSection: DashboardSection;
