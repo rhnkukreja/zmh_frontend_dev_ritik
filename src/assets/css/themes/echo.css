@@ -407,3 +407,15 @@
   font-size: 0.65rem;
   font-weight: 600;
 }
+
+/* Indent dashboard section links under their group heading (e.g. COMPANY) */
+.echo .side-menu:not(.side-menu--collapsed) ul.scrollable > li > .side-menu__link,
+.echo .side-menu.side-menu--collapsed.side-menu--on-hover ul.scrollable > li > .side-menu__link {
+  padding-left: theme("spacing.6");
+}
+
+/* Keep group headings aligned to the left edge */
+.echo .side-menu:not(.side-menu--collapsed) ul.scrollable > li.side-menu__section-label,
+.echo .side-menu.side-menu--collapsed.side-menu--on-hover ul.scrollable > li.side-menu__section-label {
+  padding-left: 0;
+}
