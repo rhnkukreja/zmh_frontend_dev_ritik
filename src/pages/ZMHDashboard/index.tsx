@@ -24,6 +24,7 @@ import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
 import InvestorOverview from "@/components/InvestorOverview";
 import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import MeetingYearSelector from "@/pages/VdsProxyVoting/MeetingYearSelector";
+import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
 import NPXPage from "@/pages/NPX";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
@@ -483,6 +484,18 @@ function Main() {
               <MeetingYearSelector
                 key={activeVotingSubTab}
                 source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
+              />
+            )}
+            {activeTab === 'shareholder-meeting-results' && agmSummaryDetails?.total_year?.length > 0 && (
+              <YearSelector
+                years={agmSummaryDetails.total_year.map(String)}
+                label="Meeting Year"
+              />
+            )}
+            {activeTab === 'ownership' && dashboardDataList?.total_year?.length > 0 && (
+              <YearSelector
+                years={dashboardDataList.total_year.map(String)}
+                label="Meeting Year"
               />
             )}
             {companyGlobalSearchTicker && activeTab === 'company-overview' && (

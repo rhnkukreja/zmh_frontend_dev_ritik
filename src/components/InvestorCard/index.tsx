@@ -92,6 +92,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
+  const yearFromQuery = searchParams.get("year") || "";
 
   const {
     dashboardDataList,
@@ -473,7 +474,7 @@ const getNormalizedScrapedInfo = (name: string) => {
     setAddNoteModalVisible(true)
   };
 
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery);
 
   const activeYear =
     selectedYear?.toString() !== ""
@@ -514,6 +515,12 @@ const getNormalizedScrapedInfo = (name: string) => {
     const index = getSelectedTabIndex();
     setSelectedIndex(index);
   }, [selectedYear])
+
+  useEffect(() => {
+    if (yearFromQuery && yearFromQuery !== selectedYear) {
+      setSelectedYear(yearFromQuery);
+    }
+  }, [yearFromQuery])
 
   const getAnalyticsData = () => {
     const analyticsData = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics;
@@ -590,7 +597,7 @@ const getNormalizedScrapedInfo = (name: string) => {
               </div>
 
               <div className="mt-5">
-                {getAvailableYears().length > 0 && (
+                {locationPathName !== "/" && getAvailableYears().length > 0 && (
                   <div className="mb-4">
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                       <Tab.List

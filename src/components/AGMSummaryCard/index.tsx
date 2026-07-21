@@ -753,9 +753,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
           <div className="w-full">
             <>
               <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
-                {/* Left: Year tabs on top row */}
+                {/* Left: Year tabs on top row (only on detail pages; dashboard uses header dropdown) */}
                 <div className="flex items-center gap-3 shrink-0">
-                  {agmSummaryDetails.total_year?.length > 0 && (
+                  {locationPathName !== "/" && agmSummaryDetails.total_year?.length > 0 && (
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                       <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
                         {getAvailableYears().map((tab: string, index: number) => (

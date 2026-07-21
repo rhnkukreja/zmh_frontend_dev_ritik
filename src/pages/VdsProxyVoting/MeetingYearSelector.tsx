@@ -105,11 +105,11 @@ const MeetingYearSelector = ({ source = "VDS" }: MeetingYearSelectorProps) => {
   return (
     <div className="flex shrink-0 items-center gap-3" aria-label="Meeting year selector">
       <div className="hidden items-center gap-2 text-right sm:flex">
-        {/* <Lucide icon="CalendarDays" className="h-4 w-4 shrink-0 text-primary" /> */}
-        {/* <div className="leading-tight">
-          <div className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-slate-400">Meeting year</div>
-          <div className="whitespace-nowrap text-xs font-medium text-slate-600">Change reporting period</div>
-        </div> */}
+        <div className="leading-tight">
+          <div className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+            Meeting Year
+          </div>
+        </div>
       </div>
       <div className="flex h-10 shrink-0 items-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex h-full w-10 shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 text-primary">
