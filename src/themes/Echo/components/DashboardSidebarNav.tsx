@@ -184,12 +184,17 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
     navigate(`/?${params.toString()}`, { replace: true });
   };
 
-  // Build sections dynamically based on user role and required ordering.
+  // Build sections dynamically based on user role, count availability, and required ordering.
   const sections: SectionDef[] = BASE_SECTIONS.filter((s) => {
     // Compensation is restricted to Admins/Analysts
     if (s.key === "compensation") {
       const userType = user?.user_type;
       return userType === "Admin" || userType === "Analyst";
+    }
+    // Hide count-driven tabs when there is no data for the selected company.
+    if (s.countKey) {
+      const count = modulesData?.[s.countKey];
+      return !!count && count > 0;
     }
     return true;
   });
@@ -279,7 +284,7 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
                 <Icon className="side-menu__link__icon w-[18px] h-[18px]" />
                 {countValue > 0 && (
                   <span
-                    className="bg-[#DC661F] absolute rounded-2xl w-5 h-5 p-2 text-[10px] font-semibold text-white top-0 flex items-center justify-center position-set"
+                    className="bg-[#DC661F] absolute rounded-full min-w-[16px] h-4 px-1 text-[9px] font-semibold text-white -top-1.5 left-2.5 flex items-center justify-center"
                   >
                     {countValue}
                   </span>
