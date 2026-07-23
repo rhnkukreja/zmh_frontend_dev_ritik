@@ -410,11 +410,11 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
   const [apiDropdownOptions, setApiDropdownOptions] = useState<any>([]);
 
   const getAllInstitutionDropdown = async () => {
-    if (!yearTicker) return;
+    if (!companyGlobalSearchId || !meetingDate) return;
     try {
       const res = await dashboardService.getInstitution({
-        company_name: [companyGlobalSearchName],
-        year: yearTicker!,
+        company_id: companyGlobalSearchId,
+        meeting_date: meetingDate,
       });
       if (res.result?.institutes) {
         setApiDropdownOptions(res.result?.institutes);
@@ -435,7 +435,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
 
   useEffect(() => {
     getAllInstitutionDropdown();
-  }, [companyGlobalSearchTicker, yearTicker]);
+  }, [companyGlobalSearchId, meetingDate]);
 
   const onSubmit = async (investorProfileFilter: any) => {
     if (investorProfileFilter?.institution) {

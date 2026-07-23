@@ -659,9 +659,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   }, [companyGlobalSearchTicker]);
 
   const getAllInstitutionDropdown = async () => {
+    if (!companyGlobalSearchId) return;
     try {
       const res = await dashboardService.getInstitution({
-        company_name: [companyGlobalSearchName],
+        company_id: companyGlobalSearchId,
       });
       if (res.result?.institutes?.length > 0) {
         setIsInstitutionList(true);
