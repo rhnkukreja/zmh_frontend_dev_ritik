@@ -563,43 +563,43 @@ function Main() {
             "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[285px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
           ])}
         >
-          {/* Logo with white background */}
-          <a className="mt-6 mb-1 flex items-center justify-center transition-all duration-700">
-            <div className="flex items-center justify-center bg-white rounded-xl shadow-md w-[110px] h-[110px] p-3 group-[.side-menu--collapsed]:xl:w-[56px] group-[.side-menu--collapsed]:xl:h-[56px] group-[.side-menu--collapsed]:xl:p-1.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:h-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:p-3 transition-all duration-300">
-              <img
-                alt="Logo"
-                src={headerLogo}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          </a>
-
-          {/* Sidebar toggle arrow - below logo */}
+          {/* Logo + sidebar toggle in a single row when expanded, stacked when collapsed */}
           <div
             className={clsx([
-              "flex-none hidden xl:flex items-center z-10 px-5 mt-4 h-[50px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
+              "flex-none flex items-center justify-center px-5 mt-6 mb-1 gap-3 relative",
+              "group-[.side-menu--collapsed]:xl:flex-col group-[.side-menu--collapsed]:xl:justify-center group-[.side-menu--collapsed]:xl:gap-2",
             ])}
           >
-            {compactMenu && (
-              <a
-                href=""
-                className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
-              >
-                <div onClick={handleToggleMenu}>
-                  <img className=" w-8" src={sideBarIcon} />
-                  {/* <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3] text-white" /> */}
-                </div>
-              </a>
-            )}
-            {!compactMenu && (
-              <a
-                href=""
-                onClick={handleToggleMenu}
-                className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center  ml-auto "
-              >
-                <img className=" w-8 rotate-180" src={sideBarIcon} />
-              </a>
-            )}
+            <a className="flex items-center justify-center transition-all duration-700">
+              <div className="flex items-center justify-center bg-white rounded-xl shadow-md w-[110px] h-[110px] p-3 group-[.side-menu--collapsed]:xl:w-[56px] group-[.side-menu--collapsed]:xl:h-[56px] group-[.side-menu--collapsed]:xl:p-1.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:h-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:p-3 transition-all duration-300">
+                <img
+                  alt="Logo"
+                  src={headerLogo}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </a>
+
+            {/* Sidebar toggle arrow - pinned to the right when expanded, below logo when collapsed */}
+            <div
+              className={clsx([
+                "hidden xl:flex items-center z-10",
+                "absolute right-5 group-[.side-menu--collapsed]:xl:static group-[.side-menu--collapsed]:xl:right-auto",
+              ])}
+            >
+              {compactMenu && (
+                <a href="" className="flex items-center transition-[margin] duration-300">
+                  <div onClick={handleToggleMenu}>
+                    <img className="w-8 group-[.side-menu--collapsed]:xl:w-5" src={sideBarIcon} />
+                  </div>
+                </a>
+              )}
+              {!compactMenu && (
+                <a href="" onClick={handleToggleMenu} className="flex items-center justify-center">
+                  <img className="w-8 group-[.side-menu--collapsed]:xl:w-5 rotate-180" src={sideBarIcon} />
+                </a>
+              )}
+            </div>
           </div>
 
           <div
