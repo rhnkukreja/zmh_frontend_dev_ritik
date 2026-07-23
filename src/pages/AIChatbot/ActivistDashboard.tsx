@@ -455,46 +455,42 @@ const ActivistIntelligenceDashboard = ({
     fetchSingleProfile();
   }, [activeInvestorKey]);
 
- const handleUpload = async () => {
-    if (!newInvestorName.trim()) {
-      alert("Please enter a clear Investor Name.");
-      return;
-    }
-    if (selectedJsonFiles.length === 0) {
-      alert("Please select at least one data file.");
+ const handlePreviewFiles = async () => {
+    if (!newInvestorName || selectedJsonFiles.length === 0) {
+      setError("Please provide an investor name and select files.");
       return;
     }
 
-    setIsUploading(true);
     try {
+      setIsUploading(true);
+      setError(null);
+      
       const formData = new FormData();
       formData.append("investor_name", newInvestorName);
-      selectedJsonFiles.forEach(file => {
+      selectedJsonFiles.forEach((file) => {
         formData.append("files", file);
       });
 
-      // 🛑 1. Call the PREVIEW endpoint instead of upload-multi
-      const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/preview-multi`;
-      const response = await axios.post(url, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Pointing to your new preview endpoint
+      const response = await axios.post(
+        `${AI_CHATBOT_API_BASE}/api/activist-profiles/preview-multi`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-      // 🛑 2. Load the preview data directly into the UI state
-      const previewData = response.data?.data;
+      const previewData = response.data.data;
+      
+      // Load the preview data into the dashboard
       setRawProfile(previewData);
       setProfile(normaliseProfile(previewData));
       
-      // 🛑 3. Turn on Preview and Edit modes
       setIsPreviewMode(true);
       setIsEditMode(true);
+      setUploadModalOpen(false); // Close modal on success
 
-      setUploadModalOpen(false);
-      setNewInvestorName("");
-      setSelectedJsonFiles([]);
-      
-    } catch (err) {
+    } catch (err: any) {
       console.error("Preview generation failed:", err);
-      alert("Failed to generate preview. Check your JSON files.");
+      setError(err.response?.data?.detail || "Failed to generate preview.");
     } finally {
       setIsUploading(false);
     }
@@ -504,58 +500,69 @@ const ActivistIntelligenceDashboard = ({
   // finishes and loads the result into the SAME preview/edit/approve flow the
   // manual file-upload path already uses — nothing gets saved to S3 until the
   // user clicks "Approve & Publish".
-  const handleGenerateProfile = async () => {
-    if (!generateInvestorName.trim()) {
-      alert("Please enter a fund name.");
-      return;
-    }
+  // ─── 3. HANDLE PIPELINE GENERATION AND POLLING ─────────────────────────────
 
-    setIsGenerating(true);
-    setGenerateStep("Starting...");
+  const handleStartGeneration = async () => {
+    if (!generateInvestorName.trim()) return;
+
     try {
-      const startUrl = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`;
-      const startRes = await axios.post(startUrl, { investor_name: generateInvestorName });
-      const slug = startRes.data?.slug;
-      if (!slug) throw new Error("No job slug returned by the server.");
+      setIsGenerating(true);
+      setGenerateStep("Starting...");
+      setError(null);
 
-      const statusUrl = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${slug}/status`;
-      const POLL_INTERVAL_MS = 5000;
-
-      await new Promise<void>((resolve, reject) => {
-        const poll = async () => {
-          try {
-            const statusRes = await axios.get(statusUrl, { params: { t: Date.now() } });
-            const { state, step, data, message } = statusRes.data || {};
-
-            if (state === "done") {
-              setRawProfile(data);
-              setProfile(normaliseProfile(data));
-              setIsPreviewMode(true);
-              setIsEditMode(true);
-              resolve();
-              return;
-            }
-            if (state === "error") {
-              reject(new Error(message || "Profile generation failed."));
-              return;
-            }
-            setGenerateStep(step || "Working...");
-            setTimeout(poll, POLL_INTERVAL_MS);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        poll();
+      // Kick off the background job
+      const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
+        investor_name: generateInvestorName
       });
+      
+      const { slug } = startRes.data;
 
-      setGenerateModalOpen(false);
-      setGenerateInvestorName("");
+      // Start Polling
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await axios.get(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${slug}/status`);
+          const jobData = statusRes.data;
+
+          if (jobData.state === "running") {
+            setGenerateStep(jobData.step || "Processing...");
+          } 
+          else if (jobData.state === "done") {
+            clearInterval(pollInterval);
+            setGenerateStep("Complete!");
+            
+            // Load the generated payload as a preview
+            setRawProfile(jobData.data);
+            setProfile(normaliseProfile(jobData.data));
+            setIsPreviewMode(true);
+            setIsEditMode(true);
+            
+            setGenerateModalOpen(false);
+            setIsGenerating(false);
+          } 
+          else if (jobData.state === "error") {
+            clearInterval(pollInterval);
+            setError(jobData.message || "Generation failed.");
+            setIsGenerating(false);
+          }
+        } catch (pollErr) {
+          // If 404, it might just not be written to S3 yet, keep polling.
+          console.warn("Polling interval warning:", pollErr);
+        }
+      }, 3000); // Poll every 3 seconds
+
     } catch (err: any) {
-      console.error("Profile generation failed:", err);
-      alert(err?.message || "Failed to generate profile. Please try again.");
-    } finally {
+      console.error("Failed to start generation:", err);
+      setError(err.response?.data?.detail || "Failed to start generation.");
       setIsGenerating(false);
-      setGenerateStep("");
+    }
+  };
+
+  // Optional: Discard a running/completed job
+  const handleDiscardJob = async (slug: string) => {
+    try {
+      await axios.delete(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${slug}`);
+    } catch (err) {
+      console.error("Failed to discard job scratch file:", err);
     }
   };
 
@@ -682,25 +689,41 @@ const ActivistIntelligenceDashboard = ({
 
   // The final save push to the upcoming FastAPI backend
   const handleSaveProfile = async () => {
-    setIsSaving(true);
+    if (!rawProfile) return;
+
     try {
+      setIsSaving(true);
+      setError(null);
+
       if (isPreviewMode) {
-        await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles`, rawProfile);
-        setIsPreviewMode(false);
+        // 🛑 HARDCODED FOR TESTING: 
+        // This forces the backend to send the success email to this address
+        // instead of the logged-in user.
+        const payload = {
+          ...rawProfile,
+          creator_email: "ritiksharma19173@gmail.com" 
+        };
+
+        await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles`, payload);
         
-        // 🛑 CLEAR PREVIEW FROM index.tsx
+        setIsPreviewMode(false);
+        setIsEditMode(false);
         onPreviewPublished(); 
         
-        const newSlug = rawProfile.metadata?.slug + "-profile";
+        const newSlug = rawProfile.metadata?.slug || "";
         await fetchAllProfiles(newSlug);
-        alert("Profile Approved and Published to S3!");
+        
+        alert("Profile Approved and Published to S3! Check your email.");
+
       } else {
-        await axios.put(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`, rawProfile);
-        setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: rawProfile }));
+        const profileName = activeInvestorKey;
+        await axios.put(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${profileName}`, rawProfile);
+        setIsEditMode(false);
+        setProfilesCache(prev => ({ ...prev, [profileName]: rawProfile }));
       }
-      setIsEditMode(false);
-    } catch (err) {
-      alert("Failed to save profile changes.");
+    } catch (err: any) {
+      console.error("Save failed:", err);
+      setError(err.response?.data?.detail || "Failed to save profile.");
     } finally {
       setIsSaving(false);
     }
@@ -1195,7 +1218,7 @@ const ActivistIntelligenceDashboard = ({
                 Cancel
               </button>
               <button 
-    onClick={handleUpload} 
+    onClick={handlePreviewFiles} 
     disabled={isUploading} 
     style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: isUploading ? "wait" : "pointer", fontWeight: 600, opacity: isUploading ? 0.7 : 1 }}
   >
@@ -1244,7 +1267,7 @@ const ActivistIntelligenceDashboard = ({
                 Cancel
               </button>
               <button
-                onClick={handleGenerateProfile}
+                onClick={handleStartGeneration}
                 disabled={isGenerating}
                 style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: isGenerating ? "wait" : "pointer", fontWeight: 600, opacity: isGenerating ? 0.7 : 1 }}
               >
