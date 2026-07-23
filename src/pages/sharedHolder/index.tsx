@@ -1070,39 +1070,6 @@ function ShareHolderProposal() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          {!isCompanySource && (
-            <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
-              <div className="bg-white px-4 mb-4 flex flex-col md:flex-row items-center justify-between shadow">
-                {isAllCompanySelected === true ? (
-                  <h1 className="text-xl font-semibold flex items-center gap-2">
-                    All Shareholder Proposals
-                  </h1>
-                ) : (
-                  tab === "proposal" ? (
-                    <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                      Shareholder Proposals
-                    </h1>
-                  ) : tab === "no-action" ? (
-                    <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                      No Action Letters
-                    </h1>
-                  ) : tab === "withdrawn" ? (
-                    <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                      Withdrawn Proposals
-                    </h1>
-                  ) : null
-                )}
-                <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                  <button
-                    className="px-5 py-2 rounded-t-lg font-semibold transition-all bg-primary text-white shadow"
-                  >
-                    All View
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="mt-3.5 relative">
             {isCompanySource && (
               <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
@@ -1126,6 +1093,35 @@ function ShareHolderProposal() {
                   <div>
                     <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                       <span className="text-slate-500">Company</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      <span>Shareholder Proposals</span>
+                    </h2>
+                  </div>
+                </div>
+              </div>
+            )}
+            {!isCompanySource && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div className="flex items-start gap-2.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary mt-[2px]"
+                  >
+                    <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                    <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+                    <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
+                  </svg>
+                  <div>
+                    <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                      <span className="text-slate-500">Market Analytics</span>
                       <ChevronRight className="w-4 h-4 text-slate-400" />
                       <span>Shareholder Proposals</span>
                     </h2>
