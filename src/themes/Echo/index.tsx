@@ -753,7 +753,7 @@ function Main() {
                             <a
                               href=""
                               className={clsx([
-                                "side-menu__link",
+                                "side-menu__link !pl-8",
                                 { "side-menu__link--active": subMenu.active },
                                 {
                                   "side-menu__link--active-dropdown":
@@ -779,7 +779,7 @@ function Main() {
                               </div>
                               {subMenu.badge && (
                                 typeof subMenu.badge === "string" ? (
-                                  <span className="ml-auto inline-flex items-center rounded-md bg-gradient-to-r from-orange-500 to-orange-400 px-[7px] py-[2px] text-[9px] font-semibold uppercase tracking-wider text-white shadow-sm leading-none">
+                                  <span className="ml-auto inline-flex items-center rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-[7px] py-[2px] text-[9px] font-semibold uppercase tracking-wider text-white shadow-sm leading-none">
                                     {subMenu.badge}
                                   </span>
                                 ) : (
@@ -818,7 +818,7 @@ function Main() {
                                       <a
                                         href=""
                                         className={clsx([
-                                          "side-menu__link",
+                                          "side-menu__link !pl-12",
                                           {
                                             "side-menu__link--active":
                                               lastSubMenu.active,

@@ -12,9 +12,12 @@ import {
   Scale,
   Target,
   Briefcase,
+  Building,
   CalendarCheck,
+  ClipboardList,
   FileSearch2,
   Files,
+  MessageSquare,
   Network,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -29,6 +32,7 @@ import {
 interface SubItem {
   key: string;
   label: string;
+  icon?: LucideIcon;
 }
 
 interface SectionDef {
@@ -95,9 +99,9 @@ const BASE_SECTIONS: SectionDef[] = [
     icon: Vote,
     group: "Company",
     subItems: [
-      { key: "vds", label: "By Fund Family" },
-      { key: "voting-rationale", label: "Voting Rationale" },
-      { key: "npx", label: "N-PX" },
+      { key: "vds", label: "By Fund Family", icon: Building },
+      { key: "voting-rationale", label: "Voting Rationale", icon: MessageSquare },
+      { key: "npx", label: "N-PX", icon: ClipboardList },
     ],
     defaultSubKey: "vds",
   },
@@ -319,6 +323,7 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
                   const effectiveSubKey =
                     activeSubSection ?? section.defaultSubKey ?? null;
                   const subActive = isActive && effectiveSubKey === sub.key;
+                  const SubIcon = sub.icon;
                   return (
                     <li key={sub.key}>
                       <a
@@ -332,8 +337,11 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
                           { "side-menu__link--active": subActive },
                         ])}
                       >
-                        <div className="side-menu__link__title link_color !ml-2">
-                          {sub.label}
+                        <div className="flex items-center gap-2 ml-6">
+                          {SubIcon && <SubIcon className="w-4 h-4" />}
+                          <div className="side-menu__link__title link_color">
+                            {sub.label}
+                          </div>
                         </div>
                       </a>
                     </li>
