@@ -512,7 +512,8 @@ const ActivistIntelligenceDashboard = ({
 
       // Kick off the background job
       const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
-        investor_name: generateInvestorName
+        investor_name: generateInvestorName,
+        creator_email: "rhnkukreja@gmail.com"
       });
       
       const { slug } = startRes.data;
@@ -696,13 +697,8 @@ const ActivistIntelligenceDashboard = ({
       setError(null);
 
       if (isPreviewMode) {
-        // 🛑 HARDCODED FOR TESTING: 
-        // This forces the backend to send the success email to this address
-        // instead of the logged-in user.
-        const payload = {
-          ...rawProfile,
-          creator_email: "ritiksharma19173@gmail.com" 
-        };
+        // Re-assign rawProfile to payload
+        const payload = { ...rawProfile };
 
         await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles`, payload);
         
@@ -712,8 +708,8 @@ const ActivistIntelligenceDashboard = ({
         
         const newSlug = rawProfile.metadata?.slug || "";
         await fetchAllProfiles(newSlug);
-        
-        alert("Profile Approved and Published to S3! Check your email.");
+
+        alert("Profile Approved and Published to S3!");
 
       } else {
         const profileName = activeInvestorKey;
@@ -721,9 +717,13 @@ const ActivistIntelligenceDashboard = ({
         setIsEditMode(false);
         setProfilesCache(prev => ({ ...prev, [profileName]: rawProfile }));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save failed:", err);
-      setError(err.response?.data?.detail || "Failed to save profile.");
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Failed to save profile.");
+      } else {
+        setError("An unexpected error occurred while saving.");
+      }
     } finally {
       setIsSaving(false);
     }
