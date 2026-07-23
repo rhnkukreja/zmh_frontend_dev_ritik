@@ -95,7 +95,7 @@ const BASE_SECTIONS: SectionDef[] = [
     icon: Vote,
     group: "Company",
     subItems: [
-      { key: "vds", label: "VDS" },
+      { key: "vds", label: "By Fund Family" },
       { key: "npx", label: "N-PX" },
     ],
     defaultSubKey: "vds",

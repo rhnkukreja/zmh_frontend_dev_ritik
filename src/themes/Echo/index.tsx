@@ -91,7 +91,7 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
       "Proxy Contest",
     ].includes(menu.title)
   ) {
-    return "Shared Research";
+    return "Market Analytics";
   }
 
   if (
