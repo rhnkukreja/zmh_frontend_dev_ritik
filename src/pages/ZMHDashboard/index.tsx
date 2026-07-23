@@ -101,7 +101,13 @@ function Main() {
           : 'Overview'
       : activeTab === 'ownership' ? 'Ownership' :
       activeTab === 'shareholder-meeting-results' ? 'Shareholder Meeting' :
-      activeTab === 'voting-data' ? 'Voting Data' : 'Overview';
+      activeTab === 'voting-data'
+        ? activeSubSection === 'voting-rationale'
+          ? 'Voting Rationale'
+          : activeSubSection === 'npx'
+            ? 'N-PX'
+            : 'By Fund Family'
+        : 'Overview';
   const HeaderIcon =
     activeTab === 'company-overview' ? Building2 :
     activeTab === 'governance-profile' ? Scale :
@@ -469,11 +475,6 @@ function Main() {
                   <span className="text-slate-500">{headerGroup}</span>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
                   <span>{headerLabel}</span>
-                  {activeTab === 'voting-data' && (
-                    <span className="text-sm font-medium text-slate-500">
-                      ({activeVotingSubTab === 'npx' ? 'N-PX' : 'VDS'})
-                    </span>
-                  )}
                 </h2>
                 {activeTab === 'shareholder-meeting-results' && meetingDateHeader && (
                   <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
@@ -555,8 +556,10 @@ function Main() {
             <div id="voting-data" className="col-span-12 xl:col-span-12">
               {activeVotingSubTab === 'npx' ? (
                 <NPXPage />
+              ) : activeVotingSubTab === 'voting-rationale' ? (
+                <VdsProxyVoting view="voting-rationale" />
               ) : (
-                <VdsProxyVoting />
+                <VdsProxyVoting view="voting-data" />
               )}
             </div>
           )}

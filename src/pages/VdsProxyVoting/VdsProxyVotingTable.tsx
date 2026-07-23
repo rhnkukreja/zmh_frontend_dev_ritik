@@ -104,7 +104,11 @@ const clearCacheForCompany = (company: string): void => {
   }
 };
 
-const VdsProxyVotingTable = () => {
+interface VdsProxyVotingTableProps {
+  view?: "voting-data" | "voting-rationale";
+}
+
+const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
   const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
   const {
@@ -137,7 +141,14 @@ const VdsProxyVotingTable = () => {
 
   const [filter, setFilter] = useState<any>([]);
   const meetingDate = searchParams.get("meeting_date") || "";
-  const [activeVdsView, setActiveVdsView] = useState<"voting-data" | "voting-rationale">("voting-data");
+  const [activeVdsView, setActiveVdsView] = useState<"voting-data" | "voting-rationale">(view || "voting-data");
+
+  // Keep the view locked to the prop when a specific sub-tab is selected via the sidebar.
+  useEffect(() => {
+    if (view) {
+      setActiveVdsView(view);
+    }
+  }, [view]);
 
   const emptyStateAnimationStyle: React.CSSProperties = {
     animationDelay: "120ms",
@@ -458,40 +469,42 @@ const VdsProxyVotingTable = () => {
       <div className="p-5 mt-1 box">
         <div className="w-full">
           <>
-            <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
-              <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="VDS views">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeVdsView === "voting-data"}
-                  onClick={() => setActiveVdsView("voting-data")}
-                  className={clsx(
-                    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
-                    activeVdsView === "voting-data"
-                      ? "bg-white text-primary shadow-sm"
-                      : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  <Lucide icon="BarChart3" className="w-4 h-4" />
-                  Voting Data
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeVdsView === "voting-rationale"}
-                  onClick={() => setActiveVdsView("voting-rationale")}
-                  className={clsx(
-                    "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
-                    activeVdsView === "voting-rationale"
-                      ? "bg-white text-primary shadow-sm"
-                      : "text-slate-500 hover:text-slate-800"
-                  )}
-                >
-                  <Lucide icon="FileText" className="w-4 h-4" />
-                  Voting Rationale
-                </button>
+            {!view && (
+              <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="VDS views">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeVdsView === "voting-data"}
+                    onClick={() => setActiveVdsView("voting-data")}
+                    className={clsx(
+                      "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+                      activeVdsView === "voting-data"
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    )}
+                  >
+                    <Lucide icon="BarChart3" className="w-4 h-4" />
+                    Voting Data
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeVdsView === "voting-rationale"}
+                    onClick={() => setActiveVdsView("voting-rationale")}
+                    className={clsx(
+                      "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all",
+                      activeVdsView === "voting-rationale"
+                        ? "bg-white text-primary shadow-sm"
+                        : "text-slate-500 hover:text-slate-800"
+                    )}
+                  >
+                    <Lucide icon="FileText" className="w-4 h-4" />
+                    Voting Rationale
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <Tab.Group defaultIndex={getSelectedTabIndex()}>
               <Tab.List variant="link-tabs" className="mt-4">
