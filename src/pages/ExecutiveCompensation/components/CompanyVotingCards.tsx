@@ -207,14 +207,14 @@ const CompanyVotingCards: React.FC<CompanyVotingCardsProps> = ({ byCompany, load
                           <React.Fragment key={`${group.key}-${i}`}>
                             <Table.Tr className="hover:bg-gray-50">
                               <Table.Td className="py-2.5 border-dashed text-sm text-gray-500">{row.proposal_num || (i + 1)}</Table.Td>
-                              <Table.Td className="py-2.5 border-dashed text-sm truncate">{row.proposal}</Table.Td>
+                              <Table.Td className="py-2.5 border-dashed text-sm leading-snug">{row.proposal}</Table.Td>
                               <Table.Td className="py-2.5 border-dashed text-sm">{row.mgt_rec}</Table.Td>
                               <Table.Td className="py-2.5 border-dashed text-sm">
                                 <span className={clsx("font-semibold", VOTE_BADGE[row.vote] || "text-slate-800")}>
                                   {row.vote}
                                 </span>
                               </Table.Td>
-                              <Table.Td className="py-2.5 border-dashed text-sm truncate">{row.institution_name}</Table.Td>
+                              <Table.Td className="py-2.5 border-dashed text-sm leading-snug">{row.institution_name}</Table.Td>
                             </Table.Tr>
                             {rationale && (
                               <Table.Tr className="bg-slate-50">
