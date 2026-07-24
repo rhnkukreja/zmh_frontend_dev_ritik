@@ -25,8 +25,10 @@ const InvestorProfileTour = ({ compactMenu }: InvestorProfileTourProps) => {
     }
   }, [isVisible]);
 
-  if (!isVisible) return null;
+  // Banner permanently disabled
+  return null;
 
+  // eslint-disable-next-line no-unreachable
   return (
     <div
       className={clsx(

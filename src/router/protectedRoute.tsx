@@ -23,6 +23,8 @@ const withAuth = (WrappedComponent: ComponentType) => {
       const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.clear();
+        sessionStorage.removeItem('redirectPath');
+        sessionStorage.removeItem('dashboardActiveSection');
         navigate("/login");
         // toast.warning("Your session has been expired.");
       };
@@ -40,8 +42,11 @@ const withAuth = (WrappedComponent: ComponentType) => {
     }, [navigate]);
 
     if (!user?.token) {
-      sessionStorage.setItem('redirectPath', location.pathname + location.search);
-      console.log(location.pathname + location.search);
+      const currentPath = location.pathname + location.search;
+      // Only save as redirect target if it's a meaningful deep-link
+      if (currentPath !== '/' && !currentPath.startsWith('/voting-data') && !currentPath.startsWith('/login')) {
+        sessionStorage.setItem('redirectPath', currentPath);
+      }
       return <Navigate to="/login" />;
     }
 

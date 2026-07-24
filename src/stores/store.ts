@@ -26,8 +26,10 @@ import globalNotificationsReducer from "./globalNotificationsSlice";
 import notesReducer from "./notesSlice";
 import domainNotesReducer from "./domainNotesSlice";
 import vdsEuropeanReducer from "./vdsEuropeanSlice";
+import compensationProposalsReducer from "./compensationProposalsSlice";
 import realTimeReducer from "./realTimeDataSlice";
 import companyReportReducer from "./companyReportSlice";
+import dashboardNavReducer from "./dashboardNavSlice";
 
 
 import { PersistPartial } from "redux-persist/es/persistReducer";
@@ -65,9 +67,11 @@ const slices = {
   notes: notesReducer,
   domainNotes: domainNotesReducer,
   vdsEuropean: vdsEuropeanReducer,
+  compensationProposals: compensationProposalsReducer,
   realTime: realTimeReducer,
   companyReport: companyReportReducer,
   globalNotifications: globalNotificationsReducer,
+  dashboardNav: dashboardNavReducer,
 };
 const appReducer = combineReducers(
   Object.entries(slices).reduce(

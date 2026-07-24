@@ -66,10 +66,16 @@
     }
     &__divider {
       white-space: nowrap;
-      font-size: theme("fontSize.xs");
-      color: theme("colors.slate.500");
-      margin-top: theme("spacing.5");
-      margin-bottom: theme("spacing.3");
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: theme("colors.white" / 65%);
+      margin: theme("spacing.5") theme("spacing.3") theme("spacing.2");
+      padding: 0 theme("spacing.1");
+    }
+    &__section-label {
+      line-height: 1.2;
     }
     &__link {
       display: flex;
@@ -77,7 +83,7 @@
       margin-bottom: theme("spacing.1");
       border-radius: 0.6rem;
       border: 1px solid transparent;
-      padding: theme("spacing.3") theme("spacing[3.5]");
+      padding: theme("spacing.2") theme("spacing.3");
       transition-property: theme("transitionProperty.all");
       transition-timing-function: theme("transitionTimingFunction.in");
       transition-duration: theme("transitionDuration.200");
@@ -102,7 +108,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         color: theme("colors.slate.600");
-        margin-left: theme("spacing.3");
+        margin-left: theme("spacing.2");
       }
       &__badge {
         min-width: 1.15rem;
@@ -147,6 +153,8 @@
           margin-bottom: theme("spacing.2");
           .side-menu__link {
             margin-bottom: 0;
+            padding-top: theme("spacing.2");
+            padding-bottom: theme("spacing.2");
           }
           ul {
             margin: 0px -1px;
@@ -398,4 +406,16 @@
   letter-spacing: 0.08em;
   font-size: 0.65rem;
   font-weight: 600;
+}
+
+/* Indent dashboard section links under their group heading (e.g. COMPANY) */
+.echo .side-menu:not(.side-menu--collapsed) ul.scrollable > li > .side-menu__link,
+.echo .side-menu.side-menu--collapsed.side-menu--on-hover ul.scrollable > li > .side-menu__link {
+  padding-left: theme("spacing.6");
+}
+
+/* Keep group headings aligned to the left edge */
+.echo .side-menu:not(.side-menu--collapsed) ul.scrollable > li.side-menu__section-label,
+.echo .side-menu.side-menu--collapsed.side-menu--on-hover ul.scrollable > li.side-menu__section-label {
+  padding-left: 0;
 }

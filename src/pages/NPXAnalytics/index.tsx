@@ -39,10 +39,11 @@ const formatCell = (value: any) => {
 
 export default function NPXAnalyticsPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const companyId = searchParams.get("company_id");
   const year = searchParams.get("year");
+  const [yearOptions, setYearOptions] = useState<string[]>([]);
 
   // Dropdown state
   const [dropdownLoading, setDropdownLoading] = useState(false);
@@ -159,6 +160,35 @@ export default function NPXAnalyticsPage() {
     fetchPivotTable();
   };
 
+  // Load available years from consolidated meeting dates endpoint
+  useEffect(() => {
+    const loadYears = async () => {
+      try {
+        if (!companyId) return;
+        const { result } = await dashboardService.getVdsNpxMeetingDates(companyId);
+        const npxKey = result?.NPX_Data || result?.npx_data || [];
+        const years = Array.from(new Set(
+          (Array.isArray(npxKey) ? npxKey : []).map((x: any) => String(x?.year)).filter(Boolean)
+        )).sort((a: string, b: string) => Number(b) - Number(a));
+        setYearOptions(years);
+        if (years.length > 0) {
+          const currentYear = searchParams.get('year');
+          const defaultYear = currentYear && years.includes(currentYear) ? currentYear : years[0];
+          if (defaultYear !== currentYear) {
+            setSearchParams(prev => {
+              const params = new URLSearchParams(prev);
+              params.set('year', defaultYear);
+              return params;
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('[NPXAnalytics] Failed to load years:', e);
+      }
+    };
+    loadYears();
+  }, [companyId]);
+
   // Load dropdowns on mount. Re-fetch with institution filter when it changes.
   useEffect(() => {
     fetchDropdown(institutionName.length > 0 ? institutionName : undefined);
@@ -214,6 +244,23 @@ export default function NPXAnalyticsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="min-w-[140px]">
+              <Select
+                options={(yearOptions || []).map(y => ({ value: y, label: y }))}
+                value={year ? { value: year, label: year } : null}
+                onChange={(opt: any) => {
+                  const y = opt?.value ? String(opt.value) : '';
+                  if (!y) return;
+                  setSearchParams(prev => {
+                    const params = new URLSearchParams(prev);
+                    params.set('year', y);
+                    return params;
+                  });
+                }}
+                placeholder="Meeting Date"
+                isClearable={false}
+              />
+            </div>
             <Button
               variant="outline-secondary"
               onClick={() => {

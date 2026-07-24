@@ -92,6 +92,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
+  const yearFromQuery = searchParams.get("year") || "";
 
   const {
     dashboardDataList,
@@ -473,7 +474,7 @@ const getNormalizedScrapedInfo = (name: string) => {
     setAddNoteModalVisible(true)
   };
 
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery);
 
   const activeYear =
     selectedYear?.toString() !== ""
@@ -514,6 +515,12 @@ const getNormalizedScrapedInfo = (name: string) => {
     const index = getSelectedTabIndex();
     setSelectedIndex(index);
   }, [selectedYear])
+
+  useEffect(() => {
+    if (yearFromQuery && yearFromQuery !== selectedYear) {
+      setSelectedYear(yearFromQuery);
+    }
+  }, [yearFromQuery])
 
   const getAnalyticsData = () => {
     const analyticsData = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics;
@@ -590,7 +597,7 @@ const getNormalizedScrapedInfo = (name: string) => {
               </div>
 
               <div className="mt-5">
-                {getAvailableYears().length > 0 && (
+                {locationPathName !== "/" && getAvailableYears().length > 0 && (
                   <div className="mb-4">
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                       <Tab.List
@@ -629,7 +636,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 No.
                               </Table.Td>
-                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[240px]">
                                 Shareholder
                               </Table.Td>
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -652,7 +659,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                                   </sup>
                                 </span>
                               </Table.Td>
-                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] whitespace-normal leading-tight">
                                 <span>Proxy Advisory Influence {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
                                   <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
                                     <Lucide
@@ -952,8 +959,8 @@ const isActivelyScraping =
                                             {dashboard?.percent_ownership}%
                                           </div>
                                         </Table.Td>
-                                       <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                                    <div className="whitespace-nowrap">
+                                       <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px]">
+                                                    <div className="whitespace-normal text-left">
                                                       {(() => {
   const scrapedInfo = getNormalizedScrapedInfo(dashboard?.institution_name);
   

@@ -18,12 +18,14 @@ interface VotingRationaleProps {
   meetingDate?: string;
   tabType?: "top20" | "allInvestors";
   parentLoading?: boolean; // Add parent loading state prop
+  expandAllSignal?: number; // Parent can bump this to force expand all
 }
 const VotingRationale: React.FC<VotingRationaleProps> = ({
   filter,
   meetingDate,
   tabType,
   parentLoading,
+  expandAllSignal,
 }) => {
   const dispatch = useAppDispatch();
   const { companyGlobalSearchTicker } = useAppSelector(
@@ -71,6 +73,21 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
     setGroupVotingRationale(groupedQuestions);
   }, [currentVotingRationale]);
 
+  // When parent bumps expandAllSignal, expand all currently grouped investors
+  useEffect(() => {
+    if (!expandAllSignal) return;
+    if (!groupVotingRationale) return;
+
+    const allInvestorNames = Object.keys(groupVotingRationale);
+    if (allInvestorNames.length === 0) return;
+
+    const newOpenGroups: { [key: string]: boolean } = {};
+    allInvestorNames.forEach((name) => {
+      newOpenGroups[name] = true;
+    });
+    setOpenGroups(newOpenGroups);
+  }, [expandAllSignal, groupVotingRationale]);
+
   const toggleGroup = (investorName: string) => {
     setOpenGroups((prevState) => ({
       ...prevState,
@@ -113,26 +130,9 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
   // State management is now handled entirely by the parent component
 
   return (
-    <div className="mt-8">
-      <div className="flex justify-between mb-4 mt-1">
-        <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-          <div>
-            <h1 className="text-lg font-bold">Voting Rationale</h1>
-            {filter?.length === 0 && tab === "Top-20" && (
-              <p className="text-sm text-slate-500 mt-1 italic">
-                Showing Top 10 institutions
-              </p>
-            )}
-            {meetingDate && (
-              <p className="text-sm italic text-slate-600 dark:text-slate-400 mt-1">
-                {" "}
-                Meeting Date: {meetingDate}{" "}
-              </p>
-            )}
-          </div>
-        </div>
-        {currentVotingRationale?.length > 0 && (
-          <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
+    <div className="mt-4">
+      {currentVotingRationale?.length > 0 && (
+        <div className="flex justify-end items-center gap-2 mb-3 xs:mt-4 md:mt-0">
             {/* Expand All Button */}
             {Object.keys(groupVotingRationale || {}).length > 0 && (
               <>
@@ -173,7 +173,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                 >
                   <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                     <div
-                      className="box p-2 cursor-pointer"
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white p-2 cursor-pointer hover:border-primary transition-colors"
                       // onClick={() => window.open("summary-details", "_blank")}
                       // onClick={() => window.open("summary-details", "_blank")}
                     >
@@ -184,7 +184,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
 
                 <button
                   onClick={expandAllGroups}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary bg-primary px-3 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-primary/90"
                 >
                   <span className="text-sm font-medium">
                     {areAllGroupsExpanded() ? "Collapse All" : "Expand All"}
@@ -198,7 +198,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
             )}
             <Tippy content="Download Excel" options={{ theme: "light" }}>
               <div
-                className="box p-[5px] cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white p-2 cursor-pointer hover:border-primary transition-colors"
                 onClick={() =>
                   downloadXlsxFile({
                     data: currentVotingRationale,
@@ -209,9 +209,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                 <img alt="download-icon" src={downloadIcon} />
               </div>
             </Tippy>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* TableWrapper handles loading state - show when loading or when data exists */}
       {(parentLoading ||
@@ -223,7 +222,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
             rows={6}
             columns={3}
           >
-            <div className="overflow-auto max-h-[400px]">
+            <div className="overflow-auto max-h-[520px] rounded-lg border border-slate-200">
               <Table>
                 <Table.Thead>
                   <Table.Tr>
@@ -260,8 +259,8 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                             {/* Accordion Header - Always visible */}
                             <Table.Tr
                               className={`${
-                                index % 2 === 0 ? "bg-slate-100" : "bg-slate-50"
-                              } dark:bg-darkmode-700 cursor-pointer hover:bg-slate-200 dark:hover:bg-darkmode-600 transition-all duration-200 border-b-2 border-slate-300 dark:border-darkmode-500 ${
+                                "bg-white"
+                              } dark:bg-darkmode-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-darkmode-600 transition-all duration-200 border-b border-slate-200 dark:border-darkmode-500 ${
                                 openGroups[investorName] ? "sticky top-0 z-10" : ""
                               }`}
                               onClick={() => toggleGroup(investorName)}
@@ -270,10 +269,15 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                                 colSpan={3}
                                 className="font-semibold py-4 px-4"
                               >
-                                <div className="flex flex-row justify-between items-center">
-                                  <span className="text-gray-800 dark:text-white font-medium">
-                                    {investorName}
-                                  </span>
+                                <div className="flex flex-row justify-between items-center gap-3">
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    <span className="truncate text-sm font-semibold text-slate-800 dark:text-white">
+                                      {investorName}
+                                    </span>
+                                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                                      {Array.isArray(institutionQuestions) ? institutionQuestions.length : 0} {Array.isArray(institutionQuestions) && institutionQuestions.length === 1 ? "proposal" : "proposals"}
+                                    </span>
+                                  </div>
                                   <Lucide
                                     icon={
                                       openGroups[investorName]
@@ -316,7 +320,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                                         dangerouslySetInnerHTML={{
                                           __html: question?.voting_rationale,
                                         }}
-                                        className="whitespace-normal text-gray-700 dark:text-gray-300 leading-relaxed text-sm"
+                                        className="whitespace-normal text-slate-700 dark:text-gray-300 leading-7 text-sm"
                                       ></div>
                                     </Table.Td>
                                   </Table.Tr>
