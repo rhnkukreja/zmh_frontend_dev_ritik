@@ -46,7 +46,7 @@ import {
   Vote,
   TrendingUp,
   BarChart3,
-  Scale,
+  Shield,
   Briefcase,
   CalendarCheck,
   ChevronRight,
@@ -110,7 +110,7 @@ function Main() {
         : 'Overview';
   const HeaderIcon =
     activeTab === 'company-overview' ? Building2 :
-    activeTab === 'governance-profile' ? Scale :
+    activeTab === 'governance-profile' ? Shield :
     activeTab === 'compensation' ? Briefcase :
     activeTab === 'investor-overview'
       ? activeSubSection === 'engagement_priorities' ? Target : BarChart3

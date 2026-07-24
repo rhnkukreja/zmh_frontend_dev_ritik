@@ -116,6 +116,8 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
     vdsProxyLoading,
     vdsProxyAllInvestorDetails,
     vdsProxyAllInvestorLoading,
+    votingRationaleTop20,
+    getProxyVotingRationaleLoading,
 
     tab,
   } = useAppSelector((state) => state.dashboard);
@@ -142,6 +144,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
   const [filter, setFilter] = useState<any>([]);
   const meetingDate = searchParams.get("meeting_date") || "";
   const [activeVdsView, setActiveVdsView] = useState<"voting-data" | "voting-rationale">(view || "voting-data");
+  const [top20Loaded, setTop20Loaded] = useState(false);
 
   // Keep the view locked to the prop when a specific sub-tab is selected via the sidebar.
   useEffect(() => {
@@ -217,6 +220,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
     });
 
     Promise.all([fetchPromise, rationalePromise]).then(([fetchResult, rationaleResult]) => {
+      setTop20Loaded(true);
       if (fetchResult.payload || rationaleResult.payload) {
         setCachedData(cacheKey, {
           vdsData: fetchResult.payload,
@@ -224,6 +228,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
         });
       }
     }).catch(error => {
+      setTop20Loaded(true);
       console.warn('Failed to cache Top-20 data:', error);
     });
   }, [companyGlobalSearchId, meetingDate, companyGlobalSearchTicker, yearTicker, dispatch]);
@@ -303,11 +308,12 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
     if (!companyGlobalSearchId || !meetingDate) return;
 
     console.log('📊 Loading data for:', companyGlobalSearchId, meetingDate, 'tab:', tab);
-    
-    // Load data based on current tab
-    if (tab === "Top-20") {
-      loadTop20Data();
-    } else if (tab === "All-Investor") {
+
+    // Always load top-20 data so we can decide whether to show the tab
+    loadTop20Data();
+
+    // Load active tab data if it's the All-Investor tab
+    if (tab === "All-Investor") {
       loadAllInvestorData();
     }
   }, [companyGlobalSearchId, meetingDate, tab, loadTop20Data, loadAllInvestorData]);
@@ -319,6 +325,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
       clearCacheForCompany(companyGlobalSearchTicker);
       // Reset API call tracking when company changes
       lastApiCallRef.current = null;
+      setTop20Loaded(false);
     }
   }, [companyGlobalSearchTicker]);
 
@@ -459,10 +466,24 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
     reset();
   };
 
+  const hasTop20Data = activeVdsView === "voting-data"
+    ? (vdsProxyDetails !== "" && vdsProxyDetails?.vds_report?.length > 0)
+    : (votingRationaleTop20?.length > 0);
+
+  const isTop20Empty = top20Loaded && !hasTop20Data;
+  const showTop20Tab = !isTop20Empty;
+
   const getSelectedTabIndex = () => {
-    const tabIndex = tab === "Top-20" ? 0 : tab === "All-Investor" ? 1 : 0;
-    return tabIndex;
+    if (!showTop20Tab) return 0;
+    return tab === "Top-20" ? 0 : tab === "All-Investor" ? 1 : 0;
   };
+
+  // If top-20 has no data, switch to the All-Investor tab
+  useEffect(() => {
+    if (top20Loaded && !hasTop20Data && tab === "Top-20") {
+      dispatch(setTabs("All-Investor"));
+    }
+  }, [top20Loaded, hasTop20Data, tab, dispatch]);
 
   return (
     <>
@@ -506,30 +527,25 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
               </div>
             )}
 
-            <Tab.Group defaultIndex={getSelectedTabIndex()}>
+            <Tab.Group
+              selectedIndex={getSelectedTabIndex()}
+              onChange={(index) => {
+                dispatch(setTabs(showTop20Tab ? (index === 0 ? "Top-20" : "All-Investor") : "All-Investor"));
+              }}
+            >
               <Tab.List variant="link-tabs" className="mt-4">
-                <Tab>
-                  <Tab.Button
-                    className="w-full py-2"
-                    as="button"
-                    onClick={() => {
-                      dispatch(setTabs("Top-20"));
-                    }}
-                  >
-                    <div className="flex items-center justify-center ">
-                      Top 20
-                    </div>
-                  </Tab.Button>
-                </Tab>
+                {showTop20Tab && (
+                  <Tab>
+                    <Tab.Button className="w-full py-2" as="button">
+                      <div className="flex items-center justify-center ">
+                        Top 20
+                      </div>
+                    </Tab.Button>
+                  </Tab>
+                )}
 
                 <Tab>
-                  <Tab.Button
-                    className="w-full py-2"
-                    as="button"
-                    onClick={() => {
-                      dispatch(setTabs("All-Investor"));
-                    }}
-                  >
+                  <Tab.Button className="w-full py-2" as="button">
                     <div className="flex items-center justify-center ">
                       All Investors
                     </div>
@@ -538,6 +554,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
               </Tab.List>
 
               <Tab.Panels className="mt-5">
+                {showTop20Tab && (
                 <Tab.Panel className="leading-relaxed">
                   <div className="flex justify-end items-center gap-4 mb-3 xs:mt-4 md:mt-0">
                     {activeVdsView === "voting-data" && vdsProxyDetails?.vds_report_headers?.length > 0 && (
@@ -778,7 +795,8 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                     </div>
                   )}
                 </Tab.Panel>
-                
+                )}
+
                 <Tab.Panel className="leading-relaxed">
                   <div className="bg-slate-50 dark:bg-darkmode-700 p-4 rounded-lg mb-6">
                     <form onSubmit={handleSubmit(onSubmit)}>

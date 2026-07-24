@@ -96,6 +96,7 @@ import ProxyContest from "@/pages/ProxyContest";
 import ProxyContestDetail from "@/pages/ProxyContestDetail";
 import ProxyVotingSummary from "@/pages/ProxyVotingGuideline/components/ProxyVotingSummary";
 import VdsEuropean from "@/pages/vdsEuropean";
+import ExecutiveCompensation from "@/pages/ExecutiveCompensation";
 import RealTimeData from "@/pages/RealTimeData";
 import CustomReports from "../pages/CustomReports";
 import VotingRationalePage from "@/pages/VotingRationalePage";
@@ -579,6 +580,11 @@ function Router() {
           path: "voting-data",
           element: <VdsEuropean />,
           data: { titleName: "Voting Data - ZMH Analytics" },
+        },
+        {
+          path: "executive-compensation",
+          element: <ExecutiveCompensation />,
+          data: { titleName: "Executive Compensation - ZMH Analytics" },
         },
         {
           path: "2025-shareholder-meetings",

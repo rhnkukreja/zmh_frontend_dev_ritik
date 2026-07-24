@@ -9,7 +9,7 @@ import {
   ChevronRight,
   LucideIcon,
   PieChart,
-  Scale,
+  Shield,
   Target,
   Briefcase,
   Building,
@@ -68,7 +68,7 @@ const BASE_SECTIONS: SectionDef[] = [
   {
     key: "governance-profile",
     label: "Governance Profile",
-    icon: Scale,
+    icon: Shield,
     group: "Company",
     subItems: [],
   },
@@ -157,6 +157,14 @@ const BASE_SECTIONS: SectionDef[] = [
     icon: PieChart,
     group: "Institution Insights",
     route: "/voting-data",
+    subItems: [],
+  },
+  {
+    key: "investor-overview",
+    label: "Executive Compensation",
+    icon: Briefcase,
+    group: "Institution Insights",
+    route: "/executive-compensation",
     subItems: [],
   },
 ];
