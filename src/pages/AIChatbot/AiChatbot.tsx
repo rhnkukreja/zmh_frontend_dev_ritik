@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { MessageSquare,FileText, GitCompare, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import headerLogo from "@/assets/images/logo/Vantage ZMH-01.png";
 
 export default function DashboardLayout() {
   const location = useLocation();
@@ -33,13 +34,13 @@ export default function DashboardLayout() {
                isCollapsed ? "justify-start pl-2" : "justify-start"
             }`}
           >
-            <img 
-              src="/logo_small.jpg" 
-              alt="PDF Mind" 
+            <img
+              src={headerLogo}
+              alt="ZMH Advisors"
               className={`object-contain transition-all duration-300 ease-in-out ${
                 // RESTORED: Large size (h-16), Zoomed (scale-110), Anchored Left (origin-left)
-                isCollapsed 
-                  ? "h-16 w-16 scale-110 origin-left" 
+                isCollapsed
+                  ? "h-16 w-16 scale-110 origin-left"
                   : "h-20 w-auto"
               }`}
             />
