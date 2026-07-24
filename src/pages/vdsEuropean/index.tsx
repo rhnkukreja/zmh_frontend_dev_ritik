@@ -2099,15 +2099,18 @@ const index = () => {
 
   return (
     <>
-      <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
+      {/* ── Page header card ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
+        <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
+          <Lucide icon="PieChart" className="w-5 h-5 text-[#8b1828] mt-[1px] shrink-0" />
+          <span className="text-slate-500">Institution Insights</span>
+          <span className="text-slate-400">›</span>
+          <span>Aggregate Voting</span>
+        </h1>
+      </div>
       <div className="p-5 mt-1 box">
         <div className="flex flex-col p-5  sm:flex-row gap-y-2">
           <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-            <span>
-              <h1 className="text-lg font-bold flex items-center gap-2">
-                Voting Data
-              </h1>
-            </span>
           </div>
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
             {!isViewAnalysis && count > 0 && (

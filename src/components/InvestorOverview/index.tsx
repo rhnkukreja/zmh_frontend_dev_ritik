@@ -18,6 +18,7 @@ import EngagementPriorities from './EngagementPriorities';
 import { useAppDispatch, useAppSelector } from '@/stores/hooks';
 import { fetchInstitutionStats, resetInstitutionStats } from '@/stores/dashboardSlice';
 import { RootState } from '@/stores/store';
+import { selectDashboardNav } from '@/stores/dashboardNavSlice';
 
 interface InvestorOption {
   id: number;
@@ -78,8 +79,14 @@ interface InvestorOverviewProps {
 const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" }) => {
   const navigate = useNavigate();
   
-  // State for the top-level insight tabs
-  const [activeInsightTab, setActiveInsightTab] = useState<InsightTab>('voting_rationale');
+  // Active sub-tab is now driven by the Koyfin-style sidebar (Redux) instead
+  // of local state, so there's a single source of truth and no duplicate
+  // tab bar rendered on the page.
+  const { activeSection: activeDashboardSection, activeSubSection } = useAppSelector(selectDashboardNav);
+  const activeInsightTab: InsightTab =
+    (activeDashboardSection === 'investor-overview' && activeSubSection
+      ? (activeSubSection as InsightTab)
+      : 'voting_rationale');
 
   const [investors, setInvestors] = useState<InvestorOption[]>([]);
   const [selectedInvestor, setSelectedInvestor] = useState<number | null>(null);
@@ -316,41 +323,6 @@ const InvestorOverview: React.FC<InvestorOverviewProps> = ({ companyTicker = "" 
           margin-left: 0;
         }
       `}</style>
-
-      {/* THREE CARDS / TABS SECTION */}
-      {/* Added top-[80px] to clear your main header. Kept original mt-4 mb-6 for spacing. */}
-      <div ref={tabBarRef} className="sticky top-[219px] z-[40] bg-white py-3 pb-5 flex flex-wrap justify-start gap-5 mb-4 mt-4 border-b border-slate-200 pl-4">
-        {/* Voting Rationale */}
-        <button
-          onClick={() => setActiveInsightTab('voting_rationale')}
-          className={`px-6 py-2.5 rounded-lg flex items-center justify-center transition-all duration-200 whitespace-nowrap ${
-            activeInsightTab === 'voting_rationale'
-              ? 'bg-white border-2 border-[#981b1e] shadow-sm text-[#981b1e]'
-              : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'
-          }`}
-        >
-          <span className="font-bold text-[14px]">Overview</span>
-        </button>
-
-        {/* Engagement Priorities */}
-
-          <button
-            onClick={() => setActiveInsightTab('engagement_priorities')}
-            className={`relative px-6 py-2.5 rounded-lg flex items-center justify-center transition-all duration-200 whitespace-nowrap ${
-              activeInsightTab === 'engagement_priorities'
-                ? 'bg-white border-2 border-[#981b1e] shadow-sm text-[#981b1e]'
-                : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:shadow-sm'
-            }`}
-          >
-            <span className="font-bold text-[14px]">Engagement Priorities</span>
-
-            {/* BETA Badge */}
-            <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-              BETA
-            </span>
-          </button>
-
-      </div>  
 
       {/* ------------------------------------------------------------------------- */}
       {/* CSS HIDING RENDER: VOTING RATIONALE                                      */}

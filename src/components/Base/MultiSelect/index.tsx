@@ -247,6 +247,10 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         backgroundColor: '#ef4444',
         color: 'white'
       }
+    }),
+    menuPortal: (provided: any) => ({
+      ...provided,
+      zIndex: 9999,
     })
   };
 
@@ -295,6 +299,7 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       blurInputOnSelect={false}
       openMenuOnFocus={true}
       openMenuOnClick={true}
+      menuPortalTarget={document.body}
     />
   );
 };

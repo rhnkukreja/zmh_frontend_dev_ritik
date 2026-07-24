@@ -22,6 +22,7 @@ import {
   setDashboardGlobalSearch,
   setFinhub,
 } from "@/stores/authenticationSlice";
+import { setActiveSection } from "@/stores/dashboardNavSlice";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
 
@@ -110,13 +111,16 @@ const Main: React.FC = () => {
         dispatch(setFinhub(response?.finnhub));
       }
 
-      const redirectPath = sessionStorage.getItem('redirectPath') || '/';
+      // Always reset dashboard to Overview on login regardless of previous session
+      dispatch(setActiveSection("company-overview"));
+
+      const redirectPath = sessionStorage.getItem('redirectPath');
       sessionStorage.removeItem('redirectPath');
 
-      if (redirectPath) {
+      // Only use redirectPath if it's a real deep-link (not root or voting-data stale path)
+      if (redirectPath && redirectPath !== '/' && !redirectPath.startsWith('/voting-data')) {
         navigate(redirectPath);
-      }
-      else {
+      } else {
         navigate(`/?ticker=${response?.company_ticker}`);
       }
 

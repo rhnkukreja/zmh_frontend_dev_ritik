@@ -18,7 +18,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { countValidFilters, countIndividualFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { ArrowDown, ChevronLeft, FilterX, SaveAll } from "lucide-react";
+import { ArrowDown, ChevronLeft, ChevronRight, FilterX, Network, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 
 import AddNewInvesterProfile from "../InvestorProfiles/components/AddNewInvester";
@@ -46,7 +46,7 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import AddEngagementDetailsModal from "./components/AddEngagementDetailsModal";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 
 interface PeerAnalysisFilter {
@@ -64,6 +64,9 @@ function PeerAnalysis() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get("source") || "";
+  const isCompanySource = source === "company";
   const [tableOnlyView, setTableOnlyView] = useState<boolean>(false);
 
   const [addNewInvesterModalVisible, setAddNewInvesterModalVisible] =
@@ -186,8 +189,15 @@ function PeerAnalysis() {
     const gsParam = searchParams.get("global_search");
     const pageParam = searchParams.get("page");
     const allCompaniesParam = searchParams.get("allCompanies");
+    const sourceParam = searchParams.get("source");
 
     setTableOnlyView(viewParam === "table-only");
+
+    if (sourceParam === "company") {
+      dispatch(selectUnSelectAllCompany(false));
+    } else if (sourceParam === "shared") {
+      dispatch(selectUnSelectAllCompany(true));
+    }
 
     if (gsParam) {
       try {
@@ -528,81 +538,73 @@ function PeerAnalysis() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          {/* Sticky Header OUTSIDE scrollable content */}
-          <div className="flex justify-between items-center bg-white px-4 pl-6 shadow sticky top-16 z-40">
-            {tableOnlyView ? (
-              <div className="flex items-center gap-2 py-4">
-                <Button
-                  onClick={() => {
-                    const params = new URLSearchParams(location.search);
-                    // Remove params added for the expanded/table-only view
-                    params.delete("view");
-                    params.delete("allCompanies");
-                    params.delete("page");
-                    params.delete("global_search");
-                    const qs = params.toString();
-                    if (qs) {
-                      navigate(`/engagement-detail?${qs}`);
-                    } else {
-                      navigate(`/engagement-detail`);
-                    }
-                  }}
-                  variant="primary"
-                  className="bg-theme-2 border-bg-theme-2"
-                >
-                  <ChevronLeft
-                    className="group-[.mode--light]:text-white text-white"
-                    size={18}
-                    strokeWidth={1.5}
-                  />
-                  Back
-                </Button>
-                <h1 className="font-semibold text-lg ml-2">
-                  {isAllCompanySelected ? "All Engagement Details" : "Engagement Details"}
-                </h1>
-              </div>
-            ) : (
-              <>
-                {isAllCompanySelected === true ? (
-                  <h1 className="font-semibold text-lg">
-                    All Engagement Details
+          {tableOnlyView && (
+            <>
+              {/* Sticky Header OUTSIDE scrollable content */}
+              <div className="flex justify-between items-center bg-white px-4 pl-6 shadow sticky top-16 z-40">
+                <div className="flex items-center gap-2 py-4">
+                  <Button
+                    onClick={() => {
+                      const params = new URLSearchParams(location.search);
+                      // Remove params added for the expanded/table-only view
+                      params.delete("view");
+                      params.delete("allCompanies");
+                      params.delete("page");
+                      params.delete("global_search");
+                      const qs = params.toString();
+                      if (qs) {
+                        navigate(`/engagement-detail?${qs}`);
+                      } else {
+                        navigate(`/engagement-detail`);
+                      }
+                    }}
+                    variant="primary"
+                    className="bg-theme-2 border-bg-theme-2"
+                  >
+                    <ChevronLeft
+                      className="group-[.mode--light]:text-white text-white"
+                      size={18}
+                      strokeWidth={1.5}
+                    />
+                    Back
+                  </Button>
+                  <h1 className="font-semibold text-lg ml-2">
+                    {isAllCompanySelected ? "All Engagement Details" : "Engagement Details"}
                   </h1>
-                ) : (
-                  <div className="font-semibold text-lg">Engagement Details</div>
-                )}
-                <div className="flex gap-3 px-4 py-4">
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: false } });
-                      }
-                    }}
-                  >
-                    {companyGlobalSearchName || "Company"}
-                  </button>
-                  <button
-                    className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                      ? "bg-primary text-white shadow"
-                      : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                      }`}
-                    onClick={async (e) => {
-                      if (!isAllCompanySelected) {
-                        handleViewAllChange({ target: { checked: true } });
-                      }
-                    }}
-                  >
-                    View For All Companies
-                  </button>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </>
+          )}
           {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
+            {isCompanySource && !tableOnlyView && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div className="flex items-start gap-2.5">
+                  <Network className="w-5 h-5 text-primary mt-[2px]" />
+                  <div>
+                    <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                      <span className="text-slate-500">Company</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      <span>Engagement Details</span>
+                    </h2>
+                  </div>
+                </div>
+              </div>
+            )}
+            {!isCompanySource && !tableOnlyView && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div className="flex items-start gap-2.5">
+                  <Network className="w-5 h-5 text-primary mt-[2px]" />
+                  <div>
+                    <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                      <span className="text-slate-500">Market Analytics</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      <span>Engagement Details</span>
+                    </h2>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col box box--stacked bg-white p-5">
               {!tableOnlyView && (
                 <>

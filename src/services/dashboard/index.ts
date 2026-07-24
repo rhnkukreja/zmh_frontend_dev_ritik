@@ -530,6 +530,12 @@ class DashboardService {
       result: result,
     };
   }
+
+  public async getVdsNpxMeetingDates(companyId: number | string): Promise<{ result: any }> {
+    const url = `/vds_npx_meeting_dates/?company_id=${companyId}`;
+    const result = await this.fetchWithCache<any>(url);
+    return { result };
+  }
 }
 
 

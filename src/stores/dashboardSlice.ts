@@ -57,6 +57,7 @@ interface CompanySliceState {
   totalCompanyDashboard: number;
   agmSummaryDetails: any;
   agmRequestStatus: 'idle' | 'loading' | 'success' | 'error';
+  agmRequestId: string | null;
   agmHasData: boolean;
   agmErrorMessage: string | null;
   agmSummaryProxyContest: any;
@@ -124,6 +125,7 @@ const initialState: CompanySliceState = {
   totalCompanyDashboard: 0,
   agmSummaryDetails: "",
   agmRequestStatus: 'idle',
+  agmRequestId: null,
   agmHasData: false,
   agmErrorMessage: null,
   agmSummaryProxyContest: "",
@@ -570,7 +572,8 @@ const companySlice = createSlice({
         state.error =
           action.error.message || "Failed to fetch company dashboard";
       })
-      .addCase(fetchAGMSummaryDashboard.pending, (state) => {
+      .addCase(fetchAGMSummaryDashboard.pending, (state, action) => {
+        state.agmRequestId = action.meta.requestId;
         state.agmSummaryDetails = "";
         state.loading = true;
         state.error = null;
@@ -579,7 +582,8 @@ const companySlice = createSlice({
       })
       .addCase(
         fetchAGMSummaryDashboard.fulfilled,
-        (state, action: PayloadAction<{ results: any }>) => {
+        (state, action: PayloadAction<{ results: any }> & { meta: { requestId: string } }) => {
+          if (state.agmRequestId !== action.meta.requestId) return;
           state.loading = false;
           const results = action.payload.results;
           
@@ -605,6 +609,7 @@ const companySlice = createSlice({
         }
       )
       .addCase(fetchAGMSummaryDashboard.rejected, (state, action) => {
+        if (state.agmRequestId !== action.meta.requestId) return;
         state.loading = false;
         state.agmRequestStatus = 'error';
         const errorMsg = action.error.message || "Failed to fetch AGM summary";

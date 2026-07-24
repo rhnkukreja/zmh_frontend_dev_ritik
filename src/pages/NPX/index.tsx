@@ -8,7 +8,7 @@ import {
   downloadFileFromAPI,
 } from "@/utils/helper";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
@@ -20,7 +20,6 @@ import {
 import { baseURL } from "@/constant";
 import { AppDispatch, RootState } from "@/stores/store";
 import Button from "@/components/Base/Button";
-import { ChevronLeft } from "lucide-react";
 import Lucide from "@/components/Base/Lucide";
 import { Popover } from "@/components/Base/Headless";
 import { Controller, useForm } from "react-hook-form";
@@ -51,7 +50,6 @@ import React from "react";
 
 const index = () => {
 
-  const navigate = useNavigate();
   const dispatch: AppDispatch = useAppDispatch();
   const { npxProxyDetails, npxProxyLoading, tempSearch, page, totalNPXCount } =
     useAppSelector((state) => state.dashboard);
@@ -70,12 +68,13 @@ const index = () => {
   const {
     companyGlobalSearchName,
     companyGlobalSearchTicker,
+    companyGlobalSearchId,
     isCompanySelected,
   } = useAppSelector((state: RootState) => state.authentiction);
 
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
-  const year = searchParams.get("year") ?? "2024"; // Default to 2024 if not specified
+  const year = searchParams.get("year") ?? ""; // derive from meeting date if missing
   const meetingDateFromURL = searchParams.get("meeting_date"); // Get meeting date from URL if available
 
   const [filter, setFilter] = useState("");
@@ -96,6 +95,7 @@ const index = () => {
     fund_name: [],
   });
   const [meetingDate, setMeetingDate] = useState('');
+  const [npxMeetings, setNpxMeetings] = useState<any[]>([]); // cache of NPX meetings {year, meeting_date}
   const isFirstLoad = useRef(true);
   const savedInstitutionRef = useRef<string>('');
   const fetchRequestId = useRef(0); // incremented on every call; guards against stale responses
@@ -164,6 +164,9 @@ const index = () => {
           console.log("Raw meeting_date from API:", res.result?.meeting_date);
 
           setMeetingDate(res.result?.meeting_date);
+          if (Array.isArray(res.result?.year)) {
+            const years = res.result.year.map((y: any) => String(y)).filter(Boolean);
+          }
 
           // Always show fund name when an institution is selected, regardless of API response
           setShowFundName(true);
@@ -226,7 +229,7 @@ const index = () => {
       const currentMeetingDate = initialMeetingDate || '';
       const paramFilter = {
         global_search: companyGlobalSearchName,
-        year: year || '2024',
+        year: year || undefined,
         ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
       };
 
@@ -261,7 +264,7 @@ const index = () => {
         const filterObj = {
           global_search: companyGlobalSearchName,
           institution_name: [firstInstitution],
-          year: year || '2024',
+          year: year || undefined,
           ...(res.result?.meeting_date && { meeting_date: formatMeetingDate(res.result.meeting_date) }), // Include formatted meeting date from API response
         };
 
@@ -357,10 +360,61 @@ const index = () => {
         }
 
       } else {
-        if (requestId !== fetchRequestId.current) return;
-        setAllInstitutions([]);
-        // Even if no institutions, we need to stop initial loading
-        setInitialLoading(false);
+        // Fallback: if dynamic endpoint didn't return institutions, fetch via institution search API
+        try {
+          const instRes = await dashboardService.fetchInstitutionByName(
+            'a',
+            companyGlobalSearchName,
+            year || '2024'
+          );
+          if (requestId !== fetchRequestId.current) return;
+          const list = Array.isArray(instRes.results) ? instRes.results : [];
+          const normalizedList = list
+            .map((item: any) => (typeof item === "string" ? item : item?.name))
+            .filter(Boolean) as string[];
+          if (normalizedList.length > 0) {
+            setAllInstitutions(normalizedList);
+            const firstInstitution =
+              (savedInstitution && normalizedList.includes(savedInstitution))
+                ? savedInstitution
+                : normalizedList[0];
+            const institutionValue = { label: firstInstitution, value: firstInstitution };
+            setValue('institution_name', institutionValue);
+            handleDropdownChange('institution_name', firstInstitution);
+
+            const filterObj = {
+              global_search: companyGlobalSearchName,
+              institution_name: [firstInstitution],
+              year: year || undefined,
+              ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }),
+            };
+
+            setallApplyFilter(filterObj);
+            setSelectedChipFilters(generateFilterChips({
+              institution_name: [firstInstitution],
+              fund_name: [], proposal: [], vote: [], vote_category: [], keyword: ''
+            }));
+            setFiltersLength(1);
+            dispatch(resetPage());
+            dispatch(
+              fetchNpxProxyDashboard(
+                createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
+              )
+            );
+
+            // Try to fetch dependent dropdowns as well
+            await getFundNameDependentDropdown(firstInstitution, currentMeetingDate ? formatMeetingDate(currentMeetingDate) : undefined);
+
+            if (currentMeetingDate) setMeetingDate(currentMeetingDate);
+          } else {
+            setAllInstitutions([]);
+            setInitialLoading(false);
+          }
+        } catch (e) {
+          if (requestId !== fetchRequestId.current) return;
+          setAllInstitutions([]);
+          setInitialLoading(false);
+        }
       }
     } catch (error) {
       if (requestId !== fetchRequestId.current) return;
@@ -382,7 +436,7 @@ const index = () => {
       const currentMeetingDate = meetingDate; // Use state only
       const paramFilter = {
         global_search: companyGlobalSearchName,
-        year: year,
+        year: year || undefined,
         ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
         // Include selected institution if available
         ...(dropdownValues?.institution_name && {
@@ -413,6 +467,8 @@ const index = () => {
   });
 
   useEffect(() => {
+    // If year isn't set yet (awaiting meeting years API), don't proceed
+    if (!year) return;
     // Save non-institution filter values BEFORE resetting, so they can be re-applied after company data loads
     const current = allApplyFilterRef.current;
     savedFiltersRef.current = {
@@ -448,9 +504,7 @@ const index = () => {
     // Only fetch institutions if we have company data
     // This will make ONLY ONE API call that handles everything
     if (companyGlobalSearchName) {
-      // Initial page load: pass URL meeting_date so the correct meeting is pre-selected.
-      // Company/year change: pass '' so no stale date constrains the new company's API call.
-      const meetingDateToPass = isFirstLoad.current ? (meetingDateFromURL ?? '') : '';
+      const meetingDateToPass = meetingDateFromURL ?? '';
       fetchAllInstitutions(savedInstitutionRef.current, meetingDateToPass);
     } else {
       // If no company, stop loading
@@ -482,7 +536,7 @@ const index = () => {
     });
   }, [companyGlobalSearchTicker]);
 
-  // Update URL meeting_date once the API returns the correct date for the current company
+  // Update URL meeting_date and year once the API returns the correct date for the current company
   useEffect(() => {
     if (!meetingDate) return;
     const formatted = formatMeetingDate(meetingDate);
@@ -492,9 +546,44 @@ const index = () => {
       if (params.get('meeting_date') !== formatted) {
         params.set('meeting_date', formatted);
       }
+      const yearFromDate = String(new Date(meetingDate).getFullYear());
+      if (yearFromDate && params.get('year') !== yearFromDate) {
+        params.set('year', yearFromDate);
+      }
       return params;
     });
   }, [meetingDate]);
+
+  // Load meeting years from consolidated endpoint (NPX side)
+  useEffect(() => {
+    const loadMeetingYears = async () => {
+      try {
+        if (!companyGlobalSearchId) return;
+        const { result } = await dashboardService.getVdsNpxMeetingDates(companyGlobalSearchId);
+        const npxKey = result?.NPX_Data || result?.npx_data || [];
+        setNpxMeetings(Array.isArray(npxKey) ? npxKey : []);
+        const years = Array.from(new Set(
+          (Array.isArray(npxKey) ? npxKey : []).map((x: any) => String(x?.year)).filter(Boolean)
+        )).sort((a: string, b: string) => Number(b) - Number(a));
+        if (years.length > 0) {
+          const currentYear = searchParams.get('year');
+          const defaultYear = currentYear && years.includes(currentYear) ? currentYear : years[0];
+          if (defaultYear !== currentYear) {
+            setSearchParams(prev => {
+              const params = new URLSearchParams(prev);
+              params.set('year', defaultYear);
+              return params;
+            });
+          }
+          const match = (Array.isArray(npxKey) ? npxKey : []).find((x: any) => String(x?.year) === String(defaultYear));
+          if (match?.meeting_date) setMeetingDate(match.meeting_date);
+        }
+      } catch (e) {
+        console.warn('Failed to load NPX meeting dates:', e);
+      }
+    };
+    loadMeetingYears();
+  }, [companyGlobalSearchId]);
 
 
   const getDependentDropdown = async () => {
@@ -568,7 +657,8 @@ const index = () => {
         const params = {
           keyword: searchTerm,
           global_search: companyGlobalSearchName,
-          year: year || '2024'
+          year: year || '2024',
+          ...(meetingDate && { meeting_date: formatMeetingDate(meetingDate) })
         };
 
         const dynamicURL = createDynamicURL(
@@ -597,6 +687,29 @@ const index = () => {
   const fetchKeywordSuggestions = (searchTerm: string) => {
     debouncedFetchKeywordSuggestions(searchTerm);
   };
+
+  // When company or selected year changes, ensure meeting_date is set consistently and fetch institutions for that date
+  useEffect(() => {
+    if (!companyGlobalSearchName || !year) return;
+    // Find the meeting date for the selected year from cached meetings
+    const match = (Array.isArray(npxMeetings) ? npxMeetings : []).find((x: any) => String(x?.year) === String(year));
+    const dateForYear = match?.meeting_date ? formatMeetingDate(match.meeting_date) : '';
+    if (dateForYear) {
+      // Set meeting date and URL param
+      if (meetingDate !== dateForYear) setMeetingDate(dateForYear);
+      setSearchParams(prev => {
+        const params = new URLSearchParams(prev);
+        params.set('meeting_date', dateForYear);
+        return params;
+      });
+      // Re-fetch institutions with explicit meeting_date for this year
+      fetchAllInstitutions(savedInstitutionRef.current, dateForYear);
+    } else {
+      // If not found, clear and let API determine default
+      fetchAllInstitutions(savedInstitutionRef.current, '');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyGlobalSearchName, year]);
 
   // Only make additional API calls when user explicitly changes filters after initial load
   useEffect(() => {
@@ -638,6 +751,9 @@ const index = () => {
     if (isCompanySelected) {
       reset();
       setShowFundName(false);
+      // Immediately refetch institutions and auto-select the first for the active meeting date
+      const md = meetingDateFromURL || meetingDate || '';
+      fetchAllInstitutions(savedInstitutionRef.current, md);
       dispatch(setIsCompanySelected(false));
     }
   }, [page, isCompanySelected]);
@@ -895,75 +1011,10 @@ const index = () => {
 
   return (
     <>
-      <Button
-        onClick={() => {
-          navigate("/", { state: { activeTab: 'shareholder-meeting-results' } });
-        }}
-        variant="primary"
-        className="bg-theme-2 border-bg-theme-2 mb-1"
-      >
-        <ChevronLeft
-          className="group-[.mode--light]:text-white text-white"
-          size={18}
-          strokeWidth={1.5}
-        />
-        Back
-      </Button>
-
-      <div className="flex justify-between items-center xs:flex-col md:flex-row py-3"></div>
-      <div className="p-5 mt-1 box">
-        <div className="flex flex-col p-5  sm:flex-row gap-y-2">
-          <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-            <span>
-              <h1 className="text-lg font-bold flex items-center gap-2">
-                N-PX Voting
-              </h1>
-              {
-                meetingDate &&
-                <>
-                  {console.log("Displaying meetingDate:", meetingDate)}
-                  <p className=" italic"> Meeting Date: {meetingDate} </p>
-                </>
-              }
-            </span>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
-            {npxProxyDetails?.length > 0 && (
-              <h2 className="flex items-end font-semibold justify-end text-[13px] md:ml-auto mx-5">
-                Count: {totalNPXCount.toLocaleString()}
-              </h2>
-            )}
-
-            <div className="flex items-center gap-2">
-              <Popover className="inline-block">
-                {({ close }) => (
-                  <>
-                    <Popover.Button
-                      as={Button}
-                      variant="outline-secondary"
-                      className="w-full sm:w-auto"
-                      onClick={handleCollapseFilter}
-                    >
-                      <Lucide
-                        icon="ArrowDownWideNarrow"
-                        className="stroke-[1.3] w-4 h-4 mr-2"
-                      />
-                      Filter
-                      <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                        {filtersLength}
-                      </div>
-                    </Popover.Button>
-                  </>
-                )}
-              </Popover>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Pills immediately after filter card, before data */}
-        {selectedChipFilters?.length > 0 && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {selectedChipFilters.map((chip, idx) => (
+      <div className="p-3 mt-1 box">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedChipFilters?.map((chip, idx) => (
               <span key={idx} className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20">
                 {chip.label}
                 <button
@@ -976,13 +1027,39 @@ const index = () => {
               </span>
             ))}
           </div>
-        )}
+          <div className="ml-auto flex items-center gap-3">
+            {npxProxyDetails?.length > 0 && (
+              <h2 className="text-xs font-semibold text-slate-500">
+                Count: {totalNPXCount.toLocaleString()}
+              </h2>
+            )}
+            <Popover className="inline-block">
+              {({ close }) => (
+                <Popover.Button
+                  as={Button}
+                  variant="outline-secondary"
+                  className="w-full sm:w-auto"
+                  onClick={handleCollapseFilter}
+                >
+                  <Lucide
+                    icon="ArrowDownWideNarrow"
+                    className="stroke-[1.3] w-4 h-4 mr-2"
+                  />
+                  Filter
+                  <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                    {filtersLength}
+                  </div>
+                </Popover.Button>
+              )}
+            </Popover>
+          </div>
+        </div>
 
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
-          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-4 transition-all duration-300">
             {/* Filter Content */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
               <div className="flex items-center gap-2">
                 <Button

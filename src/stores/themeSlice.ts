@@ -91,6 +91,7 @@ const initialState: ThemeState = {
     "proxy-contest",
     "proxy-contest-ai",
     "voting-data",
+    "executive-compensation",
     "2025-shareholder-meetings",
     "custom-reports"
   ],

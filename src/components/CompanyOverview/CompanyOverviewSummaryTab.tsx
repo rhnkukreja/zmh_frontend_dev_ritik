@@ -529,15 +529,9 @@ function CollapsibleCard({
               className="gap-1"
             >
               {open ? (
-                <>
-                  <ChevronUp className="h-4 w-4" />
-                  <span className="text-[15px]">Hide</span>
-                </>
+                <ChevronUp className="h-4 w-4" />
               ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" />
-                  <span className="text-[15px]">Show</span>
-                </>
+                <ChevronDown className="h-4 w-4" />
               )}
             </Button>
           }
