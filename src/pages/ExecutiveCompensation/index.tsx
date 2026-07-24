@@ -675,18 +675,33 @@ const ExecutiveCompensation: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
-            <Lucide icon="Briefcase" className="w-5 h-5 text-[#8b1828] mt-[1px] shrink-0" />
-            <span className="text-slate-500">Institution Insights</span>
-            <span className="text-slate-400">›</span>
-            <span>Executive Compensation Overview</span>
-          </h1>
+    <>
+      <style>{`
+        @keyframes blink-beta {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        .blink-beta {
+          animation: blink-beta 1.2s ease-in-out infinite;
+        }
+      `}</style>
+      <div className="p-4 sm:p-6 space-y-4">
+        {/* Header */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
+              <Lucide icon="Briefcase" className="w-5 h-5 text-[#8b1828] mt-[1px] shrink-0" />
+              <span className="text-slate-500">Institution Insights</span>
+              <span className="text-slate-400">›</span>
+              <span className="relative inline-flex items-center pr-7">
+                Executive Compensation Overview
+                <span className="blink-beta absolute -top-2 -right-1 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-extrabold bg-orange-500 text-white leading-none shadow-sm">
+                  BETA
+                </span>
+              </span>
+            </h1>
+          </div>
         </div>
-      </div>
 
       {/* Action bar: filter chips + export + filter toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -912,7 +927,7 @@ const ExecutiveCompensation: React.FC = () => {
         </div>
       )}
     </div>
-  );
+  </>);
 };
 
 export default ExecutiveCompensation;
