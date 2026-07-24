@@ -369,12 +369,15 @@ const index = () => {
           );
           if (requestId !== fetchRequestId.current) return;
           const list = Array.isArray(instRes.results) ? instRes.results : [];
-          if (list.length > 0) {
-            setAllInstitutions(list);
+          const normalizedList = list
+            .map((item: any) => (typeof item === "string" ? item : item?.name))
+            .filter(Boolean) as string[];
+          if (normalizedList.length > 0) {
+            setAllInstitutions(normalizedList);
             const firstInstitution =
-              (savedInstitution && list.includes(savedInstitution))
+              (savedInstitution && normalizedList.includes(savedInstitution))
                 ? savedInstitution
-                : list[0];
+                : normalizedList[0];
             const institutionValue = { label: firstInstitution, value: firstInstitution };
             setValue('institution_name', institutionValue);
             handleDropdownChange('institution_name', firstInstitution);
