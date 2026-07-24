@@ -12,6 +12,8 @@ interface CompensationProposalsState {
     index?: string;
     vote?: string[];
     investor_company?: string[];
+    category?: string;
+    keyword?: string;
     page_size?: number;
   };
 }
@@ -33,6 +35,8 @@ const initialState: CompensationProposalsState = {
     index: "S&P 500",
     vote: [],
     investor_company: DEFAULT_INVESTORS,
+    category: "Say on Pay",
+    keyword: "",
     page_size: 25,
   },
 };

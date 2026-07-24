@@ -27,6 +27,7 @@ import Skeleton from "react-loading-skeleton";
 import { axiosInstance } from "@/services";
 import { baseURL } from "@/constant";
 import { compensationProposalsService } from "@/services/compensationProposals";
+import CompanyVotingCards from "./components/CompanyVotingCards";
 
 const INDEX_OPTIONS = [
   { value: "S&P 100", label: "S&P 100" },
@@ -56,14 +57,14 @@ const PIE_COLORS = [
   "#0891b2",
 ];
 
-const YEAR_BAR_COLORS = ["#8b1828", "#2563eb", "#16a34a", "#f59e0b", "#9333ea"];
+const YEAR_BAR_COLORS = ["#8b1828", "#0d9488", "#d97706", "#7c3aed", "#be123c"];
 
 const VOTE_COLOR_MAP: Record<string, string> = {
-  For: "#16a34a",
-  "Against/Withhold": "#2563eb",
-  Abstain: "#8b1828",
+  For: "#2563eb",
+  "Against/Withhold": "#dc2626",
+  Abstain: "#f59e0b",
   "Split Vote": "#9333ea",
-  Other: "#f59e0b",
+  Other: "#64748b",
 };
 
 const formatPercent = (value: any) => {
@@ -86,12 +87,34 @@ const ExecutiveCompensation: React.FC = () => {
     (state: RootState) => state.compensationProposals
   );
 
-  const [localFilters, setLocalFilters] = useState<any>(filters);
+  const [localFilters, setLocalFilters] = useState<any>(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("executiveCompensationFilters") : null;
+    if (saved) {
+      try {
+        return { ...filters, ...JSON.parse(saved) };
+      } catch {
+        // ignore invalid cache
+      }
+    }
+    return filters;
+  });
   const [isExporting, setIsExporting] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showMaxInstitutionMessage, setShowMaxInstitutionMessage] = useState(false);
 
   useEffect(() => {
     setLocalFilters(filters);
+  }, [filters]);
+
+  // Dispatch cached filters to Redux on mount
+  useEffect(() => {
+    dispatch(setFilters(localFilters));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch]);
+
+  // Persist filters to localStorage
+  useEffect(() => {
+    localStorage.setItem("executiveCompensationFilters", JSON.stringify(filters));
   }, [filters]);
 
   const fetchData = useCallback(
@@ -106,6 +129,7 @@ const ExecutiveCompensation: React.FC = () => {
       if (localFilters.investor_company?.length) {
         payload.investor_company = localFilters.investor_company;
       }
+      if (localFilters.keyword?.trim()) payload.keyword = localFilters.keyword.trim();
       dispatch(fetchCompensationProposals({ filters: payload }));
     },
     [dispatch, localFilters]
@@ -116,6 +140,7 @@ const ExecutiveCompensation: React.FC = () => {
   }, [fetchData]);
 
   const byInstitution = data?.by_institution || [];
+  const byCompany = data?.by_company || [];
   const chartData = data?.chart_data || {};
   const barChart = chartData.bar_chart;
   const pieCharts = chartData.pie_charts || [];
@@ -129,7 +154,10 @@ const ExecutiveCompensation: React.FC = () => {
 
   const handlePageChange = (page: number) => fetchData(page);
 
-  const handleApplyFilters = () => dispatch(setFilters(localFilters));
+  const handleApplyFilters = () => {
+    dispatch(setFilters(localFilters));
+    setIsFilterOpen(false);
+  };
 
   const handleResetFilters = () => {
     const defaults = {
@@ -137,6 +165,8 @@ const ExecutiveCompensation: React.FC = () => {
       index: "S&P 500",
       vote: [],
       investor_company: DEFAULT_INVESTORS,
+      category: "Say on Pay",
+      keyword: "",
       page_size: 25,
     };
     setLocalFilters(defaults);
@@ -225,13 +255,21 @@ const ExecutiveCompensation: React.FC = () => {
   (filters.vote || []).forEach((v: string) => {
     appliedChips.push({ key: "vote", value: v, label: `Vote: ${v}` });
   });
+  if (filters.category) {
+    appliedChips.push({ key: "category", value: filters.category, label: `Category: ${filters.category}` });
+  }
+  if (filters.keyword?.trim()) {
+    appliedChips.push({ key: "keyword", value: filters.keyword.trim(), label: `Keyword: ${filters.keyword.trim()}` });
+  }
 
   const handleRemoveChip = (key: string, value: string) => {
     let updated: any = { ...filters };
     if (key === "investor_company" || key === "year" || key === "vote") {
       updated[key] = (updated[key] || []).filter((v: any) => String(v) !== String(value));
-    } else if (key === "index") {
-      updated.index = "";
+    } else if (key === "index" || key === "category") {
+      updated[key] = "";
+    } else if (key === "keyword") {
+      updated.keyword = "";
     }
     setLocalFilters(updated);
     dispatch(setFilters(updated));
@@ -360,7 +398,6 @@ const ExecutiveCompensation: React.FC = () => {
 
   const renderBarChart = (chart: any) => {
     const title = chart?.title || "Institution Proposal Volume";
-    const description = chart?.description || "";
     const dataset = chart?.data || [];
     const xKey = chart?.x_key || "institution_name";
     const yKey = chart?.y_key || "total_proposals";
@@ -369,8 +406,7 @@ const ExecutiveCompensation: React.FC = () => {
     if (!dataset || dataset.length === 0) {
       return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <h3 className="text-base font-bold text-gray-900 mb-1">{title}</h3>
-          {description && <p className="text-sm text-slate-500 mb-4">{description}</p>}
+          <h3 className="text-base font-bold text-gray-900 mb-4">{title}</h3>
           <div className="h-64 flex flex-col items-center justify-center text-slate-500">
             <Lucide icon="BarChart3" className="w-10 h-10 text-slate-300 mb-2" />
             <p>No data available</p>
@@ -393,11 +429,10 @@ const ExecutiveCompensation: React.FC = () => {
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-        <h3 className="text-base font-bold text-gray-900 mb-1">{title}</h3>
-        {description && <p className="text-sm text-slate-500 mb-4">{description}</p>}
+        <h3 className="text-base font-bold text-gray-900 mb-4">{title}</h3>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={pivoted} margin={{ top: 20, right: 20, left: 0, bottom: 40 }} barGap={6}>
+            <BarChart data={pivoted} margin={{ top: 24, right: 20, left: 0, bottom: 40 }} barGap={6}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis
                 dataKey={xKey}
@@ -406,14 +441,10 @@ const ExecutiveCompensation: React.FC = () => {
                 height={40}
               />
               <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
-              <RechartsTooltip
-                formatter={(value: any, name: any) => [formatNumber(value), name]}
-                contentStyle={{ borderRadius: 8, border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-              />
               <Legend wrapperStyle={{ paddingTop: 12 }} />
               {seriesValues.map((s, idx) => (
                 <Bar key={s} dataKey={s} name={s} fill={YEAR_BAR_COLORS[idx % YEAR_BAR_COLORS.length]} radius={[6, 6, 0, 0]}>
-                  <LabelList dataKey={s} position="top" fill="#334155" fontSize={11} formatter={(v: any) => formatNumber(v)} />
+                  <LabelList dataKey={s} position="top" fill="#0f172a" fontSize={13} fontWeight={700} formatter={(v: any) => formatNumber(v)} />
                 </Bar>
               ))}
             </BarChart>
@@ -449,6 +480,7 @@ const ExecutiveCompensation: React.FC = () => {
       .filter((item: any) => item.value > 0);
 
     const total = normalized.reduce((sum: number, item: any) => sum + item.value, 0);
+    const sortedLegend = [...normalized].sort((a, b) => b.value - a.value);
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
@@ -478,8 +510,9 @@ const ExecutiveCompensation: React.FC = () => {
                       fill="#ffffff"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      fontSize={12}
-                      fontWeight={600}
+                      fontSize={14}
+                      fontWeight={700}
+                      style={{ textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
                     >
                       {formatNumber(value)}
                     </text>
@@ -497,7 +530,7 @@ const ExecutiveCompensation: React.FC = () => {
           </ResponsiveContainer>
         </div>
         <div className="mt-3 space-y-1.5">
-          {normalized.map((entry: any) => {
+          {sortedLegend.map((entry: any) => {
             const pct = total ? ((entry.value / total) * 100).toFixed(1) : "0.0";
             return (
               <div key={entry.name} className="flex items-center justify-between text-xs">
@@ -657,16 +690,16 @@ const ExecutiveCompensation: React.FC = () => {
 
       {/* Action bar: filter chips + export + filter toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {appliedChips.map((chip, idx) => (
             <span
               key={`${chip.key}-${chip.value}-${idx}`}
-              className="flex items-center bg-[#8b1828]/10 text-[#8b1828] font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-[#8b1828]/20 text-sm"
+              className="inline-flex items-center gap-1.5 bg-[#8b1828]/10 text-[#8b1828] font-medium px-2.5 py-1 rounded-full text-sm leading-none"
             >
               {chip.label}
               <button
                 type="button"
-                className="ml-2 text-[#8b1828] hover:text-red-600 transition-colors"
+                className="text-[#8b1828] hover:text-red-600 transition-colors flex items-center justify-center"
                 onClick={() => handleRemoveChip(chip.key, chip.value)}
               >
                 <FaTimes className="text-xs" />
@@ -676,10 +709,10 @@ const ExecutiveCompensation: React.FC = () => {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
-            variant="secondary"
+            variant="primary"
             onClick={handleExport}
             disabled={isExporting || loading || !exportUrl}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-[#8b1828] border-[#8b1828] hover:bg-[#8b1828]/90"
           >
             <Download className="w-4 h-4" />
             {isExporting ? "Downloading..." : "Download Now"}
@@ -712,7 +745,7 @@ const ExecutiveCompensation: React.FC = () => {
               </Button>
             </div>
           </div>
-          <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
+          <div className="grid gap-6 md:grid-cols-3 grid-cols-1">
             <div>
               <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
                 <FaCalendarAlt className="text-gray-400" /> Year
@@ -733,14 +766,34 @@ const ExecutiveCompensation: React.FC = () => {
                 <FaUniversity className="text-gray-400" /> Institution
               </label>
               <MultiSelectDropdown
-                data={investorOptions}
+                data={investorOptions.map((opt: any) => ({
+                  ...opt,
+                  isDisabled:
+                    (localFilters.investor_company || []).length >= 5 &&
+                    !(localFilters.investor_company || []).includes(opt.value),
+                }))}
                 placeholder="Select Institutions"
                 selectedOption={localFilters.investor_company || []}
                 onChange={(selected: any) => {
                   const values = selected.map((s: any) => s.value);
+                  if (values.length > 5) return;
+                  if (values.length === 5) {
+                    setShowMaxInstitutionMessage(true);
+                    setTimeout(() => setShowMaxInstitutionMessage(false), 3000);
+                  } else {
+                    setShowMaxInstitutionMessage(false);
+                  }
                   setLocalFilters({ ...localFilters, investor_company: values });
                 }}
               />
+              {showMaxInstitutionMessage && (
+                <div className="text-xs text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-md px-2 py-1 mt-1 flex items-center gap-1 animate-fade-in">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <span>Maximum institutions are selected</span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -763,6 +816,20 @@ const ExecutiveCompensation: React.FC = () => {
 
             <div>
               <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
+                <FaLayerGroup className="text-gray-400" /> Category
+              </label>
+              <select
+                value={localFilters.category || "Say on Pay"}
+                onChange={(e) => setLocalFilters({ ...localFilters, category: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#8b1828] focus:ring-[#8b1828]"
+                style={{ minHeight: "42px" }}
+              >
+                <option value="Say on Pay">Say on Pay</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
                 <FaHandshake className="text-gray-400" /> Vote
               </label>
               <MultiSelectDropdown
@@ -773,6 +840,20 @@ const ExecutiveCompensation: React.FC = () => {
                   const values = selected.map((s: any) => s.value);
                   setLocalFilters({ ...localFilters, vote: values });
                 }}
+              />
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
+                <Lucide icon="Search" className="w-4 h-4 text-gray-400" /> Keyword
+              </label>
+              <input
+                type="text"
+                value={localFilters.keyword || ""}
+                placeholder="Search companies, proposals, votes..."
+                onChange={(e) => setLocalFilters({ ...localFilters, keyword: e.target.value })}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#8b1828] focus:ring-[#8b1828] focus:outline-none"
+                style={{ minHeight: "42px" }}
               />
             </div>
           </div>
@@ -787,16 +868,38 @@ const ExecutiveCompensation: React.FC = () => {
 
       {loading && !data ? (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-5 h-64">
-            <Skeleton height={20} width="30%" />
-            <Skeleton height="100%" className="mt-3" />
+          {/* Summary table skeleton */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <Skeleton height={20} width="30%" className="mb-4" />
+            <div className="space-y-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} height={16} width={`${[100, 92, 88, 95, 90, 85][i]}%`} />
+              ))}
+            </div>
           </div>
+
+          {/* Charts skeleton */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 h-80">
-                <Skeleton height={20} width="45%" />
-                <Skeleton height="100%" className="mt-3" />
+            <div className="bg-white rounded-xl border border-slate-200 p-5 h-80">
+              <Skeleton height={20} width="40%" className="mb-4" />
+              <Skeleton height="80%" width="100%" />
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200 p-5 h-80">
+              <Skeleton height={20} width="40%" className="mb-4" />
+              <div className="flex items-center justify-center h-48">
+                <Skeleton circle height={120} width={120} />
               </div>
+            </div>
+          </div>
+
+          {/* Company voting cards skeleton */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between mb-2">
+              <Skeleton height={20} width="30%" />
+              <Skeleton height={36} width={120} />
+            </div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} height={56} width="100%" borderRadius={8} />
             ))}
           </div>
         </div>
@@ -805,13 +908,7 @@ const ExecutiveCompensation: React.FC = () => {
           {renderSummaryTable()}
           {renderBarChart(barChart)}
           {renderPieChartFrame()}
-          <div className="space-y-3">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <span className="w-1 h-5 rounded-full bg-[#8b1828]" />
-              Detailed Data
-            </h3>
-            {renderTable()}
-          </div>
+          <CompanyVotingCards byCompany={byCompany} loading={loading} />
         </div>
       )}
     </div>
