@@ -19,6 +19,7 @@ import {
   Files,
   MessageSquare,
   Network,
+  LineChart,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -102,6 +103,7 @@ const BASE_SECTIONS: SectionDef[] = [
       { key: "vds", label: "By Fund Family", icon: Building },
       { key: "voting-rationale", label: "Voting Rationale", icon: MessageSquare },
       { key: "npx", label: "N-PX", icon: ClipboardList },
+      { key: "npx-analytics", label: "N-PX Analytics", icon: LineChart },
     ],
     defaultSubKey: "vds",
   },

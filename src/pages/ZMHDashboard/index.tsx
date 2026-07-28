@@ -26,6 +26,7 @@ import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import MeetingYearSelector from "@/pages/VdsProxyVoting/MeetingYearSelector";
 import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
 import NPXPage from "@/pages/NPX";
+import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
@@ -96,7 +97,9 @@ function Main() {
           ? 'Voting Rationale'
           : activeSubSection === 'npx'
             ? 'N-PX'
-            : 'By Fund Family'
+            : activeSubSection === 'npx-analytics'
+              ? 'N-PX Analytics'
+              : 'By Fund Family'
         : 'Overview';
 
   // Apply active section from back-navigation state / sessionStorage once on mount.
@@ -453,7 +456,7 @@ function Main() {
                 <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
               )}
             </div>
-            {activeTab === 'voting-data' && (
+            {activeTab === 'voting-data' && activeVotingSubTab !== 'npx-analytics' && (
               <MeetingYearSelector
                 key={activeVotingSubTab}
                 source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
@@ -519,6 +522,8 @@ function Main() {
             <div id="voting-data" className="col-span-12 xl:col-span-12">
               {activeVotingSubTab === 'npx' ? (
                 <NPXPage />
+              ) : activeVotingSubTab === 'npx-analytics' ? (
+                <NPXAnalyticsPage embedded />
               ) : activeVotingSubTab === 'voting-rationale' ? (
                 <VdsProxyVoting view="voting-rationale" />
               ) : (

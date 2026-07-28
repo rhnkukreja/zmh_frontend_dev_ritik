@@ -14,6 +14,8 @@ import Tippy from "@/components/Base/Tippy";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { createDynamicURL, downloadFileFromAPI } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 
 
 interface PivotColumn {
@@ -37,11 +39,21 @@ const formatCell = (value: any) => {
   return String(value);
 };
 
-export default function NPXAnalyticsPage() {
+interface NPXAnalyticsPageProps {
+  embedded?: boolean;
+}
+
+export default function NPXAnalyticsPage({ embedded = false }: NPXAnalyticsPageProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const companyId = searchParams.get("company_id");
+  const { companyGlobalSearchId } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+
+  const companyId =
+    searchParams.get("company_id") ||
+    (companyGlobalSearchId ? String(companyGlobalSearchId) : null);
   const year = searchParams.get("year");
   const [yearOptions, setYearOptions] = useState<string[]>([]);
 
@@ -217,20 +229,22 @@ export default function NPXAnalyticsPage() {
   // ------------------------------------
   return (
     <>
-      <Button
-        onClick={() => navigate('/', {
-          state: {
-            activeTab: "shareholder-meeting-results"
-          }
-        })}
-        variant="primary"
-        className="bg-theme-2 border-bg-theme-2 mb-1"
-      >
-        <Lucide icon="ChevronLeft" className="w-4 h-4 mr-1" />
-        Back
-      </Button>
+      {!embedded && (
+        <Button
+          onClick={() => navigate('/', {
+            state: {
+              activeTab: "shareholder-meeting-results"
+            }
+          })}
+          variant="primary"
+          className="bg-theme-2 border-bg-theme-2 mb-1"
+        >
+          <Lucide icon="ChevronLeft" className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+      )}
 
-      <div className="p-5 mt-1 box">
+      <div className={clsx("mt-1 box", embedded ? "p-3" : "p-5")}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-lg font-bold flex items-center gap-2">
