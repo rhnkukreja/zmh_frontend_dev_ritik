@@ -623,36 +623,52 @@ const CustomReports = () => {
   return (
     <div className="box p-5 mt-3.5">
       {/* Tab Navigation */}
-      <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1 mb-5 w-fit">
-        <button
-          onClick={() => setActiveTab('ownership')}
-          className={clsx(
-            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
-            activeTab === 'ownership'
-              ? "bg-primary text-white shadow"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-          )}
-        >
-          <Users className="w-4 h-4" />
-          Ownership
-        </button>
-        <button
-          onClick={() => setActiveTab('governance')}
-          className={clsx(
-            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
-            activeTab === 'governance'
-              ? "bg-primary text-white shadow"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-          )}
-        >
-          <Lucide icon="ShieldCheck" className="w-4 h-4" />
-          <span className="relative">
-            Governance Screener
-            <span className="pointer-events-none absolute -top-3 -right-7 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
-              BETA
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-y-2 mb-5">
+        <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1 w-fit">
+          <button
+            onClick={() => setActiveTab('ownership')}
+            className={clsx(
+              "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
+              activeTab === 'ownership'
+                ? "bg-primary text-white shadow"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+            )}
+          >
+            <Users className="w-4 h-4" />
+            Ownership
+          </button>
+          <button
+            onClick={() => setActiveTab('governance')}
+            className={clsx(
+              "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
+              activeTab === 'governance'
+                ? "bg-primary text-white shadow"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+            )}
+          >
+            <Lucide icon="ShieldCheck" className="w-4 h-4" />
+            <span className="relative">
+              Governance Screener
+              <span className="pointer-events-none absolute -top-3 -right-7 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
+                BETA
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        </div>
+        {activeTab === 'ownership' && (selectedTickers[0] || companyGlobalSearchTicker) && (
+          <button
+            className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
+            onClick={() => {
+              const ticker = selectedTickers[0] || companyGlobalSearchTicker;
+              if (ticker) {
+                window.open(`/company-report?ticker=${encodeURIComponent(ticker)}`, "_blank");
+              }
+            }}
+          >
+            <Lucide icon="FileText" className="w-4 h-4" />
+            Generate Report
+          </button>
+        )}
       </div>
 
       {/* Ownership Tab */}

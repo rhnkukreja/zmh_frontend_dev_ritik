@@ -788,7 +788,7 @@ export default function CompanyOverviewSummaryTab({
               disabled={downloadLoading || isLoading || !report}
             >
               <Download className="h-4 w-4" />
-              {downloadLoading ? "Downloading..." : "Download PDF"}
+              {downloadLoading ? "Downloading..." : "Download Summary"}
             </Button>
           </div>
         </header>

@@ -144,10 +144,10 @@ function Main() {
                     <li className="">
                       <a href="/">Main Menu</a>
                     </li>
-                    <li className="relative ml-5 pl-0.5 before:content-[''] before:w-[14px] before:h-[14px] before:bg-chevron-black before:transform before:rotate-[-90deg] before:bg-[length:100%] before:-ml-[1.125rem] before:absolute before:my-auto before:inset-y-0 dark:before:bg-chevron-black">
+                    <li className="ml-5 pl-0.5">
                       <a href="/">Foods</a>
                     </li>
-                    <li className="relative ml-5 pl-0.5 before:content-[''] before:w-[14px] before:h-[14px] before:bg-chevron-black before:transform before:rotate-[-90deg] before:bg-[length:100%] before:-ml-[1.125rem] before:absolute before:my-auto before:inset-y-0 dark:before:bg-chevron-black text-slate-600 cursor-text dark:text-slate-400">
+                    <li className="ml-5 pl-0.5 text-slate-600 cursor-text dark:text-slate-400">
                       <a href="/">{categories.fakeCategories()[0].name}</a>
                     </li>
                   </ol>
