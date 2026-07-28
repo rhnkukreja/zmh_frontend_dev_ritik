@@ -522,7 +522,7 @@ function Main() {
             <div id="voting-data" className="col-span-12 xl:col-span-12">
               {activeVotingSubTab === 'npx' ? (
                 <NPXPage />
-              ) : activeVotingSubTab === 'npx-analytics' ? (
+              ) : activeVotingSubTab === 'npx-analytics' && isAdmin ? (
                 <NPXAnalyticsPage embedded />
               ) : activeVotingSubTab === 'voting-rationale' ? (
                 <VdsProxyVoting view="voting-rationale" />
