@@ -179,13 +179,31 @@ export default function NPXAnalyticsPage({ embedded = false }: NPXAnalyticsPageP
         if (!companyId) return;
         const { result } = await dashboardService.getVdsNpxMeetingDates(companyId);
         const npxKey = result?.NPX_Data || result?.npx_data || [];
+        const entries = Array.isArray(npxKey) ? npxKey : [];
+
         const years = Array.from(new Set(
-          (Array.isArray(npxKey) ? npxKey : []).map((x: any) => String(x?.year)).filter(Boolean)
+          entries.map((x: any) => String(x?.year)).filter(Boolean)
         )).sort((a: string, b: string) => Number(b) - Number(a));
         setYearOptions(years);
-        if (years.length > 0) {
+
+        // Exclude scheduled/future meetings (no data yet) when picking the
+        // default year — only consider meetings that have already occurred.
+        const today = new Date();
+        const pastYears = Array.from(new Set(
+          entries
+            .filter((x: any) => {
+              const d = x?.meeting_date ? new Date(x.meeting_date) : null;
+              return d && !isNaN(d.getTime()) && d <= today;
+            })
+            .map((x: any) => String(x?.year))
+            .filter(Boolean)
+        )).sort((a: string, b: string) => Number(b) - Number(a));
+
+        const fallbackYears = pastYears.length > 0 ? pastYears : years;
+
+        if (fallbackYears.length > 0) {
           const currentYear = searchParams.get('year');
-          const defaultYear = currentYear && years.includes(currentYear) ? currentYear : years[0];
+          const defaultYear = currentYear && fallbackYears.includes(currentYear) ? currentYear : fallbackYears[0];
           if (defaultYear !== currentYear) {
             setSearchParams(prev => {
               const params = new URLSearchParams(prev);
