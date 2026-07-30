@@ -106,7 +106,7 @@ const MeetingYearSelector = ({ source = "VDS" }: MeetingYearSelectorProps) => {
     <div className="flex shrink-0 items-center gap-3" aria-label="Meeting year selector">
       <div className="hidden items-center gap-2 text-right sm:flex">
         <div className="leading-tight">
-          <div className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          <div className="whitespace-nowrap text-sm font-semibold tracking-wide text-slate-400">
             Meeting Year
           </div>
         </div>

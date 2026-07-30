@@ -19,6 +19,7 @@ import {
   Files,
   MessageSquare,
   Network,
+  LineChart,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -33,6 +34,8 @@ interface SubItem {
   key: string;
   label: string;
   icon?: LucideIcon;
+  // When true, this sub-item is only visible to Admin users.
+  adminOnly?: boolean;
 }
 
 interface SectionDef {
@@ -102,6 +105,7 @@ const BASE_SECTIONS: SectionDef[] = [
       { key: "vds", label: "By Fund Family", icon: Building },
       { key: "voting-rationale", label: "Voting Rationale", icon: MessageSquare },
       { key: "npx", label: "N-PX", icon: ClipboardList },
+      { key: "npx-analytics", label: "N-PX Analytics", icon: LineChart, adminOnly: true },
     ],
     defaultSubKey: "vds",
   },
@@ -126,6 +130,14 @@ const BASE_SECTIONS: SectionDef[] = [
     countKey: "engagement_details",
   },
   {
+    key: "investor-overview",
+    label: "Engagement Priorities",
+    icon: Target,
+    group: "Company",
+    subSection: "engagement_priorities",
+    subItems: [],
+  },
+  {
     key: "company-shareholder-proposals",
     label: "Shareholder Proposals",
     icon: Files,
@@ -141,14 +153,6 @@ const BASE_SECTIONS: SectionDef[] = [
     icon: BarChart3,
     group: "Institution Insights",
     subSection: "voting_rationale",
-    subItems: [],
-  },
-  {
-    key: "investor-overview",
-    label: "Engagement Priorities",
-    icon: Target,
-    group: "Institution Insights",
-    subSection: "engagement_priorities",
     subItems: [],
   },
   {
@@ -271,7 +275,10 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
               activeSubSection === section.subSection ||
               (section.subSection === "voting_rationale" && !activeSubSection));
         const isExpanded = expanded === section.key;
-        const hasSubs = section.subItems.length > 0;
+        const visibleSubItems = section.subItems.filter(
+          (sub) => !sub.adminOnly || user?.user_type === "Admin"
+        );
+        const hasSubs = visibleSubItems.length > 0;
         const countValue = section.countKey ? modulesData?.[section.countKey] : null;
 
         return (
@@ -327,7 +334,7 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
                   "group-[.side-menu--collapsed.side-menu--on-hover]:xl:block",
                 ])}
               >
-                {section.subItems.map((sub) => {
+                {visibleSubItems.map((sub) => {
                   const effectiveSubKey =
                     activeSubSection ?? section.defaultSubKey ?? null;
                   const subActive = isActive && effectiveSubKey === sub.key;

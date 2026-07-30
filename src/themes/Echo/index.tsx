@@ -636,7 +636,7 @@ function Main() {
                     <a
                       href=""
                       className={clsx([
-                        "side-menu__link",
+                        "side-menu__link relative",
                         { "side-menu__link--active": menu.active },
                         {
                           "side-menu__link--active-dropdown":
@@ -719,9 +719,15 @@ function Main() {
                         </div>
                       )}
                       {menu.badge && (
-                        <div className="side-menu__link__badge">
-                          {menu.badge}
-                        </div>
+                        typeof menu.badge === "string" ? (
+                          <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
+                            {menu.badge}
+                          </span>
+                        ) : (
+                          <div className="side-menu__link__badge">
+                            {menu.badge}
+                          </div>
+                        )
                       )}
                       {menu.subMenu && (
                         <Lucide
@@ -753,7 +759,7 @@ function Main() {
                             <a
                               href=""
                               className={clsx([
-                                "side-menu__link !pl-8",
+                                "side-menu__link !pl-8 relative",
                                 { "side-menu__link--active": subMenu.active },
                                 {
                                   "side-menu__link--active-dropdown":
@@ -779,7 +785,7 @@ function Main() {
                               </div>
                               {subMenu.badge && (
                                 typeof subMenu.badge === "string" ? (
-                                  <span className="ml-auto inline-flex items-center rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-[7px] py-[2px] text-[9px] font-semibold uppercase tracking-wider text-white shadow-sm leading-none">
+                                  <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
                                     {subMenu.badge}
                                   </span>
                                 ) : (
@@ -818,7 +824,7 @@ function Main() {
                                       <a
                                         href=""
                                         className={clsx([
-                                          "side-menu__link !pl-12",
+                                          "side-menu__link !pl-12 relative",
                                           {
                                             "side-menu__link--active":
                                               lastSubMenu.active,
@@ -846,9 +852,15 @@ function Main() {
                                           {lastSubMenu.title}
                                         </div>
                                         {lastSubMenu.badge && (
-                                          <div className="side-menu__link__badge">
-                                            {lastSubMenu.badge}
-                                          </div>
+                                          typeof lastSubMenu.badge === "string" ? (
+                                            <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
+                                              {lastSubMenu.badge}
+                                            </span>
+                                          ) : (
+                                            <div className="side-menu__link__badge">
+                                              {lastSubMenu.badge}
+                                            </div>
+                                          )
                                         )}
                                       </a>
                                     </li>

@@ -1231,31 +1231,55 @@ function ShareHolderProposal() {
                       <ArrowDown size={16} />
                     </button>
                   )}
-                  <Popover className="inline-block">
-                    {({ close }) => (
-                      <>
-                        <Popover.Button
-                          as={Button}
-                          variant="outline-secondary"
-                          className="w-full sm:w-auto"
-                          onClick={handleCollapseFilter}
-                        >
-                          <Lucide
-                            icon="ArrowDownWideNarrow"
-                            className="stroke-[1.3] w-4 h-4 mr-2"
-                          />
-                          Filter
-                          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {filtersLength}
-                          </div>
-                        </Popover.Button>
-                      </>
-                    )}
-                  </Popover>
+                  {isCompanySource ? (
+                    <div className="flex h-10 items-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                      <div className="flex h-full w-10 shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 text-primary">
+                        <FaCalendarAlt className="h-4 w-4" />
+                      </div>
+                      <select
+                        className="h-10 min-w-[140px] appearance-none border-0 bg-transparent px-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:ring-0"
+                        value={filters?.year?.[0] || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          dispatch(setFilter({ key: "year", value: val ? [val] : [] }));
+                          dispatch(resetPage());
+                        }}
+                      >
+                        <option value="">{tab === "withdrawn" ? "All Years" : "All Proxy Years"}</option>
+                        {(apiDropdownOptions?.year || []).map((y: any) => (
+                          <option key={String(y)} value={String(y)}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <Popover className="inline-block">
+                      {({ close }) => (
+                        <>
+                          <Popover.Button
+                            as={Button}
+                            variant="outline-secondary"
+                            className="w-full sm:w-auto"
+                            onClick={handleCollapseFilter}
+                          >
+                            <Lucide
+                              icon="ArrowDownWideNarrow"
+                              className="stroke-[1.3] w-4 h-4 mr-2"
+                            />
+                            Filter
+                            <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                              {filtersLength}
+                            </div>
+                          </Popover.Button>
+                        </>
+                      )}
+                    </Popover>
+                  )}
                 </div>
               </div>
 
-              {selectedChipFilters?.length > 0 && (
+              {!isCompanySource && selectedChipFilters?.length > 0 && (
                 <FilterChips
                   filters={selectedChipFilters.map(chip => ({
                     key: chip.key,
@@ -1267,7 +1291,7 @@ function ShareHolderProposal() {
                 />
               )}
 
-              {isFilterCollapse && (
+              {!isCompanySource && isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}

@@ -242,8 +242,12 @@ function CaseStudies() {
     }
 
     if (sourceParam === "shared") {
-      setActiveTab("all");
-      dispatch(selectUnSelectAllCompany(true));
+      const sharedTab =
+        tabParam === "overview" || tabParam === "specific" || tabParam === "all"
+          ? tabParam
+          : "all";
+      setActiveTab(sharedTab as any);
+      dispatch(selectUnSelectAllCompany(sharedTab === "all"));
     } else if (sourceParam === "company") {
       const companyTab = tabParam === "overview" || tabParam === "all" ? "specific" : tabParam || "specific";
       setActiveTab(companyTab as any);
@@ -744,40 +748,66 @@ function CaseStudies() {
                     </Button>
                   </div> */}
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
-                    {user?.saved_search?.["Case Studies"] !== undefined && (
-                      <div className="hover:bg-slate-50 ">
-                        <Button onClick={getSavedSearches}>
-                          Previous Search
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Clear and Apply buttons outside filter */}
-                    <Popover className="inline-block">
-
-                      <>
-                        <Popover.Button
-                          as={Button}
-                          variant="outline-secondary"
-                          className="w-full sm:w-auto"
-                          onClick={handleCollapseFilter}
+                  <div className="flex flex-col sm:flex-row items-center gap-x-3 gap-y-2 sm:ml-auto mb-7">
+                    {isCompanySource ? (
+                      <div className="flex h-10 items-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                        <div className="flex h-full w-10 shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 text-primary">
+                          <FaCalendarAlt className="h-4 w-4" />
+                        </div>
+                        <select
+                          className="h-10 min-w-[140px] appearance-none border-0 bg-transparent px-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:ring-0"
+                          value={filters?.year?.[0] || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            dispatch(setFilters({ key: "year", value: val ? [val] : [] }));
+                            dispatch(resetPage());
+                          }}
                         >
-                          <Lucide
-                            icon="ArrowDownWideNarrow"
-                            className="stroke-[1.3] w-4 h-4 mr-2"
-                          />
-                          Filters
-                          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {filtersLength}
+                          <option value="">All Years</option>
+                          {(apiDropdownOptions?.year || []).map((y: any) => (
+                            <option key={String(y)} value={String(y)}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <>
+                        {user?.saved_search?.["Case Studies"] !== undefined && (
+                          <div className="hover:bg-slate-50 ">
+                            <Button onClick={getSavedSearches}>
+                              Previous Search
+                            </Button>
                           </div>
-                        </Popover.Button>
+                        )}
+
+                        {/* Clear and Apply buttons outside filter */}
+                        <Popover className="inline-block">
+
+                          <>
+                            <Popover.Button
+                              as={Button}
+                              variant="outline-secondary"
+                              className="w-full sm:w-auto"
+                              onClick={handleCollapseFilter}
+                            >
+                              <Lucide
+                                icon="ArrowDownWideNarrow"
+                                className="stroke-[1.3] w-4 h-4 mr-2"
+                              />
+                              Filters
+                              <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                                {filtersLength}
+                              </div>
+                            </Popover.Button>
+                          </>
+                        </Popover>
                       </>
-                    </Popover>
+                    )}
                   </div>
                 </div>
 
-                {selectedChipFilters?.length > 0 && (
+                {!isCompanySource && selectedChipFilters?.length > 0 && (
                   <StandardizedFilterPills
                     filters={selectedChipFilters.map(chip => ({
                       key: chip.key,
@@ -789,7 +819,7 @@ function CaseStudies() {
                 )}
 
 
-                {isFilterCollapse && (
+                {!isCompanySource && isFilterCollapse && (
                   <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                       {/* Filter Content */}

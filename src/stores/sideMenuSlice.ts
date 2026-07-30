@@ -74,6 +74,18 @@ const initialState: any = {
       icon: "FileSearch2",
       pathname: "/case-studies?source=shared",
       title: "Case Studies",
+      subMenu: [
+        {
+          icon: "LayoutDashboard",
+          pathname: "/case-studies?tab=overview&source=shared",
+          title: "Overview",
+        },
+        {
+          icon: "FileSearch2",
+          pathname: "/case-studies?source=shared",
+          title: "All Case Studies",
+        },
+      ],
     },
     // {
     //   icon: "FileSearch",
@@ -177,6 +189,24 @@ const initialState: any = {
       icon: "BarChart2",
       pathname: "/custom-reports",
       title: "Custom Reports",
+      subMenu: [
+        {
+          icon: "Users",
+          pathname: "/custom-reports?tab=ownership",
+          title: "Ownership",
+        },
+        {
+          icon: "ShieldCheck",
+          pathname: "/custom-reports?tab=governance",
+          title: "Governance Screener",
+          badge: "Beta",
+        },
+        {
+          icon: "FileText",
+          pathname: "/custom-reports?tab=comprehensive",
+          title: "Comprehensive Report",
+        },
+      ],
     },
     {
       icon: "Headphones",

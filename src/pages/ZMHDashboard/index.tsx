@@ -26,6 +26,7 @@ import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import MeetingYearSelector from "@/pages/VdsProxyVoting/MeetingYearSelector";
 import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
 import NPXPage from "@/pages/NPX";
+import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
@@ -40,17 +41,7 @@ import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
 import {
-  FileText,
-  Building2,
-  Users,
-  Vote,
-  TrendingUp,
-  BarChart3,
-  Shield,
-  Briefcase,
-  CalendarCheck,
   ChevronRight,
-  Target,
 } from "lucide-react";
 import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
 import { toast } from "react-toastify";
@@ -106,16 +97,10 @@ function Main() {
           ? 'Voting Rationale'
           : activeSubSection === 'npx'
             ? 'N-PX'
-            : 'By Fund Family'
+            : activeSubSection === 'npx-analytics'
+              ? 'N-PX Analytics'
+              : 'By Fund Family'
         : 'Overview';
-  const HeaderIcon =
-    activeTab === 'company-overview' ? Building2 :
-    activeTab === 'governance-profile' ? Shield :
-    activeTab === 'compensation' ? Briefcase :
-    activeTab === 'investor-overview'
-      ? activeSubSection === 'engagement_priorities' ? Target : BarChart3
-      : activeTab === 'ownership' ? Users :
-      activeTab === 'shareholder-meeting-results' ? CalendarCheck : Vote;
 
   // Apply active section from back-navigation state / sessionStorage once on mount.
   useEffect(() => {
@@ -136,13 +121,6 @@ function Main() {
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
-
-  // Handle generate report
-  const handleGenerateReport = () => {
-    if (companyGlobalSearchTicker) {
-      window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
-    }
-  };
 
   // Format date function - Month and Year only
   const formatDate = (dateString: string) => {
@@ -468,20 +446,17 @@ function Main() {
         {/* Contextual section header (navigation moved to the Koyfin-style sidebar) */}
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
           <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
-            <div className="flex items-start gap-2.5">
-              <HeaderIcon className="w-5 h-5 text-primary mt-[2px]" />
-              <div>
-                <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                  <span className="text-slate-500">{headerGroup}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                  <span>{headerLabel}</span>
-                </h2>
-                {activeTab === 'shareholder-meeting-results' && meetingDateHeader && (
-                  <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
-                )}
-              </div>
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                <span className="text-slate-500">{headerGroup}</span>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <span>{headerLabel}</span>
+              </h2>
+              {activeTab === 'shareholder-meeting-results' && meetingDateHeader && (
+                <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
+              )}
             </div>
-            {activeTab === 'voting-data' && (
+            {activeTab === 'voting-data' && activeVotingSubTab !== 'npx-analytics' && (
               <MeetingYearSelector
                 key={activeVotingSubTab}
                 source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
@@ -498,15 +473,6 @@ function Main() {
                 years={dashboardDataList.total_year.map(String)}
                 label="Meeting Year"
               />
-            )}
-            {companyGlobalSearchTicker && activeTab === 'company-overview' && (
-              <button
-                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
-                onClick={handleGenerateReport}
-              >
-                <FileText className="w-4 h-4" />
-                Generate Report
-              </button>
             )}
           </div>
         </div>
@@ -556,6 +522,8 @@ function Main() {
             <div id="voting-data" className="col-span-12 xl:col-span-12">
               {activeVotingSubTab === 'npx' ? (
                 <NPXPage />
+              ) : activeVotingSubTab === 'npx-analytics' && isAdmin ? (
+                <NPXAnalyticsPage embedded />
               ) : activeVotingSubTab === 'voting-rationale' ? (
                 <VdsProxyVoting view="voting-rationale" />
               ) : (

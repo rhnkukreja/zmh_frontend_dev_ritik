@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import TableWrapper from "../components/TableWrapper";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
@@ -17,7 +18,6 @@ import CPagination from "@/components/Pagination";
 import StandardizedTable from "@/components/StandardizedTable";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
 import { X, Check } from "lucide-react";
-import {Users} from "lucide-react";
 
 // ── Index options (hardcoded — not from API) ─────────────────────────────────
 const GP_INDEX_OPTIONS = [
@@ -426,12 +426,89 @@ const GovernanceProfileTab = () => {
   );
 };
 
+const ComprehensiveReportTab = () => {
+  const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const companyName = companyGlobalSearchName || companyGlobalSearchTicker;
+
+  const handleGenerate = () => {
+    if (!companyGlobalSearchTicker) return;
+    setIsGenerating(true);
+    window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
+    setTimeout(() => setIsGenerating(false), 800);
+  };
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-lg font-bold mb-1">Comprehensive Report</h1>
+      </div>
+
+      {/* Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-white shadow-xl">
+        <div className="absolute -right-10 -top-10 w-56 h-56 rounded-full bg-white/10" />
+        <div className="absolute -right-24 -bottom-24 w-72 h-72 rounded-full bg-white/5" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6 p-8">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
+              <Lucide icon="Building2" className="w-8 h-8 text-white" />
+            </div>
+            <div className="min-w-0">
+              {companyName ? (
+                <h2 className="text-2xl font-bold truncate">{companyName}</h2>
+              ) : (
+                <h2 className="text-xl font-semibold text-white/90">No company selected yet</h2>
+              )}
+              <p className="text-sm text-white/80 mt-2 max-w-xl">
+                Includes Share Price Performance, Trend in Investor Support, Top 20 Ownership,
+                Shareholder Meeting Summary, Voting Rationale, Engagement History, and Shareholder
+                Proposals, formatted into one report ready to share with your board or clients.
+              </p>
+            </div>
+          </div>
+          <div className="flex-shrink-0">
+            <button
+              onClick={handleGenerate}
+              disabled={!companyGlobalSearchTicker || isGenerating}
+              className="flex items-center gap-2.5 px-6 py-3 bg-white text-primary font-semibold text-sm rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {isGenerating ? (
+                <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+              ) : (
+                <Lucide icon="Download" className="w-4 h-4" />
+              )}
+              {isGenerating ? "Generating..." : "Download Comprehensive Report"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {!companyGlobalSearchTicker && (
+        <div className="flex flex-col items-center justify-center py-14 text-slate-400 mt-4">
+          <Lucide icon="FileSearch" className="w-10 h-10 mb-3 opacity-40" />
+          <p className="text-sm">Select a company from the top search bar to unlock its comprehensive report.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const CustomReports = () => {
   // Get global company ticker from authentication store
   const { companyGlobalSearchTicker } = useAppSelector((state) => state.authentiction);
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'ownership' | 'governance'>('ownership');
+  // Tab state — driven by the URL so sidebar sub-item links can switch tabs
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") as 'ownership' | 'governance' | 'comprehensive' | null;
+  const [activeTab, setActiveTab] = useState<'ownership' | 'governance' | 'comprehensive'>(
+    tabFromUrl && ["ownership", "governance", "comprehensive"].includes(tabFromUrl) ? tabFromUrl : 'ownership'
+  );
+
+  useEffect(() => {
+    if (tabFromUrl && ["ownership", "governance", "comprehensive"].includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   // Initialize with local storage data, global company ticker, or default values
   const getInitialTickers = () => {
@@ -622,39 +699,6 @@ const CustomReports = () => {
 
   return (
     <div className="box p-5 mt-3.5">
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm flex items-center gap-1 mb-5 w-fit">
-        <button
-          onClick={() => setActiveTab('ownership')}
-          className={clsx(
-            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
-            activeTab === 'ownership'
-              ? "bg-primary text-white shadow"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-          )}
-        >
-          <Users className="w-4 h-4" />
-          Ownership
-        </button>
-        <button
-          onClick={() => setActiveTab('governance')}
-          className={clsx(
-            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-1.5",
-            activeTab === 'governance'
-              ? "bg-primary text-white shadow"
-              : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-          )}
-        >
-          <Lucide icon="ShieldCheck" className="w-4 h-4" />
-          <span className="relative">
-            Governance Screener
-            <span className="pointer-events-none absolute -top-3 -right-7 inline-flex items-center rounded-full bg-orange-500 px-[5px] py-[1px] text-[8px] font-bold uppercase tracking-[0.08em] text-white shadow-sm animate-pulse">
-              BETA
-            </span>
-          </span>
-        </button>
-      </div>
-
       {/* Ownership Tab */}
       {activeTab === 'ownership' && (
         <>
@@ -833,6 +877,9 @@ const CustomReports = () => {
 
       {/* Governance Profile Tab */}
       {activeTab === 'governance' && <GovernanceProfileTab />}
+
+      {/* Comprehensive Report Tab */}
+      {activeTab === 'comprehensive' && <ComprehensiveReportTab />}
     </div>
   );
 };

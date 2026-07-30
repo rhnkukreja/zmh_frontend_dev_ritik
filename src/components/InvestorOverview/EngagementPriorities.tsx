@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Target, List, ChevronDown, ChevronUp, CheckCircle2, RefreshCw } from 'lucide-react';
 import parse, { domToReact, Element, HTMLReactParserOptions } from 'html-react-parser';
 import { AI_CHATBOT_API_BASE } from "../../pages/AIChatbot/api";
@@ -20,28 +20,6 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('takeaways');
   const [expandedInvestors, setExpandedInvestors] = useState<Record<number, boolean>>({});
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
-
-  // Find real scroll parent and ensure sticky works within it
-  const subTabRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!subTabRef.current) return;
-    let scrollParent: HTMLElement | null = null;
-    let el: HTMLElement | null = subTabRef.current.parentElement;
-    while (el && el !== document.documentElement) {
-      const overflowY = window.getComputedStyle(el).overflowY;
-      if (overflowY === 'auto' || overflowY === 'scroll') {
-        scrollParent = el;
-        break;
-      }
-      el = el.parentElement;
-    }
-    if (!scrollParent) return;
-    const original = scrollParent.style.overflowY;
-    scrollParent.style.overflowY = 'scroll';
-    return () => {
-      if (scrollParent) scrollParent.style.overflowY = original;
-    };
-  }, []);
 
   // 1. GET ENDPOINT INTEGRATION: Fetch from S3 on component load
   useEffect(() => {
@@ -250,8 +228,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
         <div>
 
           {/* Sub-Tabs Navigation */}
-          {/* UPDATE THIS DIV: Added sticky positioning, z-index, and a background color so text doesn't overlap when scrolling */}
-          <div ref={subTabRef} className="sticky top-[296px] z-[30] bg-white pt-3 pb-3 flex items-center gap-8 border-b border-slate-200">
+          <div className="bg-white pt-3 pb-3 flex items-center gap-8 border-b border-slate-200">
             {/* Key Themes */}
             <button
               onClick={() => setActiveSubTab('takeaways')}
