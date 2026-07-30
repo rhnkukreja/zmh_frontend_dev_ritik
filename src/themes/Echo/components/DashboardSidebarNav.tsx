@@ -130,6 +130,14 @@ const BASE_SECTIONS: SectionDef[] = [
     countKey: "engagement_details",
   },
   {
+    key: "investor-overview",
+    label: "Engagement Priorities",
+    icon: Target,
+    group: "Company",
+    subSection: "engagement_priorities",
+    subItems: [],
+  },
+  {
     key: "company-shareholder-proposals",
     label: "Shareholder Proposals",
     icon: Files,
@@ -138,14 +146,6 @@ const BASE_SECTIONS: SectionDef[] = [
     route: "/shareholder-proposal?source=company",
     preserveActiveSection: true,
     countKey: "shareholder_proposal",
-  },
-  {
-    key: "investor-overview",
-    label: "Engagement Priorities",
-    icon: Target,
-    group: "Company",
-    subSection: "engagement_priorities",
-    subItems: [],
   },
   {
     key: "investor-overview",

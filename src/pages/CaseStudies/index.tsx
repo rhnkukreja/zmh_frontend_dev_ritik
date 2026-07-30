@@ -242,8 +242,12 @@ function CaseStudies() {
     }
 
     if (sourceParam === "shared") {
-      setActiveTab("all");
-      dispatch(selectUnSelectAllCompany(true));
+      const sharedTab =
+        tabParam === "overview" || tabParam === "specific" || tabParam === "all"
+          ? tabParam
+          : "all";
+      setActiveTab(sharedTab as any);
+      dispatch(selectUnSelectAllCompany(sharedTab === "all"));
     } else if (sourceParam === "company") {
       const companyTab = tabParam === "overview" || tabParam === "all" ? "specific" : tabParam || "specific";
       setActiveTab(companyTab as any);

@@ -33,6 +33,7 @@ interface CompanySelectProps {
   currentFilters?: any;
   year?: string; // Add year parameter
   showDefaultOptions?: boolean;
+  hideDropdownIndicator?: boolean;
 }
 
 const fetchOptions = async (
@@ -112,6 +113,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   currentFilters,
   year,
   showDefaultOptions = true,
+  hideDropdownIndicator = false,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
@@ -346,6 +348,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       openMenuOnClick={true}
       controlShouldRenderValue={true} // Always render the selected value
       noOptionsMessage={() => (inputValue && inputValue.length > 0 ? 'No options' : 'Type to search')}
+      components={hideDropdownIndicator ? { DropdownIndicator: () => null, IndicatorSeparator: () => null } : undefined}
     />
   );
 };
