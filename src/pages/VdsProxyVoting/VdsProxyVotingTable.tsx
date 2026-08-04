@@ -478,12 +478,14 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
     return tab === "Top-20" ? 0 : tab === "All-Investor" ? 1 : 0;
   };
 
-  // If top-20 has no data, switch to the All-Investor tab
+  // If top-20 truly has no data after loading completes, switch to All-Investor.
+  // Don't do this while the Top-20 request is in flight because the pending reducer
+  // temporarily clears vdsProxyDetails, which would otherwise force an unwanted switch.
   useEffect(() => {
-    if (top20Loaded && !hasTop20Data && tab === "Top-20") {
+    if (top20Loaded && !vdsProxyLoading && !hasTop20Data && tab === "Top-20") {
       dispatch(setTabs("All-Investor"));
     }
-  }, [top20Loaded, hasTop20Data, tab, dispatch]);
+  }, [top20Loaded, vdsProxyLoading, hasTop20Data, tab, dispatch]);
 
   return (
     <>
