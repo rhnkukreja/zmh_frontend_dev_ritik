@@ -29,7 +29,7 @@ import { baseURL } from "@/constant";
 import AddNewInvesterProfile from "./components/AddNewInvester";
 import { AddEditPolicyGuideline } from "@/pages/ProxyVotingGuideline/components/AddEditProxyVotingGuideline";
 import Tippy from "@/components/Base/Tippy";
-import { ChevronRight, FilterX, Landmark, SaveAll } from "lucide-react";
+import { ChevronRight, FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import { toast } from "react-toastify";
 import { commonService } from "@/services/common";
@@ -412,15 +412,12 @@ function Main() {
         <div className="col-span-12">
           <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-start gap-2.5">
-                <Landmark className="w-5 h-5 text-primary mt-[2px]" />
-                <div>
-                  <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                    <span className="text-slate-500">Market Analytics</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                    <span>Investor Profile</span>
-                  </h2>
-                </div>
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                  <span className="text-slate-500">Market Analytics</span>
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  <span>Investor Profile</span>
+                </h2>
               </div>
               <div className="flex items-center gap-3 flex-wrap justify-end">
                 <a

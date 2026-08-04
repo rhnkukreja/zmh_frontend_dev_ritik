@@ -690,7 +690,6 @@ const ExecutiveCompensation: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
-              <Lucide icon="Briefcase" className="w-5 h-5 text-[#8b1828] mt-[1px] shrink-0" />
               <span className="text-slate-500">Institution Insights</span>
               <span className="text-slate-400">›</span>
               <span className="relative inline-flex items-center pr-7">
