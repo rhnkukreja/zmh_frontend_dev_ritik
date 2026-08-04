@@ -36,6 +36,7 @@ import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import VotingRationale from "./VotingRationale";
+import AggregateVotingView from "./AggregateVotingView";
 
 // Cache utility types and constants
 interface CacheData {
@@ -145,6 +146,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
   const meetingDate = searchParams.get("meeting_date") || "";
   const [activeVdsView, setActiveVdsView] = useState<"voting-data" | "voting-rationale">(view || "voting-data");
   const [top20Loaded, setTop20Loaded] = useState(false);
+  const [isProxyContestYear, setIsProxyContestYear] = useState(false);
 
   // Keep the view locked to the prop when a specific sub-tab is selected via the sidebar.
   useEffect(() => {
@@ -152,6 +154,43 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
       setActiveVdsView(view);
     }
   }, [view]);
+
+  // Detect whether the selected meeting year is a proxy contest year. When it is,
+  // the page switches to the aggregate (institution-based) view instead of the
+  // Top 20 / All Investors tabs.
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkProxyContestYear = async () => {
+      if (!companyGlobalSearchId || !yearTicker) {
+        if (!cancelled) setIsProxyContestYear(false);
+        return;
+      }
+
+      try {
+        const { result } = await dashboardService.getVdsNpxMeetingDates(companyGlobalSearchId);
+        const entries = Array.isArray(result?.VDS_data)
+          ? result.VDS_data
+          : Array.isArray(result?.VDS_Data)
+            ? result.VDS_Data
+            : Array.isArray(result?.vds_data)
+              ? result.vds_data
+              : [];
+
+        const match = entries.find((item: any) => String(item?.year) === String(yearTicker));
+        if (!cancelled) setIsProxyContestYear(!!match?.proxy_contest);
+      } catch (error) {
+        console.warn("Failed to determine proxy contest status:", error);
+        if (!cancelled) setIsProxyContestYear(false);
+      }
+    };
+
+    checkProxyContestYear();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyGlobalSearchId, yearTicker]);
 
   const emptyStateAnimationStyle: React.CSSProperties = {
     animationDelay: "120ms",
@@ -486,6 +525,23 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
       dispatch(setTabs("All-Investor"));
     }
   }, [top20Loaded, vdsProxyLoading, hasTop20Data, tab, dispatch]);
+
+  // Proxy contest years use an aggregate, institution-based view instead of the
+  // usual Top 20 / All Investors tabs.
+  if (isProxyContestYear) {
+    return (
+      <div className="p-5 mt-1 box">
+        <div className="w-full">
+          <AggregateVotingView
+            key={`${companyGlobalSearchTicker}-${yearTicker}`}
+            companyName={companyGlobalSearchName}
+            year={yearTicker}
+            institutionOptions={apiDropdownOptions}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
