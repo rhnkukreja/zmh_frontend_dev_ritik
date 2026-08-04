@@ -66,11 +66,6 @@ const initialState: any = {
     // },
     // "APPS",
     {
-      icon: "Landmark",
-      pathname: "/investor-profile",
-      title: "Investor Profile",
-    },
-    {
       icon: "FileSearch2",
       pathname: "/case-studies?source=shared",
       title: "Case Studies",
@@ -186,6 +181,11 @@ const initialState: any = {
       isAdmin: true,
     },
     {
+      icon: "FileText",
+      pathname: "/notes",
+      title: "Knowledge Base",
+    },
+    {
       icon: "BarChart2",
       pathname: "/custom-reports",
       title: "Custom Reports",
@@ -227,11 +227,6 @@ const initialState: any = {
       icon: "Mail",
       pathname: "#",
       title: "Email Alert",
-    },
-    {
-      icon: "FileText",
-      pathname: "/notes",
-      title: "Knowledge Base",
     },
     {
       icon: "HelpCircle",

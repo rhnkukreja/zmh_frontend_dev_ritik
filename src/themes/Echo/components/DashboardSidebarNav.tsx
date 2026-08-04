@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Network,
   LineChart,
+  Landmark,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -154,6 +155,15 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Institution Insights",
     subSection: "voting_rationale",
     subItems: [],
+  },
+  {
+    key: "investor-profile",
+    label: "Investor Profile",
+    icon: Landmark,
+    group: "Institution Insights",
+    route: "/investor-profile",
+    subItems: [],
+    preserveActiveSection: true,
   },
   {
     key: "investor-overview",
