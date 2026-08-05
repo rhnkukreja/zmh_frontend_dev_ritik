@@ -236,6 +236,18 @@ function Main() {
   }, [sideMenuStore, location]);
 
   useEffect(() => {
+    const doesDashboardRouteMatch = (routeStr: string): boolean => {
+      const [basePath, existingQuery] = routeStr.split("?");
+      if (location.pathname !== basePath) {
+        return false;
+      }
+      const routeParams = new URLSearchParams(existingQuery || "");
+      const currentParams = new URLSearchParams(location.search);
+      return Array.from(routeParams.entries()).every(
+        ([key, value]) => currentParams.get(key) === value
+      );
+    };
+
     const computeActiveGroup = (): string => {
       if (companyGlobalSearchTicker) {
         const dashboardMatch =
@@ -249,7 +261,7 @@ function Main() {
                     (s.subSection === "voting_rationale" && !activeSubSection))
               )
             : DASHBOARD_SECTIONS.find(
-                (s) => s.route && location.pathname === s.route.split("?")[0]
+                (s) => s.route && doesDashboardRouteMatch(s.route)
               );
         if (dashboardMatch) {
           return dashboardMatch.group;
@@ -687,14 +699,14 @@ function Main() {
                   <Fragment key={menuKey}>
                     {showGroupHeading && (
                       <li
-                        className="side-menu__divider side-menu__section-label flex items-center justify-between cursor-pointer select-none"
+                        className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
                         onClick={() => handleToggleGroup(currentGroup)}
                       >
                         <span>{currentGroup}</span>
                         <Lucide
                           icon="ChevronRight"
                           className={clsx([
-                            "w-3.5 h-3.5 transition-transform duration-200",
+                            "w-5 h-5 transition-transform duration-200",
                             { "rotate-90": isGroupExpanded },
                           ])}
                         />

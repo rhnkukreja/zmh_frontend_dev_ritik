@@ -308,18 +308,18 @@ const DashboardSidebarNav = ({
           <Fragment key={`${section.key}-${section.label}`}>
             {section.group !== previousSection?.group && (
               isCompanyGroup ? (
-                <li className="side-menu__divider side-menu__section-label">
+                <li className="side-menu__divider side-menu__section-label !text-xs">
                   <span>{section.group}</span>
                 </li>
               ) : (
                 <li
-                  className="side-menu__divider side-menu__section-label flex items-center justify-between cursor-pointer select-none"
+                  className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
                   onClick={() => onToggleGroup(section.group)}
                 >
                   <span>{section.group}</span>
                   <ChevronRight
                     className={clsx([
-                      "w-3.5 h-3.5 transition-transform duration-200",
+                      "w-5 h-5 transition-transform duration-200",
                       { "rotate-90": isGroupExpanded },
                     ])}
                   />
