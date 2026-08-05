@@ -39,14 +39,12 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
 
   const handleInstitutionClick = (institutionName: string) => {
     setSelectedInstitution(institutionName);
-    // Don't reset company selection when clicking on already expanded institution
-    if (!expandedInstitutions.includes(institutionName)) {
-      setSelectedCompany(""); // Only reset company selection when expanding a new institution
-    }
+    setSelectedCompany("");
     toggleInstitution(institutionName);
   };
 
-  const handleCompanyClick = (companyName: string) => {
+  const handleCompanyClick = (institutionName: string, companyName: string) => {
+    setSelectedInstitution(institutionName);
     setSelectedCompany(companyName);
   };
 
@@ -83,24 +81,32 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
     dispatch(fetchInstitutionHierarchyNotes());
   };
 
-  // Auto-select first institution and company when data loads or when selections are cleared
   useEffect(() => {
+    if (searchTerm.trim().length > 0) {
+      return;
+    }
+
     if (institutionHierarchy && institutionHierarchy.length > 0) {
-      const firstInstitution = institutionHierarchy[0];
-      const institutionName = firstInstitution.main_heading;
-      const companies = firstInstitution.sub_headings || [];
-      
-      // Always select first institution and company if nothing is selected
+      const currentInstitution =
+        institutionHierarchy.find((item) => item.main_heading === selectedInstitution) ||
+        institutionHierarchy[0];
+      const institutionName = currentInstitution.main_heading;
+      const companies = Object.keys(currentInstitution.sub_heading || {});
+
       if (!selectedInstitution) {
         setSelectedInstitution(institutionName);
         setExpandedInstitutions([institutionName]);
       }
-      
+
       if (!selectedCompany && companies.length > 0) {
         setSelectedCompany(companies[0]);
       }
+
+      if (selectedInstitution && !expandedInstitutions.includes(selectedInstitution)) {
+        setExpandedInstitutions([selectedInstitution]);
+      }
     }
-  }, [institutionHierarchy, selectedInstitution, selectedCompany]);
+  }, [institutionHierarchy, selectedInstitution, selectedCompany, searchTerm, expandedInstitutions, setSelectedCompany, setSelectedInstitution]);
 
   if (loadingInstitutionHierarchy) {
     return (
@@ -201,7 +207,7 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
               ? "text-primary font-medium bg-gray-50"
               : "text-gray-700 hover:text-gray-900"
           )}
-          onClick={() => handleCompanyClick(companyName)}
+          onClick={() => handleCompanyClick(institutionName, companyName)}
         >
           <Lucide icon="CornerDownRight" className="w-4 h-4 mr-2 text-gray-400" />
           <span className="flex-1">{companyName}</span>

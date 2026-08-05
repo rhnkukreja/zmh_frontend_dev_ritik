@@ -192,10 +192,7 @@ const ProxyContestDetail = () => {
                         {!isFromGlobalSearch && (
                             <Button
                                 onClick={() => {
-                                    navigate('/proxy-contest-ai', {
-                                        replace: true,
-                                        state: { preventAutoNavigation: true }
-                                    });
+                                    navigate(-1);
                                 }}
                                 variant="primary"
                                 className="flex items-center gap-2"

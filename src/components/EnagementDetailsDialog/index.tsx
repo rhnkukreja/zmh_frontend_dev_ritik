@@ -141,7 +141,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     <tr className="bg-primary text-white">
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -351,7 +351,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     <tr className="bg-primary text-white">
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -373,7 +373,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     <tr className="bg-primary text-white">
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -394,7 +394,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     <tr className="bg-primary text-white">
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Topic</th>
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Count</th>
-                                        <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>%</th>
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>%</th>
                                     </tr>
                                 </thead>
                                 <tbody>

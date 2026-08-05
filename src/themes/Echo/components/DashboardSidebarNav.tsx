@@ -20,6 +20,7 @@ import {
   MessageSquare,
   Network,
   LineChart,
+  Landmark,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -156,6 +157,15 @@ const BASE_SECTIONS: SectionDef[] = [
     subItems: [],
   },
   {
+    key: "investor-profile",
+    label: "Investor Profile",
+    icon: Landmark,
+    group: "Institution Insights",
+    route: "/investor-profile",
+    subItems: [],
+    preserveActiveSection: true,
+  },
+  {
     key: "investor-overview",
     label: "Aggregate Voting",
     icon: PieChart,
@@ -173,7 +183,15 @@ const BASE_SECTIONS: SectionDef[] = [
   },
 ];
 
-const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
+const DashboardSidebarNav = ({
+  modulesData = {},
+  expandedGroup,
+  onToggleGroup,
+}: {
+  modulesData?: any;
+  expandedGroup: string;
+  onToggleGroup: (group: string) => void;
+}) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -281,13 +299,34 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
         const hasSubs = visibleSubItems.length > 0;
         const countValue = section.countKey ? modulesData?.[section.countKey] : null;
 
+        const isCompanyGroup = section.group === "Company";
+        const isGroupExpanded = isCompanyGroup
+          ? true
+          : expandedGroup === section.group;
+
         return (
           <Fragment key={`${section.key}-${section.label}`}>
             {section.group !== previousSection?.group && (
-              <li className="side-menu__divider side-menu__section-label">
-                {section.group}
-              </li>
+              isCompanyGroup ? (
+                <li className="side-menu__divider side-menu__section-label !text-xs">
+                  <span>{section.group}</span>
+                </li>
+              ) : (
+                <li
+                  className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
+                  onClick={() => onToggleGroup(section.group)}
+                >
+                  <span>{section.group}</span>
+                  <ChevronRight
+                    className={clsx([
+                      "w-5 h-5 transition-transform duration-200",
+                      { "rotate-90": isGroupExpanded },
+                    ])}
+                  />
+                </li>
+              )
             )}
+            {isGroupExpanded && (
             <li>
             <a
               href=""
@@ -365,6 +404,7 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
               </ul>
             )}
             </li>
+            )}
           </Fragment>
         );
       })}
@@ -373,3 +413,5 @@ const DashboardSidebarNav = ({ modulesData = {} }: { modulesData?: any }) => {
 };
 
 export default DashboardSidebarNav;
+export { BASE_SECTIONS as DASHBOARD_SECTIONS };
+export type { SectionDef };

@@ -74,7 +74,10 @@ import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
 import SearchWidgetIframe from "@/components/SearchWidget";
-import DashboardSidebarNav from "./components/DashboardSidebarNav";
+import DashboardSidebarNav, {
+  DASHBOARD_SECTIONS,
+} from "./components/DashboardSidebarNav";
+import { selectDashboardNav } from "@/stores/dashboardNavSlice";
 
 const getSidebarGroup = (menu: string | FormattedMenu) => {
   if (typeof menu === "string") {
@@ -160,6 +163,8 @@ function Main() {
   >([]);
   const sideMenuStore = useAppSelector(selectSideMenu);
   const sideMenu = () => nestedMenu(sideMenuStore, location);
+  const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
+  const [expandedGroup, setExpandedGroup] = useState<string>("");
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
@@ -230,6 +235,67 @@ function Main() {
     fixTableStyles();
   }, [sideMenuStore, location]);
 
+  useEffect(() => {
+    const doesDashboardRouteMatch = (routeStr: string): boolean => {
+      const [basePath, existingQuery] = routeStr.split("?");
+      if (location.pathname !== basePath) {
+        return false;
+      }
+      const routeParams = new URLSearchParams(existingQuery || "");
+      const currentParams = new URLSearchParams(location.search);
+      return Array.from(routeParams.entries()).every(
+        ([key, value]) => currentParams.get(key) === value
+      );
+    };
+
+    const computeActiveGroup = (): string => {
+      if (companyGlobalSearchTicker) {
+        const dashboardMatch =
+          location.pathname === "/"
+            ? DASHBOARD_SECTIONS.find(
+                (s) =>
+                  !s.route &&
+                  s.key === activeSection &&
+                  (!s.subSection ||
+                    activeSubSection === s.subSection ||
+                    (s.subSection === "voting_rationale" && !activeSubSection))
+              )
+            : DASHBOARD_SECTIONS.find(
+                (s) => s.route && doesDashboardRouteMatch(s.route)
+              );
+        if (dashboardMatch) {
+          return dashboardMatch.group;
+        }
+      }
+
+      const activeFormattedItem = formattedMenu.find(
+        (item): item is FormattedMenu =>
+          typeof item !== "string" && !!item.active
+      );
+      if (activeFormattedItem) {
+        const group = getSidebarGroup(activeFormattedItem);
+        if (group) {
+          return group;
+        }
+      }
+
+      return companyGlobalSearchTicker ? "Company" : "";
+    };
+
+    setExpandedGroup(computeActiveGroup());
+  }, [
+    location.pathname,
+    location.search,
+    activeSection,
+    activeSubSection,
+    formattedMenu,
+    companyGlobalSearchTicker,
+  ]);
+
+  const handleToggleGroup = (group: string) => {
+    setExpandedGroup((prev) => (prev === group ? "" : group));
+  };
+
   window.onscroll = () => {
     // Topbar
     if (document.body.scrollTop > 0 || document.documentElement.scrollTop > 0) {
@@ -284,9 +350,14 @@ function Main() {
 
   const isCompanySpecificView =
     new URLSearchParams(location.search).get("source") === "company";
-  const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
-    location.pathname.includes(route)
-  ) && !isCompanySpecificView;
+  const shouldHideHeader =
+    (noCompanyHeaderRoutes?.some((route: string) =>
+      location.pathname.includes(route)
+    ) &&
+      !isCompanySpecificView) ||
+    (location.pathname === "/" &&
+      activeSection === "investor-overview" &&
+      (activeSubSection === "voting_rationale" || !activeSubSection));
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
@@ -611,7 +682,11 @@ function Main() {
           >
             <ul className="scrollable">
               {/* Koyfin-style dashboard navigation for the selected company */}
-              <DashboardSidebarNav modulesData={modulesData} />
+              <DashboardSidebarNav
+                modulesData={modulesData}
+                expandedGroup={expandedGroup}
+                onToggleGroup={handleToggleGroup}
+              />
               {/* BEGIN: First Child */}
               {formattedMenu.map((menu, menuKey) => {
                 const currentGroup = getSidebarGroup(menu);
@@ -623,15 +698,26 @@ function Main() {
                   (currentGroup !== "Administration" ||
                     user.user_type === "Admin" ||
                     user.user_type === "Analyst");
+                const isGroupExpanded = expandedGroup === currentGroup;
 
                 return (
                   <Fragment key={menuKey}>
                     {showGroupHeading && (
-                      <li className="side-menu__divider side-menu__section-label">
-                        {currentGroup}
+                      <li
+                        className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
+                        onClick={() => handleToggleGroup(currentGroup)}
+                      >
+                        <span>{currentGroup}</span>
+                        <Lucide
+                          icon="ChevronRight"
+                          className={clsx([
+                            "w-5 h-5 transition-transform duration-200",
+                            { "rotate-90": isGroupExpanded },
+                          ])}
+                        />
                       </li>
                     )}
-                    {typeof menu == "string" ? null : (
+                    {typeof menu == "string" || !isGroupExpanded ? null : (
                   <li>
                     <a
                       href=""
@@ -943,9 +1029,19 @@ function Main() {
                   "/engagement-question",
                   "/custom-reports",
                   "/voting-guidelines",
+                  "/proxy-contest",
+                  "/executive-compensation",
                 ]?.includes(location.pathname) ||
                   location.pathname.startsWith("/proxy-contest-detail/") ||
-                  location.pathname.startsWith("/investor-profile/") ? (
+                  location.pathname.startsWith("/investor-profile/") ||
+                  (["/case-studies", "/engagement-detail", "/shareholder-proposal"].includes(
+                    location.pathname
+                  ) &&
+                    !isCompanySpecificView) ||
+                  (location.pathname === "/" &&
+                    activeSection === "investor-overview" &&
+                    (activeSubSection === "voting_rationale" ||
+                      !activeSubSection)) ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
                     {location.pathname.includes("/notes") &&

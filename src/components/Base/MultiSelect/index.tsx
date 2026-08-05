@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Select, { components, MultiValue } from "react-select";
 import { FormCheck } from "../Form";
-import { toast } from "react-toastify";
 
 interface Option {
   value: string;
@@ -94,7 +93,6 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     
     // Check if trying to remove the last item when preventRemoveLastItem is true
     if (preventRemoveLastItem && selectedOptions.length === 1 && newSelectedOptions.length === 0) {
-      toast.error(`At least one ${fieldName} must be selected`);
       setIsUserSelecting(false);
       return; // Don't update the state, keep the current selection
     }

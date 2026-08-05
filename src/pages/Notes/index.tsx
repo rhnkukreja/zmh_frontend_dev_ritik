@@ -170,6 +170,7 @@ const Notes: React.FC = () => {
                 {selectedInstitution && selectedCompany ? (
                   <div className="w-full h-full">
                     <NoteDetails
+                      key={`institution-${selectedInstitution}-${selectedCompany}`}
                       activeTab={activeTab}
                       companyName={companyName}
                       institutionName={institutionName}
@@ -190,6 +191,7 @@ const Notes: React.FC = () => {
                 {selectedCompany && selectedInstitution ? (
                   <div className="w-full h-full">
                     <NoteDetails
+                      key={`company-${selectedCompany}-${selectedInstitution}`}
                       activeTab={activeTab}
                       companyName={companyName}
                       institutionName={institutionName}

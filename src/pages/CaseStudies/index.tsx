@@ -12,7 +12,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { convertToTitleCase, countValidFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { ChevronRight, FileSearch2, FilterX, SaveAll } from "lucide-react";
+import { ChevronRight, FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -664,29 +664,27 @@ function CaseStudies() {
           <div className="mt-3.5 relative">
             {isCompanySource && (
               <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
-                <div className="flex items-start gap-2.5">
-                  <FileSearch2 className="w-5 h-5 text-primary mt-[2px]" />
-                  <div>
-                    <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                      <span className="text-slate-500">Company</span>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                      <span>Case Studies</span>
-                    </h2>
-                  </div>
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <span className="text-slate-500">Company</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>Case Studies</span>
+                  </h2>
                 </div>
               </div>
             )}
             {!isCompanySource && (
               <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
-                <div className="flex items-start gap-2.5">
-                  <FileSearch2 className="w-5 h-5 text-primary mt-[2px]" />
-                  <div>
-                    <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                      <span className="text-slate-500">Market Analytics</span>
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
-                      <span>Case Studies</span>
-                    </h2>
-                  </div>
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <span className="text-slate-500">Market Analytics</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>
+                      {activeTab === "overview"
+                        ? "Case Studies Overview"
+                        : "Case Studies"}
+                    </span>
+                  </h2>
                 </div>
               </div>
             )}

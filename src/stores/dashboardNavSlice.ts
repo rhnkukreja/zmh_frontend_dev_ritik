@@ -6,6 +6,7 @@ export type DashboardSection =
   | "company-overview"
   | "governance-profile"
   | "compensation"
+  | "investor-profile"
   | "investor-overview"
   | "ownership"
   | "shareholder-meeting-results"
