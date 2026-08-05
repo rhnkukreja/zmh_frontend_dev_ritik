@@ -1105,6 +1105,7 @@ function ShareHolderProposal() {
                 <div>
                   <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                     <span className="text-slate-500">Market Analytics</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
                     <span>Shareholder Proposals</span>
                   </h2>
                 </div>

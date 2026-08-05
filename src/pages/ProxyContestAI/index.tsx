@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import Lucide from "@/components/Base/Lucide";
+import { ChevronRight } from "lucide-react";
 import Button from "@/components/Base/Button";
 import { proxyContestAIService, setProxyContestSettledMode } from "@/services/proxyContestAI";
 import FiltersSidebar from "./components/FiltersSidebar";
@@ -629,9 +630,8 @@ function ProxyContestAI() {
        {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <Lucide icon="ShieldAlert" className="w-5 h-5 text-[#8b1828] mt-[1px] shrink-0" />
             <span className="text-slate-500">Proxy Contest</span>
-            <span className="text-slate-400">›</span>
+            <ChevronRight className="w-4 h-4 text-slate-400" />
             <span>{tabs.find((t) => t.key === activeTab)?.label ?? "Activist Profile"}</span>
           </h2>
           
