@@ -350,9 +350,14 @@ function Main() {
 
   const isCompanySpecificView =
     new URLSearchParams(location.search).get("source") === "company";
-  const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
-    location.pathname.includes(route)
-  ) && !isCompanySpecificView;
+  const shouldHideHeader =
+    (noCompanyHeaderRoutes?.some((route: string) =>
+      location.pathname.includes(route)
+    ) &&
+      !isCompanySpecificView) ||
+    (location.pathname === "/" &&
+      activeSection === "investor-overview" &&
+      (activeSubSection === "voting_rationale" || !activeSubSection));
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
@@ -1024,9 +1029,19 @@ function Main() {
                   "/engagement-question",
                   "/custom-reports",
                   "/voting-guidelines",
+                  "/proxy-contest",
+                  "/executive-compensation",
                 ]?.includes(location.pathname) ||
                   location.pathname.startsWith("/proxy-contest-detail/") ||
-                  location.pathname.startsWith("/investor-profile/") ? (
+                  location.pathname.startsWith("/investor-profile/") ||
+                  (["/case-studies", "/engagement-detail", "/shareholder-proposal"].includes(
+                    location.pathname
+                  ) &&
+                    !isCompanySpecificView) ||
+                  (location.pathname === "/" &&
+                    activeSection === "investor-overview" &&
+                    (activeSubSection === "voting_rationale" ||
+                      !activeSubSection)) ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
                     {location.pathname.includes("/notes") &&
