@@ -39,10 +39,7 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
 
   const handleCompanyClick = (companyName: string) => {
     setSelectedCompany(companyName);
-    // Don't reset institution selection when clicking on already expanded company
-    if (!expandedCompanies.includes(companyName)) {
-      setSelectedInstitution(""); // Only reset institution selection when expanding a new company
-    }
+    setSelectedInstitution("");
     toggleCompany(companyName);
   };
 

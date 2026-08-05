@@ -14,10 +14,8 @@ import { addNote, setSelectedGroup, setSelectedNote } from "@/stores/notesSlice"
 import { NotesFieldProps } from "./NotesList";
 import { RootState } from "@/stores/store";
 import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
-import AddDomainNoteCommentsModal from "@/components/DomainNotesComment/AddDomainNotesCommentModal";
 import { createDynamicURL, groupByValue } from "@/utils/helper";
 import { baseURL } from "@/constant";
-import { DomainNote } from "@/types/domainNotes";
 import {
   deleteDomainNote,
   fetchDomainNotes,
@@ -49,10 +47,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
 
   const [data, setData] = useState(null);
   const [noteDetails, setNoteDetails] = useState(null);
-  const [selectedCommentNote, setSelectedCommentNote] = useState<DomainNote | null>(null);
   const [addNoteModalVisible, setAddNoteModalVisible] =
-    useState<boolean>(false);
-  const [addCommentModalVisible, setAddCommentModalVisible] =
     useState<boolean>(false);
   const { results } = useAppSelector((state) => state.domainNotes);
   const [isEditing, setIsEditing] = useState(false);
@@ -89,12 +84,22 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
 
   // Auto-select first note when currentNotes changes
   useEffect(() => {
+    if (activeTab === "institution" || activeTab === "company") {
+      setIsEditing(false);
+      setAddNoteModalVisible(false);
+      setData(null);
+      setNoteDetails(null);
+    }
+
     if (currentNotes && currentNotes.length > 0 && (activeTab === "institution" || activeTab === "company")) {
       setNoteDetails(currentNotes[0]);
       // Also update global state for consistent UI
       dispatch(setSelectedNote(currentNotes[0]));
+    } else if (activeTab === "institution" || activeTab === "company") {
+      setNoteDetails(null);
+      dispatch(setSelectedNote(null));
     }
-  }, [currentNotes, activeTab, dispatch]);
+  }, [currentNotes, activeTab, dispatch, selectedInstitution, selectedCompany]);
 
   const fetchData = async () => {
     if (activeTab === "institution") {
@@ -178,11 +183,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
     } finally {
       setIsEditing(false);
     }
-  };
-
-  const handleCommentClick = (item: DomainNote) => {
-    setSelectedCommentNote(item);
-    setAddCommentModalVisible(true);
   };
 
   const selectedNoteName = useMemo(() => {
@@ -376,20 +376,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
                                 </Button>
                               </div>
                             )}
-                            <div className="flex gap-1 flex-shrink-0 ml-2">
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => handleCommentClick(item as DomainNote)}
-                              >
-                                <Tippy
-                                  content="Add Comment"
-                                  options={{ theme: "light" }}
-                                >
-                                  <Lucide icon="MessageCircle" className="w-4 h-4" />
-                                </Tippy>
-                              </Button>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -441,17 +427,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
             fetchData={fetchData}
             noteModule={false}
           />
-          {addCommentModalVisible && selectedCommentNote && (
-            <AddDomainNoteCommentsModal
-              mode="add"
-              addCommentModalVisible={addCommentModalVisible}
-              setAddNoteCommentsModalVisible={setAddCommentModalVisible}
-              title="Add Comment"
-              data={data as any}
-              selectedNote={selectedCommentNote}
-              fetchData={fetchData}
-            />
-          )}
           {addNoteModalVisible && (
             <AddNoteModal
               mode="edit"

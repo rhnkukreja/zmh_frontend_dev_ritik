@@ -74,7 +74,10 @@ import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
 import SearchWidgetIframe from "@/components/SearchWidget";
-import DashboardSidebarNav from "./components/DashboardSidebarNav";
+import DashboardSidebarNav, {
+  DASHBOARD_SECTIONS,
+} from "./components/DashboardSidebarNav";
+import { selectDashboardNav } from "@/stores/dashboardNavSlice";
 
 const getSidebarGroup = (menu: string | FormattedMenu) => {
   if (typeof menu === "string") {
@@ -160,6 +163,8 @@ function Main() {
   >([]);
   const sideMenuStore = useAppSelector(selectSideMenu);
   const sideMenu = () => nestedMenu(sideMenuStore, location);
+  const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
+  const [expandedGroup, setExpandedGroup] = useState<string>("");
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
@@ -229,6 +234,55 @@ function Main() {
 
     fixTableStyles();
   }, [sideMenuStore, location]);
+
+  useEffect(() => {
+    const computeActiveGroup = (): string => {
+      if (companyGlobalSearchTicker) {
+        const dashboardMatch =
+          location.pathname === "/"
+            ? DASHBOARD_SECTIONS.find(
+                (s) =>
+                  !s.route &&
+                  s.key === activeSection &&
+                  (!s.subSection ||
+                    activeSubSection === s.subSection ||
+                    (s.subSection === "voting_rationale" && !activeSubSection))
+              )
+            : DASHBOARD_SECTIONS.find(
+                (s) => s.route && location.pathname === s.route.split("?")[0]
+              );
+        if (dashboardMatch) {
+          return dashboardMatch.group;
+        }
+      }
+
+      const activeFormattedItem = formattedMenu.find(
+        (item): item is FormattedMenu =>
+          typeof item !== "string" && !!item.active
+      );
+      if (activeFormattedItem) {
+        const group = getSidebarGroup(activeFormattedItem);
+        if (group) {
+          return group;
+        }
+      }
+
+      return companyGlobalSearchTicker ? "Company" : "";
+    };
+
+    setExpandedGroup(computeActiveGroup());
+  }, [
+    location.pathname,
+    location.search,
+    activeSection,
+    activeSubSection,
+    formattedMenu,
+    companyGlobalSearchTicker,
+  ]);
+
+  const handleToggleGroup = (group: string) => {
+    setExpandedGroup((prev) => (prev === group ? "" : group));
+  };
 
   window.onscroll = () => {
     // Topbar
@@ -611,7 +665,11 @@ function Main() {
           >
             <ul className="scrollable">
               {/* Koyfin-style dashboard navigation for the selected company */}
-              <DashboardSidebarNav modulesData={modulesData} />
+              <DashboardSidebarNav
+                modulesData={modulesData}
+                expandedGroup={expandedGroup}
+                onToggleGroup={handleToggleGroup}
+              />
               {/* BEGIN: First Child */}
               {formattedMenu.map((menu, menuKey) => {
                 const currentGroup = getSidebarGroup(menu);
@@ -623,15 +681,26 @@ function Main() {
                   (currentGroup !== "Administration" ||
                     user.user_type === "Admin" ||
                     user.user_type === "Analyst");
+                const isGroupExpanded = expandedGroup === currentGroup;
 
                 return (
                   <Fragment key={menuKey}>
                     {showGroupHeading && (
-                      <li className="side-menu__divider side-menu__section-label">
-                        {currentGroup}
+                      <li
+                        className="side-menu__divider side-menu__section-label flex items-center justify-between cursor-pointer select-none"
+                        onClick={() => handleToggleGroup(currentGroup)}
+                      >
+                        <span>{currentGroup}</span>
+                        <Lucide
+                          icon="ChevronRight"
+                          className={clsx([
+                            "w-3.5 h-3.5 transition-transform duration-200",
+                            { "rotate-90": isGroupExpanded },
+                          ])}
+                        />
                       </li>
                     )}
-                    {typeof menu == "string" ? null : (
+                    {typeof menu == "string" || !isGroupExpanded ? null : (
                   <li>
                     <a
                       href=""
