@@ -156,6 +156,11 @@ function Main() {
   // Names that the backend is still scraping in the background — show spinners for these.
   const [pendingInvestors, setPendingInvestors] = useState<Set<string>>(new Set());
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When each name entered the pending queue. The backend has its own 60s
+  // scrape timeout plus a ~90s staleness grace period before /poll-status
+  // gives up on a name, but this is a client-side last-resort: if a name
+  const pendingStartTimesRef = useRef<Map<string, number>>(new Map());
+  const MAX_POLL_DURATION_MS = 120000;
 
   // Initial bulk fetch on data load.
   useEffect(() => {
@@ -191,6 +196,12 @@ function Main() {
 
         setAutoScrapedData(prev => ({ ...prev, ...bulkResults }));
         if (pending.length > 0) {
+          const startedAt = Date.now();
+          pending.forEach((name) => {
+            if (!pendingStartTimesRef.current.has(name)) {
+              pendingStartTimesRef.current.set(name, startedAt);
+            }
+          });
           setPendingInvestors(new Set(pending));
         }
       } catch (error) {
@@ -214,6 +225,15 @@ function Main() {
         // Run completely in parallel using Promise.all
         await Promise.all(
           names.map(async (name) => {
+            const startedAt = pendingStartTimesRef.current.get(name);
+            if (startedAt && Date.now() - startedAt > MAX_POLL_DURATION_MS) {
+              // Give up client-side — never send another request for this
+              // name, regardless of what the server would have said.
+              newResults[name] = { status: "failed", error: "Scrape timed out." };
+              pendingStartTimesRef.current.delete(name);
+              return;
+            }
+
             try {
               // Hit the lightweight status endpoint, not the heavy bulk endpoint
               const response = await pollWhaleWisdomStatus(name);
@@ -221,6 +241,7 @@ function Main() {
               // If the backend has finished scraping (success or failed)
               if (response.status === "success" || response.status === "failed") {
                 newResults[name] = { ...response.data, status: response.status, error: null };
+                pendingStartTimesRef.current.delete(name);
               } else {
                 // If it's still "scraping", keep it in the queue for the next tick
                 stillPending.push(name);

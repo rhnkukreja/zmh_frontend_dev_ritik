@@ -513,7 +513,7 @@ const ActivistIntelligenceDashboard = ({
       // Kick off the background job
       const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
         investor_name: generateInvestorName,
-        creator_email: "rhnkukreja@gmail.com"
+        creator_email: user?.email
       });
       
       const { slug } = startRes.data;
