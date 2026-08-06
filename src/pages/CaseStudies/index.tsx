@@ -50,6 +50,7 @@ import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCirc
 import { MdOutlineClear } from "react-icons/md";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { caseStudiesService } from "@/services/caseStudies";
+import GenerateCaseStudiesModal from "./Components/GenerateCaseStudiesModal";
 
 interface CaseStudyFilter {
   keyword: string[];
@@ -118,6 +119,7 @@ function CaseStudies() {
 
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
@@ -712,6 +714,28 @@ function CaseStudies() {
                       isSingle={true}
                       showPills={false}
                     />
+
+                    {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                      <div className="ml-2">
+                        <Tippy
+                          content={
+                            searchTerms.length === 0
+                              ? "Search for an institution first"
+                              : "Scan this institution's documents and extract case studies with AI"
+                          }
+                          options={{ theme: "light small" }}
+                        >
+                          <Button
+                            variant="primary"
+                            disabled={searchTerms.length === 0}
+                            onClick={() => setIsGenerateModalOpen(true)}
+                          >
+                            <Lucide icon="Sparkles" className="stroke-[1.3] w-4 h-4 mr-2" />
+                            Generate Case Studies
+                          </Button>
+                        </Tippy>
+                      </div>
+                    )}
 
                     {/* Hiding clear filter for now */}
                     {/* <div className="hover:bg-slate-50">
@@ -1600,6 +1624,12 @@ function CaseStudies() {
                       selectedCaseStudies={selectedCaseStudies}
                     />
                   )}
+
+                  <GenerateCaseStudiesModal
+                    isOpen={isGenerateModalOpen}
+                    institutionNames={searchTerms}
+                    onClose={() => setIsGenerateModalOpen(false)}
+                  />
                 </div>
               </div>
             )}
