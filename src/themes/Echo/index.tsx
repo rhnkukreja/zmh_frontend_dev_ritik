@@ -1,7 +1,7 @@
 import "@/assets/css/vendors/simplebar.css";
 import "@/assets/css/themes/echo.css";
 import { Transition } from "react-transition-group";
-import React, { useState, useEffect, createRef, useRef } from "react";
+import React, { Fragment, useState, useEffect, createRef, useRef } from "react";
 import type { MouseEvent } from "react";
 
 declare global {
@@ -74,6 +74,48 @@ import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
 import SearchWidgetIframe from "@/components/SearchWidget";
+import DashboardSidebarNav, {
+  DASHBOARD_SECTIONS,
+} from "./components/DashboardSidebarNav";
+import { selectDashboardNav } from "@/stores/dashboardNavSlice";
+
+const getSidebarGroup = (menu: string | FormattedMenu) => {
+  if (typeof menu === "string") {
+    return menu === "Admin" ? "Administration" : "";
+  }
+
+  if (
+    [
+      "Investor Profile",
+      "Case Studies",
+      "Engagement Details",
+      "Shareholder Proposals",
+      "Aggregate Voting",
+      "Proxy Contest",
+    ].includes(menu.title)
+  ) {
+    return "Market Analytics";
+  }
+
+  if (
+    [
+      "Custom Reports",
+      "Podcasts",
+      "Newsletter",
+      "Email Alert",
+      "Knowledge Base",
+      "Help",
+    ].includes(menu.title)
+  ) {
+    return "User Tools";
+  }
+
+  if (["Admin Panel", "Company", "User Detail", "User Management"].includes(menu.title)) {
+    return "Administration";
+  }
+
+  return "";
+};
 
 function Main() {
   const dispatch = useAppDispatch();
@@ -91,6 +133,12 @@ function Main() {
     localStorage.setItem("compactMenu", val.toString());
     dispatch(setCompactMenuStore(val));
   };
+
+  useEffect(() => {
+    if (user?.user_id) {
+      dispatch(setCompactMenuStore(false));
+    }
+  }, [dispatch, user?.user_id]);
 
   const [selectedText, setSelectedText] = useState<string>("");
   const [noteText, setNoteText] = useState<string>("");
@@ -115,9 +163,14 @@ function Main() {
   >([]);
   const sideMenuStore = useAppSelector(selectSideMenu);
   const sideMenu = () => nestedMenu(sideMenuStore, location);
+  const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
+  const [expandedGroup, setExpandedGroup] = useState<string>("");
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
+  // Embed mode: renders the routed page without the app chrome (sidebar/topbar)
+  // so it can be shown inside an in-page panel/iframe instead of a new tab.
+  const isEmbedMode = new URLSearchParams(location.search).get("embed") === "1";
 
   const [topBarActive, setTopBarActive] = useState(false);
 
@@ -142,12 +195,6 @@ function Main() {
     (state: RootState) => state.authentiction
   );
 
-  const compactLayout = () => {
-    if (window.innerWidth <= 1600) {
-      setCompactMenu(true);
-    }
-  };
-
   const requestFullscreen = () => {
     const el = document.documentElement;
     if (el.requestFullscreen) {
@@ -161,11 +208,6 @@ function Main() {
     }
 
     setFormattedMenu(filterMenu(sideMenu()));
-    compactLayout();
-
-    window.onresize = () => {
-      compactLayout();
-    };
 
     // Fix table border issues
     const fixTableStyles = () => {
@@ -192,6 +234,67 @@ function Main() {
 
     fixTableStyles();
   }, [sideMenuStore, location]);
+
+  useEffect(() => {
+    const doesDashboardRouteMatch = (routeStr: string): boolean => {
+      const [basePath, existingQuery] = routeStr.split("?");
+      if (location.pathname !== basePath) {
+        return false;
+      }
+      const routeParams = new URLSearchParams(existingQuery || "");
+      const currentParams = new URLSearchParams(location.search);
+      return Array.from(routeParams.entries()).every(
+        ([key, value]) => currentParams.get(key) === value
+      );
+    };
+
+    const computeActiveGroup = (): string => {
+      if (companyGlobalSearchTicker) {
+        const dashboardMatch =
+          location.pathname === "/"
+            ? DASHBOARD_SECTIONS.find(
+                (s) =>
+                  !s.route &&
+                  s.key === activeSection &&
+                  (!s.subSection ||
+                    activeSubSection === s.subSection ||
+                    (s.subSection === "voting_rationale" && !activeSubSection))
+              )
+            : DASHBOARD_SECTIONS.find(
+                (s) => s.route && doesDashboardRouteMatch(s.route)
+              );
+        if (dashboardMatch) {
+          return dashboardMatch.group;
+        }
+      }
+
+      const activeFormattedItem = formattedMenu.find(
+        (item): item is FormattedMenu =>
+          typeof item !== "string" && !!item.active
+      );
+      if (activeFormattedItem) {
+        const group = getSidebarGroup(activeFormattedItem);
+        if (group) {
+          return group;
+        }
+      }
+
+      return companyGlobalSearchTicker ? "Company" : "";
+    };
+
+    setExpandedGroup(computeActiveGroup());
+  }, [
+    location.pathname,
+    location.search,
+    activeSection,
+    activeSubSection,
+    formattedMenu,
+    companyGlobalSearchTicker,
+  ]);
+
+  const handleToggleGroup = (group: string) => {
+    setExpandedGroup((prev) => (prev === group ? "" : group));
+  };
 
   window.onscroll = () => {
     // Topbar
@@ -245,9 +348,16 @@ function Main() {
     }
   };
 
-  const shouldHideHeader = noCompanyHeaderRoutes?.some((route: string) =>
-    location.pathname.includes(route)
-  );
+  const isCompanySpecificView =
+    new URLSearchParams(location.search).get("source") === "company";
+  const shouldHideHeader =
+    (noCompanyHeaderRoutes?.some((route: string) =>
+      location.pathname.includes(route)
+    ) &&
+      !isCompanySpecificView) ||
+    (location.pathname === "/" &&
+      activeSection === "investor-overview" &&
+      (activeSubSection === "voting_rationale" || !activeSubSection));
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
@@ -477,8 +587,8 @@ function Main() {
   };
 
 
-  return isCompanyReportPage ? (
-    <div>
+  return isCompanyReportPage || isEmbedMode ? (
+    <div className={clsx({ "h-full": isEmbedMode })}>
       <Outlet />
     </div>
   ) : (
@@ -521,46 +631,46 @@ function Main() {
         </div>
         <div
           className={clsx([
-            "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[285px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px] overflow-hidden flex flex-col",
+            "h-full box border-none bg-gradient-to-b to-[#000000CC] from-[#9F1239] background rounded-none z-20 relative w-[300px] duration-300 transition-[width] group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:shadow-[6px_0_12px_-4px_#0000000f] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[300px] overflow-hidden flex flex-col",
           ])}
         >
-          {/* Logo with white background */}
-          <a className="mt-6 mb-1 flex items-center justify-center transition-all duration-700">
-            <div className="flex items-center justify-center bg-white rounded-xl shadow-md w-[110px] h-[110px] p-3 group-[.side-menu--collapsed]:xl:w-[56px] group-[.side-menu--collapsed]:xl:h-[56px] group-[.side-menu--collapsed]:xl:p-1.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:h-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:p-3 transition-all duration-300">
-              <img
-                alt="Logo"
-                src={headerLogo}
-                className="w-full h-full object-contain"
-              />
-            </div>
-          </a>
-
-          {/* Sidebar toggle arrow - below logo */}
+          {/* Logo + sidebar toggle in a single row when expanded, stacked when collapsed */}
           <div
             className={clsx([
-              "flex-none hidden xl:flex items-center z-10 px-5 mt-4 h-[50px] w-[280px] overflow-hidden relative duration-300 group-[.side-menu--collapsed]:xl:w-[91px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[280px]",
+              "flex-none flex items-center justify-center px-5 mt-6 mb-1 gap-3 relative",
+              "group-[.side-menu--collapsed]:xl:flex-col group-[.side-menu--collapsed]:xl:justify-center group-[.side-menu--collapsed]:xl:gap-2",
             ])}
           >
-            {compactMenu && (
-              <a
-                href=""
-                className="flex tems-center transition-[margin] duration-300 group-[.side-menu--collapsed]:xl:ml-2 group-[.side-menu--collapsed.side-menu--on-hover]:xl:ml-0"
-              >
-                <div onClick={handleToggleMenu}>
-                  <img className=" w-8" src={sideBarIcon} />
-                  {/* <Lucide icon="AlignJustify" className="w-5 h-5 ml-2 stroke-[1.3] text-white" /> */}
-                </div>
-              </a>
-            )}
-            {!compactMenu && (
-              <a
-                href=""
-                onClick={handleToggleMenu}
-                className="group-[.side-menu--collapsed.side-menu--on-hover]:xl:opacity-100 group-[.side-menu--collapsed]:xl:rotate-180 group-[.side-menu--collapsed]:xl:opacity-0 transition-[opacity,transform] 3xl:flex items-center justify-center  ml-auto "
-              >
-                <img className=" w-8 rotate-180" src={sideBarIcon} />
-              </a>
-            )}
+            <a className="flex items-center justify-center transition-all duration-700">
+              <div className="flex items-center justify-center bg-white rounded-xl shadow-md w-[110px] h-[110px] p-3 group-[.side-menu--collapsed]:xl:w-[56px] group-[.side-menu--collapsed]:xl:h-[56px] group-[.side-menu--collapsed]:xl:p-1.5 group-[.side-menu--collapsed.side-menu--on-hover]:xl:w-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:h-[120px] group-[.side-menu--collapsed.side-menu--on-hover]:xl:p-3 transition-all duration-300">
+                <img
+                  alt="Logo"
+                  src={headerLogo}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </a>
+
+            {/* Sidebar toggle arrow - pinned to the right when expanded, below logo when collapsed */}
+            <div
+              className={clsx([
+                "hidden xl:flex items-center z-10",
+                "absolute right-5 group-[.side-menu--collapsed]:xl:static group-[.side-menu--collapsed]:xl:right-auto",
+              ])}
+            >
+              {compactMenu && (
+                <a href="" className="flex items-center transition-[margin] duration-300">
+                  <div onClick={handleToggleMenu}>
+                    <img className="w-8 group-[.side-menu--collapsed]:xl:w-5" src={sideBarIcon} />
+                  </div>
+                </a>
+              )}
+              {!compactMenu && (
+                <a href="" onClick={handleToggleMenu} className="flex items-center justify-center">
+                  <img className="w-8 group-[.side-menu--collapsed]:xl:w-5 rotate-180" src={sideBarIcon} />
+                </a>
+              )}
+            </div>
           </div>
 
           <div
@@ -571,24 +681,48 @@ function Main() {
             ])}
           >
             <ul className="scrollable">
+              {/* Koyfin-style dashboard navigation for the selected company */}
+              <DashboardSidebarNav
+                modulesData={modulesData}
+                expandedGroup={expandedGroup}
+                onToggleGroup={handleToggleGroup}
+              />
               {/* BEGIN: First Child */}
-              {formattedMenu.map((menu, menuKey) =>
-                typeof menu == "string" ? (
-                  <li className="side-menu__divider" key={menuKey}>
-                    {user.user_type === "Analyst" ? (
-                      <>{menu}</>
-                    ) : user.user_type !== "Analyst" && menu === "Admin" ? (
-                      <>{ }</>
-                    ) : (
-                      <>{menu}</>
+              {formattedMenu.map((menu, menuKey) => {
+                const currentGroup = getSidebarGroup(menu);
+                const previousGroup =
+                  menuKey > 0 ? getSidebarGroup(formattedMenu[menuKey - 1]) : "";
+                const showGroupHeading =
+                  currentGroup &&
+                  currentGroup !== previousGroup &&
+                  (currentGroup !== "Administration" ||
+                    user.user_type === "Admin" ||
+                    user.user_type === "Analyst");
+                const isGroupExpanded = expandedGroup === currentGroup;
+
+                return (
+                  <Fragment key={menuKey}>
+                    {showGroupHeading && (
+                      <li
+                        className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
+                        onClick={() => handleToggleGroup(currentGroup)}
+                      >
+                        <span>{currentGroup}</span>
+                        <Lucide
+                          icon="ChevronRight"
+                          className={clsx([
+                            "w-5 h-5 transition-transform duration-200",
+                            { "rotate-90": isGroupExpanded },
+                          ])}
+                        />
+                      </li>
                     )}
-                  </li>
-                ) : (
-                  <li key={menuKey}>
+                    {typeof menu == "string" || !isGroupExpanded ? null : (
+                  <li>
                     <a
                       href=""
                       className={clsx([
-                        "side-menu__link",
+                        "side-menu__link relative",
                         { "side-menu__link--active": menu.active },
                         {
                           "side-menu__link--active-dropdown":
@@ -621,7 +755,7 @@ function Main() {
                               <Lucide
                                 icon={menu?.icon}
                                 className={clsx(
-                                  "side-menu__link__icon side-menu__link--active",
+                                  "side-menu__link__icon",
                                   menu.title === "Admin Panel" && "w-6 h-6"
                                 )}
                               />
@@ -631,26 +765,6 @@ function Main() {
                                     className="bg-[#DC661F] absolute  rounded-2xl w-2 h-2 p-2 text-[10px]  
                              font-semibold text-white top-0 flex items-center justify-center position-set"
                                   ></span>
-                                )}
-
-                              {menu.title === "Case Studies" &&
-                                modulesData?.case_studies > 0 && (
-                                  <span
-                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
-                               font-semibold text-white top-0 flex items-center justify-center position-set"
-                                  >
-                                    {modulesData?.case_studies}
-                                  </span>
-                                )}
-
-                              {menu.title === "Engagement Details" &&
-                                modulesData?.engagement_details > 0 && (
-                                  <span
-                                    className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
-                               font-semibold text-white top-0 flex items-center justify-center position-set"
-                                  >
-                                    {modulesData?.engagement_details}
-                                  </span>
                                 )}
                             </span>
                           </>
@@ -676,14 +790,6 @@ function Main() {
                                 <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
                               </svg>
 
-                              {modulesData?.shareholder_proposal > 0 && (
-                                <span
-                                  className="bg-[#DC661F] absolute  rounded-2xl w-5 h-5 p-2 text-[10px]  
-                             font-semibold text-white top-0 flex items-center justify-center position-set"
-                                >
-                                  {modulesData?.shareholder_proposal}
-                                </span>
-                              )}
                             </span>
                           </>
                         )}
@@ -699,14 +805,23 @@ function Main() {
                         </div>
                       )}
                       {menu.badge && (
-                        <div className="side-menu__link__badge">
-                          {menu.badge}
-                        </div>
+                        typeof menu.badge === "string" ? (
+                          <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
+                            {menu.badge}
+                          </span>
+                        ) : (
+                          <div className="side-menu__link__badge">
+                            {menu.badge}
+                          </div>
+                        )
                       )}
                       {menu.subMenu && (
                         <Lucide
-                          icon="ChevronDown"
-                          className="side-menu__link__chevron"
+                          icon="ChevronRight"
+                          className={clsx([
+                            "side-menu__link__chevron transition-transform duration-200",
+                            { "rotate-90": menu.activeDropdown },
+                          ])}
                         />
                       )}
                     </a>
@@ -730,7 +845,7 @@ function Main() {
                             <a
                               href=""
                               className={clsx([
-                                "side-menu__link",
+                                "side-menu__link !pl-8 relative",
                                 { "side-menu__link--active": subMenu.active },
                                 {
                                   "side-menu__link--active-dropdown":
@@ -755,9 +870,15 @@ function Main() {
                                 {subMenu.title}
                               </div>
                               {subMenu.badge && (
-                                <div className="side-menu__link__badge">
-                                  {subMenu.badge}
-                                </div>
+                                typeof subMenu.badge === "string" ? (
+                                  <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
+                                    {subMenu.badge}
+                                  </span>
+                                ) : (
+                                  <div className="side-menu__link__badge">
+                                    {subMenu.badge}
+                                  </div>
+                                )
                               )}
                               {subMenu.subMenu && (
                                 <Lucide
@@ -789,7 +910,7 @@ function Main() {
                                       <a
                                         href=""
                                         className={clsx([
-                                          "side-menu__link",
+                                          "side-menu__link !pl-12 relative",
                                           {
                                             "side-menu__link--active":
                                               lastSubMenu.active,
@@ -817,9 +938,15 @@ function Main() {
                                           {lastSubMenu.title}
                                         </div>
                                         {lastSubMenu.badge && (
-                                          <div className="side-menu__link__badge">
-                                            {lastSubMenu.badge}
-                                          </div>
+                                          typeof lastSubMenu.badge === "string" ? (
+                                            <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
+                                              {lastSubMenu.badge}
+                                            </span>
+                                          ) : (
+                                            <div className="side-menu__link__badge">
+                                              {lastSubMenu.badge}
+                                            </div>
+                                          )
                                         )}
                                       </a>
                                     </li>
@@ -836,8 +963,10 @@ function Main() {
                     )}
                     {/* END: Second Child */}
                   </li>
-                )
-              )}
+                    )}
+                  </Fragment>
+                );
+              })}
               {/* END: First Child */}
             </ul>
           </div>
@@ -894,17 +1023,25 @@ function Main() {
 
                 {[
                   "/notes",
-                  "/proxy-contest",
-                  "/proxy-contest-ai",
                   "/proxy-contest-detail",
                   "/voting-data",
                   "/investor-profile",
                   "/engagement-question",
                   "/custom-reports",
                   "/voting-guidelines",
+                  "/proxy-contest",
+                  "/executive-compensation",
                 ]?.includes(location.pathname) ||
                   location.pathname.startsWith("/proxy-contest-detail/") ||
-                  location.pathname.startsWith("/investor-profile/") ? (
+                  location.pathname.startsWith("/investor-profile/") ||
+                  (["/case-studies", "/engagement-detail", "/shareholder-proposal"].includes(
+                    location.pathname
+                  ) &&
+                    !isCompanySpecificView) ||
+                  (location.pathname === "/" &&
+                    activeSection === "investor-overview" &&
+                    (activeSubSection === "voting_rationale" ||
+                      !activeSubSection)) ? (
                   <h1 className="font-semibold text-2xl">
                     {pageTitles[location.pathname]}{" "}
                     {location.pathname.includes("/notes") &&
@@ -1185,6 +1322,8 @@ function Main() {
                           className={`${active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                             } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                           onClick={() => {
+                            sessionStorage.removeItem('redirectPath');
+                            sessionStorage.removeItem('dashboardActiveSection');
                             navigate("/login");
                             dispatch(logout());
                             persistor.purge();

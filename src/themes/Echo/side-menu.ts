@@ -79,7 +79,15 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
 
 const linkTo = (menu: FormattedMenu, navigate: NavigateFunction, companyGlobalSearchName?: string) => {
   if (menu.subMenu) {
+    const wasCollapsed = !menu.activeDropdown;
     menu.activeDropdown = !menu.activeDropdown;
+    // On expand, navigate to first sub-item so it is selected by default
+    if (wasCollapsed) {
+      const firstSub = menu.subMenu.find((s) => s.pathname && s.pathname !== "Notes");
+      if (firstSub?.pathname) {
+        navigate(firstSub.pathname);
+      }
+    }
   } else {
     // Check if selectPathName is defined and title is "Company Search"
     if (

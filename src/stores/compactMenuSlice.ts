@@ -5,12 +5,8 @@ interface CompactMenuState {
   value: boolean;
 }
 
-const getCompactMenu = () => {
-  return localStorage.getItem("compactMenu") === "true";
-};
-
 const initialState: CompactMenuState = {
-  value: localStorage.getItem("compactMenu") === null ? true : getCompactMenu(),
+  value: false,
 };
 
 export const compactMenuSlice = createSlice({
@@ -25,12 +21,6 @@ export const compactMenuSlice = createSlice({
 
 export const { setCompactMenu } = compactMenuSlice.actions;
 
-export const selectCompactMenu = (state: RootState) => {
-  if (localStorage.getItem("compactMenu") === null) {
-    localStorage.setItem("compactMenu", "true");
-  }
-
-  return state.compactMenu.value;
-};
+export const selectCompactMenu = (state: RootState) => state.compactMenu.value;
 
 export default compactMenuSlice;

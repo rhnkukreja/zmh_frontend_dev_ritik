@@ -90,6 +90,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const dispatch: AppDispatch = useAppDispatch();
 
   const [searchParams] = useSearchParams();
+  const yearFromQuery = searchParams.get("year") || "";
 
   const {
     dashboardDataList,
@@ -388,7 +389,7 @@ const getNormalizedScrapedInfo = (name: string) => {
     setAddNoteModalVisible(true)
   };
 
-  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery);
 
   const activeYear =
     selectedYear?.toString() !== ""
@@ -429,6 +430,12 @@ const getNormalizedScrapedInfo = (name: string) => {
     const index = getSelectedTabIndex();
     setSelectedIndex(index);
   }, [selectedYear])
+
+  useEffect(() => {
+    if (yearFromQuery && yearFromQuery !== selectedYear) {
+      setSelectedYear(yearFromQuery);
+    }
+  }, [yearFromQuery])
 
   const getAnalyticsData = () => {
     const analyticsData = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics;
@@ -505,7 +512,7 @@ const getNormalizedScrapedInfo = (name: string) => {
               </div>
 
               <div className="mt-5">
-                {getAvailableYears().length > 0 && (
+                {locationPathName !== "/" && getAvailableYears().length > 0 && (
                   <div className="mb-4">
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                       <Tab.List
@@ -544,7 +551,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                                 No.
                               </Table.Td>
-                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[240px]">
                                 Shareholder
                               </Table.Td>
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
@@ -567,7 +574,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                                   </sup>
                                 </span>
                               </Table.Td>
-                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                              <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] whitespace-normal leading-tight">
                                 <span>Proxy Advisory Influence {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
                                   <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
                                     <Lucide
@@ -666,9 +673,8 @@ const getNormalizedScrapedInfo = (name: string) => {
                                           </div>
                                         </Table.Td>
       
-      <Table.Td className="relative w-full px-4 py-2">
-    <div className="flex justify-between items-center w-full">
-      <div className="flex items-center whitespace-nowrap">
+      <Table.Td className="relative w-full px-4 py-2 pr-10">
+    <div className="flex items-center whitespace-nowrap gap-2">
         
         {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
         {(() => {
@@ -731,13 +737,12 @@ const getNormalizedScrapedInfo = (name: string) => {
       {dashboard?.flag_13d === true && (
         <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
       )}
-    </div>
    {/* ========================================== */}
     {/* 2. ACTION BUTTONS (EYE ICON LOGIC)         */}
     {/* ========================================== */}
     {/* 2. SILENT ACTION TRAYS (CLEAN RENDER VIEW) */}
     {/* ========================================== */}
-    <div className="flex items-center gap-x-2">
+    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center gap-x-2 w-5">
       {dashboard?.investor_profile_id || dashboard?.institution_name?.toLowerCase().includes('vanguard') ? (
         /* Show Investor Profile if it exists (or forced for Vanguard) */
         <Tippy
@@ -774,7 +779,7 @@ const isActivelyScraping =
                                                 if (isActivelyScraping) {
             return (
               <Tippy content="Searching" options={{ theme: "light" }}>
-                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                <div className="hidden items-center justify-center w-6 h-6 text-primary">
                   <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
                 </div>
               </Tippy>
@@ -784,7 +789,7 @@ const isActivelyScraping =
                                                 if (isInS3 && hasContent) {
             return (
                                                    <div
-  className="w-5 h-5"
+  className="hidden w-5 h-5"
   onClick={() => {
     if (!summaryLoading) {
       handleViewSummary(name);
@@ -809,7 +814,7 @@ const isActivelyScraping =
      <Tippy
        content="Case Studies"
                                                   options={{ theme: "light" }}
-                                                  className="w-6 h-6 mt-1"
+                                                  className="hidden w-6 h-6 mt-1"
                                                   onClick={() =>
                                                     redirectCaseStudy(
                                                       dashboard?.institution_name
@@ -830,7 +835,7 @@ const isActivelyScraping =
                                                 <Tippy
                                                   content="View Notes"
                                                   options={{ theme: "light" }}
-                                                  className="w-6 h-6 mt-1"
+                                                  className="hidden w-6 h-6 mt-1"
                                                   onClick={() => openEngagementQuestionsDialog(dashboard)}
                                                 >
                                                   <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
@@ -841,7 +846,7 @@ const isActivelyScraping =
                                                 <Tippy
                                                   content="Add Notes"
                                                   options={{ theme: "light" }}
-                                                  className="w-6 h-6 mt-1"
+                                                  className="hidden w-6 h-6 mt-1"
                                                   onClick={() => openAddNotesDialog(dashboard)}
                                                 >
                                                   <div className="flex items-center justify-center w-6 h-6 text-primary ">
@@ -857,8 +862,8 @@ const isActivelyScraping =
                                             {dashboard?.percent_ownership}%
                                           </div>
                                         </Table.Td>
-                                       <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                                    <div className="whitespace-nowrap">
+                                       <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px]">
+                                                    <div className="whitespace-normal text-left">
                                                       {(() => {
   const scrapedInfo = getNormalizedScrapedInfo(dashboard?.institution_name);
   

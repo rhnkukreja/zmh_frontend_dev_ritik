@@ -121,11 +121,8 @@ body {
 }
 
 .company-name-wrapper {
-  min-width: 0; /* Allow flex items to shrink below content size */
   word-wrap: break-word;
   overflow-wrap: break-word;
-  word-break: break-word;
-  hyphens: auto;
 }
 
 .sticky-table {
@@ -308,6 +305,39 @@ body {
 
 a.side-menu__link.side-menu__link--active svg {
   stroke: #ab123d;
+}
+
+/* Make chevron arrows white for visibility on dark background */
+.echo .side-menu__link__chevron {
+  color: #ffffff !important;
+}
+/* Ensure lucide chevron uses the same color */
+.echo .side-menu__link__chevron svg {
+  stroke: #ffffff !important;
+}
+
+/* Nested sidebar sub-menus render on a white card background (see echo.css
+   `ul.scrollable > li > ul`), so the default white .side-menu__link__title
+   text is invisible there. Override with dark text for legibility, and give
+   nested active items their own highlight since the top-level active
+   background rule only targets direct children of ul.scrollable > li. */
+.echo .side-menu ul.scrollable > li > ul .side-menu__link__title {
+  color: #475569 !important;
+  font-weight: 500;
+}
+
+.echo .side-menu ul.scrollable > li > ul .side-menu__link--active .side-menu__link__title {
+  color: #ab123d !important;
+  font-weight: 700;
+}
+
+.echo .side-menu ul.scrollable > li > ul .side-menu__link--active {
+  background: #fdf2f4 !important;
+  border-color: #fbcfe0 !important;
+}
+
+.echo .side-menu ul.scrollable > li > ul .side-menu__link:hover:not(.side-menu__link--active) {
+  background: #f8fafc !important;
 }
 
 .bold-sup {

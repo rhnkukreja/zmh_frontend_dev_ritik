@@ -25,7 +25,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const location = useLocation();
   const locationPathName = location?.pathname;
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const dispatch: AppDispatch = useAppDispatch();
   const { agmSummaryDetails, loading, dashboardDataList, tempSearch, agmRequestStatus, agmHasData, agmErrorMessage } =
     useAppSelector((state) => state.dashboard);
@@ -98,12 +98,24 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   // Keep selectedYear in sync with loaded agmSummaryDetails, but do NOT reset refs here
   useEffect(() => {
-    if (agmSummaryDetails?.Year && selectedYear !== agmSummaryDetails.Year.toString()) {
-      setSelectedYear(agmSummaryDetails.Year.toString());
-    } else if (!selectedYear && agmSummaryDetails?.total_year?.length > 0) {
-      setSelectedYear(agmSummaryDetails.total_year[0].toString());
+    const availableYears = Array.isArray(agmSummaryDetails?.total_year)
+      ? agmSummaryDetails.total_year
+          .map((year: any) => year.toString())
+          .sort((a: string, b: string) => Number(b) - Number(a))
+      : [];
+    const latestYear = availableYears[0] || agmSummaryDetails?.Year?.toString();
+
+    if (!selectedYear && latestYear) {
+      setSelectedYear(latestYear);
+      if (yearFromQuery !== latestYear) {
+        setSearchParams((previousParams) => {
+          const params = new URLSearchParams(previousParams);
+          params.set("year", latestYear);
+          return params;
+        }, { replace: true });
+      }
     }
-  }, [agmSummaryDetails]);
+  }, [agmSummaryDetails, selectedYear, yearFromQuery, setSearchParams]);
 
   const convertDivTableToCSV = () => {
     const table = document.querySelector(".table_2");
@@ -227,26 +239,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [yearFromQuery]);
 
-  useEffect(() => {
-    if (selectedYear) {
-      // Check if we already have data for this year in Redux
-      const isAlreadyLoaded = agmSummaryDetails && agmSummaryDetails.Year?.toString() === selectedYear.toString();
-      const requestKey = `${companyGlobalSearchTicker}:${selectedYear.toString()}`;
-
-      if (!isAlreadyLoaded && lastRequestedYearRef.current !== requestKey && agmRequestStatus !== 'loading') {
-        lastRequestedYearRef.current = requestKey;
-        dispatch(
-          fetchAGMSummaryDashboard(
-            createDynamicURL(
-              `${baseURL}/voting_report_8k/`, { ticker: companyGlobalSearchTicker, year: selectedYear }
-            )
-          )
-        );
-      }
-    }
-  }, [selectedYear, agmSummaryDetails, companyGlobalSearchTicker, dispatch])
-
-
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
 
@@ -356,6 +348,20 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   const [isInstitutionList, setIsInstitutionList] = useState<boolean>(false);
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
+  // Inline panel replaces window.open(..., "_blank") for Voting Data / N-PX /
+  // N-PX Analytics / 8-K so users stay on the dashboard instead of leaving
+  // to a new browser tab.
+  const [inlinePanel, setInlinePanel] = useState<{
+    title: string;
+    subtitle?: string;
+    url: string;
+    loading?: boolean;
+  } | null>(null);
+  const closeInlinePanel = () => setInlinePanel(null);
+  const openInlinePanel = (title: string, path: string, subtitle?: string) => {
+    const url = `${path}${path.includes("?") ? "&" : "?"}embed=1`;
+    setInlinePanel({ title, subtitle, url });
+  };
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [animateChart, setAnimateChart] = useState<boolean>(false);
   const [is8kLoading, setIs8kLoading] = useState<boolean>(false);
@@ -633,9 +639,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   }, [companyGlobalSearchTicker]);
 
   const getAllInstitutionDropdown = async () => {
+    if (!companyGlobalSearchId) return;
     try {
       const res = await dashboardService.getInstitution({
-        company_name: [companyGlobalSearchName],
+        company_id: companyGlobalSearchId,
       });
       if (res.result?.institutes?.length > 0) {
         setIsInstitutionList(true);
@@ -652,7 +659,13 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   const handleAGMYearTab = (tab: string) => {
-    setSelectedYear(tab);
+    // Only update the URL; selectedYear and the fetch will be driven by the
+    // yearFromQuery useEffect to avoid double dispatches and stuck UI.
+    setSearchParams((previousParams) => {
+      const params = new URLSearchParams(previousParams);
+      params.set("year", tab);
+      return params;
+    }, { replace: true });
   };
 
   const handleRetryAGMFetch = () => {
@@ -670,7 +683,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     if (!agmSummaryDetails?.total_year?.length) return [];
 
     // Return the actual years that have data
-    return agmSummaryDetails.total_year.map((year: any) => year.toString());
+    return agmSummaryDetails.total_year
+      .map((year: any) => year.toString())
+      .sort((a: string, b: string) => Number(b) - Number(a));
   };
 
   const getSelectedTabIndex = () => {
@@ -719,124 +734,71 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         <div className="p-5 mt-3.5 box ">
           <div className="w-full">
             <>
-              <div className="flex justify-between items-center xs:flex-col md:flex-row py-3">
-                <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                  <span>
-                    <h1 className="text-lg font-bold">
-                      Shareholder Meeting Summary
-                    </h1>
-                    <p className=" italic"> Meeting Date: {meetingDate}</p>
-                  </span>
-
-                  {!isMeetingModal && <>   {
-
-                    agmSummaryDetails?.vds_check && (
-                      <div className="flex items-center gap-2">
-                        {dashboardDataList?.total_year?.length > 0 ? (
-                          <button
-                            onClick={(event: any) => handleViewMore(event)}
-                            className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+              <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
+                {/* Left: Year tabs on top row (only on detail pages; dashboard uses header dropdown) */}
+                <div className="flex items-center gap-3 shrink-0">
+                  {locationPathName !== "/" && agmSummaryDetails.total_year?.length > 0 && (
+                    <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
+                      <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
+                        {getAvailableYears().map((tab: string, index: number) => (
+                          <Tab
+                            key={index}
+                            className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800"
                           >
-                            Voting Data
-                          </button>
-                        ) : (
-                          <>
-                            <div className="p-2 rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid opacity-50 cursor-not-allowed">
-                              Voting Data
-                            </div>
-                            <Lucide icon="Loader" className="w-4 h-4 animate-spin text-red-800" />
-                          </>
-                        )}
-                      </div>
-                    )}
-                    {showNpxActions && (
+                            <Tab.Button
+                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                              as="button"
+                              onClick={() => handleAGMYearTab(tab)}
+                            >
+                              {tab}
+                            </Tab.Button>
+                          </Tab>
+                        ))}
+                      </Tab.List>
+                    </Tab.Group>
+                  )}
+                </div>
+                {/* Right: Actions on top row */}
+                <div className="flex items-center gap-2 shrink-0 xs:mt-4 md:mt-0">
+                  {!isMeetingModal && (
+                    <>
                       <button
-                        onClick={(event: any) => handleViewNPX(event)}
-                        className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] 
-                                   md:w-auto flex items-center justify-center border-red-800 border-2
-                                    font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                      >
-                        View N-PX
-                      </button>
-                    )}
-                    {/* NPX download and NPX analytics for admin only */}
-                    {showNpxActions && user?.user_type === 'Admin' && (
-                      <Tippy content="Download N-PX Data" options={{ theme: "light" }}>
-                        <div className="relative">
-                          <button
-                            onClick={handleDownloadNPXData}
-                            disabled={isNpxLoading}
-                            className={clsx([
-                              "p-2 bg-white rounded-md w-auto flex items-center gap-2 justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
-                              isNpxLoading
-                                ? "opacity-60 cursor-not-allowed"
-                                : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
-                            ])}
-                          >
-                            {isNpxLoading ? (
-                              <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Lucide icon="Download" className="w-4 h-4" />
-                                <span>N-PX</span>
-                              </>
-                            )}
-                          </button>
-                          <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                            NEW
-                          </span>
-                        </div>
-                      </Tippy>
-                    )}
-                    {showNpxActions && (
-                      <div className="relative">
-                        <button
-                          onClick={handleViewNPXAnalytics}
-                          className="p-2 cursor-pointer bg-white rounded-md xs:w-[240px] md:w-auto flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                        >
-                          NPX Analytics
-                        </button>
-                        <span className="absolute -top-1 -right-1 text-[5px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                          BETA
-                        </span>
-                      </div>
-                    )}
-                    <button
-                      disabled={
-                        is8kLoading ||
-                        !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                        !(selectedYear || agmSummaryDetails?.Year)
-                      }
-                      onClick={handle8kLink}
-                      className={clsx([
-                        "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
-                        is8kLoading ||
+                        disabled={
+                          is8kLoading ||
                           !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
                           !(selectedYear || agmSummaryDetails?.Year)
-                          ? "opacity-60 cursor-not-allowed"
-                          : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
-                      ])}
-                    >
-                      {is8kLoading ? (
-                        <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "8-K"
+                        }
+                        onClick={handle8kLink}
+                        className={clsx([
+                          "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                          is8kLoading ||
+                            !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                            !(selectedYear || agmSummaryDetails?.Year)
+                            ? "opacity-60 cursor-not-allowed"
+                            : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
+                        ])}
+                      >
+                        {is8kLoading ? (
+                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "8-K"
+                        )}
+                      </button>
+                      {analyticsData && (
+                        <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                          <button
+                            onClick={() => setChartModalVisible(true)}
+                            className="p-2 cursor-pointer bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
+                          >
+                            <Lucide icon="BarChart3" className="w-4 h-4" />
+                          </button>
+                        </Tippy>
                       )}
-                    </button>
-                    {analyticsData && (
-                      <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
-                        <button
-                          onClick={() => setChartModalVisible(true)}
-                          className="p-2 cursor-pointer bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid hover:bg-red-800 hover:border-white hover:text-white"
-                        >
-                          <Lucide icon="BarChart3" className="w-4 h-4" />
-                        </button>
-                      </Tippy>
-                    )}
-                  </>}
+                    </>
+                  )}
                 </div>
-                <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                  <div className="flex justify-between items-center gap-2">
+                <div className="flex items-center gap-4 ml-auto xs:mt-4 md:mt-0">
+                  <div className="flex items-center gap-2">
                     <h4
                       className="font-semibold cursor-pointer"
                       onClick={() => {
@@ -870,32 +832,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   )}
                 </div>
               </div>
-              {
-                agmSummaryDetails.total_year?.length > 0 &&
-                <div >
-                  <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
-                    <Tab.List
-                      variant="boxed-tabs"
-                      className="w-[100px] border-none bg-transparent"
-                    >
-                      {
-                        getAvailableYears().map((tab: string, index: number) => (
-                          <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
-                     last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
-                            <Tab.Button
-                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
-                              as="button"
-                              onClick={() => handleAGMYearTab(tab)}>
-                              {tab}
-                            </Tab.Button>
-                          </Tab>
-                        ))
-                      }
-
-                    </Tab.List>
-                  </Tab.Group>
-                </div>
-              }
+              {/* Year tabs moved to the top row above */}
 
               <div className="mt-5">
                 <TableWrapper 
@@ -1076,24 +1013,36 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       {!agmSummaryDetails && loading && (
         <div className="p-5 mt-3.5 box bg-white">
           <div className="w-full">
-            <div className="flex justify-between items-center xs:flex-col md:flex-row py-3 gap-4">
-              <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row">
-                <span>
-                  <h1 className="text-lg font-bold">Shareholder Meeting Summary</h1>
-                  <p className="italic flex items-center gap-2">
-                    <span>Meeting Date:</span>
-                    <span className="inline-block h-4 w-28 rounded bg-slate-200 animate-pulse" />
-                  </p>
-                </span>
+            {/* Skeleton row: matches real loaded UI — year tabs | 8-K | chart | quorum | download | open */}
+            <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
+              {/* Year tab skeletons */}
+              <div className="flex items-center gap-3 shrink-0">
+                <Tab.Group selectedIndex={0} defaultIndex={0}>
+                  <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
+                    {[1, 2, 3].map((tab) => (
+                      <Tab key={tab} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem]">
+                        <Tab.Button
+                          className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10"
+                          as="button"
+                        >
+                          <span className="inline-block h-4 w-12 rounded bg-slate-200 animate-pulse" />
+                        </Tab.Button>
+                      </Tab>
+                    ))}
+                  </Tab.List>
+                </Tab.Group>
+                {/* 8-K button skeleton */}
+                <span className="inline-block h-10 w-12 rounded-md bg-slate-200 animate-pulse" />
+                {/* Chart button skeleton */}
+                <span className="inline-block h-10 w-10 rounded-md bg-slate-200 animate-pulse" />
               </div>
 
-              <div className="flex justify-between items-center gap-4 xs:mt-4 md:mt-0">
-                <div className="flex justify-between items-center gap-2">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <span>*Quorum:</span>
-                    <span className="inline-block h-4 w-20 rounded bg-slate-200 animate-pulse" />
-                  </h4>
-                </div>
+              {/* Right side: quorum + download + open-tab */}
+              <div className="flex items-center gap-4 ml-auto">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <span>*Quorum:</span>
+                  <span className="inline-block h-4 w-20 rounded bg-slate-200 animate-pulse" />
+                </h4>
                 <div className="box p-[5px] opacity-70">
                   <img alt="download-icon" src={downloadIcon} />
                 </div>
@@ -1103,23 +1052,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   </div>
                 )}
               </div>
-            </div>
-
-            <div>
-              <Tab.Group selectedIndex={0} defaultIndex={0}>
-                <Tab.List variant="boxed-tabs" className="w-[100px] border-none bg-transparent">
-                  {[1, 2].map((tab) => (
-                    <Tab key={tab} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem]">
-                      <Tab.Button
-                        className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10"
-                        as="button"
-                      >
-                        <span className="inline-block h-4 w-12 rounded bg-slate-200 animate-pulse" />
-                      </Tab.Button>
-                    </Tab>
-                  ))}
-                </Tab.List>
-              </Tab.Group>
             </div>
 
             <div className="mt-5">

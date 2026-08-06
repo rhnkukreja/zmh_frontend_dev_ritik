@@ -14,6 +14,8 @@ import Tippy from "@/components/Base/Tippy";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { createDynamicURL, downloadFileFromAPI } from "@/utils/helper";
 import { baseURL } from "@/constant";
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 
 
 interface PivotColumn {
@@ -37,12 +39,23 @@ const formatCell = (value: any) => {
   return String(value);
 };
 
-export default function NPXAnalyticsPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+interface NPXAnalyticsPageProps {
+  embedded?: boolean;
+}
 
-  const companyId = searchParams.get("company_id");
+export default function NPXAnalyticsPage({ embedded = false }: NPXAnalyticsPageProps) {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const { companyGlobalSearchId } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
+
+  const companyId =
+    searchParams.get("company_id") ||
+    (companyGlobalSearchId ? String(companyGlobalSearchId) : null);
   const year = searchParams.get("year");
+  const [yearOptions, setYearOptions] = useState<string[]>([]);
 
   // Dropdown state
   const [dropdownLoading, setDropdownLoading] = useState(false);
@@ -159,6 +172,53 @@ export default function NPXAnalyticsPage() {
     fetchPivotTable();
   };
 
+  // Load available years from consolidated meeting dates endpoint
+  useEffect(() => {
+    const loadYears = async () => {
+      try {
+        if (!companyId) return;
+        const { result } = await dashboardService.getVdsNpxMeetingDates(companyId);
+        const npxKey = result?.NPX_Data || result?.npx_data || [];
+        const entries = Array.isArray(npxKey) ? npxKey : [];
+
+        const years = Array.from(new Set(
+          entries.map((x: any) => String(x?.year)).filter(Boolean)
+        )).sort((a: string, b: string) => Number(b) - Number(a));
+        setYearOptions(years);
+
+        // Exclude scheduled/future meetings (no data yet) when picking the
+        // default year — only consider meetings that have already occurred.
+        const today = new Date();
+        const pastYears = Array.from(new Set(
+          entries
+            .filter((x: any) => {
+              const d = x?.meeting_date ? new Date(x.meeting_date) : null;
+              return d && !isNaN(d.getTime()) && d <= today;
+            })
+            .map((x: any) => String(x?.year))
+            .filter(Boolean)
+        )).sort((a: string, b: string) => Number(b) - Number(a));
+
+        const fallbackYears = pastYears.length > 0 ? pastYears : years;
+
+        if (fallbackYears.length > 0) {
+          const currentYear = searchParams.get('year');
+          const defaultYear = currentYear && fallbackYears.includes(currentYear) ? currentYear : fallbackYears[0];
+          if (defaultYear !== currentYear) {
+            setSearchParams(prev => {
+              const params = new URLSearchParams(prev);
+              params.set('year', defaultYear);
+              return params;
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('[NPXAnalytics] Failed to load years:', e);
+      }
+    };
+    loadYears();
+  }, [companyId]);
+
   // Load dropdowns on mount. Re-fetch with institution filter when it changes.
   useEffect(() => {
     fetchDropdown(institutionName.length > 0 ? institutionName : undefined);
@@ -187,20 +247,22 @@ export default function NPXAnalyticsPage() {
   // ------------------------------------
   return (
     <>
-      <Button
-        onClick={() => navigate('/', {
-          state: {
-            activeTab: "shareholder-meeting-results"
-          }
-        })}
-        variant="primary"
-        className="bg-theme-2 border-bg-theme-2 mb-1"
-      >
-        <Lucide icon="ChevronLeft" className="w-4 h-4 mr-1" />
-        Back
-      </Button>
+      {!embedded && (
+        <Button
+          onClick={() => navigate('/', {
+            state: {
+              activeTab: "shareholder-meeting-results"
+            }
+          })}
+          variant="primary"
+          className="bg-theme-2 border-bg-theme-2 mb-1"
+        >
+          <Lucide icon="ChevronLeft" className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+      )}
 
-      <div className="p-5 mt-1 box">
+      <div className={clsx("mt-1 box", embedded ? "p-3" : "p-5")}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-lg font-bold flex items-center gap-2">
@@ -214,6 +276,23 @@ export default function NPXAnalyticsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="min-w-[140px]">
+              <Select
+                options={(yearOptions || []).map(y => ({ value: y, label: y }))}
+                value={year ? { value: year, label: year } : null}
+                onChange={(opt: any) => {
+                  const y = opt?.value ? String(opt.value) : '';
+                  if (!y) return;
+                  setSearchParams(prev => {
+                    const params = new URLSearchParams(prev);
+                    params.set('year', y);
+                    return params;
+                  });
+                }}
+                placeholder="Meeting Date"
+                isClearable={false}
+              />
+            </div>
             <Button
               variant="outline-secondary"
               onClick={() => {

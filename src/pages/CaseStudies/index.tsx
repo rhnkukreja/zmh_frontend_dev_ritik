@@ -12,7 +12,7 @@ import TableWrapper from "@/components/TableWrapper";
 import { convertToTitleCase, countValidFilters, createDynamicURL, downloadFileFromAPI, generateFilterChips } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
-import { FilterX, SaveAll } from "lucide-react";
+import { ChevronRight, FilterX, SaveAll } from "lucide-react";
 import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
@@ -26,7 +26,7 @@ import {
   selectUnSelectAllCompany,
   resetPage,
 } from "@/stores/caseStudySlice";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { commonService } from "@/services/common";
 import { axiosInstance } from "@/services";
@@ -71,6 +71,7 @@ interface CaseStudyFilter {
 function CaseStudies() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     loading,
@@ -104,6 +105,8 @@ function CaseStudies() {
   const [activeTab, setActiveTab] = useState<"overview" | "specific" | "all">(
     (searchParams.get("tab") as any) || "overview"
   );
+  const source = searchParams.get("source") || "";
+  const isCompanySource = source === "company";
 
   const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
   const [selectedCaseStudies, setSelectedCaseStudies] = useState<any | null>(
@@ -208,8 +211,29 @@ function CaseStudies() {
   };
 
   useEffect(() => {
+    const state: any = location.state;
+    if (state?.refresh) {
+      const hasSelectedCompanies =
+        Array.isArray(filters?.global_search) && filters.global_search.length > 0;
+      const apiFilters =
+        isAllCompanySelected && !hasSelectedCompanies
+          ? { ...filters, global_search: undefined }
+          : filters;
+      const dynamicURL = createDynamicURL(
+        `${baseURL}/case_studies/`,
+        apiFilters,
+        undefined,
+        page
+      );
+      dispatch(fetchCaseStudies(dynamicURL));
+      navigate(location.pathname + location.search, { replace: true, state: {} });
+    }
+  }, [location.state]);
+
+  useEffect(() => {
     const institutionParam = searchParams.get("institution_name");
     const tabParam = searchParams.get("tab");
+    const sourceParam = searchParams.get("source");
 
     if (institutionParam) {
       dispatch(
@@ -219,7 +243,18 @@ function CaseStudies() {
       if (!tabParam) setActiveTab("specific");
     }
 
-    if (
+    if (sourceParam === "shared") {
+      const sharedTab =
+        tabParam === "overview" || tabParam === "specific" || tabParam === "all"
+          ? tabParam
+          : "all";
+      setActiveTab(sharedTab as any);
+      dispatch(selectUnSelectAllCompany(sharedTab === "all"));
+    } else if (sourceParam === "company") {
+      const companyTab = tabParam === "overview" || tabParam === "all" ? "specific" : tabParam || "specific";
+      setActiveTab(companyTab as any);
+      dispatch(selectUnSelectAllCompany(false));
+    } else if (
       tabParam &&
       (tabParam === "overview" ||
         tabParam === "specific" ||
@@ -627,64 +662,34 @@ function CaseStudies() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          {/* Sticky Top Heading */}
-          <div className="w-full p-4 sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md mb-2" style={{ top: '4rem' }}>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Case Studies
-            </h1>
-          </div>
-          {/* Sticky Header with Tabs - Dashboard Style */}
-          <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: '7rem' }}>
-            <div className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-                <button
-                  onClick={() => setActiveTab("overview")}
-                  className={`relative px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "overview"
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  <Lucide icon="LayoutGrid" className="w-4 h-4" />
-                  Overview
-                  <span className="absolute -top-1 -right-1 text-[8px] font-bold text-white bg-orange-500 rounded-full px-1 py-0 animate-pulse">
-                    BETA
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab("specific");
-                    if (isAllCompanySelected) {
-                      handleViewAllChange({ target: { checked: false } });
-                    }
-                  }}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "specific"
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  <Lucide icon="Building2" className="w-4 h-4" />
-                  {companyGlobalSearchName || "Specific Company"}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab("all");
-                    if (!isAllCompanySelected) {
-                      handleViewAllChange({ target: { checked: true } });
-                    }
-                  }}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === "all"
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                >
-                  <Lucide icon="Building" className="w-4 h-4" />
-                  View All Companies
-                </button>
-              </div>
-            </div>
-          </div>
           {/* Scrollable Content BELOW sticky header */}
           <div className="mt-3.5 relative">
+            {isCompanySource && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <span className="text-slate-500">Company</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>Case Studies</span>
+                  </h2>
+                </div>
+              </div>
+            )}
+            {!isCompanySource && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <span className="text-slate-500">Market Analytics</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>
+                      {activeTab === "overview"
+                        ? "Case Studies Overview"
+                        : "Case Studies"}
+                    </span>
+                  </h2>
+                </div>
+              </div>
+            )}
             {/* Overview Tab - Case Studies AI */}
             {activeTab === "overview" && (
               <CaseStudiesAI />
@@ -765,40 +770,66 @@ function CaseStudies() {
                     </Button>
                   </div> */}
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto mb-7">
-                    {user?.saved_search?.["Case Studies"] !== undefined && (
-                      <div className="hover:bg-slate-50 ">
-                        <Button onClick={getSavedSearches}>
-                          Previous Search
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Clear and Apply buttons outside filter */}
-                    <Popover className="inline-block">
-
-                      <>
-                        <Popover.Button
-                          as={Button}
-                          variant="outline-secondary"
-                          className="w-full sm:w-auto"
-                          onClick={handleCollapseFilter}
+                  <div className="flex flex-col sm:flex-row items-center gap-x-3 gap-y-2 sm:ml-auto mb-7">
+                    {isCompanySource ? (
+                      <div className="flex h-10 items-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                        <div className="flex h-full w-10 shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 text-primary">
+                          <FaCalendarAlt className="h-4 w-4" />
+                        </div>
+                        <select
+                          className="h-10 min-w-[140px] appearance-none border-0 bg-transparent px-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:ring-0"
+                          value={filters?.year?.[0] || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            dispatch(setFilters({ key: "year", value: val ? [val] : [] }));
+                            dispatch(resetPage());
+                          }}
                         >
-                          <Lucide
-                            icon="ArrowDownWideNarrow"
-                            className="stroke-[1.3] w-4 h-4 mr-2"
-                          />
-                          Filters
-                          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {filtersLength}
+                          <option value="">All Years</option>
+                          {(apiDropdownOptions?.year || []).map((y: any) => (
+                            <option key={String(y)} value={String(y)}>
+                              {y}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <>
+                        {user?.saved_search?.["Case Studies"] !== undefined && (
+                          <div className="hover:bg-slate-50 ">
+                            <Button onClick={getSavedSearches}>
+                              Previous Search
+                            </Button>
                           </div>
-                        </Popover.Button>
+                        )}
+
+                        {/* Clear and Apply buttons outside filter */}
+                        <Popover className="inline-block">
+
+                          <>
+                            <Popover.Button
+                              as={Button}
+                              variant="outline-secondary"
+                              className="w-full sm:w-auto"
+                              onClick={handleCollapseFilter}
+                            >
+                              <Lucide
+                                icon="ArrowDownWideNarrow"
+                                className="stroke-[1.3] w-4 h-4 mr-2"
+                              />
+                              Filters
+                              <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                                {filtersLength}
+                              </div>
+                            </Popover.Button>
+                          </>
+                        </Popover>
                       </>
-                    </Popover>
+                    )}
                   </div>
                 </div>
 
-                {selectedChipFilters?.length > 0 && (
+                {!isCompanySource && selectedChipFilters?.length > 0 && (
                   <StandardizedFilterPills
                     filters={selectedChipFilters.map(chip => ({
                       key: chip.key,
@@ -810,7 +841,7 @@ function CaseStudies() {
                 )}
 
 
-                {isFilterCollapse && (
+                {!isCompanySource && isFilterCollapse && (
                   <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                       {/* Filter Content */}

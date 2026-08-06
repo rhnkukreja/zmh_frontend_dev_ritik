@@ -22,7 +22,13 @@ import AGMSummaryCard from "@/components/AGMSummaryCard";
 import CompanyOverview from "@/components/CompanyOverview";
 import CompanyOverviewGPT from "@/components/CompanyOverviewGPT";
 import InvestorOverview from "@/components/InvestorOverview";
+import VdsProxyVoting from "@/pages/VdsProxyVoting";
+import MeetingYearSelector from "@/pages/VdsProxyVoting/MeetingYearSelector";
+import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
+import NPXPage from "@/pages/NPX";
+import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
+import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import TableWrapper from "@/components/TableWrapper";
@@ -34,7 +40,9 @@ import { ModulesCount } from "@/types/dashboard";
 import Pill from "@/components/Pill";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
-import { FileText, Building2, Users, Vote, TrendingUp, BarChart3 } from "lucide-react";
+import {
+  ChevronRight,
+} from "lucide-react";
 import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
 import { toast } from "react-toastify";
 import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
@@ -65,22 +73,43 @@ function Main() {
   // Check if user is admin
   const isAdmin = user?.user_type === 'Admin';
 
-  // Active tab state - default based on user role
+  // Active section now lives in Redux and is driven by the Koyfin-style sidebar.
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(() => {
+  const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
+  const activeTab = activeSection;
+  const activeVotingSubTab = activeTab === 'voting-data' ? (activeSubSection ?? 'vds') : null;
+  const headerGroup = activeTab === 'investor-overview' ? 'Institution Insights' : 'Company';
+  const headerLabel =
+    activeTab === 'company-overview' ? 'Overview' :
+    activeTab === 'governance-profile' ? 'Governance Profile' :
+    activeTab === 'compensation' ? 'Compensation' :
+    activeTab === 'investor-overview'
+      ? activeSubSection === 'engagement_priorities'
+        ? 'Engagement Priorities'
+        : activeSubSection === 'reporting_expectations'
+          ? 'Reporting Expectations'
+          : 'Overview'
+      : activeTab === 'ownership' ? 'Ownership' :
+      activeTab === 'shareholder-meeting-results' ? 'Shareholder Meeting' :
+      activeTab === 'voting-data'
+        ? activeSubSection === 'voting-rationale'
+          ? 'Voting Rationale'
+          : activeSubSection === 'npx'
+            ? 'N-PX'
+            : activeSubSection === 'npx-analytics'
+              ? 'N-PX Analytics'
+              : 'By Fund Family'
+        : 'Overview';
+
+  // Apply active section from back-navigation state / sessionStorage once on mount.
+  useEffect(() => {
     const ssReturnTab = sessionStorage.getItem('dashboardReturnTab');
     if (ssReturnTab) {
       sessionStorage.removeItem('dashboardReturnTab');
-      return ssReturnTab;
-    }
-    return location.state?.activeTab || 'company-overview';
-  });
-
-  // Apply activeTab from navigation state only once on mount (for back button)
-  useEffect(() => {
-    if (location.state?.activeTab) {
-      setActiveTab(location.state.activeTab);
+      dispatch(setActiveSection(ssReturnTab as any));
+    } else if (location.state?.activeTab) {
+      dispatch(setActiveSection(location.state.activeTab));
       navigate(location.pathname, { replace: true, state: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,13 +121,6 @@ function Main() {
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
-
-  // Handle generate report
-  const handleGenerateReport = () => {
-    if (companyGlobalSearchTicker) {
-      window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
-    }
-  };
 
   // Format date function - Month and Year only
   const formatDate = (dateString: string) => {
@@ -145,9 +167,15 @@ function Main() {
   const [searchParams] = useSearchParams();
 
   const { companySearchAndUpdate } = useCompanySearch();
-  const { dashboardDataList, tempSearch, graphQLBoardData, graphQLBoardDataLoading } =
+  const { dashboardDataList, tempSearch, graphQLBoardData, graphQLBoardDataLoading, agmSummaryDetails } =
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
+
+  // Extract meeting date from AGM summary to show next to the main heading
+  const _companyDetails = agmSummaryDetails?.company ? (agmSummaryDetails.company[0] as any) : undefined;
+  const _companyNameKey = _companyDetails ? Object.keys(_companyDetails)[0] : undefined;
+  const _meetingDetailsStr = _companyNameKey ? _companyDetails[_companyNameKey] : undefined;
+  const meetingDateHeader = typeof _meetingDetailsStr === 'string' ? _meetingDetailsStr.split(" - ").pop() : undefined;
 
   const [autoScrapedData, setAutoScrapedData] = useState<Record<string, any>>({});
   const [autoScrapeQueue, setAutoScrapeQueue] = useState<string[]>([]);
@@ -436,91 +464,42 @@ function Main() {
   return (
     <>
       <section>
-        {/* Tabs - Top Level Navigation */}
+        {/* Contextual section header (navigation moved to the Koyfin-style sidebar) */}
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
           <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
-            <div className="bg-white rounded-xl p-1.5 flex items-center gap-1.5 shadow-sm border border-gray-200">
-              {/* Company Overview - All Users */}
-              <button
-                onClick={() => setActiveTab('company-overview')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${
-                  activeTab === 'company-overview'
-                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <Building2 className="w-4 h-4" />
-                Company Overview
-              </button>
-
-              {/* Company Overview GPT - Admin Only */}
-              {/* {isAdmin && (
-                <button
-                  onClick={() => setActiveTab('company-overview-gpt')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'company-overview-gpt'
-                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                >
-                  <Building2 className="w-4 h-4" />
-                  Company Overview
-                </button>
-              )} */}
-
-              {/* Investor Insight - All Users */}
-              <div className="relative">
-                <button
-                  onClick={() => setActiveTab('investor-overview')}
-                  className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'investor-overview'
-                      ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  Investor Insight
-                </button>
-              </div>
-    
-              {/* Ownership - All Users */}
-              <button
-                onClick={() => setActiveTab('ownership')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'ownership'
-                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-              >
-                <Users className="w-4 h-4" />
-                Ownership
-              </button>
-
-              
-
-              {/* Shareholder Meeting Results - All Users */}
-              <button
-                onClick={() => setActiveTab('shareholder-meeting-results')}
-                className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-2 ${activeTab === 'shareholder-meeting-results'
-                    ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-md transform scale-105'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-              >
-                <Vote className="w-4 h-4" />
-                Shareholder Meeting Results
-              </button>
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                <span className="text-slate-500">{headerGroup}</span>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <span>{headerLabel}</span>
+              </h2>
+              {activeTab === 'shareholder-meeting-results' && meetingDateHeader && (
+                <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
+              )}
             </div>
-            {companyGlobalSearchTicker && activeTab !== 'company-overview-gpt' && (
-              <button
-                className="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/90 text-white font-semibold text-sm rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-md flex items-center gap-2.5 border border-primary/20"
-                onClick={handleGenerateReport}
-              >
-                <FileText className="w-4 h-4" />
-                Generate Report
-              </button>
+            {activeTab === 'voting-data' && activeVotingSubTab !== 'npx-analytics' && (
+              <MeetingYearSelector
+                key={activeVotingSubTab}
+                source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
+              />
+            )}
+            {activeTab === 'shareholder-meeting-results' && agmSummaryDetails?.total_year?.length > 0 && (
+              <YearSelector
+                years={agmSummaryDetails.total_year.map(String)}
+                label="Meeting Year"
+              />
+            )}
+            {activeTab === 'ownership' && dashboardDataList?.total_year?.length > 0 && (
+              <YearSelector
+                years={dashboardDataList.total_year.map(String)}
+                label="Meeting Year"
+              />
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-12 gap-y-10 gap-x-6">
-          {activeTab === 'company-overview' && (
+          {(activeTab === 'company-overview' || activeTab === 'governance-profile' || activeTab === 'compensation') && (
             <div id="company-overview" className="col-span-12 xl:col-span-12">
               <CompanyOverview />
             </div>
@@ -557,6 +536,20 @@ function Main() {
                 proxyContest2025={modulesCount?.proxy_contest_2025 || false}
                 onLoaded={() => setIsMeetingLoaded(true)}
               />
+            </div>
+          )}
+
+          {activeTab === 'voting-data' && (
+            <div id="voting-data" className="col-span-12 xl:col-span-12">
+              {activeVotingSubTab === 'npx' ? (
+                <NPXPage />
+              ) : activeVotingSubTab === 'npx-analytics' && isAdmin ? (
+                <NPXAnalyticsPage embedded />
+              ) : activeVotingSubTab === 'voting-rationale' ? (
+                <VdsProxyVoting view="voting-rationale" />
+              ) : (
+                <VdsProxyVoting view="voting-data" />
+              )}
             </div>
           )}
 

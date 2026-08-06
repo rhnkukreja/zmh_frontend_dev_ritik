@@ -5,7 +5,7 @@ import { AppIconName } from "@/components/Base/Lucide";
 export interface Menu {
   icon: AppIconName;
   title: string;
-  badge?: number;
+  badge?: number | string;
   pathname?: string;
   subMenu?: Menu[];
   ignore?: boolean;
@@ -27,12 +27,8 @@ const initialState: any = {
     //   title: "Company Profile",
     //   // badge: 4,
     // },
-    {
-      // icon: CompanyIcon,
-      icon: "Building2",
-      pathname: "/",
-      title: "Company Search",
-    },
+    // Company Search removed: the Security Analysis section (Koyfin-style)
+    // and the global top search bar now cover this entry point.
     // {
     //   icon: "ActivitySquare",
     //   pathname: "/dashboard-overview-2",
@@ -70,14 +66,21 @@ const initialState: any = {
     // },
     // "APPS",
     {
-      icon: "Landmark",
-      pathname: "/investor-profile",
-      title: "Investor Profile",
-    },
-    {
       icon: "FileSearch2",
-      pathname: "/case-studies",
+      pathname: "/case-studies?source=shared",
       title: "Case Studies",
+      subMenu: [
+        {
+          icon: "LayoutDashboard",
+          pathname: "/case-studies?tab=overview&source=shared",
+          title: "Overview",
+        },
+        {
+          icon: "FileSearch2",
+          pathname: "/case-studies?source=shared",
+          title: "All Case Studies",
+        },
+      ],
     },
     // {
     //   icon: "FileSearch",
@@ -92,7 +95,7 @@ const initialState: any = {
     // },
     {
       icon: "Network",
-      pathname: "/engagement-detail",
+      pathname: "/engagement-detail?source=shared",
       title: "Engagement Details",
     },
     // {
@@ -102,7 +105,7 @@ const initialState: any = {
     // },
     {
       icon: "Hand",
-      pathname: "/shareholder-proposal",
+      pathname: "/shareholder-proposal?source=shared",
       title: "Shareholder Proposals",
     },
     // {
@@ -111,14 +114,28 @@ const initialState: any = {
     //   title: "2025 Shareholder Meetings",
     // },
     {
-      icon: "ActivitySquare",
-      pathname: "/voting-data",
-      title: "Voting Data",
-    },
-    {
       icon: "ShieldAlert",
       pathname: "/proxy-contest",
       title: "Proxy Contest",
+      subMenu: [
+        {
+          icon: "UserRound",
+          pathname: "/proxy-contest?tab=activist_profile",
+          title: "Activist Profile",
+          badge: "Beta",
+        },
+        {
+          icon: "BarChart3",
+          pathname: "/proxy-contest?tab=overview",
+          title: "Voting Analytics",
+          badge: "Beta",
+        },
+        {
+          icon: "Table",
+          pathname: "/proxy-contest?tab=detailed",
+          title: "Campaign Details",
+        },
+      ],
     },
     
     // {
@@ -164,9 +181,32 @@ const initialState: any = {
       isAdmin: true,
     },
     {
+      icon: "FileText",
+      pathname: "/notes",
+      title: "Knowledge Base",
+    },
+    {
       icon: "BarChart2",
       pathname: "/custom-reports",
       title: "Custom Reports",
+      subMenu: [
+        {
+          icon: "Users",
+          pathname: "/custom-reports?tab=ownership",
+          title: "Ownership",
+        },
+        {
+          icon: "ShieldCheck",
+          pathname: "/custom-reports?tab=governance",
+          title: "Governance Screener",
+          badge: "Beta",
+        },
+        {
+          icon: "FileText",
+          pathname: "/custom-reports?tab=comprehensive",
+          title: "Comprehensive Report",
+        },
+      ],
     },
     {
       icon: "Headphones",
@@ -187,11 +227,6 @@ const initialState: any = {
       icon: "Mail",
       pathname: "#",
       title: "Email Alert",
-    },
-    {
-      icon: "FileText",
-      pathname: "/notes",
-      title: "Knowledge Base",
     },
     {
       icon: "HelpCircle",

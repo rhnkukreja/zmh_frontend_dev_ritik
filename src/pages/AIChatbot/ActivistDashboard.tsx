@@ -729,7 +729,7 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  if (loading && !profile) {
+  if (loading || (!profile && !error)) {
     return <ActivistDashboardSkeleton />;
   }
 
@@ -762,10 +762,10 @@ const ActivistIntelligenceDashboard = ({
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
 
-      <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 1px 3px #0000000a", position: "relative" }}>
+      <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 10, boxShadow: "0 1px 3px #0000000a" }}>
         
-        {/* ── STICKY HEADER WRAPPER ── */}
-        <div style={{ position: "sticky", top: "200px", zIndex: 40, borderRadius: "10px 10px 0 0", boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }}>
+        {/* ── COMPANY HEADER ── */}
+        <div style={{ borderRadius: "10px 10px 0 0", position: "relative" }}>
           
           <div style={{ background: THEME_MAROON, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, borderRadius: "10px 10px 0 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -787,7 +787,7 @@ const ActivistIntelligenceDashboard = ({
 
           {/* ── Inline investor picker ── */}
           {selectorOpen && (
-            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, borderBottom: "1px solid #e5e7eb", background: "#f9fafb", padding: "16px 24px", borderBottomLeftRadius: 10, borderBottomRightRadius: 10, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}>
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, borderBottom: "1px solid #e5e7eb", background: "#f9fafb", padding: "16px 24px", borderBottomLeftRadius: 10, borderBottomRightRadius: 10, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}>
               <div style={{ position: "relative", marginBottom: 14 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
                   <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />

@@ -34,6 +34,7 @@ interface AddNewCaseStudiesProps {
   setAddNewCaseStudyModalVisible: (visible: boolean) => void;
   selectedCaseStudies: any | null;
   isProxyContext?: boolean;
+  onAfterSave?: () => void;
 }
 
 const holdingTypesDropdown = ["Equity", "Debt/fixed income", "Private company"];
@@ -43,6 +44,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
   setAddNewCaseStudyModalVisible,
   selectedCaseStudies,
   isProxyContext = false,
+  onAfterSave,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   const location = useLocation();
@@ -255,7 +257,8 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
     const transformedData: any = {
       ...data,
       institution: data.institution ? Number(data.institution) : 0,
-      company: data?.company?.value ?? selectedCaseStudies?.company,
+      company: data?.company?.value ?? (data?.caspio_company_name ? null : selectedCaseStudies?.company),
+      caspio_company_name: data?.company?.value ? null : data?.caspio_company_name,
       primary_source_link: Array.isArray(data?.primary_source_link)
         ? data.primary_source_link.filter(link => link && link.trim() !== '')
         : data?.primary_source_link
@@ -318,6 +321,9 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
             )
           )
         );
+        if (onAfterSave) {
+          onAfterSave();
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -385,7 +391,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                   </div>
                 </div>
 
-                {(!watchCaspioCompanyName || watchCompany) && (
+                {(!watchCaspioCompanyName || watchCompany || selectedCaseStudies?.id) && (
                   <div className="w-full flex-1">
                     <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
                       Company Name
@@ -393,7 +399,11 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                     <Controller
                       name="company"
                       control={control}
-                      rules={{ required: "Company Name is required" }}
+                      rules={{
+                        required: !watchCaspioCompanyName
+                          ? "Company Name is required"
+                          : false,
+                      }}
                       render={({ field, fieldState: { error } }) => (
                         <>
                           <CompanySelect

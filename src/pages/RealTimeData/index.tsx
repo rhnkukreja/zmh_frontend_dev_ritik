@@ -73,10 +73,12 @@ const index = () => {
   const [companyName, setCompanyName] = useState<any>("");
   const [viewCompanyName, setViewCompanyName] = useState<any>("");
   console.log(dropdownInstitutionValues, "dropdownInstitutionValues")
+  const DEFAULT_MEETING_DATE = "2025-12-31";
+
   useEffect(() => {
-    getRealTimeDropdownData({ year: 2025 });
-    getInstitutionDropdownData({ year: 2025 });
-    getVotesDropdownData({ year: 2025 });
+    getRealTimeDropdownData({ meeting_date: DEFAULT_MEETING_DATE });
+    getInstitutionDropdownData({ meeting_date: DEFAULT_MEETING_DATE });
+    getVotesDropdownData({ meeting_date: DEFAULT_MEETING_DATE });
     // onSubmit({});
   }, []);
 
@@ -244,8 +246,8 @@ const index = () => {
     // reset();
     setallApplyFilter({ year: "2025" });
     dispatch(resetPage());
-    // getVotesDropdownData({year:"2025"})
-    // getInstitutionDropdownData({year:"2025"})
+    // getVotesDropdownData({meeting_date: DEFAULT_MEETING_DATE})
+    // getInstitutionDropdownData({meeting_date: DEFAULT_MEETING_DATE})
   };
 
   const resetFormValues: any = () => {
@@ -463,20 +465,20 @@ const index = () => {
                         isClearable={true}
                         arrayKeyName={"companies"}
                         exactUrl={
-                          "get_vds_dropdown_values/?year=2025&company_name="
+                          `get_vds_dropdown_values/?meeting_date=${DEFAULT_MEETING_DATE}&company_name=`
                         }
                         value={field.value}
                         onChange={(value: any) => {
                           field.onChange(value);
                           getInstitutionDropdownData({
-                            year: 2025,
-                            company_name:
-                              value?.label != null ? [value?.label] : "",
+                            meeting_date: DEFAULT_MEETING_DATE,
+                            company_id:
+                              value?.value != null ? [value?.value] : "",
                           });
                           getVotesDropdownData({
-                            year: 2025,
-                            company_name:
-                              value?.label != null ? [value?.label] : "",
+                            meeting_date: DEFAULT_MEETING_DATE,
+                            company_id:
+                              value?.value != null ? [value?.value] : "",
                           });
                           setCompanyName(value?.label);
                         }}
@@ -516,7 +518,7 @@ const index = () => {
                         value={field.value || ""}
                         onChange={(event) => {
                           getVotesDropdownData({
-                            year: 2025,
+                            meeting_date: DEFAULT_MEETING_DATE,
                             institutes: [event?.target?.value],
                           });
                           field.onChange(event);
@@ -562,7 +564,7 @@ const index = () => {
                           const selectedValues = selectedOptions.map((option) => option.value);
                           field.onChange(selectedValues);
                           getVotesDropdownData({
-                            year: 2025,
+                            meeting_date: DEFAULT_MEETING_DATE,
                             institutes: selectedValues,
                           });
 
@@ -610,7 +612,7 @@ const index = () => {
                           const selectedValues = selectedOptions.map((option) => option.value);
                           field.onChange(selectedValues);
                           getVotesDropdownData({
-                            year: 2025,
+                            meeting_date: DEFAULT_MEETING_DATE,
                              votes: selectedValues,
                           });
 
@@ -621,7 +623,7 @@ const index = () => {
                       //   value={field.value || ""}
                       //   onChange={(event) => {
                       //     getInstitutionDropdownData({
-                      //       year: 2025,
+                      //       meeting_date: DEFAULT_MEETING_DATE,
                       //       votes: [event?.target?.value],
                       //     });
                       //     field.onChange(event);

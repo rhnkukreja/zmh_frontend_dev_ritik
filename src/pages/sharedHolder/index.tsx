@@ -10,7 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import CPagination from "@/components/Pagination";
 import TableWrapper from "@/components/TableWrapper";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import {
   countValidFilters,
@@ -27,6 +27,7 @@ import {
   ArrowDown,
   Download,
   FilterX,
+  ChevronRight,
   Grid3X3,
   MegaphoneOff,
   SaveAll,
@@ -91,6 +92,9 @@ function ShareHolderProposal() {
     (state) => state.authentiction
   );
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get("source") || "";
+  const isCompanySource = source === "company";
   const { isBackToShareholderPage } = location.state || {};
 
   useEffect(() => {
@@ -134,6 +138,15 @@ function ShareHolderProposal() {
       if (!isNaN(parsedPage) && parsedPage > 0) {
         dispatch(setPage(parsedPage));
       }
+    }
+
+    const sourceParam = searchParams.get("source");
+    if (sourceParam === "company") {
+      dispatch(selectUnSelectAllCompany(false));
+      dispatch(setTabs("proposal"));
+      setTempTab("proposal");
+    } else if (sourceParam === "shared") {
+      dispatch(selectUnSelectAllCompany(true));
     }
   }, [dispatch, location.search]);
 
@@ -1057,92 +1070,47 @@ function ShareHolderProposal() {
     <>
       <div className="grid grid-cols-12 gap-y-10 gap-x-6">
         <div className="col-span-12">
-          <div className="w-full sticky z-30 header-card transition-[margin,width,opacity] duration-1000 ease-in-out bg-white" style={{ top: '4rem', minHeight: '64px' }}>
-            <div className="bg-white px-4 mb-4 flex flex-col md:flex-row items-center justify-between shadow">
-              {isAllCompanySelected === true ? (
-                <h1 className="text-xl font-semibold flex items-center gap-2">
-                  All Shareholder Proposals
-                </h1>
-              ) : (
-                tab === "proposal" ? (
-                  <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                    Shareholder Proposals
-                  </h1>
-                ) : tab === "no-action" ? (
-                  <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                    No Action Letters
-                  </h1>
-                ) : tab === "withdrawn" ? (
-                  <h1 className="text-xl font-semibold flex items-center gap-2 my-2">
-                    Withdrawn Proposals
-                  </h1>
-                ) : null
-              )}
-              <div className="flex gap-3 px-4 py-4 dark:bg-darkmode-800">
-                <button
-                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === false
-                    ? "bg-primary text-white shadow"
-                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
-                  onClick={async (e) => {
-                    try {
-                      // Clear year filters and reset form when switching to company view
-                      setValue("year", []);
-                      resetFormValues();
-                      dispatch(resetFilter());
-                      setProposalsAnalytics(null);
-
-                      dispatch(selectUnSelectAllCompany(false));
-                      dispatch(
-                        modifyRoute({
-                          route: "shareholder-proposal",
-                          type: true,
-                        })
-                      );
-                    } catch (error) { }
-                  }}
-                >
-
-                  {finhub?.name || companyGlobalSearchName} {" "}
-                  {finhub?.ticker ? `(${finhub?.ticker})` : `(${companyGlobalSearchTicker})`}
-                </button>
-                <button
-                  className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${isAllCompanySelected === true
-                    ? "bg-primary text-white shadow"
-                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                    }`}
-                  onClick={async (e) => {
-                    try {
-                      // Set default years (current year and previous year) when switching to View All
-                      const currentYear = new Date().getFullYear();
-                      const defaultYears = [(currentYear - 1).toString(), currentYear.toString()];
-
-                      // Reset analytics state first
-                      setProposalsAnalytics(null);
-
-                      // Clear other filters and set default years
-                      resetFormValues();
-                      setValue("year", defaultYears);
-                      dispatch(resetFilter());
-                      dispatch(setAllFilters({ year: defaultYears }));
-
-                      dispatch(selectUnSelectAllCompany(true));
-                      dispatch(
-                        modifyRoute({
-                          route: "shareholder-proposal",
-                          type: true,
-                        })
-                      );
-                    } catch (error) { }
-                  }}
-                >
-                  View for All Companies
-                </button>
-              </div>
-            </div>
-          </div>
-
           <div className="mt-3.5 relative">
+            {isCompanySource && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div className="flex items-start gap-2.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary mt-[2px]"
+                  >
+                    <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                    <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+                    <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
+                  </svg>
+                  <div>
+                    <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                      <span className="text-slate-500">Company</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      <span>Shareholder Proposals</span>
+                    </h2>
+                  </div>
+                </div>
+              </div>
+            )}
+            {!isCompanySource && !tableOnlyView && (
+              <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+                    <span className="text-slate-500">Market Analytics</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>Shareholder Proposals</span>
+                  </h2>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col box box--stacked bg-white p-5">
               <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row mb-4">
 
@@ -1245,31 +1213,55 @@ function ShareHolderProposal() {
                       <ArrowDown size={16} />
                     </button>
                   )}
-                  <Popover className="inline-block">
-                    {({ close }) => (
-                      <>
-                        <Popover.Button
-                          as={Button}
-                          variant="outline-secondary"
-                          className="w-full sm:w-auto"
-                          onClick={handleCollapseFilter}
-                        >
-                          <Lucide
-                            icon="ArrowDownWideNarrow"
-                            className="stroke-[1.3] w-4 h-4 mr-2"
-                          />
-                          Filter
-                          <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
-                            {filtersLength}
-                          </div>
-                        </Popover.Button>
-                      </>
-                    )}
-                  </Popover>
+                  {isCompanySource ? (
+                    <div className="flex h-10 items-center overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                      <div className="flex h-full w-10 shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 text-primary">
+                        <FaCalendarAlt className="h-4 w-4" />
+                      </div>
+                      <select
+                        className="h-10 min-w-[140px] appearance-none border-0 bg-transparent px-3 pr-8 text-sm font-medium text-slate-700 outline-none focus:ring-0"
+                        value={filters?.year?.[0] || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          dispatch(setFilter({ key: "year", value: val ? [val] : [] }));
+                          dispatch(resetPage());
+                        }}
+                      >
+                        <option value="">{tab === "withdrawn" ? "All Years" : "All Proxy Years"}</option>
+                        {(apiDropdownOptions?.year || []).map((y: any) => (
+                          <option key={String(y)} value={String(y)}>
+                            {y}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <Popover className="inline-block">
+                      {({ close }) => (
+                        <>
+                          <Popover.Button
+                            as={Button}
+                            variant="outline-secondary"
+                            className="w-full sm:w-auto"
+                            onClick={handleCollapseFilter}
+                          >
+                            <Lucide
+                              icon="ArrowDownWideNarrow"
+                              className="stroke-[1.3] w-4 h-4 mr-2"
+                            />
+                            Filter
+                            <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                              {filtersLength}
+                            </div>
+                          </Popover.Button>
+                        </>
+                      )}
+                    </Popover>
+                  )}
                 </div>
               </div>
 
-              {selectedChipFilters?.length > 0 && (
+              {!isCompanySource && selectedChipFilters?.length > 0 && (
                 <FilterChips
                   filters={selectedChipFilters.map(chip => ({
                     key: chip.key,
@@ -1281,7 +1273,7 @@ function ShareHolderProposal() {
                 />
               )}
 
-              {isFilterCollapse && (
+              {!isCompanySource && isFilterCollapse && (
                 <form onSubmit={handleSubmit(onSubmit)}>
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}
@@ -2286,7 +2278,7 @@ function ShareHolderProposal() {
                         <div className="flex items-center justify-center ">
                           All Proposals
                           <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
                           font-semibold text-white text-[11px] ml-2
                            flex items-center justify-center"
                           >
@@ -2309,7 +2301,7 @@ function ShareHolderProposal() {
                         <div className="flex items-center justify-center ">
                           No Action Letter
                           <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
                           font-semibold text-white text-[11px] ml-2
                            flex items-center justify-center"
                           >
@@ -2334,7 +2326,7 @@ function ShareHolderProposal() {
                         <div className="flex items-center justify-center ">
                           Withdrawn (Proponent Disclosure)
                           <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3 
+                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
                           font-semibold text-white text-[11px] ml-2
                            flex items-center justify-center"
                           >

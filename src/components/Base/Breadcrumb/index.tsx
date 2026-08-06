@@ -67,14 +67,6 @@ Breadcrumb.Link = ({
     <li
       className={clsx([
         className,
-        key > 0 && "relative ml-5 pl-0.5",
-        !breadcrumb.light &&
-          key > 0 &&
-          "before:content-[''] before:w-[14px] before:h-[14px] before:bg-chevron-black before:transform before:rotate-[-90deg] before:bg-[length:100%] before:-ml-[1.125rem] before:absolute before:my-auto before:inset-y-0",
-        breadcrumb.light &&
-          key > 0 &&
-          "before:content-[''] before:w-[14px] before:h-[14px] before:bg-chevron-white before:transform before:rotate-[-90deg] before:bg-[length:100%] before:-ml-[1.125rem] before:absolute before:my-auto before:inset-y-0",
-        key > 0 && "dark:before:bg-chevron-black",
         !breadcrumb.light &&
           active &&
           "text-slate-600 cursor-text dark:text-slate-400",
