@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Dialog } from "@/components/Base/Headless";
 import { useAppSelector } from "@/stores/hooks";
 import {
   BarChart2,
@@ -6,8 +7,10 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  ExternalLink,
   FileCheck2,
   FileText,
+  MessageSquareQuote,
   ShieldCheck,
   Users,
   Vote,
@@ -128,6 +131,28 @@ function SectionHeader({
   );
 }
 
+function toTitleCase(text?: string) {
+  return String(text ?? "")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hasMeaningfulValue(value: unknown) {
+  const str = String(value ?? "").trim();
+  const lower = str.toLowerCase();
+
+  return !!str && !["-", "none", "null", "nan"].includes(lower);
+}
+
+function splitParagraphs(paragraphs?: string) {
+  return String(paragraphs ?? "")
+    .split(/\n\s*\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
 function BulletList({ items }: { items?: string[] }) {
   if (!items?.length) return null;
 
@@ -137,6 +162,233 @@ function BulletList({ items }: { items?: string[] }) {
         <li key={index}>{item}</li>
       ))}
     </ul>
+  );
+}
+
+function ShareholderEngagementSection({
+  engagement,
+}: {
+  engagement: NonNullable<CompanyReport["shareholderEngagement"]>;
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const hasData = !!engagement.hasData;
+  const sourceUrl = engagement.source || engagement.proxyLink || "";
+  const hasSource = hasMeaningfulValue(sourceUrl);
+  const paragraphText = String(engagement.paragraphs || "").trim();
+  const paragraphBlocks = splitParagraphs(paragraphText);
+  const detailCards = [
+    {
+      label: "Number of investors contacted",
+      value: engagement.numberOfInvestorsContacted,
+      kind: "metric" as const,
+    },
+    {
+      label: "Percentage ownership contacted",
+      value: engagement.percentageOwnershipContacted,
+      kind: "metric" as const,
+    },
+    {
+      label: "Issues discussed",
+      value: engagement.issuesDiscussed,
+      kind: "issues" as const,
+    },
+    {
+      label: "Action taken",
+      value: engagement.actionTaken,
+      kind: "action" as const,
+    },
+  ];
+
+  const visibleCards = detailCards.filter((item) => {
+    if (item.kind === "issues") return !!item.value?.length;
+    return hasMeaningfulValue(item.value);
+  });
+
+  const hasVisibleCards = visibleCards.length > 0;
+  const isDisclosureFallback = /proxy does not disclose engagement details/i.test(paragraphText);
+  const showPreview = hasData && !hasVisibleCards && !!paragraphText && !isDisclosureFallback;
+  const previewText = paragraphText.slice(0, 260);
+  const hasMorePreview = paragraphText.length > previewText.length;
+
+  const topMetricCards = visibleCards.filter((item) => item.kind === "metric");
+  const issueCard = visibleCards.find((item) => item.kind === "issues");
+  const actionCard = visibleCards.find((item) => item.kind === "action");
+
+  const renderCardWidthClass = topMetricCards.length > 1 ? "sm:col-span-1" : "sm:col-span-2";
+
+  const modalParagraphs = paragraphBlocks.length ? paragraphBlocks : paragraphText ? [paragraphText] : [];
+
+  return (
+    <>
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-5">
+            <div className="flex items-center gap-2">
+              <Badge className="rounded-full" variant="outline">
+                {engagement.year ?? "Year N/A"}
+              </Badge>
+            </div>
+            <div className="flex items-start gap-2">
+              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                <MessageSquareQuote className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex min-w-0 items-start gap-2">
+                <h3 className="max-w-[180px] whitespace-normal text-[14px] font-semibold leading-5 text-slate-900">
+                  <span className="block whitespace-nowrap">Proxy Disclosure:</span>
+                  <span className="block whitespace-nowrap">Shareholder Engagement</span>
+                </h3>
+                <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
+                  BETA
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {hasData && hasVisibleCards ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 rounded-full border-slate-300 bg-white text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => setDetailsOpen(true)}
+            >
+              Detail
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Button>
+          ) : null}
+        </div>
+
+        {!hasData ? (
+          paragraphText ? (
+            <p className="mt-4 text-[15px] leading-6 text-slate-700 whitespace-pre-line">{paragraphText}</p>
+          ) : null
+        ) : hasVisibleCards ? (
+          <div className="mt-4 space-y-4">
+            {topMetricCards.length ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {topMetricCards.map((item) => (
+                  <div
+                    key={item.label}
+                    className={cx(
+                      "rounded-xl border border-slate-200 bg-slate-50 p-3",
+                      renderCardWidthClass
+                    )}
+                  >
+                    <div className="text-[13px] font-medium uppercase tracking-wide text-slate-500">{item.label}</div>
+                    <div className="mt-1 text-[15px] font-semibold text-slate-900">{String(item.value)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            {issueCard ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="text-[13px] font-medium uppercase tracking-wide text-slate-500">Issues discussed</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {issueCard.value?.map((issue, index) => (
+                    <span
+                      key={`${issue}-${index}`}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[14px] text-slate-700"
+                    >
+                      {issue}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {actionCard ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="text-[13px] font-medium uppercase tracking-wide text-slate-500">Action taken</div>
+                <div className="mt-1 text-[15px] font-normal leading-6 text-slate-700 whitespace-pre-line">
+                  {String(actionCard.value)}
+                </div>
+              </div>
+            ) : null}
+
+          </div>
+        ) : isDisclosureFallback ? (
+          <p className="mt-4 text-[15px] leading-6 text-slate-700 whitespace-pre-line">{paragraphText}</p>
+        ) : showPreview ? (
+          <div className="mt-4 space-y-2">
+            <p className="text-[15px] leading-6 text-slate-700 whitespace-pre-line">{previewText}</p>
+            <div className="flex items-center gap-2">
+              {hasMorePreview ? <span className="text-[15px] leading-6 text-slate-500">......</span> : null}
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 rounded-full border-primary text-[13px] font-medium text-primary hover:bg-primary/10"
+                onClick={() => setDetailsOpen(true)}
+              >
+                Detail
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <Dialog size="xl" open={detailsOpen} onClose={() => setDetailsOpen(false)}>
+        <Dialog.Panel className="sm:w-[820px] lg:w-[1120px]">
+          <Dialog.Title className="relative w-full pr-14">
+            <div className="flex items-start gap-2">
+              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+                <MessageSquareQuote className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex min-w-0 items-start gap-2">
+                <h2 className="max-w-[760px] whitespace-normal text-xl font-semibold leading-6 text-slate-900">
+                  Proxy Disclosure: Shareholder Engagement
+                </h2>
+                <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
+                  BETA
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDetailsOpen(false)}
+              className="absolute right-4 top-3 rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Close shareholder engagement details"
+            >
+              <span className="text-xl leading-none">×</span>
+            </button>
+          </Dialog.Title>
+          <Dialog.Description className="space-y-5 px-6 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <Badge className="rounded-full" variant="outline">
+                {engagement.year ?? "Year N/A"}
+              </Badge>
+              {hasSource ? (
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open proxy statement"
+                  aria-label="Open proxy statement"
+                  className="inline-flex items-center gap-2 rounded-full border border-primary bg-primary/10 px-4 py-2 text-[14px] font-medium text-primary"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open proxy statement
+                </a>
+              ) : null}
+            </div>
+
+            {modalParagraphs.length ? (
+              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                {modalParagraphs.map((paragraph, index) => (
+                  <p key={index} className="text-[15px] leading-7 text-slate-700 whitespace-pre-line">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[15px] leading-7 text-slate-700">
+                No detailed narrative was provided for this shareholder engagement record.
+              </div>
+            )}
+          </Dialog.Description>
+        </Dialog.Panel>
+      </Dialog>
+    </>
   );
 }
 
@@ -664,6 +916,26 @@ function SummaryLoadingSkeleton() {
               ))}
             </div>
           </div>
+
+          <div className="rounded-xl border bg-white p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-2">
+                <div className="h-5 w-20 animate-pulse rounded-full bg-slate-200" />
+                <div className="h-5 w-48 animate-pulse rounded bg-slate-200" />
+                <div className="h-4 w-24 animate-pulse rounded-full bg-slate-200" />
+              </div>
+              <div className="h-9 w-9 animate-pulse rounded-full bg-slate-200" />
+            </div>
+            <div className="mt-4 space-y-3">
+              <div className="h-4 w-[96%] animate-pulse rounded bg-slate-200" />
+              <div className="h-4 w-[90%] animate-pulse rounded bg-slate-200" />
+              <div className="h-4 w-[84%] animate-pulse rounded bg-slate-200" />
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
+              <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -847,11 +1119,15 @@ export default function CompanyOverviewSummaryTab({
                     </div>
                   </div>
                 ) : null}
+
+                {report.shareholderEngagement ? (
+                  <ShareholderEngagementSection engagement={report.shareholderEngagement} />
+                ) : null}
               </CardContent>
             </Card>
 
             <div className="space-y-6 md:col-span-8">
-              {!report.board && !report.sop && !report.auditor && !report.shareholderProposals && !report.esg && !report.proxy && (
+              {!report.board && !report.sop && !report.auditor && !report.shareholderProposals && !report.shareholderEngagement && !report.esg && !report.proxy && (
                 <div className="h-52 flex items-center justify-center rounded-2xl border border-slate-200 bg-white">
                   <p className="font-semibold text-slate-500">
                     No Company Overview data found for {report.company}.
