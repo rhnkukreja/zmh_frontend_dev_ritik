@@ -556,7 +556,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
               <div className="flex flex-col sm:flex-row sm:justify-between items-center gap-8 sm:gap-16">
                 <div className="w-full flex-1">
                   <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                    Proposal Type
+                    Case Study Type
                   </FormCheck.Label>
                   <div className="mt-2">
                     <Controller
@@ -571,7 +571,7 @@ const AddNewCaseStudies: React.FC<AddNewCaseStudiesProps> = ({
                               field.onChange(e.target.value);
                             }}
                             options={{
-                              placeholder: "Select Proposal Type",
+                              placeholder: "Select Case Study Type",
                             }}
                             className="w-full text-left"
                           >

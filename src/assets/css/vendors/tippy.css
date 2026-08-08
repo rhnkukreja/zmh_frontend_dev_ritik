@@ -13,6 +13,9 @@
         padding: theme("spacing.[1.5]") theme("spacing.3");
     }
 }
+.tippy-box[data-theme~="small"] {
+    font-size: theme("fontSize.xs");
+}
 .tippy-popper {
     &[x-placement="left"],
     &[x-placement="right"],

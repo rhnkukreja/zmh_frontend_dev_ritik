@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
-import { useAppSelector } from "@/stores/hooks";
 
 // ─── Module-level cache (survives tab switches, clears on page refresh) ───────
 const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -68,7 +67,11 @@ const normaliseProfile = (raw: any) => {
   const rawSummary =
     typeof raw.investor_summary === "string"
       ? raw.investor_summary
-      : raw.activist_investor_summary?.investment_focus ||
+      // narrative_summary is the pipeline's dedicated "institutional research
+      // report" opening paragraph, written after all campaign/13F data is
+      // final — richer than investment_focus, so it leads when present.
+      : raw.activist_investor_summary?.narrative_summary ||
+        raw.activist_investor_summary?.investment_focus ||
         (typeof raw.activist_investor_summary === "string"
           ? raw.activist_investor_summary
           : "") ||
@@ -82,8 +85,10 @@ const normaliseProfile = (raw: any) => {
     .map((pt: any) => stripCitations(pt));
 
   const legalName = raw.activist_investor_summary?.legal_name || raw.activist_investor_summary?.brand_name || "Activist Profile";
-  const founded  = raw.activist_investor_summary?.founded || "N/A";
-  const hq       = raw.activist_investor_summary?.headquarters || "N/A";
+  const founded  = raw.activist_investor_summary?.founded || "";
+  const hq       = raw.activist_investor_summary?.headquarters || "";
+  const founderOrLead = raw.activist_investor_summary?.founder_or_key_lead || "";
+  const officialWebsite = raw.activist_investor_summary?.official_website || "";
 
   // ── RESTORED MISSING DATA ──
   const personnel = (raw.nominees_and_visible_personnel || raw.visible_personnel || []).map((p: any) => ({
@@ -106,18 +111,34 @@ const normaliseProfile = (raw: any) => {
     portfolio_note:   snap13f.reported_13f_portfolio_value_note || "",
   };
 
-  const campaigns = (raw.campaign_registry || raw.campaign_history || []).map((c: any) => ({
-    target_company:  c.target_company || "Unknown",
-    start_date:      c.campaign_start_date || c.start_year || "N/A",
-    start_year:      (c.campaign_start_date || c.start_year || "N/A").toString().slice(0, 4),
-    status_label:    c.campaign_status_label || c.status || "N/A",
-    normalized_status: c.normalized_status || c.status?.toLowerCase() || "closed",
-    campaign_form:   c.campaign_form || [],
-    main_issues:     c.main_issues || [],
-    nominees:        c.nominees_or_personnel || [],
-    notes:           c.notes || c.objectives || "",
-    sources:         c.source_set || [],
-  }));
+  const campaigns = (raw.campaign_registry || raw.campaign_history || []).map((c: any) => {
+    // Two schemas feed this dashboard: the manual multi-file compile path emits
+    // nominees_or_personnel as an array, the auto-generated pipeline emits
+    // nominees as a single "Name (role); Name2 (role2)" string — support both
+    // rather than silently dropping whichever one wasn't written first.
+    const nomineeList = Array.isArray(c.nominees_or_personnel) && c.nominees_or_personnel.length > 0
+      ? c.nominees_or_personnel
+      : (typeof c.nominees === "string" && c.nominees.trim()
+          ? c.nominees.split(/;\s*/).filter(Boolean)
+          : []);
+    return {
+      target_company:  c.target_company || "Unknown",
+      start_date:      c.campaign_start_date || c.start_year || "N/A",
+      start_year:      (c.campaign_start_date || c.start_year || "N/A").toString().slice(0, 4),
+      status_label:    c.campaign_status_label || c.status || "N/A",
+      normalized_status: c.normalized_status || c.status?.toLowerCase() || "closed",
+      campaign_form:   c.campaign_form || [],
+      main_issues:     c.main_issues || [],
+      nominees:        nomineeList,
+      objectives:      c.objectives || null,
+      tactics:         c.tactics || null,
+      notes:           stripCitations(c.notes || c.objectives || ""),
+      outcome_to_date: c.outcome_to_date || null,
+      confidence_label: c.confidence_label || null,
+      source_filing_url: c.source_filing?.url || null,
+      sources:         c.source_set || [],
+    };
+  });
 
   const playbookObservations = [
     playbook.governance_philosophy,
@@ -147,6 +168,8 @@ const normaliseProfile = (raw: any) => {
     legalName,
     founded,
     hq,
+    founderOrLead,
+    officialWebsite,
     summary,
     summaryPoints,
     personnel,
@@ -303,22 +326,17 @@ const ActivistDashboardSkeleton = () => (
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const ActivistIntelligenceDashboard = ({
-  isAdminMode = false,
   externalPreviewData = null,
   onPreviewPublished = () => {},
   openGenerateModalSignal = 0,
 }: {
-  isAdminMode?: boolean;
   externalPreviewData?: any;
   onPreviewPublished?: () => void;
   openGenerateModalSignal?: number;
 }) => {
-  // Pull the logged-in session securely from the Redux store
-  const { user } = useAppSelector((state: any) => state.authentiction);
-  const isActualAdmin = user?.user_type === "Admin" || user?.user_type === "Analyst";
-
-  // The Edit button should only show up if the toggle is set to "Admin View" AND the user has permissions
-  const showEditButton = isAdminMode && isActualAdmin;
+  // Edit Mode is available to everyone viewing the profile — no separate
+  // admin/user view toggle.
+  const showEditButton = true;
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
   const [investorKeys, setInvestorKeys] = useState<string[]>([]);
@@ -334,6 +352,10 @@ const ActivistIntelligenceDashboard = ({
   const [generateInvestorName, setGenerateInvestorName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStep, setGenerateStep] = useState("");
+  // Scoped to the Generate modal so a failed generation shows inline there
+  // instead of replacing the whole dashboard via the shared page-level
+  // `error` state (that used to wipe out the modal along with everything else).
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   // ── External trigger: opens the Generate Profile modal from the "Add Proxy
   // Contest" split-button dropdown outside this component ──
@@ -342,6 +364,7 @@ const ActivistIntelligenceDashboard = ({
     if (openGenerateModalSignal && openGenerateModalSignal !== consumedGenerateSignal.current) {
       consumedGenerateSignal.current = openGenerateModalSignal;
       setGenerateModalOpen(true);
+      setGenerateError(null); // don't carry a stale error into a fresh attempt
     }
   }, [openGenerateModalSignal]);
 
@@ -404,7 +427,9 @@ const ActivistIntelligenceDashboard = ({
       setRawProfile(externalPreviewData);
       setProfile(normaliseProfile(externalPreviewData));
       setIsPreviewMode(true);
-      setIsEditMode(true);
+      // Show the generated profile as a normal read view first — Edit Mode
+      // is opt-in via the button, not the default landing state.
+      setIsEditMode(false);
     }
   }, [externalPreviewData]);
 
@@ -455,46 +480,42 @@ const ActivistIntelligenceDashboard = ({
     fetchSingleProfile();
   }, [activeInvestorKey]);
 
- const handleUpload = async () => {
-    if (!newInvestorName.trim()) {
-      alert("Please enter a clear Investor Name.");
-      return;
-    }
-    if (selectedJsonFiles.length === 0) {
-      alert("Please select at least one data file.");
+ const handlePreviewFiles = async () => {
+    if (!newInvestorName || selectedJsonFiles.length === 0) {
+      setError("Please provide an investor name and select files.");
       return;
     }
 
-    setIsUploading(true);
     try {
+      setIsUploading(true);
+      setError(null);
+      
       const formData = new FormData();
       formData.append("investor_name", newInvestorName);
-      selectedJsonFiles.forEach(file => {
+      selectedJsonFiles.forEach((file) => {
         formData.append("files", file);
       });
 
-      // 🛑 1. Call the PREVIEW endpoint instead of upload-multi
-      const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/preview-multi`;
-      const response = await axios.post(url, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Pointing to your new preview endpoint
+      const response = await axios.post(
+        `${AI_CHATBOT_API_BASE}/api/activist-profiles/preview-multi`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-      // 🛑 2. Load the preview data directly into the UI state
-      const previewData = response.data?.data;
+      const previewData = response.data.data;
+      
+      // Load the preview data into the dashboard
       setRawProfile(previewData);
       setProfile(normaliseProfile(previewData));
       
-      // 🛑 3. Turn on Preview and Edit modes
       setIsPreviewMode(true);
-      setIsEditMode(true);
+      setIsEditMode(false); // land on the read view; Edit Mode is opt-in
+      setUploadModalOpen(false); // Close modal on success
 
-      setUploadModalOpen(false);
-      setNewInvestorName("");
-      setSelectedJsonFiles([]);
-      
-    } catch (err) {
+    } catch (err: any) {
       console.error("Preview generation failed:", err);
-      alert("Failed to generate preview. Check your JSON files.");
+      setError(err.response?.data?.detail || "Failed to generate preview.");
     } finally {
       setIsUploading(false);
     }
@@ -504,58 +525,112 @@ const ActivistIntelligenceDashboard = ({
   // finishes and loads the result into the SAME preview/edit/approve flow the
   // manual file-upload path already uses — nothing gets saved to S3 until the
   // user clicks "Approve & Publish".
-  const handleGenerateProfile = async () => {
-    if (!generateInvestorName.trim()) {
-      alert("Please enter a fund name.");
+  // ─── 3. HANDLE PIPELINE GENERATION AND POLLING ─────────────────────────────
+
+  // A failed generation almost always means the entered name didn't resolve
+  // to a known SEC/13F filer — surface that plainly rather than the raw
+  // backend exception text (library names, tracebacks) which tells a user
+  // nothing about what to do differently.
+  const buildGenerationFailedMessage = (name: string) =>
+    `We couldn't generate a profile for "${name}".  
+    double-check the spelling, or try the fund's ` +
+    `exact legal name (e.g. "Elliott Investment Management" rather than "Elliott").`;
+
+  // Mirrors the backend's slugify() (app/api/activist_intelligence.py) so we
+  // can check "does a profile for this name already exist" against
+  // investorKeys before spending several minutes regenerating one.
+  const slugifyName = (text: string) =>
+    text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-");
+
+  const runGeneration = async () => {
+    try {
+      setIsGenerating(true);
+      setGenerateStep("Starting...");
+      setGenerateError(null);
+
+      // Kick off the background job
+      const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
+        investor_name: generateInvestorName,
+        // creator_email: user?.email // TODO: re-enable after testing
+      });
+      
+      const { slug } = startRes.data;
+
+      // Start Polling
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await axios.get(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${slug}/status`);
+          const jobData = statusRes.data;
+
+          if (jobData.state === "running") {
+            setGenerateStep(jobData.step || "Processing...");
+          }
+          else if (jobData.state === "done") {
+            clearInterval(pollInterval);
+            setGenerateStep("Complete!");
+            
+            // Load the generated payload as a preview
+            setRawProfile(jobData.data);
+            setProfile(normaliseProfile(jobData.data));
+            setIsPreviewMode(true);
+            setIsEditMode(false); // land on the read view; Edit Mode is opt-in
+
+            setGenerateModalOpen(false);
+            setIsGenerating(false);
+          }
+          else if (jobData.state === "error") {
+            clearInterval(pollInterval);
+            console.error("Generation job failed:", jobData.message);
+            setGenerateError(buildGenerationFailedMessage(generateInvestorName));
+            setIsGenerating(false);
+          }
+        } catch (pollErr) {
+          // If 404, it might just not be written to S3 yet, keep polling.
+          console.warn("Polling interval warning:", pollErr);
+        }
+      }, 3000); // Poll every 3 seconds
+
+    } catch (err: any) {
+      console.error("Failed to start generation:", err);
+      setGenerateError(buildGenerationFailedMessage(generateInvestorName));
+      setIsGenerating(false);
+    }
+  };
+
+  // Published profiles are saved as "{slug}-profile" — check investorKeys
+  // (already loaded for the profile switcher) before burning several minutes
+  // regenerating one that already exists, and ask the user to confirm first.
+  const [duplicateProfileKey, setDuplicateProfileKey] = useState<string | null>(null);
+
+  const handleStartGeneration = () => {
+    if (!generateInvestorName.trim()) return;
+    const targetSlug = `${slugifyName(generateInvestorName)}-profile`;
+    const existingKey = investorKeys.find((k) => k === targetSlug);
+    if (existingKey) {
+      setDuplicateProfileKey(existingKey);
       return;
     }
+    runGeneration();
+  };
 
-    setIsGenerating(true);
-    setGenerateStep("Starting...");
+  const handleConfirmRegenerate = () => {
+    setDuplicateProfileKey(null);
+    runGeneration();
+  };
+
+  const handleCancelRegenerate = () => {
+    // "No" — back to the main page, per the requested flow.
+    setDuplicateProfileKey(null);
+    setGenerateModalOpen(false);
+    setGenerateInvestorName("");
+  };
+
+  // Optional: Discard a running/completed job
+  const handleDiscardJob = async (slug: string) => {
     try {
-      const startUrl = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`;
-      const startRes = await axios.post(startUrl, { investor_name: generateInvestorName });
-      const slug = startRes.data?.slug;
-      if (!slug) throw new Error("No job slug returned by the server.");
-
-      const statusUrl = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${slug}/status`;
-      const POLL_INTERVAL_MS = 5000;
-
-      await new Promise<void>((resolve, reject) => {
-        const poll = async () => {
-          try {
-            const statusRes = await axios.get(statusUrl, { params: { t: Date.now() } });
-            const { state, step, data, message } = statusRes.data || {};
-
-            if (state === "done") {
-              setRawProfile(data);
-              setProfile(normaliseProfile(data));
-              setIsPreviewMode(true);
-              setIsEditMode(true);
-              resolve();
-              return;
-            }
-            if (state === "error") {
-              reject(new Error(message || "Profile generation failed."));
-              return;
-            }
-            setGenerateStep(step || "Working...");
-            setTimeout(poll, POLL_INTERVAL_MS);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        poll();
-      });
-
-      setGenerateModalOpen(false);
-      setGenerateInvestorName("");
-    } catch (err: any) {
-      console.error("Profile generation failed:", err);
-      alert(err?.message || "Failed to generate profile. Please try again.");
-    } finally {
-      setIsGenerating(false);
-      setGenerateStep("");
+      await axios.delete(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/${slug}`);
+    } catch (err) {
+      console.error("Failed to discard job scratch file:", err);
     }
   };
 
@@ -564,6 +639,9 @@ const ActivistIntelligenceDashboard = ({
     if (!rawProfile) return;
     const updatedRaw = JSON.parse(JSON.stringify(rawProfile));
     if (typeof updatedRaw.investor_summary === "string") updatedRaw.investor_summary = val;
+    // Mirror normaliseProfile's display priority (narrative_summary first)
+    // so editing the visible text edits the field actually being shown.
+    else if (updatedRaw.activist_investor_summary?.narrative_summary) updatedRaw.activist_investor_summary.narrative_summary = val;
     else if (updatedRaw.activist_investor_summary) updatedRaw.activist_investor_summary.investment_focus = val;
     else updatedRaw.investor_summary = val;
     setRawProfile(updatedRaw);
@@ -682,25 +760,40 @@ const ActivistIntelligenceDashboard = ({
 
   // The final save push to the upcoming FastAPI backend
   const handleSaveProfile = async () => {
-    setIsSaving(true);
+    if (!rawProfile) return;
+
     try {
+      setIsSaving(true);
+      setError(null);
+
       if (isPreviewMode) {
-        await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles`, rawProfile);
-        setIsPreviewMode(false);
+        // Re-assign rawProfile to payload
+        const payload = { ...rawProfile };
+
+        await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles`, payload);
         
-        // 🛑 CLEAR PREVIEW FROM index.tsx
+        setIsPreviewMode(false);
+        setIsEditMode(false);
         onPreviewPublished(); 
         
-        const newSlug = rawProfile.metadata?.slug + "-profile";
+        const newSlug = rawProfile.metadata?.slug || "";
         await fetchAllProfiles(newSlug);
+
         alert("Profile Approved and Published to S3!");
+
       } else {
-        await axios.put(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`, rawProfile);
-        setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: rawProfile }));
+        const profileName = activeInvestorKey;
+        await axios.put(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${profileName}`, rawProfile);
+        setIsEditMode(false);
+        setProfilesCache(prev => ({ ...prev, [profileName]: rawProfile }));
       }
-      setIsEditMode(false);
-    } catch (err) {
-      alert("Failed to save profile changes.");
+    } catch (err: unknown) {
+      console.error("Save failed:", err);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Failed to save profile.");
+      } else {
+        setError("An unexpected error occurred while saving.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -733,8 +826,15 @@ const ActivistIntelligenceDashboard = ({
     fill: STATUS_COLOR_MAP[key as keyof typeof STATUS_COLOR_MAP] || "#6b7280",
   }));
 
-  const visiblePersonnel = profile.personnel.filter((p: any) => p.category === "visible_personnel");
-  const nominees = profile.personnel.filter((p: any) => p.category === "nominee_or_outcome_director");
+  // The auto-generated pipeline always tags personnel "visible_personnel" —
+  // it never emits "nominee_or_outcome_director" — so splitting strictly on
+  // category left the Nominees section permanently empty even for people
+  // whose role is literally "nominee for election to the Board". Split on
+  // category when it's actually been set to the nominee value, otherwise
+  // fall back to the role text so real nominees still land in that section.
+  const isNomineeRole = (p: any) => /nominee|appointee|elected|settlement director/i.test(p.role || "");
+  const nominees = profile.personnel.filter((p: any) => p.category === "nominee_or_outcome_director" || isNomineeRole(p));
+  const visiblePersonnel = profile.personnel.filter((p: any) => !nominees.includes(p));
 
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
@@ -818,7 +918,7 @@ const ActivistIntelligenceDashboard = ({
 {showEditButton && (
   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 
-    {isEditMode && (
+    {(isEditMode || isPreviewMode) && (
   <button
     onClick={handleSaveProfile}
     disabled={isSaving}
@@ -871,7 +971,13 @@ const ActivistIntelligenceDashboard = ({
             )}
           </div>
 
-          <p style={{ fontSize: 12, color: "#6b7280", margin: "0 0 16px" }}>{profile.hq}</p>
+          {(profile.hq || profile.founded || profile.founderOrLead) && (
+            <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: "0 0 16px", fontSize: 12, color: "#6b7280" }}>
+              {profile.hq && <span>{profile.hq}</span>}
+              {profile.founded && <span>Founded {profile.founded}</span>}
+              {profile.founderOrLead && <span>Led by {profile.founderOrLead}</span>}
+            </div>
+          )}
 
           {/* Summary text — editable in Edit Mode */}
           {isEditMode ? (
@@ -1054,6 +1160,17 @@ const ActivistIntelligenceDashboard = ({
                               {c.main_issues.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.campaign_form.length > 0 ? 6 : 0 }}>{c.main_issues.map((issue: string, j: number) => <Tag key={j} text={issue} />)}</div>}
                               {c.campaign_form.length > 0 && <div style={{ display: "flex", flexWrap: "wrap" }}>{c.campaign_form.map((form: string, j: number) => <Tag key={j} text={form} color="#fdf2f2" textColor={THEME_MAROON} />)}</div>}
                               {c.nominees.length > 0 && <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {c.nominees.join(", ")}</p>}
+                              {c.notes && <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>}
+                              {c.outcome_to_date && (
+                                <p style={{ fontSize: 12, color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "6px 10px", margin: "8px 0 0", lineHeight: 1.5 }}>
+                                  <strong>Outcome:</strong> {c.outcome_to_date}
+                                </p>
+                              )}
+                              {c.source_filing_url && (
+                                <a href={c.source_filing_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", fontSize: 11, color: THEME_MAROON, marginTop: 8, textDecoration: "none", fontWeight: 600 }}>
+                                  View primary filing ↗
+                                </a>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -1083,12 +1200,11 @@ const ActivistIntelligenceDashboard = ({
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ background: "#fafafa", borderBottom: "1px solid #e5e7eb" }}>
-                      {[{ label: "Issuer", align: "left" }, { label: "Ticker", align: "left" }, { label: "Shares", align: "right" }, { label: "Value", align: "right" }, { label: "Type", align: "left" }].map((h) => <th key={h.label} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: h.align as any, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h.label}</th>)}
+                      {[{ label: "Issuer", align: "left" }, { label: "Ticker", align: "left" }, { label: "Shares", align: "right" }, { label: "Value", align: "right" }].map((h) => <th key={h.label} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: h.align as any, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h.label}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {profile.snapshot.holdings.map((h: any, i: number) => {
-                      const isOption = h.security_type?.toLowerCase().includes("option") || h.security_type?.toLowerCase().includes("put");
                       const sharesRaw = h.shares_or_principal;
                       const sharesDisplay = typeof sharesRaw === "number" ? sharesRaw.toLocaleString() : sharesRaw ? String(sharesRaw).replace(/\s*shares/gi, '') : "N/A";
                       return (
@@ -1097,7 +1213,6 @@ const ActivistIntelligenceDashboard = ({
                           <td style={{ padding: "12px 16px", fontSize: 12, color: THEME_MAROON, fontWeight: 500 }}>{h.ticker_or_symbol}</td>
                           <td style={{ padding: "12px 16px", fontSize: 12, color: "#6b7280", textAlign: "right" }}>{sharesDisplay}</td>
                           <td style={{ padding: "12px 16px", fontSize: 13, color: "#111827", fontWeight: 500, textAlign: "right" }}>{formatUSD(h.value_usd_thousands)}</td>
-                          <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 999, background: isOption ? "#fef3c7" : "#f3f4f6", color: isOption ? "#d97706" : "#4b5563" }}>{h.security_type}</span></td>
                         </tr>
                       );
                     })}
@@ -1134,7 +1249,13 @@ const ActivistIntelligenceDashboard = ({
                     // Robust parser in case backend sends strings OR objects
                     const title = typeof src === "string" ? src : (src.title || src.name || src.source_name || "Reference Document");
                     const url = typeof src === "object" ? (src.url || src.link || src.source_url) : null;
-                    const date = typeof src === "object" ? src.date : null;
+                    // The auto-generated pipeline emits publication_or_filing_date, not date —
+                    // check both so dates actually show instead of silently being empty.
+                    const date = typeof src === "object" ? (src.publication_or_filing_date || src.date) : null;
+                    const sourceType = typeof src === "object" ? src.source_type : null;
+                    const publisher = typeof src === "object" ? src.publisher : null;
+                    const relevanceNote = typeof src === "object" ? src.relevance_note : null;
+                    const metaLine = [sourceType, publisher, date].filter(Boolean).join(" · ");
 
                     return (
                       <li key={i} style={{ display: "flex", alignItems: "flex-start", paddingBottom: 14, borderBottom: i !== profile.sources.length - 1 ? "1px solid #f3f4f6" : "none" }}>
@@ -1143,7 +1264,8 @@ const ActivistIntelligenceDashboard = ({
                           <p style={{ fontSize: 13, color: "#4b5563", margin: 0, lineHeight: 1.55 }}>
                             {url ? <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: "#2e50cdcf", textDecoration: "none", fontWeight: 500 }} onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")} onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}>{title}</a> : <span>{title}</span>}
                           </p>
-                          {date && <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>{date}</p>}
+                          {relevanceNote && <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0", lineHeight: 1.5 }}>{relevanceNote}</p>}
+                          {metaLine && <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>{metaLine}</p>}
                         </div>
                       </li>
                     );
@@ -1195,7 +1317,7 @@ const ActivistIntelligenceDashboard = ({
                 Cancel
               </button>
               <button 
-    onClick={handleUpload} 
+    onClick={handlePreviewFiles} 
     disabled={isUploading} 
     style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: isUploading ? "wait" : "pointer", fontWeight: 600, opacity: isUploading ? 0.7 : 1 }}
   >
@@ -1212,8 +1334,7 @@ const ActivistIntelligenceDashboard = ({
           <div style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
             <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Generate New Profile</h2>
             <p style={{ margin: "0 0 24px", color: "#6b7280", fontSize: 13 }}>
-              Enter an activist fund's legal name — the AI will resolve its 13F filings, campaign
-              history, and personnel automatically. This can take a few minutes.
+              Enter an activist fund's legal name — This can take a few minutes.
             </p>
 
             <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
@@ -1235,20 +1356,55 @@ const ActivistIntelligenceDashboard = ({
               </div>
             )}
 
+            {generateError && !isGenerating && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6 }}>
+                <span style={{ flexShrink: 0, lineHeight: 1 }}>⚠</span>
+                <span style={{ fontSize: 12, color: "#b91c1c", lineHeight: 1.5 }}>{generateError}</span>
+              </div>
+            )}
+
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <button
-                onClick={() => { setGenerateModalOpen(false); setGenerateInvestorName(""); }}
+                onClick={() => { setGenerateModalOpen(false); setGenerateInvestorName(""); setGenerateError(null); }}
                 disabled={isGenerating}
                 style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: isGenerating ? "not-allowed" : "pointer", fontWeight: 600, color: "#374151", opacity: isGenerating ? 0.6 : 1 }}
               >
                 Cancel
               </button>
               <button
-                onClick={handleGenerateProfile}
+                onClick={handleStartGeneration}
                 disabled={isGenerating}
                 style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: isGenerating ? "wait" : "pointer", fontWeight: 600, opacity: isGenerating ? 0.7 : 1 }}
               >
                 {isGenerating ? "Generating..." : "Generate & Preview"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DUPLICATE PROFILE CONFIRMATION ── */}
+      {duplicateProfileKey && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 420, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+            <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Profile Already Exists</h2>
+            <p style={{ margin: "0 0 24px", color: "#4b5563", fontSize: 13, lineHeight: 1.6 }}>
+              A profile for <strong>{formatKeyToLabel(duplicateProfileKey)}</strong> has already been generated and published.
+              Do you want to regenerate it anyway? This will run the full pipeline again and produce a fresh
+              preview — the existing published profile isn't overwritten until you approve and publish it.
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button
+                onClick={handleCancelRegenerate}
+                style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, color: "#374151" }}
+              >
+                No
+              </button>
+              <button
+                onClick={handleConfirmRegenerate}
+                style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}
+              >
+                Yes, regenerate
               </button>
             </div>
           </div>
@@ -1267,8 +1423,13 @@ const PersonnelCard = ({ person, accentColor = "#f3f4f6", textColor = "#374151" 
     <div style={{ border: `1px solid #e5e7eb`, borderRadius: 8, padding: "16px", display: "flex", gap: 14, alignItems: "flex-start", background: "#fafafa" }}>
       <div style={{ width: 44, height: 44, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: textColor, flexShrink: 0 }}>{initials}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px" }}>{person.name}</p>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: 0, lineHeight: 1.4 }}>{person.role}</p>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px" }}>{person.name}</p>
+        </div>
+        <p style={{ fontSize: 12, color: "#6b7280", margin: person.public_note ? "0 0 6px" : 0, lineHeight: 1.4 }}>{person.role}</p>
+        {person.public_note && (
+          <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: 1.5 }}>{person.public_note}</p>
+        )}
       </div>
     </div>
   );

@@ -37,11 +37,9 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import { useEffect, useMemo, useReducer, useState , useRef} from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
-
-import { baseURL } from "@/constant";
 
 import Tippy from "../Base/Tippy";
 import clsx from "clsx";
@@ -147,16 +145,6 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const [filerOptions, setFilerOptions] = useState<any[]>([]);
   const [selectedFilerLink, setSelectedFilerLink] = useState<string>("");
   const [activeInstitutionName, setActiveInstitutionName] = useState<string>("");
-  
-  // 🌟 BACKGROUND POLLING STATES
-  const [liveData, setLiveData] = useState<Record<string, any>>({});
-  const [pollingSet, setPollingSet] = useState<Set<string>>(new Set());
-
-  const pollingRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    pollingRef.current = pollingSet;
-  }, [pollingSet]);
 
   // Helper to normalize names
   const normalizeInstitutionName = (name: string) => {
@@ -177,19 +165,11 @@ const getNormalizedScrapedInfo = (name: string) => {
 
   const target = normalizeInstitutionName(name);
 
-  const liveKey = Object.keys(liveData).find(
-    (k) => normalizeInstitutionName(k) === target
-  );
-
   const autoKey = Object.keys(autoScrapedData).find(
     (k) => normalizeInstitutionName(k) === target
   );
 
-
-  return {
-    ...(autoKey ? autoScrapedData[autoKey] : {}),
-    ...(liveKey ? liveData[liveKey] : {}),
-  };
+  return autoKey ? autoScrapedData[autoKey] : {};
 };
 
   const handleViewSummary = async (institutionName: string | undefined) => {
@@ -277,33 +257,6 @@ const getNormalizedScrapedInfo = (name: string) => {
     }
   };
 
-  // Sync polling set based on loading states
-  useEffect(() => {
-    const newPolling = new Set<string>();
-    const holdings = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.holdings_data || [];
-    
-    holdings.forEach((dashboard: any) => {
-      const name = dashboard?.institution_name;
-      if (!name) return;
-
-      const scrapedInfo = getNormalizedScrapedInfo(name);
-      
-      const isActivelyScraping = 
-        (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
-        scrapedInfo.status !== "success" && 
-        scrapedInfo.status !== "failed";
-      
-      if (isActivelyScraping) {
-        newPolling.add(name);
-      }
-    });
-    
-    setPollingSet((prev) => {
-      if (prev.size === newPolling.size && [...prev].every(x => newPolling.has(x))) return prev;
-      return newPolling;
-    });
-  }, [dashboardDataList, selectedIndex, autoScrapedData, liveData, pendingInvestors]);
-
   // Helper to format the scraped strategy text into paragraphs and bullet points
  const renderFormattedStrategy = (text: string) => {
     if (!text || text === "Overview not publicly listed on this profile.") {
@@ -336,52 +289,14 @@ const getNormalizedScrapedInfo = (name: string) => {
   };
 
 
-  // 🌟 FIX: Safely lock the polling to completely prevent request overlapping!
-  useEffect(() => {
-    if (pollingSet.size === 0) return;
-
-    const interval = setInterval(async () => {
-      const targets = Array.from(pollingSet);
-
-      // Run polls concurrently and safely
-      await Promise.all(targets.map(async (name) => {
-        try {
-          // Clean the baseURL to prevent double slashes, ensure correct path
-          const endpoint = `${baseURL.replace(/\/+$/, '')}/poll-status?name=${encodeURIComponent(name)}`;
-          const res = await fetch(endpoint, {
-            headers: { 'Accept': 'application/json' }
-          });
-          
-          if (res.ok) {
-            const result = await res.json();
-            
-            // Once status changes from "scraping" to success/failed
-            if (result.status === "success" || result.status === "failed") {
-              // Commit real-time updates directly to state
-              setLiveData((prev) => ({
-                ...prev,
-                [name]: { ...result.data, status: result.status, error: null }
-              }));
-
-              // Evict from active queue
-              setPollingSet((prev) => {
-                const updated = new Set(prev);
-                updated.delete(name);
-                return updated;
-              });
-            }
-          }
-        } catch (error) {
-          console.error(`Polling error for ${name}:`, error);
-        }
-      }));
-      
-    }, 4000); // Polling every 4 seconds for snappier feedback
-
-    // Cleanup interval on unmount or when pollingSet changes
-    return () => clearInterval(interval);
-  }, [pollingSet]);
-
+  // 🌟 Polling for scrape status now happens in exactly one place: the
+  // parent (ZMHDashboard) already polls /poll-status via the AI-chatbot
+  // API and passes the results down as `autoScrapedData`/`pendingInvestors`.
+  // This component used to run its own second, independent polling loop
+  // straight to `baseURL` (the main dashboard API, which has no
+  // /poll-status route at all) — every tick 404'd, forever, for every
+  // investor still "scraping". Removed rather than re-pointed at the
+  // right host, since polling twice for the same thing was never needed.
 
   useEffect(() => {
     const today = new Date();
@@ -773,16 +688,11 @@ const getNormalizedScrapedInfo = (name: string) => {
     scrapedInfo?.id || 
     dashboard?.investor_profile_id;
     
-  const hasLiveResult = Object.keys(liveData).some(k => 
-    k.toLowerCase().replace(/[^a-z0-9]/g, '') === name.toLowerCase().replace(/[^a-z0-9]/g, '')
-  );
-
-  const isActivelyScraping = 
-    !hasLiveResult &&
-    (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
-    scrapedInfo.status !== "success" && 
+  const isActivelyScraping =
+    (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) &&
+    scrapedInfo.status !== "success" &&
     scrapedInfo.status !== "failed";
-    
+
   // 2. NEW: Add a robust fallback check. If it's flagged as "Internal" or has a document, it IS in the DB!
   const rawProxy = scrapedInfo?.proxy_influence || dashboard?.proxy_advisor_influence;
   const isInternallyCovered = typeof rawProxy === 'string' && rawProxy.toLowerCase().includes('internal');
@@ -855,14 +765,9 @@ const getNormalizedScrapedInfo = (name: string) => {
           const name = dashboard?.institution_name;
                                                 const scrapedInfo = getNormalizedScrapedInfo(name);
                                                 
-                                                const hasLiveResult = Object.keys(liveData).some(k => 
-  k.toLowerCase().replace(/[^a-z0-9]/g, '') === name.toLowerCase().replace(/[^a-z0-9]/g, '')
-);
-
-const isActivelyScraping = 
-  !hasLiveResult &&   // ← KEY FIX: live result means done, stop spinning
-  (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) && 
-  scrapedInfo.status !== "success" && 
+const isActivelyScraping =
+  (scrapedInfo.status === "scraping" || scrapedInfo.error === "Not found in S3 cache." || pendingInvestors.has(name)) &&
+  scrapedInfo.status !== "success" &&
   scrapedInfo.status !== "failed";
 
                                                 const isInS3 = scrapedInfo && Object.keys(scrapedInfo).length > 0 && !scrapedInfo.error;
