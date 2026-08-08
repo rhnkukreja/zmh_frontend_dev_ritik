@@ -5,6 +5,10 @@ export type Login = {
   user_id: number;
   user_type: string;
   user_name: string;
+  // Returned by /user/login/ — already relied on by the header (Echo) and the
+  // activist profile generator, which mails the requester on completion.
+  email?: string;
+  first_name?: string;
   saved_search?: any;
   company_id?: number;
   company_name?: string;

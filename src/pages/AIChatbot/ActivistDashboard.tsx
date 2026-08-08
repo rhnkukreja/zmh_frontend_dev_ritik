@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 
 // ─── Module-level cache (survives tab switches, clears on page refresh) ───────
 const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -9,6 +11,13 @@ let _profilesCache: { data: Record<string, any>; ts: number } | null = null;
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const THEME_MAROON = "#8b1828";
+
+// ⚠️ TEMPORARY — dev testing only. The backend only sends the "profile ready"
+// email when the /generate request carries a creator_email (see the
+// `if creator_email:` guard in app/api/activist_intelligence.py), so leaving
+// this false suppresses the mail entirely without any backend change.
+// SET BACK TO true BEFORE MERGING.
+const SEND_GENERATION_EMAIL = false;
 
 const STATUS_COLOR_MAP = {
   open: "#f59e0b",
@@ -337,6 +346,7 @@ const ActivistIntelligenceDashboard = ({
   // Edit Mode is available to everyone viewing the profile — no separate
   // admin/user view toggle.
   const showEditButton = true;
+  const { user } = useAppSelector((state: RootState) => state.authentiction);
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
   const [investorKeys, setInvestorKeys] = useState<string[]>([]);
@@ -350,6 +360,7 @@ const ActivistIntelligenceDashboard = ({
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [generateInvestorName, setGenerateInvestorName] = useState("");
+  const [generateMode, setGenerateMode] = useState<"normal" | "enhanced">("normal");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStep, setGenerateStep] = useState("");
   // Scoped to the Generate modal so a failed generation shows inline there
@@ -521,16 +532,6 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  // Kicks off the automated scrape pipeline for a fund name, then polls until it
-  // finishes and loads the result into the SAME preview/edit/approve flow the
-  // manual file-upload path already uses — nothing gets saved to S3 until the
-  // user clicks "Approve & Publish".
-  // ─── 3. HANDLE PIPELINE GENERATION AND POLLING ─────────────────────────────
-
-  // A failed generation almost always means the entered name didn't resolve
-  // to a known SEC/13F filer — surface that plainly rather than the raw
-  // backend exception text (library names, tracebacks) which tells a user
-  // nothing about what to do differently.
   const buildGenerationFailedMessage = (name: string) =>
     `We couldn't generate a profile for "${name}".  
     double-check the spelling, or try the fund's ` +
@@ -542,16 +543,37 @@ const ActivistIntelligenceDashboard = ({
   const slugifyName = (text: string) =>
     text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-");
 
+  const getCreatorEmail = (): string | undefined => {
+    if (user?.email) return user.email;
+    try {
+      const stored = JSON.parse(localStorage.getItem("User") || "null");
+      return stored?.email || undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
   const runGeneration = async () => {
     try {
       setIsGenerating(true);
       setGenerateStep("Starting...");
       setGenerateError(null);
 
+      const creatorEmail = SEND_GENERATION_EMAIL ? getCreatorEmail() : undefined;
+      if (SEND_GENERATION_EMAIL && !creatorEmail) {
+        // Not fatal — the profile still generates, the user just won't get the
+        // "your profile is ready" mail.
+        console.warn("No logged-in email available; generation will not send a completion email.");
+      }
+      if (!SEND_GENERATION_EMAIL) {
+        console.info("[dev] SEND_GENERATION_EMAIL is off — no completion email will be sent.");
+      }
+
       // Kick off the background job
       const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
         investor_name: generateInvestorName,
-        // creator_email: user?.email // TODO: re-enable after testing
+        creator_email: creatorEmail,
+        mode: generateMode,
       });
       
       const { slug } = startRes.data;
@@ -623,6 +645,7 @@ const ActivistIntelligenceDashboard = ({
     setDuplicateProfileKey(null);
     setGenerateModalOpen(false);
     setGenerateInvestorName("");
+    setGenerateMode("normal");
   };
 
   // Optional: Discard a running/completed job
@@ -1348,6 +1371,57 @@ const ActivistIntelligenceDashboard = ({
               />
             </label>
 
+            <div style={{ marginBottom: 24 }}>
+              <span style={{ display: "block", marginBottom: 8, fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                Profile Type
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setGenerateMode("normal")}
+                  disabled={isGenerating}
+                  style={{
+                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
+                    cursor: isGenerating ? "not-allowed" : "pointer",
+                    border: `1px solid ${generateMode === "normal" ? THEME_MAROON : "#d1d5db"}`,
+                    background: generateMode === "normal" ? "#fdf2f2" : "#fff",
+                    color: generateMode === "normal" ? THEME_MAROON : "#374151",
+                    fontWeight: generateMode === "normal" ? 600 : 400,
+                  }}
+                >
+                  Normal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGenerateMode("enhanced")}
+                  disabled={isGenerating}
+                  style={{
+                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
+                    cursor: isGenerating ? "not-allowed" : "pointer",
+                    border: `1px solid ${generateMode === "enhanced" ? THEME_MAROON : "#d1d5db"}`,
+                    background: generateMode === "enhanced" ? "#fdf2f2" : "#fff",
+                    color: generateMode === "enhanced" ? THEME_MAROON : "#374151",
+                    fontWeight: generateMode === "enhanced" ? 600 : 400,
+                  }}
+                >
+                  Enhanced Activism Profile
+                </button>
+              </div>
+            </div>
+
+            {generateMode === "enhanced" && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6 }}>
+                <span style={{ flexShrink: 0, lineHeight: 1 }}>⚠</span>
+                <span style={{ fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
+                  Enhanced Activism Profile runs an extra SEC EDGAR research step before generating, so it takes noticeably
+                  longer than Normal — often several minutes just for that step — and costs roughly 3x as much. You can
+                  safely close this window once generation starts; {SEND_GENERATION_EMAIL && !!getCreatorEmail()
+                    ? "you'll get an email when it's ready."
+                    : "the profile will be waiting in your profile list when you come back."}
+                </span>
+              </div>
+            )}
+
             {isGenerating && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                 <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
@@ -1365,7 +1439,7 @@ const ActivistIntelligenceDashboard = ({
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <button
-                onClick={() => { setGenerateModalOpen(false); setGenerateInvestorName(""); setGenerateError(null); }}
+                onClick={() => { setGenerateModalOpen(false); setGenerateInvestorName(""); setGenerateError(null); setGenerateMode("normal"); }}
                 disabled={isGenerating}
                 style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: isGenerating ? "not-allowed" : "pointer", fontWeight: 600, color: "#374151", opacity: isGenerating ? 0.6 : 1 }}
               >
