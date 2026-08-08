@@ -51,6 +51,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const url = searchParams.get('url')
+  const source = searchParams.get("source") || "";
+  const isCompanySource = source === "company";
   const defaultValues =
     type === "duplicate"
       ? {
@@ -1131,7 +1133,12 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
                                     className=" text-blue-400"
                                     onClick={() =>
                                       navigate(
-                                        `shareholder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`
+                                        `shareholder-proposal/${proposals?.id}?url=shareholder_proposal/no_action`,
+                                        {
+                                          state: {
+                                            source: isCompanySource ? "company" : "shared",
+                                          },
+                                        }
                                       )
                                     }
                                     value={proposals?.id}
