@@ -161,7 +161,7 @@ const DetailCaseStudies = () => {
               {singleCaseStudy?.proposal_type && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">
-                    Proponent
+                    Case Study Type
                   </h3>
                   <p>{singleCaseStudy?.proposal_type}</p>
                 </div>

@@ -139,6 +139,43 @@ function toTitleCase(text?: string) {
     .trim();
 }
 
+function capitalizeFirstLetter(text?: string) {
+  const value = String(text ?? "").trim();
+  if (!value) return value;
+  const first = value.charAt(0);
+  return first === first.toUpperCase() ? value : `${first.toUpperCase()}${value.slice(1)}`;
+}
+
+function titleCaseAllCapsHeading(text: string) {
+  if (!/^[A-Z0-9&/.'()\-,\s]+$/.test(text) || !/[A-Z]/.test(text)) return text;
+  return text
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeMixedCaseHeading(text: string) {
+  return text.replace(/(^|\s)(\d+)([a-z])(?=\b)/g, (_, prefix: string, digits: string, letter: string) => `${prefix}${digits}${letter.toUpperCase()}`);
+}
+
+function formatEngagementParagraph(text: string) {
+  return text
+    .split(/\n/)
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+
+      const normalized = normalizeMixedCaseHeading(trimmed);
+      if (/^[A-Z0-9&/.'()\-,\s]+$/.test(normalized) && /[A-Z]/.test(normalized)) {
+        return titleCaseAllCapsHeading(normalized);
+      }
+
+      return normalized;
+    })
+    .join("\n");
+}
+
 function hasMeaningfulValue(value: unknown) {
   const str = String(value ?? "").trim();
   const lower = str.toLowerCase();
@@ -175,7 +212,8 @@ function ShareholderEngagementSection({
   const sourceUrl = engagement.source || engagement.proxyLink || "";
   const hasSource = hasMeaningfulValue(sourceUrl);
   const paragraphText = String(engagement.paragraphs || "").trim();
-  const paragraphBlocks = splitParagraphs(paragraphText);
+  const formattedParagraphText = formatEngagementParagraph(paragraphText);
+  const paragraphBlocks = splitParagraphs(formattedParagraphText);
   const detailCards = [
     {
       label: "Number of investors contacted",
@@ -207,8 +245,9 @@ function ShareholderEngagementSection({
   const hasVisibleCards = visibleCards.length > 0;
   const isDisclosureFallback = /proxy does not disclose engagement details/i.test(paragraphText);
   const showPreview = hasData && !hasVisibleCards && !!paragraphText && !isDisclosureFallback;
-  const previewText = paragraphText.slice(0, 260);
-  const hasMorePreview = paragraphText.length > previewText.length;
+  const displayYear = engagement.year ?? "Year N/A";
+  const previewText = formattedParagraphText.slice(0, 260);
+  const hasMorePreview = formattedParagraphText.length > previewText.length;
 
   const topMetricCards = visibleCards.filter((item) => item.kind === "metric");
   const issueCard = visibleCards.find((item) => item.kind === "issues");
@@ -221,45 +260,40 @@ function ShareholderEngagementSection({
   return (
     <>
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-5">
-            <div className="flex items-center gap-2">
-              <Badge className="rounded-full" variant="outline">
-                {engagement.year ?? "Year N/A"}
-              </Badge>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start gap-2">
+            <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
+              <MessageSquareQuote className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex items-start gap-2">
-              <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
-                <MessageSquareQuote className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex min-w-0 items-start gap-2">
-                <h3 className="max-w-[180px] whitespace-normal text-[14px] font-semibold leading-5 text-slate-900">
-                  <span className="block whitespace-nowrap">Proxy Disclosure:</span>
-                  <span className="block whitespace-nowrap">Shareholder Engagement</span>
-                </h3>
-                <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
-                  BETA
-                </span>
-              </div>
+            <div className="flex min-w-0 items-start gap-2">
+              <h3 className="max-w-[180px] whitespace-normal text-[14px] font-semibold leading-5 text-slate-900">
+                <span className="block whitespace-nowrap">{displayYear} Proxy Disclosure:</span>
+                <span className="block whitespace-nowrap">Shareholder Engagement</span>
+              </h3>
+              <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
+                BETA
+              </span>
             </div>
           </div>
 
           {hasData && hasVisibleCards ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2 rounded-full border-slate-300 bg-white text-[13px] font-medium text-slate-700 hover:bg-slate-50"
-              onClick={() => setDetailsOpen(true)}
-            >
-              Detail
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                className="shrink-0 gap-1.5 rounded-full border-slate-300 bg-white px-2.5 py-1 text-[12px] font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setDetailsOpen(true)}
+              >
+                Detail
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            </div>
           ) : null}
         </div>
 
         {!hasData ? (
-          paragraphText ? (
-            <p className="mt-4 text-[15px] leading-6 text-slate-700 whitespace-pre-line">{paragraphText}</p>
+          formattedParagraphText ? (
+            <p className="mt-4 text-[15px] leading-6 text-slate-700 whitespace-pre-line">{formattedParagraphText}</p>
           ) : null
         ) : hasVisibleCards ? (
           <div className="mt-4 space-y-4">
@@ -273,8 +307,8 @@ function ShareholderEngagementSection({
                       renderCardWidthClass
                     )}
                   >
-                    <div className="text-[13px] font-medium uppercase tracking-wide text-slate-500">{item.label}</div>
-                    <div className="mt-1 text-[15px] font-semibold text-slate-900">{String(item.value)}</div>
+                    <div className="text-[13px] font-bold capitalize text-slate-700">{toTitleCase(item.label)}</div>
+                    <div className="mt-1 text-[15px] font-normal text-slate-900">{String(item.value)}</div>
                   </div>
                 ))}
               </div>
@@ -282,14 +316,14 @@ function ShareholderEngagementSection({
 
             {issueCard ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <div className="text-[13px] font-medium uppercase tracking-wide text-slate-500">Issues discussed</div>
+                <div className="text-[13px] font-bold capitalize text-slate-700">Issues Discussed</div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {issueCard.value?.map((issue, index) => (
                     <span
                       key={`${issue}-${index}`}
                       className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[14px] text-slate-700"
                     >
-                      {issue}
+                      {capitalizeFirstLetter(issue)}
                     </span>
                   ))}
                 </div>
@@ -298,7 +332,7 @@ function ShareholderEngagementSection({
 
             {actionCard ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <div className="text-[13px] font-medium uppercase tracking-wide text-slate-500">Action taken</div>
+                <div className="text-[13px] font-bold capitalize text-slate-700">Action Taken</div>
                 <div className="mt-1 text-[15px] font-normal leading-6 text-slate-700 whitespace-pre-line">
                   {String(actionCard.value)}
                 </div>
@@ -307,7 +341,7 @@ function ShareholderEngagementSection({
 
           </div>
         ) : isDisclosureFallback ? (
-          <p className="mt-4 text-[15px] leading-6 text-slate-700 whitespace-pre-line">{paragraphText}</p>
+          <p className="mt-4 text-[15px] leading-6 text-slate-700 whitespace-pre-line">{formattedParagraphText}</p>
         ) : showPreview ? (
           <div className="mt-4 space-y-2">
             <p className="text-[15px] leading-6 text-slate-700 whitespace-pre-line">{previewText}</p>
@@ -336,7 +370,7 @@ function ShareholderEngagementSection({
               </div>
               <div className="flex min-w-0 items-start gap-2">
                 <h2 className="max-w-[760px] whitespace-normal text-xl font-semibold leading-6 text-slate-900">
-                  Proxy Disclosure: Shareholder Engagement
+                  {displayYear} Proxy Disclosure: Shareholder Engagement
                 </h2>
                 <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
                   BETA
@@ -353,10 +387,7 @@ function ShareholderEngagementSection({
             </button>
           </Dialog.Title>
           <Dialog.Description className="space-y-5 px-6 py-4">
-            <div className="flex items-center justify-between gap-3">
-              <Badge className="rounded-full" variant="outline">
-                {engagement.year ?? "Year N/A"}
-              </Badge>
+            <div className="flex justify-end gap-3">
               {hasSource ? (
                 <a
                   href={sourceUrl}
@@ -372,19 +403,20 @@ function ShareholderEngagementSection({
               ) : null}
             </div>
 
-            {modalParagraphs.length ? (
-              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                {modalParagraphs.map((paragraph, index) => (
+            <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-[15px] font-semibold text-slate-900">Disclosure:</div>
+              {modalParagraphs.length ? (
+                modalParagraphs.map((paragraph, index) => (
                   <p key={index} className="text-[15px] leading-7 text-slate-700 whitespace-pre-line">
                     {paragraph}
                   </p>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[15px] leading-7 text-slate-700">
-                No detailed narrative was provided for this shareholder engagement record.
-              </div>
-            )}
+                ))
+              ) : (
+                <div className="text-[15px] leading-7 text-slate-700">
+                  No detailed narrative was provided for this shareholder engagement record.
+                </div>
+              )}
+            </div>
           </Dialog.Description>
         </Dialog.Panel>
       </Dialog>
