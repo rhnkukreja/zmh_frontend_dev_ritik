@@ -91,10 +91,20 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
       "Engagement Details",
       "Shareholder Proposals",
       "Aggregate Voting",
-      "Proxy Contest",
     ].includes(menu.title)
   ) {
     return "Market Analytics";
+  }
+
+  if (
+    [
+      "Proxy Contest",
+      "Activist Profile",
+      "Voting Analytics",
+      "Campaign Details",
+    ].includes(menu.title)
+  ) {
+    return "Proxy Contest";
   }
 
   if (
@@ -164,6 +174,9 @@ function Main() {
   const sideMenuStore = useAppSelector(selectSideMenu);
   const sideMenu = () => nestedMenu(sideMenuStore, location);
   const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
+  const locationState = location.state as
+    | { source?: string; fromTab?: string }
+    | undefined;
   const [expandedGroup, setExpandedGroup] = useState<string>("");
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
@@ -250,6 +263,14 @@ function Main() {
 
     const computeActiveGroup = (): string => {
       if (companyGlobalSearchTicker) {
+        const isCaseStudiesDetail = location.pathname.startsWith("/case-studies/");
+        const isSharedCaseStudies =
+          isCaseStudiesDetail &&
+          (locationState?.source === "shared" || locationState?.fromTab === "all");
+        if (isSharedCaseStudies) {
+          return "Market Analytics";
+        }
+
         const dashboardMatch =
           location.pathname === "/"
             ? DASHBOARD_SECTIONS.find(
@@ -279,6 +300,17 @@ function Main() {
         }
       }
 
+      const activeDropdownItem = formattedMenu.find(
+        (item): item is FormattedMenu =>
+          typeof item !== "string" && !!item.activeDropdown
+      );
+      if (activeDropdownItem) {
+        const group = getSidebarGroup(activeDropdownItem);
+        if (group) {
+          return group;
+        }
+      }
+
       return companyGlobalSearchTicker ? "Company" : "";
     };
 
@@ -286,6 +318,7 @@ function Main() {
   }, [
     location.pathname,
     location.search,
+    locationState,
     activeSection,
     activeSubSection,
     formattedMenu,

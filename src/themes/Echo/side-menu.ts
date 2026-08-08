@@ -8,6 +8,53 @@ interface Location {
   forceActiveMenu?: string;
 }
 
+const doesMenuPathMatchLocation = (pathname: string | undefined, location: Location) => {
+  if (!pathname) {
+    return false;
+  }
+
+  const [basePath, existingQuery] = pathname.split("?");
+
+  if (location.pathname !== basePath) {
+    return false;
+  }
+
+  const routeParams = new URLSearchParams(existingQuery || "");
+  const currentParams = new URLSearchParams(location.search);
+
+  const ignoredExtraParams = new Set(["page", "ticker"]);
+
+  for (const [key, value] of currentParams.entries()) {
+    if (ignoredExtraParams.has(key)) {
+      continue;
+    }
+
+    if (key === "tab" && !routeParams.has("tab")) {
+      if (value === "all") {
+        continue;
+      }
+      return false;
+    }
+
+    if (!routeParams.has(key)) {
+      return false;
+    }
+
+    if (routeParams.get(key) !== value) {
+      return false;
+    }
+  }
+
+  for (const [key, value] of routeParams.entries()) {
+    const currentValue = currentParams.get(key);
+    if (currentValue !== value) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export interface FormattedMenu extends Menu {
   active?: boolean;
   activeDropdown?: boolean;
@@ -22,7 +69,7 @@ const findActiveMenu = (subMenu: Menu[], location: Location): boolean => {
       ((location.forceActiveMenu !== undefined &&
         item.pathname === location.forceActiveMenu) ||
         (location.forceActiveMenu === undefined &&
-          item.pathname === location.pathname + location.search)) &&
+          doesMenuPathMatchLocation(item.pathname, location))) &&
       !item.ignore
     ) {
       match = true;
@@ -54,9 +101,10 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         ((location.forceActiveMenu !== undefined &&
           menuItem.pathname === location.forceActiveMenu) ||
           (location.forceActiveMenu === undefined &&
-            menuItem.pathname === location.pathname + location.search) ||
+            doesMenuPathMatchLocation(menuItem.pathname, location)) ||
           (menuItem.subMenu && findActiveMenu(menuItem.subMenu, location))) &&
-        !menuItem.ignore;
+        !menuItem.ignore &&
+        !menuItem.subMenu;
 
       if (menuItem.subMenu) {
         menuItem.activeDropdown = findActiveMenu(menuItem.subMenu, location);

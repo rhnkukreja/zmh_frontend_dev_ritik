@@ -104,40 +104,27 @@ const initialState: any = {
     //   title: "Voting Guidelines",
     // },
     {
-      icon: "Hand",
+      icon: "Files",
       pathname: "/shareholder-proposal?source=shared",
       title: "Shareholder Proposals",
     },
-    // {
-    //   icon: "Vote",
-    //   pathname: "/2025-shareholder-meetings",
-    //   title: "2025 Shareholder Meetings",
-    // },
+    {
+      icon: "UserRound",
+      pathname: "/proxy-contest?tab=activist_profile",
+      title: "Activist Profile",
+      badge: "Beta",
+    },
+    {
+      icon: "BarChart3",
+      pathname: "/proxy-contest?tab=overview",
+      title: "Voting Analytics",
+      badge: "Beta",
+    },
     {
       icon: "ShieldAlert",
-      pathname: "/proxy-contest",
-      title: "Proxy Contest",
-      subMenu: [
-        {
-          icon: "UserRound",
-          pathname: "/proxy-contest?tab=activist_profile",
-          title: "Activist Profile",
-          badge: "Beta",
-        },
-        {
-          icon: "BarChart3",
-          pathname: "/proxy-contest?tab=overview",
-          title: "Voting Analytics",
-          badge: "Beta",
-        },
-        {
-          icon: "Table",
-          pathname: "/proxy-contest?tab=detailed",
-          title: "Campaign Details",
-        },
-      ],
+      pathname: "/proxy-contest?tab=detailed",
+      title: "Campaign Details",
     },
-    
     // {
     //   icon: "PanelTopClose",
     //   pathname: "/point-of-sale",

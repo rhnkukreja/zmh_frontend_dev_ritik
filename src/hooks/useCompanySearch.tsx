@@ -6,10 +6,28 @@ import {
   setSavedSearch,
 } from "@/stores/authenticationSlice";
 import { useAppDispatch } from "@/stores/hooks";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CompanyData } from "@/types/company";
 
 const useCompanySearch = () => {
   const dispatch = useAppDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const syncTickerInUrl = (ticker?: string) => {
+    if (!ticker) return;
+
+    const params = new URLSearchParams(location.search);
+    params.set("ticker", ticker);
+
+    navigate(
+      {
+        pathname: location.pathname,
+        search: `?${params.toString()}`,
+      },
+      { replace: true }
+    );
+  };
 
   const saveSearch = async (id: number, company: string) => {
     const res = await commonService.saveSearches({
@@ -33,6 +51,7 @@ const useCompanySearch = () => {
 
   const companySearchAndUpdate = async (companyData: CompanyData) => {
     // window.history.pushState({}, "", `/?ticker=${companyData?.symbol}`);
+    const nextTicker = companyData?.symbol || companyData?.ticker;
     const saveSearchResponse = await saveSearch(
       companyData?.id,
       companyData?.name
@@ -45,12 +64,13 @@ const useCompanySearch = () => {
     dispatch(
       setDashboardGlobalSearch({
         id: companyData?.id,
-        ticker: companyData?.symbol,
+        ticker: nextTicker || "",
         name: companyData?.name,
         board_name: companyData?.board_name || companyData?.name, // Fallback to name if board_name not available
       })
     );
     dispatch(setIsCompanySelected(true));
+    syncTickerInUrl(nextTicker);
   };
   return {
     saveSearch,

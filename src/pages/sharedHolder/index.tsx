@@ -143,8 +143,16 @@ function ShareHolderProposal() {
     const sourceParam = searchParams.get("source");
     if (sourceParam === "company") {
       dispatch(selectUnSelectAllCompany(false));
-      dispatch(setTabs("proposal"));
-      setTempTab("proposal");
+      if (urlParam?.includes("no_action")) {
+        dispatch(setTabs("no-action"));
+        setTempTab("no-action");
+      } else if (urlParam?.includes("withdrawn")) {
+        dispatch(setTabs("withdrawn"));
+        setTempTab("withdrawn");
+      } else {
+        dispatch(setTabs("proposal"));
+        setTempTab("proposal");
+      }
     } else if (sourceParam === "shared") {
       dispatch(selectUnSelectAllCompany(true));
     }
