@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
 
 // ─── Module-level cache (survives tab switches, clears on page refresh) ───────
 const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -9,6 +11,13 @@ let _profilesCache: { data: Record<string, any>; ts: number } | null = null;
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const THEME_MAROON = "#8b1828";
+
+// ⚠️ TEMPORARY — dev testing only. The backend only sends the "profile ready"
+// email when the /generate request carries a creator_email (see the
+// `if creator_email:` guard in app/api/activist_intelligence.py), so leaving
+// this false suppresses the mail entirely without any backend change.
+// SET BACK TO true BEFORE MERGING.
+const SEND_GENERATION_EMAIL = false;
 
 const STATUS_COLOR_MAP = {
   open: "#f59e0b",
@@ -337,6 +346,7 @@ const ActivistIntelligenceDashboard = ({
   // Edit Mode is available to everyone viewing the profile — no separate
   // admin/user view toggle.
   const showEditButton = true;
+  const { user } = useAppSelector((state: RootState) => state.authentiction);
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
   const [investorKeys, setInvestorKeys] = useState<string[]>([]);
@@ -350,6 +360,7 @@ const ActivistIntelligenceDashboard = ({
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [generateInvestorName, setGenerateInvestorName] = useState("");
+  const [generateMode, setGenerateMode] = useState<"normal" | "enhanced">("normal");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStep, setGenerateStep] = useState("");
   // Scoped to the Generate modal so a failed generation shows inline there
@@ -521,16 +532,6 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  // Kicks off the automated scrape pipeline for a fund name, then polls until it
-  // finishes and loads the result into the SAME preview/edit/approve flow the
-  // manual file-upload path already uses — nothing gets saved to S3 until the
-  // user clicks "Approve & Publish".
-  // ─── 3. HANDLE PIPELINE GENERATION AND POLLING ─────────────────────────────
-
-  // A failed generation almost always means the entered name didn't resolve
-  // to a known SEC/13F filer — surface that plainly rather than the raw
-  // backend exception text (library names, tracebacks) which tells a user
-  // nothing about what to do differently.
   const buildGenerationFailedMessage = (name: string) =>
     `We couldn't generate a profile for "${name}".  
     double-check the spelling, or try the fund's ` +
@@ -542,16 +543,37 @@ const ActivistIntelligenceDashboard = ({
   const slugifyName = (text: string) =>
     text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-");
 
+  const getCreatorEmail = (): string | undefined => {
+    if (user?.email) return user.email;
+    try {
+      const stored = JSON.parse(localStorage.getItem("User") || "null");
+      return stored?.email || undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
   const runGeneration = async () => {
     try {
       setIsGenerating(true);
       setGenerateStep("Starting...");
       setGenerateError(null);
 
+      const creatorEmail = SEND_GENERATION_EMAIL ? getCreatorEmail() : undefined;
+      if (SEND_GENERATION_EMAIL && !creatorEmail) {
+        // Not fatal — the profile still generates, the user just won't get the
+        // "your profile is ready" mail.
+        console.warn("No logged-in email available; generation will not send a completion email.");
+      }
+      if (!SEND_GENERATION_EMAIL) {
+        console.info("[dev] SEND_GENERATION_EMAIL is off — no completion email will be sent.");
+      }
+
       // Kick off the background job
       const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
         investor_name: generateInvestorName,
-        // creator_email: user?.email // TODO: re-enable after testing
+        creator_email: creatorEmail,
+        mode: generateMode,
       });
       
       const { slug } = startRes.data;
@@ -623,6 +645,7 @@ const ActivistIntelligenceDashboard = ({
     setDuplicateProfileKey(null);
     setGenerateModalOpen(false);
     setGenerateInvestorName("");
+    setGenerateMode("normal");
   };
 
   // Optional: Discard a running/completed job
@@ -814,6 +837,16 @@ const ActivistIntelligenceDashboard = ({
   const campaigns = profile.campaigns || [];
   const activeCampaigns = campaigns.filter((c: any) => c.normalized_status === "open" || c.normalized_status === "active").length;
 
+  // The auto-generated pipeline sometimes fills notes/outcome fields with a
+  // boilerplate "not stated/disclosed" sentence instead of leaving them
+  // empty. Showing that sentence reads as real information when it isn't,
+  // so treat it the same as no value and render nothing.
+  const PLACEHOLDER_TEXT_RE = /\b(not\s+(stated|disclosed|available|recorded|found|applicable|specified)|none\s+disclosed|n\/a|unknown)\b/i;
+  const isMeaningfulText = (text: any) =>
+    typeof text === "string" &&
+    text.trim().length > 0 &&
+    !PLACEHOLDER_TEXT_RE.test(text);
+
   const statusGroups: Record<string, number> = campaigns.reduce((acc: Record<string, number>, c: any) => {
     const key = c.normalized_status || "closed";
     acc[key] = (acc[key] || 0) + 1;
@@ -835,6 +868,18 @@ const ActivistIntelligenceDashboard = ({
   const isNomineeRole = (p: any) => /nominee|appointee|elected|settlement director/i.test(p.role || "");
   const nominees = profile.personnel.filter((p: any) => p.category === "nominee_or_outcome_director" || isNomineeRole(p));
   const visiblePersonnel = profile.personnel.filter((p: any) => !nominees.includes(p));
+
+  // Best-effort extraction of the company a nominee was put forward at, e.g.
+  // "...Ancora nominee at U.S. Steel (2025)" -> "U.S. Steel", so the Nominee
+  // card can show a company tag instead of just repeating the same layout
+  // as the Management cards. Returns null (no tag) rather than a bad guess
+  // when the role text doesn't match either phrasing.
+  const extractNomineeCompany = (role: string) => {
+    const match =
+      /nominee[^.]*?\bat\s+([A-Z][\w&.,'\-\s]*?)(?:\s*\(|,|;|\.|$)/i.exec(role || "") ||
+      /nominee[^.]*?\bfor\s+([A-Z][\w&.,'\-\s]*?)(?:\s*\(|,|;|\.|$)/i.exec(role || "");
+    return match ? match[1].trim() : null;
+  };
 
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
@@ -1159,9 +1204,14 @@ const ActivistIntelligenceDashboard = ({
                             <td style={{ padding: "14px 16px" }}>
                               {c.main_issues.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.campaign_form.length > 0 ? 6 : 0 }}>{c.main_issues.map((issue: string, j: number) => <Tag key={j} text={issue} />)}</div>}
                               {c.campaign_form.length > 0 && <div style={{ display: "flex", flexWrap: "wrap" }}>{c.campaign_form.map((form: string, j: number) => <Tag key={j} text={form} color="#fdf2f2" textColor={THEME_MAROON} />)}</div>}
-                              {c.nominees.length > 0 && <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {c.nominees.join(", ")}</p>}
-                              {c.notes && <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>}
-                              {c.outcome_to_date && (
+                              {(() => {
+                                const meaningfulNominees = (c.nominees || []).filter(isMeaningfulText);
+                                return meaningfulNominees.length > 0 && (
+                                  <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {meaningfulNominees.join(", ")}</p>
+                                );
+                              })()}
+                              {isMeaningfulText(c.notes) && <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>}
+                              {isMeaningfulText(c.outcome_to_date) && (
                                 <p style={{ fontSize: 12, color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "6px 10px", margin: "8px 0 0", lineHeight: 1.5 }}>
                                   <strong>Outcome:</strong> {c.outcome_to_date}
                                 </p>
@@ -1233,7 +1283,7 @@ const ActivistIntelligenceDashboard = ({
               {nominees.length > 0 && (
                 <div>
                   <SectionHeader title="Nominees & Settlement Directors" />
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>{nominees.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#f0fdf4" textColor="#166534" />)}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>{nominees.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#f0fdf4" textColor="#166534" isNominee nomineeCompany={extractNomineeCompany(p.role)} />)}</div>
                 </div>
               )}
             </div>
@@ -1348,6 +1398,57 @@ const ActivistIntelligenceDashboard = ({
               />
             </label>
 
+            <div style={{ marginBottom: 24 }}>
+              <span style={{ display: "block", marginBottom: 8, fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                Profile Type
+              </span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setGenerateMode("normal")}
+                  disabled={isGenerating}
+                  style={{
+                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
+                    cursor: isGenerating ? "not-allowed" : "pointer",
+                    border: `1px solid ${generateMode === "normal" ? THEME_MAROON : "#d1d5db"}`,
+                    background: generateMode === "normal" ? "#fdf2f2" : "#fff",
+                    color: generateMode === "normal" ? THEME_MAROON : "#374151",
+                    fontWeight: generateMode === "normal" ? 600 : 400,
+                  }}
+                >
+                  Normal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGenerateMode("enhanced")}
+                  disabled={isGenerating}
+                  style={{
+                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
+                    cursor: isGenerating ? "not-allowed" : "pointer",
+                    border: `1px solid ${generateMode === "enhanced" ? THEME_MAROON : "#d1d5db"}`,
+                    background: generateMode === "enhanced" ? "#fdf2f2" : "#fff",
+                    color: generateMode === "enhanced" ? THEME_MAROON : "#374151",
+                    fontWeight: generateMode === "enhanced" ? 600 : 400,
+                  }}
+                >
+                  Enhanced Activism Profile
+                </button>
+              </div>
+            </div>
+
+            {generateMode === "enhanced" && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6 }}>
+                <span style={{ flexShrink: 0, lineHeight: 1 }}>⚠</span>
+                <span style={{ fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
+                  Enhanced Activism Profile runs an extra SEC EDGAR research step before generating, so it takes noticeably
+                  longer than Normal — often several minutes just for that step — and costs roughly 3x as much. You can
+                  safely close this window once generation starts; {SEND_GENERATION_EMAIL && !!getCreatorEmail()
+                    ? "you'll get an email when it's ready."
+                    : "the profile will be waiting in your profile list when you come back."}
+                </span>
+              </div>
+            )}
+
             {isGenerating && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                 <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
@@ -1365,7 +1466,7 @@ const ActivistIntelligenceDashboard = ({
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <button
-                onClick={() => { setGenerateModalOpen(false); setGenerateInvestorName(""); setGenerateError(null); }}
+                onClick={() => { setGenerateModalOpen(false); setGenerateInvestorName(""); setGenerateError(null); setGenerateMode("normal"); }}
                 disabled={isGenerating}
                 style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: isGenerating ? "not-allowed" : "pointer", fontWeight: 600, color: "#374151", opacity: isGenerating ? 0.6 : 1 }}
               >
@@ -1417,18 +1518,25 @@ const ActivistIntelligenceDashboard = ({
 
 // ─── PersonnelCard sub-component ─────────────────────────────────────────────
 
-const PersonnelCard = ({ person, accentColor = "#f3f4f6", textColor = "#374151" }: { person: any, accentColor?: string, textColor?: string }) => {
+const PersonnelCard = ({ person, accentColor = "#f3f4f6", textColor = "#374151", isNominee = false, nomineeCompany = null }: { person: any, accentColor?: string, textColor?: string, isNominee?: boolean, nomineeCompany?: string | null }) => {
   const initials = person.name.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
   return (
     <div style={{ border: `1px solid #e5e7eb`, borderRadius: 8, padding: "16px", display: "flex", gap: 14, alignItems: "flex-start", background: "#fafafa" }}>
       <div style={{ width: 44, height: 44, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: textColor, flexShrink: 0 }}>{initials}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
+        {isNominee && nomineeCompany && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#374151", overflowWrap: "anywhere" }}>{nomineeCompany}</span>
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px" }}>{person.name}</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px", overflowWrap: "anywhere" }}>{person.name}</p>
         </div>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: person.public_note ? "0 0 6px" : 0, lineHeight: 1.4 }}>{person.role}</p>
+        <p style={{ fontSize: 12, color: "#6b7280", margin: person.public_note ? "0 0 6px" : 0, lineHeight: 1.4, overflowWrap: "anywhere" }}>{person.role}</p>
         {person.public_note && (
-          <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: 1.5 }}>{person.public_note}</p>
+          // public_note often embeds raw citation URLs with no spaces (e.g. "([sec.gov](https://...))"),
+          // which without overflowWrap push straight past the card's right edge instead of wrapping.
+          <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: 1.5, overflowWrap: "anywhere" }}>{person.public_note}</p>
         )}
       </div>
     </div>
