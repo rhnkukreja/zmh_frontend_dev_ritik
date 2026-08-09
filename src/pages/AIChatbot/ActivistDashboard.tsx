@@ -837,6 +837,16 @@ const ActivistIntelligenceDashboard = ({
   const campaigns = profile.campaigns || [];
   const activeCampaigns = campaigns.filter((c: any) => c.normalized_status === "open" || c.normalized_status === "active").length;
 
+  // The auto-generated pipeline sometimes fills notes/outcome fields with a
+  // boilerplate "not stated/disclosed" sentence instead of leaving them
+  // empty. Showing that sentence reads as real information when it isn't,
+  // so treat it the same as no value and render nothing.
+  const PLACEHOLDER_TEXT_RE = /\b(not\s+(stated|disclosed|available|recorded|found|applicable|specified)|none\s+disclosed|n\/a|unknown)\b/i;
+  const isMeaningfulText = (text: any) =>
+    typeof text === "string" &&
+    text.trim().length > 0 &&
+    !PLACEHOLDER_TEXT_RE.test(text);
+
   const statusGroups: Record<string, number> = campaigns.reduce((acc: Record<string, number>, c: any) => {
     const key = c.normalized_status || "closed";
     acc[key] = (acc[key] || 0) + 1;
@@ -1194,9 +1204,14 @@ const ActivistIntelligenceDashboard = ({
                             <td style={{ padding: "14px 16px" }}>
                               {c.main_issues.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.campaign_form.length > 0 ? 6 : 0 }}>{c.main_issues.map((issue: string, j: number) => <Tag key={j} text={issue} />)}</div>}
                               {c.campaign_form.length > 0 && <div style={{ display: "flex", flexWrap: "wrap" }}>{c.campaign_form.map((form: string, j: number) => <Tag key={j} text={form} color="#fdf2f2" textColor={THEME_MAROON} />)}</div>}
-                              {c.nominees.length > 0 && <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {c.nominees.join(", ")}</p>}
-                              {c.notes && <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>}
-                              {c.outcome_to_date && (
+                              {(() => {
+                                const meaningfulNominees = (c.nominees || []).filter(isMeaningfulText);
+                                return meaningfulNominees.length > 0 && (
+                                  <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {meaningfulNominees.join(", ")}</p>
+                                );
+                              })()}
+                              {isMeaningfulText(c.notes) && <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>}
+                              {isMeaningfulText(c.outcome_to_date) && (
                                 <p style={{ fontSize: 12, color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "6px 10px", margin: "8px 0 0", lineHeight: 1.5 }}>
                                   <strong>Outcome:</strong> {c.outcome_to_date}
                                 </p>
@@ -1509,12 +1524,9 @@ const PersonnelCard = ({ person, accentColor = "#f3f4f6", textColor = "#374151",
     <div style={{ border: `1px solid #e5e7eb`, borderRadius: 8, padding: "16px", display: "flex", gap: 14, alignItems: "flex-start", background: "#fafafa" }}>
       <div style={{ width: 44, height: 44, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: textColor, flexShrink: 0 }}>{initials}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        {isNominee && (
+        {isNominee && nomineeCompany && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.4, color: "#166534", background: "#dcfce7", border: "1px solid #bbf7d0", borderRadius: 999, padding: "2px 8px" }}>NOMINEE</span>
-            {nomineeCompany && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#374151", overflowWrap: "anywhere" }}>{nomineeCompany}</span>
-            )}
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#374151", overflowWrap: "anywhere" }}>{nomineeCompany}</span>
           </div>
         )}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
