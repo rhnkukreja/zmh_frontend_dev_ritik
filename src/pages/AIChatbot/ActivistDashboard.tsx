@@ -859,6 +859,18 @@ const ActivistIntelligenceDashboard = ({
   const nominees = profile.personnel.filter((p: any) => p.category === "nominee_or_outcome_director" || isNomineeRole(p));
   const visiblePersonnel = profile.personnel.filter((p: any) => !nominees.includes(p));
 
+  // Best-effort extraction of the company a nominee was put forward at, e.g.
+  // "...Ancora nominee at U.S. Steel (2025)" -> "U.S. Steel", so the Nominee
+  // card can show a company tag instead of just repeating the same layout
+  // as the Management cards. Returns null (no tag) rather than a bad guess
+  // when the role text doesn't match either phrasing.
+  const extractNomineeCompany = (role: string) => {
+    const match =
+      /nominee[^.]*?\bat\s+([A-Z][\w&.,'\-\s]*?)(?:\s*\(|,|;|\.|$)/i.exec(role || "") ||
+      /nominee[^.]*?\bfor\s+([A-Z][\w&.,'\-\s]*?)(?:\s*\(|,|;|\.|$)/i.exec(role || "");
+    return match ? match[1].trim() : null;
+  };
+
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
 
@@ -1256,7 +1268,7 @@ const ActivistIntelligenceDashboard = ({
               {nominees.length > 0 && (
                 <div>
                   <SectionHeader title="Nominees & Settlement Directors" />
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>{nominees.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#f0fdf4" textColor="#166534" />)}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>{nominees.map((p: any, i: number) => <PersonnelCard key={i} person={p} accentColor="#f0fdf4" textColor="#166534" isNominee nomineeCompany={extractNomineeCompany(p.role)} />)}</div>
                 </div>
               )}
             </div>
@@ -1491,18 +1503,28 @@ const ActivistIntelligenceDashboard = ({
 
 // ─── PersonnelCard sub-component ─────────────────────────────────────────────
 
-const PersonnelCard = ({ person, accentColor = "#f3f4f6", textColor = "#374151" }: { person: any, accentColor?: string, textColor?: string }) => {
+const PersonnelCard = ({ person, accentColor = "#f3f4f6", textColor = "#374151", isNominee = false, nomineeCompany = null }: { person: any, accentColor?: string, textColor?: string, isNominee?: boolean, nomineeCompany?: string | null }) => {
   const initials = person.name.split(" ").slice(0, 2).map((w: string) => w[0]).join("").toUpperCase();
   return (
     <div style={{ border: `1px solid #e5e7eb`, borderRadius: 8, padding: "16px", display: "flex", gap: 14, alignItems: "flex-start", background: "#fafafa" }}>
       <div style={{ width: 44, height: 44, borderRadius: "50%", background: accentColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: textColor, flexShrink: 0 }}>{initials}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
+        {isNominee && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.4, color: "#166534", background: "#dcfce7", border: "1px solid #bbf7d0", borderRadius: 999, padding: "2px 8px" }}>NOMINEE</span>
+            {nomineeCompany && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#374151", overflowWrap: "anywhere" }}>{nomineeCompany}</span>
+            )}
+          </div>
+        )}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px" }}>{person.name}</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 4px", overflowWrap: "anywhere" }}>{person.name}</p>
         </div>
-        <p style={{ fontSize: 12, color: "#6b7280", margin: person.public_note ? "0 0 6px" : 0, lineHeight: 1.4 }}>{person.role}</p>
+        <p style={{ fontSize: 12, color: "#6b7280", margin: person.public_note ? "0 0 6px" : 0, lineHeight: 1.4, overflowWrap: "anywhere" }}>{person.role}</p>
         {person.public_note && (
-          <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: 1.5 }}>{person.public_note}</p>
+          // public_note often embeds raw citation URLs with no spaces (e.g. "([sec.gov](https://...))"),
+          // which without overflowWrap push straight past the card's right edge instead of wrapping.
+          <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: 1.5, overflowWrap: "anywhere" }}>{person.public_note}</p>
         )}
       </div>
     </div>
