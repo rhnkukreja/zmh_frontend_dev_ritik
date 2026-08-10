@@ -86,11 +86,11 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
 
   if (
     [
-      "Investor Profile",
+      "Investor Resources",
       "Case Studies",
       "Engagement Details",
       "Shareholder Proposals",
-      "Aggregate Voting",
+      "Voting Data",
     ].includes(menu.title)
   ) {
     return "Market Analytics";

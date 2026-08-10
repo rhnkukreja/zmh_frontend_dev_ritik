@@ -693,7 +693,7 @@ const ExecutiveCompensation: React.FC = () => {
               <span className="text-slate-500">Institution Insights</span>
               <span className="text-slate-400">›</span>
               <span className="relative inline-flex items-center pr-7">
-                Executive Compensation Overview
+                Exec. Comp. Voting Data
                 <span className="blink-beta absolute -top-2 -right-1 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-extrabold bg-orange-500 text-white leading-none shadow-sm">
                   BETA
                 </span>

@@ -11,10 +11,24 @@ type GovernanceTabProps = {
 
 const governanceDataCache = new Map<number, CorporateGovernanceData>();
 
-function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
+function renderDashIfNA(value?: string) {
+  if (!value) return <span className="font-semibold text-slate-900">-</span>;
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "n/a" || normalized === "na") {
+    return <span className="font-semibold text-slate-900">-</span>;
+  }
+
+  return <span>{value}</span>;
+}
+
+function GovernanceTable({ rows, sectionTitle }: { rows: GovernanceRow[]; sectionTitle: string }) {
   if (!rows || rows.length === 0) {
     return null;
   }
+
+  const isBoardStructureSection = sectionTitle.toLowerCase().includes("board structure");
+  const isCorporateStructureSection = sectionTitle.toLowerCase().includes("corporate structure");
 
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200">
@@ -43,6 +57,10 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
         </thead>
         <tbody>
           {rows.map((row, idx) => {
+            if (isBoardStructureSection && row.Category.trim().toLowerCase() === "board size") {
+              return null;
+            }
+
             const yesNo = row["Yes/No"];
             const isYes = typeof yesNo === "boolean" ? yesNo : yesNo?.toLowerCase() === "yes";
             const isNo = typeof yesNo === "boolean" ? !yesNo : yesNo?.toLowerCase() === "no";
@@ -51,7 +69,13 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
               fontTone === "red" ? "text-red-700 font-semibold" : "text-slate-900 font-medium";
             const sourceName = row.Source?.name;
             const sourceLink = row.Source?.link;
-
+            const shouldShowDashForSource = (sourceName || "").trim().toLowerCase() === "n/a";
+            const shouldShowDashForKeyProvisions = (row["Key Provisions"] || "").trim().toLowerCase() === "n/a";
+            const shouldShowDashInYesNo =
+              shouldShowDashForKeyProvisions ||
+              (isCorporateStructureSection &&
+                (row.Category.trim().toLowerCase().includes("shareholder rights") ||
+                  row.Category.trim().toLowerCase().includes("state of incorporation")));
             return (
               <tr
                 key={idx}
@@ -61,7 +85,9 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
                   {row.Category}
                 </td>
                 <td className={`px-4 py-3 text-[14px] ${yesNoColorClass}`}>
-                  {isYes ? (
+                  {shouldShowDashInYesNo ? (
+                    <span className="font-semibold text-slate-900">-</span>
+                  ) : isYes ? (
                     <span>Yes</span>
                   ) : isNo ? (
                     <span>No</span>
@@ -70,10 +96,12 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
                   )}
                 </td>
                 <td className="px-4 py-3 text-[14px] text-slate-700 break-words">
-                  {row["Key Provisions"]}
+                  {renderDashIfNA(row["Key Provisions"])}
                 </td>
                 <td className="px-4 py-3 text-[14px] text-slate-700">
-                  {sourceName && sourceLink ? (
+                  {shouldShowDashForSource ? (
+                    <span className="font-semibold text-slate-900">-</span>
+                  ) : sourceName && sourceLink ? (
                     <a
                       href={sourceLink}
                       target="_blank"
@@ -86,7 +114,7 @@ function GovernanceTable({ rows }: { rows: GovernanceRow[] }) {
                   ) : sourceName ? (
                     <span>{sourceName}</span>
                   ) : (
-                    <span className="text-slate-400">-</span>
+                    <span className="font-semibold text-slate-900">-</span>
                   )}
                 </td>
               </tr>
@@ -440,7 +468,7 @@ export default function GovernanceTab({
             <h3 className="mb-4 text-lg font-semibold text-slate-900">
               {sectionTitle}
             </h3>
-            <GovernanceTable rows={rows} />
+            <GovernanceTable rows={rows} sectionTitle={sectionTitle} />
           </div>
         ))}
       </div>
