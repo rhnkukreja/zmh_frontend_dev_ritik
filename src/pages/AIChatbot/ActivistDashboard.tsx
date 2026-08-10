@@ -19,6 +19,12 @@ const THEME_MAROON = "#8b1828";
 // SET BACK TO true BEFORE MERGING.
 const SEND_GENERATION_EMAIL = `True`;
 
+// Every generation runs the enhanced pipeline (extra SEC EDGAR research pass
+// before writing the profile). This is deliberately a constant and not state:
+// the "Normal" mode produced noticeably weaker profiles, so there must be no
+// code path — not a picker, not a modal reset — that can send anything else.
+const GENERATE_MODE = "enhanced" as const;
+
 // The pipeline writes free-text statuses — "ongoing (second episode) -
 // cooperation period filings", "closed - 13d engagement", "exited (position
 // liquidated)" — so every consumer keys off the FIRST word, never the whole
@@ -392,8 +398,13 @@ const ActivistIntelligenceDashboard = ({
   openGenerateModalSignal?: number;
 }) => {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdmin = user?.user_type === "Admin";
-  const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
+  // Compared case-insensitively: user_type comes straight from the API and
+  // isn't guaranteed to be title-cased (UserManagement normalises it the same
+  // way before matching), so a strict === "Admin" silently locked real admins
+  // out of Edit Mode. Anything that isn't Admin/Analyst still gets nothing.
+  const userType = (user?.user_type || "").trim().toLowerCase();
+  const isAdmin = userType === "admin";
+  const isAdminOrAnalyst = isAdmin || userType === "analyst";
   const showEditButton = isAdminOrAnalyst;
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
@@ -413,7 +424,6 @@ const ActivistIntelligenceDashboard = ({
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [generateInvestorName, setGenerateInvestorName] = useState("");
-  const [generateMode, setGenerateMode] = useState<"normal" | "enhanced">("enhanced");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStep, setGenerateStep] = useState("");
   // Scoped to the Generate modal so a failed generation shows inline there
@@ -437,7 +447,6 @@ const ActivistIntelligenceDashboard = ({
     setGenerateError(null);
     if (!isGenerating) {
       setGenerateInvestorName("");
-      setGenerateMode("normal");
     }
   };
 
@@ -754,7 +763,7 @@ const ActivistIntelligenceDashboard = ({
       const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
         investor_name: generateInvestorName,
         creator_email: creatorEmail,
-        mode: generateMode,
+        mode: GENERATE_MODE,
       });
       
       const { slug } = startRes.data;
@@ -850,7 +859,6 @@ const ActivistIntelligenceDashboard = ({
     setDuplicateProfileKey(null);
     setGenerateModalOpen(false);
     setGenerateInvestorName("");
-    setGenerateMode("normal");
   };
 
   // Optional: Discard a running/completed job
@@ -1237,42 +1245,14 @@ const ActivistIntelligenceDashboard = ({
             )}
           </div>
 
+          {/* Firm identity line stays above the tabs — it's context for every
+              tab, unlike the summary narrative which now lives in its own tab. */}
           {(profile.hq || profile.founded || profile.founderOrLead) && (
-            <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: "0 0 16px", fontSize: 12, color: "#6b7280" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: 0, fontSize: 12, color: "#6b7280" }}>
               {profile.hq && <span>{profile.hq}</span>}
               {profile.founded && <span>Founded {profile.founded}</span>}
               {profile.founderOrLead && <span>Led by {profile.founderOrLead}</span>}
             </div>
-          )}
-
-          {/* Summary text — editable in Edit Mode */}
-          {isEditMode ? (
-            <textarea
-              value={profile.summary}
-              onChange={(e) => handleSummaryTextChange(e.target.value)}
-              style={{
-                width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 500, color: "#111827", lineHeight: 1.6,
-                border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", minHeight: 80, background: "#fafafa",
-              }}
-            />
-          ) : (
-            <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{profile.summary}</p>
-          )}
-
-          {/* Summary bullet points — editable in Edit Mode */}
-          {profile.summaryPoints.length > 0 && (
-            <ul style={{ marginTop: 16, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
-              {profile.summaryPoints.map((pt: string, i: number) => (
-                <li key={i} style={{ display: "flex", alignItems: "flex-start", fontSize: 13, color: "#4b5563", lineHeight: 1.5 }}>
-                  <span style={{ color: THEME_MAROON, marginRight: 8, fontSize: 16, lineHeight: 1, marginTop: isEditMode ? 8 : 0, flexShrink: 0 }}>▸</span>
-                  {isEditMode ? (
-                    <textarea value={pt} onChange={(e) => handleSummaryPointChange(i, e.target.value)} style={{ flex: 1, padding: "6px 10px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, minHeight: 48, background: "#fafafa" }} />
-                  ) : (
-                    <span>{pt}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
           )}
         </div>
 
@@ -1304,6 +1284,40 @@ const ActivistIntelligenceDashboard = ({
           
           {activeTab === "summary" && (
             <>
+              {/* Summary narrative + bullets — editable in Edit Mode. These used
+                  to sit above the tab bar, which meant they were also printed
+                  over the Campaigns / 13F / Personnel / Sources tabs; they
+                  belong to Summary only. */}
+              <div style={{ marginBottom: 24 }}>
+                {isEditMode ? (
+                  <textarea
+                    value={profile.summary}
+                    onChange={(e) => handleSummaryTextChange(e.target.value)}
+                    style={{
+                      width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 500, color: "#111827", lineHeight: 1.6,
+                      border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", minHeight: 80, background: "#fafafa",
+                    }}
+                  />
+                ) : (
+                  <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{profile.summary}</p>
+                )}
+
+                {profile.summaryPoints.length > 0 && (
+                  <ul style={{ marginTop: 16, marginBottom: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+                    {profile.summaryPoints.map((pt: string, i: number) => (
+                      <li key={i} style={{ display: "flex", alignItems: "flex-start", fontSize: 13, color: "#4b5563", lineHeight: 1.5 }}>
+                        <span style={{ color: THEME_MAROON, marginRight: 8, fontSize: 16, lineHeight: 1, marginTop: isEditMode ? 8 : 0, flexShrink: 0 }}>▸</span>
+                        {isEditMode ? (
+                          <textarea value={pt} onChange={(e) => handleSummaryPointChange(i, e.target.value)} style={{ flex: 1, padding: "6px 10px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, minHeight: 48, background: "#fafafa" }} />
+                        ) : (
+                          <span>{pt}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               {/* ZMH Style Unified Metrics Row */}
               <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid #e5e7eb", paddingBottom: 24, marginBottom: 24 }}>
                 {[
@@ -1605,9 +1619,15 @@ const ActivistIntelligenceDashboard = ({
           onClick={closeGenerateModal}
           style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
         >
+          {/* Positioned via the Tailwind class, NOT an inline style: app.css has a
+              global `div[style*="position: relative"] input { border: none !important }`
+              rule, so an inline position here silently stripped the border off the
+              investor-name input below (the Upload modal keeps its box because its
+              panel isn't inline-positioned). */}
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ position: "relative", background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
+            className="relative"
+            style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
           >
             <button
               type="button"
@@ -1626,65 +1646,28 @@ const ActivistIntelligenceDashboard = ({
 
             <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
               Investor Entity Name
+              {/* Focus is signalled with border-colour, not a ring: app.css nukes
+                  box-shadow/outline on any element carrying them inline. */}
               <input
+                autoFocus
                 value={generateInvestorName}
                 onChange={(e) => setGenerateInvestorName(e.target.value)}
+                onFocus={(e) => { e.currentTarget.style.borderColor = THEME_MAROON; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; }}
                 placeholder="e.g. Elliott Investment Management"
                 disabled={isGenerating}
-                style={{ width: "100%", marginTop: 8, padding: "10px 14px", border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box", fontSize: 14 }}
+                style={{
+                  width: "100%", marginTop: 8, padding: "10px 14px", fontSize: 14,
+                  border: "1px solid #cbd5e1", borderRadius: 6, boxSizing: "border-box",
+                  background: isGenerating ? "#f9fafb" : "#fff", color: "#111827", fontWeight: 400, outline: "none",
+                }}
               />
             </label>
 
-            <div style={{ marginBottom: 24 }}>
-              <span style={{ display: "block", marginBottom: 8, fontSize: 13, fontWeight: 600, color: "#374151" }}>
-                Profile Type
-              </span>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setGenerateMode("normal")}
-                  disabled={isGenerating}
-                  style={{
-                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
-                    cursor: isGenerating ? "not-allowed" : "pointer",
-                    border: `1px solid ${generateMode === "normal" ? THEME_MAROON : "#d1d5db"}`,
-                    background: generateMode === "normal" ? "#fdf2f2" : "#fff",
-                    color: generateMode === "normal" ? THEME_MAROON : "#374151",
-                    fontWeight: generateMode === "normal" ? 600 : 400,
-                  }}
-                >
-                  Normal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGenerateMode("enhanced")}
-                  disabled={isGenerating}
-                  style={{
-                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
-                    cursor: isGenerating ? "not-allowed" : "pointer",
-                    border: `1px solid ${generateMode === "enhanced" ? THEME_MAROON : "#d1d5db"}`,
-                    background: generateMode === "enhanced" ? "#fdf2f2" : "#fff",
-                    color: generateMode === "enhanced" ? THEME_MAROON : "#374151",
-                    fontWeight: generateMode === "enhanced" ? 600 : 400,
-                  }}
-                >
-                  Enhanced Activism Profile
-                </button>
-              </div>
-            </div>
-
-            {generateMode === "enhanced" && (
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6 }}>
-                <span style={{ flexShrink: 0, lineHeight: 1 }}>⚠</span>
-                <span style={{ fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
-                  Enhanced Activism Profile runs an extra SEC EDGAR research step before generating, so it takes noticeably
-                  longer than Normal, often several minutes just for that step and costs roughly 3x as much. You can
-                  safely close this window once generation starts; {SEND_GENERATION_EMAIL && !!getCreatorEmail()
-                    ? "you'll get an email when it's ready."
-                    : "the profile will be waiting in your profile list when you come back."}
-                </span>
-              </div>
-            )}
+            {/* Profile type picker removed — every run uses the enhanced
+                pipeline (GENERATE_MODE), so there is nothing left to choose,
+                and no notice to explain the choice either. The in-progress
+                panel below still says generation continues in the background. */}
 
             {isGenerating && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
