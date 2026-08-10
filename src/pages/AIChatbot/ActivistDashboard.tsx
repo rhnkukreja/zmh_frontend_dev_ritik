@@ -360,7 +360,7 @@ const ActivistIntelligenceDashboard = ({
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [generateInvestorName, setGenerateInvestorName] = useState("");
-  const [generateMode, setGenerateMode] = useState<"normal" | "enhanced">("normal");
+  const [generateMode, setGenerateMode] = useState<"normal" | "enhanced">("enhanced");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStep, setGenerateStep] = useState("");
   // Scoped to the Generate modal so a failed generation shows inline there
@@ -1210,9 +1210,14 @@ const ActivistIntelligenceDashboard = ({
                                   <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {meaningfulNominees.join(", ")}</p>
                                 );
                               })()}
-                              {isMeaningfulText(c.notes) && <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>}
+                              {/* notes and outcome_to_date are both sourced from the same pipeline
+                                  field on some profiles, so they end up identical — only show notes
+                                  when it says something outcome_to_date doesn't already say. */}
+                              {isMeaningfulText(c.notes) && c.notes.trim() !== (c.outcome_to_date || "").trim() && (
+                                <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>
+                              )}
                               {isMeaningfulText(c.outcome_to_date) && (
-                                <p style={{ fontSize: 12, color: "#166534", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 6, padding: "6px 10px", margin: "8px 0 0", lineHeight: 1.5 }}>
+                                <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>
                                   <strong>Outcome:</strong> {c.outcome_to_date}
                                 </p>
                               )}
