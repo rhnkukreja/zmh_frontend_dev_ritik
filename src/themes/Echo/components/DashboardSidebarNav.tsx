@@ -158,7 +158,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "investor-profile",
-    label: "Investor Profile",
+    label: "Investor Resources",
     icon: Landmark,
     group: "Institution Insights",
     route: "/investor-profile",
@@ -167,7 +167,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "investor-overview",
-    label: "Aggregate Voting",
+    label: "Voting Data",
     icon: PieChart,
     group: "Institution Insights",
     route: "/voting-data",
@@ -175,7 +175,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "investor-overview",
-    label: "Executive Compensation",
+    label: "Exec. Comp. Voting Data",
     icon: Briefcase,
     group: "Institution Insights",
     route: "/executive-compensation",
