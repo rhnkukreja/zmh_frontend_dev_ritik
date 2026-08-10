@@ -649,7 +649,7 @@ function ProxyContestAI() {
             )}
 
             {/* Activist Profile tab → Generate Activism Profile action */}
-            {isAdminOrAnalyst && activeTab === "activist_profile" && (
+            {activeTab === "activist_profile" && (
               <button
                 type="button"
                 onClick={() => setGenerateProfileSignal((v) => v + 1)}
