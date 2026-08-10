@@ -131,14 +131,6 @@ function SectionHeader({
   );
 }
 
-function toTitleCase(text?: string) {
-  return String(text ?? "")
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function capitalizeFirstLetter(text?: string) {
   const value = String(text ?? "").trim();
   if (!value) return value;
@@ -216,22 +208,22 @@ function ShareholderEngagementSection({
   const paragraphBlocks = splitParagraphs(formattedParagraphText);
   const detailCards = [
     {
-      label: "Number of investors contacted",
+      label: "Number of Investors Contacted",
       value: engagement.numberOfInvestorsContacted,
       kind: "metric" as const,
     },
     {
-      label: "Percentage ownership contacted",
+      label: "Percentage Ownership Contacted",
       value: engagement.percentageOwnershipContacted,
       kind: "metric" as const,
     },
     {
-      label: "Issues discussed",
+      label: "Issues Discussed",
       value: engagement.issuesDiscussed,
       kind: "issues" as const,
     },
     {
-      label: "Action taken",
+      label: "Action Taken",
       value: engagement.actionTaken,
       kind: "action" as const,
     },
@@ -266,11 +258,11 @@ function ShareholderEngagementSection({
               <MessageSquareQuote className="h-4 w-4 text-primary" />
             </div>
             <div className="flex min-w-0 items-start gap-2">
-              <h3 className="max-w-[180px] whitespace-normal text-[14px] font-semibold leading-5 text-slate-900">
+              <h3 className="max-w-[180px] whitespace-normal text-base font-semibold leading-6 text-slate-900">
                 <span className="block whitespace-nowrap">{displayYear} Proxy Disclosure:</span>
                 <span className="block whitespace-nowrap">Shareholder Engagement</span>
               </h3>
-              <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
+              <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] font-extrabold leading-none text-white shadow-sm">
                 BETA
               </span>
             </div>
@@ -307,7 +299,7 @@ function ShareholderEngagementSection({
                       renderCardWidthClass
                     )}
                   >
-                    <div className="text-[13px] font-bold capitalize text-slate-700">{toTitleCase(item.label)}</div>
+                    <div className="text-[13px] font-bold text-slate-700">{item.label}</div>
                     <div className="mt-1 text-[15px] font-normal text-slate-900">{String(item.value)}</div>
                   </div>
                 ))}
