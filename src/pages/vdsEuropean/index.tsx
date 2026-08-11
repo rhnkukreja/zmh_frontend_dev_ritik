@@ -2104,7 +2104,7 @@ const index = () => {
         <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
           <span className="text-slate-500">Institution Insights</span>
           <span className="text-slate-400">›</span>
-          <span>Aggregate Voting</span>
+          <span>Voting Data</span>
         </h1>
       </div>
       <div className="p-5 mt-1 box">

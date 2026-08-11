@@ -46,8 +46,12 @@ const saveF = (tab: string, data: any) => {
 
 function ProxyContestAI() {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdmin = user?.user_type === "Admin";
-  const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
+  // Case-insensitive on purpose — user_type isn't guaranteed title-cased by the
+  // API (UserManagement normalises it the same way). Non Admin/Analyst users
+  // still see neither "Upload Activist Profile" nor "Add Proxy Contest".
+  const userType = (user?.user_type || "").trim().toLowerCase();
+  const isAdmin = userType === "admin";
+  const isAdminOrAnalyst = isAdmin || userType === "analyst";
 
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab") as ProxyContestTabKey | null;
@@ -656,7 +660,7 @@ function ProxyContestAI() {
                 className="flex items-center gap-1.5 h-[38px] px-3 text-sm font-medium text-white bg-primary border border-primary rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
               >
                 <Lucide icon="Sparkles" className="w-4 h-4" />
-                Generate Activism Profile
+                Generate Activist Profile
               </button>
             )}
 

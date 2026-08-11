@@ -158,7 +158,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "investor-profile",
-    label: "Investor Profile",
+    label: "Investor Resources",
     icon: Landmark,
     group: "Institution Insights",
     route: "/investor-profile",
@@ -167,7 +167,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "investor-overview",
-    label: "Aggregate Voting",
+    label: "Voting Data",
     icon: PieChart,
     group: "Institution Insights",
     route: "/voting-data",
@@ -175,7 +175,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "investor-overview",
-    label: "Executive Compensation",
+    label: "Exec. Comp. Voting Data",
     icon: Briefcase,
     group: "Institution Insights",
     route: "/executive-compensation",
@@ -195,6 +195,7 @@ const DashboardSidebarNav = ({
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const locationState = location.state as { source?: string } | undefined;
 
   const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
   const { companyGlobalSearchName, companyGlobalSearchTicker, user } = useAppSelector(
@@ -292,6 +293,13 @@ const DashboardSidebarNav = ({
             (!section.subSection ||
               activeSubSection === section.subSection ||
               (section.subSection === "voting_rationale" && !activeSubSection));
+        const isCaseStudiesDetail = location.pathname.startsWith("/case-studies/");
+        const isShareholderDetail = location.pathname.startsWith("/shareholder-proposal/");
+        const isCompanyDetailSource = locationState?.source === "company";
+        const isCompanyDetailActive =
+          (section.key === "company-case-studies" && isCaseStudiesDetail && isCompanyDetailSource) ||
+          (section.key === "company-shareholder-proposals" && isShareholderDetail && isCompanyDetailSource);
+        const resolvedIsActive = isActive || isCompanyDetailActive;
         const isExpanded = expanded === section.key;
         const visibleSubItems = section.subItems.filter(
           (sub) => !sub.adminOnly || user?.user_type === "Admin"
@@ -336,7 +344,7 @@ const DashboardSidebarNav = ({
               }}
               className={clsx([
                 "side-menu__link",
-                { "side-menu__link--active": isActive },
+                { "side-menu__link--active": resolvedIsActive },
               ])}
             >
               <span className="relative">

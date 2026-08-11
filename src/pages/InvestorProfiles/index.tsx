@@ -414,9 +414,9 @@ function Main() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                  <span className="text-slate-500">Market Analytics</span>
+                  <span className="text-slate-500">Institution Insights</span>
                   <ChevronRight className="w-4 h-4 text-slate-400" />
-                  <span>Investor Profile</span>
+                  <span>Investor Resources</span>
                 </h2>
               </div>
               <div className="flex items-center gap-3 flex-wrap justify-end">

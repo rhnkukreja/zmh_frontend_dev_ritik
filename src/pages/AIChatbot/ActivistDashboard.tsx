@@ -19,6 +19,12 @@ const THEME_MAROON = "#8b1828";
 // SET BACK TO true BEFORE MERGING.
 const SEND_GENERATION_EMAIL = `True`;
 
+// Every generation runs the enhanced pipeline (extra SEC EDGAR research pass
+// before writing the profile). This is deliberately a constant and not state:
+// the "Normal" mode produced noticeably weaker profiles, so there must be no
+// code path — not a picker, not a modal reset — that can send anything else.
+const GENERATE_MODE = "enhanced" as const;
+
 // The pipeline writes free-text statuses — "ongoing (second episode) -
 // cooperation period filings", "closed - 13d engagement", "exited (position
 // liquidated)" — so every consumer keys off the FIRST word, never the whole
@@ -82,6 +88,14 @@ const isMeaningfulText = (text: any) =>
   text.trim().length > 0 &&
   !PLACEHOLDER_TEXT_RE.test(text);
 
+/**
+ * The investor's real name as shown in the dashboard header. Returns "" (not a
+ * placeholder) when the profile has neither field, so callers can decide their
+ * own fallback — the investor picker falls back to the slug-derived label.
+ */
+const extractLegalName = (raw: any): string =>
+  raw?.activist_investor_summary?.legal_name || raw?.activist_investor_summary?.brand_name || "";
+
 /** Normalise the raw JSON from S3 into a consistent internal shape */
 const normaliseProfile = (raw: any) => {
   if (!raw) return null;
@@ -123,7 +137,7 @@ const normaliseProfile = (raw: any) => {
   const summaryPoints = (raw.activist_investor_summary?.summary_points || [])
     .map((pt: any) => stripCitations(pt));
 
-  const legalName = raw.activist_investor_summary?.legal_name || raw.activist_investor_summary?.brand_name || "Activist Profile";
+  const legalName = extractLegalName(raw) || "Activist Profile";
   const founded  = raw.activist_investor_summary?.founded || "";
   const hq       = raw.activist_investor_summary?.headquarters || "";
   const founderOrLead = raw.activist_investor_summary?.founder_or_key_lead || "";
@@ -384,8 +398,13 @@ const ActivistIntelligenceDashboard = ({
   openGenerateModalSignal?: number;
 }) => {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdmin = user?.user_type === "Admin";
-  const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
+  // Compared case-insensitively: user_type comes straight from the API and
+  // isn't guaranteed to be title-cased (UserManagement normalises it the same
+  // way before matching), so a strict === "Admin" silently locked real admins
+  // out of Edit Mode. Anything that isn't Admin/Analyst still gets nothing.
+  const userType = (user?.user_type || "").trim().toLowerCase();
+  const isAdmin = userType === "admin";
+  const isAdminOrAnalyst = isAdmin || userType === "analyst";
   const showEditButton = isAdminOrAnalyst;
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
@@ -429,7 +448,6 @@ const ActivistIntelligenceDashboard = ({
     setGenerateError(null);
     if (!isGenerating) {
       setGenerateInvestorName("");
-      setGenerateMode("normal");
     }
   };
 
@@ -456,10 +474,14 @@ const ActivistIntelligenceDashboard = ({
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
 
+  // Fallback label used only until the real legal name lands (see the name
+  // prefetch effect). Strips the trailing "-profile"/"_profile" suffix — S3
+  // slugs use both separators (e.g. "biglari-capital_profile"), and matching
+  // only the hyphen form left "Profile" stuck on the end of those labels.
   const formatKeyToLabel = (keyStr: string) => {
     if (!keyStr) return "";
     return keyStr
-      .replace('-profile', '')
+      .replace(/[-_]profile$/i, '')
       .split(/[-_]/)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
@@ -482,21 +504,26 @@ const ActivistIntelligenceDashboard = ({
       }
 
       setInvestorKeys(discoveredKeys);
-      if (keyToSelect && discoveredKeys.includes(keyToSelect)) {
-        setActiveInvestorKey(keyToSelect);
-      } else if (!activeInvestorKey || (keyToSelect && !discoveredKeys.includes(activeInvestorKey))) {
+      // Resolved functionally rather than from the `activeInvestorKey` state
+      // value: reading it here would make this callback depend on it, so every
+      // investor switch re-ran the index fetch and handed down a brand-new
+      // investorKeys array — which tore down the name prefetch below mid-flight.
+      setActiveInvestorKey((current) => {
+        if (keyToSelect && discoveredKeys.includes(keyToSelect)) return keyToSelect;
         // Either nothing selected yet, or the key we wanted (or the one
         // already active) isn't actually present in S3 — fall back to the
         // first profile that is, instead of showing a stale/missing one.
-        setActiveInvestorKey(discoveredKeys[0]);
-      }
+        if (!current) return discoveredKeys[0];
+        if (keyToSelect && !discoveredKeys.includes(current)) return discoveredKeys[0];
+        return current;
+      });
     } catch (err: any) {
       console.error("[ActivistDashboard] index assembly failure:", err);
       setError(err.response?.data?.detail || err.message || "Failed to load dynamic profile index.");
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
-  }, [activeInvestorKey]);
+  }, []);
 
   useEffect(() => {
     if (externalPreviewData) {
@@ -514,26 +541,32 @@ const ActivistIntelligenceDashboard = ({
   }, [fetchAllProfiles]);
 
   // Background-fetch the real legal name for every investor key so the
-  // dropdown/trigger can show it instead of the slug-derived label. Reuses
+  // dropdown/trigger show it instead of the slug-derived label. Reuses
   // profilesCache when a profile's already been loaded this session, and
-  // never re-fetches a key once attempted (tracked via a ref, not state, so
-  // this effect doesn't re-run as names trickle in).
+  // doesn't re-fetch a key whose name request already settled (tracked via a
+  // ref, not state, so this effect doesn't re-run as names trickle in).
+  // Keyed on the joined slug list, not the array identity, so a re-fetched but
+  // identical index doesn't restart (and cancel) the whole prefetch.
+  const investorKeysSignature = investorKeys.join("|");
   useEffect(() => {
     const keysToFetch = investorKeys.filter((k) => !fetchedNameKeysRef.current.has(k));
     if (!keysToFetch.length) return;
     keysToFetch.forEach((k) => fetchedNameKeysRef.current.add(k));
 
     let cancelled = false;
+    // Keys whose fetch actually settled. Anything still unsettled when this
+    // effect is torn down gets un-marked in the cleanup — otherwise the ref
+    // claims a name was fetched for a key that never resolved one, and the
+    // dropdown is stuck on the slug fallback for the rest of the session.
+    const settled = new Set<string>();
     const NAME_FETCH_CONCURRENCY = 5;
     const queue = [...keysToFetch];
-
-    const extractLegalName = (raw: any): string =>
-      raw?.activist_investor_summary?.legal_name || raw?.activist_investor_summary?.brand_name || "";
 
     const fetchName = async (key: string) => {
       if (profilesCache[key]) {
         const legalName = extractLegalName(profilesCache[key]);
         if (legalName && !cancelled) setInvestorNames((prev) => ({ ...prev, [key]: legalName }));
+        settled.add(key);
         return;
       }
       try {
@@ -545,8 +578,11 @@ const ActivistIntelligenceDashboard = ({
         setProfilesCache((prev) => (prev[key] ? prev : { ...prev, [key]: profileData }));
         const legalName = extractLegalName(profileData);
         if (legalName) setInvestorNames((prev) => ({ ...prev, [key]: legalName }));
+        settled.add(key);
       } catch (err) {
         console.warn(`[Investor name prefetch] failed for '${key}':`, err);
+        // Marked settled so a genuinely broken key isn't retried in a loop.
+        settled.add(key);
       }
     };
 
@@ -560,20 +596,35 @@ const ActivistIntelligenceDashboard = ({
 
     Promise.all(Array.from({ length: Math.min(NAME_FETCH_CONCURRENCY, queue.length) }, worker));
 
-    return () => { cancelled = true; };
-  }, [investorKeys]);
+    return () => {
+      cancelled = true;
+      keysToFetch.forEach((k) => { if (!settled.has(k)) fetchedNameKeysRef.current.delete(k); });
+    };
+  }, [investorKeysSignature]);
 
   useEffect(() => {
     if (!activeInvestorKey) return;
 
+    // Keep the picker's label for this key in sync with the header, without
+    // waiting on the background name prefetch — we already hold the profile.
+    const rememberName = (raw: any) => {
+      const legalName = extractLegalName(raw);
+      if (legalName) {
+        fetchedNameKeysRef.current.add(activeInvestorKey);
+        setInvestorNames((prev) =>
+          prev[activeInvestorKey] === legalName ? prev : { ...prev, [activeInvestorKey]: legalName });
+      }
+    };
+
     const fetchSingleProfile = async () => {
-      setIsPreviewMode(false); 
+      setIsPreviewMode(false);
       setIsEditMode(false);
 
       // FIX: Ensure rawProfile state is populated even when utilizing cache
       if (profilesCache[activeInvestorKey]) {
         setRawProfile(profilesCache[activeInvestorKey]);
         setProfile(normaliseProfile(profilesCache[activeInvestorKey]));
+        rememberName(profilesCache[activeInvestorKey]);
         return;
       }
 
@@ -586,6 +637,7 @@ const ActivistIntelligenceDashboard = ({
         setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: profileData }));
         setRawProfile(profileData);
         setProfile(normaliseProfile(profileData));
+        rememberName(profileData);
       } catch (err) {
         console.error(`[Fetch Profile Error] '${activeInvestorKey}' not found in S3:`, err);
 
@@ -712,7 +764,7 @@ const ActivistIntelligenceDashboard = ({
       const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/generate`, {
         investor_name: generateInvestorName,
         creator_email: creatorEmail,
-        mode: generateMode,
+        mode: GENERATE_MODE,
       });
       
       const { slug } = startRes.data;
@@ -808,7 +860,6 @@ const ActivistIntelligenceDashboard = ({
     setDuplicateProfileKey(null);
     setGenerateModalOpen(false);
     setGenerateInvestorName("");
-    setGenerateMode("normal");
   };
 
   // Optional: Discard a running/completed job
@@ -1195,42 +1246,14 @@ const ActivistIntelligenceDashboard = ({
             )}
           </div>
 
+          {/* Firm identity line stays above the tabs — it's context for every
+              tab, unlike the summary narrative which now lives in its own tab. */}
           {(profile.hq || profile.founded || profile.founderOrLead) && (
-            <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: "0 0 16px", fontSize: 12, color: "#6b7280" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: 0, fontSize: 12, color: "#6b7280" }}>
               {profile.hq && <span>{profile.hq}</span>}
               {profile.founded && <span>Founded {profile.founded}</span>}
               {profile.founderOrLead && <span>Led by {profile.founderOrLead}</span>}
             </div>
-          )}
-
-          {/* Summary text — editable in Edit Mode */}
-          {isEditMode ? (
-            <textarea
-              value={profile.summary}
-              onChange={(e) => handleSummaryTextChange(e.target.value)}
-              style={{
-                width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 500, color: "#111827", lineHeight: 1.6,
-                border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", minHeight: 80, background: "#fafafa",
-              }}
-            />
-          ) : (
-            <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{profile.summary}</p>
-          )}
-
-          {/* Summary bullet points — editable in Edit Mode */}
-          {profile.summaryPoints.length > 0 && (
-            <ul style={{ marginTop: 16, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
-              {profile.summaryPoints.map((pt: string, i: number) => (
-                <li key={i} style={{ display: "flex", alignItems: "flex-start", fontSize: 13, color: "#4b5563", lineHeight: 1.5 }}>
-                  <span style={{ color: THEME_MAROON, marginRight: 8, fontSize: 16, lineHeight: 1, marginTop: isEditMode ? 8 : 0, flexShrink: 0 }}>▸</span>
-                  {isEditMode ? (
-                    <textarea value={pt} onChange={(e) => handleSummaryPointChange(i, e.target.value)} style={{ flex: 1, padding: "6px 10px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, minHeight: 48, background: "#fafafa" }} />
-                  ) : (
-                    <span>{pt}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
           )}
         </div>
 
@@ -1262,6 +1285,40 @@ const ActivistIntelligenceDashboard = ({
           
           {activeTab === "summary" && (
             <>
+              {/* Summary narrative + bullets — editable in Edit Mode. These used
+                  to sit above the tab bar, which meant they were also printed
+                  over the Campaigns / 13F / Personnel / Sources tabs; they
+                  belong to Summary only. */}
+              <div style={{ marginBottom: 24 }}>
+                {isEditMode ? (
+                  <textarea
+                    value={profile.summary}
+                    onChange={(e) => handleSummaryTextChange(e.target.value)}
+                    style={{
+                      width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 500, color: "#111827", lineHeight: 1.6,
+                      border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box", minHeight: 80, background: "#fafafa",
+                    }}
+                  />
+                ) : (
+                  <p style={{ fontSize: 14, color: "#111827", lineHeight: 1.6, margin: 0, fontWeight: 500 }}>{profile.summary}</p>
+                )}
+
+                {profile.summaryPoints.length > 0 && (
+                  <ul style={{ marginTop: 16, marginBottom: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
+                    {profile.summaryPoints.map((pt: string, i: number) => (
+                      <li key={i} style={{ display: "flex", alignItems: "flex-start", fontSize: 13, color: "#4b5563", lineHeight: 1.5 }}>
+                        <span style={{ color: THEME_MAROON, marginRight: 8, fontSize: 16, lineHeight: 1, marginTop: isEditMode ? 8 : 0, flexShrink: 0 }}>▸</span>
+                        {isEditMode ? (
+                          <textarea value={pt} onChange={(e) => handleSummaryPointChange(i, e.target.value)} style={{ flex: 1, padding: "6px 10px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 6, resize: "vertical", fontFamily: "inherit", lineHeight: 1.5, minHeight: 48, background: "#fafafa" }} />
+                        ) : (
+                          <span>{pt}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               {/* ZMH Style Unified Metrics Row */}
               <div style={{ display: "flex", flexWrap: "wrap", borderBottom: "1px solid #e5e7eb", paddingBottom: 24, marginBottom: 24 }}>
                 {[
@@ -1563,9 +1620,15 @@ const ActivistIntelligenceDashboard = ({
           onClick={closeGenerateModal}
           style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
         >
+          {/* Positioned via the Tailwind class, NOT an inline style: app.css has a
+              global `div[style*="position: relative"] input { border: none !important }`
+              rule, so an inline position here silently stripped the border off the
+              investor-name input below (the Upload modal keeps its box because its
+              panel isn't inline-positioned). */}
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ position: "relative", background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
+            className="relative"
+            style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
           >
             <button
               type="button"
@@ -1584,65 +1647,28 @@ const ActivistIntelligenceDashboard = ({
 
             <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
               Investor Entity Name
+              {/* Focus is signalled with border-colour, not a ring: app.css nukes
+                  box-shadow/outline on any element carrying them inline. */}
               <input
+                autoFocus
                 value={generateInvestorName}
                 onChange={(e) => setGenerateInvestorName(e.target.value)}
+                onFocus={(e) => { e.currentTarget.style.borderColor = THEME_MAROON; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; }}
                 placeholder="e.g. Elliott Investment Management"
                 disabled={isGenerating}
-                style={{ width: "100%", marginTop: 8, padding: "10px 14px", border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box", fontSize: 14 }}
+                style={{
+                  width: "100%", marginTop: 8, padding: "10px 14px", fontSize: 14,
+                  border: "1px solid #cbd5e1", borderRadius: 6, boxSizing: "border-box",
+                  background: isGenerating ? "#f9fafb" : "#fff", color: "#111827", fontWeight: 400, outline: "none",
+                }}
               />
             </label>
 
-            <div style={{ marginBottom: 24 }}>
-              <span style={{ display: "block", marginBottom: 8, fontSize: 13, fontWeight: 600, color: "#374151" }}>
-                Profile Type
-              </span>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => setGenerateMode("normal")}
-                  disabled={isGenerating}
-                  style={{
-                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
-                    cursor: isGenerating ? "not-allowed" : "pointer",
-                    border: `1px solid ${generateMode === "normal" ? THEME_MAROON : "#d1d5db"}`,
-                    background: generateMode === "normal" ? "#fdf2f2" : "#fff",
-                    color: generateMode === "normal" ? THEME_MAROON : "#374151",
-                    fontWeight: generateMode === "normal" ? 600 : 400,
-                  }}
-                >
-                  Normal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGenerateMode("enhanced")}
-                  disabled={isGenerating}
-                  style={{
-                    flex: 1, padding: "10px 14px", borderRadius: 6, fontSize: 13,
-                    cursor: isGenerating ? "not-allowed" : "pointer",
-                    border: `1px solid ${generateMode === "enhanced" ? THEME_MAROON : "#d1d5db"}`,
-                    background: generateMode === "enhanced" ? "#fdf2f2" : "#fff",
-                    color: generateMode === "enhanced" ? THEME_MAROON : "#374151",
-                    fontWeight: generateMode === "enhanced" ? 600 : 400,
-                  }}
-                >
-                  Enhanced Activism Profile
-                </button>
-              </div>
-            </div>
-
-            {generateMode === "enhanced" && (
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6 }}>
-                <span style={{ flexShrink: 0, lineHeight: 1 }}>⚠</span>
-                <span style={{ fontSize: 12, color: "#92400e", lineHeight: 1.5 }}>
-                  Enhanced Activism Profile runs an extra SEC EDGAR research step before generating, so it takes noticeably
-                  longer than Normal — often several minutes just for that step — and costs roughly 3x as much. You can
-                  safely close this window once generation starts; {SEND_GENERATION_EMAIL && !!getCreatorEmail()
-                    ? "you'll get an email when it's ready."
-                    : "the profile will be waiting in your profile list when you come back."}
-                </span>
-              </div>
-            )}
+            {/* Profile type picker removed — every run uses the enhanced
+                pipeline (GENERATE_MODE), so there is nothing left to choose,
+                and no notice to explain the choice either. The in-progress
+                panel below still says generation continues in the background. */}
 
             {isGenerating && (
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
@@ -1693,7 +1719,7 @@ const ActivistIntelligenceDashboard = ({
           <div style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 420, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
             <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Profile Already Exists</h2>
             <p style={{ margin: "0 0 24px", color: "#4b5563", fontSize: 13, lineHeight: 1.6 }}>
-              A profile for <strong>{formatKeyToLabel(duplicateProfileKey)}</strong> has already been generated and published.
+              A profile for <strong>{investorNames[duplicateProfileKey] || formatKeyToLabel(duplicateProfileKey)}</strong> has already been generated and published.
               Do you want to regenerate it anyway? This will run the full pipeline again and produce a fresh
               preview — the existing published profile isn't overwritten until you approve and publish it.
             </p>
