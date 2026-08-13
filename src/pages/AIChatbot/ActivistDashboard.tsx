@@ -579,6 +579,11 @@ const ActivistIntelligenceDashboard = ({
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
   const loadTokenRef = useRef(0);
+  // Keys that have already failed a profile fetch this session -- prevents
+  // loadProfileForKey's fallback-on-error logic from ever bouncing between
+  // the same bad keys forever (seen in prod as a runaway loop hammering
+  // /api/activist-profiles with no backoff).
+  const failedProfileKeysRef = useRef<Set<string>>(new Set());
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
 
@@ -728,6 +733,17 @@ const ActivistIntelligenceDashboard = ({
   // showing stale cached data). Shared by the activeInvestorKey effect below
   // and by refreshFinishedJobProfile.
   const loadProfileForKey = async (key: string, { forceRefresh = false } = {}) => {
+    // Defensive guard: key must be a real, non-empty string before it's ever
+    // allowed into a URL template literal -- if a non-string slips in from
+    // anywhere (bad state, a stale reference, etc.), interpolating it would
+    // silently produce a literal "/api/activist-profiles/[object Object]"
+    // request instead of failing loudly. Refuse it here instead.
+    if (typeof key !== "string" || !key) {
+      console.error("[loadProfileForKey] refusing to fetch a non-string/empty key:", key);
+      setError("Failed to load the selected investor profile (invalid key).");
+      setLoading(false);
+      return;
+    }
     const myToken = ++loadTokenRef.current;
     setIsPreviewMode(false);
     setIsEditMode(false);
@@ -764,11 +780,14 @@ const ActivistIntelligenceDashboard = ({
       }
     } catch (err) {
       console.error(`[Fetch Profile Error] '${key}' not found in S3:`, err);
+      failedProfileKeysRef.current.add(key);
 
       // The selected key doesn't have a matching file in S3 (stale slug, deleted
       // profile, etc). Rather than dead-ending on an error screen, fall back to
-      // the first profile that does exist so the dashboard still shows something.
-      const fallbackKey = investorKeys.find((k) => k !== key);
+      // the first profile that does exist so the dashboard still shows something
+      // -- but only among keys that haven't already failed this session, so a
+      // bad key can never bounce back and forth with another bad key forever.
+      const fallbackKey = investorKeys.find((k) => k !== key && !failedProfileKeysRef.current.has(k));
       if (fallbackKey) {
         setActiveInvestorKey(fallbackKey);
       } else {
