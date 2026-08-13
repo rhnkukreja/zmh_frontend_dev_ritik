@@ -779,7 +779,7 @@ const isActivelyScraping =
                                                 if (isActivelyScraping) {
             return (
               <Tippy content="Searching" options={{ theme: "light" }}>
-                <div className="hidden items-center justify-center w-6 h-6 text-primary">
+                <div className="flex items-center justify-center w-6 h-6 text-primary">
                   <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
                 </div>
               </Tippy>
@@ -789,7 +789,7 @@ const isActivelyScraping =
                                                 if (isInS3 && hasContent) {
             return (
                                                    <div
-  className="hidden w-5 h-5"
+  className="w-5 h-5"
   onClick={() => {
     if (!summaryLoading) {
       handleViewSummary(name);
@@ -814,7 +814,7 @@ const isActivelyScraping =
      <Tippy
        content="Case Studies"
                                                   options={{ theme: "light" }}
-                                                  className="hidden w-6 h-6 mt-1"
+                                                  className="w-6 h-6 mt-1"
                                                   onClick={() =>
                                                     redirectCaseStudy(
                                                       dashboard?.institution_name
@@ -835,7 +835,7 @@ const isActivelyScraping =
                                                 <Tippy
                                                   content="View Notes"
                                                   options={{ theme: "light" }}
-                                                  className="hidden w-6 h-6 mt-1"
+                                                  className="w-6 h-6 mt-1"
                                                   onClick={() => openEngagementQuestionsDialog(dashboard)}
                                                 >
                                                   <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
@@ -846,7 +846,7 @@ const isActivelyScraping =
                                                 <Tippy
                                                   content="Add Notes"
                                                   options={{ theme: "light" }}
-                                                  className="hidden w-6 h-6 mt-1"
+                                                  className="w-6 h-6 mt-1"
                                                   onClick={() => openAddNotesDialog(dashboard)}
                                                 >
                                                   <div className="flex items-center justify-center w-6 h-6 text-primary ">

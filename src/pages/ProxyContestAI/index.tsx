@@ -632,7 +632,7 @@ function ProxyContestAI() {
        {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <span className="text-slate-500">Proxy Contest</span>
+            <span className="text-slate-500">Proxy Contests</span>
             <ChevronRight className="w-4 h-4 text-slate-400" />
             <span>{tabs.find((t) => t.key === activeTab)?.label ?? "Activist Profile"}</span>
           </h2>
@@ -652,7 +652,9 @@ function ProxyContestAI() {
               </Button>
             )}
 
-            {/* Activist Profile tab → Generate Activism Profile action */}
+            {/* Activist Profile tab → Generate Activism Profile action.
+                Intentionally open to every logged-in user, not just
+                Admin/Analyst — unlike Upload Activist Profile above. */}
             {activeTab === "activist_profile" && (
               <button
                 type="button"

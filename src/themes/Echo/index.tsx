@@ -98,13 +98,13 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
 
   if (
     [
-      "Proxy Contest",
+      "Proxy Contests",
       "Activist Profile",
       "Voting Analytics",
       "Campaign Details",
     ].includes(menu.title)
   ) {
-    return "Proxy Contest";
+    return "Proxy Contests";
   }
 
   if (
