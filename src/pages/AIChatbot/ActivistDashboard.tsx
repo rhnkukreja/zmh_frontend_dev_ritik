@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -54,6 +55,21 @@ const STATUS_LABEL_MAP = {
 /** Statuses meaning "this campaign has not concluded". */
 const LIVE_STATUS_KEYS = ["open", "ongoing", "active"];
 
+/** A single in-flight generation job, as returned by GET /generate/active */
+type ActiveGenerationJob = {
+  slug: string;
+  investor_name: string;
+  step?: string;
+  progress_pct?: number;
+  mode?: string;
+};
+
+/** "elliott-management" and "elliott-management-profile" both refer to the
+ * same investor — the /generate/active job slug and the published S3 key
+ * aren't guaranteed to use the same suffix convention, so match both forms. */
+const slugMatches = (a: string, b: string) =>
+  !!a && !!b && (a === b || `${a}-profile` === b || a === `${b}-profile`);
+
 /** "ongoing (second episode) - cooperation period filings" -> "ongoing" */
 const statusKey = (status: any) =>
   String(status || "closed").toLowerCase().trim().split(/[/\s(]/)[0];
@@ -107,7 +123,19 @@ const normaliseProfile = (raw: any) => {
     .replace(/\[(?:cite|citation|citations):\s*.*?\]/gi, "")
     .replace(/\[[\d,\s-]+\]/g, "")
     .replace(/(?:cite|citation|citations):\s*[\d,\s-]+/gi, "")
+    // Markdown-link citations, e.g. "[sec.gov](https://...)" — strip the
+    // whole link (label + url), not just the url, since the bare label
+    // ("sec.gov") would otherwise read as orphaned noise once the link
+    // markup is gone.
+    .replace(/\[[^\[\]]*\]\(https?:\/\/[^\s()]+\)/gi, "")
+    // Bare (non-markdown) URLs, parenthesized or not — e.g. "(https://...)".
+    .replace(/\(?\bhttps?:\/\/[^\s()]+\)?/gi, "")
+    // Empty parens left behind once their only contents were a citation,
+    // e.g. "increased its stake ()" or "(, )" from a multi-link citation.
+    .replace(/\(\s*(?:[,;]\s*)*\)/g, "")
     .replace(/\[\s*\]/g, "")
+    // Dangling space before punctuation left by a removed citation.
+    .replace(/\s+([.,;:])/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
 };
@@ -267,7 +295,7 @@ const StatusBadge = ({ status }: { status: string }) => {
         border: `1px solid ${color}40`,
         whiteSpace: "nowrap",
         display: "inline-block",
-        maxWidth: "100%",
+        maxWidth: 150,
         overflow: "hidden",
         textOverflow: "ellipsis",
       }}
@@ -295,6 +323,78 @@ const Tag = ({ text, color = "#6b728020", textColor = "#374151" }: { text: strin
   </span>
 );
 
+// A small persistent "still generating" indicator for a specific investor
+// row in the picker dropdown — the row already shows that investor's name,
+// so this only needs the percentage.
+const GeneratingChip = ({ job }: { job: ActiveGenerationJob }) => (
+  <span
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 5,
+      fontSize: 10,
+      fontWeight: 600,
+      padding: "2px 7px",
+      borderRadius: 999,
+      background: "#fdf2f2",
+      color: THEME_MAROON,
+      border: `1px solid ${THEME_MAROON}30`,
+      whiteSpace: "nowrap",
+      maxWidth: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    }}
+    title="Generating"
+  >
+    <span style={{ width: 6, height: 6, borderRadius: "50%", background: THEME_MAROON, flexShrink: 0, animation: "pulse-dot 1.2s ease-in-out infinite" }} />
+    {typeof job.progress_pct === "number" ? `Generating… ${Math.round(job.progress_pct)}%` : "Generating…"}
+    <style>{`@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
+  </span>
+);
+
+// to show "Generating" just because the currently-viewed investor happened
+const GenerationProgressBar = ({ job, onClick }: { job: ActiveGenerationJob; onClick?: () => void }) => {
+  const pct = typeof job.progress_pct === "number" ? Math.max(0, Math.min(100, Math.round(job.progress_pct))) : null;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Click to view generation details"
+      style={{
+        width: 180, flexShrink: 0, boxSizing: "border-box", padding: "5px 10px",
+        background: "white", border: "1px solid #e5e7eb", borderRadius: 8,
+        boxShadow: "0 1px 2px rgba(0,0,0,0.04)", cursor: onClick ? "pointer" : "default",
+        textAlign: "left", font: "inherit",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6, marginBottom: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={job.investor_name}>
+          {job.investor_name || "Generating profile"}
+        </span>
+        {pct !== null && (
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#059669", flexShrink: 0, animation: "pct-pulse 1.4s ease-in-out infinite" }}>
+            {pct}%
+          </span>
+        )}
+      </div>
+      <div style={{ height: 5, background: "#f3f4f6", borderRadius: 999, overflow: "hidden" }}>
+        <div
+          style={{
+            height: "100%", width: `${pct ?? 10}%`, borderRadius: 999, transition: "width 0.4s ease",
+            background: "linear-gradient(90deg, #10b981 0%, #6ee7b7 50%, #10b981 100%)",
+            backgroundSize: "200% 100%",
+            animation: "progress-shimmer 1.3s linear infinite",
+          }}
+        />
+      </div>
+      <style>{`
+        @keyframes progress-shimmer { 0% { background-position: 0% 0; } 100% { background-position: -200% 0; } }
+        @keyframes pct-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+      `}</style>
+    </button>
+  );
+};
+
 // ─── Investor trigger button (header only) ────────────────────────────────────
 
 const InvestorTrigger = ({
@@ -319,12 +419,13 @@ const InvestorTrigger = ({
       display: "flex",
       alignItems: "center",
       gap: 8,
-      minWidth: 220,
-      maxWidth: 320,
+      width: 260,
+      boxSizing: "border-box",
+      flexShrink: 0,
       textAlign: "left",
     }}
   >
-    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+    <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
       {label}
     </span>
     <svg
@@ -401,21 +502,18 @@ const ActivistIntelligenceDashboard = ({
   // Compared case-insensitively: user_type comes straight from the API and
   // isn't guaranteed to be title-cased (UserManagement normalises it the same
   // way before matching), so a strict === "Admin" silently locked real admins
-  // out of Edit Mode. Anything that isn't Admin/Analyst still gets nothing.
+  // out of Edit Mode. Edit Mode is admin-only.
   const userType = (user?.user_type || "").trim().toLowerCase();
   const isAdmin = userType === "admin";
-  const isAdminOrAnalyst = isAdmin || userType === "analyst";
-  const showEditButton = isAdminOrAnalyst;
+  const showEditButton = isAdmin;
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
   const [investorKeys, setInvestorKeys] = useState<string[]>([]);
   const [activeInvestorKey, setActiveInvestorKey] = useState("");
+  const activeInvestorKeyRef = useRef(activeInvestorKey);
+  activeInvestorKeyRef.current = activeInvestorKey;
 
-  // Real legal names for the dropdown/trigger, background-fetched per key
-  // since the S3 index only gives us slugs (see prefetch effect below).
   const [investorNames, setInvestorNames] = useState<Record<string, string>>({});
-  const fetchedNameKeysRef = useRef<Set<string>>(new Set());
-  
   const [activeTab, setActiveTab] = useState("summary");
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [newInvestorName, setNewInvestorName] = useState("");
@@ -436,10 +534,20 @@ const ActivistIntelligenceDashboard = ({
   // finishes with the modal dismissed, and lets us clear the timer on unmount
   // instead of leaking a 3-second interval for the rest of the session.
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentGenerationSlugRef = useRef<string | null>(null);
 
   useEffect(() => () => {
     if (pollRef.current) clearInterval(pollRef.current);
   }, []);
+
+  // All in-flight generation jobs (not just this session's) — lets the
+  // "Generating… NN%" indicator survive closing the modal, and lets a freshly
+  // opened modal detect a job that's already running for that investor.
+  const [activeJobs, setActiveJobs] = useState<ActiveGenerationJob[]>([]);
+  const activeJobsPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // The poll interval is created once on mount, so it can't close over fresh
+  const fetchActiveJobsRef = useRef<((force?: boolean) => Promise<void>) | null>(null);
 
   /** Dismiss the modal. Safe mid-generation — the backend job keeps running. */
   const closeGenerateModal = () => {
@@ -470,8 +578,66 @@ const ActivistIntelligenceDashboard = ({
   const [profile, setProfile]   = useState<any>(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
+  const loadTokenRef = useRef(0);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
+
+  // Admin-only inline rename of a firm's display name (header title and/or
+  // investor picker). Keyed by which investor key is currently being edited
+  // (not a single boolean) so the same affordance works both for the header
+  // — always the active profile — and for any row in the dropdown list.
+  const [editingNameKey, setEditingNameKey] = useState<string | null>(null);
+  const [legalNameDraft, setLegalNameDraft] = useState("");
+  const [isSavingLegalName, setIsSavingLegalName] = useState(false);
+
+  const startEditLegalName = (key: string, currentLabel: string) => {
+    setEditingNameKey(key);
+    setLegalNameDraft(currentLabel);
+  };
+
+  const cancelEditLegalName = () => {
+    setEditingNameKey(null);
+    setLegalNameDraft("");
+  };
+
+  const saveLegalName = async (key: string) => {
+    const trimmed = legalNameDraft.trim();
+    if (!trimmed) return;
+    try {
+      setIsSavingLegalName(true);
+      await axios.patch(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${key}/name`, { legal_name: trimmed });
+
+      // Reflect immediately everywhere the name is shown, without a full
+      // reload: the dropdown/trigger label map, the cached raw profile (so a
+      // later cache hit doesn't regress the name), and the currently
+      // rendered profile if this is the one being viewed.
+      setInvestorNames((prev) => ({ ...prev, [key]: trimmed }));
+      setProfilesCache((prev) => {
+        const existing = prev[key];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          [key]: {
+            ...existing,
+            activist_investor_summary: { ...(existing.activist_investor_summary || {}), legal_name: trimmed },
+          },
+        };
+      });
+      if (key === activeInvestorKey) {
+        setProfile((prev: any) => (prev ? { ...prev, legalName: trimmed } : prev));
+        setRawProfile((prev: any) =>
+          prev ? { ...prev, activist_investor_summary: { ...(prev.activist_investor_summary || {}), legal_name: trimmed } } : prev
+        );
+      }
+      setEditingNameKey(null);
+      setLegalNameDraft("");
+    } catch (err) {
+      console.error("Failed to rename profile:", err);
+      setError("Failed to rename the firm.");
+    } finally {
+      setIsSavingLegalName(false);
+    }
+  };
 
   // Fallback label used only until the real legal name lands (see the name
   // prefetch effect). Strips the trailing "-profile"/"_profile" suffix — S3
@@ -487,40 +653,57 @@ const ActivistIntelligenceDashboard = ({
   };
 
   const fetchAllProfiles = useCallback(async (keyToSelect?: string) => {
+    const myToken = ++loadTokenRef.current;
     try {
       setLoading(true);
       setError(null);
       const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles`;
       const response = await axios.get(url, { params: { t: Date.now() } });
-      
-      let discoveredKeys = response.data?.data || response.data; 
-      if (discoveredKeys && typeof discoveredKeys === 'object' && !Array.isArray(discoveredKeys)) {
-          discoveredKeys = Object.keys(discoveredKeys);
+
+      let listPayload = response.data?.data || response.data;
+      if (listPayload && typeof listPayload === 'object' && !Array.isArray(listPayload)) {
+          listPayload = Object.keys(listPayload);
       }
 
-      if (!Array.isArray(discoveredKeys) || discoveredKeys.length === 0) {
+      if (!Array.isArray(listPayload) || listPayload.length === 0) {
         throw new Error("No profiles available in the designated S3 cluster prefix.");
       }
 
+      // The index now returns {slug, legal_name} entries so the dropdown gets
+      // real names in this single call — no more per-profile fetch just to
+      // resolve a label (see the deleted name-prefetch effect this replaced).
+      // Still tolerates the older plain-slug-array shape defensively.
+      const discoveredKeys: string[] = listPayload.map((entry: any) => (typeof entry === "string" ? entry : entry.slug));
+      const namesFromIndex: Record<string, string> = {};
+      listPayload.forEach((entry: any) => {
+        if (entry && typeof entry === "object" && entry.slug && entry.legal_name) {
+          namesFromIndex[entry.slug] = entry.legal_name;
+        }
+      });
+      if (Object.keys(namesFromIndex).length > 0) {
+        setInvestorNames((prev) => ({ ...namesFromIndex, ...prev }));
+      }
+
       setInvestorKeys(discoveredKeys);
-      // Resolved functionally rather than from the `activeInvestorKey` state
-      // value: reading it here would make this callback depend on it, so every
-      // investor switch re-ran the index fetch and handed down a brand-new
-      // investorKeys array — which tore down the name prefetch below mid-flight.
-      setActiveInvestorKey((current) => {
-        if (keyToSelect && discoveredKeys.includes(keyToSelect)) return keyToSelect;
+      const currentActiveKey = activeInvestorKeyRef.current;
+      if (keyToSelect && discoveredKeys.includes(keyToSelect)) {
+        setActiveInvestorKey(keyToSelect);
+      } else if (!currentActiveKey || (keyToSelect && !discoveredKeys.includes(currentActiveKey))) {
         // Either nothing selected yet, or the key we wanted (or the one
         // already active) isn't actually present in S3 — fall back to the
         // first profile that is, instead of showing a stale/missing one.
-        if (!current) return discoveredKeys[0];
-        if (keyToSelect && !discoveredKeys.includes(current)) return discoveredKeys[0];
-        return current;
-      });
+        setActiveInvestorKey(discoveredKeys[0]);
+      }
+      return discoveredKeys as string[];
     } catch (err: any) {
       console.error("[ActivistDashboard] index assembly failure:", err);
       setError(err.response?.data?.detail || err.message || "Failed to load dynamic profile index.");
+      return undefined;
     } finally {
-      setLoading(false);
+      // Only the most recently-started profile-affecting load may clear (or
+      // re-set) loading — a superseded call finishing late becomes a no-op
+      // instead of clobbering whatever a newer request already settled.
+      if (loadTokenRef.current === myToken) setLoading(false);
     }
   }, []);
 
@@ -539,123 +722,122 @@ const ActivistIntelligenceDashboard = ({
     fetchAllProfiles();
   }, [fetchAllProfiles]);
 
-  // Background-fetch the real legal name for every investor key so the
-  // dropdown/trigger show it instead of the slug-derived label. Reuses
-  // profilesCache when a profile's already been loaded this session, and
-  // doesn't re-fetch a key whose name request already settled (tracked via a
-  // ref, not state, so this effect doesn't re-run as names trickle in).
-  // Keyed on the joined slug list, not the array identity, so a re-fetched but
-  // identical index doesn't restart (and cancel) the whole prefetch.
-  const investorKeysSignature = investorKeys.join("|");
-  useEffect(() => {
-    const keysToFetch = investorKeys.filter((k) => !fetchedNameKeysRef.current.has(k));
-    if (!keysToFetch.length) return;
-    keysToFetch.forEach((k) => fetchedNameKeysRef.current.add(k));
+  // Loads one investor's profile into rawProfile/profile, using profilesCache
+  // unless forceRefresh is set (used after a background-generated job for
+  // this investor finishes, so the currently-open profile doesn't keep
+  // showing stale cached data). Shared by the activeInvestorKey effect below
+  // and by refreshFinishedJobProfile.
+  const loadProfileForKey = async (key: string, { forceRefresh = false } = {}) => {
+    const myToken = ++loadTokenRef.current;
+    setIsPreviewMode(false);
+    setIsEditMode(false);
 
-    let cancelled = false;
-    // Keys whose fetch actually settled. Anything still unsettled when this
-    // effect is torn down gets un-marked in the cleanup — otherwise the ref
-    // claims a name was fetched for a key that never resolved one, and the
-    // dropdown is stuck on the slug fallback for the rest of the session.
-    const settled = new Set<string>();
-    const NAME_FETCH_CONCURRENCY = 5;
-    const queue = [...keysToFetch];
-
-    const fetchName = async (key: string) => {
-      if (profilesCache[key]) {
-        const legalName = extractLegalName(profilesCache[key]);
-        if (legalName && !cancelled) setInvestorNames((prev) => ({ ...prev, [key]: legalName }));
-        settled.add(key);
-        return;
+    if (!forceRefresh && profilesCache[key]) {
+      setRawProfile(profilesCache[key]);
+      setProfile(normaliseProfile(profilesCache[key]));
+      // Free upgrade from the slug-derived fallback label to the real legal
+      // name — no extra network call, this data was already fetched.
+      const cachedLegalName = extractLegalName(profilesCache[key]);
+      if (cachedLegalName) {
+        setInvestorNames((prev) => (prev[key] === cachedLegalName ? prev : { ...prev, [key]: cachedLegalName }));
       }
-      try {
-        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/${key}`;
-        const response = await axios.get(url, { params: { t: Date.now() } });
-        const profileData = response.data?.data || response.data;
-        if (cancelled) return;
+      // Resolves synchronously with fresh-enough data — clear any skeleton
+      // left over from a still-in-flight, now-superseded fetch (e.g. an
+      // earlier investor switch whose network call hasn't returned yet).
+      if (loadTokenRef.current === myToken) setLoading(false);
+      return;
+    }
 
-        setProfilesCache((prev) => (prev[key] ? prev : { ...prev, [key]: profileData }));
-        const legalName = extractLegalName(profileData);
-        if (legalName) setInvestorNames((prev) => ({ ...prev, [key]: legalName }));
-        settled.add(key);
-      } catch (err) {
-        console.warn(`[Investor name prefetch] failed for '${key}':`, err);
-        // Marked settled so a genuinely broken key isn't retried in a loop.
-        settled.add(key);
+    try {
+      setLoading(true);
+      const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/${key}`;
+      const response = await axios.get(url, { params: { t: Date.now() } });
+      const profileData = response.data?.data || response.data;
+
+      setProfilesCache(prev => ({ ...prev, [key]: profileData }));
+      setRawProfile(profileData);
+      setProfile(normaliseProfile(profileData));
+      // Same free upgrade, for the path that actually had to hit the network.
+      const legalName = extractLegalName(profileData);
+      if (legalName) {
+        setInvestorNames((prev) => ({ ...prev, [key]: legalName }));
       }
-    };
+    } catch (err) {
+      console.error(`[Fetch Profile Error] '${key}' not found in S3:`, err);
 
-    const worker = async () => {
-      while (!cancelled) {
-        const key = queue.shift();
-        if (!key) return;
-        await fetchName(key);
+      // The selected key doesn't have a matching file in S3 (stale slug, deleted
+      // profile, etc). Rather than dead-ending on an error screen, fall back to
+      // the first profile that does exist so the dashboard still shows something.
+      const fallbackKey = investorKeys.find((k) => k !== key);
+      if (fallbackKey) {
+        setActiveInvestorKey(fallbackKey);
+      } else {
+        setError("Failed to fetch the selected investor profile data.");
       }
-    };
-
-    Promise.all(Array.from({ length: Math.min(NAME_FETCH_CONCURRENCY, queue.length) }, worker));
-
-    return () => {
-      cancelled = true;
-      keysToFetch.forEach((k) => { if (!settled.has(k)) fetchedNameKeysRef.current.delete(k); });
-    };
-  }, [investorKeysSignature]);
+    } finally {
+      // Only the most recently-started profile-affecting load may clear (or
+      // re-set) loading — see loadTokenRef's declaration for why.
+      if (loadTokenRef.current === myToken) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!activeInvestorKey) return;
-
-    // Keep the picker's label for this key in sync with the header, without
-    // waiting on the background name prefetch — we already hold the profile.
-    const rememberName = (raw: any) => {
-      const legalName = extractLegalName(raw);
-      if (legalName) {
-        fetchedNameKeysRef.current.add(activeInvestorKey);
-        setInvestorNames((prev) =>
-          prev[activeInvestorKey] === legalName ? prev : { ...prev, [activeInvestorKey]: legalName });
-      }
-    };
-
-    const fetchSingleProfile = async () => {
-      setIsPreviewMode(false);
-      setIsEditMode(false);
-
-      // FIX: Ensure rawProfile state is populated even when utilizing cache
-      if (profilesCache[activeInvestorKey]) {
-        setRawProfile(profilesCache[activeInvestorKey]);
-        setProfile(normaliseProfile(profilesCache[activeInvestorKey]));
-        rememberName(profilesCache[activeInvestorKey]);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/${activeInvestorKey}`;
-        const response = await axios.get(url, { params: { t: Date.now() } });
-        const profileData = response.data?.data || response.data;
-
-        setProfilesCache(prev => ({ ...prev, [activeInvestorKey]: profileData }));
-        setRawProfile(profileData);
-        setProfile(normaliseProfile(profileData));
-        rememberName(profileData);
-      } catch (err) {
-        console.error(`[Fetch Profile Error] '${activeInvestorKey}' not found in S3:`, err);
-
-        // The selected key doesn't have a matching file in S3 (stale slug, deleted
-        // profile, etc). Rather than dead-ending on an error screen, fall back to
-        // the first profile that does exist so the dashboard still shows something.
-        const fallbackKey = investorKeys.find((k) => k !== activeInvestorKey);
-        if (fallbackKey) {
-          setActiveInvestorKey(fallbackKey);
-        } else {
-          setError("Failed to fetch the selected investor profile data.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSingleProfile();
+    loadProfileForKey(activeInvestorKey);
   }, [activeInvestorKey]);
+
+  const fetchActiveJobs = async (force = false) => {
+    if (!force && !isGenerating && activeJobs.length === 0) return;
+    const creatorEmail = getCreatorEmail();
+    if (!creatorEmail) return;
+    try {
+      const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/active`;
+      const response = await axios.get(url, { params: { t: Date.now(), creator_email: creatorEmail } });
+      let jobs = response.data?.data || response.data;
+      if (!Array.isArray(jobs)) jobs = [];
+      // Defensive: a job genuinely still "in flight" should never be reporting
+      // 100% — if one is, the backend just hasn't removed it from this list
+      // yet, so don't leave a "done" job looking perpetually active on screen.
+      jobs = jobs.filter((j: ActiveGenerationJob) => !(typeof j.progress_pct === "number" && j.progress_pct >= 100));
+
+      const newSlugs = new Set(jobs.map((j: ActiveGenerationJob) => j.slug));
+      const finishedSlugs = activeJobs.filter((j) => !newSlugs.has(j.slug)).map((j) => j.slug);
+
+      setActiveJobs(jobs);
+      finishedSlugs.forEach((slug) => refreshFinishedJobProfile(slug));
+    } catch (err) {
+      // The endpoint may not exist yet / may be briefly unreachable — the
+      // indicator just stays as it was, nothing user-facing to show for this.
+      console.warn("[Active jobs poll] failed:", err);
+    }
+  };
+  fetchActiveJobsRef.current = fetchActiveJobs;
+
+  const refreshFinishedJobProfile = async (jobSlug: string) => {
+    const freshKeys = await fetchAllProfiles();
+    const matchedKey = (freshKeys || investorKeys).find((k) => slugMatches(jobSlug, k));
+    if (matchedKey && matchedKey === activeInvestorKey) {
+      setProfilesCache((prev) => {
+        const next = { ...prev };
+        delete next[matchedKey];
+        return next;
+      });
+      loadProfileForKey(matchedKey, { forceRefresh: true });
+    }
+  };
+
+  useEffect(() => {
+    fetchActiveJobsRef.current?.(true);
+    activeJobsPollRef.current = setInterval(() => {
+      fetchActiveJobsRef.current?.(false);
+    }, 15000);
+    return () => {
+      if (activeJobsPollRef.current) {
+        clearInterval(activeJobsPollRef.current);
+        activeJobsPollRef.current = null;
+      }
+    };
+  }, []);
 
  const handlePreviewFiles = async () => {
     if (!newInvestorName || selectedJsonFiles.length === 0) {
@@ -708,6 +890,15 @@ const ActivistIntelligenceDashboard = ({
   // investorKeys before spending several minutes regenerating one.
   const slugifyName = (text: string) =>
     text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-");
+
+  const getActiveJobForName = (name: string): ActiveGenerationJob | undefined => {
+    const slug = slugifyName(name);
+    if (!slug) return undefined;
+    return activeJobs.find((j) => slugMatches(slug, j.slug));
+  };
+
+  const getActiveJobForKey = (key: string): ActiveGenerationJob | undefined =>
+    activeJobs.find((j) => slugMatches(j.slug, key));
 
   const getCreatorEmail = (): string | undefined => {
     if (user?.email) return user.email;
@@ -767,6 +958,11 @@ const ActivistIntelligenceDashboard = ({
       });
       
       const { slug } = startRes.data;
+      currentGenerationSlugRef.current = slug;
+
+      // Let the page-level indicator pick up this job immediately instead of
+      // waiting for its next 4s tick.
+      fetchActiveJobsRef.current?.(true);
 
       // Start Polling
       if (pollRef.current) clearInterval(pollRef.current);
@@ -781,6 +977,7 @@ const ActivistIntelligenceDashboard = ({
           else if (jobData.state === "done") {
             clearInterval(pollInterval);
             setGenerateStep("Complete!");
+            currentGenerationSlugRef.current = null;
 
             const nextVersion = await getNextVersion(regenerateFromKey);
             jobData.data.metadata = { ...(jobData.data.metadata || {}), version: nextVersion };
@@ -788,28 +985,21 @@ const ActivistIntelligenceDashboard = ({
             setRawProfile(jobData.data);
             setProfile(normaliseProfile(jobData.data));
             setIsEditMode(false); // land on the read view; Edit Mode is opt-in
-
-            if (isAdminOrAnalyst) {
-              // Load the generated payload as a preview so it can be
-              // reviewed/edited before publishing.
-              setIsPreviewMode(true);
+            setIsPreviewMode(false);
+            try {
+              await publishProfileToS3(jobData.data);
+              const newSlug = jobData.data?.metadata?.slug || slug;
+              await fetchAllProfiles(newSlug);
+              const legalName = extractLegalName(jobData.data) || generateInvestorName;
+              toast.success(`${legalName} profile created — now available in the dropdown.`);
+            } catch (publishErr: any) {
+              console.error("Auto-publish failed:", publishErr);
+              const message = publishErr?.response?.data?.detail || "Failed to publish the generated profile.";
+              setError(message);
+              toast.error(message);
+            } finally {
               setGenerateModalOpen(false);
               setIsGenerating(false);
-            } else {
-              // Regular users skip preview/edit entirely — publish straight
-              // to S3 and land on the normal read-only view.
-              try {
-                await publishProfileToS3(jobData.data);
-                const newSlug = jobData.data?.metadata?.slug || slug;
-                setIsPreviewMode(false);
-                await fetchAllProfiles(newSlug);
-              } catch (publishErr: any) {
-                console.error("Auto-publish failed:", publishErr);
-                setError(publishErr?.response?.data?.detail || "Failed to publish the generated profile.");
-              } finally {
-                setGenerateModalOpen(false);
-                setIsGenerating(false);
-              }
             }
           }
           else if (jobData.state === "error") {
@@ -817,6 +1007,7 @@ const ActivistIntelligenceDashboard = ({
             console.error("Generation job failed:", jobData.message);
             setGenerateError(buildGenerationFailedMessage(generateInvestorName));
             setIsGenerating(false);
+            currentGenerationSlugRef.current = null;
           }
         } catch (pollErr) {
           // If 404, it might just not be written to S3 yet, keep polling.
@@ -829,6 +1020,7 @@ const ActivistIntelligenceDashboard = ({
       console.error("Failed to start generation:", err);
       setGenerateError(buildGenerationFailedMessage(generateInvestorName));
       setIsGenerating(false);
+      currentGenerationSlugRef.current = null;
     }
   };
 
@@ -839,8 +1031,14 @@ const ActivistIntelligenceDashboard = ({
 
   const handleStartGeneration = () => {
     if (!generateInvestorName.trim()) return;
+    if (getActiveJobForName(generateInvestorName)) return;
     const targetSlug = `${slugifyName(generateInvestorName)}-profile`;
-    const existingKey = investorKeys.find((k) => k === targetSlug);
+    // Compare with underscores normalised to dashes — a handful of legacy S3
+    // keys (e.g. "biglari-capital_profile") predate the "-profile" suffix
+    // convention and would otherwise silently miss this match, skipping the
+    // regenerate-confirmation prompt and leaving metadata.version stuck at 1.
+    const normalize = (s: string) => s.toLowerCase().replace(/_/g, "-");
+    const existingKey = investorKeys.find((k) => normalize(k) === normalize(targetSlug));
     if (existingKey) {
       setDuplicateProfileKey(existingKey);
       return;
@@ -1074,20 +1272,19 @@ const ActivistIntelligenceDashboard = ({
     }))
     .sort((a, b) => b.count - a.count);
 
-  // The auto-generated pipeline always tags personnel "visible_personnel" —
-  // it never emits "nominee_or_outcome_director" — so splitting strictly on
-  // category left the Nominees section permanently empty even for people
-  // whose role is literally "nominee for election to the Board". Split on
-  // category when it's actually been set to the nominee value, otherwise
-  // fall back to the role text so real nominees still land in that section.
-  // Settlement director is checked first since it's the more specific phrase
-  // — "settlement director" would otherwise also match the generic
-  // nominee/appointee/elected pattern.
   const classifyPersonnelLabel = (p: any): "Settlement Director" | "Nominee" | null => {
     const role = p.role || "";
     if (/settlement director/i.test(role)) return "Settlement Director";
-    if (/nominee|appointee|elected/i.test(role)) return "Nominee";
-    return p.category === "nominee_or_outcome_director" ? "Nominee" : null;
+    // category is now the authoritative signal once the backend populates it
+    // ("firm_leadership" | "recurring_nominee" | "campaign_designee" | "other").
+    if (p.category === "recurring_nominee" || p.category === "campaign_designee") return "Nominee";
+    // Fallback to the role-text pattern only when category hasn't been set to
+    // one of the new values — i.e. historical profiles generated before this
+    // backend change, still tagged "other"/"visible_personnel" or missing.
+    if (!p.category || p.category === "other" || p.category === "visible_personnel") {
+      if (/nominee|appointee|elected/i.test(role)) return "Nominee";
+    }
+    return null;
   };
   const nominees = profile.personnel.filter((p: any) => classifyPersonnelLabel(p) !== null);
   const visiblePersonnel = profile.personnel.filter((p: any) => !nominees.includes(p));
@@ -1104,6 +1301,25 @@ const ActivistIntelligenceDashboard = ({
     return match ? match[1].trim() : null;
   };
 
+
+  const matchingActiveJob = !isGenerating ? getActiveJobForName(generateInvestorName) : undefined;
+
+  const localGeneratingJob: ActiveGenerationJob | null =
+    isGenerating && currentGenerationSlugRef.current
+      ? { slug: currentGenerationSlugRef.current, investor_name: generateInvestorName, mode: GENERATE_MODE, step: generateStep }
+      : null;
+  const jobsForDisplay =
+    localGeneratingJob && !activeJobs.some((j) => slugMatches(j.slug, localGeneratingJob.slug))
+      ? [...activeJobs, localGeneratingJob]
+      : activeJobs;
+  const primaryActiveJob = jobsForDisplay.length > 0
+    ? [...jobsForDisplay].sort((a, b) => {
+        const pctDiff = (b.progress_pct || 0) - (a.progress_pct || 0);
+        if (pctDiff !== 0) return pctDiff;
+        return (b.step ? 1 : 0) - (a.step ? 1 : 0);
+      })[0]
+    : null;
+
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
 
@@ -1114,19 +1330,76 @@ const ActivistIntelligenceDashboard = ({
           
           <div style={{ background: THEME_MAROON, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, borderRadius: "10px 10px 0 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0 }}>
-                 {profile.legalName}
-              </h1>
-              
-
+              {editingNameKey === activeInvestorKey ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <input
+                    autoFocus
+                    value={legalNameDraft}
+                    onChange={(e) => setLegalNameDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveLegalName(activeInvestorKey);
+                      if (e.key === "Escape") cancelEditLegalName();
+                    }}
+                    disabled={isSavingLegalName}
+                    style={{ fontSize: 16, fontWeight: 600, padding: "4px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.5)", outline: "none", minWidth: 240, background: "rgba(255,255,255,0.95)", color: "#111827" }}
+                  />
+                  <button type="button" onClick={() => saveLegalName(activeInvestorKey)} disabled={isSavingLegalName} title="Save" style={{ background: "transparent", border: "none", cursor: isSavingLegalName ? "wait" : "pointer", color: "white", padding: 4, display: "inline-flex" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  </button>
+                  <button type="button" onClick={cancelEditLegalName} disabled={isSavingLegalName} title="Cancel" style={{ background: "transparent", border: "none", cursor: "pointer", color: "white", padding: 4, display: "inline-flex" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                </div>
+              ) : (
+                <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                  {profile.legalName}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => startEditLegalName(activeInvestorKey, profile.legalName)}
+                      title="Rename firm"
+                      style={{ background: "transparent", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.75)", padding: 2, display: "inline-flex" }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  )}
+                </h1>
+              )}
             </div>
             
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {primaryActiveJob && (
+                <GenerationProgressBar
+                  job={primaryActiveJob}
+                  onClick={() => {
+                    // shows its live progress there instead.
+                    setGenerateInvestorName(primaryActiveJob.investor_name || "");
+                    setGenerateError(null);
+                    setGenerateModalOpen(true);
+                  }}
+                />
+              )}
               <InvestorTrigger
                 label={profile.legalName || formatKeyToLabel(activeInvestorKey)}
                 open={selectorOpen}
                 onClick={() => { setSelectorOpen((v) => !v); setSelectorSearch(""); }}
               />
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); startEditLegalName(activeInvestorKey, profile.legalName || formatKeyToLabel(activeInvestorKey)); }}
+                  title="Rename firm"
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: "white", opacity: 0.85, padding: 4, display: "inline-flex", flexShrink: 0 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
@@ -1150,6 +1423,30 @@ const ActivistIntelligenceDashboard = ({
                 {investorKeys.filter((k) => (investorNames[k] || formatKeyToLabel(k)).toLowerCase().includes(selectorSearch.toLowerCase())).map((key) => {
                   const isActive = key === activeInvestorKey;
                   const investorLabel = investorNames[key] || formatKeyToLabel(key);
+                  const job = getActiveJobForKey(key);
+
+                  if (editingNameKey === key) {
+                    return (
+                      <div key={key} style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 6, borderRight: "1px solid #f3f4f6", borderBottom: "1px solid #f3f4f6", background: "#fff" }}>
+                        <input
+                          autoFocus
+                          value={legalNameDraft}
+                          onChange={(e) => setLegalNameDraft(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") saveLegalName(key); if (e.key === "Escape") cancelEditLegalName(); }}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={isSavingLegalName}
+                          style={{ flex: 1, minWidth: 0, fontSize: 13, padding: "5px 8px", borderRadius: 4, border: "1px solid #d1d5db", outline: "none", color: "#111827" }}
+                        />
+                        <button type="button" onClick={(e) => { e.stopPropagation(); saveLegalName(key); }} disabled={isSavingLegalName} title="Save" style={{ background: "transparent", border: "none", cursor: isSavingLegalName ? "wait" : "pointer", color: "#059669", padding: 2, display: "inline-flex", flexShrink: 0 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        </button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); cancelEditLegalName(); }} title="Cancel" style={{ background: "transparent", border: "none", cursor: "pointer", color: "#dc2626", padding: 2, display: "inline-flex", flexShrink: 0 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </button>
+                      </div>
+                    );
+                  }
+
                   return (
                     <button
                       key={key}
@@ -1164,7 +1461,25 @@ const ActivistIntelligenceDashboard = ({
                       onMouseLeave={(e) => { if (!isActive) (e.currentTarget.style.background = "#fff"); }}
                     >
                       {isActive && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12" /></svg>}
-                      {investorLabel}
+                      <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{investorLabel}</span>
+                        {job && <GeneratingChip job={job} />}
+                      </span>
+                      {isAdmin && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => { e.stopPropagation(); startEditLegalName(key, investorLabel); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); startEditLegalName(key, investorLabel); } }}
+                          title="Rename firm"
+                          style={{ display: "inline-flex", flexShrink: 0, color: "#9ca3af", padding: 2 }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -1436,23 +1751,23 @@ const ActivistIntelligenceDashboard = ({
                             <td style={{ padding: "14px 16px", fontSize: 13, fontWeight: 600, color: "#111827" }}>{c.target_company}</td>
                             <td style={{ padding: "14px 16px", fontSize: 13, color: "#6b7280" }}>{c.start_year}</td>
                             <td style={{ padding: "14px 16px" }}><StatusBadge status={c.normalized_status} /></td>
-                            <td style={{ padding: "14px 16px" }}>
+                            <td style={{ padding: "14px 16px", overflowWrap: "anywhere", wordBreak: "break-word" }}>
                               {c.main_issues.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", marginBottom: c.campaign_form.length > 0 ? 6 : 0 }}>{c.main_issues.map((issue: string, j: number) => <Tag key={j} text={issue} />)}</div>}
                               {c.campaign_form.length > 0 && <div style={{ display: "flex", flexWrap: "wrap" }}>{c.campaign_form.map((form: string, j: number) => <Tag key={j} text={form} color="#fdf2f2" textColor={THEME_MAROON} />)}</div>}
                               {(() => {
                                 const meaningfulNominees = (c.nominees || []).filter(isMeaningfulText);
                                 return meaningfulNominees.length > 0 && (
-                                  <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0" }}>👤 {meaningfulNominees.join(", ")}</p>
+                                  <p style={{ fontSize: 12, color: "#6b7280", margin: "8px 0 0", overflowWrap: "anywhere", wordBreak: "break-word" }}>👤 {meaningfulNominees.join(", ")}</p>
                                 );
                               })()}
                               {/* notes and outcome_to_date are both sourced from the same pipeline
                                   field on some profiles, so they end up identical — only show notes
                                   when it says something outcome_to_date doesn't already say. */}
                               {isMeaningfulText(c.notes) && c.notes.trim() !== (c.outcome_to_date || "").trim() && (
-                                <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>{c.notes}</p>
+                                <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5, overflowWrap: "anywhere", wordBreak: "break-word" }}>{c.notes}</p>
                               )}
                               {isMeaningfulText(c.outcome_to_date) && (
-                                <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5 }}>
+                                <p style={{ fontSize: 12, color: "#4b5563", margin: "8px 0 0", lineHeight: 1.5, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                                   <strong>Outcome:</strong> {c.outcome_to_date}
                                 </p>
                               )}
@@ -1504,6 +1819,26 @@ const ActivistIntelligenceDashboard = ({
                   </tbody>
                 </table>
               </div>
+
+              {(profile.snapshot.filing_url || profile.snapshot.cik) && (
+                <ul style={{ padding: 0, margin: "16px 0 0", listStyle: "none" }}>
+                  <li style={{ display: "flex", alignItems: "flex-start" }}>
+                    <span style={{ color: THEME_MAROON, marginRight: 10, fontSize: 16, lineHeight: 1 }}>▸</span>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 13, color: "#4b5563", margin: 0, lineHeight: 1.55 }}>
+                        {profile.snapshot.filing_url ? (
+                          <a href={profile.snapshot.filing_url} target="_blank" rel="noopener noreferrer" style={{ color: "#2e50cdcf", textDecoration: "none", fontWeight: 500 }} onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")} onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}>SEC Form 13F-HR filing</a>
+                        ) : (
+                          <span>SEC Form 13F-HR filing</span>
+                        )}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#9ca3af", margin: "4px 0 0" }}>
+                        {[profile.snapshot.cik ? `CIK ${profile.snapshot.cik}` : null, profile.snapshot.filing_date !== "N/A" ? profile.snapshot.filing_date : null].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+              )}
             </>
           )}
 
@@ -1531,8 +1866,10 @@ const ActivistIntelligenceDashboard = ({
               {profile.sources && profile.sources.length > 0 ? (
                 <ul style={{ padding: 0, margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
                   {profile.sources.map((src: any, i: number) => {
-                    // Robust parser in case backend sends strings OR objects
-                    const title = typeof src === "string" ? src : (src.title || src.name || src.source_name || "Reference Document");
+                    const title = typeof src === "string" ? src : (
+                      src.title || src.name || src.source_name || src.document_title ||
+                      (src.publisher ? `${src.source_type || "Document"} — ${src.publisher}` : "Reference Document")
+                    );
                     const url = typeof src === "object" ? (src.url || src.link || src.source_url) : null;
                     // The auto-generated pipeline emits publication_or_filing_date, not date —
                     // check both so dates actually show instead of silently being empty.
@@ -1573,11 +1910,18 @@ const ActivistIntelligenceDashboard = ({
             
             <label style={{ display: "block", marginBottom: 16, fontSize: 13, fontWeight: 600, color: "#374151" }}>
               Investor Entity Name
-              <input 
+              <input
                 value={newInvestorName}
                 onChange={(e) => setNewInvestorName(e.target.value)}
                 placeholder="e.g. Elliott Investment Management"
-                style={{ width: "100%", marginTop: 8, padding: "10px 14px", border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box", fontSize: 14 }}
+                style={{
+                  width: "100%", marginTop: 8, padding: "10px 14px", fontSize: 14,
+                  border: "1px solid #d1d5db", borderRadius: 6, boxSizing: "border-box",
+                  outline: "none", background: "#fff", color: "#111827",
+                  transition: "border-color 0.15s, box-shadow 0.15s",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = THEME_MAROON; e.currentTarget.style.boxShadow = `0 0 0 3px ${THEME_MAROON}1f`; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.boxShadow = "none"; }}
               />
             </label>
 
@@ -1625,10 +1969,28 @@ const ActivistIntelligenceDashboard = ({
               investor-name input below (the Upload modal keeps its box because its
               panel isn't inline-positioned). */}
           <div
+            className="zmh-modal relative"
             onClick={(e) => e.stopPropagation()}
-            className="relative"
             style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
           >
+            {/* A pre-existing global rule (app.css: "div[style*='position: relative'] input")
+                force-kills border/outline/box-shadow/background with !important on any
+                input inside a relatively-positioned div (this one, needed for the ×
+                button below) — it beats inline styles outright, so the input's look has
+                to come from this scoped, higher-specificity stylesheet instead. */}
+            <style>{`
+              .zmh-modal input.zmh-investor-input {
+                border: 1px solid #d1d5db !important;
+                outline: none !important;
+                box-shadow: none !important;
+                background: #fff !important;
+                color: #111827 !important;
+              }
+              .zmh-modal input.zmh-investor-input:focus {
+                border-color: ${THEME_MAROON} !important;
+                box-shadow: 0 0 0 3px ${THEME_MAROON}1f !important;
+              }
+            `}</style>
             <button
               type="button"
               onClick={closeGenerateModal}
@@ -1645,21 +2007,17 @@ const ActivistIntelligenceDashboard = ({
             </p>
 
             <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
-              Investor Entity Name
-              {/* Focus is signalled with border-colour, not a ring: app.css nukes
-                  box-shadow/outline on any element carrying them inline. */}
+              Activist Name
               <input
                 autoFocus
+                className="zmh-investor-input"
                 value={generateInvestorName}
                 onChange={(e) => setGenerateInvestorName(e.target.value)}
-                onFocus={(e) => { e.currentTarget.style.borderColor = THEME_MAROON; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = "#cbd5e1"; }}
                 placeholder="e.g. Elliott Investment Management"
-                disabled={isGenerating}
+                disabled={isGenerating || !!matchingActiveJob}
                 style={{
                   width: "100%", marginTop: 8, padding: "10px 14px", fontSize: 14,
-                  border: "1px solid #cbd5e1", borderRadius: 6, boxSizing: "border-box",
-                  background: isGenerating ? "#f9fafb" : "#fff", color: "#111827", fontWeight: 400, outline: "none",
+                  borderRadius: 6, boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s",
                 }}
               />
             </label>
@@ -1673,11 +2031,24 @@ const ActivistIntelligenceDashboard = ({
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                 <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 <span style={{ fontSize: 12, color: "#374151" }}>
-                  {generateStep && generateStep !== "Starting..."
-                    ? generateStep
-                    : "Generating profile, this can take a few minutes..."}
+                  Your profile creation is in progress. You'll have to wait for a few moments.
                   <br />
                   <span style={{ color: "#6b7280" }}>You can close this window — generation continues in the background.</span>
+                </span>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            )}
+
+            {/* A job for this exact investor is already running — in this
+                session or another — so block starting a second one and show
+                its live progress instead. */}
+            {!isGenerating && matchingActiveJob && (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
+                <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <span style={{ fontSize: 12, color: "#374151" }}>
+                  Your profile creation is in progress. You'll have to wait for a few moments.
+                  <br />
+                  <span style={{ color: "#6b7280" }}>Close this window and check back — no need to start another one.</span>
                 </span>
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
               </div>
@@ -1702,10 +2073,10 @@ const ActivistIntelligenceDashboard = ({
               </button>
               <button
                 onClick={handleStartGeneration}
-                disabled={isGenerating}
-                style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: isGenerating ? "wait" : "pointer", fontWeight: 600, opacity: isGenerating ? 0.7 : 1 }}
+                disabled={isGenerating || !!matchingActiveJob}
+                style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: (isGenerating || matchingActiveJob) ? "wait" : "pointer", fontWeight: 600, opacity: (isGenerating || matchingActiveJob) ? 0.7 : 1 }}
               >
-                {isGenerating ? "Generating..." : "Generate & Preview"}
+                {isGenerating || matchingActiveJob ? "Generating..." : "Generate"}
               </button>
             </div>
           </div>
