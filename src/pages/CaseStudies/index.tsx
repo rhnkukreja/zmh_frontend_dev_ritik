@@ -48,7 +48,6 @@ import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
-import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { caseStudiesService } from "@/services/caseStudies";
 import GenerateCaseStudiesModal from "./Components/GenerateCaseStudiesModal";
 
@@ -654,7 +653,7 @@ function CaseStudies() {
       ),
       fileName: "case_studies.xlsx",
       setLoading: setLoadingDownload,
-      serviceMethod: shareHolderProposalService.getAllShareholderAPIFile
+      serviceMethod: caseStudiesService.getCaseStudiesFile
     });
   };
 
@@ -795,6 +794,19 @@ function CaseStudies() {
                       </div>
                     ) : (
                       <>
+                        <Tippy content="Download Excel" options={{ theme: "light" }}>
+                          <div
+                            className="box p-[5px] cursor-pointer"
+                            onClick={() => !loadingDownload && handleDownload()}
+                          >
+                            {loadingDownload ? (
+                              <Lucide icon="Loader" className="w-6 h-7 stroke-[1.3] animate-spin" />
+                            ) : (
+                              <img alt="download-icon" src={downloadIcon} />
+                            )}
+                          </div>
+                        </Tippy>
+
                         {user?.saved_search?.["Case Studies"] !== undefined && (
                           <div className="hover:bg-slate-50 ">
                             <Button onClick={getSavedSearches}>

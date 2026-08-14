@@ -16,6 +16,7 @@ type SharedHolderFiltersType = {
   year: string[];
   category: string[];
   sub_category: string[];
+  sector: string[];
   keyword: string;
   status: string[];
 
@@ -92,6 +93,7 @@ const initialState: SharedHolderPrposal = {
     year: [],
     category: [],
     sub_category: [],
+    sector: [],
     keyword: "",
     status: [],
 

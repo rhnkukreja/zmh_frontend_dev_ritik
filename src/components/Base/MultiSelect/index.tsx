@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Select, { components, MultiValue } from "react-select";
+import { Check } from "lucide-react";
 import { FormCheck } from "../Form";
 
 interface Option {
@@ -110,19 +111,16 @@ const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
     const { data, isSelected, innerRef, innerProps, isDisabled } = props;
 
     return (
-      <div 
-        ref={innerRef} 
-        {...innerProps} 
-        className={`flex items-center p-2 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      <div
+        ref={innerRef}
+        {...innerProps}
+        className={`flex items-center gap-2 px-3 py-2 ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        <FormCheck className="mr-2">
-          <FormCheck.Input 
-            className="ml-1" 
-            checked={isSelected} 
-            type="checkbox" 
-            disabled={isDisabled}
-          />
-        </FormCheck>
+        <span
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border ${isSelected ? 'border-primary bg-primary text-white' : 'border-slate-300 bg-white text-transparent'}`}
+        >
+          <Check className="h-3 w-3 stroke-[3]" />
+        </span>
         <span className={isDisabled ? 'text-gray-400' : ''}>{data.label}</span>
       </div>
     );

@@ -8,6 +8,7 @@ export type ShareHolderDropdown = {
   company?: string[];
   vote_outcome?: string[];
   index?: string[];
+  sector?: string[];
 
 };
 

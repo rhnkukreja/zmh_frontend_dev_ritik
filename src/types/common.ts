@@ -36,6 +36,7 @@ export type ShareholderProposalPayload = {
   proponent_name: string[];
   category: string[];
   sub_category: string[];
+  sector: string[];
   year: string[];
   status: string[];
   keyword: string;

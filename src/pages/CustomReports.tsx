@@ -431,11 +431,30 @@ const ComprehensiveReportTab = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const companyName = companyGlobalSearchName || companyGlobalSearchTicker;
 
-  const handleGenerate = () => {
-    if (!companyGlobalSearchTicker) return;
+  const handleGenerate = async () => {
+    if (!companyGlobalSearchTicker || isGenerating) return;
     setIsGenerating(true);
-    window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
-    setTimeout(() => setIsGenerating(false), 800);
+    try {
+      // window.open(`/company-report?ticker=${encodeURIComponent(companyGlobalSearchTicker)}`, "_blank");
+      const blob = await reportsService.downloadCompanyReport(companyGlobalSearchTicker);
+      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      const link = document.createElement("a");
+      const formattedDate = new Date().toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+      link.href = url;
+      link.download = `${companyName} Comprehensive Report (${formattedDate}).xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download comprehensive report:", error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -477,7 +496,7 @@ const ComprehensiveReportTab = () => {
               ) : (
                 <Lucide icon="Download" className="w-4 h-4" />
               )}
-              {isGenerating ? "Generating..." : "Download Comprehensive Report"}
+              {isGenerating ? "Downloading..." : "Download Comprehensive Report"}
             </button>
           </div>
         </div>
