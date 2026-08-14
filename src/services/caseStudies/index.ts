@@ -33,6 +33,19 @@ class CaseStudiesService {
     dashboardCacheManager.trackRequest(cacheKey, requestPromise);
     return requestPromise;
   }
+
+  public async getCaseStudiesFile(url: string): Promise<{
+    result: Blob;
+  }> {
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+    const result = response.data;
+    return {
+      result: result,
+    };
+  }
+
   public async getSingleSingleCaseStudy(id: number): Promise<{
     result: any;
   }> {

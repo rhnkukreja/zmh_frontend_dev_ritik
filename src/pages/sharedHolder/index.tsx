@@ -246,6 +246,7 @@ function ShareHolderProposal() {
       sub_category: [],
       year: [],
       index: [],
+      sector: [],
     });
 
   const [monthDropdownOption, setMonthDropdownOption] = useState<any>(month);
@@ -292,6 +293,7 @@ function ShareHolderProposal() {
       category: filters.category,
       sub_category: filters.sub_category,
       status: filters.status,
+      sector: filters.sector || [],
       keyword: filters.keyword || [],
       // Ensure year is always an array of strings
       year: filters.year ? filters.year.map(String) : [],
@@ -318,6 +320,7 @@ function ShareHolderProposal() {
     setValue("category", []);
     setValue("keyword", []);
     setValue("sub_category", []);
+    setValue("sector", []);
     setValue("status", []);
     setValue("year", []);
     setValue("proxy_season", []);
@@ -777,6 +780,7 @@ function ShareHolderProposal() {
       setValue("proponent_name", savedSearch.proponent_name || []);
       setValue("category", savedSearch.category || []);
       setValue("sub_category", savedSearch.sub_category || []);
+      setValue("sector", savedSearch.sector || []);
       setValue("year", savedSearch.year || []);
       setValue("status", savedSearch.status || []);
       setValue("index", savedSearch?.index || "");
@@ -786,6 +790,7 @@ function ShareHolderProposal() {
           keyword: savedSearch.keyword || [],
           category: savedSearch.category || [],
           sub_category: savedSearch.sub_category || [],
+          sector: savedSearch.sector || [],
           year: savedSearch.year || [],
           status: savedSearch.status || [],
           index: savedSearch.index || "",
@@ -802,6 +807,7 @@ function ShareHolderProposal() {
       proponent_name: searchTerms,
       category: filters?.category || [],
       sub_category: filters?.sub_category || [],
+      sector: filters?.sector || [],
       year: filters?.year || [],
       status: filters?.status || [],
       keyword: filters?.keyword || [],
@@ -822,6 +828,7 @@ function ShareHolderProposal() {
             proponent_name: searchTerms,
             category: filters?.category || [],
             sub_category: filters?.sub_category || [],
+            sector: filters?.sector || [],
             year: filters?.year || [],
             status: filters?.status || [],
             keyword: filters?.keyword || [],
@@ -1630,33 +1637,30 @@ function ShareHolderProposal() {
                         />
                       </div>
 
-                      {isAllCompanySelected && (
-                        <div className="w-full">
-                          <div className="text-left text-slate-500 flex justify-between mb-1">
-                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
-                              <FaBuilding className="text-gray-400" /> Companies
-                            </span>
-                          </div>
-                          <Controller
-                            name="global_search"
-                            control={control}
-                            render={({ field }) => (
-
-                              <CompanySelect
-                                value={field.value}
-                                onChange={field.onChange}
-                                isMulti
-                                className="mt-1"
-                                isHideCurrentCompany={true}
-                                currentCompany={finhub?.name || companyGlobalSearchName}
-                              />
-                            )}
-                          />
+                      <div className="w-full">
+                        <div className="text-left text-slate-500 flex justify-between mb-1">
+                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                            <FaBuilding className="text-gray-400" /> Companies
+                          </span>
                         </div>
-                      )}
+                        <Controller
+                          name="global_search"
+                          control={control}
+                          render={({ field }) => (
+                            <CompanySelect
+                              value={field.value}
+                              onChange={field.onChange}
+                              isMulti
+                              className="mt-1"
+                              isHideCurrentCompany={true}
+                              currentCompany={finhub?.name || companyGlobalSearchName}
+                            />
+                          )}
+                        />
+                      </div>
 
-                      {isAllCompanySelected && ((tab === "proposal" || tab === "no-action") && (
-                        <div className="mx-2">
+                      {tab !== "withdrawn" && (
+                        <div className="w-full">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
                             <span className="flex items-center gap-2 text-slate-600 font-semibold">
                               <FaLayerGroup className="text-gray-400" /> Index
@@ -1679,58 +1683,78 @@ function ShareHolderProposal() {
                             )}
                           />
                         </div>
-                      ))}
+                      )}
+
                       {tab === "proposal" && (
-                        <div className="me-2">
+                        <div className="w-full">
                           <div className="text-left text-slate-500 flex justify-between mb-1">
                             <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaLayerGroup className="text-gray-400" /> Sector
+                            </span>
+                          </div>
+                          <Controller
+                            name="sector"
+                            control={control}
+                            defaultValue={[]}
+                            render={({ field }) => (
+                              <MultiSelectDropdown
+                                data={apiDropdownOptions?.sector || []}
+                                placeholder="Select Sector"
+                                loading={getDropdownLoader}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
+                                }}
+                                selectedOption={field.value || []}
+                              />
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      {tab === "proposal" && !(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+                        <div className="w-full min-w-0">
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold whitespace-nowrap">
                               <FaCalendarAlt className="text-gray-400" /> Shareholder Meeting Held
                             </span>
                           </div>
-
-                          <div className="mt-3">
-                            <Controller
-                              name="outcome_percentage"
-                              control={control}
-                              defaultValue=""
-                              render={({ field }) => (
-                                <FormCheck>
+                          <Controller
+                            name="outcome_percentage"
+                            control={control}
+                            defaultValue=""
+                            render={({ field }) => (
+                              <div className="flex flex-row flex-wrap gap-x-4 gap-y-2 mt-[10px]">
+                                <FormCheck className="flex items-center mr-2">
                                   <FormCheck.Input
                                     id="radio-switch-1"
                                     type="radio"
                                     value="yes"
-                                    checked={
-                                      field.value ===
-                                      "yes"
-                                    }
-                                    onChange={(e) =>
-                                      field.onChange(e.target.value)
-                                    }
+                                    checked={field.value === "yes"}
+                                    onChange={(e) => field.onChange(e.target.value)}
                                   />
-                                  <FormCheck.Label htmlFor="radio-switch-1">
+                                  <FormCheck.Label htmlFor="radio-switch-1" className="ml-2 text-left">
                                     Yes
                                   </FormCheck.Label>
+                                </FormCheck>
+                                <FormCheck className="flex items-center mr-2">
                                   <FormCheck.Input
                                     id="radio-switch-2"
                                     type="radio"
                                     value="no"
-                                    className="d-inline-block ms-4"
-                                    checked={
-                                      field.value === "no"
-                                    }
-                                    onChange={(e) =>
-                                      field.onChange(e.target.value)
-                                    }
+                                    checked={field.value === "no"}
+                                    onChange={(e) => field.onChange(e.target.value)}
                                   />
-                                  <FormCheck.Label htmlFor="radio-switch-2">
+                                  <FormCheck.Label htmlFor="radio-switch-2" className="ml-2 text-left">
                                     No
                                   </FormCheck.Label>
                                 </FormCheck>
-                              )}
-                            />
-                          </div>
+                              </div>
+                            )}
+                          />
                         </div>
                       )}
+
                       {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                         <>
                           <div className="w-full">
@@ -1952,56 +1976,38 @@ function ShareHolderProposal() {
                             </div>
                             */}
 
-                              <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-8 sm:gap-16">
-                                <div className="w-full flex-1">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="w-full min-w-0">
                                   <div className="text-left text-slate-500 font-semibold">
                                     NL Exist
                                   </div>
                                   <Controller
                                     name="nl_exist"
                                     control={control}
-                                    defaultValue={null} // Default as null to allow toggling
+                                    defaultValue={null}
                                     render={({ field }) => (
-                                      <div className="flex flex-row mt-[10px]">
+                                      <div className="flex flex-row flex-wrap gap-x-4 gap-y-2 mt-[10px]">
                                         <FormCheck className="flex items-center mr-2">
                                           <FormCheck.Input
-                                            id="checkbox-switch-true"
-                                            type="checkbox"
-                                            checked={field.value === true} // Check for true value
-                                            onChange={
-                                              () =>
-                                                field.onChange(
-                                                  field.value === true
-                                                    ? null
-                                                    : true
-                                                ) // Toggle true/null
-                                            }
+                                            id="radio-nl-exist-true"
+                                            type="radio"
+                                            value="true"
+                                            checked={field.value === true}
+                                            onChange={() => field.onChange(true)}
                                           />
-                                          <FormCheck.Label
-                                            htmlFor="checkbox-switch-true"
-                                            className="ml-2 text-left"
-                                          >
+                                          <FormCheck.Label htmlFor="radio-nl-exist-true" className="ml-2 text-left">
                                             True
                                           </FormCheck.Label>
                                         </FormCheck>
                                         <FormCheck className="flex items-center mr-2">
                                           <FormCheck.Input
-                                            id="checkbox-switch-false"
-                                            type="checkbox"
-                                            checked={field.value === false} // Check for false value
-                                            onChange={
-                                              () =>
-                                                field.onChange(
-                                                  field.value === false
-                                                    ? null
-                                                    : false
-                                                ) // Toggle false/null
-                                            }
+                                            id="radio-nl-exist-false"
+                                            type="radio"
+                                            value="false"
+                                            checked={field.value === false}
+                                            onChange={() => field.onChange(false)}
                                           />
-                                          <FormCheck.Label
-                                            htmlFor="checkbox-switch-false"
-                                            className="ml-2 text-left"
-                                          >
+                                          <FormCheck.Label htmlFor="radio-nl-exist-false" className="ml-2 text-left">
                                             False
                                           </FormCheck.Label>
                                         </FormCheck>
@@ -2010,56 +2016,79 @@ function ShareHolderProposal() {
                                   />
                                 </div>
 
-                                <div className="w-full flex-1">
-                                  <div className="text-left text-slate-500 font-semibold">
-                                    Approved
+                                <div className="w-full min-w-0">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    <span className="font-semibold">Approved</span>
                                   </div>
                                   <Controller
                                     name="approved"
                                     control={control}
                                     defaultValue={null}
                                     render={({ field }) => (
-                                      <div className="flex flex-row mt-[10px]">
+                                      <div className="flex flex-row flex-wrap gap-x-4 gap-y-2 mt-[10px]">
                                         <FormCheck className="flex items-center mr-2">
                                           <FormCheck.Input
-                                            id="checkbox-approved-true"
-                                            type="checkbox"
+                                            id="radio-approved-true"
+                                            type="radio"
+                                            value="true"
                                             checked={field.value === true}
-                                            onChange={
-                                              () =>
-                                                field.onChange(
-                                                  field.value === true
-                                                    ? null
-                                                    : true
-                                                )
-                                            }
+                                            onChange={() => field.onChange(true)}
                                           />
-                                          <FormCheck.Label
-                                            htmlFor="checkbox-approved-true"
-                                            className="ml-2 text-left"
-                                          >
+                                          <FormCheck.Label htmlFor="radio-approved-true" className="ml-2 text-left">
                                             True
                                           </FormCheck.Label>
                                         </FormCheck>
                                         <FormCheck className="flex items-center mr-2">
                                           <FormCheck.Input
-                                            id="checkbox-approved-false"
-                                            type="checkbox"
+                                            id="radio-approved-false"
+                                            type="radio"
+                                            value="false"
                                             checked={field.value === false}
-                                            onChange={
-                                              () =>
-                                                field.onChange(
-                                                  field.value === false
-                                                    ? null
-                                                    : false
-                                                )
-                                            }
+                                            onChange={() => field.onChange(false)}
                                           />
-                                          <FormCheck.Label
-                                            htmlFor="checkbox-approved-false"
-                                            className="ml-2 text-left"
-                                          >
+                                          <FormCheck.Label htmlFor="radio-approved-false" className="ml-2 text-left">
                                             False
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                      </div>
+                                    )}
+                                  />
+                                </div>
+
+                                <div className="w-full min-w-0">
+                                  <div className="text-left text-slate-500 flex justify-between mb-1">
+                                    <span className="flex items-center gap-2 text-slate-600 font-semibold whitespace-nowrap">
+                                      <FaCalendarAlt className="text-gray-400" /> Shareholder Meeting Held
+                                    </span>
+                                  </div>
+                                  <Controller
+                                    name="outcome_percentage"
+                                    control={control}
+                                    defaultValue=""
+                                    render={({ field }) => (
+                                      <div className="flex flex-row flex-wrap gap-x-4 gap-y-2 mt-[10px]">
+                                        <FormCheck className="flex items-center mr-2">
+                                          <FormCheck.Input
+                                            id="radio-switch-1"
+                                            type="radio"
+                                            value="yes"
+                                            checked={field.value === "yes"}
+                                            onChange={(e) => field.onChange(e.target.value)}
+                                          />
+                                          <FormCheck.Label htmlFor="radio-switch-1" className="ml-2 text-left">
+                                            Yes
+                                          </FormCheck.Label>
+                                        </FormCheck>
+                                        <FormCheck className="flex items-center mr-2">
+                                          <FormCheck.Input
+                                            id="radio-switch-2"
+                                            type="radio"
+                                            value="no"
+                                            checked={field.value === "no"}
+                                            onChange={(e) => field.onChange(e.target.value)}
+                                          />
+                                          <FormCheck.Label htmlFor="radio-switch-2" className="ml-2 text-left">
+                                            No
                                           </FormCheck.Label>
                                         </FormCheck>
                                       </div>

@@ -1172,7 +1172,16 @@ export default function CompanyOverviewSummaryTab({
                   {report.board.lowestSupport?.length ? (
                     <>
                       <Separator className="my-4" />
-                      <div className="text-[15px] font-semibold text-slate-500">Lowest support</div>
+                      {/* <div className="text-[15px] font-semibold text-slate-500">Lowest support</div> */}
+                      <div className="text-[15px] font-semibold text-slate-500">
+                        {report.board.lowestSupport?.length > 0 && (
+                          <>
+                            {report.board.lowestSupport.length}{" "}
+                            {report.board.lowestSupport.length > 1 ? "Directors" : "Director"}{" "}
+                          </>
+                        )}
+                        Lowest support
+                      </div>
                       <BulletList items={report.board.lowestSupport} />
                     </>
                   ) : null}
