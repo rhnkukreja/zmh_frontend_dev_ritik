@@ -42,6 +42,7 @@ const DetailShareHolder = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const url = searchParams.get("url");
+  const source = (location.state as { source?: string } | undefined)?.source || searchParams.get("source") || "";
   const headingTitle = url?.includes("withdrawn")
     ? "Withdrawn Proposal Details"
     : url?.includes("def14a")
@@ -58,6 +59,16 @@ const DetailShareHolder = () => {
     ? "no-action"
     : "";
 
+  const selectedTabUrl = selectedTab
+    ? `/shareholder-proposal?url=shareholder_proposal/${
+        selectedTab === "proposal"
+          ? "def14a"
+          : selectedTab === "no-action"
+          ? "no_action"
+          : "withdrawn"
+      }${source ? `&source=${source}` : ""}`
+    : `/shareholder-proposal${source ? `?source=${source}` : ""}`;
+
   useEffect(() => {
     dispatch(getSingleShareHolderData({ url: url!, id: Number(params.id!) }));
   }, [params.id]);
@@ -65,7 +76,7 @@ const DetailShareHolder = () => {
   const backToPreviousPage = () => {
     dispatch(setPage(page));
     dispatch(setTabs(selectedTab));
-    navigate("/shareholder-proposal", {
+    navigate(selectedTabUrl, {
       state: { isBackToShareholderPage: true },
     });
   };
@@ -97,7 +108,7 @@ const DetailShareHolder = () => {
       setIsDeleteModalOpen(false);
       dispatch(setPage(page));
       dispatch(setTabs(selectedTab));
-      navigate("/shareholder-proposal", { state: { isBackToShareholderPage: true } });
+      navigate(selectedTabUrl, { state: { isBackToShareholderPage: true } });
     } catch (error) {
       console.error("Error deleting proposal:", error);
       toast.error("Failed to delete. Please try again.");

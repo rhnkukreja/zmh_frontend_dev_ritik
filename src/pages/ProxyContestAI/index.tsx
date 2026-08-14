@@ -46,8 +46,12 @@ const saveF = (tab: string, data: any) => {
 
 function ProxyContestAI() {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdmin = user?.user_type === "Admin";
-  const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
+  // Case-insensitive on purpose — user_type isn't guaranteed title-cased by the
+  // API (UserManagement normalises it the same way). Non Admin/Analyst users
+  // still see neither "Upload Activist Profile" nor "Add Proxy Contest".
+  const userType = (user?.user_type || "").trim().toLowerCase();
+  const isAdmin = userType === "admin";
+  const isAdminOrAnalyst = isAdmin || userType === "analyst";
 
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab") as ProxyContestTabKey | null;
@@ -628,7 +632,7 @@ function ProxyContestAI() {
        {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <span className="text-slate-500">Proxy Contest</span>
+            <span className="text-slate-500">Proxy Contests</span>
             <ChevronRight className="w-4 h-4 text-slate-400" />
             <span>{tabs.find((t) => t.key === activeTab)?.label ?? "Activist Profile"}</span>
           </h2>
@@ -648,15 +652,17 @@ function ProxyContestAI() {
               </Button>
             )}
 
-            {/* Activist Profile tab → Generate Activism Profile action */}
-            {isAdminOrAnalyst && activeTab === "activist_profile" && (
+            {/* Activist Profile tab → Generate Activism Profile action.
+                Intentionally open to every logged-in user, not just
+                Admin/Analyst — unlike Upload Activist Profile above. */}
+            {activeTab === "activist_profile" && (
               <button
                 type="button"
                 onClick={() => setGenerateProfileSignal((v) => v + 1)}
                 className="flex items-center gap-1.5 h-[38px] px-3 text-sm font-medium text-white bg-primary border border-primary rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
               >
                 <Lucide icon="Sparkles" className="w-4 h-4" />
-                Generate Activism Profile
+                Generate Activist Profile
               </button>
             )}
 

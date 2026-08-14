@@ -65,6 +65,8 @@ function ProposalDetailsTableView({
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
     const url = searchParams.get("url");
+    const source = searchParams.get("source") || "";
+    const isCompanySource = source === "company";
     const pageParam = searchParams.get("page");
 
     const { tab: reduxTab } = useAppSelector((state) => state.sharedHolderNoAction);
@@ -331,7 +333,9 @@ const getLiveSupportPercentage = (proposal: any) => {
                                         {proposal?.nl_exist === true && (
                                             <span className="font-medium" onClick={() => {
                                                 const id = proposal?.nl_exist === true ? proposal?.no_action_link?.split("/").filter(Boolean).pop() : 0;
-                                                proposal?.nl_exist === true && navigate(`/shareholder-proposal/${id}?url=shareholder_proposal/no_action`);
+                                                proposal?.nl_exist === true && navigate(`/shareholder-proposal/${id}?url=shareholder_proposal/no_action`, {
+                                                    state: { source: isCompanySource ? "company" : "shared" }
+                                                });
                                             }}>
                                                 Yes
                                             </span>
@@ -347,7 +351,9 @@ const getLiveSupportPercentage = (proposal: any) => {
                                             )}
 
                                             <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                                <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/def14a`)} icon="Eye" />
+                                                <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/def14a`, {
+                                                    state: { source: isCompanySource ? "company" : "shared" }
+                                                })} icon="Eye" />
                                             </div>
                                         </div>
                                     </StandardizedTable.Cell>
@@ -383,7 +389,9 @@ const getLiveSupportPercentage = (proposal: any) => {
                                     <StandardizedTable.Cell><span className="font-medium">{proposal?.staff_response || "-"}</span></StandardizedTable.Cell>
                                     <StandardizedTable.Cell className="text-center">
                                         <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                            <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/no_action`)} icon="Eye" />
+                                            <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/no_action`, {
+                                                state: { source: isCompanySource ? "company" : "shared" }
+                                            })} icon="Eye" />
                                         </div>
                                     </StandardizedTable.Cell>
                                     {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
@@ -411,7 +419,9 @@ const getLiveSupportPercentage = (proposal: any) => {
                                 <StandardizedTable.Cell><span className="font-medium capitalize" title={proposal?.status}>{proposal?.status}</span></StandardizedTable.Cell>
                                 <StandardizedTable.Cell className="text-center">
                                     <div className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors bg-gray-100 text-gray-600 cursor-pointer hover:bg-gray-200">
-                                        <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/withdrawn`)} icon="Eye" />
+                                        <Lucide onClick={() => navigate(`/shareholder-proposal/${proposal?.id}?url=shareholder_proposal/withdrawn`, {
+                                            state: { source: isCompanySource ? "company" : "shared" }
+                                        })} icon="Eye" />
                                     </div>
                                 </StandardizedTable.Cell>
                                 {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (

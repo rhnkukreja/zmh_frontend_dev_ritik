@@ -19,6 +19,7 @@ const DetailCaseStudies = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fromTab: string | undefined = location.state?.fromTab;
+  const source: string | undefined = location.state?.source;
 
   const { singleCaseStudy, loading } = useAppSelector(
     (state) => state.caseStudies
@@ -30,7 +31,12 @@ const DetailCaseStudies = () => {
   }, [params.id]);
 
   const backToPreviousPage = () => {
-    navigate(fromTab ? `/case-studies?tab=${fromTab}` : `/case-studies`);
+    const sourceParam = source ? `&source=${source}` : "";
+    navigate(
+      fromTab
+        ? `/case-studies?tab=${fromTab}${sourceParam}`
+        : `/case-studies${sourceParam}`
+    );
   };
 
   const [editOpen, setEditOpen] = useState(false);
