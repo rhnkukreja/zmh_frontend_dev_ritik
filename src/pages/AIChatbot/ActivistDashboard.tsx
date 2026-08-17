@@ -34,7 +34,7 @@ const GENERATE_MODE = "enhanced" as const;
 // Basic-profile creation across several investors quickly without kicking
 // off a long Advanced run every time.
 // MUST be true before commit/ship.
-const AUTO_CHAIN_ADVANCED_ON_APPROVE = false;
+const AUTO_CHAIN_ADVANCED_ON_APPROVE = true;
 
 // The pipeline writes free-text statuses — "ongoing (second episode) -
 // cooperation period filings", "closed - 13d engagement", "exited (position
