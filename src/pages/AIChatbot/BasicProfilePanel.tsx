@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Lucide from "@/components/Base/Lucide";
-import Tippy from "@/components/Base/Tippy";
 
 const THEME_MAROON = "#8b1828";
 
@@ -21,6 +20,18 @@ const formatUSDThousands = (thousands: any) => {
   return formatLargeUSD(Number(thousands) * 1000);
 };
 
+// h.note on a 13F holding is a full sentence, e.g. "INDUSTRIALS /
+// CONSTRUCTION & ENGINEERING; 23.34% of reported 13F portfolio." — the
+// percent-of-portfolio figure is embedded in there, not the whole string.
+// Pull just the number out (dynamically, per row) rather than displaying
+// the sentence or naively appending a "%".
+const formatPortfolioPercent = (value: any): string => {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "number") return `${value.toFixed(2)}%`;
+  const match = String(value).match(/(\d+(?:\.\d+)?)\s*%/);
+  return match ? `${match[1]}%` : "—";
+};
+
 const formatDate = (value: any) => {
   if (!value) return null;
   const d = new Date(value);
@@ -37,28 +48,119 @@ const getDomain = (url: any): string | null => {
   }
 };
 
-// Recreates InvestorCard's renderFormattedStrategy independently (see
-// src/components/InvestorCard/index.tsx renderFormattedStrategy) — not
-// imported, per instructions to keep this panel fully standalone.
-const renderFormattedText = (text: string | null | undefined) => {
-  if (!text) return null;
-  const normalized = text.replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
-  return normalized.split("\n").map((line, index) => {
-    const trimmed = line.trim();
-    if (!trimmed) return null;
-    if (trimmed.startsWith("-")) {
-      return (
-        <li key={index} className="ml-4 mb-1 list-disc text-slate-700">
-          {trimmed.substring(1).trim()}
-        </li>
-      );
+// Splits raw WhaleWisdom text (Overview / Investment Strategy — a single
+// unbroken paragraph with no "\n") into sentences, then groups those
+// sentences into 2-3 roughly-equal-length bullets, purely for visual
+// scanability. This is reformatting only — every word of the source text
+// still appears, just chunked differently; nothing is dropped, shortened,
+// or paraphrased.
+//
+// Sentence splitting prefers the locale-aware Intl.Segmenter (supported in
+// all current evergreen browsers), which correctly treats abbreviations
+// like "U.S.", "Inc.", "Corp.", "L.P." as non-terminal — confirmed against
+// real production data, e.g. a Starboard Value LP business_description
+// containing "...invests in public and private securities of U.S. public
+// companies believed to be undervalued...". A naive `.split('. ')` mangles
+// that sentence. The regex fallback below (for engines without
+// Intl.Segmenter) guards against the same abbreviation list explicitly.
+const ABBREVIATIONS = /\b(?:[A-Z]|U\.S|Inc|Corp|Ltd|L\.P|LLC|Co|St|Mr|Mrs|Ms|Dr|vs|etc)\.$/;
+
+const splitIntoSentences = (text: string): string[] => {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+
+  if (typeof Intl !== "undefined" && typeof (Intl as any).Segmenter === "function") {
+    const segmenter = new (Intl as any).Segmenter("en", { granularity: "sentence" });
+    const sentences: string[] = [];
+    for (const { segment } of segmenter.segment(trimmed)) {
+      const s = String(segment).trim();
+      if (s) sentences.push(s);
     }
-    return (
-      <p key={index} className="mb-2 text-slate-700 last:mb-0">
-        {trimmed}
-      </p>
-    );
+    return sentences;
+  }
+
+  // Fallback: split after ./!/? + whitespace when followed by a capital
+  // letter or opening paren, then re-merge any split that landed right
+  // after a known abbreviation (so "U.S. public companies" stays whole).
+  const parts = trimmed.split(/(?<=[.!?])\s+(?=[A-Z(])/);
+  const sentences: string[] = [];
+  for (const part of parts) {
+    const prev = sentences[sentences.length - 1];
+    if (prev && ABBREVIATIONS.test(prev)) {
+      sentences[sentences.length - 1] = `${prev} ${part}`;
+    } else {
+      sentences.push(part);
+    }
+  }
+  return sentences.map((s) => s.trim()).filter(Boolean);
+};
+
+// Groups sentences into 2-3 bullets of roughly-equal character length. Very
+// short text (1-2 sentences total) is left as a single bullet rather than
+// forcing an artificial split, so we never create empty/near-empty bullets.
+const groupSentencesIntoBullets = (sentences: string[]): string[] => {
+  if (sentences.length <= 2) {
+    return sentences.length ? [sentences.join(" ")] : [];
+  }
+
+  const targetBulletCount = sentences.length >= 5 ? 3 : 2;
+  const totalLength = sentences.reduce((sum, s) => sum + s.length, 0);
+  const targetLength = totalLength / targetBulletCount;
+
+  const bullets: string[] = [];
+  let current: string[] = [];
+  let currentLength = 0;
+
+  sentences.forEach((sentence, i) => {
+    current.push(sentence);
+    currentLength += sentence.length;
+
+    const isLast = i === sentences.length - 1;
+    const remainingBulletsToFill = targetBulletCount - bullets.length - 1;
+    const remainingSentences = sentences.length - (i + 1);
+
+    // Close out the current bullet once it has reached its target share of
+    // the text — but only if enough sentences remain to fill the rest of
+    // the target bullets (otherwise keep accumulating into this one).
+    if (!isLast && remainingBulletsToFill > 0 && remainingSentences >= remainingBulletsToFill && currentLength >= targetLength) {
+      bullets.push(current.join(" "));
+      current = [];
+      currentLength = 0;
+    }
   });
+
+  if (current.length) bullets.push(current.join(" "));
+  return bullets;
+};
+
+// Renders WhaleWisdom-sourced free text (Overview / Investment Strategy) as
+// 2-3 bullet points instead of one dense paragraph. Falls back to a plain
+// paragraph when the text is too short to meaningfully split.
+const renderTextAsBullets = (text: string | null | undefined) => {
+  if (!text) return null;
+  const normalized = text
+    .replace(/\\n/g, "\n")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return null;
+
+  const sentences = splitIntoSentences(normalized);
+  if (sentences.length === 0) return null;
+
+  const bullets = groupSentencesIntoBullets(sentences);
+  if (bullets.length <= 1) {
+    return <p className="m-0 text-slate-700">{bullets[0] ?? normalized}</p>;
+  }
+
+  return (
+    <ul className="pl-5 m-0 list-disc text-slate-700 flex flex-col gap-2">
+      {bullets.map((bullet, i) => (
+        <li key={i}>{bullet}</li>
+      ))}
+    </ul>
+  );
 };
 
 const Badge = ({ label, value }: { label: string; value: string }) => (
@@ -125,7 +227,7 @@ const FirmLinksList = ({ links }: { links: any[] }) => {
   return (
     <div className="mt-4 pt-4 border-t border-slate-100">
       <h4 className="text-sm font-bold text-slate-800 mb-3">Company Links</h4>
-      <ul className="p-0 m-0 list-none flex flex-col gap-3">
+      <ul className="p-0 m-0 list-none flex flex-row flex-wrap gap-x-6 gap-y-3">
         {links.map((link: any, i: number) => {
           const url = link?.url || link?.link;
           const domain = getDomain(url);
@@ -133,7 +235,7 @@ const FirmLinksList = ({ links }: { links: any[] }) => {
           return (
             <li key={i} className="flex items-start">
               <span className="text-red-800 mr-2 text-base leading-none">▸</span>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0">
                 <p className="text-sm text-slate-600 m-0 leading-relaxed">
                   {url ? (
                     <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-medium hover:underline">
@@ -156,16 +258,28 @@ const FirmLinksList = ({ links }: { links: any[] }) => {
 // Simple bulleted sub-section for owners / known_email_addresses — only
 // rendered when the array actually has entries (empty is expected, not an
 // error, so it renders nothing at all rather than a placeholder).
-const BulletList = ({ heading, items }: { heading: string; items: any[] }) => {
+// `boxed` matches Overview's text-base + bg-slate-50 card treatment (used
+// for Owners, per instructions); Known Email Addresses stays the plain,
+// smaller default.
+const BulletList = ({ heading, items, boxed = false }: { heading: string; items: any[]; boxed?: boolean }) => {
   if (!Array.isArray(items) || items.length === 0) return null;
+
+  const list = (
+    <ul className={`pl-5 m-0 list-disc text-slate-700 flex flex-col gap-1 ${boxed ? "text-base" : "text-sm"}`}>
+      {items.map((item: any, i: number) => (
+        <li key={i}>{item}</li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className="mt-4">
       <h4 className="text-sm font-bold text-slate-800 mb-2">{heading}</h4>
-      <ul className="pl-5 m-0 list-disc text-slate-700 text-sm flex flex-col gap-1">
-        {items.map((item: any, i: number) => (
-          <li key={i}>{item}</li>
-        ))}
-      </ul>
+      {boxed ? (
+        <div className="bg-slate-50 p-4 rounded-md border border-slate-100">{list}</div>
+      ) : (
+        list
+      )}
     </div>
   );
 };
@@ -191,38 +305,32 @@ const OverviewSection = ({ section }: { section: any }) => {
         {section.region && <Badge label="Region" value={section.region} />}
         {section.proxy_influence && <Badge label="Proxy Influence" value={section.proxy_influence} />}
         {/* {section.sec_number && <Badge label="SEC #" value={section.sec_number} />} */}
+        {section.cik_number && <Badge label="CIK" value={section.cik_number} />}
       </div>
 
       <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
-        {renderFormattedText(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
+        {renderTextAsBullets(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
       </div>
 
       {/* investment_strategy is a genuinely separate field from summary
-          (not an alternate phrasing of it) — its own labeled sub-section. */}
+          (not an alternate phrasing of it) — its own labeled sub-section.
+          Same text-base + boxed-card treatment as the Overview paragraph
+          above, so both read as one consistent visual unit rather than
+          Overview looking like a card and this floating below it as plain text. */}
       {section.investment_strategy && (
         <div className="mt-4">
           <h4 className="text-sm font-bold text-slate-800 mb-2">Investment Strategy</h4>
-          <div className="text-slate-600 text-sm leading-relaxed">
-            {renderFormattedText(section.investment_strategy)}
+          <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
+            {renderTextAsBullets(section.investment_strategy)}
           </div>
         </div>
       )}
 
-      <BulletList heading="Owners" items={section.owners} />
+      <BulletList heading="Owners" items={section.owners} boxed />
       <BulletList heading="Known Email Addresses" items={section.known_email_addresses} />
 
       <FirmLinksList links={section.firm_links} />
 
-      {section.source_url && (
-        <a
-          href={section.source_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-3 text-sm font-semibold text-blue-700 underline"
-        >
-          View on WhaleWisdom
-        </a>
-      )}
 
       {section.adv_brochure_url && (
         <div className="border-t border-slate-100 mt-4 -mx-6 px-6">
@@ -290,11 +398,12 @@ const HoldingsSection = ({ section }: { section: any }) => {
         <div className="overflow-x-auto border border-slate-200 rounded-md">
           <table className="min-w-full border-collapse text-left text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-                <th className="px-3 py-2 font-medium">Issuer</th>
-                <th className="px-3 py-2 font-medium">Ticker</th>
-                <th className="px-3 py-2 font-medium text-right">Shares</th>
-                <th className="px-3 py-2 font-medium text-right">Value</th>
+              <tr className="bg-red-50 border-b border-red-100 text-xs uppercase tracking-wide text-red-800">
+                <th className="px-3 py-2 font-bold">Issuer</th>
+                <th className="px-3 py-2 font-bold">Ticker</th>
+                <th className="px-3 py-2 font-bold text-right">% Portfolio</th>
+                <th className="px-3 py-2 font-bold text-right">Shares</th>
+                <th className="px-3 py-2 font-bold text-right">Value</th>
               </tr>
             </thead>
             <tbody>
@@ -308,15 +417,9 @@ const HoldingsSection = ({ section }: { section: any }) => {
                     : "N/A";
                 return (
                   <tr key={`${h.issuer}-${i}`} className="border-b border-slate-100 last:border-0">
-                    <td className="px-3 py-2 font-semibold text-slate-900">
-                      {h.issuer}
-                      {h.note && (
-                        <Tippy content={h.note}>
-                          <span className="ml-1 text-slate-400 cursor-help">ⓘ</span>
-                        </Tippy>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-red-800 font-medium">{h.ticker_or_symbol || "—"}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-900">{h.issuer}</td>
+                    <td className="px-3 py-2 text-slate-800 font-medium">{h.ticker_or_symbol || "—"}</td>
+                    <td className="px-3 py-2 text-slate-600 text-right">{formatPortfolioPercent(h.note)}</td>
                     <td className="px-3 py-2 text-slate-600 text-right">{sharesDisplay}</td>
                     <td className="px-3 py-2 text-slate-900 font-medium text-right">{formatUSDThousands(h.value_usd_thousands)}</td>
                   </tr>
@@ -343,11 +446,14 @@ const HoldingsSection = ({ section }: { section: any }) => {
   );
 };
 
-const Filings13DGSection = ({ section }: { section: any }) => {
+// "Form & File" mirrors EDGAR's own full-text-search results table
+// (https://www.sec.gov/edgar/search/) — form type stacked over the SEC
+// file number, e.g. "SC 13D/A" / "005-82940".
+const ActivistFilingsSection = ({ section }: { section: any }) => {
   if (!section || section.status !== "ok") {
     return (
-      <SectionCard title="13D/13G Filings" icon="FileText">
-        <UnavailableNotice label="13D/13G filings" error={section?.error} />
+      <SectionCard title="Activist Filings (13D/13G & Proxy Contests)" icon="FileText">
+        <UnavailableNotice label="Activist filings" error={section?.error} />
       </SectionCard>
     );
   }
@@ -355,32 +461,41 @@ const Filings13DGSection = ({ section }: { section: any }) => {
   const filings = Array.isArray(section.filings) ? section.filings : [];
 
   return (
-    <SectionCard title="13D/13G Filings" icon="FileText" collapsible defaultOpen={false}>
+    <SectionCard title="Activist Filings (13D/13G & Proxy Contests)" icon="FileText" collapsible defaultOpen={false}>
       {filings.length > 0 ? (
-        <ul className="p-0 m-0 list-none flex flex-col gap-4">
-          {filings.map((f: any, i: number) => (
-            <li key={i} className="flex items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-              <span className="text-red-800 mr-2 text-base leading-none">▸</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-600 m-0 leading-relaxed">
-                  {f.url ? (
-                    <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-medium hover:underline">
-                      {f.form || "Filing"}
-                    </a>
-                  ) : (
-                    <span className="font-medium">{f.form || "Filing"}</span>
-                  )}
-                  {Array.isArray(f.entities) && f.entities.length > 0 && ` — ${f.entities.join("; ")}`}
-                </p>
-                <p className="text-xs text-slate-400 m-0 mt-1">
-                  {[f.filing_date, f.accession].filter(Boolean).join(" · ")}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto border border-slate-200 rounded-md">
+          <table className="min-w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="bg-red-50 border-b border-red-100 text-xs uppercase tracking-wide text-red-800">
+                <th className="px-3 py-2 font-bold">Form &amp; File</th>
+                <th className="px-3 py-2 font-bold">Filed</th>
+                <th className="px-3 py-2 font-bold">Reporting For</th>
+                <th className="px-3 py-2 font-bold">Filing Entity/Person</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filings.map((f: any, i: number) => (
+                <tr key={f.accession || i} className="border-b border-slate-100 last:border-0 align-top">
+                  <td className="px-3 py-2">
+                    {f.url ? (
+                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-semibold hover:underline">
+                        {f.form || "Filing"}
+                      </a>
+                    ) : (
+                      <span className="font-semibold text-slate-900">{f.form || "Filing"}</span>
+                    )}
+                    {f.file_num && <div className="text-xs text-slate-400 mt-0.5">{f.file_num}</div>}
+                  </td>
+                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{f.filing_date || "—"}</td>
+                  <td className="px-3 py-2 text-slate-800">{f.reporting_for || "—"}</td>
+                  <td className="px-3 py-2 text-slate-800">{f.filing_entity_person || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
-        <p className="text-sm text-slate-500 m-0">No 13D/13G filings found.</p>
+        <p className="text-sm text-slate-500 m-0">No activist filings found in the last 5 years.</p>
       )}
     </SectionCard>
   );
@@ -439,7 +554,7 @@ export interface BasicProfileData {
   sections: {
     whalewisdom_overview?: any;
     current_13f_holdings?: any;
-    sec_13d_13g_filings?: any;
+    activist_filings?: any;
     shareholder_letters_web?: any;
   };
 }
@@ -497,7 +612,7 @@ const BasicProfilePanel = ({
 
       <OverviewSection section={sections.whalewisdom_overview} />
       <HoldingsSection section={sections.current_13f_holdings} />
-      <Filings13DGSection section={sections.sec_13d_13g_filings} />
+      <ActivistFilingsSection section={sections.activist_filings} />
       <ShareholderLettersSection section={sections.shareholder_letters_web} />
     </div>
   );

@@ -27,6 +27,15 @@ const SEND_GENERATION_EMAIL = `True`;
 // code path — not a picker, not a modal reset — that can send anything else.
 const GENERATE_MODE = "enhanced" as const;
 
+// ⚠️ TEMPORARY — dev testing only. When true (the shipped/intended state),
+// approving a Basic profile auto-chains straight into Advanced generation
+// (see handleApproveBasic) — that's the whole point of the Basic→Advanced
+// flow. Set to false so Approve just publishes Basic and stops, to test
+// Basic-profile creation across several investors quickly without kicking
+// off a long Advanced run every time.
+// MUST be true before commit/ship.
+const AUTO_CHAIN_ADVANCED_ON_APPROVE = false;
+
 // The pipeline writes free-text statuses — "ongoing (second episode) -
 // cooperation period filings", "closed - 13d engagement", "exited (position
 // liquidated)" — so every consumer keys off the FIRST word, never the whole
@@ -880,6 +889,12 @@ const ActivistIntelligenceDashboard = ({
     setRawProfile(null);
     setError(null);
     setProfileViewMode("basic");
+    // The "activist_filings" tab only exists for dual-profile investors (see
+    // the hasBasicProfile && hasAdvancedProfile-gated tab list below) — reset
+    // here too so switching to a single-profile investor while sitting on
+    // that tab can't leave activeTab pointing at a tab that no longer renders
+    // (which would otherwise show a blank pane with no tab visually active).
+    setActiveTab("summary");
     loadProfileForKey(activeInvestorKey);
   }, [activeInvestorKey]);
 
@@ -1282,11 +1297,15 @@ const ActivistIntelligenceDashboard = ({
       // without opening the modal. Viewing any other investor — including
       // pre-existing basic-only ones — must never trigger this; there is
       // deliberately no activeInvestorKey-change effect for it.
-      if (!autoGenAdvancedInFlightRef.current.has(baseSlug)) {
-        autoGenAdvancedInFlightRef.current.add(baseSlug);
-        setGenerateInvestorName(approvedName);
-        setGenerateError(null);
-        setAdvancedTriggerSignal((v) => v + 1);
+      if (AUTO_CHAIN_ADVANCED_ON_APPROVE) {
+        if (!autoGenAdvancedInFlightRef.current.has(baseSlug)) {
+          autoGenAdvancedInFlightRef.current.add(baseSlug);
+          setGenerateInvestorName(approvedName);
+          setGenerateError(null);
+          setAdvancedTriggerSignal((v) => v + 1);
+        } else {
+          setGenerateInvestorName("");
+        }
       } else {
         setGenerateInvestorName("");
       }
@@ -1905,6 +1924,13 @@ const ActivistIntelligenceDashboard = ({
                       { id: "summary",   label: "Summary" },
                       { id: "campaigns", label: "Campaigns" },
                       { id: "holdings",  label: "13F Holdings" },
+                      // Only meaningful when a Basic profile also exists for
+                      // this investor — that's where activist_filings data
+                      // lives (basicProfile.sections.activist_filings), not
+                      // on the Advanced `profile` object.
+                      ...(hasBasicProfile && hasAdvancedProfile
+                        ? [{ id: "activist_filings", label: "Activist Filings (13D/13G & Proxy Contests)" }]
+                        : []),
                       { id: "personnel", label: "Personnel" },
                       { id: "sources",   label: "Sources" },
                     ].map((tab) => (
@@ -2169,6 +2195,51 @@ const ActivistIntelligenceDashboard = ({
               )}
             </>
           )}
+
+          {/* ── ACTIVIST FILINGS TAB CONTENT — only reachable when both a Basic
+              and an Advanced profile exist (see the tab-list gate above and
+              the activeTab reset in the activeInvestorKey effect). Sourced
+              from basicProfile, not the Advanced `profile` object — pure
+              display composition, no new fetching. ── */}
+          {activeTab === "activist_filings" && (() => {
+            const filings = basicProfile?.sections?.activist_filings?.filings;
+            const filingsList = Array.isArray(filings) ? filings : [];
+            return (
+              <>
+                <SectionHeader title="Activist Filings (13D/13G & Proxy Contests)" />
+                {filingsList.length > 0 ? (
+                  <div style={{ overflowX: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "#fafafa", borderBottom: "1px solid #e5e7eb" }}>
+                          {[{ label: "Form & File", align: "left" }, { label: "Filed", align: "left" }, { label: "Reporting For", align: "left" }, { label: "Filing Entity/Person", align: "left" }].map((h) => <th key={h.label} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: h.align as any, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h.label}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filingsList.map((f: any, i: number) => (
+                          <tr key={f.accession || i} style={{ borderBottom: i !== filingsList.length - 1 ? "1px solid #f3f4f6" : "none", verticalAlign: "top" }}>
+                            <td style={{ padding: "12px 16px" }}>
+                              {f.url ? (
+                                <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: THEME_MAROON, textDecoration: "none", fontWeight: 500 }} onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")} onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}>{f.form || "Filing"}</a>
+                              ) : (
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{f.form || "Filing"}</span>
+                              )}
+                              {f.file_num && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{f.file_num}</div>}
+                            </td>
+                            <td style={{ padding: "12px 16px", fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{f.filing_date || "—"}</td>
+                            <td style={{ padding: "12px 16px", fontSize: 13, color: "#111827" }}>{f.reporting_for || "—"}</td>
+                            <td style={{ padding: "12px 16px", fontSize: 13, color: "#111827" }}>{f.filing_entity_person || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No activist filings found in the last 5 years.</p>
+                )}
+              </>
+            );
+          })()}
 
           {activeTab === "personnel" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
