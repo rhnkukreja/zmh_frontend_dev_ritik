@@ -64,6 +64,16 @@ const STATUS_LABEL_MAP = {
 /** Statuses meaning "this campaign has not concluded". */
 const LIVE_STATUS_KEYS = ["open", "ongoing", "active"];
 
+/**
+ * Display names for the profile-view toggle. The underlying ids stay
+ * "basic"/"advanced" — the API routes, cache keys and every branch on
+ * effectiveProfileView key off those, so only the visible label changes here.
+ */
+const PROFILE_VIEW_LABELS = {
+  basic: "Condensed",
+  advanced: "Comprehensive",
+} as const;
+
 /** A single in-flight generation job, as returned by GET /generate/active */
 type ActiveGenerationJob = {
   slug: string;
@@ -90,13 +100,18 @@ const statusKey = (status: any) =>
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// SEC figures are US dollars and must group US-style. Left to the browser's
+// default locale, an en-IN machine renders 266000 as "2,66,000" (lakh/crore
+// grouping), so the locale is pinned rather than inherited.
+const NUMBER_LOCALE = "en-US";
+
 const formatUSD = (thousands: any) => {
   if (!thousands) return "N/A";
   const val = Number(thousands) * 1000;
   if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
   if (val >= 1e9)  return `$${(val / 1e9).toFixed(2)}B`;
   if (val >= 1e6)  return `$${(val / 1e6).toFixed(0)}M`;
-  return `$${val.toLocaleString()}`;
+  return `$${val.toLocaleString(NUMBER_LOCALE)}`;
 };
 
 const formatLargeUSD = (value: any) => {
@@ -104,7 +119,7 @@ const formatLargeUSD = (value: any) => {
   const numValue = Number(value);
   if (numValue >= 1e9)  return `$${(numValue / 1e9).toFixed(2)}B`;
   if (numValue >= 1e6)  return `$${(numValue / 1e6).toFixed(0)}M`;
-  return `$${numValue.toLocaleString()}`;
+  return `$${numValue.toLocaleString(NUMBER_LOCALE)}`;
 };
 
 // The pipeline sometimes fills fields (notes, outcomes, nominee lists, public
@@ -1902,13 +1917,13 @@ const ActivistIntelligenceDashboard = ({
                   onClick={() => setProfileViewMode(mode)}
                   style={{
                     padding: "6px 16px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "none",
-                    cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s",
+                    cursor: "pointer", transition: "all 0.15s",
                     background: effectiveProfileView === mode ? "#fff" : "transparent",
                     color: effectiveProfileView === mode ? THEME_MAROON : "#6b7280",
                     boxShadow: effectiveProfileView === mode ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
                   }}
                 >
-                  {mode}
+                  {PROFILE_VIEW_LABELS[mode]}
                 </button>
               ))}
             </div>
@@ -2160,7 +2175,7 @@ const ActivistIntelligenceDashboard = ({
                   <tbody>
                     {profile.snapshot.holdings.map((h: any, i: number) => {
                       const sharesRaw = h.shares_or_principal;
-                      const sharesDisplay = typeof sharesRaw === "number" ? sharesRaw.toLocaleString() : sharesRaw ? String(sharesRaw).replace(/\s*shares/gi, '') : "N/A";
+                      const sharesDisplay = typeof sharesRaw === "number" ? sharesRaw.toLocaleString(NUMBER_LOCALE) : sharesRaw ? String(sharesRaw).replace(/\s*shares/gi, '') : "N/A";
                       return (
                         <tr key={i} style={{ borderBottom: i !== profile.snapshot.holdings.length - 1 ? "1px solid #f3f4f6" : "none" }}>
                           <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: "#111827" }}>{h.issuer}</td>

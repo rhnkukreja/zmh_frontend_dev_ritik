@@ -7,13 +7,18 @@ const THEME_MAROON = "#8b1828";
 // ─── Local helpers — deliberately duplicated rather than imported, so this
 // panel has zero coupling to InvestorCard/ActivistDashboard internals. ───────
 
+// SEC figures are US dollars and must group US-style. Left to the browser's
+// default locale, an en-IN machine renders 266000 as "2,66,000" (lakh/crore
+// grouping), so the locale is pinned rather than inherited.
+const NUMBER_LOCALE = "en-US";
+
 const formatLargeUSD = (value: any) => {
   if (!value) return "N/A";
   const numValue = Number(value);
   if (!Number.isFinite(numValue)) return "N/A";
   if (numValue >= 1e9) return `$${(numValue / 1e9).toFixed(2)}B`;
   if (numValue >= 1e6) return `$${(numValue / 1e6).toFixed(0)}M`;
-  return `$${numValue.toLocaleString()}`;
+  return `$${numValue.toLocaleString(NUMBER_LOCALE)}`;
 };
 
 const formatUSDThousands = (thousands: any) => {
@@ -200,6 +205,21 @@ const SectionCard = ({
   );
 };
 
+// Some links come back from the API under a generic label (the X/Twitter link
+// arrives as "Website"), so a recognised social domain always supplies its own
+// name instead of whatever the payload said.
+const DOMAIN_LABELS: Array<[string, string]> = [
+  ["twitter.com", "Twitter"],
+  ["x.com", "Twitter"],
+];
+
+const getLinkLabel = (link: any, domain: string | null): string => {
+  const known =
+    domain && DOMAIN_LABELS.find(([d]) => domain === d || domain.endsWith("." + d));
+  if (known) return known[1];
+  return link?.label || link?.title || link?.name || link?.type || domain || "Link";
+};
+
 // Company website / LinkedIn / etc. — same external-link-list visual pattern
 // as the 13D/13G and Shareholder Letters lists below, embedded inline under
 // the WhaleWisdom summary rather than as its own SectionCard.
@@ -213,7 +233,7 @@ const FirmLinksList = ({ links }: { links: any[] }) => {
         {links.map((link: any, i: number) => {
           const url = link?.url || link?.link;
           const domain = getDomain(url);
-          const label = link?.label || link?.title || link?.name || link?.type || domain || "Link";
+          const label = getLinkLabel(link, domain);
           return (
             <li key={i} className="flex items-start">
               <span className="text-red-800 mr-2 text-base leading-none">▸</span>
@@ -282,7 +302,7 @@ const OverviewSection = ({ section }: { section: any }) => {
   const bodyText = section.ai_enriched_summary || section.summary;
 
   return (
-    <SectionCard title="Investor Overview " icon="Globe">
+    <SectionCard title="Investor Overview" icon="Globe" collapsible>
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         {section.region && <Badge label="Region" value={section.region} />}
         {section.proxy_influence && <Badge label="Proxy Influence" value={section.proxy_influence} />}
@@ -354,7 +374,7 @@ const HoldingsSection = ({ section }: { section: any }) => {
   const holdings = Array.isArray(section.top_holdings) ? section.top_holdings : [];
 
   return (
-    <SectionCard title="Current 13F Holdings" icon="Briefcase">
+    <SectionCard title="Current 13F Holdings" icon="Briefcase" collapsible defaultOpen={false}>
       <div className="flex flex-wrap gap-6 mb-4 text-sm">
         {section.filing_date && (
           <div>
@@ -384,7 +404,7 @@ const HoldingsSection = ({ section }: { section: any }) => {
                 <th className="px-3 py-2 font-bold">Issuer</th>
                 <th className="px-3 py-2 font-bold">Ticker</th>
                 <th className="px-3 py-2 font-bold text-right">
-                  ZMH_Calculation<span className="text-red-600">*</span>
+                  % Portfolio<sup className="text-red-600 ml-0.5">*</sup>
                 </th>
                 <th className="px-3 py-2 font-bold text-right">Shares</th>
                 <th className="px-3 py-2 font-bold text-right">Value</th>
@@ -395,7 +415,7 @@ const HoldingsSection = ({ section }: { section: any }) => {
                 const sharesRaw = h.shares_or_principal;
                 const sharesDisplay =
                   typeof sharesRaw === "number"
-                    ? sharesRaw.toLocaleString()
+                    ? sharesRaw.toLocaleString(NUMBER_LOCALE)
                     : sharesRaw
                     ? String(sharesRaw).replace(/\s*shares/gi, "")
                     : "N/A";
@@ -414,6 +434,13 @@ const HoldingsSection = ({ section }: { section: any }) => {
         </div>
       ) : (
         <p className="text-sm text-slate-500 m-0">No holdings reported in this filing.</p>
+      )}
+
+      {/* Defines the "*" on the % Portfolio column header. */}
+      {holdings.length > 0 && (
+        <p className="text-xs text-slate-500 mt-2 m-0">
+          <span className="text-red-600">*</span> ZMH Calculation
+        </p>
       )}
 
       {section.sec_filing_url && (
@@ -451,6 +478,43 @@ const ActivistFilingsSection = ({ section }: { section: any }) => {
   );
 };
 
+// The API sends a `published_date` on every shareholder-letter result but
+// currently leaves it null, so the only dates actually available are the ones
+// written into the article text itself — PRNewswire datelines ("NEW YORK,
+// March 25, 2022 /PRNewswire/") and stamps like "May 05, 2023, 08:00 ET".
+// `published_date` still wins whenever the backend starts populating it.
+//
+// Only a full month-day-year counts. A bare "December 2021" is almost always
+// prose about a holding period ("has been a stockholder since December 2021"),
+// not a publish date, and sorting on it would place rows confidently wrong.
+const MONTH_NAMES =
+  "January|February|March|April|May|June|July|August|September|October|November|December";
+const TEXT_DATE_RE = new RegExp(`\\b(${MONTH_NAMES})\\s+(\\d{1,2}),\\s*(\\d{4})\\b`, "i");
+const ISO_DATE_RE = /\b(\d{4})-(\d{2})-(\d{2})\b/;
+
+const getLetterDate = (r: any): Date | null => {
+  if (r?.published_date) {
+    const d = new Date(r.published_date);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  const text = `${r?.snippet || ""} ${r?.title || ""}`;
+
+  const iso = text.match(ISO_DATE_RE);
+  if (iso) {
+    const d = new Date(`${iso[1]}-${iso[2]}-${iso[3]}T00:00:00`);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  const named = text.match(TEXT_DATE_RE);
+  if (named) {
+    const d = new Date(`${named[1]} ${named[2]}, ${named[3]}`);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  return null;
+};
+
 const ShareholderLettersSection = ({ section }: { section: any }) => {
   if (!section || section.status !== "ok") {
     return (
@@ -460,13 +524,23 @@ const ShareholderLettersSection = ({ section }: { section: any }) => {
     );
   }
 
-  const results = Array.isArray(section.results) ? section.results : [];
+  // Newest first. Letters we could not date keep their original API order and
+  // sink below the dated ones, so an undated result never masquerades as recent.
+  const results = (Array.isArray(section.results) ? section.results : [])
+    .map((r: any, i: number) => ({ r, i, time: getLetterDate(r)?.getTime() ?? null }))
+    .sort((a, b) => {
+      if (a.time === null || b.time === null) {
+        if (a.time === b.time) return a.i - b.i;
+        return a.time === null ? 1 : -1;
+      }
+      return b.time - a.time;
+    });
 
   return (
-    <SectionCard title="Shareholder Letters" icon="Mail">
+    <SectionCard title="Shareholder Letters" icon="Mail" collapsible defaultOpen={false}>
       {results.length > 0 ? (
         <ul className="p-0 m-0 list-none flex flex-col gap-4">
-          {results.map((r: any, i: number) => (
+          {results.map(({ r, time }, i: number) => (
             <li key={i} className="flex items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0">
               <span className="text-red-800 mr-2 text-base leading-none">▸</span>
               <div className="flex-1 min-w-0">
@@ -479,10 +553,12 @@ const ShareholderLettersSection = ({ section }: { section: any }) => {
                     <span className="font-medium">{r.title || "Untitled letter"}</span>
                   )}
                 </p>
-                {r.snippet && <p className="text-xs text-slate-600 m-0 mt-1 leading-relaxed">{r.snippet}</p>}
-                <p className="text-xs text-slate-400 m-0 mt-1">
-                  {[r.source, formatDate(r.published_date)].filter(Boolean).join(" · ")}
-                </p>
+                {/* Title + date only. The snippet is still read by
+                    getLetterDate() above to derive that date — it just isn't
+                    rendered any more. */}
+                {time !== null && (
+                  <p className="text-xs text-slate-400 m-0 mt-1">{formatDate(time)}</p>
+                )}
               </div>
             </li>
           ))}
