@@ -96,6 +96,10 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
     return "Market Analytics";
   }
 
+  if (["Total Campaigns Covered"].includes(menu.title)) {
+    return "Activist Campaign";
+  }
+
   if (
     [
       "Proxy Contests",
