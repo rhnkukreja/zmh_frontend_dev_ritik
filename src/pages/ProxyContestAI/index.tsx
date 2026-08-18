@@ -635,6 +635,13 @@ function ProxyContestAI() {
             <span className="text-slate-500">Proxy Contests</span>
             <ChevronRight className="w-4 h-4 text-slate-400" />
             <span>{tabs.find((t) => t.key === activeTab)?.label ?? "Activist Profile"}</span>
+            {/* Only Activist Profile is in beta — Voting Analytics and Campaign
+                Details share this breadcrumb and are not. */}
+            {activeTab === "activist_profile" && (
+              <span className="inline-flex shrink-0 items-center rounded-full bg-red-800 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
+                BETA
+              </span>
+            )}
           </h2>
           
           <div className="flex items-center gap-3">

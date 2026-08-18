@@ -697,11 +697,27 @@ const ActivistIntelligenceDashboard = ({
           },
         };
       });
+
+      // The Basic copy of the name has to move too. displayName reads
+      //   profile?.legalName || basicProfile?.investor_name || investorNames[key]
+      // so on a Basic-only investor (no Advanced `profile` object, which makes
+      // the setProfile call below a no-op) the header would fall through to the
+      // stale basicProfile.investor_name and snap straight back to the old
+      // name — a successful save that looks like it silently failed. The cache
+      // is keyed by base slug, so a later cache hit doesn't regress it either.
+      const baseSlug = toBaseSlug(key);
+      setBasicProfilesCache((prev) => {
+        const existing = prev[baseSlug];
+        if (!existing) return prev;
+        return { ...prev, [baseSlug]: { ...existing, investor_name: trimmed } };
+      });
+
       if (key === activeInvestorKey) {
         setProfile((prev: any) => (prev ? { ...prev, legalName: trimmed } : prev));
         setRawProfile((prev: any) =>
           prev ? { ...prev, activist_investor_summary: { ...(prev.activist_investor_summary || {}), legal_name: trimmed } } : prev
         );
+        setBasicProfile((prev: any) => (prev ? { ...prev, investor_name: trimmed } : prev));
       }
       setEditingNameKey(null);
       setLegalNameDraft("");
@@ -1665,17 +1681,37 @@ const ActivistIntelligenceDashboard = ({
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               {editingNameKey === activeInvestorKey ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <input
-                    autoFocus
-                    value={legalNameDraft}
-                    onChange={(e) => setLegalNameDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveLegalName(activeInvestorKey);
-                      if (e.key === "Escape") cancelEditLegalName();
+                  {/* The frame lives on this wrapper, not the input: a global
+                      reset in app.css (`div[class*="select"] input`) forces
+                      background/border off any input nested under a class
+                      containing "select" — Tailwind's `select-none` included —
+                      which is why this field used to render as unreadable dark
+                      text straight on the maroon bar. The wrapper is a div, so
+                      that rule can't touch it. */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      background: "rgba(255,255,255,0.16)",
+                      border: "1px solid rgba(255,255,255,0.55)",
+                      borderRadius: 4,
+                      padding: "3px 8px",
+                      opacity: isSavingLegalName ? 0.6 : 1,
                     }}
-                    disabled={isSavingLegalName}
-                    style={{ fontSize: 16, fontWeight: 600, padding: "4px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.5)", outline: "none", minWidth: 240, background: "rgba(255,255,255,0.95)", color: "#111827" }}
-                  />
+                  >
+                    <input
+                      autoFocus
+                      value={legalNameDraft}
+                      onChange={(e) => setLegalNameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveLegalName(activeInvestorKey);
+                        if (e.key === "Escape") cancelEditLegalName();
+                      }}
+                      disabled={isSavingLegalName}
+                      className="investor-rename-input"
+                      style={{ fontSize: 16, fontWeight: 600, padding: 0, border: "none", outline: "none", minWidth: 240, background: "transparent", color: "#fff" }}
+                    />
+                  </div>
                   <button type="button" onClick={() => saveLegalName(activeInvestorKey)} disabled={isSavingLegalName} title="Save" style={{ background: "transparent", border: "none", cursor: isSavingLegalName ? "wait" : "pointer", color: "white", padding: 4, display: "inline-flex" }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                   </button>

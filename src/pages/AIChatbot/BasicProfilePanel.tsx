@@ -159,11 +159,21 @@ const Badge = ({ label, value }: { label: string; value: string }) => (
 
 // ─── Per-section "unavailable" fallback ──────────────────────────────────────
 
-const UnavailableNotice = ({ label, error }: { label: string; error?: string | null }) => (
+// `message` overrides the default "<label> unavailable" wording for sections
+// where an empty result is a plain fact rather than a failure to report.
+const UnavailableNotice = ({
+  label,
+  error,
+  message,
+}: {
+  label: string;
+  error?: string | null;
+  message?: string;
+}) => (
   <div className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-md flex items-start gap-3">
     <Lucide icon="AlertCircle" className="w-5 h-5 text-slate-400 mt-0.5 shrink-0" />
     <div>
-      <p className="text-sm font-semibold text-slate-600">{label} unavailable</p>
+      <p className="text-sm font-semibold text-slate-600">{message || `${label} unavailable`}</p>
       {error && <p className="text-xs text-slate-500 mt-1">{error}</p>}
     </div>
   </div>
@@ -464,7 +474,7 @@ const ActivistFilingsSection = ({ section }: { section: any }) => {
   if (!section || section.status !== "ok") {
     return (
       <SectionCard title="Activist Filings (13D/13G & Proxy Contests)" icon="FileText">
-        <UnavailableNotice label="Activist filings" error={section?.error} />
+        <UnavailableNotice label="Activist filings" message="None" error={section?.error} />
       </SectionCard>
     );
   }
