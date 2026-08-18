@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import Lucide from "@/components/Base/Lucide";
+import ActivistFilingsTable from "@/pages/AIChatbot/ActivistFilingsTable";
 
 const THEME_MAROON = "#8b1828";
 
@@ -48,21 +49,6 @@ const getDomain = (url: any): string | null => {
   }
 };
 
-// Splits raw WhaleWisdom text (Overview / Investment Strategy — a single
-// unbroken paragraph with no "\n") into sentences, then groups those
-// sentences into 2-3 roughly-equal-length bullets, purely for visual
-// scanability. This is reformatting only — every word of the source text
-// still appears, just chunked differently; nothing is dropped, shortened,
-// or paraphrased.
-//
-// Sentence splitting prefers the locale-aware Intl.Segmenter (supported in
-// all current evergreen browsers), which correctly treats abbreviations
-// like "U.S.", "Inc.", "Corp.", "L.P." as non-terminal — confirmed against
-// real production data, e.g. a Starboard Value LP business_description
-// containing "...invests in public and private securities of U.S. public
-// companies believed to be undervalued...". A naive `.split('. ')` mangles
-// that sentence. The regex fallback below (for engines without
-// Intl.Segmenter) guards against the same abbreviation list explicitly.
 const ABBREVIATIONS = /\b(?:[A-Z]|U\.S|Inc|Corp|Ltd|L\.P|LLC|Co|St|Mr|Mrs|Ms|Dr|vs|etc)\.$/;
 
 const splitIntoSentences = (text: string): string[] => {
@@ -132,10 +118,6 @@ const groupSentencesIntoBullets = (sentences: string[]): string[] => {
   if (current.length) bullets.push(current.join(" "));
   return bullets;
 };
-
-// Renders WhaleWisdom-sourced free text (Overview / Investment Strategy) as
-// 2-3 bullet points instead of one dense paragraph. Falls back to a plain
-// paragraph when the text is too short to meaningfully split.
 const renderTextAsBullets = (text: string | null | undefined) => {
   if (!text) return null;
   const normalized = text
@@ -401,7 +383,9 @@ const HoldingsSection = ({ section }: { section: any }) => {
               <tr className="bg-red-50 border-b border-red-100 text-xs uppercase tracking-wide text-red-800">
                 <th className="px-3 py-2 font-bold">Issuer</th>
                 <th className="px-3 py-2 font-bold">Ticker</th>
-                <th className="px-3 py-2 font-bold text-right">% Portfolio</th>
+                <th className="px-3 py-2 font-bold text-right">
+                  ZMH_Calculation<span className="text-red-600">*</span>
+                </th>
                 <th className="px-3 py-2 font-bold text-right">Shares</th>
                 <th className="px-3 py-2 font-bold text-right">Value</th>
               </tr>
@@ -462,41 +446,7 @@ const ActivistFilingsSection = ({ section }: { section: any }) => {
 
   return (
     <SectionCard title="Activist Filings (13D/13G & Proxy Contests)" icon="FileText" collapsible defaultOpen={false}>
-      {filings.length > 0 ? (
-        <div className="overflow-x-auto border border-slate-200 rounded-md">
-          <table className="min-w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="bg-red-50 border-b border-red-100 text-xs uppercase tracking-wide text-red-800">
-                <th className="px-3 py-2 font-bold">Form &amp; File</th>
-                <th className="px-3 py-2 font-bold">Filed</th>
-                <th className="px-3 py-2 font-bold">Reporting For</th>
-                <th className="px-3 py-2 font-bold">Filing Entity/Person</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filings.map((f: any, i: number) => (
-                <tr key={f.accession || i} className="border-b border-slate-100 last:border-0 align-top">
-                  <td className="px-3 py-2">
-                    {f.url ? (
-                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-semibold hover:underline">
-                        {f.form || "Filing"}
-                      </a>
-                    ) : (
-                      <span className="font-semibold text-slate-900">{f.form || "Filing"}</span>
-                    )}
-                    {f.file_num && <div className="text-xs text-slate-400 mt-0.5">{f.file_num}</div>}
-                  </td>
-                  <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{f.filing_date || "—"}</td>
-                  <td className="px-3 py-2 text-slate-800">{f.reporting_for || "—"}</td>
-                  <td className="px-3 py-2 text-slate-800">{f.filing_entity_person || "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-sm text-slate-500 m-0">No activist filings found in the last 5 years.</p>
-      )}
+      <ActivistFilingsTable filings={filings} variant="tailwind" />
     </SectionCard>
   );
 };

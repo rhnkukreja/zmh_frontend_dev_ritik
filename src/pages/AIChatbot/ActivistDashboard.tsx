@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
+import { AI_CHATBOT_API_BASE, IS_LOCAL_ENV } from '@/pages/AIChatbot/api';
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import BasicProfilePanel from "@/pages/AIChatbot/BasicProfilePanel";
+import ActivistFilingsTable from "@/pages/AIChatbot/ActivistFilingsTable";
 
 // ─── Module-level cache (survives tab switches, clears on page refresh) ───────
 const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -27,14 +28,12 @@ const SEND_GENERATION_EMAIL = `True`;
 // code path — not a picker, not a modal reset — that can send anything else.
 const GENERATE_MODE = "enhanced" as const;
 
-// ⚠️ TEMPORARY — dev testing only. When true (the shipped/intended state),
-// approving a Basic profile auto-chains straight into Advanced generation
-// (see handleApproveBasic) — that's the whole point of the Basic→Advanced
-// flow. Set to false so Approve just publishes Basic and stops, to test
-// Basic-profile creation across several investors quickly without kicking
-// off a long Advanced run every time.
-// MUST be true before commit/ship.
-const AUTO_CHAIN_ADVANCED_ON_APPROVE = true;
+// Deliberate product decision (not a bug, not scaffolding): publishing a
+// Basic profile never auto-chains into Advanced generation. Advanced is a
+// real ~20-25 min, non-resumable job, so it only ever starts from an
+// explicit user action — the "Generate Advanced Profile" empty-state prompt
+// in the Advanced tab (see handleGenerateAdvancedFromTab), which this same
+// publishBasicProfile flow lands the user on immediately after publish.
 
 // The pipeline writes free-text statuses — "ongoing (second episode) -
 // cooperation period filings", "closed - 13d engagement", "exited (position
@@ -561,17 +560,6 @@ const ActivistIntelligenceDashboard = ({
   // switch (see the activeInvestorKey effect below) so the default is always
   // Basic, not whatever was last selected for a different investor.
   const [profileViewMode, setProfileViewMode] = useState<"basic" | "advanced">("basic");
-
-  // In-flight guard for the silent Advanced auto-generate fired from
-  // handleApproveBasic's success path (see there) — keyed by base slug,
-  // mirrors the (now-removed) Basic auto-load's in-flight ref so a
-  // double-click or re-render right after Approve can't double-fire it.
-  // Never cleared: once added, that slug won't auto-retry again this session
-  // even if the job fails — the manual "Generate Advanced Profile" button is
-  // the fallback for that case. This ONLY ever fires for an investor that
-  // was just freshly approved in this session — viewing/opening any other
-  // investor, including pre-existing basic-only ones, stays purely read-only.
-  const autoGenAdvancedInFlightRef = useRef<Set<string>>(new Set());
 
   // Drives the Generate modal's second step: submitting the name only ever
   // generates a PREVIEW (basic/generate no longer persists anything) — the
@@ -1255,7 +1243,18 @@ const ActivistIntelligenceDashboard = ({
       });
       const data = response.data?.data || response.data;
       setModalBasicResult(data);
-      setGenerateModalStep("preview");
+      if (IS_LOCAL_ENV) {
+        // Local dev keeps today's exact flow: show the preview step so the
+        // user can review and explicitly Approve (or bail to Advanced).
+        setGenerateModalStep("preview");
+      } else {
+        // Production: no manual approval gate — publish straight through
+        // using the freshly-fetched `data`, NOT `modalBasicResult` state
+        // (which wouldn't be readable yet in this same synchronous flow).
+        // isSubmittingBasic stays true across this await, so the modal's
+        // "Generating..." state naturally covers the publish call too.
+        await publishBasicProfile(data);
+      }
     } catch (err: any) {
       console.error("Basic preview generation failed:", err);
       setGenerateError(
@@ -1266,20 +1265,24 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  // "Approve" on the preview step — the ONLY place a basic profile is ever
-  // actually persisted. Publishes the held preview payload as-is, then
-  // closes out and lands the user on the newly-published investor.
-  const handleApproveBasic = async () => {
-    if (!modalBasicResult || isApprovingBasic) return;
-    const baseSlug = modalBasicResult?.slug || slugifyName(generateInvestorName);
+  // The actual publish — takes the basic-profile payload directly (rather
+  // than reading `modalBasicResult` state) so it can be called either from
+  // the manual "Approve" click (handleApproveBasic, preview step) or
+  // straight out of handleGenerateModalSubmit in production, where there's
+  // no preview step and thus no reliable moment at which `modalBasicResult`
+  // state has actually re-rendered yet. This is the ONLY place a basic
+  // profile is ever actually persisted; closes out and lands the user on
+  // the newly-published investor either way.
+  const publishBasicProfile = async (basicResult: any) => {
+    const baseSlug = basicResult?.slug || slugifyName(generateInvestorName);
     setIsApprovingBasic(true);
     setGenerateError(null);
     try {
-      await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, modalBasicResult);
+      await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicResult);
 
-      setBasicProfilesCache((prev) => ({ ...prev, [baseSlug]: modalBasicResult }));
+      setBasicProfilesCache((prev) => ({ ...prev, [baseSlug]: basicResult }));
 
-      const approvedName = modalBasicResult.investor_name || generateInvestorName;
+      const approvedName = basicResult.investor_name || generateInvestorName;
       setGenerateModalOpen(false);
       setGenerateModalStep("form");
       setModalBasicResult(null);
@@ -1289,32 +1292,29 @@ const ActivistIntelligenceDashboard = ({
       if (matchedKey) setActiveInvestorKey(matchedKey);
       toast.success(`${approvedName} basic profile published.`);
 
-      // Auto-chain straight into Advanced generation for the investor that
-      // was JUST approved — the only case this auto-trigger is allowed to
-      // fire for. Reuses handleStartGeneration/runGeneration completely
-      // unchanged via the same signal-indirection the manual "Generate
-      // Advanced Profile" CTA uses (handleGenerateAdvancedFromTab), just
-      // without opening the modal. Viewing any other investor — including
-      // pre-existing basic-only ones — must never trigger this; there is
-      // deliberately no activeInvestorKey-change effect for it.
-      if (AUTO_CHAIN_ADVANCED_ON_APPROVE) {
-        if (!autoGenAdvancedInFlightRef.current.has(baseSlug)) {
-          autoGenAdvancedInFlightRef.current.add(baseSlug);
-          setGenerateInvestorName(approvedName);
-          setGenerateError(null);
-          setAdvancedTriggerSignal((v) => v + 1);
-        } else {
-          setGenerateInvestorName("");
-        }
-      } else {
-        setGenerateInvestorName("");
-      }
+      // Basic→Advanced no longer auto-chains (deliberate product decision,
+      // see the comment near the top of this file where the old
+      // AUTO_CHAIN_ADVANCED_ON_APPROVE flag used to live). Advanced
+      // generation now only ever starts from the explicit "Generate Advanced
+      // Profile" prompt in the Advanced tab's empty state, which the
+      // activeInvestorKey switch above (landing on the freshly-published
+      // investor) already puts the user right in front of.
+      setGenerateInvestorName("");
     } catch (err: any) {
       console.error("Basic publish failed:", err);
       setGenerateError(err.response?.data?.detail || "Failed to publish the basic profile.");
     } finally {
       setIsApprovingBasic(false);
     }
+  };
+
+  // "Approve" on the preview step (local dev only — production never shows
+  // this step, see handleGenerateModalSubmit). Thin wrapper preserving the
+  // same guard semantics as before, delegating the actual work to
+  // publishBasicProfile.
+  const handleApproveBasic = async () => {
+    if (!modalBasicResult || isApprovingBasic) return;
+    await publishBasicProfile(modalBasicResult);
   };
 
   // "Create Advanced Profile Instead" on the preview step — discards the
@@ -2207,36 +2207,7 @@ const ActivistIntelligenceDashboard = ({
             return (
               <>
                 <SectionHeader title="Activist Filings (13D/13G & Proxy Contests)" />
-                {filingsList.length > 0 ? (
-                  <div style={{ overflowX: "auto", border: "1px solid #e5e7eb", borderRadius: 8 }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr style={{ background: "#fafafa", borderBottom: "1px solid #e5e7eb" }}>
-                          {[{ label: "Form & File", align: "left" }, { label: "Filed", align: "left" }, { label: "Reporting For", align: "left" }, { label: "Filing Entity/Person", align: "left" }].map((h) => <th key={h.label} style={{ padding: "12px 16px", fontSize: 11, fontWeight: 600, color: "#6b7280", textAlign: h.align as any, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h.label}</th>)}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filingsList.map((f: any, i: number) => (
-                          <tr key={f.accession || i} style={{ borderBottom: i !== filingsList.length - 1 ? "1px solid #f3f4f6" : "none", verticalAlign: "top" }}>
-                            <td style={{ padding: "12px 16px" }}>
-                              {f.url ? (
-                                <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ color: THEME_MAROON, textDecoration: "none", fontWeight: 500 }} onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")} onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}>{f.form || "Filing"}</a>
-                              ) : (
-                                <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{f.form || "Filing"}</span>
-                              )}
-                              {f.file_num && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{f.file_num}</div>}
-                            </td>
-                            <td style={{ padding: "12px 16px", fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{f.filing_date || "—"}</td>
-                            <td style={{ padding: "12px 16px", fontSize: 13, color: "#111827" }}>{f.reporting_for || "—"}</td>
-                            <td style={{ padding: "12px 16px", fontSize: 13, color: "#111827" }}>{f.filing_entity_person || "—"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>No activist filings found in the last 5 years.</p>
-                )}
+                <ActivistFilingsTable filings={filingsList} variant="inline" />
               </>
             );
           })()}

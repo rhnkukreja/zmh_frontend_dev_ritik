@@ -9,7 +9,12 @@ export const Environment = {
 type EnvType = typeof Environment[keyof typeof Environment];
 
 // ⚠️ CHANGE THIS VARIABLE TO SWITCH ENVIRONMENTS // Options: Environment.LOCAL | Environment.PRODUCTION | Environment.NGROK
-const CURRENT_ENV: EnvType = Environment.PRODUCTION; 
+const CURRENT_ENV: EnvType = Environment.PRODUCTION;
+
+// Derived flag — single source of truth for any local-only vs. production
+// behavioral branching (e.g. the Basic-profile approval-gate bypass in
+// ActivistDashboard.tsx). Flip CURRENT_ENV above and this follows.
+export const IS_LOCAL_ENV = CURRENT_ENV === Environment.PRODUCTION;
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
