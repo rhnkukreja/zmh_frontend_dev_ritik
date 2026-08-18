@@ -24,7 +24,11 @@ const FORM_BUCKET_LABELS: Record<Exclude<FormBucket, "all">, string> = {
   annual_meeting: "Annual Meeting Proxy",
 };
 
-const FORM_BUCKET_ORDER: Exclude<FormBucket, "all">[] = ["ownership", "proxy_contest", "annual_meeting"];
+// Which buckets get a filter pill. "annual_meeting" is deliberately absent —
+// routine DEF 14A/14C proxies aren't worth their own filter here. The bucket
+// itself still exists (classifyForm, the row dot colour), so those filings are
+// still listed and colour-coded under "All"; they just have no pill.
+const FORM_BUCKET_ORDER: Exclude<FormBucket, "all">[] = ["ownership", "proxy_contest"];
 
 const classifyForm = (form: any): Exclude<FormBucket, "all"> | null => {
   if (!form) return null;
@@ -40,6 +44,17 @@ const formatFilingDate = (value: any): string => {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+};
+
+// Sort keys for grouping the table by issuer. Company names arrive in mixed
+// casing ("TripAdvisor, Inc." next to "ALGONQUIN POWER & UTILITIES CORP."), so
+// the comparison is case-insensitive — otherwise the same issuer's filings
+// would scatter depending on how EDGAR happened to spell them.
+const companySortKey = (f: any): string => String(f?.reporting_for || "").trim().toLowerCase();
+
+const filingTime = (f: any): number => {
+  const t = new Date(f?.filing_date).getTime();
+  return Number.isNaN(t) ? 0 : t;
 };
 
 // ─── Per-bucket color coding ────────────────────────────────────────────────
@@ -92,12 +107,29 @@ export const useActivistFilingsFilters = (filings: any[]) => {
     return counts;
   }, [companyFilteredList]);
 
+  // Grouped by company so every filing for the same issuer sits together
+  // instead of being scattered through a date-ordered list. This only reorders
+  // rows — each row object is passed through untouched. Within one company the
+  // newest filing stays on top, which is the order the table used throughout.
+  // .sort() is safe here: .filter() already produced a fresh array, so the
+  // caller's `filings` prop is never mutated.
   const filteredFilings = useMemo(() => {
-    return list.filter((f: any) => {
-      if (formBucket !== "all" && classifyForm(f?.form) !== formBucket) return false;
-      if (company !== "all" && f?.reporting_for !== company) return false;
-      return true;
-    });
+    return list
+      .filter((f: any) => {
+        if (formBucket !== "all" && classifyForm(f?.form) !== formBucket) return false;
+        if (company !== "all" && f?.reporting_for !== company) return false;
+        return true;
+      })
+      .sort((a: any, b: any) => {
+        const ca = companySortKey(a);
+        const cb = companySortKey(b);
+        if (ca !== cb) {
+          if (!ca) return 1; // filings with no issuer name sink to the bottom
+          if (!cb) return -1;
+          return ca.localeCompare(cb);
+        }
+        return filingTime(b) - filingTime(a);
+      });
   }, [list, formBucket, company]);
 
   return {
