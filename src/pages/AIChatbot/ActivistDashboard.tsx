@@ -32,9 +32,8 @@ const GENERATE_MODE = "enhanced" as const;
 // Deliberate product decision (not a bug, not scaffolding): publishing a
 // Basic profile never auto-chains into Advanced generation. Advanced is a
 // real ~20-25 min, non-resumable job, so it only ever starts from an
-// explicit user action — the "Generate Advanced Profile" empty-state prompt
-// in the Advanced tab (see handleGenerateAdvancedFromTab), which this same
-// publishBasicProfile flow lands the user on immediately after publish.
+// explicit user action — "Generate Activist Profile" in the page header,
+// which opens the Generate modal (handleStartGeneration).
 
 // The pipeline writes free-text statuses — "ongoing (second episode) -
 // cooperation period filings", "closed - 13d engagement", "exited (position
@@ -601,14 +600,6 @@ const ActivistIntelligenceDashboard = ({
   const [isSubmittingBasic, setIsSubmittingBasic] = useState(false);
   const [isApprovingBasic, setIsApprovingBasic] = useState(false);
   const [modalBasicResult, setModalBasicResult] = useState<any>(null);
-
-  // "Generate Advanced Profile" from the empty-state prompt inside the
-  // Advanced tab sets generateInvestorName then needs to wait for that state
-  // to actually land before calling handleStartGeneration (which reads
-  // generateInvestorName from its own closure) — mirrors the existing
-  // openGenerateModalSignal/consumedGenerateSignal pattern below.
-  const [advancedTriggerSignal, setAdvancedTriggerSignal] = useState(0);
-  const consumedAdvancedTriggerRef = useRef(0);
 
   // Generation runs server-side, so closing the modal must not stop the job.
   // Holding the poll timer in a ref lets the preview still land once the job
@@ -1373,29 +1364,6 @@ const ActivistIntelligenceDashboard = ({
     handleStartGeneration();
   };
 
-  // "Generate Advanced Profile" from the empty-state prompt inside the
-  // Advanced tab (has_advanced: false, e.g. a Basic-only profile from a
-  // prior "No"). Pre-fills the name then defers to the same effect that
-  // drives the GenerationProgressBar click below, so handleStartGeneration
-  // (unchanged) reads the freshly-set generateInvestorName instead of a
-  // stale closure value.
-  const handleGenerateAdvancedFromTab = () => {
-    const label = profile?.legalName || investorNames[activeInvestorKey] || formatKeyToLabel(activeInvestorKey);
-    setGenerateInvestorName(label);
-    setGenerateError(null);
-    setGenerateModalStep("form");
-    setGenerateModalOpen(true);
-    setAdvancedTriggerSignal((v) => v + 1);
-  };
-
-  useEffect(() => {
-    if (advancedTriggerSignal && advancedTriggerSignal !== consumedAdvancedTriggerRef.current) {
-      consumedAdvancedTriggerRef.current = advancedTriggerSignal;
-      handleStartGeneration();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [advancedTriggerSignal]);
-
   // Optional: Discard a running/completed job
   const handleDiscardJob = async (slug: string) => {
     try {
@@ -1677,7 +1645,6 @@ const ActivistIntelligenceDashboard = ({
   // loadProfileForKey no longer bounces away on a legitimate 404.
   const hasAdvancedProfile = !!profile;
   const hasBasicProfile = !!basicProfile;
-  const isGeneratingAdvancedForActive = isGenerating && slugMatches(slugifyName(generateInvestorName), toBaseSlug(activeInvestorKey));
 
   // What actually renders below: respects the user's Basic/Advanced toggle
   // choice only when both exist; otherwise forces whichever one does (or
@@ -2363,37 +2330,6 @@ const ActivistIntelligenceDashboard = ({
               ) : (
                 <div style={{ padding: 24 }}>
                   <BasicProfilePanel data={basicProfile} loading={basicLoading} error={basicError} />
-
-                  {/* Manual fallback — covers the window before the silent
-                      auto-trigger (see the activeInvestorKey-adjacent effect
-                      above) kicks in, and stays usable if it fails to fire.
-                      Only relevant when Advanced genuinely doesn't exist yet;
-                      hidden when the user toggled to Basic on an investor
-                      that already has both. */}
-                  {!hasAdvancedProfile && (
-                    <div style={{ marginTop: 24, border: "1px dashed #d1d5db", borderRadius: 8, padding: "32px 24px", textAlign: "center", background: "#fafafa" }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 6px" }}>
-                        {isGeneratingAdvancedForActive ? `Generating the Advanced profile for ${displayName}…` : `No Comprehensive profile yet for ${displayName}`}
-                      </p>
-                      <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px" }}>
-                        {isGeneratingAdvancedForActive
-                          ? "This can take a few minutes — you can navigate away, it keeps running in the background."
-                          : "Generate the full comprehensive profile — campaigns, personnel, 13F holdings, and sources."}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleGenerateAdvancedFromTab}
-                        disabled={isGeneratingAdvancedForActive}
-                        style={{
-                          padding: "8px 18px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6,
-                          cursor: isGeneratingAdvancedForActive ? "wait" : "pointer", fontWeight: 600, fontSize: 13,
-                          opacity: isGeneratingAdvancedForActive ? 0.7 : 1,
-                        }}
-                      >
-                        {isGeneratingAdvancedForActive ? "Generating…" : "Generate Comprehensive Profile"}
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
       </div>
