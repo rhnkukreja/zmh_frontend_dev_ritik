@@ -42,6 +42,17 @@ const formatFilingDate = (value: any): string => {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 };
 
+// Sort keys for grouping the table by issuer. Company names arrive in mixed
+// casing ("TripAdvisor, Inc." next to "ALGONQUIN POWER & UTILITIES CORP."), so
+// the comparison is case-insensitive — otherwise the same issuer's filings
+// would scatter depending on how EDGAR happened to spell them.
+const companySortKey = (f: any): string => String(f?.reporting_for || "").trim().toLowerCase();
+
+const filingTime = (f: any): number => {
+  const t = new Date(f?.filing_date).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
 // ─── Per-bucket color coding ────────────────────────────────────────────────
 const THEME_MAROON = "#8b1828";
 
@@ -92,6 +103,8 @@ export const useActivistFilingsFilters = (filings: any[]) => {
     return counts;
   }, [companyFilteredList]);
 
+  // Ordering is handled by companyGroups below — this stays a plain filter,
+  // and drives the "N of M filings" count and the empty-state check.
   const filteredFilings = useMemo(() => {
     return list.filter((f: any) => {
       if (formBucket !== "all" && classifyForm(f?.form) !== formBucket) return false;
@@ -99,6 +112,90 @@ export const useActivistFilingsFilters = (filings: any[]) => {
       return true;
     });
   }, [list, formBucket, company]);
+
+  // One entry per issuer, newest filing first inside each, and the issuers
+  // themselves ordered by their most recent filing — so the companies that
+  // filed most recently sit at the top. Row objects pass through untouched;
+  // this is purely how they're bucketed and ordered. Only meaningful when
+  // "All Companies" is selected — a specific-company filter already narrows
+  // filteredFilings to one issuer, so visibleRows bypasses this below.
+  const companyGroups = useMemo(() => {
+    const groups = new Map<string, { key: string; company: string; filings: any[] }>();
+
+    filteredFilings.forEach((f: any) => {
+      // Keyed case-insensitively: EDGAR spells the same issuer both
+      // "ALGONQUIN POWER & UTILITIES CORP." and "Algonquin Power & Utilities
+      // Corp.", and those must land in one group, not two.
+      const key = companySortKey(f) || " unnamed";
+      let group = groups.get(key);
+      if (!group) {
+        group = { key, company: f?.reporting_for || "—", filings: [] };
+        groups.set(key, group);
+      }
+      group.filings.push(f);
+    });
+
+    return Array.from(groups.values())
+      .map((g) => {
+        const filings = [...g.filings].sort((a, b) => filingTime(b) - filingTime(a));
+        return { ...g, filings, latest: filingTime(filings[0]) };
+      })
+      .sort((a, b) => b.latest - a.latest);
+  }, [filteredFilings]);
+
+  // Which issuers the user has opened. Keyed by the same case-insensitive key
+  // as the groups, so it survives re-filtering.
+  const [expandedCompanies, setExpandedCompanies] = useState<Record<string, boolean>>({});
+  const toggleCompany = (key: string) =>
+    setExpandedCompanies((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  // Flattened to what the table actually draws: every group's newest filing,
+  // plus the rest of that group's filings only while it's expanded. Both
+  // variants render from this, so they can't drift apart.
+  //
+  // Grouping only applies under "All Companies" — once a specific company is
+  // picked via CompanyFilterDropdown, filteredFilings already contains just
+  // that one issuer, so collapsing it behind a "+N" pill would hide filings
+  // the user explicitly asked to see. Render those flat instead, in their
+  // existing (unsorted) order.
+  const visibleRows = useMemo(() => {
+    if (company !== "all") {
+      return filteredFilings.map((f: any, idx: number) => ({
+        f,
+        key: f?.accession || `${company}-${idx}`,
+        companyKey: company,
+        isParent: true,
+        hiddenCount: 0,
+        expanded: false,
+      }));
+    }
+
+    const rows: {
+      f: any;
+      key: string;
+      companyKey: string;
+      isParent: boolean;
+      hiddenCount: number;
+      expanded: boolean;
+    }[] = [];
+
+    companyGroups.forEach((g) => {
+      const expanded = !!expandedCompanies[g.key];
+      g.filings.forEach((f: any, idx: number) => {
+        if (idx > 0 && !expanded) return;
+        rows.push({
+          f,
+          key: f?.accession || `${g.key}-${idx}`,
+          companyKey: g.key,
+          isParent: idx === 0,
+          hiddenCount: idx === 0 ? g.filings.length - 1 : 0,
+          expanded,
+        });
+      });
+    });
+
+    return rows;
+  }, [company, filteredFilings, companyGroups, expandedCompanies]);
 
   return {
     formBucket,
@@ -109,6 +206,8 @@ export const useActivistFilingsFilters = (filings: any[]) => {
     formBucketCounts,
     totalCount: companyFilteredList.length,
     filteredFilings,
+    visibleRows,
+    toggleCompany,
   };
 };
 
@@ -371,6 +470,8 @@ const ActivistFilingsTable = ({
     formBucketCounts,
     totalCount,
     filteredFilings,
+    visibleRows,
+    toggleCompany,
   } = useActivistFilingsFilters(filings);
 
   if (totalCount === 0) {
@@ -436,19 +537,22 @@ const ActivistFilingsTable = ({
                   <th className="px-3 py-2 font-bold">Form &amp; File</th>
                   <th className="px-3 py-2 font-bold">Filed</th>
                   <th className="px-3 py-2 font-bold">Company</th>
+                  {/* Expand/collapse control — no visible header label. */}
+                  <th className="px-3 py-2 w-12" />
                 </tr>
               </thead>
               <tbody>
-                {filteredFilings.map((f: any, i: number) => {
+                {visibleRows.map((row) => {
+                  const f = row.f;
                   const bucket = classifyForm(f?.form);
                   return (
                     <tr
-                      key={f.accession || i}
+                      key={row.key}
                       className={`border-b border-slate-100 last:border-0 align-top hover:bg-red-50/40 transition-colors ${
-                        i % 2 === 1 ? "bg-slate-50/60" : "bg-white"
+                        row.isParent ? "bg-white" : "bg-slate-50/60"
                       }`}
                     >
-                      <td className="px-3 py-2">
+                      <td className={`px-3 py-2 ${row.isParent ? "" : "pl-8"}`}>
                         <div className="flex items-start gap-2">
                           <span
                             className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
@@ -470,10 +574,28 @@ const ActivistFilingsTable = ({
                       </td>
                       <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{formatFilingDate(f.filing_date)}</td>
                       <td
-                        className="px-3 py-2 text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis max-w-[220px]"
+                        className={`px-3 py-2 whitespace-nowrap overflow-hidden text-ellipsis max-w-[220px] ${
+                          row.isParent ? "text-slate-800" : "text-slate-400"
+                        }`}
                         title={f.reporting_for}
                       >
                         {f.reporting_for || "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {row.isParent && row.hiddenCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => toggleCompany(row.companyKey)}
+                            aria-expanded={row.expanded}
+                            title={`${row.expanded ? "Hide" : "Show"} ${row.hiddenCount} more filing${
+                              row.hiddenCount === 1 ? "" : "s"
+                            } for ${f.reporting_for || "this company"}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                          >
+                            <Lucide icon={row.expanded ? "Minus" : "Plus"} className="w-3 h-3" />
+                            {row.hiddenCount}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -539,9 +661,11 @@ const ActivistFilingsTable = ({
                   { label: "Form & File", align: "left" },
                   { label: "Filed", align: "left" },
                   { label: "Company", align: "left" },
+                  // Expand/collapse control — no visible header label.
+                  { label: "", align: "right" },
                 ].map((h) => (
                   <th
-                    key={h.label}
+                    key={h.label || "expand"}
                     style={{
                       padding: "12px 16px",
                       fontSize: 11,
@@ -559,14 +683,15 @@ const ActivistFilingsTable = ({
               </tr>
             </thead>
             <tbody>
-              {filteredFilings.map((f: any, i: number) => {
+              {visibleRows.map((row, i: number) => {
+                const f = row.f;
                 const bucket = classifyForm(f?.form);
-                const rowBaseBg = i % 2 === 1 ? "#fafafa" : "#fff";
+                const rowBaseBg = row.isParent ? "#fff" : "#fafafa";
                 return (
                   <tr
-                    key={f.accession || i}
+                    key={row.key}
                     style={{
-                      borderBottom: i !== filteredFilings.length - 1 ? "1px solid #f3f4f6" : "none",
+                      borderBottom: i !== visibleRows.length - 1 ? "1px solid #f3f4f6" : "none",
                       verticalAlign: "top",
                       background: rowBaseBg,
                       transition: "background-color 0.15s ease",
@@ -574,7 +699,7 @@ const ActivistFilingsTable = ({
                     onMouseEnter={(e) => (e.currentTarget.style.background = "#fdf2f4")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = rowBaseBg)}
                   >
-                    <td style={{ padding: "12px 16px" }}>
+                    <td style={{ padding: "12px 16px", paddingLeft: row.isParent ? 16 : 40 }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                         <span
                           style={{
@@ -610,7 +735,7 @@ const ActivistFilingsTable = ({
                       style={{
                         padding: "12px 16px",
                         fontSize: 13,
-                        color: "#111827",
+                        color: row.isParent ? "#111827" : "#9ca3af",
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -619,6 +744,34 @@ const ActivistFilingsTable = ({
                       title={f.reporting_for}
                     >
                       {f.reporting_for || "—"}
+                    </td>
+                    <td style={{ padding: "12px 16px", textAlign: "right" }}>
+                      {row.isParent && row.hiddenCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleCompany(row.companyKey)}
+                          aria-expanded={row.expanded}
+                          title={`${row.expanded ? "Hide" : "Show"} ${row.hiddenCount} more filing${
+                            row.hiddenCount === 1 ? "" : "s"
+                          } for ${f.reporting_for || "this company"}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            border: "1px solid #e5e7eb",
+                            background: "#fff",
+                            color: "#6b7280",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <Lucide icon={row.expanded ? "Minus" : "Plus"} className="w-3 h-3" />
+                          {row.hiddenCount}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
