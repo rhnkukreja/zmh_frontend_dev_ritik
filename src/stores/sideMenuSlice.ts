@@ -109,12 +109,6 @@ const initialState: any = {
       title: "Shareholder Proposals",
     },
     {
-      icon: "Megaphone",
-      pathname: "/activist-campaigns-summary",
-      title: "Total Campaigns Covered",
-      badge: "Beta",
-    },
-    {
       icon: "UserRound",
       pathname: "/proxy-contest?tab=activist_profile",
       title: "Activist Profile",
