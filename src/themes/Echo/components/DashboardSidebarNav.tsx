@@ -370,7 +370,7 @@ const DashboardSidebarNav = ({
                 handleSectionClick(section);
               }}
               className={clsx([
-                "side-menu__link",
+                "side-menu__link relative",
                 { "side-menu__link--active": resolvedIsActive },
                 isDisabled && "pointer-events-none cursor-not-allowed opacity-50",
               ])}
@@ -391,7 +391,7 @@ const DashboardSidebarNav = ({
               <div className="side-menu__link__title link_color flex items-center gap-1.5">
                 <span>{section.label}</span>
                 {section.beta && (
-                  <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary shadow-sm">
+                  <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
                     BETA
                   </span>
                 )}
