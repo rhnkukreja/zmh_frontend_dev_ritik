@@ -119,7 +119,6 @@ import CaseStudiesAI from "@/pages/CaseStudiesAI";
 import ProxyContestAI from "@/pages/ProxyContestAI";
 
 import ActivistIntelligenceDashboard from "../pages/AIChatbot/ActivistDashboard";
-import ActivistCampaignsSummary from "../pages/AIChatbot/ActivistCampaignsSummary";
 
 const ProtectedLayout = withAuth(Layout);
 const ProtectedAiChatbot = withAuth(() => <ChatProvider><AiChatbot /></ChatProvider>);
@@ -571,11 +570,6 @@ function Router() {
           path: "proxy-contest-detail/:companyId",
           element: <ProxyContestDetail />,
           data: { titleName: "Proxy Contest Details - ZMH Analytics" },
-        },
-        {
-          path: "activist-campaigns-summary",
-          element: <ActivistCampaignsSummary />,
-          data: { titleName: "Total Campaigns Covered - ZMH Analytics" },
         },
           {
             path: "custom-reports",
