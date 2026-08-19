@@ -1114,6 +1114,7 @@ export default function CompanyOverview() {
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const lastRequestedYearRef = useRef<string>("");
+  const prefetchedOverviewYearsRef = useRef<string>("");
   const isCompanyYearsLoadingRef = useRef(false);
 
   // Active sub-tab is now driven by the Koyfin-style sidebar (Redux) instead
@@ -1198,6 +1199,26 @@ export default function CompanyOverview() {
   }, [companyGlobalSearchId]);
 
   useEffect(() => {
+    if (!companyGlobalSearchId || availableYears.length === 0) return;
+
+    const prefetchKey = `${companyGlobalSearchId}:${availableYears.join(",")}`;
+    if (prefetchedOverviewYearsRef.current === prefetchKey) {
+      return;
+    }
+    prefetchedOverviewYearsRef.current = prefetchKey;
+
+    void Promise.all(
+      availableYears.map((year) =>
+        dashboardService.getCompanyOverview(
+          `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${year}`
+        ).catch((error) => {
+          console.error(`Failed to prefetch company overview for year ${year}:`, error);
+        })
+      )
+    );
+  }, [companyGlobalSearchId, availableYears]);
+
+  useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
     if (isCompanyYearsLoadingRef.current) return;
     if (availableYears.length > 0 && !availableYears.includes(selectedYear)) return;
@@ -1222,7 +1243,7 @@ export default function CompanyOverview() {
     //     )
     //   );
     // }
-  }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs]);
+  }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs, availableYears]);
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {

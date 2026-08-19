@@ -69,6 +69,15 @@ class ReportsService {
       throw error;
     }
   }
+
+  public async downloadCompanyReport(ticker: string): Promise<Blob> {
+    const normalizedTicker = ticker.toUpperCase();
+    const response = await axiosInstance.get(
+      `/company_report/?ticker=${encodeURIComponent(normalizedTicker)}&download=true`,
+      { responseType: "blob" }
+    );
+    return response.data as Blob;
+  }
 }
 
 // ── In-memory cache for GovernanceProfileService (clears on page refresh) ────

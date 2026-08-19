@@ -64,6 +64,16 @@ const STATUS_LABEL_MAP = {
 /** Statuses meaning "this campaign has not concluded". */
 const LIVE_STATUS_KEYS = ["open", "ongoing", "active"];
 
+/**
+ * Display names for the profile-view toggle. The underlying ids stay
+ * "basic"/"advanced" — the API routes, cache keys and every branch on
+ * effectiveProfileView key off those, so only the visible label changes here.
+ */
+const PROFILE_VIEW_LABELS = {
+  basic: "Condensed",
+  advanced: "Comprehensive",
+} as const;
+
 /** A single in-flight generation job, as returned by GET /generate/active */
 type ActiveGenerationJob = {
   slug: string;
@@ -90,13 +100,18 @@ const statusKey = (status: any) =>
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// SEC figures are US dollars and must group US-style. Left to the browser's
+// default locale, an en-IN machine renders 266000 as "2,66,000" (lakh/crore
+// grouping), so the locale is pinned rather than inherited.
+const NUMBER_LOCALE = "en-US";
+
 const formatUSD = (thousands: any) => {
   if (!thousands) return "N/A";
   const val = Number(thousands) * 1000;
   if (val >= 1e12) return `$${(val / 1e12).toFixed(2)}T`;
   if (val >= 1e9)  return `$${(val / 1e9).toFixed(2)}B`;
   if (val >= 1e6)  return `$${(val / 1e6).toFixed(0)}M`;
-  return `$${val.toLocaleString()}`;
+  return `$${val.toLocaleString(NUMBER_LOCALE)}`;
 };
 
 const formatLargeUSD = (value: any) => {
@@ -104,7 +119,7 @@ const formatLargeUSD = (value: any) => {
   const numValue = Number(value);
   if (numValue >= 1e9)  return `$${(numValue / 1e9).toFixed(2)}B`;
   if (numValue >= 1e6)  return `$${(numValue / 1e6).toFixed(0)}M`;
-  return `$${numValue.toLocaleString()}`;
+  return `$${numValue.toLocaleString(NUMBER_LOCALE)}`;
 };
 
 // The pipeline sometimes fills fields (notes, outcomes, nominee lists, public
@@ -682,11 +697,27 @@ const ActivistIntelligenceDashboard = ({
           },
         };
       });
+
+      // The Basic copy of the name has to move too. displayName reads
+      //   profile?.legalName || basicProfile?.investor_name || investorNames[key]
+      // so on a Basic-only investor (no Advanced `profile` object, which makes
+      // the setProfile call below a no-op) the header would fall through to the
+      // stale basicProfile.investor_name and snap straight back to the old
+      // name — a successful save that looks like it silently failed. The cache
+      // is keyed by base slug, so a later cache hit doesn't regress it either.
+      const baseSlug = toBaseSlug(key);
+      setBasicProfilesCache((prev) => {
+        const existing = prev[baseSlug];
+        if (!existing) return prev;
+        return { ...prev, [baseSlug]: { ...existing, investor_name: trimmed } };
+      });
+
       if (key === activeInvestorKey) {
         setProfile((prev: any) => (prev ? { ...prev, legalName: trimmed } : prev));
         setRawProfile((prev: any) =>
           prev ? { ...prev, activist_investor_summary: { ...(prev.activist_investor_summary || {}), legal_name: trimmed } } : prev
         );
+        setBasicProfile((prev: any) => (prev ? { ...prev, investor_name: trimmed } : prev));
       }
       setEditingNameKey(null);
       setLegalNameDraft("");
@@ -1650,17 +1681,37 @@ const ActivistIntelligenceDashboard = ({
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               {editingNameKey === activeInvestorKey ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <input
-                    autoFocus
-                    value={legalNameDraft}
-                    onChange={(e) => setLegalNameDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") saveLegalName(activeInvestorKey);
-                      if (e.key === "Escape") cancelEditLegalName();
+                  {/* The frame lives on this wrapper, not the input: a global
+                      reset in app.css (`div[class*="select"] input`) forces
+                      background/border off any input nested under a class
+                      containing "select" — Tailwind's `select-none` included —
+                      which is why this field used to render as unreadable dark
+                      text straight on the maroon bar. The wrapper is a div, so
+                      that rule can't touch it. */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      background: "rgba(255,255,255,0.16)",
+                      border: "1px solid rgba(255,255,255,0.55)",
+                      borderRadius: 4,
+                      padding: "3px 8px",
+                      opacity: isSavingLegalName ? 0.6 : 1,
                     }}
-                    disabled={isSavingLegalName}
-                    style={{ fontSize: 16, fontWeight: 600, padding: "4px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.5)", outline: "none", minWidth: 240, background: "rgba(255,255,255,0.95)", color: "#111827" }}
-                  />
+                  >
+                    <input
+                      autoFocus
+                      value={legalNameDraft}
+                      onChange={(e) => setLegalNameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveLegalName(activeInvestorKey);
+                        if (e.key === "Escape") cancelEditLegalName();
+                      }}
+                      disabled={isSavingLegalName}
+                      className="investor-rename-input"
+                      style={{ fontSize: 16, fontWeight: 600, padding: 0, border: "none", outline: "none", minWidth: 240, background: "transparent", color: "#fff" }}
+                    />
+                  </div>
                   <button type="button" onClick={() => saveLegalName(activeInvestorKey)} disabled={isSavingLegalName} title="Save" style={{ background: "transparent", border: "none", cursor: isSavingLegalName ? "wait" : "pointer", color: "white", padding: 4, display: "inline-flex" }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                   </button>
@@ -1902,13 +1953,13 @@ const ActivistIntelligenceDashboard = ({
                   onClick={() => setProfileViewMode(mode)}
                   style={{
                     padding: "6px 16px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "none",
-                    cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s",
+                    cursor: "pointer", transition: "all 0.15s",
                     background: effectiveProfileView === mode ? "#fff" : "transparent",
                     color: effectiveProfileView === mode ? THEME_MAROON : "#6b7280",
                     boxShadow: effectiveProfileView === mode ? "0 1px 2px rgba(0,0,0,0.08)" : "none",
                   }}
                 >
-                  {mode}
+                  {PROFILE_VIEW_LABELS[mode]}
                 </button>
               ))}
             </div>
@@ -2160,7 +2211,7 @@ const ActivistIntelligenceDashboard = ({
                   <tbody>
                     {profile.snapshot.holdings.map((h: any, i: number) => {
                       const sharesRaw = h.shares_or_principal;
-                      const sharesDisplay = typeof sharesRaw === "number" ? sharesRaw.toLocaleString() : sharesRaw ? String(sharesRaw).replace(/\s*shares/gi, '') : "N/A";
+                      const sharesDisplay = typeof sharesRaw === "number" ? sharesRaw.toLocaleString(NUMBER_LOCALE) : sharesRaw ? String(sharesRaw).replace(/\s*shares/gi, '') : "N/A";
                       return (
                         <tr key={i} style={{ borderBottom: i !== profile.snapshot.holdings.length - 1 ? "1px solid #f3f4f6" : "none" }}>
                           <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: "#111827" }}>{h.issuer}</td>
