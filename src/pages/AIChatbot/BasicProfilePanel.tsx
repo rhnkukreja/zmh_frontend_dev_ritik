@@ -46,15 +46,6 @@ const formatDate = (value: any) => {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 };
 
-const getDomain = (url: any): string | null => {
-  if (typeof url !== "string" || !url) return null;
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-};
-
 const ABBREVIATIONS = /\b(?:[A-Z]|U\.S|Inc|Corp|Ltd|L\.P|LLC|Co|St|Mr|Mrs|Ms|Dr|vs|etc)\.$/;
 
 const splitIntoSentences = (text: string): string[] => {
@@ -216,54 +207,56 @@ const SectionCard = ({
   );
 };
 
-// Some links come back from the API under a generic label (the X/Twitter link
-// arrives as "Website"), so a recognised social domain always supplies its own
-// name instead of whatever the payload said.
-const DOMAIN_LABELS: Array<[string, string]> = [
-  ["twitter.com", "Twitter"],
-  ["x.com", "Twitter"],
-];
+// Company website / LinkedIn / etc. — a collapsible list of the raw URLs, one
+// per row, embedded inline under the WhaleWisdom summary rather than as its
+// own SectionCard. The anchor text is the full URL rather than a title, so
+// the destination is visible without hovering; the same URL arriving twice
+// from the API collapses into a single row.
+const RelevantLinksList = ({ links }: { links: any[] }) => {
+  const [open, setOpen] = useState(true);
 
-const getLinkLabel = (link: any, domain: string | null): string => {
-  const known =
-    domain && DOMAIN_LABELS.find(([d]) => domain === d || domain.endsWith("." + d));
-  if (known) return known[1];
-  return link?.label || link?.title || link?.name || link?.type || domain || "Link";
-};
-
-// Company website / LinkedIn / etc. — same external-link-list visual pattern
-// as the 13D/13G and Shareholder Letters lists below, embedded inline under
-// the WhaleWisdom summary rather than as its own SectionCard.
-const FirmLinksList = ({ links }: { links: any[] }) => {
   if (!Array.isArray(links) || links.length === 0) return null;
 
+  const urls: string[] = [];
+  links.forEach((link: any) => {
+    const raw = link?.url || link?.link;
+    const url = typeof raw === "string" ? raw.trim() : "";
+    if (url && !urls.includes(url)) urls.push(url);
+  });
+  if (urls.length === 0) return null;
+
   return (
-    <div className="mt-4 pt-4 border-t border-slate-100">
-      <h4 className="text-sm font-bold text-slate-800 mb-3">Company Links</h4>
-      <ul className="p-0 m-0 list-none flex flex-row flex-wrap gap-x-6 gap-y-3">
-        {links.map((link: any, i: number) => {
-          const url = link?.url || link?.link;
-          const domain = getDomain(url);
-          const label = getLinkLabel(link, domain);
-          return (
+    <div className="border-t border-slate-100 mt-4 -mx-6 px-6">
+      <div
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center justify-between py-4 cursor-pointer hover:bg-slate-50 transition-all"
+      >
+        <div className="flex items-center gap-2">
+          <Lucide icon="Link" className="w-5 h-5 text-red-800" />
+          <h4 className="text-sm font-bold text-slate-800">Relevant Links</h4>
+        </div>
+        <Lucide
+          icon="ChevronDown"
+          className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
+        />
+      </div>
+      {open && (
+        <ul className="p-0 m-0 pb-4 list-none flex flex-col gap-2">
+          {urls.map((url: string, i: number) => (
             <li key={i} className="flex items-start">
               <span className="text-red-800 mr-2 text-base leading-none">▸</span>
-              <div className="min-w-0">
-                <p className="text-sm text-slate-600 m-0 leading-relaxed">
-                  {url ? (
-                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-medium hover:underline">
-                      {label}
-                    </a>
-                  ) : (
-                    <span className="font-medium">{label}</span>
-                  )}
-                </p>
-                {domain && <p className="text-xs text-slate-400 m-0 mt-1">{domain}</p>}
-              </div>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="min-w-0 text-sm text-blue-700 no-underline font-medium hover:underline break-all leading-relaxed"
+              >
+                {url}
+              </a>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
@@ -342,7 +335,7 @@ const OverviewSection = ({ section }: { section: any }) => {
       <BulletList heading="Owners" items={section.owners} boxed />
       <BulletList heading="Known Email Addresses" items={section.known_email_addresses} />
 
-      <FirmLinksList links={section.firm_links} />
+      <RelevantLinksList links={section.firm_links} />
 
 
       {section.adv_brochure_url && (
@@ -656,12 +649,10 @@ const BasicProfilePanel = ({
         </div>
       )}
 
-      <div>
-        <p className="text-xs text-slate-500">
-          Last updated: {formatDate(data.generated_at) || "—"}
-          {loading && <span className="ml-2 text-slate-400">(refreshing…)</span>}
-        </p>
-      </div>
+      {/* "Last updated" moved to the dashboard header pill (ActivistDashboard)
+          so it isn't stated twice on the same screen; the refreshing hint stays
+          here, where the sections it applies to are. */}
+      {loading && <p className="text-xs text-slate-400 m-0">Refreshing…</p>}
 
       <OverviewSection section={sections.whalewisdom_overview} />
       <HoldingsSection section={sections.current_13f_holdings} />
