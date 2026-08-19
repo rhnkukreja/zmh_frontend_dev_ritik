@@ -307,12 +307,15 @@ const OverviewSection = ({ section }: { section: any }) => {
 
   return (
     <SectionCard title="Investor Overview" icon="Globe" collapsible>
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
-        {section.region && <Badge label="Region" value={section.region} />}
-        {section.proxy_influence && <Badge label="Proxy Influence" value={section.proxy_influence} />}
-        {/* {section.sec_number && <Badge label="SEC #" value={section.sec_number} />} */}
-        {section.cik_number && <Badge label="CIK" value={section.cik_number} />}
-      </div>
+      {/* Region and CIK badges removed — the region is already stated in the
+          overview text below, and the CIK number is not something this view
+          needs to lead with. The row only renders now when a profile actually
+          carries a proxy-influence rating. */}
+      {section.proxy_influence && (
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <Badge label="Proxy Influence" value={section.proxy_influence} />
+        </div>
+      )}
 
       <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
         {renderTextAsBullets(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
