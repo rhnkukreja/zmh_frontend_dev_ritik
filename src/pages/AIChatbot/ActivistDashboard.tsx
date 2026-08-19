@@ -127,7 +127,7 @@ const formatLargeUSD = (value: any) => {
 // — "None stated.", "Not disclosed", "N/A", etc. Showing that text reads as
 // real information when it isn't, so treat it the same as no value everywhere
 // it can appear and render nothing instead.
-const PLACEHOLDER_TEXT_RE = /\b(not\s+(stated|disclosed|available|recorded|found|applicable|specified|provided|listed|identified|indicated|named|given|reported)|none\s+(stated|disclosed|available|recorded|found|applicable|specified|provided|listed|identified|indicated|named|given|reported|noted)|n\/a|unknown)\b/i;
+const PLACEHOLDER_TEXT_RE = /\b(not\s+(stated|disclosed|available|recorded|found|applicable|specified|provided|listed|identified|indicated|named|given|reported|captured)|none\s+(stated|disclosed|available|recorded|found|applicable|specified|provided|listed|identified|indicated|named|given|reported|noted)|n\/a|unknown|tbd)\b/i;
 const isMeaningfulText = (text: any) =>
   typeof text === "string" &&
   text.trim().length > 0 &&
@@ -1933,11 +1933,11 @@ const ActivistIntelligenceDashboard = ({
               tab, unlike the summary narrative which now lives in its own tab.
               Advanced-profile-only fields — nothing shown here for a Basic-only
               investor (BasicProfilePanel below has its own region/overview info). */}
-          {(profile?.hq || profile?.founded || profile?.founderOrLead) && (
+          {(isMeaningfulText(profile?.hq) || isMeaningfulText(profile?.founded) || isMeaningfulText(profile?.founderOrLead)) && (
             <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: 0, fontSize: 12, color: "#6b7280" }}>
-              {profile.hq && <span>{profile.hq}</span>}
-              {profile.founded && <span>Founded {profile.founded}</span>}
-              {profile.founderOrLead && <span>Led by {profile.founderOrLead}</span>}
+              {isMeaningfulText(profile.hq) && <span>{profile.hq}</span>}
+              {isMeaningfulText(profile.founded) && <span>Founded {profile.founded}</span>}
+              {isMeaningfulText(profile.founderOrLead) && <span>Led by {profile.founderOrLead}</span>}
             </div>
           )}
         </div>
