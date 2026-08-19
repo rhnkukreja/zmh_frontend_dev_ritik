@@ -56,8 +56,10 @@ interface SectionDef {
   preserveActiveSection?: boolean;
   // Optional count badge key pulled from modulesData.
   countKey?: "case_studies" | "engagement_details" | "shareholder_proposal" | "activist_filings";
-  // Keep the item visible even when the count is zero, but disable it.
-  disabledWhenEmpty?: boolean;
+  // Hide the item entirely when the count is zero.
+  hideWhenEmpty?: boolean;
+  // Render a small BETA badge next to the label.
+  beta?: boolean;
 }
 
 // Koyfin-style navigation for the main dashboard.
@@ -160,7 +162,8 @@ const BASE_SECTIONS: SectionDef[] = [
     route: "/activist-filings?source=company",
     preserveActiveSection: true,
     countKey: "activist_filings",
-    disabledWhenEmpty: true,
+    hideWhenEmpty: true,
+    beta: true,
   },
   {
     key: "investor-overview",
@@ -245,7 +248,10 @@ const DashboardSidebarNav = ({
     // except for sections that should stay visible but disabled.
     if (s.countKey) {
       const count = modulesData?.[s.countKey];
-      if (!count && !s.disabledWhenEmpty) {
+      if ((!count || count <= 0) && s.hideWhenEmpty) {
+        return false;
+      }
+      if (!count && !s.hideWhenEmpty) {
         return false;
       }
     }
@@ -324,7 +330,7 @@ const DashboardSidebarNav = ({
         const hasSubs = visibleSubItems.length > 0;
         const countValue = section.countKey ? Number(modulesData?.[section.countKey]) : null;
         const hasCountValue = countValue !== null && Number.isFinite(countValue);
-        const isDisabled = Boolean(section.disabledWhenEmpty && countValue === 0);
+        const isDisabled = false;
 
         const isCompanyGroup = section.group === "Company";
         const isGroupExpanded = isCompanyGroup
@@ -371,7 +377,7 @@ const DashboardSidebarNav = ({
             >
               <span className="relative">
                 <Icon className="side-menu__link__icon w-[18px] h-[18px]" />
-                {hasCountValue && section.countKey !== "activist_filings" && (countValue! > 0 || section.disabledWhenEmpty) && (
+                {hasCountValue && section.countKey !== "activist_filings" && (countValue! > 0 || section.hideWhenEmpty) && (
                   <span
                     className={clsx([
                       "absolute rounded-full min-w-[16px] h-4 px-1 text-[9px] font-semibold text-white -top-1.5 left-2.5 flex items-center justify-center",
@@ -382,8 +388,13 @@ const DashboardSidebarNav = ({
                   </span>
                 )}
               </span>
-              <div className="side-menu__link__title link_color">
-                {section.label}
+              <div className="side-menu__link__title link_color flex items-center gap-1.5">
+                <span>{section.label}</span>
+                {section.beta && (
+                  <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary shadow-sm">
+                    BETA
+                  </span>
+                )}
               </div>
               {hasSubs && (
                 <ChevronRight

@@ -586,10 +586,16 @@ function Main() {
     try {
       const response = await dashboardService.getActivistFilings(companyGlobalSearchId);
       const result = response?.result || response || {};
-      const filingsCount = Number(result?.count ?? (Array.isArray(result?.filings) ? result.filings.length : 0));
+      const filings = Array.isArray(result?.filings) ? result.filings : [];
+      const excludedTypes = ["DEF 14A", "DEFA14A", "PRE 14A"];
+      const relevantCount = filings.filter((filing: any) => {
+        const filingType = String(filing?.["Filing Type"] || "").trim();
+        return filingType && !excludedTypes.includes(filingType);
+      }).length;
+
       setModulesData((prev: any) => ({
         ...prev,
-        activist_filings: Number.isFinite(filingsCount) ? filingsCount : 0,
+        activist_filings: relevantCount,
       }));
     } catch (error) {
       return error;
