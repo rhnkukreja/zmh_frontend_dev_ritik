@@ -133,6 +133,13 @@ const isMeaningfulText = (text: any) =>
   text.trim().length > 0 &&
   !PLACEHOLDER_TEXT_RE.test(text);
 
+// profile.hq arrives either LLM-generated and ungrounded ("San Antonio,
+// Texas, United States") or WhaleWisdom-grounded ("Coconut Creek, FL") — the
+// identity line only wants the city, so take everything before the first
+// comma. No comma at all just means the whole value passes through.
+const extractCity = (hq: any): string =>
+  typeof hq === "string" ? hq.split(",")[0].trim() : "";
+
 /**
  * The investor's real name as shown in the dashboard header. Returns "" (not a
  * placeholder) when the profile has neither field, so callers can decide their
@@ -872,7 +879,7 @@ const ActivistIntelligenceDashboard = ({
         // profile/rawProfile null (already cleared by the effect above) and
         // don't bounce to a different investor or surface a page-level error
         // — the render gate below falls through to the Basic-only content.
-        console.info(`[Advanced Profile] No advanced profile for '${key}' — rendering Basic-only if available.`);
+        console.info(`[Comprehensive Profile] No comprehensive profile for '${key}' — rendering Basic-only if available.`);
       } else {
         console.error(`[Fetch Profile Error] '${key}' not found in S3:`, err);
         failedProfileKeysRef.current.add(key);
@@ -1933,11 +1940,9 @@ const ActivistIntelligenceDashboard = ({
               tab, unlike the summary narrative which now lives in its own tab.
               Advanced-profile-only fields — nothing shown here for a Basic-only
               investor (BasicProfilePanel below has its own region/overview info). */}
-          {(isMeaningfulText(profile?.hq) || isMeaningfulText(profile?.founded) || isMeaningfulText(profile?.founderOrLead)) && (
+          {isMeaningfulText(extractCity(profile?.hq)) && (
             <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: 0, fontSize: 12, color: "#6b7280" }}>
-              {isMeaningfulText(profile.hq) && <span>{profile.hq}</span>}
-              {isMeaningfulText(profile.founded) && <span>Founded {profile.founded}</span>}
-              {isMeaningfulText(profile.founderOrLead) && <span>Led by {profile.founderOrLead}</span>}
+              <span>{extractCity(profile.hq)}</span>
             </div>
           )}
         </div>
@@ -2334,7 +2339,7 @@ const ActivistIntelligenceDashboard = ({
                   {!hasAdvancedProfile && (
                     <div style={{ marginTop: 24, border: "1px dashed #d1d5db", borderRadius: 8, padding: "32px 24px", textAlign: "center", background: "#fafafa" }}>
                       <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 6px" }}>
-                        {isGeneratingAdvancedForActive ? `Generating the Advanced profile for ${displayName}…` : `No Advanced profile yet for ${displayName}`}
+                        {isGeneratingAdvancedForActive ? `Generating the Advanced profile for ${displayName}…` : `No Comprehensive profile yet for ${displayName}`}
                       </p>
                       <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px" }}>
                         {isGeneratingAdvancedForActive
@@ -2351,7 +2356,7 @@ const ActivistIntelligenceDashboard = ({
                           opacity: isGeneratingAdvancedForActive ? 0.7 : 1,
                         }}
                       >
-                        {isGeneratingAdvancedForActive ? "Generating…" : "Generate Advanced Profile"}
+                        {isGeneratingAdvancedForActive ? "Generating…" : "Generate Comprehensive Profile"}
                       </button>
                     </div>
                   )}
@@ -2468,10 +2473,10 @@ const ActivistIntelligenceDashboard = ({
             {generateModalStep === "preview" ? (
               <>
                 <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>
-                  Basic Profile Preview
+                  Condensed Profile Preview
                 </h2>
                 <p style={{ margin: "0 0 16px", color: "#6b7280", fontSize: 13 }}>
-                  Please review the profile — <strong>{modalBasicResult?.investor_name || generateInvestorName}</strong> below, then Approve to publish it or generate the Advanced profile instead.
+                  Please review the profile — <strong>{modalBasicResult?.investor_name || generateInvestorName}</strong> below, then Approve to publish it or generate the Comprehensive profile instead.
                 </p>
 
                 <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, marginBottom: 20 }}>
@@ -2491,7 +2496,7 @@ const ActivistIntelligenceDashboard = ({
                     disabled={isApprovingBasic}
                     style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: isApprovingBasic ? "wait" : "pointer", fontWeight: 600, color: "#374151", opacity: isApprovingBasic ? 0.7 : 1 }}
                   >
-                    Create Advanced Profile Instead
+                    Create Comprehensive Profile Instead
                   </button>
                   <button
                     onClick={handleApproveBasic}
@@ -2552,7 +2557,7 @@ const ActivistIntelligenceDashboard = ({
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                     <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                     <span style={{ fontSize: 12, color: "#374151" }}>
-                      Your Advanced profile creation is in progress. You'll have to wait for a few moments.
+                      Your Comprehensive profile creation is in progress. You'll have to wait for a few moments.
                       <br />
                       <span style={{ color: "#6b7280" }}>Close this window and check back — no need to start another one.</span>
                     </span>

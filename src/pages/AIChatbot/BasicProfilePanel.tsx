@@ -18,6 +18,7 @@ const formatLargeUSD = (value: any) => {
   if (!Number.isFinite(numValue)) return "N/A";
   if (numValue >= 1e9) return `$${(numValue / 1e9).toFixed(2)}B`;
   if (numValue >= 1e6) return `$${(numValue / 1e6).toFixed(0)}M`;
+  if (numValue >= 1e3) return `$${(numValue / 1e3).toFixed(0)}K`;
   return `$${numValue.toLocaleString(NUMBER_LOCALE)}`;
 };
 
@@ -488,18 +489,28 @@ const ActivistFilingsSection = ({ section }: { section: any }) => {
   );
 };
 
-// The API sends a `published_date` on every shareholder-letter result but
-// currently leaves it null, so the only dates actually available are the ones
-// written into the article text itself — PRNewswire datelines ("NEW YORK,
-// March 25, 2022 /PRNewswire/") and stamps like "May 05, 2023, 08:00 ET".
-// `published_date` still wins whenever the backend starts populating it.
+// The API now populates `published_date` on shareholder-letter results when
+// the source page/PDF actually states one, so that field wins first. When
+// it's absent or unparseable (an older/unfetched result), this falls back to
+// scanning the snippet/title text itself for a dateline -- PRNewswire-style
+// month-day-year ("NEW YORK, March 25, 2022 /PRNewswire/", "Aug. 14, 2026",
+// "May 05, 2023, 08:00 ET") and day-month-year ("30 Apr, 2025",
+// "14 Aug 2026") order, full or abbreviated (with-or-without a trailing
+// period) month names -- mirrors basic_profile.py's own _LETTER_DATE_RE on
+// the backend so the two stay in agreement on what counts as a real date.
 //
-// Only a full month-day-year counts. A bare "December 2021" is almost always
-// prose about a holding period ("has been a stockholder since December 2021"),
-// not a publish date, and sorting on it would place rows confidently wrong.
-const MONTH_NAMES =
+// Only a full month-day-year (or day-month-year) counts. A bare "December
+// 2021" is almost always prose about a holding period ("has been a
+// stockholder since December 2021"), not a publish date, and sorting on it
+// would place rows confidently wrong.
+const MONTH_FULL =
   "January|February|March|April|May|June|July|August|September|October|November|December";
-const TEXT_DATE_RE = new RegExp(`\\b(${MONTH_NAMES})\\s+(\\d{1,2}),\\s*(\\d{4})\\b`, "i");
+const MONTH_ABBR = "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec";
+const MONTH_TOKEN = `(?:${MONTH_FULL}|${MONTH_ABBR})\\.?`;
+// Comma between day and year is optional in both orders -- "May 05, 2023"
+// and "May 05 2023" should both count.
+const TEXT_DATE_MDY_RE = new RegExp(`\\b(${MONTH_TOKEN})\\s+(\\d{1,2}),?\\s*(\\d{4})\\b`, "i");
+const TEXT_DATE_DMY_RE = new RegExp(`\\b(\\d{1,2})\\s+(${MONTH_TOKEN})\\s*,?\\s*(\\d{4})\\b`, "i");
 const ISO_DATE_RE = /\b(\d{4})-(\d{2})-(\d{2})\b/;
 
 const getLetterDate = (r: any): Date | null => {
@@ -516,9 +527,15 @@ const getLetterDate = (r: any): Date | null => {
     if (!Number.isNaN(d.getTime())) return d;
   }
 
-  const named = text.match(TEXT_DATE_RE);
-  if (named) {
-    const d = new Date(`${named[1]} ${named[2]}, ${named[3]}`);
+  const mdy = text.match(TEXT_DATE_MDY_RE);
+  if (mdy) {
+    const d = new Date(`${mdy[1]} ${mdy[2]}, ${mdy[3]}`);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+
+  const dmy = text.match(TEXT_DATE_DMY_RE);
+  if (dmy) {
+    const d = new Date(`${dmy[2]} ${dmy[1]}, ${dmy[3]}`);
     if (!Number.isNaN(d.getTime())) return d;
   }
 
@@ -611,7 +628,7 @@ const BasicProfilePanel = ({
           className="w-10 h-10 rounded-full border-4 border-slate-200 animate-spin"
           style={{ borderTopColor: THEME_MAROON }}
         />
-        <p className="text-slate-500 mt-4 text-sm">Generating basic profile…</p>
+        <p className="text-slate-500 mt-4 text-sm">Generating Condensed profile…</p>
       </div>
     );
   }
@@ -625,7 +642,7 @@ const BasicProfilePanel = ({
   }
 
   if (!data) {
-    return <p className="text-sm text-slate-500">No basic profile available yet.</p>;
+    return <p className="text-sm text-slate-500">No Condensed profile available yet.</p>;
   }
 
   const sections = data.sections || {};
