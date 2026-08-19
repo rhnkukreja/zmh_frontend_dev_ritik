@@ -27,8 +27,13 @@ const CURRENT_ENV: EnvType = MANUAL_ENV_OVERRIDE ?? resolveCurrentEnv();
 
 // Derived flag — single source of truth for any local-only vs. production
 // behavioral branching (e.g. the Basic-profile approval-gate bypass in
-// ActivistDashboard.tsx).
-export const IS_LOCAL_ENV = CURRENT_ENV === Environment.LOCAL;
+// ActivistDashboard.tsx). Flip CURRENT_ENV above and this follows.
+// [FIX] "(CURRENT_ENV as string)" so TypeScript doesn't flag this as an
+// impossible comparison — same reason getRequestHeaders' NGROK check below
+// needs the same cast. Without it, this line either won't compile against
+// Environment.LOCAL, or (as it did before) silently gets "fixed" by
+// comparing against PRODUCTION instead, which is backwards.
+export const IS_LOCAL_ENV = (CURRENT_ENV as string) === Environment.LOCAL;
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
