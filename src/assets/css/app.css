@@ -677,3 +677,25 @@ input[type="text"][class*="css-"]:focus {
   box-shadow: none !important;
   border: none !important;
 }
+/* ── Inline firm-rename field (activist profile header) ─────────────────────
+   This input sits on the maroon header bar, so it has to be white-on-maroon.
+   The generic select reset earlier in this file matches it via
+   `div[class*="select"] input` — an ancestor carrying any class containing
+   "select" (Tailwind's `select-none` counts) is enough — and forces a dark
+   caret with !important, which an inline style cannot beat. Same specificity
+   as that rule, declared later, so this wins. */
+input.investor-rename-input {
+  color: #ffffff !important;
+  caret-color: #ffffff !important;
+  background: transparent !important;
+}
+
+input.investor-rename-input::selection {
+  background-color: rgba(255, 255, 255, 0.32) !important;
+  color: #ffffff !important;
+}
+
+input.investor-rename-input::-moz-selection {
+  background-color: rgba(255, 255, 255, 0.32) !important;
+  color: #ffffff !important;
+}

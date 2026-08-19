@@ -244,6 +244,11 @@ class DashboardService {
     return Array.from(new Set(years)).sort((a, b) => b - a);
   }
 
+  public async getActivistFilings(companyId: number | string): Promise<any> {
+    const url = `${baseURL}/api/activist_filed/?company_id=${companyId}`;
+    return await this.fetchWithCache<any>(url);
+  }
+
   public async fetchCaseStudiesTopProxyContext(url: string): Promise<{
     count: number;
     results: any[];

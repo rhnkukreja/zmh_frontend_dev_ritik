@@ -204,7 +204,7 @@ function Main() {
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
   };
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchId, companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -563,7 +563,8 @@ function Main() {
   useEffect(() => {
     getModulesCount();
     getNotificationList();
-  }, [companyGlobalSearchName]);
+    prefetchActivistFilings();
+  }, [companyGlobalSearchName, companyGlobalSearchId]);
 
   const getModulesCount = async () => {
     try {
@@ -571,11 +572,33 @@ function Main() {
         global_search: companyGlobalSearchName,
       });
       if (res?.result) {
-        setModulesData(res?.result);
+        setModulesData((prev: any) => ({ ...prev, ...res.result }));
       }
     } catch (error) {
       return error;
     } finally {
+    }
+  };
+
+  const prefetchActivistFilings = async () => {
+    if (!companyGlobalSearchId) return;
+
+    try {
+      const response = await dashboardService.getActivistFilings(companyGlobalSearchId);
+      const result = response?.result || response || {};
+      const filings = Array.isArray(result?.filings) ? result.filings : [];
+      const excludedTypes = ["DEF 14A", "DEFA14A", "PRE 14A"];
+      const relevantCount = filings.filter((filing: any) => {
+        const filingType = String(filing?.["Filing Type"] || "").trim();
+        return filingType && !excludedTypes.includes(filingType);
+      }).length;
+
+      setModulesData((prev: any) => ({
+        ...prev,
+        activist_filings: relevantCount,
+      }));
+    } catch (error) {
+      return error;
     }
   };
 

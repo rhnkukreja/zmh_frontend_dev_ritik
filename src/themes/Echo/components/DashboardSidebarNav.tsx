@@ -17,6 +17,7 @@ import {
   ClipboardList,
   FileSearch2,
   Files,
+  FileText,
   MessageSquare,
   Network,
   LineChart,
@@ -54,7 +55,11 @@ interface SectionDef {
   // active section (the dashboard has no matching tab for it).
   preserveActiveSection?: boolean;
   // Optional count badge key pulled from modulesData.
-  countKey?: "case_studies" | "engagement_details" | "shareholder_proposal";
+  countKey?: "case_studies" | "engagement_details" | "shareholder_proposal" | "activist_filings";
+  // Hide the item entirely when the count is zero.
+  hideWhenEmpty?: boolean;
+  // Render a small BETA badge next to the label.
+  beta?: boolean;
 }
 
 // Koyfin-style navigation for the main dashboard.
@@ -149,6 +154,18 @@ const BASE_SECTIONS: SectionDef[] = [
     countKey: "shareholder_proposal",
   },
   {
+    key: "company-activist-filings",
+    label: "Activist Filings",
+    icon: FileText,
+    group: "Company",
+    subItems: [],
+    route: "/activist-filings?source=company",
+    preserveActiveSection: true,
+    countKey: "activist_filings",
+    hideWhenEmpty: true,
+    beta: true,
+  },
+  {
     key: "investor-overview",
     label: "Overview",
     icon: BarChart3,
@@ -227,10 +244,16 @@ const DashboardSidebarNav = ({
       const userType = user?.user_type;
       return userType === "Admin" || userType === "Analyst";
     }
-    // Hide count-driven tabs when there is no data for the selected company.
+    // Hide count-driven tabs when there is no data for the selected company,
+    // except for sections that should stay visible but disabled.
     if (s.countKey) {
       const count = modulesData?.[s.countKey];
-      return !!count && count > 0;
+      if ((!count || count <= 0) && s.hideWhenEmpty) {
+        return false;
+      }
+      if (!count && !s.hideWhenEmpty) {
+        return false;
+      }
     }
     return true;
   });
@@ -305,7 +328,9 @@ const DashboardSidebarNav = ({
           (sub) => !sub.adminOnly || user?.user_type === "Admin"
         );
         const hasSubs = visibleSubItems.length > 0;
-        const countValue = section.countKey ? modulesData?.[section.countKey] : null;
+        const countValue = section.countKey ? Number(modulesData?.[section.countKey]) : null;
+        const hasCountValue = countValue !== null && Number.isFinite(countValue);
+        const isDisabled = false;
 
         const isCompanyGroup = section.group === "Company";
         const isGroupExpanded = isCompanyGroup
@@ -338,27 +363,38 @@ const DashboardSidebarNav = ({
             <li>
             <a
               href=""
+              aria-disabled={isDisabled}
               onClick={(e) => {
                 e.preventDefault();
+                if (isDisabled) return;
                 handleSectionClick(section);
               }}
               className={clsx([
                 "side-menu__link",
                 { "side-menu__link--active": resolvedIsActive },
+                isDisabled && "pointer-events-none cursor-not-allowed opacity-50",
               ])}
             >
               <span className="relative">
                 <Icon className="side-menu__link__icon w-[18px] h-[18px]" />
-                {countValue > 0 && (
+                {hasCountValue && section.countKey !== "activist_filings" && (countValue! > 0 || section.hideWhenEmpty) && (
                   <span
-                    className="bg-[#DC661F] absolute rounded-full min-w-[16px] h-4 px-1 text-[9px] font-semibold text-white -top-1.5 left-2.5 flex items-center justify-center"
+                    className={clsx([
+                      "absolute rounded-full min-w-[16px] h-4 px-1 text-[9px] font-semibold text-white -top-1.5 left-2.5 flex items-center justify-center",
+                      countValue > 0 ? "bg-[#DC661F]" : "bg-slate-400",
+                    ])}
                   >
                     {countValue}
                   </span>
                 )}
               </span>
-              <div className="side-menu__link__title link_color">
-                {section.label}
+              <div className="side-menu__link__title link_color flex items-center gap-1.5">
+                <span>{section.label}</span>
+                {section.beta && (
+                  <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary shadow-sm">
+                    BETA
+                  </span>
+                )}
               </div>
               {hasSubs && (
                 <ChevronRight

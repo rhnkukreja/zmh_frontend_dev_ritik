@@ -82,6 +82,7 @@ import PeerAnalysis from "@/pages/PeerAnalysis";
 import AISearchOnly from "../pages/AISearchOnly";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
+import ActivistFilings from "@/pages/ActivistFilings";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
 import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
@@ -484,6 +485,11 @@ function Router() {
           path: "case-studies-ai",
           element: <CaseStudiesAI />,
           data: { titleName: "Case Studies AI - ZMH Analytics" },
+        },
+        {
+          path: "activist-filings",
+          element: <ActivistFilings />,
+          data: { titleName: "Activist Filings - ZMH Analytics" },
         },
         {
           path: "investor-details",
