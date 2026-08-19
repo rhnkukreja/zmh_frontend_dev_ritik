@@ -8,32 +8,8 @@ export const Environment = {
 // Define a type that represents ANY of the values in Environment
 type EnvType = typeof Environment[keyof typeof Environment];
 
-// Derived from the same build-time source as src/config/environment.ts —
-// VITE_ENVIRONMENT (falling back to Vite's own MODE) — so there's no
-// hand-set literal for a human to forget to flip before a production build.
-// 'development' (dev server / preview builds) maps to LOCAL; anything else
-// (including the 'production' from .env.local / the prod build) maps to
-// PRODUCTION.
-const resolveCurrentEnv = (): EnvType => {
-  const raw = String(import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE || 'production').toLowerCase();
-  return raw === 'development' ? Environment.LOCAL : Environment.PRODUCTION;
-};
-
-// ⚠️ Manual override — set to Environment.NGROK to force the ngrok tunnel
-// regardless of VITE_ENVIRONMENT/MODE. Leave null to use the derived value.
-const MANUAL_ENV_OVERRIDE: EnvType | null = null;
-
-const CURRENT_ENV: EnvType = MANUAL_ENV_OVERRIDE ?? resolveCurrentEnv();
-
-// Derived flag — single source of truth for any local-only vs. production
-// behavioral branching (e.g. the Basic-profile approval-gate bypass in
-// ActivistDashboard.tsx). Flip CURRENT_ENV above and this follows.
-// [FIX] "(CURRENT_ENV as string)" so TypeScript doesn't flag this as an
-// impossible comparison — same reason getRequestHeaders' NGROK check below
-// needs the same cast. Without it, this line either won't compile against
-// Environment.LOCAL, or (as it did before) silently gets "fixed" by
-// comparing against PRODUCTION instead, which is backwards.
-export const IS_LOCAL_ENV = (CURRENT_ENV as string) === Environment.LOCAL;
+// ⚠️ CHANGE THIS VARIABLE TO SWITCH ENVIRONMENTS // Options: Environment.LOCAL | Environment.PRODUCTION | Environment.NGROK
+const CURRENT_ENV: EnvType = Environment.PRODUCTION; 
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
@@ -48,6 +24,14 @@ export const getApiBaseUrl = () => {
 
 // Define the Base URL constant
 export const AI_CHATBOT_API_BASE = getApiBaseUrl();
+
+// Whether the app is pointed at the LOCAL backend. Derived from the CURRENT_ENV
+// switch above so environments are flipped in exactly one place, rather than
+// from import.meta.env (which would report "local" whenever the dev server is
+// running, even while it talks to the production API).
+// The `as string` cast mirrors getRequestHeaders(): without it TS narrows this
+// const to the literal it was initialized with and rejects the comparison.
+export const IS_LOCAL_ENV = (CURRENT_ENV as string) === Environment.LOCAL;
 
 console.log(`[App Config] Environment: ${CURRENT_ENV}`);
 console.log(`[App Config] API Base: ${AI_CHATBOT_API_BASE}`);
