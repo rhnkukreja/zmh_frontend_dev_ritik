@@ -7,6 +7,7 @@ import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import BasicProfilePanel from "@/pages/AIChatbot/BasicProfilePanel";
 import ActivistFilingsTable from "@/pages/AIChatbot/ActivistFilingsTable";
+import { DeleteConfirmationModal } from "@/components/DeleteModal";
 
 // ─── Module-level cache (survives tab switches, clears on page refresh) ───────
 const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -671,6 +672,10 @@ const ActivistIntelligenceDashboard = ({
   const [legalNameDraft, setLegalNameDraft] = useState("");
   const [isSavingLegalName, setIsSavingLegalName] = useState(false);
 
+  // Admin-only delete of the active profile.
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingProfile, setIsDeletingProfile] = useState(false);
+
   const startEditLegalName = (key: string, currentLabel: string) => {
     setEditingNameKey(key);
     setLegalNameDraft(currentLabel);
@@ -733,6 +738,56 @@ const ActivistIntelligenceDashboard = ({
       setError("Failed to rename the firm.");
     } finally {
       setIsSavingLegalName(false);
+    }
+  };
+
+  // Deletes the currently active profile (admin-only — the button that
+  // triggers this is gated on isAdmin, and the backend independently
+  // rejects the call for a non-admin X-User-Type). Handles both slug shapes
+  // the dropdown can hand us: an advanced-profile key ("x-profile") or a
+  // bare basic-only key ("x") — see delete_investor_profile's docstring.
+  const handleDeleteActiveProfile = async () => {
+    if (!activeInvestorKey || isDeletingProfile) return;
+    const deletedKey = activeInvestorKey;
+    setIsDeletingProfile(true);
+    try {
+      await axios.delete(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${deletedKey}`, {
+        headers: { "X-User-Type": user?.user_type || "" },
+      });
+
+      setIsDeleteModalOpen(false);
+      toast.success(`${displayName} profile deleted.`);
+
+      // Drop it from every cache it could be sitting in, then land on
+      // whatever profile remains (mirrors fetchAllProfiles' own fallback:
+      // first remaining key, or empty if that was the last one).
+      setProfilesCache((prev) => {
+        const { [deletedKey]: _omit, ...rest } = prev;
+        return rest;
+      });
+      const baseSlug = toBaseSlug(deletedKey);
+      setBasicProfilesCache((prev) => {
+        const { [baseSlug]: _omit, ...rest } = prev;
+        return rest;
+      });
+      setInvestorNames((prev) => {
+        const { [deletedKey]: _omit, ...rest } = prev;
+        return rest;
+      });
+
+      const remainingKeys = investorKeys.filter((k) => k !== deletedKey);
+      setInvestorKeys(remainingKeys);
+      setActiveInvestorKey(remainingKeys[0] || "");
+      if (!remainingKeys.length) {
+        setProfile(null);
+        setRawProfile(null);
+        setBasicProfile(null);
+      }
+    } catch (err: any) {
+      console.error("Failed to delete profile:", err);
+      toast.error(err.response?.data?.detail || "Failed to delete the profile.");
+    } finally {
+      setIsDeletingProfile(false);
     }
   };
 
@@ -1296,7 +1351,7 @@ const ActivistIntelligenceDashboard = ({
     } catch (err: any) {
       console.error("Basic preview generation failed:", err);
       setGenerateError(
-        err.response?.data?.detail || `We couldn't generate a basic profile preview for "${generateInvestorName}".`
+        err.response?.data?.detail || `We couldn't generate a basic profile for  "${generateInvestorName}".`
       );
     } finally {
       setIsSubmittingBasic(false);
@@ -1312,13 +1367,19 @@ const ActivistIntelligenceDashboard = ({
   // profile is ever actually persisted; closes out and lands the user on
   // the newly-published investor either way.
   const publishBasicProfile = async (basicResult: any) => {
-    const baseSlug = basicResult?.slug || slugifyName(generateInvestorName);
+    const guessedSlug = basicResult?.slug || slugifyName(generateInvestorName);
     setIsApprovingBasic(true);
     setGenerateError(null);
     try {
-      await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicResult);
+      const publishResponse = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicResult);
+      // The backend re-resolves the slug server-side (may differ from our
+      // pre-publish guess — see publish_basic_profile's docstring) and
+      // returns the published profile verbatim, so trust ITS slug, not ours,
+      // for finding/caching the profile we just created.
+      const publishedProfile = publishResponse.data?.data || publishResponse.data || basicResult;
+      const publishedSlug = publishedProfile?.slug || guessedSlug;
 
-      setBasicProfilesCache((prev) => ({ ...prev, [baseSlug]: basicResult }));
+      setBasicProfilesCache((prev) => ({ ...prev, [publishedSlug]: publishedProfile }));
 
       const approvedName = basicResult.investor_name || generateInvestorName;
       setGenerateModalOpen(false);
@@ -1326,7 +1387,7 @@ const ActivistIntelligenceDashboard = ({
       setModalBasicResult(null);
 
       const freshKeys = await fetchAllProfiles();
-      const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === baseSlug);
+      const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === publishedSlug);
       if (matchedKey) setActiveInvestorKey(matchedKey);
       toast.success(`${approvedName} basic profile published.`);
 
@@ -1835,8 +1896,31 @@ const ActivistIntelligenceDashboard = ({
                   </svg>
                 </button>
               )}
+              {isAdmin && activeInvestorKey && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIsDeleteModalOpen(true); }}
+                  title="Delete profile"
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: "white", opacity: 0.85, padding: 4, display: "inline-flex", flexShrink: 0 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
+
+          <DeleteConfirmationModal
+            isVisible={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDeleteActiveProfile}
+            loading={isDeletingProfile}
+            description={`Are you sure you want to delete <strong>${displayName}</strong>'s profile? This action cannot be undone.`}
+          />
 
           {/* ── Inline investor picker ── */}
           {selectorOpen && (
@@ -2503,7 +2587,7 @@ const ActivistIntelligenceDashboard = ({
                 {isSubmittingBasic && (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                     <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontSize: 12, color: "#374151" }}>Generating the basic profile preview…</span>
+                    <span style={{ fontSize: 12, color: "#374151" }}>Generating the basic profile Please wait...</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 )}
