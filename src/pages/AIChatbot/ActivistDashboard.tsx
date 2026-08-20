@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AI_CHATBOT_API_BASE, IS_LOCAL_ENV } from '@/pages/AIChatbot/api';
@@ -31,9 +32,8 @@ const GENERATE_MODE = "enhanced" as const;
 // Deliberate product decision (not a bug, not scaffolding): publishing a
 // Basic profile never auto-chains into Advanced generation. Advanced is a
 // real ~20-25 min, non-resumable job, so it only ever starts from an
-// explicit user action — the "Generate Advanced Profile" empty-state prompt
-// in the Advanced tab (see handleGenerateAdvancedFromTab), which this same
-// publishBasicProfile flow lands the user on immediately after publish.
+// explicit user action — "Generate Activist Profile" in the page header,
+// which opens the Generate modal (handleStartGeneration).
 
 // The pipeline writes free-text statuses — "ongoing (second episode) -
 // cooperation period filings", "closed - 13d engagement", "exited (position
@@ -133,12 +133,15 @@ const isMeaningfulText = (text: any) =>
   text.trim().length > 0 &&
   !PLACEHOLDER_TEXT_RE.test(text);
 
-// profile.hq arrives either LLM-generated and ungrounded ("San Antonio,
-// Texas, United States") or WhaleWisdom-grounded ("Coconut Creek, FL") — the
-// identity line only wants the city, so take everything before the first
-// comma. No comma at all just means the whole value passes through.
-const extractCity = (hq: any): string =>
-  typeof hq === "string" ? hq.split(",")[0].trim() : "";
+// Same wording/format as the rest of the profile ("August 19, 2026"). Returns
+// "" rather than a dash when there's no usable timestamp, so the caller drops
+// the pill entirely instead of showing an empty one.
+const formatUpdatedDate = (value: any): string => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+};
 
 /**
  * The investor's real name as shown in the dashboard header. Returns "" (not a
@@ -529,10 +532,15 @@ const ActivistIntelligenceDashboard = ({
   externalPreviewData = null,
   onPreviewPublished = () => {},
   openGenerateModalSignal = 0,
+  headerActionsSlot = null,
 }: {
   externalPreviewData?: any;
   onPreviewPublished?: () => void;
   openGenerateModalSignal?: number;
+  // Element in the host page's header where the Edit Mode controls should
+  // render (see ProxyContestAI). Null when this dashboard is used standalone,
+  // in which case the controls fall back to rendering above the profile.
+  headerActionsSlot?: HTMLElement | null;
 }) => {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
   // Compared case-insensitively: user_type comes straight from the API and
@@ -592,14 +600,6 @@ const ActivistIntelligenceDashboard = ({
   const [isSubmittingBasic, setIsSubmittingBasic] = useState(false);
   const [isApprovingBasic, setIsApprovingBasic] = useState(false);
   const [modalBasicResult, setModalBasicResult] = useState<any>(null);
-
-  // "Generate Advanced Profile" from the empty-state prompt inside the
-  // Advanced tab sets generateInvestorName then needs to wait for that state
-  // to actually land before calling handleStartGeneration (which reads
-  // generateInvestorName from its own closure) — mirrors the existing
-  // openGenerateModalSignal/consumedGenerateSignal pattern below.
-  const [advancedTriggerSignal, setAdvancedTriggerSignal] = useState(0);
-  const consumedAdvancedTriggerRef = useRef(0);
 
   // Generation runs server-side, so closing the modal must not stop the job.
   // Holding the poll timer in a ref lets the preview still land once the job
@@ -1364,29 +1364,6 @@ const ActivistIntelligenceDashboard = ({
     handleStartGeneration();
   };
 
-  // "Generate Advanced Profile" from the empty-state prompt inside the
-  // Advanced tab (has_advanced: false, e.g. a Basic-only profile from a
-  // prior "No"). Pre-fills the name then defers to the same effect that
-  // drives the GenerationProgressBar click below, so handleStartGeneration
-  // (unchanged) reads the freshly-set generateInvestorName instead of a
-  // stale closure value.
-  const handleGenerateAdvancedFromTab = () => {
-    const label = profile?.legalName || investorNames[activeInvestorKey] || formatKeyToLabel(activeInvestorKey);
-    setGenerateInvestorName(label);
-    setGenerateError(null);
-    setGenerateModalStep("form");
-    setGenerateModalOpen(true);
-    setAdvancedTriggerSignal((v) => v + 1);
-  };
-
-  useEffect(() => {
-    if (advancedTriggerSignal && advancedTriggerSignal !== consumedAdvancedTriggerRef.current) {
-      consumedAdvancedTriggerRef.current = advancedTriggerSignal;
-      handleStartGeneration();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [advancedTriggerSignal]);
-
   // Optional: Discard a running/completed job
   const handleDiscardJob = async (slug: string) => {
     try {
@@ -1668,13 +1645,95 @@ const ActivistIntelligenceDashboard = ({
   // loadProfileForKey no longer bounces away on a legitimate 404.
   const hasAdvancedProfile = !!profile;
   const hasBasicProfile = !!basicProfile;
-  const isGeneratingAdvancedForActive = isGenerating && slugMatches(slugifyName(generateInvestorName), toBaseSlug(activeInvestorKey));
 
   // What actually renders below: respects the user's Basic/Advanced toggle
   // choice only when both exist; otherwise forces whichever one does (or
   // "basic" — which itself renders an empty state — when neither does).
   const effectiveProfileView: "basic" | "advanced" =
     hasBasicProfile && hasAdvancedProfile ? profileViewMode : hasAdvancedProfile ? "advanced" : "basic";
+
+  // Replaces the old "Version N" pill in the header. The pill sits above the
+  // Condensed/Comprehensive toggle, so it stamps the card as a whole: take the
+  // most recent timestamp either half of it carries (Condensed exposes
+  // generated_at; the Comprehensive profile keeps its own on the raw
+  // metadata). Deliberately not view-dependent — a date that changed every
+  // time you flipped the toggle would read as a glitch.
+  const updatedCandidates = [
+    basicProfile?.generated_at,
+    rawProfile?.metadata?.generated_at,
+    rawProfile?.metadata?.updated_at,
+    rawProfile?.generated_at,
+  ]
+    .map((v: any) => (v ? new Date(v) : null))
+    .filter((d: Date | null): d is Date => !!d && !Number.isNaN(d.getTime()));
+  const lastUpdatedLabel = updatedCandidates.length
+    ? formatUpdatedDate(new Date(Math.max(...updatedCandidates.map((d) => d.getTime()))))
+    : "";
+
+  // ── Edit Mode controls ──
+  // Admin-only — showEditButton is the single gate, so end users never see the
+  // toggle or the Save/Discard actions that come with it. Sized to match the
+  // page-header buttons (38px tall, text-sm) since that's where they render:
+  // portalled into `headerActionsSlot`, left of "Upload Activist Profile".
+  // Without a slot (standalone use) they fall back to the profile card header.
+  const editControls = showEditButton ? (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {(isEditMode || isPreviewMode) && (
+        <button
+          onClick={handleSaveProfile}
+          disabled={isSaving}
+          style={{
+            height: 38, padding: "0 12px", background: "#10b981", color: "white", border: "1px solid #10b981",
+            borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: isSaving ? "wait" : "pointer",
+            display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {isSaving ? "Processing..." : (isPreviewMode ? "Approve & Publish to S3" : "Save Changes")}
+        </button>
+      )}
+
+      {isPreviewMode && (
+        <button
+          onClick={handleDiscardPreview}
+          disabled={isSaving}
+          style={{
+            height: 38, padding: "0 12px", background: "white", color: "#dc2626", border: "1px solid #dc2626",
+            borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: isSaving ? "wait" : "pointer",
+            display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+          Discard
+        </button>
+      )}
+
+      <button
+        onClick={() => setIsEditMode((v) => !v)}
+        style={{
+          height: 38, padding: "0 12px", fontSize: 14, fontWeight: 500, borderRadius: 6, cursor: "pointer",
+          border: isEditMode ? `1px solid ${THEME_MAROON}` : "1px solid #e5e7eb",
+          background: isEditMode ? "#fdf2f2" : "white",
+          color: isEditMode ? THEME_MAROON : "#374151",
+          display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", transition: "all 0.15s",
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+        {isEditMode ? "Editing…" : "Edit Mode"}
+      </button>
+    </div>
+  ) : null;
+
+  const portalledEditControls = headerActionsSlot && editControls
+    ? createPortal(editControls, headerActionsSlot)
+    : null;
 
   return (
     <div style={{ padding: "24px", width: "100%", background: "#f9fafb", boxSizing: "border-box", fontFamily: "system-ui, sans-serif" }}>
@@ -1865,87 +1924,29 @@ const ActivistIntelligenceDashboard = ({
         </div>
 
         {/* ── Profile Header Info ── */}
-        <div style={{ padding: "20px 24px" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
-            {/* Version pill — was "Updated Framework"; now shows the profile's
-                generation version. Defaults to 1 for profiles with no
-                metadata.version (i.e. every profile published before this
-                change), and bumps by 1 each time the same investor is
-                regenerated (see getNextVersion / handleConfirmRegenerate). */}
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: THEME_MAROON, background: "#fdf2f2", border: `1px solid ${THEME_MAROON}40`, borderRadius: 999, padding: "2px 10px", fontWeight: 500 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              Version {rawProfile?.metadata?.version || 1}
-            </div>
-
-              {/* ── Edit Mode Controls ── */}
-{showEditButton && (
-  <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-
-    {(isEditMode || isPreviewMode) && (
-  <button
-    onClick={handleSaveProfile}
-    disabled={isSaving}
-    style={{
-      background: "#10b981", color: "white", border: "none", padding: "6px 14px", borderRadius: 6, fontSize: 12,
-      fontWeight: 600, cursor: isSaving ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 1px 3px rgba(16,185,129,0.3)",
-    }}
-  >
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-    {/* 🛑 DYNAMIC TEXT CHANGE HERE */}
-    {isSaving ? "Processing..." : (isPreviewMode ? "Approve & Publish to S3" : "Save Changes")}
-  </button>
-)}
-    {isPreviewMode && (
-  <button
-    onClick={handleDiscardPreview}
-    disabled={isSaving}
-    style={{
-      background: "white", color: "#dc2626", border: "1px solid #dc2626", padding: "6px 14px", borderRadius: 6, fontSize: 12,
-      fontWeight: 600, cursor: isSaving ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 6,
-    }}
-  >
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-    Discard
-  </button>
-)}
-                <button
-                  onClick={() => setIsEditMode((v) => !v)}
-                  style={{
-                    padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                    borderRadius: 6, cursor: "pointer",
-                    border: isEditMode ? `1px solid ${THEME_MAROON}` : "1px solid #e5e7eb",
-                    background: isEditMode ? "#fdf2f2" : "white",
-                    color: isEditMode ? THEME_MAROON : "#374151",
-                    display: "flex", alignItems: "center", gap: 6,
-                    transition: "all 0.15s",
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121  3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                  {isEditMode ? "Editing…" : "Edit Mode"}
-                </button>
+        {/* Just the "last updated" stamp now: the Version pill is gone (version
+            is still tracked in metadata, it simply isn't a user-facing number),
+            the city line was dropped as a duplicate of the region shown in the
+            profile below, and Edit Mode moved up to the page header. */}
+        {(lastUpdatedLabel || (!headerActionsSlot && editControls)) && (
+          <div style={{ padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            {lastUpdatedLabel ? (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: THEME_MAROON, background: "#fdf2f2", border: `1px solid ${THEME_MAROON}40`, borderRadius: 999, padding: "2px 10px", fontWeight: 500 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Last updated: {lastUpdatedLabel}
               </div>
+            ) : (
+              <span />
             )}
-          </div>
 
-          {/* Firm identity line stays above the tabs — it's context for every
-              tab, unlike the summary narrative which now lives in its own tab.
-              Advanced-profile-only fields — nothing shown here for a Basic-only
-              investor (BasicProfilePanel below has its own region/overview info). */}
-          {isMeaningfulText(extractCity(profile?.hq)) && (
-            <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16, rowGap: 4, margin: 0, fontSize: 12, color: "#6b7280" }}>
-              <span>{extractCity(profile.hq)}</span>
-            </div>
-          )}
-        </div>
+            {/* Fallback position — only when no header slot was provided. */}
+            {!headerActionsSlot && editControls}
+          </div>
+        )}
+
+        {portalledEditControls}
 
         {/* ── Basic / Advanced toggle — only shown when both actually exist ── */}
         {hasBasicProfile && hasAdvancedProfile && (
@@ -2329,37 +2330,6 @@ const ActivistIntelligenceDashboard = ({
               ) : (
                 <div style={{ padding: 24 }}>
                   <BasicProfilePanel data={basicProfile} loading={basicLoading} error={basicError} />
-
-                  {/* Manual fallback — covers the window before the silent
-                      auto-trigger (see the activeInvestorKey-adjacent effect
-                      above) kicks in, and stays usable if it fails to fire.
-                      Only relevant when Advanced genuinely doesn't exist yet;
-                      hidden when the user toggled to Basic on an investor
-                      that already has both. */}
-                  {!hasAdvancedProfile && (
-                    <div style={{ marginTop: 24, border: "1px dashed #d1d5db", borderRadius: 8, padding: "32px 24px", textAlign: "center", background: "#fafafa" }}>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: "0 0 6px" }}>
-                        {isGeneratingAdvancedForActive ? `Generating the Advanced profile for ${displayName}…` : `No Comprehensive profile yet for ${displayName}`}
-                      </p>
-                      <p style={{ fontSize: 13, color: "#6b7280", margin: "0 0 20px" }}>
-                        {isGeneratingAdvancedForActive
-                          ? "This can take a few minutes — you can navigate away, it keeps running in the background."
-                          : "Generate the full comprehensive profile — campaigns, personnel, 13F holdings, and sources."}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleGenerateAdvancedFromTab}
-                        disabled={isGeneratingAdvancedForActive}
-                        style={{
-                          padding: "8px 18px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6,
-                          cursor: isGeneratingAdvancedForActive ? "wait" : "pointer", fontWeight: 600, fontSize: 13,
-                          opacity: isGeneratingAdvancedForActive ? 0.7 : 1,
-                        }}
-                      >
-                        {isGeneratingAdvancedForActive ? "Generating…" : "Generate Comprehensive Profile"}
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
       </div>

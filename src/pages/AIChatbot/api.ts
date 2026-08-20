@@ -9,17 +9,7 @@ export const Environment = {
 type EnvType = typeof Environment[keyof typeof Environment];
 
 // ⚠️ CHANGE THIS VARIABLE TO SWITCH ENVIRONMENTS // Options: Environment.LOCAL | Environment.PRODUCTION | Environment.NGROK
-const CURRENT_ENV: EnvType = Environment.PRODUCTION;
-
-// Derived flag — single source of truth for any local-only vs. production
-// behavioral branching (e.g. the Basic-profile approval-gate bypass in
-// ActivistDashboard.tsx). Flip CURRENT_ENV above and this follows.
-// [FIX] "(CURRENT_ENV as string)" so TypeScript doesn't flag this as an
-// impossible comparison — same reason getRequestHeaders' NGROK check below
-// needs the same cast. Without it, this line either won't compile against
-// Environment.LOCAL, or (as it did before) silently gets "fixed" by
-// comparing against PRODUCTION instead, which is backwards.
-export const IS_LOCAL_ENV = (CURRENT_ENV as string) === Environment.LOCAL;
+const CURRENT_ENV: EnvType = Environment.PRODUCTION; 
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
@@ -34,6 +24,14 @@ export const getApiBaseUrl = () => {
 
 // Define the Base URL constant
 export const AI_CHATBOT_API_BASE = getApiBaseUrl();
+
+// Whether the app is pointed at the LOCAL backend. Derived from the CURRENT_ENV
+// switch above so environments are flipped in exactly one place, rather than
+// from import.meta.env (which would report "local" whenever the dev server is
+// running, even while it talks to the production API).
+// The `as string` cast mirrors getRequestHeaders(): without it TS narrows this
+// const to the literal it was initialized with and rejects the comparison.
+export const IS_LOCAL_ENV = (CURRENT_ENV as string) === Environment.LOCAL;
 
 console.log(`[App Config] Environment: ${CURRENT_ENV}`);
 console.log(`[App Config] API Base: ${AI_CHATBOT_API_BASE}`);

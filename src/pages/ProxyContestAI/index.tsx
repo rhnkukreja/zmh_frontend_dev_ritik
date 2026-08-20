@@ -81,6 +81,11 @@ function ProxyContestAI() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [generateProfileSignal, setGenerateProfileSignal] = useState(0);
+  // Header slot the Activist Profile dashboard portals its (admin-only) Edit
+  // Mode controls into, so they sit with the other page actions instead of
+  // inside the profile card. `display: contents` keeps the wrapper itself out
+  // of the flex row — an empty div would still eat a gap for non-admins.
+  const [activistHeaderSlot, setActivistHeaderSlot] = useState<HTMLDivElement | null>(null);
   const [editInitialData, setEditInitialData] = useState<any>(null);
 
   // ── Edit handler ─────────────────────────────────────────────────────────────
@@ -644,7 +649,13 @@ function ProxyContestAI() {
             )}
           </h2>
           
-          <div className="flex items-center gap-3">
+          {/* Wraps rather than overflows: Edit Mode brings Save/Discard along
+              with it once an admin is editing, which is up to five buttons. */}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {activeTab === "activist_profile" && (
+              <div ref={setActivistHeaderSlot} className="contents" />
+            )}
+
             {/* Upload Activist Profile — available to Admins/Analysts, same
                 permission level as the other profile-management actions
                 below (no separate "Admin View" toggle needed). */}
@@ -839,6 +850,7 @@ function ProxyContestAI() {
     externalPreviewData={previewData}
     onPreviewPublished={() => setPreviewData(null)}
     openGenerateModalSignal={generateProfileSignal}
+    headerActionsSlot={activistHeaderSlot}
   />
 )}
         </div>
