@@ -25,6 +25,14 @@ export const getApiBaseUrl = () => {
 // Define the Base URL constant
 export const AI_CHATBOT_API_BASE = getApiBaseUrl();
 
+// Whether the app is pointed at the LOCAL backend. Derived from the CURRENT_ENV
+// switch above so environments are flipped in exactly one place, rather than
+// from import.meta.env (which would report "local" whenever the dev server is
+// running, even while it talks to the production API).
+// The `as string` cast mirrors getRequestHeaders(): without it TS narrows this
+// const to the literal it was initialized with and rejects the comparison.
+export const IS_LOCAL_ENV = (CURRENT_ENV as string) === Environment.LOCAL;
+
 console.log(`[App Config] Environment: ${CURRENT_ENV}`);
 console.log(`[App Config] API Base: ${AI_CHATBOT_API_BASE}`);
 

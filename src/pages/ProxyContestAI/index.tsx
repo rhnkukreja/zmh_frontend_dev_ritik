@@ -16,7 +16,7 @@ import { RootState } from "@/stores/store";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from '@/pages/AIChatbot/api';
-import { Popover, Dialog, Menu } from "@/components/Base/Headless";
+import { Popover, Dialog } from "@/components/Base/Headless";
 
 type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
 
@@ -46,8 +46,12 @@ const saveF = (tab: string, data: any) => {
 
 function ProxyContestAI() {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdmin = user?.user_type === "Admin";
-  const isAdminOrAnalyst = isAdmin || user?.user_type === "Analyst";
+  // Case-insensitive on purpose — user_type isn't guaranteed title-cased by the
+  // API (UserManagement normalises it the same way). Non Admin/Analyst users
+  // still see neither "Upload Activist Profile" nor "Add Proxy Contest".
+  const userType = (user?.user_type || "").trim().toLowerCase();
+  const isAdmin = userType === "admin";
+  const isAdminOrAnalyst = isAdmin || userType === "analyst";
 
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab") as ProxyContestTabKey | null;
@@ -77,7 +81,11 @@ function ProxyContestAI() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [generateProfileSignal, setGenerateProfileSignal] = useState(0);
-  const [splitAction, setSplitAction] = useState<"add" | "generate">("add");
+  // Header slot the Activist Profile dashboard portals its (admin-only) Edit
+  // Mode controls into, so they sit with the other page actions instead of
+  // inside the profile card. `display: contents` keeps the wrapper itself out
+  // of the flex row — an empty div would still eat a gap for non-admins.
+  const [activistHeaderSlot, setActivistHeaderSlot] = useState<HTMLDivElement | null>(null);
   const [editInitialData, setEditInitialData] = useState<any>(null);
 
   // ── Edit handler ─────────────────────────────────────────────────────────────
@@ -575,7 +583,6 @@ function ProxyContestAI() {
   const curToggleGl      = activeTab === "overview" ? ovToggleGl      : dtToggleGl;
 
 
-  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
   const [newInvestorName, setNewInvestorName] = useState<string>("");
   const [selectedJsonFiles, setSelectedJsonFiles] = useState<File[]>([]);
@@ -630,42 +637,29 @@ function ProxyContestAI() {
        {/* Page header card */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <span className="text-slate-500">Proxy Contest</span>
+            <span className="text-slate-500">Proxy Contests</span>
             <ChevronRight className="w-4 h-4 text-slate-400" />
             <span>{tabs.find((t) => t.key === activeTab)?.label ?? "Activist Profile"}</span>
+            {/* Only Activist Profile is in beta — Voting Analytics and Campaign
+                Details share this breadcrumb and are not. */}
+            {activeTab === "activist_profile" && (
+              <span className="inline-flex shrink-0 items-center rounded-full bg-red-800 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
+                BETA
+              </span>
+            )}
           </h2>
           
-          <div className="flex items-center gap-3">
-            {/* 
-               PRODUCTION BOUNDARY GATING: 
-               Verifies the global store credentials so that only authenticated Admins 
-               or Analysts can view or use the system mode toggle.
-            */}
-            {activeTab === "activist_profile" && (user?.user_type === "Admin" || user?.user_type === "Analyst") && (
-              <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 h-[38px] items-center">
-                <button
-                  onClick={() => setIsAdminMode(false)}
-                  className={clsx(
-                    "px-4 py-1 text-sm font-semibold rounded-md transition-all duration-200",
-                    !isAdminMode ? "bg-[#10b981] text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  User View
-                </button>
-                <button
-                  onClick={() => setIsAdminMode(true)}
-                  className={clsx(
-                    "px-4 py-1 text-sm font-semibold rounded-md transition-all duration-200",
-                    isAdminMode ? "bg-[#8b1828] text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
-                  )}
-                >
-                  Admin View
-                </button>
-              </div>
+          {/* Wraps rather than overflows: Edit Mode brings Save/Discard along
+              with it once an admin is editing, which is up to five buttons. */}
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {activeTab === "activist_profile" && (
+              <div ref={setActivistHeaderSlot} className="contents" />
             )}
 
-            {/* Show Upload Button ONLY in Admin Mode */}
-            {activeTab === "activist_profile" && isAdminMode && (
+            {/* Upload Activist Profile — available to Admins/Analysts, same
+                permission level as the other profile-management actions
+                below (no separate "Admin View" toggle needed). */}
+            {activeTab === "activist_profile" && isAdminOrAnalyst && (
               <Button
                 variant="outline-primary"
                 onClick={() => setUploadModalOpen(true)}
@@ -676,72 +670,30 @@ function ProxyContestAI() {
               </Button>
             )}
 
-            {/* Add Proxy Contest split button — main action + dropdown for related actions */}
-            {isAdminOrAnalyst && (
-              <div className="inline-flex h-[38px] rounded-md shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (splitAction === "add") {
-                      setAddModalOpen(true);
-                    } else {
-                      setActiveTabPersisted("activist_profile");
-                      setGenerateProfileSignal((v) => v + 1);
-                    }
-                  }}
-                  className="flex items-center gap-1.5 px-3 text-sm font-medium text-white bg-primary border border-primary rounded-l-md hover:bg-primary/90 transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
-                >
-                  <Lucide icon={splitAction === "add" ? "Plus" : "Sparkles"} className="w-4 h-4" />
-                  {splitAction === "add" ? "Add Proxy Contest" : "Generate Activism Profile"}
-                </button>
-                <Menu as="div" className="relative flex">
-                  <Menu.Button
-                    as="button"
-                    className="flex items-center justify-center w-9 h-full bg-primary border border-l-0 border-primary rounded-r-md text-white hover:bg-primary/90 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
-                  >
-                    <Lucide icon="ChevronDown" className="w-4 h-4" />
-                  </Menu.Button>
-                  {/* ── UPDATE THIS SECTION IN YOUR CODE ── */}
-                  <Menu.Items placement="bottom-end" className="w-[200px] mt-1 bg-white border border-slate-200 rounded-lg shadow-lg p-1 z-40">
-                  {splitAction !== "add" && (
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          type="button"
-                          className={clsx(
-                            "w-full px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-slate-700 whitespace-nowrap text-left",
-                            active ? "bg-slate-100 text-slate-900" : "bg-white"
-                          )}
-                          onClick={() => setSplitAction("add")}
-                        >
-                          Add Proxy Contest
-                        </button>
-                      )}
-                    </Menu.Item>
-                  )}
-                  {splitAction !== "generate" && (
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          type="button"
-                          className={clsx(
-                            "w-full px-3 py-9.5 text-xs font-medium rounded-md transition-colors text-slate-700 whitespace-nowrap text-left",
-                            active ? "bg-slate-100 text-slate-900" : "bg-white"
-                          )}
-                          onClick={() => {
-                            setSplitAction("generate");
-                            setActiveTabPersisted("activist_profile");
-                            setGenerateProfileSignal((v) => v + 1);
-                          }}
-                        >
-                          Generate Activism Profile
-                        </button>
-                      )}
-                    </Menu.Item>
-                  )}
-                </Menu.Items>
-                </Menu>
-              </div>
+            {/* Activist Profile tab → Generate Activism Profile action.
+                Intentionally open to every logged-in user, not just
+                Admin/Analyst — unlike Upload Activist Profile above. */}
+            {activeTab === "activist_profile" && (
+              <button
+                type="button"
+                onClick={() => setGenerateProfileSignal((v) => v + 1)}
+                className="flex items-center gap-1.5 h-[38px] px-3 text-sm font-medium text-white bg-primary border border-primary rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+              >
+                <Lucide icon="Sparkles" className="w-4 h-4" />
+                Generate Activist Profile
+              </button>
+            )}
+
+            {/* Voting Analytics / Campaign Details tabs → Add Proxy Contest action */}
+            {isAdminOrAnalyst && activeTab !== "activist_profile" && (
+              <button
+                type="button"
+                onClick={() => setAddModalOpen(true)}
+                className="flex items-center gap-1.5 h-[38px] px-3 text-sm font-medium text-white bg-primary border border-primary rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+              >
+                <Lucide icon="Plus" className="w-4 h-4" />
+                Add Proxy Contest
+              </button>
             )}
           </div>
         </div>
@@ -895,10 +847,10 @@ function ProxyContestAI() {
           {/* ── PASS THE MODE TOGGLE DOWN AS A LIFETIME PROP ── */}
 {activeTab === "activist_profile" && (
   <ActivistIntelligenceDashboard
-    isAdminMode={isAdminMode}
     externalPreviewData={previewData}
     onPreviewPublished={() => setPreviewData(null)}
     openGenerateModalSignal={generateProfileSignal}
+    headerActionsSlot={activistHeaderSlot}
   />
 )}
         </div>

@@ -196,6 +196,19 @@ export type CompanyReport = {
     investors: ESGInvestor[];
   };
   proxy?: ProxySplit;
+  shareholderEngagement?: {
+    hasData?: boolean;
+    year?: number;
+    sectionHeading?: string;
+    paragraphs?: string;
+    source?: string;
+    proxyLink?: string;
+    pageNum?: number | string;
+    numberOfInvestorsContacted?: string;
+    percentageOwnershipContacted?: string;
+    issuesDiscussed?: string[];
+    actionTaken?: string;
+  };
   board?: {
     headlineBullets: string[];
     lowestSupport?: string[];
@@ -746,6 +759,38 @@ function buildPlainText(report: CompanyReport) {
 
   }
 
+  if (report.shareholderEngagement) {
+
+    lines.push("");
+
+    lines.push("Proxy Disclosure: Shareholder Engagement");
+
+    if (report.shareholderEngagement.paragraphs) lines.push(report.shareholderEngagement.paragraphs);
+
+    if (report.shareholderEngagement.numberOfInvestorsContacted) {
+      lines.push(`- Investors contacted: ${report.shareholderEngagement.numberOfInvestorsContacted}`);
+    }
+
+    if (report.shareholderEngagement.percentageOwnershipContacted) {
+      lines.push(`- Ownership contacted: ${report.shareholderEngagement.percentageOwnershipContacted}`);
+    }
+
+    if (report.shareholderEngagement.issuesDiscussed?.length) {
+      lines.push(`- Issues discussed: ${report.shareholderEngagement.issuesDiscussed.join(", ")}`);
+    }
+
+    if (report.shareholderEngagement.actionTaken) {
+      lines.push(`- Action taken: ${report.shareholderEngagement.actionTaken}`);
+    }
+
+    if (report.shareholderEngagement.source) {
+      lines.push(`- Source: ${report.shareholderEngagement.source}`);
+    } else if (report.shareholderEngagement.pageNum !== undefined && report.shareholderEngagement.pageNum !== null) {
+      lines.push(`- Page: ${report.shareholderEngagement.pageNum}`);
+    }
+
+  }
+
   if (report.board) {
 
     lines.push("");
@@ -907,6 +952,43 @@ function transformApiDataToReport(apiData: any): CompanyReport | null {
         }
         break;
 
+      case "shareholder_engagement": {
+        const rawParagraphs = Array.isArray(section.paragraphs)
+          ? section.paragraphs.filter(Boolean).join("\n\n")
+          : String(section.paragraphs || "").trim();
+
+        const issuesDiscussed = Array.isArray(section.issues_discussed)
+          ? section.issues_discussed.map((issue: any) => String(issue).trim()).filter(Boolean)
+          : typeof section.issues_discussed === "string" && section.issues_discussed.trim()
+            ? [section.issues_discussed.trim()]
+            : [];
+
+        const source = section.shareholder_engagement_source || section.proxy_link || undefined;
+        const hasDetailData = [
+          section.number_of_investors_contacted,
+          section.percentage_ownership_contacted,
+          issuesDiscussed.length,
+          section.action_taken,
+        ].some((item) => item !== null && item !== undefined && String(item).trim() !== "" && String(item).trim() !== "0");
+
+        if (section.has_data || rawParagraphs || hasDetailData) {
+          report.shareholderEngagement = {
+            hasData: !!section.has_data,
+            year: section.year,
+            sectionHeading: section.section_heading || section.title || "Shareholder Engagement",
+            paragraphs: rawParagraphs,
+            source,
+            proxyLink: section.proxy_link || undefined,
+            pageNum: section.page_num,
+            numberOfInvestorsContacted: section.number_of_investors_contacted ?? undefined,
+            percentageOwnershipContacted: section.percentage_ownership_contacted ?? undefined,
+            issuesDiscussed,
+            actionTaken: section.action_taken ?? undefined,
+          };
+        }
+        break;
+      }
+
       case "board_of_directors":
         // Filter out duplicate/disclosure paragraphs
         const boardParagraphs = (section.paragraphs || []).filter((p: string) =>
@@ -1032,6 +1114,7 @@ export default function CompanyOverview() {
   const [availableYears, setAvailableYears] = useState<number[]>([]);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const lastRequestedYearRef = useRef<string>("");
+  const prefetchedOverviewYearsRef = useRef<string>("");
   const isCompanyYearsLoadingRef = useRef(false);
 
   // Active sub-tab is now driven by the Koyfin-style sidebar (Redux) instead
@@ -1116,6 +1199,26 @@ export default function CompanyOverview() {
   }, [companyGlobalSearchId]);
 
   useEffect(() => {
+    if (!companyGlobalSearchId || availableYears.length === 0) return;
+
+    const prefetchKey = `${companyGlobalSearchId}:${availableYears.join(",")}`;
+    if (prefetchedOverviewYearsRef.current === prefetchKey) {
+      return;
+    }
+    prefetchedOverviewYearsRef.current = prefetchKey;
+
+    void Promise.all(
+      availableYears.map((year) =>
+        dashboardService.getCompanyOverview(
+          `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${year}`
+        ).catch((error) => {
+          console.error(`Failed to prefetch company overview for year ${year}:`, error);
+        })
+      )
+    );
+  }, [companyGlobalSearchId, availableYears]);
+
+  useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
     if (isCompanyYearsLoadingRef.current) return;
     if (availableYears.length > 0 && !availableYears.includes(selectedYear)) return;
@@ -1140,7 +1243,7 @@ export default function CompanyOverview() {
     //     )
     //   );
     // }
-  }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs]);
+  }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs, availableYears]);
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {

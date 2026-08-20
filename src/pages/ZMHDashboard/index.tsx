@@ -79,7 +79,13 @@ function Main() {
   const { activeSection, activeSubSection } = useAppSelector(selectDashboardNav);
   const activeTab = activeSection;
   const activeVotingSubTab = activeTab === 'voting-data' ? (activeSubSection ?? 'vds') : null;
-  const headerGroup = activeTab === 'investor-overview' ? 'Institution Insights' : 'Company';
+  const headerGroup =
+    activeTab === 'investor-overview' && activeSubSection === 'engagement_priorities'
+      ? 'Company'
+      : activeTab === 'investor-overview'
+        ? 'Institution Insights'
+        : 'Company';
+  const showHeaderSeparator = activeTab !== 'shareholder-meeting-results';
   const headerLabel =
     activeTab === 'company-overview' ? 'Overview' :
     activeTab === 'governance-profile' ? 'Governance Profile' :
@@ -470,7 +476,7 @@ function Main() {
             <div>
               <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-slate-500">{headerGroup}</span>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
+                {showHeaderSeparator && <ChevronRight className="w-4 h-4 text-slate-400" />}
                 <span>{headerLabel}</span>
               </h2>
               {activeTab === 'shareholder-meeting-results' && meetingDateHeader && (
