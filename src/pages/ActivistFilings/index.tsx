@@ -24,14 +24,20 @@ const extractFilingYear = (value: unknown) => {
 const toTrimmedString = (value: unknown) => String(value || "").trim();
 
 const DEFAULT_EXCLUDED_FILING_TYPES = ["DEF 14A", "DEFA14A", "PRE 14A"];
+const COMPANY_FILINGS_TAB = "company-filings";
+const ACTIVIST_FILINGS_TAB = "activist-filings";
+
+type FilingTab = typeof ACTIVIST_FILINGS_TAB | typeof COMPANY_FILINGS_TAB;
 
 function ActivistFilings() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const source = searchParams.get("source") || "";
   const isCompanySource = source === "company";
+  const initialTab: FilingTab = searchParams.get("tab") === COMPANY_FILINGS_TAB ? COMPANY_FILINGS_TAB : ACTIVIST_FILINGS_TAB;
 
   const { companyGlobalSearchId } = useAppSelector((state) => state.authentiction);
 
+  const [activeTab, setActiveTab] = useState<FilingTab>(initialTab);
   const [loading, setLoading] = useState(false);
   const [filings, setFilings] = useState<any[]>([]);
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
@@ -70,43 +76,65 @@ function ActivistFilings() {
     setDraftFilingTypes([]);
   }, [companyGlobalSearchId]);
 
+  useEffect(() => {
+    const nextTab: FilingTab = searchParams.get("tab") === COMPANY_FILINGS_TAB ? COMPANY_FILINGS_TAB : ACTIVIST_FILINGS_TAB;
+    setActiveTab(nextTab);
+  }, [searchParams]);
+
   const hasCompany = Boolean(companyGlobalSearchId);
   const filingsData = useMemo(() => filings || [], [filings]);
 
+  const isCompanyFilingType = useCallback(
+    (filingType: string) => DEFAULT_EXCLUDED_FILING_TYPES.includes(filingType),
+    []
+  );
+
+  const activeTabFilings = useMemo(() => {
+    return filingsData.filter((filing) => {
+      const filingType = toTrimmedString(filing?.["Filing Type"]);
+      return activeTab === COMPANY_FILINGS_TAB
+        ? isCompanyFilingType(filingType)
+        : !isCompanyFilingType(filingType);
+    });
+  }, [activeTab, filingsData, isCompanyFilingType]);
+
   const yearOptions = useMemo(() => {
-    const years = filingsData
+    const years = activeTabFilings
       .map((filing) => extractFilingYear(filing?.["Filing Date"]))
       .filter(Boolean);
 
     return Array.from(new Set(years)).sort((a, b) => Number(b) - Number(a));
-  }, [filingsData]);
+  }, [activeTabFilings]);
 
   const filingTypeOptions = useMemo(() => {
-    const filingTypes = filingsData
+    const filingTypes = activeTabFilings
       .map((filing) => toTrimmedString(filing?.["Filing Type"]))
       .filter(Boolean);
 
     return Array.from(new Set(filingTypes)).sort((a, b) => a.localeCompare(b));
-  }, [filingsData]);
+  }, [activeTabFilings]);
 
   const filteredFilings = useMemo(() => {
-    return filingsData.filter((filing) => {
+    return activeTabFilings.filter((filing) => {
       const filingYear = extractFilingYear(filing?.["Filing Date"]);
       const filingType = toTrimmedString(filing?.["Filing Type"]);
-      const isDefaultExcludedType = DEFAULT_EXCLUDED_FILING_TYPES.includes(filingType);
 
       if (selectedYears.length > 0 && !selectedYears.includes(filingYear)) return false;
-      if (selectedFilingTypes.length > 0) {
-        if (!selectedFilingTypes.includes(filingType)) return false;
-      } else if (isDefaultExcludedType) {
-        return false;
-      }
+      if (selectedFilingTypes.length > 0 && !selectedFilingTypes.includes(filingType)) return false;
 
       return true;
     });
-  }, [filingsData, selectedYears, selectedFilingTypes]);
+  }, [activeTabFilings, selectedYears, selectedFilingTypes]);
 
   const activeFiltersCount = selectedYears.length + selectedFilingTypes.length;
+  const activistFilingsCount = useMemo(
+    () => filingsData.filter((filing) => !isCompanyFilingType(toTrimmedString(filing?.["Filing Type"])) ).length,
+    [filingsData, isCompanyFilingType]
+  );
+  const companyFilingsCount = useMemo(
+    () => filingsData.filter((filing) => isCompanyFilingType(toTrimmedString(filing?.["Filing Type"])) ).length,
+    [filingsData, isCompanyFilingType]
+  );
 
   const syncDraftFilters = useCallback(() => {
     setDraftYears(selectedYears);
@@ -145,6 +173,21 @@ function ActivistFilings() {
     }
   }, []);
 
+  const switchTab = useCallback(
+    (tab: FilingTab) => {
+      setActiveTab(tab);
+      setSelectedYears([]);
+      setSelectedFilingTypes([]);
+      setDraftYears([]);
+      setDraftFilingTypes([]);
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set("tab", tab);
+      setSearchParams(nextParams, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
@@ -161,7 +204,7 @@ function ActivistFilings() {
                   <span className="text-slate-500">Company</span>
                   <Lucide icon="ChevronRight" className="w-4 h-4 text-slate-400" />
                   <span className="flex items-center gap-2">
-                    <span>Activist Filings</span>
+                    <span>{activeTab === COMPANY_FILINGS_TAB ? "Company Filings" : "Activist Filings"}</span>
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
                       BETA
                     </span>
@@ -169,18 +212,49 @@ function ActivistFilings() {
                 </h2>
               </div>
 
+              <div className="mb-4 flex gap-2 rounded-xl bg-slate-100 p-1 w-fit shadow-sm border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => switchTab(ACTIVIST_FILINGS_TAB)}
+                  className={"rounded-lg px-4 py-2 text-sm font-semibold transition-all " +
+                    (activeTab === ACTIVIST_FILINGS_TAB
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-slate-500 hover:text-slate-700")}
+                >
+                  Activist Filings
+                  <span className="ml-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                    {activistFilingsCount}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchTab(COMPANY_FILINGS_TAB)}
+                  className={"rounded-lg px-4 py-2 text-sm font-semibold transition-all " +
+                    (activeTab === COMPANY_FILINGS_TAB
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-slate-500 hover:text-slate-700")}
+                >
+                  Company Filings
+                  <span className="ml-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                    {companyFilingsCount}
+                  </span>
+                </button>
+              </div>
+
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <div className="inline-flex w-fit max-w-[72%] items-baseline gap-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                    <span className="font-semibold text-slate-700">Note:</span>
-                    <span className="italic">
-                      Initial screen excludes <span className="font-semibold not-italic">DEF 14A</span>,{" "}
-                      <span className="font-semibold not-italic">DEFA14A</span>, and{" "}
-                      <span className="font-semibold not-italic">PRE 14A</span>. Use the filter to select these filings if available.
-                    </span>
-                  </div>
+                  {activeTab === ACTIVIST_FILINGS_TAB && (
+                    <div className="inline-flex w-fit max-w-[72%] items-baseline gap-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      <span className="font-semibold text-slate-700">Note:</span>
+                      <span className="italic">
+                        Initial screen excludes <span className="font-semibold not-italic">DEF 14A</span>,{" "}
+                        <span className="font-semibold not-italic">DEFA14A</span>, and{" "}
+                        <span className="font-semibold not-italic">PRE 14A</span>. Use the filter to select these filings if available.
+                      </span>
+                    </div>
+                  )}
 
-                  <div className="flex shrink-0 items-center gap-3 text-sm text-slate-600">
+                  <div className="ml-auto flex shrink-0 items-center gap-3 text-sm text-slate-600">
                   <div className="flex items-center gap-2">
                     <span className="text-slate-500">Count:</span>
                     <span className="inline-flex items-center rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-white">
@@ -331,7 +405,7 @@ function ActivistFilings() {
                             <span className="text-sm text-slate-700">{filing?.["Filing Date"] || "-"}</span>
                           </StandardizedTable.Cell>
                           <StandardizedTable.Cell>
-                            <span className="text-sm font-medium text-slate-700">{filing?.["Investor Name"] || "-"}</span>
+                            <span className="text-sm font-medium text-slate-700">{filing?.["Entity"] || "-"}</span>
                           </StandardizedTable.Cell>
                           <StandardizedTable.Cell>
                             <div className="flex items-center justify-start gap-3">
@@ -356,7 +430,11 @@ function ActivistFilings() {
                         <Table.Td colSpan={4} className="text-center py-12 text-slate-500">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Lucide icon="FileSearch" className="w-10 h-10 opacity-40" />
-                            <span className="text-sm font-medium text-slate-600">No relevant activist filings</span>
+                            <span className="text-sm font-medium text-slate-600">
+                              {activeTab === COMPANY_FILINGS_TAB
+                                ? "No company filings found"
+                                : "No relevant activist filings"}
+                            </span>
                           </div>
                         </Table.Td>
                       </Table.Tr>
