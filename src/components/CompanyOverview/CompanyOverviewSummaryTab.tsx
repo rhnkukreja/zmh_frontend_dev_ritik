@@ -1172,7 +1172,7 @@ export default function CompanyOverviewSummaryTab({
                             {report.board.lowestSupport.length > 1 ? "Directors" : "Director"}{" "}
                           </>
                         )}
-                        Lowest support
+                        Lowest Support
                       </div>
                       <BulletList items={report.board.lowestSupport} />
                     </>

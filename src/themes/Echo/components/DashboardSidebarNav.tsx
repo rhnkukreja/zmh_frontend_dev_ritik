@@ -202,11 +202,11 @@ const BASE_SECTIONS: SectionDef[] = [
 
 const DashboardSidebarNav = ({
   modulesData = {},
-  expandedGroup,
+  expandedGroups,
   onToggleGroup,
 }: {
   modulesData?: any;
-  expandedGroup: string;
+  expandedGroups: string[];
   onToggleGroup: (group: string) => void;
 }) => {
   const dispatch = useAppDispatch();
@@ -304,13 +304,19 @@ const DashboardSidebarNav = ({
         const routeQuery = section.route ? section.route.split("?")[1] : undefined;
         const routeParams = routeQuery ? new URLSearchParams(routeQuery) : null;
         const currentParams = new URLSearchParams(location.search);
+        const routeSource = routeParams?.get("source") || undefined;
+        const currentSource = locationState?.source || currentParams.get("source") || undefined;
+        const isNestedRoute = section.route
+          ? location.pathname !== routeBasePath && location.pathname.startsWith(`${routeBasePath}/`)
+          : false;
         const routeQueryMatches = routeParams
           ? Array.from(routeParams.entries()).every(
               ([key, value]) => currentParams.get(key) === value
             )
           : true;
         const isActive = section.route
-          ? location.pathname === routeBasePath && routeQueryMatches
+          ? (location.pathname === routeBasePath && routeQueryMatches) ||
+            (isNestedRoute && (!routeSource || currentSource === routeSource))
           : location.pathname === "/" &&
             activeSection === section.key &&
             (!section.subSection ||
@@ -332,32 +338,23 @@ const DashboardSidebarNav = ({
         const hasCountValue = countValue !== null && Number.isFinite(countValue);
         const isDisabled = false;
 
-        const isCompanyGroup = section.group === "Company";
-        const isGroupExpanded = isCompanyGroup
-          ? true
-          : expandedGroup === section.group;
+        const isGroupExpanded = expandedGroups.includes(section.group);
 
         return (
           <Fragment key={`${section.key}-${section.label}`}>
             {section.group !== previousSection?.group && (
-              isCompanyGroup ? (
-                <li className="side-menu__divider side-menu__section-label !text-xs">
-                  <span>{section.group}</span>
-                </li>
-              ) : (
-                <li
-                  className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
-                  onClick={() => onToggleGroup(section.group)}
-                >
-                  <span>{section.group}</span>
-                  <ChevronRight
-                    className={clsx([
-                      "w-5 h-5 transition-transform duration-200",
-                      { "rotate-90": isGroupExpanded },
-                    ])}
-                  />
-                </li>
-              )
+              <li
+                className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
+                onClick={() => onToggleGroup(section.group)}
+              >
+                <span>{section.group}</span>
+                <ChevronRight
+                  className={clsx([
+                    "w-5 h-5 transition-transform duration-200",
+                    { "rotate-90": isGroupExpanded },
+                  ])}
+                />
+              </li>
             )}
             {isGroupExpanded && (
             <li>

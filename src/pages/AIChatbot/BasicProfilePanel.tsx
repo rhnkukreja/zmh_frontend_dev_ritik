@@ -48,24 +48,14 @@ const formatDate = (value: any) => {
 
 const ABBREVIATIONS = /\b(?:[A-Z]|U\.S|Inc|Corp|Ltd|L\.P|LLC|Co|St|Mr|Mrs|Ms|Dr|vs|etc)\.$/;
 
-const splitIntoSentences = (text: string): string[] => {
-  const trimmed = text.trim();
-  if (!trimmed) return [];
-
-  if (typeof Intl !== "undefined" && typeof (Intl as any).Segmenter === "function") {
-    const segmenter = new (Intl as any).Segmenter("en", { granularity: "sentence" });
-    const sentences: string[] = [];
-    for (const { segment } of segmenter.segment(trimmed)) {
-      const s = String(segment).trim();
-      if (s) sentences.push(s);
-    }
-    return sentences;
-  }
-
-  // Fallback: split after ./!/? + whitespace when followed by a capital
-  // letter or opening paren, then re-merge any split that landed right
-  // after a known abbreviation (so "U.S. public companies" stays whole).
-  const parts = trimmed.split(/(?<=[.!?])\s+(?=[A-Z(])/);
+// Re-merges any split that landed right after a known abbreviation (so
+// "U.S. public companies" or "...with Mr. Ferguson..." stays one sentence),
+// regardless of which splitter produced the raw parts. Both branches of
+// splitIntoSentences below call this instead of each doing their own
+// re-merge pass, so they can't drift apart on abbreviation handling again —
+// the Intl.Segmenter branch used to skip this entirely, which is exactly
+// what let "...with Mr." / "Ferguson also managing..." split in two.
+const mergeAbbreviationSplits = (parts: string[]): string[] => {
   const sentences: string[] = [];
   for (const part of parts) {
     const prev = sentences[sentences.length - 1];
@@ -76,6 +66,27 @@ const splitIntoSentences = (text: string): string[] => {
     }
   }
   return sentences.map((s) => s.trim()).filter(Boolean);
+};
+
+const splitIntoSentences = (text: string): string[] => {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+
+  if (typeof Intl !== "undefined" && typeof (Intl as any).Segmenter === "function") {
+    const segmenter = new (Intl as any).Segmenter("en", { granularity: "sentence" });
+    const rawParts: string[] = [];
+    for (const { segment } of segmenter.segment(trimmed)) {
+      const s = String(segment).trim();
+      if (s) rawParts.push(s);
+    }
+    return mergeAbbreviationSplits(rawParts);
+  }
+
+  // Fallback: split after ./!/? + whitespace when followed by a capital
+  // letter or opening paren, then re-merge via the same abbreviation pass
+  // as the Intl.Segmenter branch above.
+  const parts = trimmed.split(/(?<=[.!?])\s+(?=[A-Z(])/);
+  return mergeAbbreviationSplits(parts);
 };
 
 // Groups sentences into 2-3 bullets of roughly-equal character length. Very

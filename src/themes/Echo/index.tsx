@@ -177,7 +177,7 @@ function Main() {
   const locationState = location.state as
     | { source?: string; fromTab?: string }
     | undefined;
-  const [expandedGroup, setExpandedGroup] = useState<string>("");
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(["Company"]);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
@@ -251,9 +251,14 @@ function Main() {
   useEffect(() => {
     const doesDashboardRouteMatch = (routeStr: string): boolean => {
       const [basePath, existingQuery] = routeStr.split("?");
-      if (location.pathname !== basePath) {
+      if (location.pathname !== basePath && !location.pathname.startsWith(`${basePath}/`)) {
         return false;
       }
+
+      if (location.pathname !== basePath) {
+        return true;
+      }
+
       const routeParams = new URLSearchParams(existingQuery || "");
       const currentParams = new URLSearchParams(location.search);
       return Array.from(routeParams.entries()).every(
@@ -314,7 +319,18 @@ function Main() {
       return companyGlobalSearchTicker ? "Company" : "";
     };
 
-    setExpandedGroup(computeActiveGroup());
+    setExpandedGroups((prev) => {
+      const activeGroup = computeActiveGroup();
+      if (!activeGroup || activeGroup === "Company") {
+        return prev;
+      }
+
+      if (prev.includes(activeGroup)) {
+        return prev;
+      }
+
+      return [...prev, activeGroup];
+    });
   }, [
     location.pathname,
     location.search,
@@ -326,7 +342,9 @@ function Main() {
   ]);
 
   const handleToggleGroup = (group: string) => {
-    setExpandedGroup((prev) => (prev === group ? "" : group));
+    setExpandedGroups((prev) =>
+      prev.includes(group) ? prev.filter((item) => item !== group) : [...prev, group]
+    );
   };
 
   window.onscroll = () => {
@@ -740,7 +758,7 @@ function Main() {
               {/* Koyfin-style dashboard navigation for the selected company */}
               <DashboardSidebarNav
                 modulesData={modulesData}
-                expandedGroup={expandedGroup}
+                expandedGroups={expandedGroups}
                 onToggleGroup={handleToggleGroup}
               />
               {/* BEGIN: First Child */}
@@ -754,7 +772,7 @@ function Main() {
                   (currentGroup !== "Administration" ||
                     user.user_type === "Admin" ||
                     user.user_type === "Analyst");
-                const isGroupExpanded = expandedGroup === currentGroup;
+                const isGroupExpanded = currentGroup ? expandedGroups.includes(currentGroup) : false;
 
                 return (
                   <Fragment key={menuKey}>

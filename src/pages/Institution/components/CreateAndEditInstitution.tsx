@@ -22,6 +22,7 @@ import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 import { generateWhaleWisdomId, scrapeSelectedWhaleWisdom } from "../../AIChatbot/api";
 import LoadingIcon from "@/components/Base/LoadingIcon";
+import { WhaleWisdomFilerPickerModal, WhaleWisdomFiler } from "@/components/WhaleWisdomFilerPickerModal";
 
 interface InstitutionFormData {
   institution: string;
@@ -44,13 +45,6 @@ interface AddEditInstitutionProps {
   selectedInstitution: Institutions | null;
 }
 
-interface WhaleWisdomFiler {
-  id: string | number;
-  name: string;
-  cik: string;
-  link: string;
-}
-
 export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   addEditInstitutionVisible,
   setAddEditInstitutionVisible,
@@ -65,9 +59,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   const [isGeneratingId, setIsGeneratingId] = useState(false);
   const [filerOptions, setFilerOptions] = useState<WhaleWisdomFiler[]>([]);
   const [showFilerModal, setShowFilerModal] = useState(false);
-  const [selectedFilerId, setSelectedFilerId] = useState<string>("");
-  const [filerSearchQuery, setFilerSearchQuery] = useState<string>("");
-  
+
   // PDF Scraping & Viewer States
   const [isScrapingPdf, setIsScrapingPdf] = useState(false);
   const [scrapedPdfUrl, setScrapedPdfUrl] = useState<string | null>(null);
@@ -214,8 +206,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       } else if (data && data.filers && data.filers.length > 1) {
         // Show modal if multiple matches
         setFilerOptions(data.filers);
-        setSelectedFilerId("");
-        setFilerSearchQuery("");
         setShowFilerModal(true);
       } else {
         toast.error("Could not find any Filer IDs for this name.");
@@ -227,25 +217,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
     } finally {
       setIsGeneratingId(false);
     }
-  };
-
-  const confirmFilerSelection = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!selectedFilerId) {
-      toast.error("Please select a Filer ID from the list.");
-      return;
-    }
-    const selectedFiler = filerOptions.find(f => String(f.id) === selectedFilerId);
-    if (selectedFiler) {
-      triggerScraping(selectedFiler);
-    }
-  };
-
-  const buildFilerUrl = (link: string): string => {
-    if (!link) return "";
-    if (link.startsWith("http")) return link;
-    const separator = link.startsWith("/") ? "" : "/";
-    return "https://whalewisdom.com" + separator + link;
   };
 
   const onSubmit = async (data: InstitutionFormData) => {
@@ -322,13 +293,6 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
       setAddEditInstitutionVisible(false);
     }
   };
-
-  const filteredFilerOptions = filerOptions.filter(
-    (filer) =>
-      filer.name.toLowerCase().includes(filerSearchQuery.toLowerCase()) ||
-      String(filer.id).includes(filerSearchQuery) ||
-      String(filer.cik).includes(filerSearchQuery)
-  );
 
   return (
     <>
@@ -679,134 +643,12 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
         </Dialog.Panel>
       </Dialog>
 
-      {/* Filer Selection Modal */}
-      <Dialog
-        size="xl"
-        open={showFilerModal}
-        onClose={() => setShowFilerModal(false)}
-      >
-        <Dialog.Panel>
-          <Dialog.Title>
-            <h2 className="text-lg font-semibold">Select Whale Wisdom ID</h2>
-            <div
-              onClick={() => setShowFilerModal(false)}
-              className="absolute top-0 right-0 mt-3 mr-3 cursor-pointer"
-            >
-              <Lucide icon="X" className="w-8 h-8 text-slate-400" />
-            </div>
-          </Dialog.Title>
-
-          <div className="px-4 pt-4 pb-2">
-            <div className="relative w-full sm:w-1/2">
-              <Lucide
-                icon="Search"
-                className="absolute inset-y-0 left-0 z-10 w-4 h-4 my-auto ml-3 text-slate-500"
-              />
-              <FormInput
-                type="text"
-                placeholder="Search by Name, ID, or CIK..."
-                className="pl-10"
-                value={filerSearchQuery}
-                onChange={(e) => setFilerSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <Dialog.Description className="px-4 pb-4 max-h-[60vh] overflow-y-auto">
-            <div className="overflow-x-auto border rounded-md">
-              <table className="w-full text-left text-sm text-slate-700">
-                <thead className="bg-slate-100 text-slate-800 border-b">
-                  <tr>
-                    <th className="p-3 font-semibold w-16 text-center">Select</th>
-                    <th className="p-3 font-semibold">ID</th>
-                    <th className="p-3 font-semibold">Name</th>
-                    <th className="p-3 font-semibold">CIK</th>
-                    <th className="p-3 font-semibold">WhaleWisdom Page</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredFilerOptions.length > 0 ? (
-                    filteredFilerOptions.map((filer) => {
-                      const finalUrl = buildFilerUrl(filer.link);
-                      const isSelected = selectedFilerId === String(filer.id);
-
-                      return (
-                        <tr
-                          key={filer.id}
-                          className={
-                            "border-b transition-all duration-200 cursor-pointer " +
-                            (isSelected
-                              ? "bg-red-50 border-l-4 border-l-red-700"
-                              : "hover:bg-slate-50")
-                          }
-                        >
-                          <td className="p-3 text-center">
-                            <FormCheck.Input
-                              type="radio"
-                              name="filerSelectionRadio"
-                              className="cursor-pointer w-4 h-4"
-                              style={{ accentColor: "#9b1b30" }}
-                              checked={isSelected}
-                              onChange={() => setSelectedFilerId(String(filer.id))}
-                            />
-                          </td>
-                          <td className="p-3">{filer.id}</td>
-                          <td className="p-3 font-medium">{filer.name}</td>
-                          <td className="p-3">{filer.cik}</td>
-                          <td className="p-3">
-                            {filer.link ? (
-                              <a
-                                href={finalUrl}
-                                className="text-blue-600 hover:text-blue-800 hover:underline flex items-center"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  window.open(finalUrl, "_blank", "noopener,noreferrer");
-                                }}
-                              >
-                                View Page
-                                <Lucide
-                                  icon="ExternalLink"
-                                  className="w-3 h-3 ml-1"
-                                />
-                              </a>
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-slate-500">
-                        No matches found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Dialog.Description>
-
-          <Dialog.Footer className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline-secondary"
-              onClick={() => setShowFilerModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={confirmFilerSelection}
-            >
-              Confirm Selection
-            </Button>
-          </Dialog.Footer>
-        </Dialog.Panel>
-      </Dialog>
+      <WhaleWisdomFilerPickerModal
+        filers={filerOptions}
+        isOpen={showFilerModal}
+        onConfirm={(filer) => triggerScraping(filer)}
+        onCancel={() => setShowFilerModal(false)}
+      />
     </>
   );
 };

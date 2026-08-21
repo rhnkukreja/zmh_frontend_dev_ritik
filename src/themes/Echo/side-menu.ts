@@ -6,6 +6,7 @@ interface Location {
   pathname: string;
   search: string;
   forceActiveMenu?: string;
+  state?: { source?: string; fromTab?: string };
 }
 
 const doesMenuPathMatchLocation = (pathname: string | undefined, location: Location) => {
@@ -15,41 +16,46 @@ const doesMenuPathMatchLocation = (pathname: string | undefined, location: Locat
 
   const [basePath, existingQuery] = pathname.split("?");
 
-  if (location.pathname !== basePath) {
+  if (location.pathname !== basePath && !location.pathname.startsWith(`${basePath}/`)) {
     return false;
   }
 
   const routeParams = new URLSearchParams(existingQuery || "");
   const currentParams = new URLSearchParams(location.search);
+  const routeSource = routeParams.get("source") || undefined;
+  const currentSource = location.state?.source || currentParams.get("source") || undefined;
+  const currentTab = location.state?.fromTab || currentParams.get("tab") || undefined;
+  const routeTab = routeParams.get("tab") || undefined;
+  const isNestedRoute = location.pathname !== basePath;
 
-  const ignoredExtraParams = new Set(["page", "ticker"]);
-
-  for (const [key, value] of currentParams.entries()) {
-    if (ignoredExtraParams.has(key)) {
-      continue;
+  if (isNestedRoute) {
+    if (routeTab) {
+      return currentTab === routeTab;
     }
 
-    if (key === "tab" && !routeParams.has("tab")) {
-      if (value === "all") {
-        continue;
-      }
-      return false;
+    if (basePath === "/case-studies") {
+      return currentTab === "all";
     }
 
-    if (!routeParams.has(key)) {
-      return false;
+    if (!routeSource) {
+      return true;
     }
 
-    if (routeParams.get(key) !== value) {
+    if (!currentSource) {
+      return routeSource === "shared";
+    }
+
+    return currentSource === routeSource;
+  }
+
+  for (const [key, value] of routeParams.entries()) {
+    if (currentParams.get(key) !== value) {
       return false;
     }
   }
 
-  for (const [key, value] of routeParams.entries()) {
-    const currentValue = currentParams.get(key);
-    if (currentValue !== value) {
-      return false;
-    }
+  if (!routeTab && currentParams.has("tab") && currentParams.get("tab") !== "all") {
+    return false;
   }
 
   return true;
