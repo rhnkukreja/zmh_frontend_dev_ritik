@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { AI_CHATBOT_API_BASE, IS_LOCAL_ENV } from '@/pages/AIChatbot/api';
+import { AI_CHATBOT_API_BASE, IS_LOCAL_ENV, generateWhaleWisdomId } from '@/pages/AIChatbot/api';
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import BasicProfilePanel from "@/pages/AIChatbot/BasicProfilePanel";
 import ActivistFilingsTable from "@/pages/AIChatbot/ActivistFilingsTable";
+import { DeleteConfirmationModal } from "@/components/DeleteModal";
+import { WhaleWisdomFilerPickerModal, WhaleWisdomFiler } from "@/components/WhaleWisdomFilerPickerModal";
 
 // ─── Module-level cache (survives tab switches, clears on page refresh) ───────
 const PROFILES_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
@@ -601,6 +603,19 @@ const ActivistIntelligenceDashboard = ({
   const [isApprovingBasic, setIsApprovingBasic] = useState(false);
   const [modalBasicResult, setModalBasicResult] = useState<any>(null);
 
+  // WhaleWisdom filer disambiguation — reuses the same picker as the
+  // institution-linking flow (CreateAndEditInstitution.tsx) so a raw typed
+  // name resolves to a specific WhaleWisdom filer before generation runs,
+  // instead of leaving the backend to best-effort match on the name alone.
+  const [isResolvingWhaleWisdom, setIsResolvingWhaleWisdom] = useState(false);
+  const [whaleWisdomFilerOptions, setWhaleWisdomFilerOptions] = useState<WhaleWisdomFiler[]>([]);
+  const [showWhaleWisdomPicker, setShowWhaleWisdomPicker] = useState(false);
+  // Set when the WhaleWisdom lookup came back with zero matches (or failed
+  // outright) — surfaced as a subtle, non-blocking note rather than stopping
+  // generation, since a raw-name-only generate is exactly what happened here
+  // before this feature existed.
+  const [whaleWisdomNoMatch, setWhaleWisdomNoMatch] = useState(false);
+
   // Generation runs server-side, so closing the modal must not stop the job.
   // Holding the poll timer in a ref lets the preview still land once the job
   // finishes with the modal dismissed, and lets us clear the timer on unmount
@@ -671,6 +686,10 @@ const ActivistIntelligenceDashboard = ({
   const [legalNameDraft, setLegalNameDraft] = useState("");
   const [isSavingLegalName, setIsSavingLegalName] = useState(false);
 
+  // Admin-only delete of the active profile.
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletingProfile, setIsDeletingProfile] = useState(false);
+
   const startEditLegalName = (key: string, currentLabel: string) => {
     setEditingNameKey(key);
     setLegalNameDraft(currentLabel);
@@ -733,6 +752,56 @@ const ActivistIntelligenceDashboard = ({
       setError("Failed to rename the firm.");
     } finally {
       setIsSavingLegalName(false);
+    }
+  };
+
+  // Deletes the currently active profile (admin-only — the button that
+  // triggers this is gated on isAdmin, and the backend independently
+  // rejects the call for a non-admin X-User-Type). Handles both slug shapes
+  // the dropdown can hand us: an advanced-profile key ("x-profile") or a
+  // bare basic-only key ("x") — see delete_investor_profile's docstring.
+  const handleDeleteActiveProfile = async () => {
+    if (!activeInvestorKey || isDeletingProfile) return;
+    const deletedKey = activeInvestorKey;
+    setIsDeletingProfile(true);
+    try {
+      await axios.delete(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${deletedKey}`, {
+        headers: { "X-User-Type": user?.user_type || "" },
+      });
+
+      setIsDeleteModalOpen(false);
+      toast.success(`${displayName} profile deleted.`);
+
+      // Drop it from every cache it could be sitting in, then land on
+      // whatever profile remains (mirrors fetchAllProfiles' own fallback:
+      // first remaining key, or empty if that was the last one).
+      setProfilesCache((prev) => {
+        const { [deletedKey]: _omit, ...rest } = prev;
+        return rest;
+      });
+      const baseSlug = toBaseSlug(deletedKey);
+      setBasicProfilesCache((prev) => {
+        const { [baseSlug]: _omit, ...rest } = prev;
+        return rest;
+      });
+      setInvestorNames((prev) => {
+        const { [deletedKey]: _omit, ...rest } = prev;
+        return rest;
+      });
+
+      const remainingKeys = investorKeys.filter((k) => k !== deletedKey);
+      setInvestorKeys(remainingKeys);
+      setActiveInvestorKey(remainingKeys[0] || "");
+      if (!remainingKeys.length) {
+        setProfile(null);
+        setRawProfile(null);
+        setBasicProfile(null);
+      }
+    } catch (err: any) {
+      console.error("Failed to delete profile:", err);
+      toast.error(err.response?.data?.detail || "Failed to delete the profile.");
+    } finally {
+      setIsDeletingProfile(false);
     }
   };
 
@@ -1270,14 +1339,19 @@ const ActivistIntelligenceDashboard = ({
   // discards it with no server-side trace. No duplicate-name check here
   // either: previewing costs nothing to redo, and the guard stays scoped to
   // the "Create Advanced Profile Instead" path below, unchanged.
-  const handleGenerateModalSubmit = async () => {
-    if (!generateInvestorName.trim() || isSubmittingBasic) return;
+  //
+  // Actually calls basic/generate — split out from handleGenerateModalSubmit
+  // so it can run either right after an auto-resolved (0 or 1 candidate)
+  // WhaleWisdom lookup, or from the picker modal's onConfirm once the user
+  // has disambiguated among multiple candidates.
+  const runBasicGenerate = async (filer: WhaleWisdomFiler | null) => {
     setIsSubmittingBasic(true);
     setGenerateError(null);
     try {
       const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/generate`, {
         investor_name: generateInvestorName,
         creator_email: getCreatorEmail(),
+        ...(filer ? { whalewisdom_filer_id: filer.id, whalewisdom_cik: filer.cik } : {}),
       });
       const data = response.data?.data || response.data;
       setModalBasicResult(data);
@@ -1296,11 +1370,52 @@ const ActivistIntelligenceDashboard = ({
     } catch (err: any) {
       console.error("Basic preview generation failed:", err);
       setGenerateError(
-        err.response?.data?.detail || `We couldn't generate a basic profile preview for "${generateInvestorName}".`
+        err.response?.data?.detail || `We couldn't generate a basic profile for  "${generateInvestorName}".`
       );
     } finally {
       setIsSubmittingBasic(false);
     }
+  };
+
+  // "Generate Preview" click — resolves a WhaleWisdom filer for the typed
+  // name first (same auto-select/prompt behavior as the institution-linking
+  // flow's handleGenerateWhaleWisdomId), then hands off to runBasicGenerate.
+  // A failed or empty lookup doesn't block generation — it falls back to the
+  // raw-name-only behavior that existed before this feature, just flagged
+  // with a subtle note so the user knows why no filer was attached.
+  const handleGenerateModalSubmit = async () => {
+    if (!generateInvestorName.trim() || isSubmittingBasic || isResolvingWhaleWisdom) return;
+    setGenerateError(null);
+    setWhaleWisdomNoMatch(false);
+    setIsResolvingWhaleWisdom(true);
+    try {
+      const data = await generateWhaleWisdomId(generateInvestorName, true);
+      const filers: WhaleWisdomFiler[] = data?.filers || [];
+      if (filers.length === 1) {
+        await runBasicGenerate(filers[0]);
+      } else if (filers.length > 1) {
+        setWhaleWisdomFilerOptions(filers);
+        setShowWhaleWisdomPicker(true);
+      } else {
+        setWhaleWisdomNoMatch(true);
+        await runBasicGenerate(null);
+      }
+    } catch (err) {
+      console.warn("WhaleWisdom filer lookup failed; proceeding without a filer match:", err);
+      setWhaleWisdomNoMatch(true);
+      await runBasicGenerate(null);
+    } finally {
+      setIsResolvingWhaleWisdom(false);
+    }
+  };
+
+  const handleWhaleWisdomFilerConfirm = async (filer: WhaleWisdomFiler) => {
+    setShowWhaleWisdomPicker(false);
+    await runBasicGenerate(filer);
+  };
+
+  const handleWhaleWisdomFilerCancel = () => {
+    setShowWhaleWisdomPicker(false);
   };
 
   // The actual publish — takes the basic-profile payload directly (rather
@@ -1312,13 +1427,19 @@ const ActivistIntelligenceDashboard = ({
   // profile is ever actually persisted; closes out and lands the user on
   // the newly-published investor either way.
   const publishBasicProfile = async (basicResult: any) => {
-    const baseSlug = basicResult?.slug || slugifyName(generateInvestorName);
+    const guessedSlug = basicResult?.slug || slugifyName(generateInvestorName);
     setIsApprovingBasic(true);
     setGenerateError(null);
     try {
-      await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicResult);
+      const publishResponse = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicResult);
+      // The backend re-resolves the slug server-side (may differ from our
+      // pre-publish guess — see publish_basic_profile's docstring) and
+      // returns the published profile verbatim, so trust ITS slug, not ours,
+      // for finding/caching the profile we just created.
+      const publishedProfile = publishResponse.data?.data || publishResponse.data || basicResult;
+      const publishedSlug = publishedProfile?.slug || guessedSlug;
 
-      setBasicProfilesCache((prev) => ({ ...prev, [baseSlug]: basicResult }));
+      setBasicProfilesCache((prev) => ({ ...prev, [publishedSlug]: publishedProfile }));
 
       const approvedName = basicResult.investor_name || generateInvestorName;
       setGenerateModalOpen(false);
@@ -1326,7 +1447,7 @@ const ActivistIntelligenceDashboard = ({
       setModalBasicResult(null);
 
       const freshKeys = await fetchAllProfiles();
-      const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === baseSlug);
+      const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === publishedSlug);
       if (matchedKey) setActiveInvestorKey(matchedKey);
       toast.success(`${approvedName} basic profile published.`);
 
@@ -1835,8 +1956,31 @@ const ActivistIntelligenceDashboard = ({
                   </svg>
                 </button>
               )}
+              {isAdmin && activeInvestorKey && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setIsDeleteModalOpen(true); }}
+                  title="Delete profile"
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: "white", opacity: 0.85, padding: 4, display: "inline-flex", flexShrink: 0 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <line x1="10" y1="11" x2="10" y2="17" />
+                    <line x1="14" y1="11" x2="14" y2="17" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
+
+          <DeleteConfirmationModal
+            isVisible={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDeleteActiveProfile}
+            loading={isDeletingProfile}
+            description={`Are you sure you want to delete <strong>${displayName}</strong>'s profile? This action cannot be undone.`}
+          />
 
           {/* ── Inline investor picker ── */}
           {selectorOpen && (
@@ -2393,7 +2537,15 @@ const ActivistIntelligenceDashboard = ({
       {/* ── GENERATE PROFILE MODAL ── */}
       {generateModalOpen && (
         <div
-          onClick={closeGenerateModal}
+          // Any modal/portal rendered inside this overlay (e.g.
+          // WhaleWisdomFilerPickerModal, which portals its DOM elsewhere but
+          // still bubbles its React synthetic events through this tree)
+          // would otherwise have its clicks misread as a backdrop click and
+          // close this whole modal. Only close on a genuine click on the
+          // overlay itself, not one bubbled up from any descendant.
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeGenerateModal();
+          }}
           style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
         >
           {/* Positioned via the Tailwind class, NOT an inline style: app.css has a
@@ -2490,9 +2642,12 @@ const ActivistIntelligenceDashboard = ({
                     autoFocus
                     className="zmh-investor-input"
                     value={generateInvestorName}
-                    onChange={(e) => setGenerateInvestorName(e.target.value)}
+                    onChange={(e) => {
+                      setGenerateInvestorName(e.target.value);
+                      setWhaleWisdomNoMatch(false);
+                    }}
                     placeholder="e.g. Elliott Investment Management"
-                    disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic}
+                    disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
                     style={{
                       width: "100%", marginTop: 8, padding: "10px 14px", fontSize: 14,
                       borderRadius: 6, boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s",
@@ -2500,10 +2655,27 @@ const ActivistIntelligenceDashboard = ({
                   />
                 </label>
 
+                {isResolvingWhaleWisdom && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
+                    <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <span style={{ fontSize: 12, color: "#374151" }}>Looking up WhaleWisdom filer...</span>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  </div>
+                )}
+
+                {whaleWisdomNoMatch && !isResolvingWhaleWisdom && (
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6 }}>
+                    <span style={{ flexShrink: 0, lineHeight: 1, color: "#9ca3af" }}>ⓘ</span>
+                    <span style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
+                      No WhaleWisdom match found for this name — the profile will use best-effort auto-resolution.
+                    </span>
+                  </div>
+                )}
+
                 {isSubmittingBasic && (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                     <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontSize: 12, color: "#374151" }}>Generating the basic profile preview…</span>
+                    <span style={{ fontSize: 12, color: "#374151" }}>Generating the basic profile Please wait...</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 )}
@@ -2535,7 +2707,7 @@ const ActivistIntelligenceDashboard = ({
                   </div>
                 )}
 
-                {generateError && !isGenerating && !isSubmittingBasic && (
+                {generateError && !isGenerating && !isSubmittingBasic && !isResolvingWhaleWisdom && (
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6 }}>
                     <span style={{ flexShrink: 0, lineHeight: 1 }}>⚠</span>
                     <span style={{ fontSize: 12, color: "#b91c1c", lineHeight: 1.5 }}>{generateError}</span>
@@ -2554,15 +2726,22 @@ const ActivistIntelligenceDashboard = ({
                   </button>
                   <button
                     onClick={handleGenerateModalSubmit}
-                    disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic}
-                    style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: (isGenerating || matchingActiveJob || isSubmittingBasic) ? "wait" : "pointer", fontWeight: 600, opacity: (isGenerating || matchingActiveJob || isSubmittingBasic) ? 0.7 : 1 }}
+                    disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
+                    style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? "wait" : "pointer", fontWeight: 600, opacity: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? 0.7 : 1 }}
                   >
-                    {isSubmittingBasic ? "Generating..." : (isGenerating || matchingActiveJob) ? "Generating..." : "Generate Preview"}
+                    {isResolvingWhaleWisdom ? "Looking up filer..." : isSubmittingBasic ? "Generating..." : (isGenerating || matchingActiveJob) ? "Generating..." : "Generate Preview"}
                   </button>
                 </div>
               </>
             )}
           </div>
+
+          <WhaleWisdomFilerPickerModal
+            filers={whaleWisdomFilerOptions}
+            isOpen={showWhaleWisdomPicker}
+            onConfirm={handleWhaleWisdomFilerConfirm}
+            onCancel={handleWhaleWisdomFilerCancel}
+          />
         </div>
       )}
 
