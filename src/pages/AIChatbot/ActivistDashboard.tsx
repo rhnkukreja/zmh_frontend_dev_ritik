@@ -1431,7 +1431,7 @@ const ActivistIntelligenceDashboard = ({
         return;
       }
 
-      const data = await generateWhaleWisdomId(generateInvestorName, true);
+      const data = await generateWhaleWisdomId(generateInvestorName);
       const filers: WhaleWisdomFiler[] = data?.filers || [];
       if (filers.length === 1) {
         await runBasicGenerate(filers[0]);
