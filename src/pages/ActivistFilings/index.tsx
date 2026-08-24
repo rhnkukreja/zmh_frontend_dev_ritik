@@ -243,7 +243,7 @@ function ActivistFilings() {
 
               <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  {activeTab === ACTIVIST_FILINGS_TAB && (
+                  {/* {activeTab === ACTIVIST_FILINGS_TAB && (
                     <div className="inline-flex w-fit max-w-[72%] items-baseline gap-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                       <span className="font-semibold text-slate-700">Note:</span>
                       <span className="italic">
@@ -252,7 +252,7 @@ function ActivistFilings() {
                         <span className="font-semibold not-italic">PRE 14A</span>. Use the filter to select these filings if available.
                       </span>
                     </div>
-                  )}
+                  )} */}
 
                   <div className="ml-auto flex shrink-0 items-center gap-3 text-sm text-slate-600">
                   <div className="flex items-center gap-2">
