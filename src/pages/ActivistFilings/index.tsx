@@ -221,7 +221,7 @@ function ActivistFilings() {
                       ? "bg-white text-primary shadow-sm"
                       : "text-slate-500 hover:text-slate-700")}
                 >
-                  Activist Filings
+                  Activism Related Filings
                   <span className="ml-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                     {activistFilingsCount}
                   </span>
