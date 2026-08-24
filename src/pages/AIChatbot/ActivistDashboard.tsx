@@ -1263,6 +1263,11 @@ const ActivistIntelligenceDashboard = ({
               await publishProfileToS3(jobData.data);
               const newSlug = jobData.data?.metadata?.slug || slug;
               await fetchAllProfiles(newSlug);
+              // Same as publishBasicProfile: land on a clean view of the
+              // freshly-generated profile, not the investor grid still open
+              // from before generation started.
+              setSelectorOpen(false);
+              setSelectorSearch("");
               const legalName = extractLegalName(jobData.data) || generateInvestorName;
               toast.success(`${legalName} profile created — now available in the dropdown.`);
             } catch (publishErr: any) {
@@ -1377,10 +1382,41 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  // "Generate Preview" click — resolves a WhaleWisdom filer for the typed
-  // name first (same auto-select/prompt behavior as the institution-linking
-  // flow's handleGenerateWhaleWisdomId), then hands off to runBasicGenerate.
-  // A failed or empty lookup doesn't block generation — it falls back to the
+  // Checks whether the backend already has a resolved WhaleWisdom filer on
+  // record for this investor name — GET .../basic/known-filer, which does
+  // its own fuzzy name matching server-side (the same matching used
+  // everywhere else on the backend). This makes no matching decisions of
+  // its own; it only reads resolved_whalewisdom_filer_id /
+  // resolved_whalewisdom_cik off the response (both null together when
+  // nothing's known — investor doesn't exist yet, or exists but was
+  // published before these fields did). Returns null in both of those
+  // cases, and on any request failure, so callers uniformly fall through to
+  // the normal search+picker flow.
+  const getKnownWhaleWisdomFiler = async (investorName: string): Promise<WhaleWisdomFiler | null> => {
+    try {
+      const response = await axios.get(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/known-filer`, {
+        params: { investor_name: investorName },
+      });
+      const filerId = response.data?.resolved_whalewisdom_filer_id;
+      const cik = response.data?.resolved_whalewisdom_cik;
+      if (!filerId || !cik) return null;
+      // name/link aren't returned by this endpoint and aren't needed — this
+      // filer is only ever handed to runBasicGenerate (which only reads
+      // id/cik), never rendered in a picker.
+      return { id: filerId, cik, name: investorName, link: "" };
+    } catch (err) {
+      console.warn("[WhaleWisdom] known-filer lookup failed; falling back to the normal search:", err);
+      return null;
+    }
+  };
+
+  // "Generate Preview" click. First checks whether the backend already has a
+  // resolved filer on record for this investor name — if so, generation
+  // proceeds straight through with it, no WhaleWisdom search or picker at
+  // all. Otherwise resolves a filer for the typed name via WhaleWisdom (same
+  // auto-select/prompt behavior as the institution-linking flow's
+  // handleGenerateWhaleWisdomId), then hands off to runBasicGenerate. A
+  // failed or empty lookup doesn't block generation — it falls back to the
   // raw-name-only behavior that existed before this feature, just flagged
   // with a subtle note so the user knows why no filer was attached.
   const handleGenerateModalSubmit = async () => {
@@ -1389,6 +1425,12 @@ const ActivistIntelligenceDashboard = ({
     setWhaleWisdomNoMatch(false);
     setIsResolvingWhaleWisdom(true);
     try {
+      const knownFiler = await getKnownWhaleWisdomFiler(generateInvestorName);
+      if (knownFiler) {
+        await runBasicGenerate(knownFiler);
+        return;
+      }
+
       const data = await generateWhaleWisdomId(generateInvestorName, true);
       const filers: WhaleWisdomFiler[] = data?.filers || [];
       if (filers.length === 1) {
@@ -1432,10 +1474,6 @@ const ActivistIntelligenceDashboard = ({
     setGenerateError(null);
     try {
       const publishResponse = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicResult);
-      // The backend re-resolves the slug server-side (may differ from our
-      // pre-publish guess — see publish_basic_profile's docstring) and
-      // returns the published profile verbatim, so trust ITS slug, not ours,
-      // for finding/caching the profile we just created.
       const publishedProfile = publishResponse.data?.data || publishResponse.data || basicResult;
       const publishedSlug = publishedProfile?.slug || guessedSlug;
 
@@ -1449,6 +1487,10 @@ const ActivistIntelligenceDashboard = ({
       const freshKeys = await fetchAllProfiles();
       const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === publishedSlug);
       if (matchedKey) setActiveInvestorKey(matchedKey);
+      // Land on a clean view of the freshly-published profile, not the full
+      // investor grid still hanging open from before generation started.
+      setSelectorOpen(false);
+      setSelectorSearch("");
       toast.success(`${approvedName} basic profile published.`);
 
       // Basic→Advanced no longer auto-chains (deliberate product decision,
