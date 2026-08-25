@@ -481,7 +481,7 @@ const HoldingsSection = ({ section }: { section: any }) => {
 const ActivistFilingsSection = ({ section }: { section: any }) => {
   if (!section || section.status !== "ok") {
     return (
-      <SectionCard title="Activist Filings (13D/13G & Proxy Contests)" icon="FileText">
+      <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText">
         <UnavailableNotice label="Activist filings" message="None" error={section?.error} />
       </SectionCard>
     );
@@ -490,7 +490,7 @@ const ActivistFilingsSection = ({ section }: { section: any }) => {
   const filings = Array.isArray(section.filings) ? section.filings : [];
 
   return (
-    <SectionCard title="Activist Filings (13D/13G & Proxy Contests)" icon="FileText" collapsible defaultOpen={false}>
+    <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText" collapsible defaultOpen={false}>
       <ActivistFilingsTable filings={filings} variant="tailwind" />
     </SectionCard>
   );

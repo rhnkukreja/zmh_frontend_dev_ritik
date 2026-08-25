@@ -551,7 +551,9 @@ const ActivistIntelligenceDashboard = ({
   // out of Edit Mode. Edit Mode is admin-only.
   const userType = (user?.user_type || "").trim().toLowerCase();
   const isAdmin = userType === "admin";
-  const showEditButton = isAdmin;
+  const isAnalyst = userType === "analyst";
+  const isAdminOrAnalyst = isAdmin || isAnalyst;
+  const showEditButton = isAdminOrAnalyst;
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
   const [investorKeys, setInvestorKeys] = useState<string[]>([]);
@@ -2172,7 +2174,7 @@ const ActivistIntelligenceDashboard = ({
                       // lives (basicProfile.sections.activist_filings), not
                       // on the Advanced `profile` object.
                       ...(hasBasicProfile && hasAdvancedProfile
-                        ? [{ id: "activist_filings", label: "Activist Filings (13D/13G & Proxy Contests)" }]
+                        ? [{ id: "activist_filings", label: "Activist Filings (13D & Proxy Contests)" }]
                         : []),
                       { id: "personnel", label: "Personnel" },
                       { id: "sources",   label: "Sources" },
@@ -2449,7 +2451,7 @@ const ActivistIntelligenceDashboard = ({
             const filingsList = Array.isArray(filings) ? filings : [];
             return (
               <>
-                <SectionHeader title="Activist Filings (13D/13G & Proxy Contests)" />
+                <SectionHeader title="Activist Filings (13D & Proxy Contests)" />
                 <ActivistFilingsTable filings={filingsList} variant="inline" />
               </>
             );
@@ -2673,10 +2675,7 @@ const ActivistIntelligenceDashboard = ({
               </>
             ) : (
               <>
-                <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Generate New Profile</h2>
-                <p style={{ margin: "0 0 24px", color: "#6b7280", fontSize: 13 }}>
-                  Enter an activist fund's legal name to preview a basic profile — nothing is saved until you approve it.
-                </p>
+                <h2 style={{ margin: "0 0 24px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Generate New Profile</h2>
 
                 <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
                   Activist Name
@@ -2700,7 +2699,7 @@ const ActivistIntelligenceDashboard = ({
                 {isResolvingWhaleWisdom && (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                     <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontSize: 12, color: "#374151" }}>Looking up WhaleWisdom filer...</span>
+                    <span style={{ fontSize: 12, color: "#374151" }}>Researching...</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 )}
@@ -2771,7 +2770,7 @@ const ActivistIntelligenceDashboard = ({
                     disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
                     style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? "wait" : "pointer", fontWeight: 600, opacity: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? 0.7 : 1 }}
                   >
-                    {isResolvingWhaleWisdom ? "Looking up filer..." : isSubmittingBasic ? "Generating..." : (isGenerating || matchingActiveJob) ? "Generating..." : "Generate Preview"}
+                    {isResolvingWhaleWisdom ? "Researching..." : isSubmittingBasic ? "Generating..." : (isGenerating || matchingActiveJob) ? "Generating..." : "Generate Preview"}
                   </button>
                 </div>
               </>
