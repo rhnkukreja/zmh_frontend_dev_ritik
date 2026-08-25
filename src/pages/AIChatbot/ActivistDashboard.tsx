@@ -551,7 +551,9 @@ const ActivistIntelligenceDashboard = ({
   // out of Edit Mode. Edit Mode is admin-only.
   const userType = (user?.user_type || "").trim().toLowerCase();
   const isAdmin = userType === "admin";
-  const showEditButton = isAdmin;
+  const isAnalyst = userType === "analyst";
+  const isAdminOrAnalyst = isAdmin || isAnalyst;
+  const showEditButton = isAdminOrAnalyst;
 
   const [profilesCache, setProfilesCache] = useState<Record<string, any>>({});
   const [investorKeys, setInvestorKeys] = useState<string[]>([]);
@@ -1263,6 +1265,11 @@ const ActivistIntelligenceDashboard = ({
               await publishProfileToS3(jobData.data);
               const newSlug = jobData.data?.metadata?.slug || slug;
               await fetchAllProfiles(newSlug);
+              // Same as publishBasicProfile: land on a clean view of the
+              // freshly-generated profile, not the investor grid still open
+              // from before generation started.
+              setSelectorOpen(false);
+              setSelectorSearch("");
               const legalName = extractLegalName(jobData.data) || generateInvestorName;
               toast.success(`${legalName} profile created — now available in the dropdown.`);
             } catch (publishErr: any) {
@@ -1377,10 +1384,41 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  // "Generate Preview" click — resolves a WhaleWisdom filer for the typed
-  // name first (same auto-select/prompt behavior as the institution-linking
-  // flow's handleGenerateWhaleWisdomId), then hands off to runBasicGenerate.
-  // A failed or empty lookup doesn't block generation — it falls back to the
+  // Checks whether the backend already has a resolved WhaleWisdom filer on
+  // record for this investor name — GET .../basic/known-filer, which does
+  // its own fuzzy name matching server-side (the same matching used
+  // everywhere else on the backend). This makes no matching decisions of
+  // its own; it only reads resolved_whalewisdom_filer_id /
+  // resolved_whalewisdom_cik off the response (both null together when
+  // nothing's known — investor doesn't exist yet, or exists but was
+  // published before these fields did). Returns null in both of those
+  // cases, and on any request failure, so callers uniformly fall through to
+  // the normal search+picker flow.
+  const getKnownWhaleWisdomFiler = async (investorName: string): Promise<WhaleWisdomFiler | null> => {
+    try {
+      const response = await axios.get(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/known-filer`, {
+        params: { investor_name: investorName },
+      });
+      const filerId = response.data?.resolved_whalewisdom_filer_id;
+      const cik = response.data?.resolved_whalewisdom_cik;
+      if (!filerId || !cik) return null;
+      // name/link aren't returned by this endpoint and aren't needed — this
+      // filer is only ever handed to runBasicGenerate (which only reads
+      // id/cik), never rendered in a picker.
+      return { id: filerId, cik, name: investorName, link: "" };
+    } catch (err) {
+      console.warn("[WhaleWisdom] known-filer lookup failed; falling back to the normal search:", err);
+      return null;
+    }
+  };
+
+  // "Generate Preview" click. First checks whether the backend already has a
+  // resolved filer on record for this investor name — if so, generation
+  // proceeds straight through with it, no WhaleWisdom search or picker at
+  // all. Otherwise resolves a filer for the typed name via WhaleWisdom (same
+  // auto-select/prompt behavior as the institution-linking flow's
+  // handleGenerateWhaleWisdomId), then hands off to runBasicGenerate. A
+  // failed or empty lookup doesn't block generation — it falls back to the
   // raw-name-only behavior that existed before this feature, just flagged
   // with a subtle note so the user knows why no filer was attached.
   const handleGenerateModalSubmit = async () => {
@@ -1389,6 +1427,12 @@ const ActivistIntelligenceDashboard = ({
     setWhaleWisdomNoMatch(false);
     setIsResolvingWhaleWisdom(true);
     try {
+      const knownFiler = await getKnownWhaleWisdomFiler(generateInvestorName);
+      if (knownFiler) {
+        await runBasicGenerate(knownFiler);
+        return;
+      }
+
       const data = await generateWhaleWisdomId(generateInvestorName);
       const filers: WhaleWisdomFiler[] = data?.filers || [];
       if (filers.length === 1) {
@@ -1432,10 +1476,6 @@ const ActivistIntelligenceDashboard = ({
     setGenerateError(null);
     try {
       const publishResponse = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicResult);
-      // The backend re-resolves the slug server-side (may differ from our
-      // pre-publish guess — see publish_basic_profile's docstring) and
-      // returns the published profile verbatim, so trust ITS slug, not ours,
-      // for finding/caching the profile we just created.
       const publishedProfile = publishResponse.data?.data || publishResponse.data || basicResult;
       const publishedSlug = publishedProfile?.slug || guessedSlug;
 
@@ -1449,6 +1489,10 @@ const ActivistIntelligenceDashboard = ({
       const freshKeys = await fetchAllProfiles();
       const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === publishedSlug);
       if (matchedKey) setActiveInvestorKey(matchedKey);
+      // Land on a clean view of the freshly-published profile, not the full
+      // investor grid still hanging open from before generation started.
+      setSelectorOpen(false);
+      setSelectorSearch("");
       toast.success(`${approvedName} basic profile published.`);
 
       // Basic→Advanced no longer auto-chains (deliberate product decision,
@@ -2130,7 +2174,7 @@ const ActivistIntelligenceDashboard = ({
                       // lives (basicProfile.sections.activist_filings), not
                       // on the Advanced `profile` object.
                       ...(hasBasicProfile && hasAdvancedProfile
-                        ? [{ id: "activist_filings", label: "Activist Filings (13D/13G & Proxy Contests)" }]
+                        ? [{ id: "activist_filings", label: "Activist Filings (13D & Proxy Contests)" }]
                         : []),
                       { id: "personnel", label: "Personnel" },
                       { id: "sources",   label: "Sources" },
@@ -2407,7 +2451,7 @@ const ActivistIntelligenceDashboard = ({
             const filingsList = Array.isArray(filings) ? filings : [];
             return (
               <>
-                <SectionHeader title="Activist Filings (13D/13G & Proxy Contests)" />
+                <SectionHeader title="Activist Filings (13D & Proxy Contests)" />
                 <ActivistFilingsTable filings={filingsList} variant="inline" />
               </>
             );
@@ -2631,10 +2675,7 @@ const ActivistIntelligenceDashboard = ({
               </>
             ) : (
               <>
-                <h2 style={{ margin: "0 0 8px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Generate New Profile</h2>
-                <p style={{ margin: "0 0 24px", color: "#6b7280", fontSize: 13 }}>
-                  Enter an activist fund's legal name to preview a basic profile — nothing is saved until you approve it.
-                </p>
+                <h2 style={{ margin: "0 0 24px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Generate New Profile</h2>
 
                 <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
                   Activist Name
@@ -2658,7 +2699,7 @@ const ActivistIntelligenceDashboard = ({
                 {isResolvingWhaleWisdom && (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
                     <div style={{ width: 14, height: 14, border: `2px solid ${THEME_MAROON}30`, borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontSize: 12, color: "#374151" }}>Looking up WhaleWisdom filer...</span>
+                    <span style={{ fontSize: 12, color: "#374151" }}>Researching...</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 )}
@@ -2729,7 +2770,7 @@ const ActivistIntelligenceDashboard = ({
                     disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
                     style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? "wait" : "pointer", fontWeight: 600, opacity: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? 0.7 : 1 }}
                   >
-                    {isResolvingWhaleWisdom ? "Looking up filer..." : isSubmittingBasic ? "Generating..." : (isGenerating || matchingActiveJob) ? "Generating..." : "Generate Preview"}
+                    {isResolvingWhaleWisdom ? "Researching..." : isSubmittingBasic ? "Generating..." : (isGenerating || matchingActiveJob) ? "Generating..." : "Generate Preview"}
                   </button>
                 </div>
               </>
