@@ -220,7 +220,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
           <TableWrapper
             isLoading={getProxyVotingRationaleLoading || parentLoading}
             rows={6}
-            columns={3}
+            columns={4}
           >
             <div className="overflow-auto max-h-[520px] rounded-lg border border-slate-200">
               <Table>
@@ -232,6 +232,9 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
 
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                       Proposal
+                    </Table.Td>
+                    <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
+                      Vote
                     </Table.Td>
                     <Table.Td className="py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2]">
                       <div className="flex items-center gap-2">
@@ -266,7 +269,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                               onClick={() => toggleGroup(investorName)}
                             >
                               <Table.Td
-                                colSpan={3}
+                                colSpan={4}
                                 className="font-semibold py-4 px-4"
                               >
                                 <div className="flex flex-row justify-between items-center gap-3">
@@ -315,6 +318,12 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                                       </div>
                                     </Table.Td>
 
+                                    <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 min-w-[120px] bg-inherit align-top" style={{ verticalAlign: 'top' }}>
+                                      <div className={`font-medium text-sm ${["Against", "Withhold", "Withheld", "Withold"].includes(question?.vote) ? "text-red-700" : "text-gray-800 dark:text-gray-200"}`}>
+                                        {question?.vote}
+                                      </div>
+                                    </Table.Td>
+
                                     <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-inherit align-top" style={{ verticalAlign: 'top' }}>
                                       <div
                                         dangerouslySetInnerHTML={{
@@ -332,7 +341,7 @@ const VotingRationale: React.FC<VotingRationaleProps> = ({
                     ) : (
                       <Table.Tr>
                         <Table.Td
-                          colSpan={5}
+                          colSpan={4}
                           className="py-10 text-center text-slate-500"
                         >
                           No Voting Rationale.
