@@ -673,8 +673,8 @@ const getNormalizedScrapedInfo = (name: string) => {
                                           </div>
                                         </Table.Td>
       
-      <Table.Td className="relative w-full px-4 py-2 pr-10">
-    <div className="flex items-center whitespace-nowrap gap-2">
+      <Table.Td className="relative w-full min-w-[320px] px-4 py-2 pr-28">
+    <div className="flex min-w-0 items-start gap-2">
         
         {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
         {(() => {
@@ -720,7 +720,7 @@ const getNormalizedScrapedInfo = (name: string) => {
     }
   }}
   className={clsx([
-    "cell whitespace-nowrap capitalize text-wrap font-semibold",
+    "block min-w-0 max-w-[260px] break-words whitespace-normal capitalize font-semibold leading-tight",
     dashboard?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
   ])}
 >
@@ -735,14 +735,14 @@ const getNormalizedScrapedInfo = (name: string) => {
 })()}
 
       {dashboard?.flag_13d === true && (
-        <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
+        <img className="ml-2 w-3 shrink-0" alt="flag-icon" src={flagIcon} />
       )}
    {/* ========================================== */}
     {/* 2. ACTION BUTTONS (EYE ICON LOGIC)         */}
     {/* ========================================== */}
     {/* 2. SILENT ACTION TRAYS (CLEAN RENDER VIEW) */}
     {/* ========================================== */}
-    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center gap-x-2 w-5">
+    <div className="absolute right-3 top-1/2 flex w-[120px] -translate-y-1/2 items-center justify-end gap-2 pl-2">
       {dashboard?.investor_profile_id || dashboard?.institution_name?.toLowerCase().includes('vanguard') ? (
         /* Show Investor Profile if it exists (or forced for Vanguard) */
         <Tippy
