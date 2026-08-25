@@ -19,7 +19,7 @@ const ANNUAL_MEETING_FORMS = new Set(
 export type FormBucket = "all" | "ownership" | "proxy_contest" | "annual_meeting";
 
 const FORM_BUCKET_LABELS: Record<Exclude<FormBucket, "all">, string> = {
-  ownership: "13D/13G Ownership",
+  ownership: "13D Ownership",
   proxy_contest: "Proxy Contest",
   annual_meeting: "Annual Meeting Proxy",
 };
