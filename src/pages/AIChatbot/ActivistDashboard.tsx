@@ -100,6 +100,89 @@ const toBaseSlug = (key: string) => (key || "").replace(/[-_]profile$/i, "");
 const statusKey = (status: any) =>
   String(status || "closed").toLowerCase().trim().split(/[/\s(]/)[0];
 
+// ─── Investor selector: fuzzy search ───────────────────────────────────────────
+
+/** Trailing legal-entity suffix only — deliberately narrow. Activist fund
+ * names routinely differ on words like "Capital"/"Management"/"Partners"
+ * (e.g. "Elliott Investment Management" vs "Elliott Capital"), so those stay
+ * significant; only the bare corporate-form suffix is stripped. */
+const LEGAL_SUFFIX_RE = /\s+(inc|incorporated|corp|corporation|co|company|llc|llp|lp|ltd|limited|plc|gp)$/;
+
+/** lowercase, strip punctuation, collapse whitespace, drop a trailing
+ * legal-entity suffix — so "Elliott Mgmt, LLC." and "elliott mgmt llc" line
+ * up as the same search key. */
+const normalizeForMatch = (text: string): string => {
+  const collapsed = (text || "")
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return collapsed.replace(LEGAL_SUFFIX_RE, "").trim();
+};
+
+/** Scores `label` against `query` (higher = better), or null if it isn't a
+ * match at all. Exact/prefix/substring matches on the normalized strings win
+ * outright; otherwise every whitespace-separated query token must appear
+ * somewhere in the label (in any order), so "mgmt elliott" still finds
+ * "Elliott Investment Management". */
+const scoreInvestorMatch = (label: string, query: string): number | null => {
+  const normQuery = normalizeForMatch(query);
+  if (!normQuery) return 0;
+  const normLabel = normalizeForMatch(label);
+  if (normLabel === normQuery) return 100;
+  if (normLabel.startsWith(normQuery)) return 90;
+  if (normLabel.includes(normQuery)) return 80;
+
+  const queryTokens = normQuery.split(" ").filter(Boolean);
+  const labelTokens = normLabel.split(" ").filter(Boolean);
+  const allTokensMatch = queryTokens.every((qt) => labelTokens.some((lt) => lt.includes(qt)));
+  if (!allTokensMatch) return null;
+
+  const firstIndex = Math.min(...queryTokens.map((qt) => normLabel.indexOf(qt)).filter((i) => i >= 0));
+  return 60 - firstIndex * 0.1;
+};
+
+/** Bolds every case-insensitive occurrence of each search token inside the
+ * (un-normalized) label, so highlighting still lines up with what's on
+ * screen even though matching itself runs on the normalized/stripped text. */
+const highlightInvestorMatch = (label: string, query: string): React.ReactNode => {
+  const tokens = query.trim().split(/\s+/).filter(Boolean).map((t) => t.toLowerCase());
+  if (tokens.length === 0) return label;
+
+  const lowerLabel = label.toLowerCase();
+  const ranges: [number, number][] = [];
+  tokens.forEach((t) => {
+    let idx = lowerLabel.indexOf(t);
+    while (idx !== -1) {
+      ranges.push([idx, idx + t.length]);
+      idx = lowerLabel.indexOf(t, idx + 1);
+    }
+  });
+  if (ranges.length === 0) return label;
+
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const r of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+    else merged.push([r[0], r[1]]);
+  }
+
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+  merged.forEach(([start, end], i) => {
+    if (start > cursor) nodes.push(label.slice(cursor, start));
+    nodes.push(
+      <strong key={i} style={{ fontWeight: 700, background: "#fde68a", borderRadius: 2 }}>
+        {label.slice(start, end)}
+      </strong>
+    );
+    cursor = end;
+  });
+  if (cursor < label.length) nodes.push(label.slice(cursor));
+  return nodes;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 // SEC figures are US dollars and must group US-style. Left to the browser's
@@ -460,7 +543,7 @@ const InvestorTrigger = ({
       display: "flex",
       alignItems: "center",
       gap: 8,
-      width: 260,
+      width: 320,
       boxSizing: "border-box",
       flexShrink: 0,
       textAlign: "left",
@@ -679,6 +762,39 @@ const ActivistIntelligenceDashboard = ({
   const failedProfileKeysRef = useRef<Set<string>>(new Set());
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
+  const [selectorHighlightedIndex, setSelectorHighlightedIndex] = useState(0);
+  const selectorContainerRef = useRef<HTMLDivElement>(null);
+  const selectorOptionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Close on outside click or Escape — the dropdown previously only closed
+  // via an explicit onClick on an item or the trigger toggle.
+  useEffect(() => {
+    if (!selectorOpen) return;
+    const handlePointerDown = (e: MouseEvent) => {
+      if (selectorContainerRef.current && !selectorContainerRef.current.contains(e.target as Node)) {
+        setSelectorOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectorOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectorOpen]);
+
+  // A fresh search (or a freshly (re)opened dropdown) always starts the
+  // keyboard highlight back at the top result.
+  useEffect(() => {
+    setSelectorHighlightedIndex(0);
+  }, [selectorSearch, selectorOpen]);
+
+  useEffect(() => {
+    selectorOptionRefs.current[selectorHighlightedIndex]?.scrollIntoView({ block: "nearest" });
+  }, [selectorHighlightedIndex]);
 
   // Admin-only inline rename of a firm's display name (header title and/or
   // investor picker). Keyed by which investor key is currently being edited
@@ -1480,6 +1596,14 @@ const ActivistIntelligenceDashboard = ({
       const publishedSlug = publishedProfile?.slug || guessedSlug;
 
       setBasicProfilesCache((prev) => ({ ...prev, [publishedSlug]: publishedProfile }));
+      // setActiveInvestorKey below is a no-op when this investor's Advanced
+      // profile was already active (matchedKey === activeInvestorKey), which
+      // means the Basic-loading effect (keyed only on activeInvestorKey)
+      // never re-fires and loadBasicForKey never picks up the cache update
+      // above. Set basicProfile directly so the freshly-published profile
+      // shows immediately regardless of whether the key actually changes.
+      setBasicProfile(publishedProfile);
+      setBasicError(null);
 
       const approvedName = basicResult.investor_name || generateInvestorName;
       setGenerateModalOpen(false);
@@ -1490,9 +1614,11 @@ const ActivistIntelligenceDashboard = ({
       const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === publishedSlug);
       if (matchedKey) setActiveInvestorKey(matchedKey);
       // Land on a clean view of the freshly-published profile, not the full
-      // investor grid still hanging open from before generation started.
+      // investor grid still hanging open from before generation started, and
+      // not whatever tab (e.g. Advanced) was active before generation.
       setSelectorOpen(false);
       setSelectorSearch("");
+      setProfileViewMode("basic");
       toast.success(`${approvedName} basic profile published.`);
 
       // Basic→Advanced no longer auto-chains (deliberate product decision,
@@ -1728,6 +1854,49 @@ const ActivistIntelligenceDashboard = ({
   // when the Advanced fetch succeeded; fall back through the Basic profile's
   // name, the index's cached name, then the slug itself.
   const displayName = profile?.legalName || basicProfile?.investor_name || investorNames[activeInvestorKey] || formatKeyToLabel(activeInvestorKey);
+
+  // Investor-selector dropdown: fuzzy-matched + ranked, best match first.
+  const filteredInvestors = investorKeys
+    .map((key) => ({ key, label: investorNames[key] || formatKeyToLabel(key) }))
+    .map((item) => ({ ...item, score: scoreInvestorMatch(item.label, selectorSearch) }))
+    .filter((item): item is typeof item & { score: number } => item.score !== null)
+    .sort((a, b) => b.score - a.score);
+
+  // "Not in our database" fallback — pre-fills and opens the exact same
+  // Generate New Profile flow as the header's own CTA (see the
+  // primaryActiveJob onClick above).
+  const openGenerateModalFromSelectorSearch = () => {
+    setGenerateInvestorName(selectorSearch.trim());
+    setGenerateError(null);
+    setSelectorOpen(false);
+    setSelectorSearch("");
+    setGenerateModalOpen(true);
+  };
+
+  const handleSelectorSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectorHighlightedIndex((i) => Math.min(i + 1, filteredInvestors.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectorHighlightedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const item = filteredInvestors[selectorHighlightedIndex];
+      if (item) {
+        setActiveInvestorKey(item.key);
+        setSelectorOpen(false);
+        setSelectorSearch("");
+      } else if (selectorSearch.trim()) {
+        openGenerateModalFromSelectorSearch();
+      }
+    } else if (e.key === "Escape") {
+      // Also handled by the document-level listener; this just avoids
+      // waiting on the event to bubble while focus is in the input.
+      e.preventDefault();
+      setSelectorOpen(false);
+    }
+  };
 
   const campaigns = profile?.campaigns || [];
   // Match on the canonical first word, not the whole string — otherwise every
@@ -1982,11 +2151,115 @@ const ActivistIntelligenceDashboard = ({
                   }}
                 />
               )}
-              <InvestorTrigger
-                label={displayName}
-                open={selectorOpen}
-                onClick={() => { setSelectorOpen((v) => !v); setSelectorSearch(""); }}
-              />
+              <div ref={selectorContainerRef} style={{ position: "relative" }}>
+                <InvestorTrigger
+                  label={displayName}
+                  open={selectorOpen}
+                  onClick={() => { setSelectorOpen((v) => !v); setSelectorSearch(""); }}
+                />
+
+                {/* ── Inline investor picker — anchored floating dropdown, not
+                    a full-width panel. Closes on outside click, Escape, or a
+                    selection (see the effect above that wires those up). ── */}
+                {selectorOpen && (
+                  <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: 380, zIndex: 50, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: 12, boxShadow: "0 10px 25px -5px rgba(0,0,0,0.15), 0 4px 6px -4px rgba(0,0,0,0.1)" }}>
+                    <div style={{ position: "relative", marginBottom: 10 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                      <input
+                        autoFocus
+                        value={selectorSearch}
+                        onChange={(e) => setSelectorSearch(e.target.value)}
+                        onKeyDown={handleSelectorSearchKeyDown}
+                        placeholder="Search investors..."
+                        style={{ width: "100%", padding: "9px 12px 9px 36px", fontSize: 13, border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", boxSizing: "border-box", color: "#111827", background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+                      />
+                    </div>
+
+                    {filteredInvestors.length === 0 && selectorSearch.trim() ? (
+                      <div style={{ padding: "18px 12px", textAlign: "center" }}>
+                        <div style={{ fontSize: 12.5, color: "#6b7280", marginBottom: 12, lineHeight: 1.5 }}>
+                          No investor found matching "{selectorSearch.trim()}".
+                        </div>
+                        <button
+                          type="button"
+                          onClick={openGenerateModalFromSelectorSearch}
+                          style={{ padding: "8px 14px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600, fontSize: 12.5 }}
+                        >
+                          Generate a new profile for "{selectorSearch.trim()}"
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", maxHeight: 420, overflowY: "auto", overflowX: "hidden", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+                        {filteredInvestors.map(({ key, label: investorLabel }, index) => {
+                          const isActive = key === activeInvestorKey;
+                          const isHighlighted = index === selectorHighlightedIndex;
+                          const job = getActiveJobForKey(key);
+
+                          if (editingNameKey === key) {
+                            return (
+                              <div key={key} style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 6, borderBottom: "1px solid #f3f4f6", background: "#fff" }}>
+                                <input
+                                  autoFocus
+                                  value={legalNameDraft}
+                                  onChange={(e) => setLegalNameDraft(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === "Enter") saveLegalName(key); if (e.key === "Escape") cancelEditLegalName(); }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  disabled={isSavingLegalName}
+                                  style={{ flex: 1, minWidth: 0, fontSize: 13, padding: "5px 8px", borderRadius: 4, border: "1px solid #d1d5db", outline: "none", color: "#111827" }}
+                                />
+                                <button type="button" onClick={(e) => { e.stopPropagation(); saveLegalName(key); }} disabled={isSavingLegalName} title="Save" style={{ background: "transparent", border: "none", cursor: isSavingLegalName ? "wait" : "pointer", color: "#059669", padding: 2, display: "inline-flex", flexShrink: 0 }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                </button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); cancelEditLegalName(); }} title="Cancel" style={{ background: "transparent", border: "none", cursor: "pointer", color: "#dc2626", padding: 2, display: "inline-flex", flexShrink: 0 }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                </button>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={key}
+                              ref={(el) => { selectorOptionRefs.current[index] = el; }}
+                              onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
+                              onMouseEnter={() => setSelectorHighlightedIndex(index)}
+                              style={{
+                                padding: "10px 12px", fontSize: 13, textAlign: "left",
+                                background: isActive ? "#fdf2f2" : isHighlighted ? "#f3f4f6" : "#fff", color: isActive ? THEME_MAROON : "#374151",
+                                fontWeight: isActive ? 600 : 400, border: "none", borderBottom: "1px solid #f3f4f6",
+                                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 8, transition: "background 0.1s",
+                              }}
+                            >
+                              {isActive && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12" /></svg>}
+                              <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
+                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{highlightInvestorMatch(investorLabel, selectorSearch)}</span>
+                                {job && <GeneratingChip job={job} />}
+                              </span>
+                              {isAdmin && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => { e.stopPropagation(); startEditLegalName(key, investorLabel); }}
+                                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); startEditLegalName(key, investorLabel); } }}
+                                  title="Rename firm"
+                                  style={{ display: "inline-flex", flexShrink: 0, color: "#9ca3af", padding: 2 }}
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                  </svg>
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               {isAdmin && (
                 <button
                   type="button"
@@ -2025,90 +2298,6 @@ const ActivistIntelligenceDashboard = ({
             loading={isDeletingProfile}
             description={`Are you sure you want to delete <strong>${displayName}</strong>'s profile? This action cannot be undone.`}
           />
-
-          {/* ── Inline investor picker ── */}
-          {selectorOpen && (
-            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, borderBottom: "1px solid #e5e7eb", background: "#f9fafb", padding: "16px 24px", borderBottomLeftRadius: 10, borderBottomRightRadius: 10, boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}>
-              <div style={{ position: "relative", marginBottom: 14 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input
-                  autoFocus
-                  value={selectorSearch}
-                  onChange={(e) => setSelectorSearch(e.target.value)}
-                  placeholder="Search investors..."
-                  style={{ width: "100%", padding: "9px 12px 9px 36px", fontSize: 13, border: "1px solid #e5e7eb", borderRadius: 8, outline: "none", boxSizing: "border-box", color: "#111827", background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
-                />
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 0, maxHeight: 300, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", overflow: "hidden" }}>
-                {investorKeys.filter((k) => (investorNames[k] || formatKeyToLabel(k)).toLowerCase().includes(selectorSearch.toLowerCase())).map((key) => {
-                  const isActive = key === activeInvestorKey;
-                  const investorLabel = investorNames[key] || formatKeyToLabel(key);
-                  const job = getActiveJobForKey(key);
-
-                  if (editingNameKey === key) {
-                    return (
-                      <div key={key} style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 6, borderRight: "1px solid #f3f4f6", borderBottom: "1px solid #f3f4f6", background: "#fff" }}>
-                        <input
-                          autoFocus
-                          value={legalNameDraft}
-                          onChange={(e) => setLegalNameDraft(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") saveLegalName(key); if (e.key === "Escape") cancelEditLegalName(); }}
-                          onClick={(e) => e.stopPropagation()}
-                          disabled={isSavingLegalName}
-                          style={{ flex: 1, minWidth: 0, fontSize: 13, padding: "5px 8px", borderRadius: 4, border: "1px solid #d1d5db", outline: "none", color: "#111827" }}
-                        />
-                        <button type="button" onClick={(e) => { e.stopPropagation(); saveLegalName(key); }} disabled={isSavingLegalName} title="Save" style={{ background: "transparent", border: "none", cursor: isSavingLegalName ? "wait" : "pointer", color: "#059669", padding: 2, display: "inline-flex", flexShrink: 0 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                        </button>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); cancelEditLegalName(); }} title="Cancel" style={{ background: "transparent", border: "none", cursor: "pointer", color: "#dc2626", padding: 2, display: "inline-flex", flexShrink: 0 }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                        </button>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
-                      style={{
-                        padding: "11px 16px", fontSize: 13, textAlign: "left",
-                        background: isActive ? "#fdf2f2" : "#fff", color: isActive ? THEME_MAROON : "#374151",
-                        fontWeight: isActive ? 600 : 400, border: "none", borderRight: "1px solid #f3f4f6", borderBottom: "1px solid #f3f4f6",
-                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 8, transition: "background 0.1s",
-                      }}
-                      onMouseEnter={(e) => { if (!isActive) (e.currentTarget.style.background = "#f9fafb"); }}
-                      onMouseLeave={(e) => { if (!isActive) (e.currentTarget.style.background = "#fff"); }}
-                    >
-                      {isActive && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12" /></svg>}
-                      <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{investorLabel}</span>
-                        {job && <GeneratingChip job={job} />}
-                      </span>
-                      {isAdmin && (
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          onClick={(e) => { e.stopPropagation(); startEditLegalName(key, investorLabel); }}
-                          onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); startEditLegalName(key, investorLabel); } }}
-                          title="Rename firm"
-                          style={{ display: "inline-flex", flexShrink: 0, color: "#9ca3af", padding: 2 }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* ── Profile Header Info ── */}
