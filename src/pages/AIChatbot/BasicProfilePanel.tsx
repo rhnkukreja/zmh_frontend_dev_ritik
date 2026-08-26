@@ -303,7 +303,15 @@ const BulletList = ({ heading, items, boxed = false }: { heading: string; items:
 
 // ─── Sections ─────────────────────────────────────────────────────────────
 
-const OverviewSection = ({ section }: { section: any }) => {
+const OverviewSection = ({
+  section,
+  isEditMode,
+  onChange,
+}: {
+  section: any;
+  isEditMode: boolean;
+  onChange: (updated: any) => void;
+}) => {
   const [showBrochure, setShowBrochure] = useState(false);
 
   if (!section || section.status !== "ok") {
@@ -315,6 +323,10 @@ const OverviewSection = ({ section }: { section: any }) => {
   }
 
   const bodyText = section.ai_enriched_summary || section.summary;
+  // Edit whichever field actually holds the text — ai_enriched_summary when
+  // present, otherwise the plain summary — same precedence as bodyText above.
+  const summaryField = section.ai_enriched_summary != null ? "ai_enriched_summary" : "summary";
+  const summaryValue = section[summaryField] ?? "";
 
   return (
     <SectionCard title="Investor Overview" icon="Globe" collapsible>
@@ -328,25 +340,68 @@ const OverviewSection = ({ section }: { section: any }) => {
         </div>
       )}
 
-      <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
-        {renderTextAsBullets(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
-      </div>
+      {isEditMode ? (
+        <textarea
+          value={summaryValue}
+          onChange={(e) => onChange({ ...section, [summaryField]: e.target.value })}
+          rows={7}
+          placeholder="Investor overview text…"
+          className="w-full text-base leading-relaxed text-slate-700 bg-white p-4 rounded-md border border-slate-300 focus:border-red-800 focus:outline-none resize-y"
+        />
+      ) : (
+        <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
+          {renderTextAsBullets(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
+        </div>
+      )}
 
       {/* investment_strategy is a genuinely separate field from summary
           (not an alternate phrasing of it) — its own labeled sub-section.
           Same text-base + boxed-card treatment as the Overview paragraph
           above, so both read as one consistent visual unit rather than
           Overview looking like a card and this floating below it as plain text. */}
-      {section.investment_strategy && (
+      {isEditMode ? (
         <div className="mt-4">
           <h4 className="text-sm font-bold text-slate-800 mb-2">Investment Strategy</h4>
-          <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
-            {renderTextAsBullets(section.investment_strategy)}
-          </div>
+          <textarea
+            value={section.investment_strategy || ""}
+            onChange={(e) => onChange({ ...section, investment_strategy: e.target.value })}
+            rows={5}
+            placeholder="Investment strategy…"
+            className="w-full text-base leading-relaxed text-slate-700 bg-white p-4 rounded-md border border-slate-300 focus:border-red-800 focus:outline-none resize-y"
+          />
         </div>
+      ) : (
+        section.investment_strategy && (
+          <div className="mt-4">
+            <h4 className="text-sm font-bold text-slate-800 mb-2">Investment Strategy</h4>
+            <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
+              {renderTextAsBullets(section.investment_strategy)}
+            </div>
+          </div>
+        )
       )}
 
-      <BulletList heading="Owners" items={section.owners} boxed />
+      {isEditMode && Array.isArray(section.owners) && section.owners.length > 0 ? (
+        <div className="mt-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Owners</h4>
+          <div className="bg-slate-50 p-4 rounded-md border border-slate-100 flex flex-col gap-2">
+            {section.owners.map((owner: any, i: number) => (
+              <input
+                key={i}
+                type="text"
+                value={owner || ""}
+                onChange={(e) => {
+                  const updated = section.owners.map((o: any, oi: number) => (oi === i ? e.target.value : o));
+                  onChange({ ...section, owners: updated });
+                }}
+                className="w-full text-sm text-slate-800 border border-slate-300 rounded px-2 py-1.5 bg-white focus:border-red-800 focus:outline-none"
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <BulletList heading="Owners" items={section.owners} boxed />
+      )}
       <BulletList heading="Known Email Addresses" items={section.known_email_addresses} />
 
       <RelevantLinksList links={section.firm_links} />
@@ -380,7 +435,18 @@ const OverviewSection = ({ section }: { section: any }) => {
   );
 };
 
-const HoldingsSection = ({ section }: { section: any }) => {
+const editableCellInputClass =
+  "w-full text-xs text-slate-900 border border-slate-300 rounded px-1.5 py-1 focus:border-red-800 focus:outline-none bg-white";
+
+const HoldingsSection = ({
+  section,
+  isEditMode,
+  onChange,
+}: {
+  section: any;
+  isEditMode: boolean;
+  onChange: (updated: any) => void;
+}) => {
   if (!section || section.status !== "ok") {
     return (
       <SectionCard title="Current 13F Holdings" icon="Briefcase">
@@ -390,6 +456,11 @@ const HoldingsSection = ({ section }: { section: any }) => {
   }
 
   const holdings = Array.isArray(section.top_holdings) ? section.top_holdings : [];
+
+  const updateHolding = (index: number, field: string, value: string) => {
+    const updated = holdings.map((h: any, i: number) => (i === index ? { ...h, [field]: value } : h));
+    onChange({ ...section, top_holdings: updated });
+  };
 
   return (
     <SectionCard title="Current 13F Holdings" icon="Briefcase" collapsible defaultOpen={false}>
@@ -439,11 +510,57 @@ const HoldingsSection = ({ section }: { section: any }) => {
                     : "N/A";
                 return (
                   <tr key={`${h.issuer}-${i}`} className="border-b border-slate-100 last:border-0">
-                    <td className="px-3 py-2 font-semibold text-slate-900">{h.issuer}</td>
-                    <td className="px-3 py-2 text-slate-800 font-medium">{h.ticker_or_symbol || "—"}</td>
-                    <td className="px-3 py-2 text-slate-600 text-right">{formatPortfolioPercent(h.note)}</td>
-                    <td className="px-3 py-2 text-slate-600 text-right">{sharesDisplay}</td>
-                    <td className="px-3 py-2 text-slate-900 font-medium text-right">{formatUSDThousands(h.value_usd_thousands)}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-900">
+                      {isEditMode ? (
+                        <input type="text" value={h.issuer || ""} onChange={(e) => updateHolding(i, "issuer", e.target.value)} className={editableCellInputClass} />
+                      ) : (
+                        h.issuer
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-800 font-medium">
+                      {isEditMode ? (
+                        <input type="text" value={h.ticker_or_symbol || ""} onChange={(e) => updateHolding(i, "ticker_or_symbol", e.target.value)} className={editableCellInputClass} />
+                      ) : (
+                        h.ticker_or_symbol || "—"
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-600 text-right">
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={h.note || ""}
+                          onChange={(e) => updateHolding(i, "note", e.target.value)}
+                          placeholder="e.g. 23.34% of reported 13F portfolio"
+                          className={`${editableCellInputClass} text-right`}
+                        />
+                      ) : (
+                        formatPortfolioPercent(h.note)
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-600 text-right">
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={h.shares_or_principal ?? ""}
+                          onChange={(e) => updateHolding(i, "shares_or_principal", e.target.value)}
+                          className={`${editableCellInputClass} text-right`}
+                        />
+                      ) : (
+                        sharesDisplay
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-slate-900 font-medium text-right">
+                      {isEditMode ? (
+                        <input
+                          type="text"
+                          value={h.value_usd_thousands ?? ""}
+                          onChange={(e) => updateHolding(i, "value_usd_thousands", e.target.value)}
+                          className={`${editableCellInputClass} text-right`}
+                        />
+                      ) : (
+                        formatUSDThousands(h.value_usd_thousands)
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -478,7 +595,18 @@ const HoldingsSection = ({ section }: { section: any }) => {
 // "Form & File" mirrors EDGAR's own full-text-search results table
 // (https://www.sec.gov/edgar/search/) — form type stacked over the SEC
 // file number, e.g. "SC 13D/A" / "005-82940".
-const ActivistFilingsSection = ({ section }: { section: any }) => {
+const editableLabelInputClass =
+  "mt-1 w-full text-sm text-slate-800 border border-slate-300 rounded px-2 py-1.5 focus:border-red-800 focus:outline-none bg-white";
+
+const ActivistFilingsSection = ({
+  section,
+  isEditMode,
+  onChange,
+}: {
+  section: any;
+  isEditMode: boolean;
+  onChange: (updated: any) => void;
+}) => {
   if (!section || section.status !== "ok") {
     return (
       <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText">
@@ -489,9 +617,57 @@ const ActivistFilingsSection = ({ section }: { section: any }) => {
 
   const filings = Array.isArray(section.filings) ? section.filings : [];
 
+  const updateFiling = (index: number, field: string, value: string) => {
+    const updated = filings.map((f: any, i: number) => (i === index ? { ...f, [field]: value } : f));
+    onChange({ ...section, filings: updated });
+  };
+
   return (
     <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText" collapsible defaultOpen={false}>
-      <ActivistFilingsTable filings={filings} variant="tailwind" />
+      {isEditMode ? (
+        filings.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {/* form, filing_date, accession, and url are verifiable SEC facts,
+                not something to hand-correct — shown read-only for context. */}
+            {filings.map((f: any, i: number) => (
+              <div key={f.accession || i} className="border border-slate-200 rounded-md p-3 flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                  <span className="font-semibold text-slate-700">{f.form || "Filing"}</span>
+                  <span>{f.filing_date || "—"}</span>
+                  {f.accession && <span>{f.accession}</span>}
+                  {f.url && (
+                    <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-medium hover:underline">
+                      View filing
+                    </a>
+                  )}
+                </div>
+                <label className="text-xs font-semibold text-slate-600">
+                  Reporting For
+                  <input
+                    type="text"
+                    value={f.reporting_for || ""}
+                    onChange={(e) => updateFiling(i, "reporting_for", e.target.value)}
+                    className={editableLabelInputClass}
+                  />
+                </label>
+                <label className="text-xs font-semibold text-slate-600">
+                  Filing Entity / Person
+                  <input
+                    type="text"
+                    value={f.filing_entity_person || ""}
+                    onChange={(e) => updateFiling(i, "filing_entity_person", e.target.value)}
+                    className={editableLabelInputClass}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 m-0">No activist filings found in the last 5 years.</p>
+        )
+      ) : (
+        <ActivistFilingsTable filings={filings} variant="tailwind" />
+      )}
     </SectionCard>
   );
 };
@@ -549,7 +725,15 @@ const getLetterDate = (r: any): Date | null => {
   return null;
 };
 
-const ShareholderLettersSection = ({ section }: { section: any }) => {
+const ShareholderLettersSection = ({
+  section,
+  isEditMode,
+  onChange,
+}: {
+  section: any;
+  isEditMode: boolean;
+  onChange: (updated: any) => void;
+}) => {
   if (!section || section.status !== "ok") {
     return (
       <SectionCard title="Shareholder Letters" icon="Mail">
@@ -558,9 +742,11 @@ const ShareholderLettersSection = ({ section }: { section: any }) => {
     );
   }
 
+  const rawResults = Array.isArray(section.results) ? section.results : [];
+
   // Newest first. Letters we could not date keep their original API order and
   // sink below the dated ones, so an undated result never masquerades as recent.
-  const results = (Array.isArray(section.results) ? section.results : [])
+  const sortedResults = rawResults
     .map((r: any, i: number) => ({ r, i, time: getLetterDate(r)?.getTime() ?? null }))
     .sort((a, b) => {
       if (a.time === null || b.time === null) {
@@ -570,11 +756,61 @@ const ShareholderLettersSection = ({ section }: { section: any }) => {
       return b.time - a.time;
     });
 
+  const updateLetter = (index: number, field: string, value: string) => {
+    const updated = rawResults.map((r: any, i: number) => (i === index ? { ...r, [field]: value } : r));
+    onChange({ ...section, results: updated });
+  };
+
   return (
     <SectionCard title="Shareholder Letters" icon="Mail" collapsible defaultOpen={false}>
-      {results.length > 0 ? (
+      {isEditMode ? (
+        rawResults.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {/* url is a verifiable source link, not something to hand-correct
+                — shown read-only for context. */}
+            {rawResults.map((r: any, i: number) => (
+              <div key={i} className="border border-slate-200 rounded-md p-3 flex flex-col gap-2">
+                {r.url && (
+                  <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-700 no-underline font-medium hover:underline break-all">
+                    {r.url}
+                  </a>
+                )}
+                <label className="text-xs font-semibold text-slate-600">
+                  Title
+                  <input type="text" value={r.title || ""} onChange={(e) => updateLetter(i, "title", e.target.value)} className={editableLabelInputClass} />
+                </label>
+                <label className="text-xs font-semibold text-slate-600">
+                  Source
+                  <input type="text" value={r.source || ""} onChange={(e) => updateLetter(i, "source", e.target.value)} className={editableLabelInputClass} />
+                </label>
+                <label className="text-xs font-semibold text-slate-600">
+                  Snippet
+                  <textarea
+                    value={r.snippet || ""}
+                    onChange={(e) => updateLetter(i, "snippet", e.target.value)}
+                    rows={3}
+                    className={`${editableLabelInputClass} resize-y`}
+                  />
+                </label>
+                <label className="text-xs font-semibold text-slate-600">
+                  Published Date
+                  <input
+                    type="text"
+                    value={r.published_date || ""}
+                    onChange={(e) => updateLetter(i, "published_date", e.target.value)}
+                    placeholder="YYYY-MM-DD"
+                    className={editableLabelInputClass}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500 m-0">No shareholder letters found.</p>
+        )
+      ) : sortedResults.length > 0 ? (
         <ul className="p-0 m-0 list-none flex flex-col gap-4">
-          {results.map(({ r, time }, i: number) => (
+          {sortedResults.map(({ r, time }, i: number) => (
             <li key={i} className="flex items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0">
               <span className="text-red-800 mr-2 text-base leading-none">▸</span>
               <div className="flex-1 min-w-0">
@@ -623,10 +859,14 @@ const BasicProfilePanel = ({
   data,
   loading,
   error,
+  isEditMode,
+  onChange,
 }: {
   data: BasicProfileData | null;
   loading: boolean;
   error: string | null;
+  isEditMode: boolean;
+  onChange: (updated: BasicProfileData) => void;
 }) => {
   if (loading && !data) {
     return (
@@ -654,6 +894,13 @@ const BasicProfilePanel = ({
 
   const sections = data.sections || {};
 
+  // Merges a section-level edit back into the full BasicProfileData object
+  // (immutable, same shape) and hands it up to the parent, which holds the
+  // live draft in its own basicProfile state.
+  const updateSection = (key: keyof BasicProfileData["sections"], updatedSection: any) => {
+    onChange({ ...data, sections: { ...data.sections, [key]: updatedSection } });
+  };
+
   return (
     <div className="flex flex-col gap-5">
       {data.status === "partial" && (
@@ -668,10 +915,26 @@ const BasicProfilePanel = ({
           here, where the sections it applies to are. */}
       {loading && <p className="text-xs text-slate-400 m-0">Refreshing…</p>}
 
-      <OverviewSection section={sections.whalewisdom_overview} />
-      <HoldingsSection section={sections.current_13f_holdings} />
-      <ActivistFilingsSection section={sections.activist_filings} />
-      <ShareholderLettersSection section={sections.shareholder_letters_web} />
+      <OverviewSection
+        section={sections.whalewisdom_overview}
+        isEditMode={isEditMode}
+        onChange={(s) => updateSection("whalewisdom_overview", s)}
+      />
+      <HoldingsSection
+        section={sections.current_13f_holdings}
+        isEditMode={isEditMode}
+        onChange={(s) => updateSection("current_13f_holdings", s)}
+      />
+      <ActivistFilingsSection
+        section={sections.activist_filings}
+        isEditMode={isEditMode}
+        onChange={(s) => updateSection("activist_filings", s)}
+      />
+      <ShareholderLettersSection
+        section={sections.shareholder_letters_web}
+        isEditMode={isEditMode}
+        onChange={(s) => updateSection("shareholder_letters_web", s)}
+      />
     </div>
   );
 };

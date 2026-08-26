@@ -1790,13 +1790,20 @@ const ActivistIntelligenceDashboard = ({
 
   // The final save push to the upcoming FastAPI backend
   const handleSaveProfile = async () => {
-    if (!rawProfile) return;
+    if (!rawProfile && !basicProfile) return;
 
     try {
       setIsSaving(true);
       setError(null);
 
-      if (isPreviewMode) {
+      if (!rawProfile && basicProfile) {
+        // Condensed-only profile — no Advanced rawProfile exists to PUT below,
+        // so republish the (possibly edited) Condensed draft through the same
+        // endpoint runBasicGenerate/publishBasicProfile already use.
+        await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/publish`, basicProfile);
+        setIsEditMode(false);
+        setBasicProfilesCache((prev) => ({ ...prev, [toBaseSlug(activeInvestorKey)]: basicProfile }));
+      } else if (isPreviewMode) {
         // Re-assign rawProfile to payload
         const payload = { ...rawProfile };
 
@@ -2237,7 +2244,7 @@ const ActivistIntelligenceDashboard = ({
                                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{highlightInvestorMatch(investorLabel, selectorSearch)}</span>
                                 {job && <GeneratingChip job={job} />}
                               </span>
-                              {isAdmin && (
+                              {isAdminOrAnalyst && (
                                 <span
                                   role="button"
                                   tabIndex={0}
@@ -2260,7 +2267,7 @@ const ActivistIntelligenceDashboard = ({
                   </div>
                 )}
               </div>
-              {isAdmin && (
+              {isAdminOrAnalyst && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); startEditLegalName(activeInvestorKey, displayName); }}
@@ -2706,7 +2713,13 @@ const ActivistIntelligenceDashboard = ({
                 </>
               ) : (
                 <div style={{ padding: 24 }}>
-                  <BasicProfilePanel data={basicProfile} loading={basicLoading} error={basicError} />
+                  <BasicProfilePanel
+                    data={basicProfile}
+                    loading={basicLoading}
+                    error={basicError}
+                    isEditMode={isEditMode}
+                    onChange={(updated) => setBasicProfile(updated)}
+                  />
                 </div>
               )}
       </div>
@@ -2835,7 +2848,11 @@ const ActivistIntelligenceDashboard = ({
                 </p>
 
                 <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, marginBottom: 20 }}>
-                  <BasicProfilePanel data={modalBasicResult} loading={false} error={null} />
+                  {/* Pre-publish preview only (local dev step, see
+                      handleApproveBasic) — not the live basicProfile, so this
+                      intentionally stays read-only rather than wiring edits
+                      into the active profile's state. */}
+                  <BasicProfilePanel data={modalBasicResult} loading={false} error={null} isEditMode={false} onChange={() => {}} />
                 </div>
 
                 {generateError && (
