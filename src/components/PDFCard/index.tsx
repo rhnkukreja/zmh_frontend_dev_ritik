@@ -12,6 +12,7 @@ import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { dashboardCacheManager } from "@/utils/cacheManager";
 import clsx from "clsx";
 
 interface ChildProps {
@@ -89,12 +90,17 @@ const index: React.FC<ChildProps> = ({ pdfDocuments }) => {
       const res =
         await dashboardService.putDocumentStarred(documentId, {  starred: (isStarred ? false : true) });
       if (res.result) {
-        // setApiDropdownOptions({ ...res.result });
+        // The investor profile endpoint is cached, so invalidate it before refetching
+        // to ensure the UI reflects the updated starred state immediately.
+        const investorProfileUrl = createDynamicURL(
+          `${baseURL}/investor_profile_detail_page/?institution_id=${id}`
+        );
+        dashboardCacheManager.invalidate(investorProfileUrl);
       }
     } catch (error) {
       return error;
     } finally {
-    
+      
       setTimeout(() => {
       setLoading(false);       
         dispatch(
