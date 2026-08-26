@@ -171,14 +171,26 @@ function Main() {
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
+  const ownershipView = searchParams.get("ownership_view") === "separate" ? "separate" : "all";
+  const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "separate" ? "separate" : "all";
 
   const { companySearchAndUpdate } = useCompanySearch();
   const { dashboardDataList, tempSearch, graphQLBoardData, graphQLBoardDataLoading, agmSummaryDetails } =
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
+  const agmYearlyData = agmSummaryDetails?.meeting_details_yearly_data;
+  const agmAvailableYears = (
+    Array.isArray(agmSummaryDetails?.total_year)
+      ? agmSummaryDetails.total_year.map(String)
+      : agmYearlyData
+        ? Object.keys(agmYearlyData)
+        : []
+  ).sort((a: string, b: string) => Number(b) - Number(a));
+  const dashboardSelectedMeetingYear = searchParams.get("year") || agmAvailableYears[0];
+  const dashboardMeetingDetails =
+    agmYearlyData?.[dashboardSelectedMeetingYear] || agmSummaryDetails;
 
-  // Extract meeting date from AGM summary to show next to the main heading
-  const _companyDetails = agmSummaryDetails?.company ? (agmSummaryDetails.company[0] as any) : undefined;
+  const _companyDetails = dashboardMeetingDetails?.company ? (dashboardMeetingDetails.company[0] as any) : undefined;
   const _companyNameKey = _companyDetails ? Object.keys(_companyDetails)[0] : undefined;
   const _meetingDetailsStr = _companyNameKey ? _companyDetails[_companyNameKey] : undefined;
   const meetingDateHeader = typeof _meetingDetailsStr === 'string' ? _meetingDetailsStr.split(" - ").pop() : undefined;
@@ -414,7 +426,7 @@ function Main() {
             fetchAGMSummaryDashboard(
               createDynamicURL(
                 `${baseURL}/voting_report_8k/`,
-                { ticker: companyGlobalSearchTicker }
+                { ticker: companyGlobalSearchTicker, include_all_years_data: "true" }
               )
             )
           );
@@ -489,13 +501,13 @@ function Main() {
                 source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
               />
             )}
-            {activeTab === 'shareholder-meeting-results' && agmSummaryDetails?.total_year?.length > 0 && (
+            {activeTab === 'shareholder-meeting-results' && shareholderMeetingView === 'separate' && agmAvailableYears.length > 0 && (
               <YearSelector
-                years={agmSummaryDetails.total_year.map(String)}
+                years={agmAvailableYears}
                 label="Meeting Year"
               />
             )}
-            {activeTab === 'ownership' && dashboardDataList?.total_year?.length > 0 && (
+            {activeTab === 'ownership' && ownershipView === 'separate' && dashboardDataList?.total_year?.length > 0 && (
               <YearSelector
                 years={dashboardDataList.total_year.map(String)}
                 label="Meeting Year"

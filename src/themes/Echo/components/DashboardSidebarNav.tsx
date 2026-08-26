@@ -154,6 +154,15 @@ const BASE_SECTIONS: SectionDef[] = [
     countKey: "shareholder_proposal",
   },
   {
+    key: "company-comprehensive-report",
+    label: "Comprehensive Report",
+    icon: FileText,
+    group: "Company",
+    subItems: [],
+    route: "/custom-reports?tab=comprehensive",
+    preserveActiveSection: true,
+  },
+  {
     key: "company-activist-filings",
     label: "Activist Filings",
     icon: FileText,
