@@ -548,7 +548,7 @@ function Main() {
       <section>
         {/* Contextual section header (navigation moved to the Koyfin-style sidebar) */}
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
-          <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200 min-h-[4.5rem]">
             <div>
               <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-slate-500">{headerGroup}</span>
