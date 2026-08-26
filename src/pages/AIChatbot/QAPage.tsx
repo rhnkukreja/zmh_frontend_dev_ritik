@@ -664,13 +664,13 @@ export default function QAPage() {
 
 {/* --- CONTROLS SECTION --- */}
 <div className={`space-y-3 relative z-20 ${showFilters ? 'mb-2' : 'mb-3'}`}>
-  <div className="flex items-center justify-between gap-4">
-    <div className="flex items-center gap-3 flex-1">
+  <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex items-center gap-3 flex-1 flex-wrap">
       
       {showFilters && (
       <>
 {/* 1. Investor Selection with Google-style Search */}
-<div className="relative flex-1 max-w-[250px]" ref={investorDropdownRef}>
+<div className="relative flex-1 min-w-[180px] max-w-[250px]" ref={investorDropdownRef}>
 <div className="relative flex items-center">
   <input
     type="text"
@@ -733,7 +733,7 @@ export default function QAPage() {
   )}
 </div>
       {/* 2. Year Multi-Select (Defaults to Latest Year) */}
-      <div className="relative" ref={yearDropdownRef}>
+      <div className="relative flex-shrink-0" ref={yearDropdownRef}>
         <button 
           onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)} 
           className="relative flex items-center justify-between h-[38px] pl-9 pr-3 bg-gray-100 border border-[#931638]/50 rounded-lg text-xs hover:border-[#931638] transition-all min-w-[100px]"
@@ -772,7 +772,7 @@ export default function QAPage() {
       </div>
 
       {/* 3. Mode Tabs (Specific / All) */}
-      <div className="bg-gray-100 border border-[#931638]/50 rounded-lg p-1 flex gap-1">
+      <div className="bg-gray-100 border border-[#931638]/50 rounded-lg p-1 flex gap-1 flex-shrink-0">
         {(["specific", "all"] as const).map(mode => (
           <button 
             key={mode} 
@@ -785,7 +785,7 @@ export default function QAPage() {
       </div>
 
       {/* 4. Category Multi-Select */}
-      <div className="relative" ref={categoryDropdownRef}>
+      <div className="relative flex-shrink-0" ref={categoryDropdownRef}>
         <button 
           onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)} 
           className={`relative flex items-center justify-between h-[38px] pl-9 pr-3 bg-gray-100 border rounded-lg text-xs transition-all min-w-[120px] ${showCategoryTooltip ? 'border-[#931638] shadow-lg shadow-[#931638]/20 animate-pulse' : 'border-[#931638]/50'}`}
@@ -811,7 +811,7 @@ export default function QAPage() {
       {/* 5. Add EMEA Toggle */}
       <button 
         onClick={() => setIncludeEmea(!includeEmea)}
-        className="flex items-center gap-2 h-[38px] px-3 bg-gray-100 border border-[#931638]/50 rounded-lg cursor-pointer group hover:border-[#931638] transition-all"
+        className="flex items-center gap-2 h-[38px] px-3 bg-gray-100 border border-[#931638]/50 rounded-lg cursor-pointer group hover:border-[#931638] transition-all flex-shrink-0"
       >
         <div className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 flex items-center ${includeEmea ? "bg-[#931638]" : "bg-gray-400"}`}>
           <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${includeEmea ? "translate-x-4" : "translate-x-0"}`} />
