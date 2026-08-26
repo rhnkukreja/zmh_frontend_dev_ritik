@@ -58,6 +58,8 @@ interface SectionDef {
   countKey?: "case_studies" | "engagement_details" | "shareholder_proposal" | "activist_filings";
   // Hide the item entirely when the count is zero.
   hideWhenEmpty?: boolean;
+  // When true, the entire section is only visible to Admin users.
+  adminOnly?: boolean;
   // Render a small BETA badge next to the label.
   beta?: boolean;
 }
@@ -154,6 +156,15 @@ const BASE_SECTIONS: SectionDef[] = [
     countKey: "shareholder_proposal",
   },
   {
+    key: "company-comprehensive-report",
+    label: "Comprehensive Report",
+    icon: FileText,
+    group: "Company",
+    subItems: [],
+    route: "/custom-reports?tab=comprehensive",
+    preserveActiveSection: true,
+  },
+  {
     key: "company-activist-filings",
     label: "Activist Filings",
     icon: FileText,
@@ -189,6 +200,16 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Institution Insights",
     route: "/voting-data",
     subItems: [],
+  },
+  {
+    key: "investor-overview",
+    label: "N-PX Voting Data",
+    icon: ClipboardList,
+    group: "Institution Insights",
+    route: "/npx-proposal-voting-stats",
+    subItems: [],
+    adminOnly: true,
+    beta: true,
   },
   {
     key: "investor-overview",
@@ -239,6 +260,10 @@ const DashboardSidebarNav = ({
 
   // Build sections dynamically based on user role, count availability, and required ordering.
   const sections: SectionDef[] = BASE_SECTIONS.filter((s) => {
+    if (s.adminOnly) {
+      const userType = user?.user_type;
+      return userType === "Admin";
+    }
     // Compensation is restricted to Admins/Analysts
     if (s.key === "compensation") {
       const userType = user?.user_type;

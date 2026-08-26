@@ -438,6 +438,15 @@ class DashboardService {
     };
   }
 
+  public async getNpxProposalVotingStats(params?: any): Promise<{ result: any }> {
+    const response = await axiosInstance.get(
+      createDynamicURL(`/api/npx-proposal-voting-stats/`, params)
+    );
+    return {
+      result: response.data,
+    };
+  }
+
   public async getBoardDirectorMembers(ticker: string): Promise<{
     result: BoardDirectorMembers[];
   }> {

@@ -188,11 +188,6 @@ const initialState: any = {
           title: "Governance Screener",
           badge: "Beta",
         },
-        {
-          icon: "FileText",
-          pathname: "/custom-reports?tab=comprehensive",
-          title: "Comprehensive Report",
-        },
       ],
     },
     {

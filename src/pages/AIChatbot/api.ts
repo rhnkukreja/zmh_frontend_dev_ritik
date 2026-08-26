@@ -208,8 +208,16 @@ export async function searchWhaleWisdom(name: string) {
   return res.json();
 }
 
-export const generateWhaleWisdomId = async (institutionName: string) => {
-  const res = await fetch(`${AI_CHATBOT_API_BASE}/generate-whalewisdom-id`, {
+// allowIdOrCik defaults to false so every existing caller (institution-linking's
+// CreateAndEditInstitution.tsx / InvestorCard) keeps its exact current
+// name-only behavior, unchanged. Only ActivistDashboard.tsx's Basic Profile
+// "Activist Name" search passes true, letting a raw WhaleWisdom filer ID or
+// CIK typed into that box resolve directly instead of going through (and
+// possibly being mismatched by) the name-based fuzzy search -- see
+// fetch_whale_wisdom_id's docstring on the backend.
+export const generateWhaleWisdomId = async (institutionName: string, allowIdOrCik: boolean = false) => {
+  const url = `${AI_CHATBOT_API_BASE}/generate-whalewisdom-id${allowIdOrCik ? "?allow_id_or_cik=true" : ""}`;
+  const res = await fetch(url, {
     method: "POST",
     headers: getRequestHeaders(), // Uses your existing headers helper
     body: JSON.stringify({ institution_name: institutionName }),

@@ -4,14 +4,11 @@ import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import tabIcon from "../../assets/images/zmh-images/new-tab-icon.png";
 import Tippy from "../Base/Tippy";
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
-import {
-  fetchAGMSummaryDashboard,
-  setTempSearch,
-} from "@/stores/dashboardSlice";
+import { fetchAGMSummaryDashboard } from "@/stores/dashboardSlice";
 import { baseURL } from "@/constant";
 import { axiosInstance } from "@/services";
 import { AppDispatch } from "@/stores/store";
@@ -24,40 +21,52 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   const location = useLocation();
   const locationPathName = location?.pathname;
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch: AppDispatch = useAppDispatch();
-  const { agmSummaryDetails, loading, dashboardDataList, tempSearch, agmRequestStatus, agmHasData, agmErrorMessage } =
+  const { agmSummaryDetails, loading, agmRequestStatus, agmHasData, agmErrorMessage } =
     useAppSelector((state) => state.dashboard);
-  const { user } = useAppSelector((state) => state.authentiction);
 
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
-  const lastRequestedYearRef = useRef<string>("");
+  const lastRequestedTickerRef = useRef<string>("");
 
   const { finhub, companyGlobalSearchId } = useAppSelector((state) => state.authentiction);
-
-  const companyDetails = agmSummaryDetails?.company
-    ? agmSummaryDetails?.company[0]
-    : "";
-  const companyName = Object.keys(companyDetails)[0];
-  const meetingDetails = companyDetails[companyName];
-  const meetingDate = meetingDetails?.split(" - ").pop();
-
-  // Extract year from query parameters
+  const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "all" ? "all" : "separate";
   const yearFromQuery = searchParams.get("year");
-  const [selectedYear, setSelectedYear] = useState<string>(
-    yearFromQuery || ""
+  const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery || "");
+
+  const yearlyMeetingData = agmSummaryDetails?.meeting_details_yearly_data;
+  const availableYears = useMemo(
+    () => (
+      Array.isArray(agmSummaryDetails?.total_year)
+        ? agmSummaryDetails.total_year.map((year: any) => year.toString())
+        : yearlyMeetingData
+          ? Object.keys(yearlyMeetingData)
+          : agmSummaryDetails?.Year
+            ? [agmSummaryDetails.Year.toString()]
+            : []
+    ).sort((a: string, b: string) => Number(b) - Number(a)),
+    [agmSummaryDetails, yearlyMeetingData]
   );
+  const latestYear = availableYears[0] || agmSummaryDetails?.Year?.toString() || "";
+  const selectedYearKey = selectedYear || yearFromQuery || latestYear;
+  const selectedYearData = yearlyMeetingData?.[selectedYearKey] || agmSummaryDetails;
+  const activeMeetingYear = selectedYearData?.Year?.toString() || selectedYearKey || latestYear;
+  const mergedMeetingData = agmSummaryDetails?.meeting_details_years_data;
+  const displayMeetingData = shareholderMeetingView === "separate" ? selectedYearData : yearlyMeetingData?.[latestYear] || agmSummaryDetails;
+
+  const companyDetails = displayMeetingData?.company?.[0] || null;
+  const companyName = companyDetails ? Object.keys(companyDetails)[0] : "";
+  const meetingDetails = companyName ? companyDetails?.[companyName] : "";
+  const meetingDate = typeof meetingDetails === "string" ? meetingDetails.split(" - ").pop() : "";
 
   const resetCompanyScopedState = useCallback(() => {
     setSelectedYear(yearFromQuery || "");
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
-    lastRequestedYearRef.current = "";
+    lastRequestedTickerRef.current = "";
   }, [yearFromQuery]);
 
-  // Reset scoped state only when the company/ticker changes (not on every agmSummaryDetails update)
   const prevTickerRef = useRef<string | null>(null);
   useEffect(() => {
     if (prevTickerRef.current !== companyGlobalSearchTicker) {
@@ -66,45 +75,32 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [companyGlobalSearchTicker, resetCompanyScopedState]);
 
-  // Initial fetch: when component mounts or ticker becomes available, trigger AGM fetch
   useEffect(() => {
-    // If no ticker, nothing to fetch
-    if (!companyGlobalSearchTicker) return;
+    if (!companyGlobalSearchTicker || agmRequestStatus === "loading") return;
 
-    // If a request is already in progress, skip
-    if (agmRequestStatus === 'loading') return;
-
-    // If we already have data for this ticker and year, skip initial fetch
     const alreadyHasData = Boolean(
-      agmSummaryDetails && (
-        (agmSummaryDetails.Year && agmSummaryDetails.Year.toString()) ||
-        (Array.isArray(agmSummaryDetails.total_year) && agmSummaryDetails.total_year.length > 0) ||
-        agmSummaryDetails.company
-      )
+      agmSummaryDetails?.meeting_details_yearly_data ||
+      agmSummaryDetails?.Year ||
+      agmSummaryDetails?.company ||
+      availableYears.length > 0
     );
 
-    const key = `${companyGlobalSearchTicker}:${selectedYear || ''}`;
-    if (lastRequestedYearRef.current === key) return;
-
-    if (!alreadyHasData) {
-      lastRequestedYearRef.current = key;
-      const url = createDynamicURL(`${baseURL}/voting_report_8k/`, {
-        ticker: companyGlobalSearchTicker,
-        ...(selectedYear && { year: selectedYear }),
-      });
-      dispatch(fetchAGMSummaryDashboard(url));
+    if (alreadyHasData || lastRequestedTickerRef.current === companyGlobalSearchTicker) {
+      return;
     }
-  }, [companyGlobalSearchTicker, selectedYear, agmSummaryDetails, agmRequestStatus, dispatch]);
 
-  // Keep selectedYear in sync with loaded agmSummaryDetails, but do NOT reset refs here
+    lastRequestedTickerRef.current = companyGlobalSearchTicker;
+    dispatch(
+      fetchAGMSummaryDashboard(
+        createDynamicURL(`${baseURL}/voting_report_8k/`, {
+          ticker: companyGlobalSearchTicker,
+          include_all_years_data: "true",
+        })
+      )
+    );
+  }, [companyGlobalSearchTicker, agmSummaryDetails, agmRequestStatus, availableYears.length, dispatch]);
+
   useEffect(() => {
-    const availableYears = Array.isArray(agmSummaryDetails?.total_year)
-      ? agmSummaryDetails.total_year
-          .map((year: any) => year.toString())
-          .sort((a: string, b: string) => Number(b) - Number(a))
-      : [];
-    const latestYear = availableYears[0] || agmSummaryDetails?.Year?.toString();
-
     if (!selectedYear && latestYear) {
       setSelectedYear(latestYear);
       if (yearFromQuery !== latestYear) {
@@ -115,18 +111,24 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
         }, { replace: true });
       }
     }
-  }, [agmSummaryDetails, selectedYear, yearFromQuery, setSearchParams]);
+  }, [latestYear, selectedYear, yearFromQuery, setSearchParams]);
 
   const convertDivTableToCSV = () => {
-    const table = document.querySelector(".table_2");
-    const rows = table?.querySelectorAll(".row_2");
-    const tableProposal = document.querySelector(".table_3");
-    const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-    let csvContent = "\uFEFF"; // Add BOM for UTF-8 encoding
+    const nomineeTableClass = shareholderMeetingView === "all" ? ".table_2_all" : ".table_2";
+    const nomineeRowClass = shareholderMeetingView === "all" ? ".row_2_all" : ".row_2";
+    const nomineeCellClass = shareholderMeetingView === "all" ? ".cell_2_all" : ".cell_2";
+    const proposalTableClass = shareholderMeetingView === "all" ? ".table_3_all" : ".table_3";
+    const proposalRowClass = shareholderMeetingView === "all" ? ".row_3_all" : ".row_3";
+    const proposalCellClass = shareholderMeetingView === "all" ? ".cell_3_all" : ".cell_3";
+    const table = document.querySelector(nomineeTableClass);
+    const rows = table?.querySelectorAll(nomineeRowClass);
+    const tableProposal = document.querySelector(proposalTableClass);
+    const rowsProposal = tableProposal?.querySelectorAll(proposalRowClass);
+    let csvContent = "\uFEFF";
 
     // Iterate over each row in the first table
     rows?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_2");
+      const cells = row.querySelectorAll(nomineeCellClass);
       let rowData: any = [];
 
       // Iterate over each cell and get the text content
@@ -147,7 +149,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
     // Iterate over each row in the second table
     rowsProposal?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_3");
+      const cells = row.querySelectorAll(proposalCellClass);
       let rowData: any = [];
 
       // Iterate over each cell and get the text content
@@ -165,45 +167,22 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       csvContent += rowData.join(",") + "\n";
     });
 
-    downloadCSV(csvContent, `Agm-Summary-${companyGlobalSearchTicker}-${agmSummaryDetails?.Year}`);
+    downloadCSV(
+      csvContent,
+      `Agm-Summary-${companyGlobalSearchTicker}-${shareholderMeetingView === "all" ? "All-Years" : activeMeetingYear}`
+    );
   };
 
   useEffect(() => {
-    // Only handle year changes, not initial fetch (dashboard handles that)
-    if (!yearFromQuery || !companyGlobalSearchTicker) {
-      return;
+    if (yearFromQuery && yearFromQuery !== selectedYear) {
+      setSelectedYear(yearFromQuery);
     }
-
-    const nextYear = yearFromQuery.toString();
-    const currentYear = agmSummaryDetails?.Year?.toString();
-    const requestKey = `${companyGlobalSearchTicker}:${nextYear}`;
-
-    // If we've already requested this key, skip
-    if (lastRequestedYearRef.current === requestKey) return;
-
-    // If current loaded year already matches, skip dispatch
-    if (currentYear === nextYear) {
-      lastRequestedYearRef.current = requestKey;
-      setSelectedYear(nextYear);
-      return;
-    }
-
-    // Avoid dispatching if a request is already in-flight
-    if (agmRequestStatus === 'loading') return;
-
-    lastRequestedYearRef.current = requestKey;
-    setSelectedYear(nextYear);
-    const url = createDynamicURL(
-      `${baseURL}/voting_report_8k/`,
-      { ticker: companyGlobalSearchTicker, ...(nextYear && { year: nextYear }) }
-    );
-    dispatch(fetchAGMSummaryDashboard(url));
-  }, [yearFromQuery, agmSummaryDetails, companyGlobalSearchTicker, dispatch]);
+  }, [yearFromQuery, selectedYear]);
 
   useEffect(() => {
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
-    lastRequestedYearRef.current = "";
+    lastRequestedTickerRef.current = "";
   }, [companyGlobalSearchTicker, yearFromQuery]);
 
   useEffect(() => {
@@ -232,17 +211,10 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [onLoaded, hasLoadingStarted, loading, hasNotifiedLoaded]);
 
-  // Handle year query parameter changes
-  useEffect(() => {
-    if (yearFromQuery && yearFromQuery !== selectedYear) {
-      setSelectedYear(yearFromQuery);
-    }
-  }, [yearFromQuery]);
-
   const handleViewMore = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
 
-    const yearToCheck = selectedYear || agmSummaryDetails?.Year;
+    const yearToCheck = activeMeetingYear;
     // Debug log for troubleshooting
     console.log('Voting Data click:', { yearToCheck, proxyContest2024, proxyContest2025, proxyContest });
     if (yearToCheck === "2025") {
@@ -328,7 +300,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     const formattedMeetingDate = formatMeetingDateForURL(meetingDate);
     const urlParams = new URLSearchParams({
       ticker: companyGlobalSearchTicker.split("-")[0],
-      year: (agmSummaryDetails?.Year ?? new Date().getFullYear()).toString(),
+      year: (activeMeetingYear || new Date().getFullYear().toString()).toString(),
       ...(formattedMeetingDate && { meeting_date: formattedMeetingDate })
     });
 
@@ -340,7 +312,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     if (!idToUse) return;
     const urlParams = new URLSearchParams({
       company_id: String(idToUse),
-      year: (agmSummaryDetails?.Year ?? new Date().getFullYear()).toString(),
+      year: (activeMeetingYear || new Date().getFullYear().toString()).toString(),
     });
 
     window.open(`npx-analytics/?${urlParams.toString()}`, "_blank");
@@ -384,7 +356,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   const handle8kLink = async () => {
-    const yearToCheck = (selectedYear || agmSummaryDetails?.Year)?.toString();
+    const yearToCheck = activeMeetingYear?.toString();
     const cik = extractCikFromSecFilingUrl(finhub?.sec_filing);
 
     if (!yearToCheck || !cik) return;
@@ -492,7 +464,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   // Download NPX data handler
   const handleDownloadNPXData = async () => {
     const idToUse = institutionId || companyGlobalSearchId;
-    const dynamicYear = (selectedYear || agmSummaryDetails?.Year || new Date().getFullYear()).toString();
+    const dynamicYear = (activeMeetingYear || new Date().getFullYear().toString()).toString();
 
     if (!idToUse) {
       console.error('Institution or Company ID not available');
@@ -659,8 +631,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   const handleAGMYearTab = (tab: string) => {
-    // Only update the URL; selectedYear and the fetch will be driven by the
-    // yearFromQuery useEffect to avoid double dispatches and stuck UI.
     setSearchParams((previousParams) => {
       const params = new URLSearchParams(previousParams);
       params.set("year", tab);
@@ -668,33 +638,42 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }, { replace: true });
   };
 
-  const handleRetryAGMFetch = () => {
-    console.log('[AGM Retry] Retrying AGM summary fetch...');
-    const retryYear = selectedYear || yearFromQuery || agmSummaryDetails?.Year;
-    const url = createDynamicURL(`${baseURL}/voting_report_8k/`, {
-      ticker: companyGlobalSearchTicker,
-      ...(retryYear && { year: retryYear }),
-    });
-    dispatch(fetchAGMSummaryDashboard(url));
+  const handleMeetingViewTab = (view: "all" | "separate") => {
+    setSearchParams((previousParams) => {
+      const params = new URLSearchParams(previousParams);
+      params.set("shareholder_meeting_view", view);
+      if (!params.get("year") && latestYear) {
+        params.set("year", latestYear);
+      }
+      return params;
+    }, { replace: true });
   };
 
-  // Generate available year tabs - only show years that actually have data
-  const getAvailableYears = () => {
-    if (!agmSummaryDetails?.total_year?.length) return [];
-
-    // Return the actual years that have data
-    return agmSummaryDetails.total_year
-      .map((year: any) => year.toString())
-      .sort((a: string, b: string) => Number(b) - Number(a));
+  const handleRetryAGMFetch = () => {
+    console.log('[AGM Retry] Retrying AGM summary fetch...');
+    dispatch(
+      fetchAGMSummaryDashboard(
+        createDynamicURL(`${baseURL}/voting_report_8k/`, {
+          ticker: companyGlobalSearchTicker,
+          include_all_years_data: "true",
+        })
+      )
+    );
   };
 
   const getSelectedTabIndex = () => {
-    const availableYears = getAvailableYears();
-    const tabIndex = availableYears.findIndex((year: string) => year === (selectedYear?.toString() !== "" ? selectedYear?.toString() : agmSummaryDetails?.Year.toString()));
+    const tabIndex = availableYears.findIndex((year: string) => year === activeMeetingYear);
     return tabIndex >= 0 ? tabIndex : 0;
   };
 
-  const showNpxActions = Boolean(agmSummaryDetails?.npx_check);
+  const showNpxActions = Boolean(displayMeetingData?.npx_check || agmSummaryDetails?.npx_check);
+  const separateNomineeHeaders = selectedYearData?.nominees_headers || [];
+  const separateProposalHeaders = selectedYearData?.proposals_headers || [];
+  const separateNominees = selectedYearData?.nominees || [];
+  const separateProposals = selectedYearData?.proposals || [];
+  const mergedYearColumns = availableYears;
+  const mergedNominees = mergedMeetingData?.nominees || [];
+  const mergedProposals = mergedMeetingData?.proposals || [];
 
   return (
     <>
@@ -730,17 +709,41 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       )}
 
       {/* RENDER STATE: SUCCESS - WITH DATA */}
-      {agmRequestStatus === 'success' && agmHasData && agmSummaryDetails?.Year && (
+      {agmRequestStatus === 'success' && agmHasData && (activeMeetingYear || mergedYearColumns.length > 0) && (
         <div className="p-5 mt-3.5 box ">
           <div className="w-full">
             <>
               <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
-                {/* Left: Year tabs on top row (only on detail pages; dashboard uses header dropdown) */}
-                <div className="flex items-center gap-3 shrink-0">
-                  {locationPathName !== "/" && agmSummaryDetails.total_year?.length > 0 && (
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <Tab.Group selectedIndex={shareholderMeetingView === "separate" ? 0 : 1}>
+                    <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
+                      {[
+                        { label: "Latest", value: "separate" },
+                        { label: "Year-on-Year Comparison", value: "all" },
+                      ].map((tab, index) => (
+                        <Tab
+                          key={tab.value}
+                          className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800"
+                        >
+                          <Tab.Button
+                            className={clsx([
+                              "whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer",
+                              tab.value === "separate" ? "w-32" : "w-52",
+                            ])}
+                            as="button"
+                            onClick={() => handleMeetingViewTab(tab.value as "all" | "separate")}
+                          >
+                            {tab.label}
+                          </Tab.Button>
+                        </Tab>
+                      ))}
+                    </Tab.List>
+                  </Tab.Group>
+
+                  {locationPathName !== "/" && shareholderMeetingView === "separate" && availableYears.length > 0 && (
                     <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
                       <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
-                        {getAvailableYears().map((tab: string, index: number) => (
+                        {availableYears.map((tab: string, index: number) => (
                           <Tab
                             key={index}
                             className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800"
@@ -758,33 +761,34 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                     </Tab.Group>
                   )}
                 </div>
-                {/* Right: Actions on top row */}
                 <div className="flex items-center gap-2 shrink-0 xs:mt-4 md:mt-0">
                   {!isMeetingModal && (
                     <>
-                      <button
-                        disabled={
-                          is8kLoading ||
-                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                          !(selectedYear || agmSummaryDetails?.Year)
-                        }
-                        onClick={handle8kLink}
-                        className={clsx([
-                          "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
-                          is8kLoading ||
+                      {shareholderMeetingView === "separate" && (
+                        <button
+                          disabled={
+                            is8kLoading ||
                             !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                            !(selectedYear || agmSummaryDetails?.Year)
-                            ? "opacity-60 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
-                        ])}
-                      >
-                        {is8kLoading ? (
-                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "8-K"
-                        )}
-                      </button>
-                      {analyticsData && (
+                            !activeMeetingYear
+                          }
+                          onClick={handle8kLink}
+                          className={clsx([
+                            "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                            is8kLoading ||
+                              !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                              !activeMeetingYear
+                              ? "opacity-60 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
+                          ])}
+                        >
+                          {is8kLoading ? (
+                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                          ) : (
+                            "8-K"
+                          )}
+                        </button>
+                      )}
+                      {analyticsData && shareholderMeetingView === "all" && (
                         <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
                           <button
                             onClick={() => setChartModalVisible(true)}
@@ -799,17 +803,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                 </div>
                 <div className="flex items-center gap-4 ml-auto xs:mt-4 md:mt-0">
                   <div className="flex items-center gap-2">
-                    <h4
-                      className="font-semibold cursor-pointer"
-                      onClick={() => {
-                        window.scrollBy({
-                          top: 650,
-                          behavior: "smooth",
-                        });
-                      }}
-                    >
-                      {agmSummaryDetails.Quorum ? `*Quorum: ${agmSummaryDetails?.Quorum}` : ''}
-                    </h4>
+                    {shareholderMeetingView === "separate" && displayMeetingData?.Quorum ? (
+                      <h4 className="font-semibold">{`*Quorum: ${displayMeetingData.Quorum}`}</h4>
+                    ) : null}
                   </div>
                   <Tippy content="Download Excel" options={{ theme: "light" }}>
                     <div
@@ -823,7 +819,6 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                     <Tippy content="Open in New Tab" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
-                        // onClick={() => window.open("summary-details", "_blank")}
                         onClick={() => window.open("summary-details", "_blank")}
                       >
                         <img alt="tab-icon" src={tabIcon} />
@@ -832,27 +827,122 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                   )}
                 </div>
               </div>
-              {/* Year tabs moved to the top row above */}
 
               <div className="mt-5">
-                <TableWrapper 
-                  isLoading={loading}
-                  rows={4}
-                  columns={5}
-                >
-                  <div
-                    className={clsx([
-                      locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}
-                  >
-                    <Table className="table_2 w-full">
-                      <Table.Thead className="sticky top-0 z-10">
-                        <Table.Tr className="row_2">
-                          {agmSummaryDetails?.nominees_headers?.length > 0 &&
-                            agmSummaryDetails?.nominees_headers?.map(
-                              (nomineeHeader: any, headerIndex: number) => (
+                {shareholderMeetingView === "all" ? (
+                  <>
+                    <TableWrapper
+                      isLoading={loading}
+                      rows={4}
+                      columns={Math.max(mergedYearColumns.length + 1, 2)}
+                    >
+                      <div className={clsx([locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}>
+                        <Table className="table_2_all w-full">
+                          <Table.Thead className="sticky top-0 z-10">
+                            <Table.Tr className="row_2_all">
+                              <Table.Td className="cell_2_all py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] border-header text-[#000000B2] w-[320px] text-left">
+                                Nominee
+                              </Table.Td>
+                              {mergedYearColumns.map((year: string, headerIndex: number) => (
+                                <Table.Td
+                                  key={year}
+                                  className={clsx([
+                                    "cell_2_all py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[130px] text-left",
+                                    headerIndex === mergedYearColumns.length - 1 && "last:rounded-tr-[0.6rem]",
+                                  ])}
+                                >
+                                  {year}
+                                </Table.Td>
+                              ))}
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {mergedNominees.map((nominee: any, nomineeIndex: number) => (
+                              <Table.Tr key={nomineeIndex} className="row_2_all [&_td]:last:border-b-0">
+                                <Table.Td className="cell_2_all py-2 border-dashed dark:bg-darkmode-600 w-[320px] text-left">
+                                  <h1 className="font-semibold">{nominee?.nominee}</h1>
+                                </Table.Td>
+                                {mergedYearColumns.map((year: string) => {
+                                  const value = nominee?.[year];
+                                  const numericValue = parseFloat(String(value ?? ""));
+                                  return (
+                                    <Table.Td key={year} className="cell_2_all py-2 border-dashed dark:bg-darkmode-600 w-[130px] text-left">
+                                      <h1 className={clsx([!Number.isNaN(numericValue) && numericValue < 85 && "text-red-700 font-semibold"])}>
+                                        {value ?? "-"}
+                                      </h1>
+                                    </Table.Td>
+                                  );
+                                })}
+                              </Table.Tr>
+                            ))}
+                          </Table.Tbody>
+                        </Table>
+                      </div>
+                    </TableWrapper>
+                    <br />
+                    <TableWrapper
+                      isLoading={loading}
+                      rows={4}
+                      columns={Math.max(mergedYearColumns.length + 1, 2)}
+                    >
+                      <div className={clsx([locationPathName === "/" && " max-h-[400px] overflow-y-scroll"])}>
+                        <Table className="table_3_all w-full">
+                          <Table.Thead className="sticky top-0 z-10">
+                            <Table.Tr className="row_3_all">
+                              <Table.Td className="cell_3_all py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] border-header text-[#000000B2] w-[320px] text-left">
+                                Proposal
+                              </Table.Td>
+                              {mergedYearColumns.map((year: string, headerIndex: number) => (
+                                <Table.Td
+                                  key={year}
+                                  className={clsx([
+                                    "cell_3_all py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] w-[130px] text-left",
+                                    headerIndex === mergedYearColumns.length - 1 && "last:rounded-tr-[0.6rem]",
+                                  ])}
+                                >
+                                  {year}
+                                </Table.Td>
+                              ))}
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {mergedProposals.map((proposal: any, proposalIndex: number) => (
+                              <Table.Tr key={proposalIndex} className="row_3_all [&_td]:last:border-b-0">
+                                <Table.Td className="cell_3_all py-2 border-dashed dark:bg-darkmode-600 text-left w-[320px]">
+                                  <h1 className="font-semibold">{proposal?.proposal}</h1>
+                                </Table.Td>
+                                {mergedYearColumns.map((year: string) => {
+                                  const value = proposal?.[year];
+                                  const numericValue = parseFloat(String(value ?? ""));
+                                  return (
+                                    <Table.Td key={year} className="cell_3_all py-2 border-dashed dark:bg-darkmode-600 text-left w-[130px]">
+                                      <h1 className={clsx([!Number.isNaN(numericValue) && numericValue < 85 && "text-red-700 font-semibold"])}>
+                                        {value ?? "-"}
+                                      </h1>
+                                    </Table.Td>
+                                  );
+                                })}
+                              </Table.Tr>
+                            ))}
+                          </Table.Tbody>
+                        </Table>
+                      </div>
+                    </TableWrapper>
+                  </>
+                ) : (
+                  <>
+                    <TableWrapper
+                      isLoading={loading}
+                      rows={4}
+                      columns={5}
+                    >
+                      <div className={clsx([locationPathName === "/" && "max-h-[400px] overflow-y-scroll"])}>
+                        <Table className="table_2 w-full">
+                          <Table.Thead className="sticky top-0 z-10">
+                            <Table.Tr className="row_2">
+                              {separateNomineeHeaders.map((nomineeHeader: any, headerIndex: number) => (
                                 <Table.Td
                                   key={headerIndex}
-                                  // className="cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[150px] text-right"
                                   className={clsx([
                                     "cell_2 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[130px] text-left",
                                     headerIndex === 0 && "w-[200px]",
@@ -860,138 +950,92 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                                 >
                                   {nomineeHeader.header}
                                 </Table.Td>
-                              )
-                            )}
-                        </Table.Tr>
-                      </Table.Thead>
-
-                      <Table.Tbody>
-                        {agmSummaryDetails?.nominees?.length > 0 &&
-                          agmSummaryDetails?.nominees?.map(
-                            (nominee: any, nomineeIndex: number) => (
-                              <Table.Tr
-                                key={nomineeIndex}
-                                className="row_2 [&_td]:last:border-b-0"
-                              >
-                                {agmSummaryDetails?.nominees_headers?.length >
-                                  0 &&
-                                  agmSummaryDetails?.nominees_headers?.map(
-                                    (
-                                      nomineeHeader: any,
-                                      headerIndex: number
-                                    ) => (
-                                      <Table.Td
-                                        key={headerIndex}
-                                        className={clsx([
-                                          "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left",
-                                          headerIndex === 0 && "w-[200px]",
-                                        ])}
-                                      >
-                                        <h1
-                                          className={clsx([
-                                            headerIndex === 0 &&
-                                            "font-semibold ",
-                                            headerIndex ===
-                                            agmSummaryDetails
-                                              ?.nominees_headers?.length -
-                                            1 &&
-                                            parseFloat(
-                                              nominee[nomineeHeader?.field]
-                                            ) < 85 &&
-                                            "text-red-700 font-semibold",
-                                          ])}
-                                        >
-                                          {nominee[nomineeHeader?.field]}
-                                        </h1>
-                                      </Table.Td>
-                                    )
-                                  )}
+                              ))}
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {separateNominees.map((nominee: any, nomineeIndex: number) => (
+                              <Table.Tr key={nomineeIndex} className="row_2 [&_td]:last:border-b-0">
+                                {separateNomineeHeaders.map((nomineeHeader: any, headerIndex: number) => (
+                                  <Table.Td
+                                    key={headerIndex}
+                                    className={clsx([
+                                      "cell_2 py-2 border-dashed dark:bg-darkmode-600 w-[150px] text-left",
+                                      headerIndex === 0 && "w-[200px]",
+                                    ])}
+                                  >
+                                    <h1
+                                      className={clsx([
+                                        headerIndex === 0 && "font-semibold ",
+                                        headerIndex === separateNomineeHeaders.length - 1 &&
+                                        parseFloat(nominee[nomineeHeader?.field]) < 85 &&
+                                        "text-red-700 font-semibold",
+                                      ])}
+                                    >
+                                      {nominee[nomineeHeader?.field]}
+                                    </h1>
+                                  </Table.Td>
+                                ))}
                               </Table.Tr>
-                            )
-                          )}
-                      </Table.Tbody>
-                    </Table>
-                  </div>
-                </TableWrapper>
-                <br />
-                <TableWrapper 
-                  isLoading={loading}
-                  rows={4}
-                  columns={5}
-                >
-                  <div
-                    className={clsx([
-                      locationPathName === "/" &&
-                      " max-h-[400px] overflow-y-scroll",
-                    ])}
-                  >
-                    <Table className="table_3 w-full">
-                      <Table.Thead className="sticky top-0 z-10">
-                        <Table.Tr className="row_3">
-                          {agmSummaryDetails?.proposals_headers?.map(
-                            (proposalHeader: any, headerIndex: number) => (
-                              <Table.Td
-                                key={headerIndex}
-                                className={clsx([
-                                  "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-left",
-                                  headerIndex === 0 && "w-[220px]",
-                                ])}
-                              >
-                                {proposalHeader?.header}
-                              </Table.Td>
-                            )
-                          )}
-                        </Table.Tr>
-                      </Table.Thead>
-
-                      <Table.Tbody>
-                        {agmSummaryDetails?.proposals?.length > 0 &&
-                          agmSummaryDetails?.proposals?.map(
-                            (proposal: any, proposalIndex: number) => (
-                              <Table.Tr
-                                key={proposalIndex}
-                                className="row_3 [&_td]:last:border-b-0"
-                              >
-                                {agmSummaryDetails?.proposals_headers?.length >
-                                  0 &&
-                                  agmSummaryDetails?.proposals_headers?.map(
-                                    (
-                                      proposalHeader: any,
-                                      headerIndex: number
-                                    ) => (
-                                      <Table.Td
-                                        key={headerIndex}
-                                        className={clsx([
-                                          "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-left",
-                                          headerIndex === 0 && "w-[220px]",
-                                        ])}
-                                      >
-                                        <h1
-                                          className={clsx([
-                                            headerIndex === 0 &&
-                                            "font-semibold ",
-                                            headerIndex ===
-                                            agmSummaryDetails
-                                              ?.proposals_headers?.length -
-                                            1 &&
-                                            parseFloat(
-                                              proposal[proposalHeader?.field]
-                                            ) < 85 &&
-                                            "text-red-700 font-semibold",
-                                          ])}
-                                        >
-                                          {proposal[proposalHeader?.field]}
-                                        </h1>
-                                      </Table.Td>
-                                    )
-                                  )}
+                            ))}
+                          </Table.Tbody>
+                        </Table>
+                      </div>
+                    </TableWrapper>
+                    <br />
+                    <TableWrapper
+                      isLoading={loading}
+                      rows={4}
+                      columns={5}
+                    >
+                      <div className={clsx([locationPathName === "/" && " max-h-[400px] overflow-y-scroll"])}>
+                        <Table className="table_3 w-full">
+                          <Table.Thead className="sticky top-0 z-10">
+                            <Table.Tr className="row_3">
+                              {separateProposalHeaders.map((proposalHeader: any, headerIndex: number) => (
+                                <Table.Td
+                                  key={headerIndex}
+                                  className={clsx([
+                                    "cell_3 py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-header text-[#000000B2] w-[140px] text-left",
+                                    headerIndex === 0 && "w-[220px]",
+                                  ])}
+                                >
+                                  {proposalHeader?.header}
+                                </Table.Td>
+                              ))}
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {separateProposals.map((proposal: any, proposalIndex: number) => (
+                              <Table.Tr key={proposalIndex} className="row_3 [&_td]:last:border-b-0">
+                                {separateProposalHeaders.map((proposalHeader: any, headerIndex: number) => (
+                                  <Table.Td
+                                    key={headerIndex}
+                                    className={clsx([
+                                      "cell_3 py-2 border-dashed dark:bg-darkmode-600 text-left",
+                                      headerIndex === 0 && "w-[220px]",
+                                    ])}
+                                  >
+                                    <h1
+                                      className={clsx([
+                                        headerIndex === 0 && "font-semibold ",
+                                        headerIndex === separateProposalHeaders.length - 1 &&
+                                        parseFloat(proposal[proposalHeader?.field]) < 85 &&
+                                        "text-red-700 font-semibold",
+                                      ])}
+                                    >
+                                      {proposal[proposalHeader?.field]}
+                                    </h1>
+                                  </Table.Td>
+                                ))}
                               </Table.Tr>
-                            )
-                          )}
-                      </Table.Tbody>
-                    </Table>
-                  </div>
-                </TableWrapper>
+                            ))}
+                          </Table.Tbody>
+                        </Table>
+                      </div>
+                    </TableWrapper>
+                  </>
+                )}
 
                 <footer className="!pt-3 flex items-start flex-col">
                   <span className="!pt-3 flex items-center p-2">
