@@ -367,6 +367,70 @@ function Main() {
   //   }
   // }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
 
+  // Determine whether the current company has ANY voting data at all
+  // (VDS or NPX). When neither exists, the three Voting Data sub-tabs
+  // (By Fund Family, Voting Rationale, N-PX) should show a "no data"
+  // message instead of spinning forever waiting for a meeting date/year
+  // that will never arrive.
+  const [votingDataAvailability, setVotingDataAvailability] = useState<{
+    checkedFor: string;
+    hasData: boolean;
+  } | null>(null);
+  const [checkingVotingData, setCheckingVotingData] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkVotingDataAvailability = async () => {
+      if (!companyGlobalSearchId) {
+        setVotingDataAvailability(null);
+        return;
+      }
+
+      setCheckingVotingData(true);
+      try {
+        const { result } = await dashboardService.getVdsNpxMeetingDates(companyGlobalSearchId);
+        const vdsEntries = Array.isArray(result?.VDS_data)
+          ? result.VDS_data
+          : Array.isArray(result?.VDS_Data)
+            ? result.VDS_Data
+            : Array.isArray(result?.vds_data)
+              ? result.vds_data
+              : [];
+        const npxEntries = Array.isArray(result?.NPX_Data)
+          ? result.NPX_Data
+          : Array.isArray(result?.npx_data)
+            ? result.npx_data
+            : [];
+
+        if (cancelled) return;
+        setVotingDataAvailability({
+          checkedFor: String(companyGlobalSearchId),
+          hasData: vdsEntries.length > 0 || npxEntries.length > 0,
+        });
+      } catch (error) {
+        console.warn("Failed to check voting data availability:", error);
+        if (!cancelled) {
+          // Fail open so we don't hide the tabs on a transient network error.
+          setVotingDataAvailability({ checkedFor: String(companyGlobalSearchId), hasData: true });
+        }
+      } finally {
+        if (!cancelled) setCheckingVotingData(false);
+      }
+    };
+
+    checkVotingDataAvailability();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyGlobalSearchId]);
+
+  const hasVotingData =
+    votingDataAvailability?.checkedFor === String(companyGlobalSearchId)
+      ? votingDataAvailability.hasData
+      : true; // assume available until we know otherwise, to avoid a flash of the empty state
+
   // Fetch modules count when company changes
   useEffect(() => {
     const fetchModulesCount = async () => {
@@ -559,7 +623,21 @@ function Main() {
 
           {activeTab === 'voting-data' && (
             <div id="voting-data" className="col-span-12 xl:col-span-12">
-              {activeVotingSubTab === 'npx' ? (
+              {activeVotingSubTab !== 'npx-analytics' && checkingVotingData ? (
+                <div className="p-5 mt-1 box">
+                  <div className="h-52 flex items-center justify-center">
+                    <LoadingIcon icon="three-dots" className="w-10 h-10 text-primary" />
+                  </div>
+                </div>
+              ) : activeVotingSubTab !== 'npx-analytics' && !hasVotingData ? (
+                <div className="p-5 mt-1 box">
+                  <div className="h-52 flex items-center justify-center">
+                    <div className="text-center text-gray-400 text-lg font-semibold">
+                      <div>No such company data available</div>
+                    </div>
+                  </div>
+                </div>
+              ) : activeVotingSubTab === 'npx' ? (
                 <NPXPage />
               ) : activeVotingSubTab === 'npx-analytics' && isAdmin ? (
                 <NPXAnalyticsPage embedded />

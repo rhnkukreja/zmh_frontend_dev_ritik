@@ -86,8 +86,9 @@ import ActivistFilings from "@/pages/ActivistFilings";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
 import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
-import VdsProxyVoting from "@/pages/VdsProxyVoting";
-import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
+import VdsProxyVoting from "../pages/VdsProxyVoting";
+import NpxProposalVotingStats from "../pages/NpxProposalVotingStats";
+import InvestorCompanyDetails from "../pages/InvestorCompanyDetails";
 import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
@@ -586,6 +587,11 @@ function Router() {
           path: "voting-data",
           element: <VdsEuropean />,
           data: { titleName: "Voting Data - ZMH Analytics" },
+        },
+        {
+          path: "npx-proposal-voting-stats",
+          element: <NpxProposalVotingStats />,
+          data: { titleName: "N-PX Proposal Voting Stats - ZMH Analytics" },
         },
         {
           path: "executive-compensation",
