@@ -171,8 +171,8 @@ function Main() {
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
-  const ownershipView = searchParams.get("ownership_view") === "separate" ? "separate" : "all";
-  const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "separate" ? "separate" : "all";
+  const ownershipView = searchParams.get("ownership_view") === "all" ? "all" : "separate";
+  const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "all" ? "all" : "separate";
 
   const { companySearchAndUpdate } = useCompanySearch();
   const { dashboardDataList, tempSearch, graphQLBoardData, graphQLBoardDataLoading, agmSummaryDetails } =

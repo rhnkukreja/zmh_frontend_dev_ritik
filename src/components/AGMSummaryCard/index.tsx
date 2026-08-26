@@ -31,7 +31,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const lastRequestedTickerRef = useRef<string>("");
 
   const { finhub, companyGlobalSearchId } = useAppSelector((state) => state.authentiction);
-  const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "separate" ? "separate" : "all";
+  const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "all" ? "all" : "separate";
   const yearFromQuery = searchParams.get("year");
   const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery || "");
 
@@ -715,18 +715,21 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
             <>
               <div className="flex items-center gap-4 xs:flex-col md:flex-row py-3">
                 <div className="flex flex-wrap items-center gap-3 shrink-0">
-                  <Tab.Group selectedIndex={shareholderMeetingView === "all" ? 0 : 1}>
+                  <Tab.Group selectedIndex={shareholderMeetingView === "separate" ? 0 : 1}>
                     <Tab.List variant="boxed-tabs" className="border-none bg-transparent p-0">
                       {[
-                        { label: "All Years", value: "all" },
-                        { label: "Separate Years", value: "separate" },
+                        { label: "Latest", value: "separate" },
+                        { label: "Year-on-Year Comparison", value: "all" },
                       ].map((tab, index) => (
                         <Tab
                           key={tab.value}
                           className="active px-1 border-primary/10 first:rounded-l-[0.6rem] last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800"
                         >
                           <Tab.Button
-                            className="min-w-[132px] whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer px-4 py-2"
+                            className={clsx([
+                              "whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer",
+                              tab.value === "separate" ? "w-32" : "w-52",
+                            ])}
                             as="button"
                             onClick={() => handleMeetingViewTab(tab.value as "all" | "separate")}
                           >
@@ -761,29 +764,31 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                 <div className="flex items-center gap-2 shrink-0 xs:mt-4 md:mt-0">
                   {!isMeetingModal && (
                     <>
-                      <button
-                        disabled={
-                          is8kLoading ||
-                          !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                          !activeMeetingYear
-                        }
-                        onClick={handle8kLink}
-                        className={clsx([
-                          "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
-                          is8kLoading ||
+                      {shareholderMeetingView === "separate" && (
+                        <button
+                          disabled={
+                            is8kLoading ||
                             !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
                             !activeMeetingYear
-                            ? "opacity-60 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
-                        ])}
-                      >
-                        {is8kLoading ? (
-                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                        ) : (
-                          "8-K"
-                        )}
-                      </button>
-                      {analyticsData && shareholderMeetingView === "separate" && (
+                          }
+                          onClick={handle8kLink}
+                          className={clsx([
+                            "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
+                            is8kLoading ||
+                              !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
+                              !activeMeetingYear
+                              ? "opacity-60 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
+                          ])}
+                        >
+                          {is8kLoading ? (
+                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                          ) : (
+                            "8-K"
+                          )}
+                        </button>
+                      )}
+                      {analyticsData && shareholderMeetingView === "all" && (
                         <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
                           <button
                             onClick={() => setChartModalVisible(true)}

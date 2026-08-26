@@ -103,7 +103,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const [searchParams, setSearchParams] = useSearchParams();
   const yearFromQuery = searchParams.get("year") || "";
   const ownershipView: OwnershipView =
-    searchParams.get("ownership_view") === "separate" ? "separate" : "all";
+    searchParams.get("ownership_view") === "all" ? "all" : "separate";
 
   const {
     dashboardDataList,
@@ -659,7 +659,7 @@ const getNormalizedScrapedInfo = (name: string) => {
 
               <div className="mt-5">
                 <div className="mb-4">
-                  <Tab.Group selectedIndex={ownershipView === "all" ? 0 : 1}>
+                  <Tab.Group selectedIndex={ownershipView === "separate" ? 0 : 1}>
                     <Tab.List
                       variant="boxed-tabs"
                       className="w-fit border-none bg-transparent"
@@ -668,18 +668,18 @@ const getNormalizedScrapedInfo = (name: string) => {
                         <Tab.Button
                           className="w-32 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
                           as="button"
-                          onClick={() => handleOwnershipViewChange("all")}
+                          onClick={() => handleOwnershipViewChange("separate")}
                         >
-                          All Years
+                          Latest
                         </Tab.Button>
                       </Tab>
                       <Tab className="active px-1 border-primary/10 last:rounded-r-[0.6rem] cursor-pointer [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
                         <Tab.Button
-                          className="w-36 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                          className="w-52 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
                           as="button"
-                          onClick={() => handleOwnershipViewChange("separate")}
+                          onClick={() => handleOwnershipViewChange("all")}
                         >
-                          Separate Years
+                          Year-on-Year Comparison
                         </Tab.Button>
                       </Tab>
                     </Tab.List>
@@ -741,7 +741,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                                   <Table.Td
                                     key={`year-header-${yearData?.year}`}
                                     colSpan={2}
-                                    className="cell relative z-10 px-1 text-[13px] py-2 font-semibold h-[40px] bg-header border-[#0000000D] border-b-0 text-[#000000B2] text-center before:absolute before:bottom-[-2px] before:left-0 before:right-0 before:h-[4px] before:bg-[#f1f5f9] before:content-['']"
+                                    className="cell relative z-10 px-1 text-[13px] py-2 font-semibold h-[40px] bg-header border-[#0000000D] border-b-0 text-[#000000B2] text-center before:absolute before:bottom-[-2px] before:left-0 before:right-0 before:h-[4px] before:bg-[#f1f5f9] before:content-[''] after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-300 after:content-['']"
                                   >
                                     {yearData?.year}
                                   </Table.Td>
@@ -750,7 +750,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                               <Table.Tr className="row bg-header">
                                 {allYearData.map((yearData) => (
                                   <Fragment key={`year-subheader-${yearData?.year}`}>
-                                    <Table.Td className="cell relative z-10 w-[72px] px-1 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] text-center whitespace-normal leading-tight before:absolute before:left-0 before:right-0 before:top-[-2px] before:h-[4px] before:bg-[#f1f5f9] before:content-['']">
+                                    <Table.Td className="cell relative z-10 w-[72px] px-1 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] text-center whitespace-normal leading-tight before:absolute before:left-0 before:right-0 before:top-[-2px] before:h-[4px] before:bg-[#f1f5f9] before:content-[''] after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-300 after:content-['']">
                                       Voted Against Directors
                                     </Table.Td>
                                     <Table.Td className="cell relative z-10 w-[72px] px-1 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] text-center whitespace-normal leading-tight before:absolute before:left-0 before:right-0 before:top-[-2px] before:h-[4px] before:bg-[#f1f5f9] before:content-['']">
@@ -850,7 +850,7 @@ const getNormalizedScrapedInfo = (name: string) => {
 
                                         return (
                                           <Fragment key={`${holding?.filer_id ?? holding?.institution_name ?? "row"}-${yearKey}`}>
-                                            <Table.Td className="cell px-1 py-2 border-dashed dark:bg-darkmode-600 text-center align-middle">
+                                            <Table.Td className="cell relative px-1 py-2 border-dashed dark:bg-darkmode-600 text-center align-middle after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-200 after:content-['']">
                                               {renderVotingStatus(
                                                 yearHolding?.voted_against_directors,
                                                 yearHolding?.voted_against_directors_message,
