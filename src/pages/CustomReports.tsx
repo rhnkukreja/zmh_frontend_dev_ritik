@@ -480,8 +480,8 @@ const ComprehensiveReportTab = () => {
               )}
               <p className="text-sm text-white/80 mt-2 max-w-xl">
                 Includes Share Price Performance, Trend in Investor Support, Top 20 Ownership,
-                Shareholder Meeting Summary, Voting Rationale, Engagement History, and Shareholder
-                Proposals, formatted into one report ready to share with your board or clients.
+                Shareholder Meeting Summary, Voting Rationale, Engagement History, Shareholder
+                Proposals, Governance Profile, and Shareholder Engagement.
               </p>
             </div>
           </div>
