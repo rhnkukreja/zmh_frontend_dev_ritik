@@ -417,10 +417,25 @@ const OverviewSection = ({
               <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
               <h4 className="text-sm font-bold text-slate-800">SEC Form ADV Part 2 Brochure</h4>
             </div>
-            <Lucide
-              icon="ChevronDown"
-              className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${showBrochure ? "rotate-180" : ""}`}
-            />
+            <div className="flex items-center gap-3">
+              {isEditMode && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onChange({ ...section, adv_brochure_url: null });
+                  }}
+                  title="Remove this brochure"
+                  className="text-slate-400 hover:text-red-800 transition-colors"
+                >
+                  <Lucide icon="Trash2" className="w-4 h-4" />
+                </button>
+              )}
+              <Lucide
+                icon="ChevronDown"
+                className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${showBrochure ? "rotate-180" : ""}`}
+              />
+            </div>
           </div>
           {showBrochure && (
             <div className="pb-4">

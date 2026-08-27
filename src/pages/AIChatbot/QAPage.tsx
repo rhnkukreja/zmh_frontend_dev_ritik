@@ -579,39 +579,22 @@ export default function QAPage() {
                             const uniquePages = new Set(segments.map(s => s.page));
                             const isMultiPage = uniquePages.size > 1;
 
-                              // NEW: Ultra-strict helper function to detect squashed headings
                               const formatTextAsMarkdown = (text: string) => {
                                   if (!text) return "";
-                                  
-                                  // Split by newlines and filter out empty lines
+
+                                  // Split by newlines and filter out empty lines, then rejoin as paragraphs.
+                                  // Previously this also tried to detect "squashed headings" (a heading and
+                                  // its paragraph mashed onto one line with no separator) via a regex
+                                  // heuristic guessing purely from capitalization/punctuation shape -- that
+                                  // heuristic had no reliable way to tell an actual heading apart from an
+                                  // ordinary sentence that merely contains a capitalized word early on, and
+                                  // was incorrectly bolding and truncating normal prose (e.g. "The
+                                  // independent Chair or Lead Independent Director..." became a fake bold
+                                  // heading "The independent" cut off from its own sentence). Removed
+                                  // rather than tightened -- there's no text-shape-only rule that can
+                                  // safely distinguish a real heading from an ordinary capitalized word.
                                   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-                                  if (lines.length === 0) return "";
-
-                                  let firstLine = lines[0];
-                                  let formattedFirstLine = firstLine;
-
-                                  // Regex: Looks for 4-80 characters with NO punctuation (.,!?;:), 
-                                  // followed by a space and a standard Capitalized word (like "Executive", "The", etc.)
-                                  const match = firstLine.match(/^([^.,!?;:]{4,80}?)\s([A-Z][a-z]+.*)/);
-                                  
-                                  if (match) {
-                                      // Successfully found a squashed heading!
-                                      const heading = match[1].trim();
-                                      const restOfParagraph = match[2].trim();
-                                      formattedFirstLine = `**${heading}**\n\n${restOfParagraph}`;
-                                  } 
-                                  // If it's just a normal standalone heading (short, no ending punctuation)
-                                  else if (firstLine.length < 100 && !/[.!?:]$/.test(firstLine)) {
-                                      formattedFirstLine = `**${firstLine.replace(/\*\*/g, '')}**`;
-                                  }
-
-                                  // Combine the fixed first line back with the rest of the paragraphs
-                                  if (lines.length > 1) {
-                                      const body = lines.slice(1).join("\n\n");
-                                      return `${formattedFirstLine}\n\n${body}`;
-                                  }
-                                  
-                                  return formattedFirstLine;
+                                  return lines.join("\n\n");
                               };
 
                             if (!isMultiPage) {
@@ -963,9 +946,18 @@ export default function QAPage() {
                             <div className={`mt-0.5 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? 'bg-[#931638] border-[#931638]' : 'border-gray-400'}`}>
                               {isSelected && <Check size={10} className="text-white" />}
                             </div>
-                            <span className={`text-xs leading-normal break-words whitespace-normal ${isSelected ? 'text-[#931638] font-medium' : 'text-gray-700'}`}>
-                              {doc.name}
-                            </span>
+                            {(() => {
+                              const cleanedName = doc.name.replace(/_/g, " ");
+                              const displayName = cleanedName.length > 70 ? `${cleanedName.slice(0, 70)}…` : cleanedName;
+                              return (
+                                <span
+                                  title={cleanedName}
+                                  className={`text-xs leading-normal break-words whitespace-normal ${isSelected ? 'text-[#931638] font-medium' : 'text-gray-700'}`}
+                                >
+                                  {displayName}
+                                </span>
+                              );
+                            })()}
                           </div>
                         )
                       })
@@ -978,9 +970,11 @@ export default function QAPage() {
               <div className="flex gap-1.5 overflow-x-auto mt-2" style={{ scrollbarWidth: 'thin' }}>
                 {selectedPdfIds.map(id => {
                   const doc = allDocs.find(d => d.pdf_id === id);
+                  const cleanedName = (doc?.name || "").replace(/_/g, " ");
+                  const displayName = cleanedName.length > 40 ? `${cleanedName.slice(0, 40)}…` : cleanedName;
                   return (
                     <div key={id} className="flex items-center gap-1 bg-[#931638]/10 text-[#931638] border border-[#931638]/60 px-2 py-1 rounded text-xs animate-in fade-in zoom-in-95 shrink-0">
-                      <span className="whitespace-nowrap">{doc?.name}</span>
+                      <span className="whitespace-nowrap" title={cleanedName}>{displayName}</span>
                       <button onClick={() => removePdf(id)} className="hover:text-[#931638]"><X size={12} /></button>
                     </div>
                   )
