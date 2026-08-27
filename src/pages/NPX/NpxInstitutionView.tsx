@@ -225,7 +225,13 @@ const NpxInstitutionView = () => {
       year: resolvedYear,
     };
     if (meetingDate) payload.meeting_date = meetingDate;
-    dispatch(fetchNpxProposalVotingStats({ view: "by_institution", filters: payload }));
+    dispatch(
+      fetchNpxProposalVotingStats({
+        view: "by_institution",
+        filters: payload,
+        requestKey: createDynamicURL(`/api/npx-proposal-voting-stats/`, payload),
+      })
+    );
   };
 
   useEffect(() => {
@@ -288,6 +294,13 @@ const NpxInstitutionView = () => {
           page_size: pageSize,
           investor_company: [DEFAULT_INVESTOR],
         },
+        requestKey: createDynamicURL(`/api/npx-proposal-voting-stats/`, {
+          year: fallbackYear,
+          meeting_date: meetingDate,
+          page: 1,
+          page_size: pageSize,
+          investor_company: [DEFAULT_INVESTOR],
+        }),
       })
     );
   };

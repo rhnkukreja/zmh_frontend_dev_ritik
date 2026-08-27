@@ -27,6 +27,7 @@ import Skeleton from "react-loading-skeleton";
 import { axiosInstance } from "@/services";
 import { baseURL } from "@/constant";
 import { compensationProposalsService } from "@/services/compensationProposals";
+import { createDynamicURL } from "@/utils/helper";
 import CompanyVotingCards from "./components/CompanyVotingCards";
 
 const INDEX_OPTIONS = [
@@ -130,7 +131,12 @@ const ExecutiveCompensation: React.FC = () => {
         payload.investor_company = localFilters.investor_company;
       }
       if (localFilters.keyword?.trim()) payload.keyword = localFilters.keyword.trim();
-      dispatch(fetchCompensationProposals({ filters: payload }));
+      dispatch(
+        fetchCompensationProposals({
+          filters: payload,
+          requestKey: createDynamicURL("/api/compensation-proposals/stats/", payload),
+        })
+      );
     },
     [dispatch, localFilters]
   );

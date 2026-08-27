@@ -50,6 +50,21 @@ const INVALIDATION_RULES: InvalidationRule[] = [
     triggers: ['company'],
     description: 'Engagement details (depends on company only)',
   },
+  {
+    pattern: /\/api\/npx-proposal-voting-stats\//,
+    triggers: ['company', 'year'],
+    description: 'N-PX proposal voting stats (depends on company and year)',
+  },
+  {
+    pattern: /\/api\/compensation-proposals\/stats\//,
+    triggers: ['company', 'year'],
+    description: 'Compensation proposals stats (depends on company and year)',
+  },
+  {
+    pattern: /\/api\/proposal-voting-stats\//,
+    triggers: ['company', 'year'],
+    description: 'Proposal voting stats (depends on company and year)',
+  },
 ];
 
 // Tab-specific cache keys/patterns
@@ -65,6 +80,9 @@ const TAB_CACHE_PATTERNS = {
   ],
   compensation: [
     /\/executive_compensation\//,
+    /\/api\/compensation-proposals\/stats\//,
+    /\/api\/npx-proposal-voting-stats\//,
+    /\/api\/proposal-voting-stats\//,
   ],
 };
 

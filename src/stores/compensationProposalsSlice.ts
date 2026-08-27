@@ -7,6 +7,7 @@ interface CompensationProposalsState {
   data: any;
   loading: boolean;
   error: string | null;
+  requestKey: string | null;
   filters: {
     year?: (string | number)[];
     index?: string;
@@ -30,6 +31,7 @@ const initialState: CompensationProposalsState = {
   data: null,
   loading: false,
   error: null,
+  requestKey: null,
   filters: {
     year: [CURRENT_YEAR],
     index: "S&P 500",
@@ -45,24 +47,38 @@ const CLEAN_ERROR = "Unable to load compensation proposal voting stats. Please t
 
 export const fetchCompensationProposals = createAsyncThunk<
   any,
-  { filters?: any },
+  { filters?: any; requestKey?: string },
   { rejectValue: string }
->(`${name}/fetchCompensationProposals`, async ({ filters }, { rejectWithValue }) => {
-  try {
-    return await compensationProposalsService.getCompensationStats(filters);
-  } catch (error: any) {
-    const responseData = error?.response?.data;
-    if (typeof responseData === "string" && responseData.trim().startsWith("<!DOCTYPE")) {
-      return rejectWithValue(CLEAN_ERROR);
+>(
+  `${name}/fetchCompensationProposals`,
+  async ({ filters }, { rejectWithValue }) => {
+    try {
+      return await compensationProposalsService.getCompensationStats(filters);
+    } catch (error: any) {
+      const responseData = error?.response?.data;
+      if (typeof responseData === "string" && responseData.trim().startsWith("<!DOCTYPE")) {
+        return rejectWithValue(CLEAN_ERROR);
+      }
+      return rejectWithValue(
+        responseData?.detail ||
+          responseData?.message ||
+          error?.message ||
+          CLEAN_ERROR
+      );
     }
-    return rejectWithValue(
-      responseData?.detail ||
-        responseData?.message ||
-        error?.message ||
-        CLEAN_ERROR
-    );
+  },
+  {
+    condition: ({ requestKey }, { getState }) => {
+      if (!requestKey) return true;
+      const state = getState() as any;
+      const compensationState = state.compensationProposals;
+      return !(
+        compensationState?.requestKey === requestKey &&
+        compensationState?.data
+      );
+    },
   }
-});
+);
 
 const compensationProposalsSlice = createSlice({
   name,
@@ -87,10 +103,12 @@ const compensationProposalsSlice = createSlice({
       .addCase(fetchCompensationProposals.fulfilled, (state, action) => {
         state.loading = false;
         state.data = action.payload;
+        state.requestKey = (action as any)?.meta?.arg?.requestKey ?? null;
       })
       .addCase(fetchCompensationProposals.rejected, (state, action) => {
         state.loading = false;
         state.error = (action.payload as string) || CLEAN_ERROR;
+        state.requestKey = (action as any)?.meta?.arg?.requestKey ?? state.requestKey;
       });
   },
 });

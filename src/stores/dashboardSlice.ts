@@ -86,6 +86,7 @@ interface CompanySliceState {
   totalNPXCount: number;
   npxProposalVotingStats: any | null;
   npxProposalVotingStatsLoading: boolean;
+  npxProposalVotingStatsRequestKey: string | null;
   searchCompletion: number;
   tab: "Top-20" | "All-Investor" | "Top-5" | "";
   proxyContestinvestorFilter: any;
@@ -186,6 +187,7 @@ const initialState: CompanySliceState = {
   npxProxyLoading: false,
   npxProposalVotingStats: null,
   npxProposalVotingStatsLoading: false,
+  npxProposalVotingStatsRequestKey: null,
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
@@ -346,14 +348,28 @@ export const fetchNpxProxyDashboard = createAsyncThunk<
 
 export const fetchNpxProposalVotingStats = createAsyncThunk<
   { result: any },
-  { view?: string; filters?: any }
->(`${name}/fetchNpxProposalVotingStats`, async ({ view, filters }) => {
-  const response = await dashboardService.getNpxProposalVotingStats({
-    view,
-    ...filters,
-  });
-  return { result: response.result };
-});
+  { view?: string; filters?: any; requestKey?: string }
+>(
+  `${name}/fetchNpxProposalVotingStats`,
+  async ({ view, filters }) => {
+    const response = await dashboardService.getNpxProposalVotingStats({
+      view,
+      ...filters,
+    });
+    return { result: response.result };
+  },
+  {
+    condition: ({ requestKey }, { getState }) => {
+      if (!requestKey) return true;
+      const state = getState() as any;
+      const dashboardState = state.dashboard;
+      return !(
+        dashboardState?.npxProposalVotingStatsRequestKey === requestKey &&
+        dashboardState?.npxProposalVotingStats
+      );
+    },
+  }
+);
 
 export const fetchInvestorProfileDetails = createAsyncThunk<
   { results: any },
@@ -883,12 +899,14 @@ const companySlice = createSlice({
         (state, action: PayloadAction<{ result: any }>) => {
           state.npxProposalVotingStatsLoading = false;
           state.npxProposalVotingStats = action.payload.result;
+          state.npxProposalVotingStatsRequestKey = (action as any)?.meta?.arg?.requestKey ?? null;
         }
       )
       .addCase(fetchNpxProposalVotingStats.rejected, (state, action) => {
         state.npxProposalVotingStatsLoading = false;
         state.error =
           action.error.message || "Failed to fetch NPX proposal voting stats";
+        state.npxProposalVotingStatsRequestKey = (action as any)?.meta?.arg?.requestKey ?? state.npxProposalVotingStatsRequestKey;
       })
 
       .addCase(fetchInvestorProfileDetails.pending, (state) => {
