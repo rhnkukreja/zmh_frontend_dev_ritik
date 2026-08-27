@@ -1101,7 +1101,6 @@ function Main() {
                   "/voting-data",
                   "/investor-profile",
                   "/engagement-question",
-                  "/custom-reports",
                   "/voting-guidelines",
                   "/proxy-contest",
                   "/executive-compensation",

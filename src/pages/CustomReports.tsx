@@ -17,7 +17,7 @@ import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CPagination from "@/components/Pagination";
 import StandardizedTable from "@/components/StandardizedTable";
 import GovernanceTab from "@/components/CompanyOverview/GovernanceTab";
-import { X, Check } from "lucide-react";
+import { X, Check, ChevronRight } from "lucide-react";
 
 // ── Index options (hardcoded — not from API) ─────────────────────────────────
 const GP_INDEX_OPTIONS = [
@@ -430,6 +430,17 @@ const ComprehensiveReportTab = () => {
   const { companyGlobalSearchTicker, companyGlobalSearchName } = useAppSelector((state) => state.authentiction);
   const [isGenerating, setIsGenerating] = useState(false);
   const companyName = companyGlobalSearchName || companyGlobalSearchTicker;
+  const includedModules = [
+    "Share Price Performance",
+    "Trend in Investor Support",
+    "Top 20 Ownership",
+    "Shareholder Meeting Summary",
+    "Voting Rationale",
+    "Engagement History",
+    "Shareholder Proposals",
+    "Governance Profile",
+    "Shareholder Engagement",
+  ];
 
   const handleGenerate = async () => {
     if (!companyGlobalSearchTicker || isGenerating) return;
@@ -459,8 +470,16 @@ const ComprehensiveReportTab = () => {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-lg font-bold mb-1">Comprehensive Report</h1>
+      <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+        <div className="flex items-start gap-2.5">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+              <span className="text-slate-500">Company</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+              <span>Comprehensive Report</span>
+            </h2>
+          </div>
+        </div>
       </div>
 
       {/* Banner */}
@@ -478,11 +497,19 @@ const ComprehensiveReportTab = () => {
               ) : (
                 <h2 className="text-xl font-semibold text-white/90">No company selected yet</h2>
               )}
-              <p className="text-sm text-white/80 mt-2 max-w-xl">
-                Includes Share Price Performance, Trend in Investor Support, Top 20 Ownership,
-                Shareholder Meeting Summary, Voting Rationale, Engagement History, and Shareholder
-                Proposals, formatted into one report ready to share with your board or clients.
-              </p>
+              <div className="mt-2 max-w-2xl">
+                <p className="text-sm font-medium text-white/90">Modules included:</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {includedModules.map((module) => (
+                    <span
+                      key={module}
+                      className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur-sm"
+                    >
+                      {module}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
           <div className="flex-shrink-0">
