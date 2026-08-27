@@ -873,31 +873,46 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  // Deletes the currently active profile (admin-only — the button that
-  // triggers this is gated on isAdmin, and the backend independently
-  // rejects the call for a non-admin X-User-Type). Handles both slug shapes
-  // the dropdown can hand us: an advanced-profile key ("x-profile") or a
-  // bare basic-only key ("x") — see delete_investor_profile's docstring.
+  // Deletes the profile tier actually being viewed (admin/analyst — the
+  // button that triggers this is gated on isAdminOrAnalyst, and the backend
+  // independently rejects the call for other X-User-Type values). Handles
+  // both slug shapes the dropdown can hand us: an advanced-profile key
+  // ("x-profile") or a bare basic-only key ("x") — see
+  // delete_investor_profile's docstring.
   const handleDeleteActiveProfile = async () => {
     if (!activeInvestorKey || isDeletingProfile) return;
     const deletedKey = activeInvestorKey;
+    const deletingBasicOnly = effectiveProfileView === "basic" && hasAdvancedProfile;
+    const slugToDelete = effectiveProfileView === "basic" ? toBaseSlug(deletedKey) : deletedKey;
     setIsDeletingProfile(true);
     try {
-      await axios.delete(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${deletedKey}`, {
+      await axios.delete(`${AI_CHATBOT_API_BASE}/api/activist-profiles/${slugToDelete}`, {
         headers: { "X-User-Type": user?.user_type || "" },
       });
 
       setIsDeleteModalOpen(false);
-      toast.success(`${displayName} profile deleted.`);
+      toast.success(`${displayName} ${effectiveProfileView === "basic" ? "Condensed" : "Comprehensive"} profile deleted.`);
 
-      // Drop it from every cache it could be sitting in, then land on
-      // whatever profile remains (mirrors fetchAllProfiles' own fallback:
-      // first remaining key, or empty if that was the last one).
+      const baseSlug = toBaseSlug(deletedKey);
+
+      if (deletingBasicOnly) {
+        // Advanced profile survives -- stay on this investor, just drop the
+        // Basic half and fall back to the Comprehensive view.
+        setBasicProfilesCache((prev) => {
+          const { [baseSlug]: _omit, ...rest } = prev;
+          return rest;
+        });
+        setBasicProfile(null);
+        setProfileViewMode("advanced");
+        return;
+      }
+
+      // Deleting the Advanced profile (or the investor's only profile) --
+      // same full-removal behavior as before.
       setProfilesCache((prev) => {
         const { [deletedKey]: _omit, ...rest } = prev;
         return rest;
       });
-      const baseSlug = toBaseSlug(deletedKey);
       setBasicProfilesCache((prev) => {
         const { [baseSlug]: _omit, ...rest } = prev;
         return rest;
@@ -2280,7 +2295,7 @@ const ActivistIntelligenceDashboard = ({
                   </svg>
                 </button>
               )}
-              {isAdmin && activeInvestorKey && (
+              {isAdminOrAnalyst && activeInvestorKey && (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setIsDeleteModalOpen(true); }}
