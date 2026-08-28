@@ -653,6 +653,7 @@ const ActivistIntelligenceDashboard = ({
 
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [generateInvestorName, setGenerateInvestorName] = useState("");
+  const [generateCik, setGenerateCik] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStep, setGenerateStep] = useState("");
   // Scoped to the Generate modal so a failed generation shows inline there
@@ -731,6 +732,7 @@ const ActivistIntelligenceDashboard = ({
     setModalBasicResult(null);
     if (!isGenerating) {
       setGenerateInvestorName("");
+      setGenerateCik("");
     }
   };
 
@@ -1468,6 +1470,7 @@ const ActivistIntelligenceDashboard = ({
     setDuplicateProfileKey(null);
     setGenerateModalOpen(false);
     setGenerateInvestorName("");
+    setGenerateCik("");
   };
 
   // ── Generate modal, step 1: Basic profile PREVIEW ───────────────────────
@@ -1489,7 +1492,8 @@ const ActivistIntelligenceDashboard = ({
       const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/generate`, {
         investor_name: generateInvestorName,
         creator_email: getCreatorEmail(),
-        ...(filer ? { whalewisdom_filer_id: filer.id, whalewisdom_cik: filer.cik } : {}),
+        ...(filer?.id ? { whalewisdom_filer_id: filer.id } : {}),
+        ...(filer?.cik ? { whalewisdom_cik: filer.cik } : {}),
       });
       const data = response.data?.data || response.data;
       setModalBasicResult(data);
@@ -1553,11 +1557,25 @@ const ActivistIntelligenceDashboard = ({
   // raw-name-only behavior that existed before this feature, just flagged
   // with a subtle note so the user knows why no filer was attached.
   const handleGenerateModalSubmit = async () => {
-    if (!generateInvestorName.trim() || isSubmittingBasic || isResolvingWhaleWisdom) return;
+    if (isSubmittingBasic || isResolvingWhaleWisdom) return;
+    const trimmedCik = generateCik.trim();
+    if (!generateInvestorName.trim() && !trimmedCik) {
+      setGenerateError("Enter an activist name or a CIK to generate a profile.");
+      return;
+    }
     setGenerateError(null);
     setWhaleWisdomNoMatch(false);
     setIsResolvingWhaleWisdom(true);
     try {
+      if (trimmedCik) {
+        // User supplied an exact CIK -- skip the known-filer cache, the
+        // WhaleWisdom name search, and the disambiguation picker entirely.
+        // resolve_filer() on the backend already resolves a bare CIK
+        // directly, with zero fuzzy name matching involved.
+        await runBasicGenerate({ id: "", cik: trimmedCik, name: generateInvestorName, link: "" });
+        return;
+      }
+
       const knownFiler = await getKnownWhaleWisdomFiler(generateInvestorName);
       if (knownFiler) {
         await runBasicGenerate(knownFiler);
@@ -1644,6 +1662,7 @@ const ActivistIntelligenceDashboard = ({
       // activeInvestorKey switch above (landing on the freshly-published
       // investor) already puts the user right in front of.
       setGenerateInvestorName("");
+      setGenerateCik("");
     } catch (err: any) {
       console.error("Basic publish failed:", err);
       setGenerateError(err.response?.data?.detail || "Failed to publish the basic profile.");
@@ -2899,7 +2918,7 @@ const ActivistIntelligenceDashboard = ({
                 <h2 style={{ margin: "0 0 24px", color: "#111827", fontSize: 18, fontWeight: 600 }}>Generate New Profile</h2>
 
                 <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
-                  Activist Name
+                  Activist Name <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional if CIK is provided below)</span>
                   <input
                     autoFocus
                     className="zmh-investor-input"
@@ -2915,6 +2934,24 @@ const ActivistIntelligenceDashboard = ({
                       borderRadius: 6, boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s",
                     }}
                   />
+                </label>
+
+                <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                  CIK <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
+                  <input
+                    className="zmh-investor-input"
+                    value={generateCik}
+                    onChange={(e) => setGenerateCik(e.target.value.replace(/\D/g, ""))}
+                    placeholder="e.g. 1697748"
+                    disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
+                    style={{
+                      width: "100%", marginTop: 8, padding: "10px 14px", fontSize: 14,
+                      borderRadius: 6, boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s",
+                    }}
+                  />
+                  <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 400, color: "#6b7280" }}>
+                    If you already know the exact SEC CIK, enter it here to skip the name search entirely.
+                  </span>
                 </label>
 
                 {isResolvingWhaleWisdom && (
