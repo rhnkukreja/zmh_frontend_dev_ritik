@@ -106,6 +106,97 @@ export async function uploadJson(file: File, investorId: string, categories?: st
   return res.json();
 }
 
+// Uploads a SEC Form ADV Part 2 brochure PDF for a Condensed (basic) profile
+// and returns the public URL it is served from — that URL is what gets written
+// to sections.whalewisdom_overview.adv_brochure_url_manual and persisted with
+// the rest of the profile on Save.
+//
+// Backend contract (fixed): multipart POST with "file", plus "slug" when the
+// profile has one (it doesn't yet while an unpublished preview is on screen),
+// responding {"status", "message", "url"}. Only "url" is read — the shape is
+// settled, so tolerating alternatives here would only hide a broken response.
+//
+// Passing the slug also has the server attach the URL to that stored profile
+// right away (and 404 for a slug it can't find); without one the file is just
+// stored and the URL handed back for publish to commit. Either way the caller
+// still writes it into the draft, so the panel doesn't depend on which of the
+// two paths ran.
+export async function uploadAdvBrochure(file: File, slug?: string): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (slug) formData.append("slug", slug);
+
+  // Content-Type is deliberately left unset so the browser writes the
+  // multipart boundary itself (same as uploadPdf/uploadJson above).
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/brochure`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const payload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    // The server is the authority on what it will accept (type, size, and
+    // whatever else it validates), so show its own words when it sends any —
+    // the client-side checks are only there for faster feedback.
+    const serverMessage = payload?.detail || payload?.message;
+    throw new Error(serverMessage || `Brochure upload failed (${res.status}).`);
+  }
+
+  if (!payload?.url) throw new Error("Upload finished but no file URL came back.");
+  return payload.url as string;
+}
+
+// One combined profile, as reported by the merge endpoint.
+export interface MergedProfileResult {
+  status: string;
+  message: string;
+  slug: string;
+  name: string;
+}
+
+// Merges two published Condensed (basic) profiles into a new combined profile
+// and returns the new profile's slug/name. The combined document carries
+// is_combination: true and combination_of: [slugA, slugB], and otherwise uses
+// the same schema as any other basic profile.
+//
+// Backend contract: JSON POST {slug_a, slug_b, name?} responding
+// {"status", "message", "slug", "name"}; failures are {"detail": "..."} and the
+// caller shows that message verbatim (the server is the one that knows why a
+// pair can't be merged — a combined profile as input, a missing slug, and so
+// on). Slugs are BASE slugs, the same form GET /basic/{slug} takes.
+//
+// Slow by nature: the merge runs an LLM synthesis pass server-side, so callers
+// need a real loading state rather than an optimistic spinner.
+export async function mergeBasicProfiles(
+  slugA: string,
+  slugB: string,
+  name?: string
+): Promise<MergedProfileResult> {
+  const trimmedName = (name || "").trim();
+
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/merge`, {
+    method: "POST",
+    headers: getRequestHeaders(),
+    body: JSON.stringify({
+      slug_a: slugA,
+      slug_b: slugB,
+      // Omitted rather than sent empty, so the backend applies its own
+      // "A + B" default instead of naming the profile "".
+      ...(trimmedName ? { name: trimmedName } : {}),
+    }),
+  });
+
+  const payload = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    throw new Error(payload?.detail || `Merge failed (${res.status}).`);
+  }
+
+  if (!payload?.slug) throw new Error("Merge finished but no profile slug came back.");
+  return payload as MergedProfileResult;
+}
+
 export const fetchDocuments = async () => {
   const res = await fetch(`${AI_CHATBOT_API_BASE}/documents`);
   if (!res.ok) throw new Error("Failed to fetch documents");

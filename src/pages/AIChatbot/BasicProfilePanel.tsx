@@ -1,8 +1,15 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Lucide from "@/components/Base/Lucide";
 import ActivistFilingsTable from "@/pages/AIChatbot/ActivistFilingsTable";
+import { uploadAdvBrochure } from "@/pages/AIChatbot/api";
 
 const THEME_MAROON = "#8b1828";
+
+// Form ADV Part 2 brochures are text-heavy filings, rarely more than a few MB.
+// The cap exists to fail fast in the browser on an obviously wrong file rather
+// than after a long upload the backend would reject anyway.
+const MAX_BROCHURE_MB = 25;
+const MAX_BROCHURE_BYTES = MAX_BROCHURE_MB * 1024 * 1024;
 
 // ─── Local helpers — deliberately duplicated rather than imported, so this
 // panel has zero coupling to InvestorCard/ActivistDashboard internals. ───────
@@ -301,18 +308,87 @@ const BulletList = ({ heading, items, boxed = false }: { heading: string; items:
   );
 };
 
+// "ancora-advisors" -> "Ancora Advisors". Only used for the combination
+// footer when the dashboard hasn't supplied a real legal name for a slug.
+const prettifySlug = (slug: string) =>
+  (slug || "")
+    .replace(/[-_]profile$/i, "")
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
 // ─── Sections ─────────────────────────────────────────────────────────────
 
 const OverviewSection = ({
   section,
+  slug,
   isEditMode,
   onChange,
 }: {
   section: any;
+  slug?: string;
   isEditMode: boolean;
   onChange: (updated: any) => void;
 }) => {
   const [showBrochure, setShowBrochure] = useState(false);
+  const [showBrochureUploader, setShowBrochureUploader] = useState(false);
+  const [brochureUrlDraft, setBrochureUrlDraft] = useState("");
+  const [brochureError, setBrochureError] = useState<string | null>(null);
+  const [uploadingFileName, setUploadingFileName] = useState<string | null>(null);
+  const [isDropTarget, setIsDropTarget] = useState(false);
+  const brochureFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Both attach paths (uploaded file, pasted link) land here. The URL goes to
+  // adv_brochure_url_manual, never adv_brochure_url: the latter is derived
+  // from IAPD and gets overwritten every time the profile is regenerated or
+  // republished, which would silently throw away whatever was attached here.
+  // As with every other edit in this panel it only touches the in-memory
+  // draft — nothing is persisted until the dashboard's Save runs.
+  const applyBrochureUrl = (url: string) => {
+    onChange({ ...section, adv_brochure_url_manual: url });
+    setShowBrochureUploader(false);
+    setBrochureUrlDraft("");
+    setBrochureError(null);
+    setShowBrochure(true);
+  };
+
+  const handleBrochureFile = async (file: File) => {
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (!isPdf) {
+      setBrochureError(`"${file.name}" isn't a PDF — the brochure has to be a PDF file.`);
+      return;
+    }
+    if (file.size > MAX_BROCHURE_BYTES) {
+      setBrochureError(
+        `"${file.name}" is ${(file.size / 1024 / 1024).toFixed(1)}MB — the limit is ${MAX_BROCHURE_MB}MB.`
+      );
+      return;
+    }
+
+    setBrochureError(null);
+    setUploadingFileName(file.name);
+    try {
+      applyBrochureUrl(await uploadAdvBrochure(file, slug));
+    } catch (err: any) {
+      console.error("Brochure upload failed:", err);
+      setBrochureError(err?.message || "Upload failed.");
+    } finally {
+      setUploadingFileName(null);
+    }
+  };
+
+  const handleBrochureUrlSubmit = () => {
+    const trimmed = brochureUrlDraft.trim();
+    if (!trimmed) return;
+    // The value goes straight into an <iframe src>, so require a real http(s)
+    // link rather than accepting whatever happened to be pasted.
+    if (!/^https?:\/\//i.test(trimmed)) {
+      setBrochureError("Enter a full link starting with http:// or https://");
+      return;
+    }
+    applyBrochureUrl(trimmed);
+  };
 
   if (!section || section.status !== "ok") {
     return (
@@ -321,6 +397,11 @@ const OverviewSection = ({
       </SectionCard>
     );
   }
+
+  // A manually attached brochure wins over the IAPD-derived one: it's the
+  // deliberate choice someone made in Edit Mode, and it's the only one of the
+  // two that survives a regenerate.
+  const brochureUrl = section.adv_brochure_url_manual || section.adv_brochure_url;
 
   const bodyText = section.ai_enriched_summary || section.summary;
   // Edit whichever field actually holds the text — ai_enriched_summary when
@@ -407,11 +488,20 @@ const OverviewSection = ({
       <RelevantLinksList links={section.firm_links} />
 
 
-      {section.adv_brochure_url && (
+      {/* The brochure row renders whenever there's a brochure to show OR the
+          panel is in Edit Mode — so a profile that came back without one still
+          offers somewhere to attach it, instead of the whole section silently
+          not existing. Read view is unchanged: no brochure, no row. */}
+      {(brochureUrl || isEditMode) && (
         <div className="border-t border-slate-100 mt-4 -mx-6 px-6">
           <div
-            onClick={() => setShowBrochure((v) => !v)}
-            className="flex items-center justify-between py-4 cursor-pointer hover:bg-slate-50 transition-all"
+            onClick={() => {
+              // Only a row that actually has a PDF behind it toggles.
+              if (brochureUrl) setShowBrochure((v) => !v);
+            }}
+            className={`flex items-center justify-between py-4 transition-all ${
+              brochureUrl ? "cursor-pointer hover:bg-slate-50" : ""
+            }`}
           >
             <div className="flex items-center gap-2">
               <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
@@ -423,7 +513,33 @@ const OverviewSection = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onChange({ ...section, adv_brochure_url: null });
+                    setShowBrochureUploader((v) => !v);
+                    setBrochureError(null);
+                  }}
+                  title={brochureUrl ? "Replace this brochure" : "Attach a brochure"}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-red-800 border border-red-200 rounded px-2.5 py-1.5 hover:bg-red-50 transition-colors"
+                >
+                  <Lucide icon="Upload" className="w-3.5 h-3.5" />
+                  {brochureUrl ? "Replace Brochure" : "Upload Brochure"}
+                </button>
+              )}
+              {isEditMode && brochureUrl && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Clears both fields so the row empties immediately —
+                    // dropping only the manual override would re-reveal the
+                    // IAPD-derived URL, which reads as a broken delete.
+                    //
+                    // Only the derived URL actually stays cleared on Save,
+                    // though: basic/publish (_merge_manual_brochure) reads a
+                    // null adv_brochure_url_manual as "the payload didn't
+                    // carry one" and restores the stored value, so an
+                    // uploaded brochure comes back on the next load. Removing
+                    // one for good needs a clear path on the backend.
+                    onChange({ ...section, adv_brochure_url_manual: null, adv_brochure_url: null });
+                    setShowBrochure(false);
                   }}
                   title="Remove this brochure"
                   className="text-slate-400 hover:text-red-800 transition-colors"
@@ -431,16 +547,106 @@ const OverviewSection = ({
                   <Lucide icon="Trash2" className="w-4 h-4" />
                 </button>
               )}
-              <Lucide
-                icon="ChevronDown"
-                className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${showBrochure ? "rotate-180" : ""}`}
-              />
+              {brochureUrl && (
+                <Lucide
+                  icon="ChevronDown"
+                  className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${showBrochure ? "rotate-180" : ""}`}
+                />
+              )}
             </div>
           </div>
-          {showBrochure && (
+
+          {isEditMode && showBrochureUploader && (
+            <div className="pb-4">
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDropTarget(true);
+                }}
+                onDragLeave={() => setIsDropTarget(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDropTarget(false);
+                  const dropped = e.dataTransfer.files?.[0];
+                  if (dropped) handleBrochureFile(dropped);
+                }}
+                className={`rounded-md border-2 border-dashed p-5 text-center transition-colors ${
+                  isDropTarget ? "border-red-800 bg-red-50" : "border-slate-300 bg-slate-50"
+                }`}
+              >
+                <input
+                  ref={brochureFileInputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const picked = e.target.files?.[0];
+                    // Cleared so picking the same file twice in a row (e.g.
+                    // after a failed upload) still fires onChange.
+                    e.target.value = "";
+                    if (picked) handleBrochureFile(picked);
+                  }}
+                />
+                <Lucide icon="UploadCloud" className="w-6 h-6 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm text-slate-600 m-0">
+                  <button
+                    type="button"
+                    onClick={() => brochureFileInputRef.current?.click()}
+                    disabled={!!uploadingFileName}
+                    className="font-semibold text-red-800 hover:underline disabled:opacity-50 disabled:no-underline"
+                  >
+                    Choose a PDF
+                  </button>{" "}
+                  or drag one here
+                </p>
+                <p className="text-xs text-slate-400 mt-1 mb-0">PDF only, up to {MAX_BROCHURE_MB}MB</p>
+                {uploadingFileName && (
+                  <p className="text-xs text-slate-500 mt-3 mb-0 flex items-center justify-center gap-2">
+                    <span className="w-3 h-3 rounded-full border-2 border-slate-300 border-t-red-800 animate-spin" />
+                    Uploading {uploadingFileName}…
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 my-3">
+                <div className="h-px bg-slate-200 flex-1" />
+                <span className="text-[11px] uppercase tracking-wide text-slate-400">or</span>
+                <div className="h-px bg-slate-200 flex-1" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="url"
+                  value={brochureUrlDraft}
+                  onChange={(e) => setBrochureUrlDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleBrochureUrlSubmit();
+                    }
+                  }}
+                  placeholder="Paste a link to the brochure PDF"
+                  className="flex-1 text-sm text-slate-800 border border-slate-300 rounded px-2.5 py-2 bg-white focus:border-red-800 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleBrochureUrlSubmit}
+                  disabled={!brochureUrlDraft.trim() || !!uploadingFileName}
+                  className="text-xs font-semibold text-white rounded px-3 py-2 transition-opacity disabled:opacity-40"
+                  style={{ background: THEME_MAROON }}
+                >
+                  Add
+                </button>
+              </div>
+
+              {brochureError && <p className="text-xs text-red-700 mt-2 mb-0">{brochureError}</p>}
+            </div>
+          )}
+
+          {brochureUrl && showBrochure && (
             <div className="pb-4">
               <div className="border border-slate-200 rounded-md overflow-hidden bg-slate-100 shadow-inner">
-                <iframe src={section.adv_brochure_url} width="100%" height="600px" title="SEC Brochure PDF" className="w-full" />
+                <iframe src={brochureUrl} width="100%" height="600px" title="SEC Brochure PDF" className="w-full" />
               </div>
             </div>
           )}
@@ -452,6 +658,32 @@ const OverviewSection = ({
 
 const editableCellInputClass =
   "w-full text-xs text-slate-900 border border-slate-300 rounded px-1.5 py-1 focus:border-red-800 focus:outline-none bg-white";
+
+// The three header figures a 13F filing reports. Factored out of
+// HoldingsSection so the combined-profile view can repeat it once per filer
+// while the single-filer view keeps rendering exactly one of them.
+const HoldingMetaFields = ({ filing }: { filing: any }) => (
+  <div className="flex flex-wrap gap-6 text-sm">
+    {filing?.filing_date && (
+      <div>
+        <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Filing Date</p>
+        <p className="font-semibold text-slate-800">{filing.filing_date}</p>
+      </div>
+    )}
+    {filing?.report_period_end && (
+      <div>
+        <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Period End</p>
+        <p className="font-semibold text-slate-800">{filing.report_period_end}</p>
+      </div>
+    )}
+    {!!filing?.reported_13f_portfolio_value_usd && (
+      <div>
+        <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Portfolio Value</p>
+        <p className="font-semibold text-slate-800">{formatLargeUSD(filing.reported_13f_portfolio_value_usd)}</p>
+      </div>
+    )}
+  </div>
+);
 
 const HoldingsSection = ({
   section,
@@ -472,6 +704,26 @@ const HoldingsSection = ({
 
   const holdings = Array.isArray(section.top_holdings) ? section.top_holdings : [];
 
+  // ── Combined-profile 13F shape ──────────────────────────────────────────
+  // A merged profile (POST /activist-profiles/basic/merge) reports on two filers
+  // at once, so its 13F section carries these on top of the single-filer fields:
+  //   per_filer[]          one header per source filer — its own `filer` label,
+  //                        filing_date, report_period_end,
+  //                        reported_13f_portfolio_value_usd, sec_filing_url and
+  //                        holdings_count
+  //   top_holdings[].filer which filer reported that row (null single-filer)
+  //   note                 why % Portfolio doesn't sum to 100% across filers
+  //   period_end_mismatch  set when the two filings cover different periods
+  //
+  // The single-filer header fields stay populated on a combination too — the
+  // backend fills them from whichever filer actually reported holdings — so the
+  // per-filer branch below replaces that header rather than adding to it, and
+  // each branch keys off the presence of these fields rather than off the
+  // profile-level is_combination flag. A single-filer section carries none of
+  // them and renders exactly as it did before.
+  const filerHeaders: any[] = Array.isArray(section.per_filer) ? section.per_filer.filter(Boolean) : [];
+  const showFilerColumn = holdings.some((h: any) => h?.filer);
+
   const updateHolding = (index: number, field: string, value: string) => {
     const updated = holdings.map((h: any, i: number) => (i === index ? { ...h, [field]: value } : h));
     onChange({ ...section, top_holdings: updated });
@@ -479,32 +731,58 @@ const HoldingsSection = ({
 
   return (
     <SectionCard title="Current 13F Holdings" icon="Briefcase" collapsible defaultOpen={false}>
-      <div className="flex flex-wrap gap-6 mb-4 text-sm">
-        {section.filing_date && (
-          <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Filing Date</p>
-            <p className="font-semibold text-slate-800">{section.filing_date}</p>
-          </div>
-        )}
-        {section.report_period_end && (
-          <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Period End</p>
-            <p className="font-semibold text-slate-800">{section.report_period_end}</p>
-          </div>
-        )}
-        {!!section.reported_13f_portfolio_value_usd && (
-          <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Portfolio Value</p>
-            <p className="font-semibold text-slate-800">{formatLargeUSD(section.reported_13f_portfolio_value_usd)}</p>
-          </div>
-        )}
-      </div>
+      {filerHeaders.length > 0 ? (
+        <div className="flex flex-col gap-3 mb-4">
+          {filerHeaders.map((filer: any, i: number) => (
+            <div key={filer?.slug || i} className="bg-slate-50 border border-slate-100 rounded-md p-3">
+              <h5 className="text-sm font-bold text-slate-800 m-0 mb-2 flex items-center gap-2">
+                <Lucide icon="Building2" className="w-4 h-4 text-red-800 shrink-0" />
+                {filer?.filer || `Filer ${i + 1}`}
+              </h5>
+              <HoldingMetaFields filing={filer} />
+              {/* A feeder fund / fund-series entity often files no 13F of its
+                  own. Said here as well as in the merge notes, so nobody reads
+                  the table as this filer's positions. */}
+              {!filer?.holdings_count && (
+                <p className="text-xs text-slate-500 m-0 mt-1">No 13F holdings reported — none of the rows below are this filer's.</p>
+              )}
+              {filer?.sec_filing_url && (
+                <a
+                  href={filer.sec_filing_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 text-sm font-semibold text-blue-700 underline"
+                >
+                  View SEC Form 13F-HR filing
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mb-4">
+          <HoldingMetaFields filing={section} />
+        </div>
+      )}
+
+      {/* Two filers on different reporting periods aren't directly comparable,
+          so this can't be a quiet footnote — the reader has to see it above the
+          table they'd otherwise read as one point in time. */}
+      {section.period_end_mismatch && (
+        <div className="flex items-start gap-2 p-3 mb-4 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+          <Lucide icon="AlertTriangle" className="w-4 h-4 shrink-0 mt-0.5" />
+          <p className="m-0">
+            These filers reported different period ends, so the holdings below are not all as of the same date.
+          </p>
+        </div>
+      )}
 
       {holdings.length > 0 ? (
         <div className="overflow-x-auto border border-slate-200 rounded-md">
           <table className="min-w-full border-collapse text-left text-sm">
             <thead>
               <tr className="bg-red-50 border-b border-red-100 text-xs uppercase tracking-wide text-red-800">
+                {showFilerColumn && <th className="px-3 py-2 font-bold">Filer</th>}
                 <th className="px-3 py-2 font-bold">Issuer</th>
                 <th className="px-3 py-2 font-bold">Ticker</th>
                 <th className="px-3 py-2 font-bold text-right">
@@ -525,6 +803,11 @@ const HoldingsSection = ({
                     : "N/A";
                 return (
                   <tr key={`${h.issuer}-${i}`} className="border-b border-slate-100 last:border-0">
+                    {/* Structural, not editable: which filer reported the row
+                        comes from the merge, not from anything a user retypes. */}
+                    {showFilerColumn && (
+                      <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{h.filer || "—"}</td>
+                    )}
                     <td className="px-3 py-2 font-semibold text-slate-900">
                       {isEditMode ? (
                         <input type="text" value={h.issuer || ""} onChange={(e) => updateHolding(i, "issuer", e.target.value)} className={editableCellInputClass} />
@@ -593,7 +876,14 @@ const HoldingsSection = ({
         </p>
       )}
 
-      {section.sec_filing_url && (
+      {/* Combined profiles ship their own explanation of what % Portfolio is
+          measured against — rendered as sent rather than restated here, so the
+          wording stays the backend's. */}
+      {section.note && <p className="text-xs text-slate-500 mt-1 m-0">{section.note}</p>}
+
+      {/* Combined profiles link each filer's own 13F-HR from its sub-header
+          above, so this section-level link would be a third, ambiguous one. */}
+      {filerHeaders.length === 0 && section.sec_filing_url && (
         <a
           href={section.sec_filing_url}
           target="_blank"
@@ -862,6 +1152,13 @@ export interface BasicProfileData {
   slug: string;
   investor_name: string;
   generated_at: string;
+  // Set on profiles built by merging two others; combination_of holds the two
+  // source slugs, in the order they were merged, and combination_notes records
+  // every merge decision that wasn't a clean union (a scalar that differed
+  // between the sources, a filer with no 13F holdings, a period-end mismatch).
+  is_combination?: boolean;
+  combination_of?: string[];
+  combination_notes?: string[];
   sections: {
     whalewisdom_overview?: any;
     current_13f_holdings?: any;
@@ -876,12 +1173,17 @@ const BasicProfilePanel = ({
   error,
   isEditMode,
   onChange,
+  resolveProfileName,
 }: {
   data: BasicProfileData | null;
   loading: boolean;
   error: string | null;
   isEditMode: boolean;
   onChange: (updated: BasicProfileData) => void;
+  // Turns one of combination_of's slugs into the name the rest of the app shows
+  // for it. The dashboard passes its own index-backed lookup; on its own this
+  // panel can only prettify the slug.
+  resolveProfileName?: (slug: string) => string;
 }) => {
   if (loading && !data) {
     return (
@@ -909,6 +1211,12 @@ const BasicProfilePanel = ({
 
   const sections = data.sections || {};
 
+  // Names of the two profiles a combined profile was merged from — real legal
+  // names when the dashboard supplied a resolver, prettified slugs otherwise.
+  const sourceProfileNames: string[] = (data.combination_of || [])
+    .filter(Boolean)
+    .map((slug) => (resolveProfileName ? resolveProfileName(slug) : prettifySlug(slug)));
+
   // Merges a section-level edit back into the full BasicProfileData object
   // (immutable, same shape) and hands it up to the parent, which holds the
   // live draft in its own basicProfile state.
@@ -918,12 +1226,12 @@ const BasicProfilePanel = ({
 
   return (
     <div className="flex flex-col gap-5">
-      {data.status === "partial" && (
+      {/* {data.status === "partial" && (
         <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
           <Lucide icon="AlertTriangle" className="w-4 h-4 shrink-0" />
           Some sections of this profile could not be retrieved.
         </div>
-      )}
+      )} */}
 
       {/* "Last updated" moved to the dashboard header pill (ActivistDashboard)
           so it isn't stated twice on the same screen; the refreshing hint stays
@@ -932,6 +1240,7 @@ const BasicProfilePanel = ({
 
       <OverviewSection
         section={sections.whalewisdom_overview}
+        slug={data.slug}
         isEditMode={isEditMode}
         onChange={(s) => updateSection("whalewisdom_overview", s)}
       />
@@ -950,6 +1259,51 @@ const BasicProfilePanel = ({
         isEditMode={isEditMode}
         onChange={(s) => updateSection("shareholder_letters_web", s)}
       />
+
+      {/* Explains the "Combined" marker carried next to this profile's name in
+          the header and the investor dropdown, and names the two profiles the
+          merge was built from. */}
+      {data.is_combination && (
+        <div className="flex items-start gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-md">
+          <Lucide icon="GitMerge" className="w-4 h-4 text-red-800 shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-600 m-0 leading-relaxed">
+            <span className="font-bold text-slate-800">Combined profile.</span>{" "}
+            {sourceProfileNames.length > 0 ? (
+              <>
+                Everything above was synthesised from{" "}
+                {sourceProfileNames.map((name, i) => (
+                  <React.Fragment key={`${name}-${i}`}>
+                    {i > 0 && " and "}
+                    <span className="font-semibold text-slate-800">{name}</span>
+                  </React.Fragment>
+                ))}
+                , which stay available as their own profiles.
+              </>
+            ) : (
+              "Everything above was synthesised from two other profiles, which stay available as their own profiles."
+            )}{" "}
+            The marker next to the name flags it as a combination rather than a single firm's profile.
+          </p>
+        </div>
+      )}
+
+      {/* The backend records every merge decision that wasn't a clean union —
+          which source won a field the two disagreed on, a filer that reported no
+          13F holdings, and so on. Folded away by default: it's an audit trail,
+          not something the reader needs in front of them, but it must not be
+          dropped either. */}
+      {data.is_combination && (data.combination_notes || []).length > 0 && (
+        <details className="bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
+          <summary className="text-xs font-semibold text-slate-700 cursor-pointer select-none">
+            What this merge decided ({(data.combination_notes || []).length})
+          </summary>
+          <ul className="pl-5 mt-2 mb-0 list-disc flex flex-col gap-1.5 text-xs text-slate-600 leading-relaxed">
+            {(data.combination_notes || []).map((note: string, i: number) => (
+              <li key={i}>{note}</li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 };
