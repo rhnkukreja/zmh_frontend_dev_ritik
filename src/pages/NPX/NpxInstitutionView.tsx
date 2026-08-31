@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import dayjs from "dayjs";
 import TableWrapper from "@/components/TableWrapper";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
+import Litepicker from "@/components/Base/Litepicker";
 import { dashboardService } from "@/services/dashboard";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchNpxProposalVotingStats } from "@/stores/dashboardSlice";
@@ -26,6 +28,7 @@ interface FilterState {
   vote_category?: string[];
   keyword?: string[];
   meeting_date?: string;
+  date_range?: string;
   year?: string[];
   country?: string[];
   index?: string[];
@@ -82,6 +85,8 @@ const NpxInstitutionView = () => {
   const [apiFundNameDropdown, setApiFundNameDropdown] = useState<any>({ fund_name: [] });
   const [isFilterCollapse, setIsFilterCollapse] = useState(false);
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
+  const [prevYearSelection, setPrevYearSelection] = useState<string[]>([]);
+  const [prevDateRangeSelection, setPrevDateRangeSelection] = useState("");
 
   const viewData = useMemo(() => npxProposalVotingStats || {}, [npxProposalVotingStats]);
   const byInstitution = useMemo(() => viewData.by_institution || [], [viewData]);
@@ -103,6 +108,46 @@ const NpxInstitutionView = () => {
     if (!selectedInstitution?.years) return null;
     return selectedInstitution.years[selectedYearKey] || null;
   }, [selectedInstitution, selectedYearKey]);
+
+  const availableDateRange = useMemo(() => {
+    const range = dropdowns?.available_date_range;
+    if (!range?.start_meeting || !range?.end_meeting) return null;
+
+    const startDate = dayjs(range.start_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+    const endDate = dayjs(range.end_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+
+    if (!startDate.isValid() || !endDate.isValid()) return null;
+
+    return {
+      startDate: startDate.format("YYYY-MM-DD"),
+      endDate: endDate.format("YYYY-MM-DD"),
+    };
+  }, [dropdowns?.available_date_range]);
+
+  const datePickerBounds = useMemo(() => {
+    const fallbackStart = availableDateRange?.startDate || "2023-01-01";
+    const fallbackEnd = availableDateRange?.endDate || new Date().toISOString().split("T")[0];
+
+    return {
+      minYear: Number(fallbackStart.slice(0, 4)),
+      maxYear: Number(fallbackEnd.slice(0, 4)),
+      startDate: fallbackStart,
+      endDate: fallbackEnd,
+    };
+  }, [availableDateRange]);
+
+  // Navigate the calendar to the latest/selected year exactly when it opens,
+  // without affecting the currently selected/displayed date range value.
+  const handleDateRangePickerShow = (picker: any) => {
+    const targetYear = datePickerBounds.endDate.slice(0, 4);
+    if (!targetYear) return;
+    try {
+      picker.gotoDate(new Date(`${targetYear}-01-01`), 0);
+      picker.gotoDate(new Date(`${targetYear}-02-01`), 1);
+    } catch (err) {
+      console.error("[NpxInstitutionView] Failed to navigate date picker:", err);
+    }
+  };
 
   const tableRows = useMemo(() => {
     const rows: any[] = [];
@@ -176,6 +221,7 @@ const NpxInstitutionView = () => {
         : (filters.investor_company && filters.investor_company.length > 0 ? filters.investor_company : [DEFAULT_INVESTOR]);
       const params: any = { investor_company: resolvedInstitution };
       if (filters.year && filters.year.length > 0) params.year = filters.year;
+      if (filters.date_range && filters.date_range.trim()) params.date_range = filters.date_range;
       if (meetingDate) params.meeting_date = meetingDate;
       const response = await dashboardService.getDynamicNPXDropdownValues(params);
       if (response?.result) {
@@ -213,7 +259,8 @@ const NpxInstitutionView = () => {
 
   const loadStats = (page = 1) => {
     const investor = filters.investor_company?.[0] || DEFAULT_INVESTOR;
-    const resolvedYear = filters.year && filters.year.length > 0
+    const hasDateRange = Boolean(filters.date_range && filters.date_range.trim());
+    const resolvedYear = !hasDateRange && filters.year && filters.year.length > 0
       ? filters.year
       : [sortYearsDesc(dropdowns.year || [])[0] || searchParams.get("year") || new Date().getFullYear().toString()];
     const payload: any = {
@@ -222,7 +269,7 @@ const NpxInstitutionView = () => {
       page_size: pageSize,
       investor_company: [investor],
       ...filters,
-      year: resolvedYear,
+      ...(hasDateRange ? { date_range: filters.date_range } : { year: resolvedYear }),
     };
     if (meetingDate) payload.meeting_date = meetingDate;
     dispatch(
@@ -237,17 +284,35 @@ const NpxInstitutionView = () => {
   useEffect(() => {
     loadDropdowns(filters.investor_company);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.investor_company, meetingDate]);
+  }, [filters.year, filters.date_range, filters.investor_company, meetingDate]);
 
   useEffect(() => {
-    if (!filters.year || filters.year.length === 0) return;
+    if ((!filters.year || filters.year.length === 0) && !filters.date_range) return;
     loadStats(1);
     setActivePage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, meetingDate]);
+  }, [filters.year, filters.date_range, meetingDate]);
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+
+      if (key === "year" && Array.isArray(value) && value.length > 0) {
+        next.date_range = "";
+        setPrevYearSelection(value);
+        setPrevDateRangeSelection("");
+      }
+
+      if (key === "date_range") {
+        next.year = typeof value === "string" && value.trim() ? [] : (prevYearSelection.length > 0 ? prevYearSelection : prev.year || []);
+        setPrevDateRangeSelection(typeof value === "string" ? value : "");
+        if (typeof value === "string" && value.trim()) {
+          setPrevYearSelection([]);
+        }
+      }
+
+      return next;
+    });
   };
 
   const handleRemoveChip = (key: keyof FilterState, value: string) => {
@@ -280,9 +345,11 @@ const NpxInstitutionView = () => {
 
   const handleClear = () => {
     const fallbackYear = sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString();
-    setFilters({ investor_company: [DEFAULT_INVESTOR], year: [fallbackYear], fund_name: [] });
+    setFilters({ investor_company: [DEFAULT_INVESTOR], year: [fallbackYear], fund_name: [], date_range: "" });
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
+    setPrevYearSelection([]);
+    setPrevDateRangeSelection("");
     setActivePage(1);
     dispatch(
       fetchNpxProposalVotingStats({
@@ -290,6 +357,7 @@ const NpxInstitutionView = () => {
         filters: {
           year: fallbackYear,
           meeting_date: meetingDate,
+          date_range: undefined,
           page: 1,
           page_size: pageSize,
           investor_company: [DEFAULT_INVESTOR],
@@ -307,9 +375,13 @@ const NpxInstitutionView = () => {
 
   const handleDownload = () => {
     const params: any = { view: "by_institution", download: true, investor_company: [DEFAULT_INVESTOR], ...filters };
-    params.year = filters.year && filters.year.length > 0
-      ? filters.year
-      : [sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString()];
+    if (filters.date_range && filters.date_range.trim()) {
+      delete params.year;
+    } else {
+      params.year = filters.year && filters.year.length > 0
+        ? filters.year
+        : [sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString()];
+    }
     if (meetingDate) params.meeting_date = meetingDate;
     downloadFileFromAPI({
       url: createDynamicURL(`${baseURL}/api/npx-proposal-voting-stats/`, params),
@@ -352,7 +424,8 @@ const NpxInstitutionView = () => {
     const chips: Array<{ label: string; value: string; key: keyof FilterState | null }> = [
       ...(filters.investor_company || []).map((value) => ({ label: "Institution", value, key: "investor_company" as keyof FilterState })),
       ...(filters.fund_name || []).map((value) => ({ label: "Fund", value, key: "fund_name" as keyof FilterState })),
-      ...(filters.year || []).map((value) => ({ label: "Year", value, key: "year" as keyof FilterState })),
+      ...(filters.date_range ? [{ label: "Date Range", value: filters.date_range, key: "date_range" as keyof FilterState }] : []),
+      ...(filters.date_range ? [] : (filters.year || []).map((value) => ({ label: "Year", value, key: "year" as keyof FilterState }))),
       ...(filters.vote || []).map((value) => ({ label: "Vote", value, key: "vote" as keyof FilterState })),
       ...(filters.vote_category || []).map((value) => ({ label: "Vote Category", value, key: "vote_category" as keyof FilterState })),
       ...(filters.keyword || []).map((value) => ({ label: "Keyword", value, key: "keyword" as keyof FilterState })),
@@ -666,6 +739,44 @@ const NpxInstitutionView = () => {
                   showDefaultOptions={false}
                 />
               </div>
+              <div>
+                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                  <FaCalendarAlt className="text-gray-400" /> Date Range
+                </label>
+                <div className="relative">
+                  <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                    <Lucide icon="Calendar" className="w-4 h-4" />
+                  </div>
+                  <Litepicker
+                    value={filters.date_range || ""}
+                    onChange={(e) => {
+                      const nextValue = e.target.value || "";
+                      handleFilterChange("date_range", nextValue);
+                    }}
+                    onShow={handleDateRangePickerShow}
+                    placeholder="Select Date Range"
+                    options={{
+                      autoApply: false,
+                      singleMode: false,
+                      numberOfColumns: 2,
+                      numberOfMonths: 2,
+                      showWeekNumbers: true,
+                      splitView: true,
+                      dropdowns: {
+                        minYear: datePickerBounds.minYear,
+                        maxYear: datePickerBounds.maxYear,
+                        months: true,
+                        years: true,
+                      },
+                      minDate: availableDateRange?.startDate,
+                      maxDate: availableDateRange?.endDate,
+                      startDate: datePickerBounds.startDate,
+                      endDate: datePickerBounds.endDate,
+                    }}
+                    className="pl-12"
+                  />
+                </div>
+              </div>
               {showFundName ? (
                 <div>
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
@@ -687,7 +798,7 @@ const NpxInstitutionView = () => {
                 <MultiSelectDropdown
                   data={yearOptions}
                   loading={dropdownLoading}
-                  selectedOption={(filters.year && filters.year.length > 0 ? filters.year : [defaultYear]).filter(Boolean)}
+                  selectedOption={(filters.date_range ? [] : (filters.year && filters.year.length > 0 ? filters.year : [defaultYear])).filter(Boolean)}
                   onChange={(opts) => handleFilterChange("year", opts.map((o) => o.value))}
                   placeholder="Select Year"
                 />

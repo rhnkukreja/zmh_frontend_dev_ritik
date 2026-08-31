@@ -245,7 +245,9 @@ function createDynamicURL<T extends Record<string, string | string[] | any>>(
     baseURL.includes('npx') || 
     baseURL.includes('NPX');
 
-  if (isNPXRequest && !filters?.year && !extraPrams?.year) {
+  const hasExplicitDateRange = Boolean(filters?.date_range || extraPrams?.date_range);
+
+  if (isNPXRequest && !hasExplicitDateRange && !filters?.year && !extraPrams?.year) {
     // Get year from URL or use default
     const urlParams = new URLSearchParams(window.location.search);
     const yearParam = urlParams.get('year') || '2024';

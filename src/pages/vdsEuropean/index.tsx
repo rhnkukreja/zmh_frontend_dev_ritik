@@ -56,6 +56,7 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
 import Litepicker from "@/components/Base/Litepicker";
 import React from "react";
+import dayjs from "dayjs";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -117,6 +118,7 @@ const index = () => {
     });
   const [voteOptions, setVoteOptions] = useState<string[]>([]);
   const [yearOptions, setYearOptions] = useState<number[]>([]);
+  const [availableDateRange, setAvailableDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
   const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
@@ -668,6 +670,20 @@ const index = () => {
   const watchedYear = watch("year");
   const watchedAnalyticsYear = watch("analyticsYear");
 
+  // Navigate the calendar to the latest/selected year exactly when it opens,
+  // without affecting the currently selected/displayed date range value.
+  const handleDateRangePickerShow = (picker: any) => {
+    const fallbackEnd = availableDateRange?.endDate || new Date().toISOString().split("T")[0];
+    const targetYear = fallbackEnd.slice(0, 4);
+    if (!targetYear) return;
+    try {
+      picker.gotoDate(new Date(`${targetYear}-01-01`), 0);
+      picker.gotoDate(new Date(`${targetYear}-02-01`), 1);
+    } catch (err) {
+      console.error("Failed to navigate date picker:", err);
+    }
+  };
+
   // Set default values only if no query parameters are present
   useEffect(() => {
     const institutionParam = searchParams.get('institution');
@@ -775,6 +791,21 @@ const index = () => {
     }
   };
 
+  // Parse the API's available_date_range (e.g. "03 Jan, 2022") into ISO date strings
+  const parseAvailableDateRange = (range: any) => {
+    if (!range?.start_meeting || !range?.end_meeting) return null;
+
+    const startDate = dayjs(range.start_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+    const endDate = dayjs(range.end_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+
+    if (!startDate.isValid() || !endDate.isValid()) return null;
+
+    return {
+      startDate: startDate.format("YYYY-MM-DD"),
+      endDate: endDate.format("YYYY-MM-DD"),
+    };
+  };
+
   // New function to get vote and year options based on selected institution
   const getInstitutionDependentOptions = async (institutionNames: string[]) => {
     if (!institutionNames || institutionNames.length === 0) {
@@ -791,6 +822,7 @@ const index = () => {
       if (res.result) {
         setVoteOptions(res.result.vote || []);
         setYearOptions(res.result.year || []);
+        setAvailableDateRange(parseAvailableDateRange(res.result.available_date_range));
       }
     } catch (error) {
       setVoteOptions([]);
@@ -2373,35 +2405,35 @@ const index = () => {
                         <Litepicker
                           value={field.value}
                           onChange={(date) => field.onChange(date)}
+                          onShow={handleDateRangePickerShow}
                           placeholder="Select Date Range"
-                          options={{
-                            autoApply: false,
-                            singleMode: false,
-                            numberOfColumns: 2,
-                            numberOfMonths: 2,
-                            showWeekNumbers: true,
-                            splitView: true,
-                            dropdowns: {
-                              minYear: 2023,
-                              maxYear: 2025,
-                              months: true,
-                              years: true,
-                            },
-                            maxDate: (() => {
-                              // Get current US date (considering Pakistan is ahead by ~10-11 hours)
+                          options={(() => {
+                            const fallbackStart = availableDateRange?.startDate || "2023-01-01";
+                            const fallbackEnd = availableDateRange?.endDate || (() => {
                               const now = new Date();
                               const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
                               return usDate.toISOString().split("T")[0];
-                            })(),
-                            minDate: "2023-01-01",
-                            startDate: "2025-01-01",
-                            endDate: (() => {
-                              // Get current US date (considering Pakistan is ahead by ~10-11 hours)
-                              const now = new Date();
-                              const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-                              return usDate.toISOString().split("T")[0];
-                            })(),
-                          }}
+                            })();
+
+                            return {
+                              autoApply: false,
+                              singleMode: false,
+                              numberOfColumns: 2,
+                              numberOfMonths: 2,
+                              showWeekNumbers: true,
+                              splitView: true,
+                              dropdowns: {
+                                minYear: Number(fallbackStart.slice(0, 4)),
+                                maxYear: Number(fallbackEnd.slice(0, 4)),
+                                months: true,
+                                years: true,
+                              },
+                              minDate: fallbackStart,
+                              maxDate: fallbackEnd,
+                              startDate: fallbackStart,
+                              endDate: fallbackEnd,
+                            };
+                          })()}
                           className="pl-12"
                         />
                       )}

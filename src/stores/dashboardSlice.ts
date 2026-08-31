@@ -358,17 +358,7 @@ export const fetchNpxProposalVotingStats = createAsyncThunk<
     });
     return { result: response.result };
   },
-  {
-    condition: ({ requestKey }, { getState }) => {
-      if (!requestKey) return true;
-      const state = getState() as any;
-      const dashboardState = state.dashboard;
-      return !(
-        dashboardState?.npxProposalVotingStatsRequestKey === requestKey &&
-        dashboardState?.npxProposalVotingStats
-      );
-    },
-  }
+  {}
 );
 
 export const fetchInvestorProfileDetails = createAsyncThunk<
