@@ -663,7 +663,7 @@ const NpxInstitutionView = () => {
                   isClearable={true}
                   onChange={(option: any) => handleInstitutionChange(option)}
                   placeholder="Select Investor Company(s)"
-                  showDefaultOptions={true}
+                  showDefaultOptions={false}
                 />
               </div>
               {showFundName ? (
