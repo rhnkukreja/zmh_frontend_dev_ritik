@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { AI_CHATBOT_API_BASE, IS_LOCAL_ENV, generateWhaleWisdomId } from '@/pages/AIChatbot/api';
+import { AI_CHATBOT_API_BASE, IS_LOCAL_ENV, generateWhaleWisdomId, mergeBasicProfiles } from '@/pages/AIChatbot/api';
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import BasicProfilePanel from "@/pages/AIChatbot/BasicProfilePanel";
@@ -17,6 +17,10 @@ let _profilesCache: { data: Record<string, any>; ts: number } | null = null;
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const THEME_MAROON = "#8b1828";
+
+// Exactly two. The merge endpoint takes slug_a and slug_b, so the picker caps
+// selection there rather than letting a third tick silently do nothing.
+const MERGE_PAIR_SIZE = 2;
 
 // ⚠️ TEMPORARY — dev testing only.  The backend only sends the "profile ready"
 // email when the /generate request carries a creator_email (see the
@@ -476,6 +480,39 @@ const GeneratingChip = ({ job }: { job: ActiveGenerationJob }) => (
   </span>
 );
 
+/** Marks a profile built by merging two others (is_combination). Same pill
+ *  vocabulary as GeneratingChip so the dropdown row and the header bar read as
+ *  one family; `onDark` is the variant that sits on the maroon header. */
+const CombinedBadge = ({ onDark = false, title }: { onDark?: boolean; title?: string }) => {
+  const borderColor = onDark ? "rgba(255,255,255,0.45)" : `${THEME_MAROON}30`;
+  return (
+    <span
+      title={title || "Combined profile — synthesised from two other profiles"}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: 10,
+        fontWeight: 600,
+        padding: "2px 7px",
+        borderRadius: 999,
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+        background: onDark ? "rgba(255,255,255,0.18)" : "#fdf2f2",
+        color: onDark ? "#fff" : THEME_MAROON,
+        border: `1px solid ${borderColor}`,
+      }}
+    >
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        <circle cx="18" cy="18" r="3" />
+        <circle cx="6" cy="6" r="3" />
+        <path d="M6 21V9a9 9 0 0 0 9 9" />
+      </svg>
+      Combined
+    </span>
+  );
+};
+
 // to show "Generating" just because the currently-viewed investor happened
 const GenerationProgressBar = ({ job, onClick }: { job: ActiveGenerationJob; onClick?: () => void }) => {
   const pct = typeof job.progress_pct === "number" ? Math.max(0, Math.min(100, Math.round(job.progress_pct))) : null;
@@ -671,6 +708,20 @@ const ActivistIntelligenceDashboard = ({
   const [basicLoading, setBasicLoading] = useState(false);
   const [basicError, setBasicError] = useState<string | null>(null);
   const [basicProfilesCache, setBasicProfilesCache] = useState<Record<string, any>>({});
+
+  // ── Merging two profiles into a combined one ─────────────────────────────
+  // Investor keys (index form), never more than MERGE_PAIR_SIZE of them. Held
+  // apart from activeInvestorKey on purpose: ticking rows builds a merge pair,
+  // it never changes which profile is on screen.
+  const [mergeSelection, setMergeSelection] = useState<string[]>([]);
+  const [mergeName, setMergeName] = useState("");
+  const [isMerging, setIsMerging] = useState(false);
+  const [mergeError, setMergeError] = useState<string | null>(null);
+  // is_combination / combination_of per BASE slug — read off the profile index
+  // when it carries them, and off each basic profile as it loads. The dropdown
+  // needs this before a profile has ever been opened, since a combined profile
+  // can't be merged again and its checkbox has to say so up front.
+  const [combinationMeta, setCombinationMeta] = useState<Record<string, { isCombination: boolean; combinationOf: string[] }>>({});
 
   // Which panel shows when an investor has BOTH a Basic and an Advanced
   // profile — only meaningful in that case; when only one exists, the render
@@ -985,6 +1036,22 @@ const ActivistIntelligenceDashboard = ({
         setInvestorNames((prev) => ({ ...namesFromIndex, ...prev }));
       }
 
+      // Combination flags, when the index carries them. Anything it doesn't
+      // cover gets filled in by loadBasicForKey as profiles are opened, so this
+      // merges into whatever is already known rather than replacing it.
+      const combinationsFromIndex: Record<string, { isCombination: boolean; combinationOf: string[] }> = {};
+      listPayload.forEach((entry: any) => {
+        if (entry && typeof entry === "object" && entry.slug && entry.is_combination) {
+          combinationsFromIndex[toBaseSlug(entry.slug)] = {
+            isCombination: true,
+            combinationOf: Array.isArray(entry.combination_of) ? entry.combination_of : [],
+          };
+        }
+      });
+      if (Object.keys(combinationsFromIndex).length > 0) {
+        setCombinationMeta((prev) => ({ ...prev, ...combinationsFromIndex }));
+      }
+
       setInvestorKeys(discoveredKeys);
       const currentActiveKey = activeInvestorKeyRef.current;
       if (keyToSelect && discoveredKeys.includes(keyToSelect)) {
@@ -1152,6 +1219,14 @@ const ActivistIntelligenceDashboard = ({
       const response = await axios.get(url, { params: { t: Date.now() } });
       const data = response.data?.data || response.data;
       setBasicProfilesCache((prev) => ({ ...prev, [baseSlug]: data }));
+      // Authoritative for this slug: the document itself, not the index summary.
+      setCombinationMeta((prev) => ({
+        ...prev,
+        [baseSlug]: {
+          isCombination: !!data?.is_combination,
+          combinationOf: Array.isArray(data?.combination_of) ? data.combination_of : [],
+        },
+      }));
       if (activeInvestorKeyRef.current === key) setBasicProfile(data);
     } catch (err) {
       const status = axios.isAxiosError(err) ? err.response?.status : undefined;
@@ -1903,6 +1978,75 @@ const ActivistIntelligenceDashboard = ({
     .filter((item): item is typeof item & { score: number } => item.score !== null)
     .sort((a, b) => b.score - a.score);
 
+  // ── Merge ────────────────────────────────────────────────────────────────
+  const isCombinationKey = (key: string) => !!combinationMeta[toBaseSlug(key)]?.isCombination;
+
+  // The open profile's own document wins over the index summary — it's the one
+  // that's certainly current, and it's loaded by the time the header renders.
+  const activeIsCombination = !!basicProfile?.is_combination || isCombinationKey(activeInvestorKey);
+
+  const mergeSelectionNames = mergeSelection.map((key) => investorNames[key] || formatKeyToLabel(key));
+  const defaultMergeName = mergeSelectionNames.length === MERGE_PAIR_SIZE ? mergeSelectionNames.join(" + ") : "";
+
+  const toggleMergeSelection = (key: string) => {
+    setMergeError(null);
+    setMergeSelection((prev) => {
+      if (prev.includes(key)) return prev.filter((k) => k !== key);
+      // Hard cap rather than a rolling window: silently dropping the earliest
+      // pick would make the disabled checkboxes look broken instead of full.
+      if (prev.length >= MERGE_PAIR_SIZE) return prev;
+      return [...prev, key];
+    });
+  };
+
+  const clearMergeSelection = () => {
+    setMergeSelection([]);
+    setMergeName("");
+    setMergeError(null);
+  };
+
+  const handleMergeProfiles = async () => {
+    if (mergeSelection.length !== MERGE_PAIR_SIZE || isMerging) return;
+
+    setIsMerging(true);
+    setMergeError(null);
+    try {
+      const result = await mergeBasicProfiles(
+        toBaseSlug(mergeSelection[0]),
+        toBaseSlug(mergeSelection[1]),
+        mergeName
+      );
+
+      // The combined profile only enters the index on the backend's write, so
+      // the list has to be refetched before anything can select it.
+      const freshKeys = await fetchAllProfiles();
+      // Fall back to the returned slug itself if the index hasn't caught up —
+      // the basic-profile GET is keyed by that slug either way, so the new
+      // profile still opens rather than leaving the user on the old one.
+      const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === result.slug) || result.slug;
+
+      clearMergeSelection();
+      setSelectorOpen(false);
+      setSelectorSearch("");
+      setActiveInvestorKey(matchedKey);
+      // A combined profile is a Condensed profile — never land on Comprehensive.
+      setProfileViewMode("basic");
+      toast.success(result.message || `${result.name} created.`);
+    } catch (err: any) {
+      console.error("[Merge] failed:", err);
+      // Whatever the server said about why this pair can't be merged.
+      setMergeError(err?.message || "Failed to merge the selected profiles.");
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  // combination_of holds base slugs, while the index keys profiles that also
+  // have an Advanced document as "{slug}-profile" — try both before giving up
+  // and prettifying the slug.
+  const resolveProfileName = (slug: string) =>
+    investorNames[slug] || investorNames[`${slug}-profile`] || formatKeyToLabel(slug);
+
   // "Not in our database" fallback — pre-fills and opens the exact same
   // Generate New Profile flow as the header's own CTA (see the
   // primaryActiveJob onClick above).
@@ -2163,6 +2307,7 @@ const ActivistIntelligenceDashboard = ({
               ) : (
                 <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                   {displayName}
+                  {activeIsCombination && <CombinedBadge onDark />}
                   {isAdmin && (
                     <button
                       type="button"
@@ -2237,6 +2382,20 @@ const ActivistIntelligenceDashboard = ({
                           const isActive = key === activeInvestorKey;
                           const isHighlighted = index === selectorHighlightedIndex;
                           const job = getActiveJobForKey(key);
+                          const isSelectedForMerge = mergeSelection.includes(key);
+                          const rowIsCombination = isCombinationKey(key);
+                          const mergeSelectionFull = mergeSelection.length >= MERGE_PAIR_SIZE;
+                          // Disabled, never hidden: a checkbox that vanishes once
+                          // two are picked reads as a bug, one that greys out with
+                          // a reason explains the cap.
+                          const mergeCheckboxDisabled = isMerging || rowIsCombination || (mergeSelectionFull && !isSelectedForMerge);
+                          const mergeCheckboxTitle = rowIsCombination
+                            ? "Already a combined profile — combinations can't be merged again"
+                            : isSelectedForMerge
+                            ? "Selected for merge"
+                            : mergeSelectionFull
+                            ? "Two profiles are already selected — untick one to choose a different pair"
+                            : "Select for merge";
 
                           if (editingNameKey === key) {
                             return (
@@ -2261,41 +2420,130 @@ const ActivistIntelligenceDashboard = ({
                           }
 
                           return (
-                            <button
+                            <div
                               key={key}
-                              ref={(el) => { selectorOptionRefs.current[index] = el; }}
-                              onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
-                              onMouseEnter={() => setSelectorHighlightedIndex(index)}
                               style={{
-                                padding: "10px 12px", fontSize: 13, textAlign: "left",
-                                background: isActive ? "#fdf2f2" : isHighlighted ? "#f3f4f6" : "#fff", color: isActive ? THEME_MAROON : "#374151",
-                                fontWeight: isActive ? 600 : 400, border: "none", borderBottom: "1px solid #f3f4f6",
-                                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 8, transition: "background 0.1s",
+                                display: "flex", alignItems: "stretch",
+                                background: isActive ? "#fdf2f2" : isHighlighted ? "#f3f4f6" : "#fff",
+                                borderBottom: "1px solid #f3f4f6",
                               }}
                             >
-                              {isActive && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12" /></svg>}
-                              <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
-                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{highlightInvestorMatch(investorLabel, selectorSearch)}</span>
-                                {job && <GeneratingChip job={job} />}
-                              </span>
-                              {isAdminOrAnalyst && (
-                                <span
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={(e) => { e.stopPropagation(); startEditLegalName(key, investorLabel); }}
-                                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); startEditLegalName(key, investorLabel); } }}
-                                  title="Rename firm"
-                                  style={{ display: "inline-flex", flexShrink: 0, color: "#9ca3af", padding: 2 }}
-                                >
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                    <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                  </svg>
+                              {/* Selection lives outside the button, both because a
+                                  checkbox nested in a button is a broken control and
+                                  because ticking a row must never be mistaken for
+                                  opening it. */}
+                              <label
+                                title={mergeCheckboxTitle}
+                                onMouseEnter={() => setSelectorHighlightedIndex(index)}
+                                style={{ display: "flex", alignItems: "center", paddingLeft: 10, cursor: mergeCheckboxDisabled ? "not-allowed" : "pointer" }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelectedForMerge}
+                                  disabled={mergeCheckboxDisabled}
+                                  onChange={() => toggleMergeSelection(key)}
+                                  style={{ width: 14, height: 14, margin: 0, accentColor: THEME_MAROON, cursor: "inherit" }}
+                                />
+                              </label>
+                              <button
+                                ref={(el) => { selectorOptionRefs.current[index] = el; }}
+                                onClick={() => { setActiveInvestorKey(key); setSelectorOpen(false); setSelectorSearch(""); }}
+                                onMouseEnter={() => setSelectorHighlightedIndex(index)}
+                                style={{
+                                  flex: 1, minWidth: 0,
+                                  padding: "10px 12px", fontSize: 13, textAlign: "left",
+                                  background: "transparent", color: isActive ? THEME_MAROON : "#374151",
+                                  fontWeight: isActive ? 600 : 400, border: "none",
+                                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 8, transition: "background 0.1s",
+                                }}
+                              >
+                                {isActive && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={THEME_MAROON} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12" /></svg>}
+                                <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
+                                  <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{highlightInvestorMatch(investorLabel, selectorSearch)}</span>
+                                    {rowIsCombination && <CombinedBadge />}
+                                  </span>
+                                  {job && <GeneratingChip job={job} />}
                                 </span>
-                              )}
-                            </button>
+                                {isAdminOrAnalyst && (
+                                  <span
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => { e.stopPropagation(); startEditLegalName(key, investorLabel); }}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); startEditLegalName(key, investorLabel); } }}
+                                    title="Rename firm"
+                                    style={{ display: "inline-flex", flexShrink: 0, color: "#9ca3af", padding: 2 }}
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                      <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                  </span>
+                                )}
+                              </button>
+                            </div>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {/* Merge tray — appears with the first tick. At one pick it
+                        stays on screen with the button disabled, so "why can't I
+                        merge yet" is answered instead of left blank. */}
+                    {mergeSelection.length > 0 && (
+                      <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid #f3f4f6", display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase", color: "#9ca3af" }}>
+                          {mergeSelection.length} of {MERGE_PAIR_SIZE} selected
+                        </div>
+
+                        <div style={{ fontSize: 12.5, color: "#111827", fontWeight: 600, lineHeight: 1.45 }}>
+                          {mergeSelectionNames.join("  +  ")}
+                          {mergeSelection.length < MERGE_PAIR_SIZE && (
+                            <span style={{ fontWeight: 400, color: "#9ca3af" }}> — tick one more to merge</span>
+                          )}
+                        </div>
+
+                        <input
+                          value={mergeName}
+                          onChange={(e) => setMergeName(e.target.value)}
+                          disabled={isMerging}
+                          placeholder={defaultMergeName || "Name for the combined profile"}
+                          style={{ width: "100%", padding: "8px 10px", fontSize: 12.5, border: "1px solid #e5e7eb", borderRadius: 6, outline: "none", boxSizing: "border-box", color: "#111827", background: "#fff" }}
+                        />
+
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <button
+                            type="button"
+                            onClick={handleMergeProfiles}
+                            disabled={mergeSelection.length !== MERGE_PAIR_SIZE || isMerging}
+                            style={{
+                              padding: "8px 14px", fontSize: 12.5, fontWeight: 600, borderRadius: 6, border: "none", color: "#fff",
+                              background: THEME_MAROON,
+                              opacity: mergeSelection.length !== MERGE_PAIR_SIZE || isMerging ? 0.45 : 1,
+                              cursor: mergeSelection.length !== MERGE_PAIR_SIZE || isMerging ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            {isMerging ? "Merging…" : "Merge Profiles"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={clearMergeSelection}
+                            disabled={isMerging}
+                            style={{ padding: "8px 12px", fontSize: 12.5, fontWeight: 600, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: isMerging ? "not-allowed" : "pointer" }}
+                          >
+                            Clear
+                          </button>
+                        </div>
+
+                        {isMerging && (
+                          <div style={{ fontSize: 11.5, color: "#6b7280", lineHeight: 1.45 }}>
+                            Synthesising the combined profile — this runs an LLM pass server-side and takes several seconds.
+                          </div>
+                        )}
+
+                        {mergeError && (
+                          <div style={{ fontSize: 12, color: "#b91c1c", lineHeight: 1.45 }}>{mergeError}</div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2753,6 +3001,7 @@ const ActivistIntelligenceDashboard = ({
                     error={basicError}
                     isEditMode={isEditMode}
                     onChange={(updated) => setBasicProfile(updated)}
+                    resolveProfileName={resolveProfileName}
                   />
                 </div>
               )}
