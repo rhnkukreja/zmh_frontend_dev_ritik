@@ -2426,6 +2426,9 @@ const ActivistIntelligenceDashboard = ({
                                 display: "flex", alignItems: "stretch",
                                 background: isActive ? "#fdf2f2" : isHighlighted ? "#f3f4f6" : "#fff",
                                 borderBottom: "1px solid #f3f4f6",
+                                // A left accent bar, not just the 14px checkbox, is what actually
+                                // reads as "picked" at a glance across two non-adjacent rows.
+                                borderLeft: isSelectedForMerge ? `3px solid ${THEME_MAROON}` : "3px solid transparent",
                               }}
                             >
                               {/* Selection lives outside the button, both because a
