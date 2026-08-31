@@ -1226,12 +1226,12 @@ const BasicProfilePanel = ({
 
   return (
     <div className="flex flex-col gap-5">
-      {data.status === "partial" && (
+      {/* {data.status === "partial" && (
         <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
           <Lucide icon="AlertTriangle" className="w-4 h-4 shrink-0" />
           Some sections of this profile could not be retrieved.
         </div>
-      )}
+      )} */}
 
       {/* "Last updated" moved to the dashboard header pill (ActivistDashboard)
           so it isn't stated twice on the same screen; the refreshing hint stays
