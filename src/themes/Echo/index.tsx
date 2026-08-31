@@ -177,7 +177,7 @@ function Main() {
   const locationState = location.state as
     | { source?: string; fromTab?: string }
     | undefined;
-  const [expandedGroup, setExpandedGroup] = useState<string>("");
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(["Company"]);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
@@ -204,7 +204,7 @@ function Main() {
     setCompactMenu(!compactMenu);
     // setCompactMenuOnHover(!compactMenuOnHover)
   };
-  const { companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
+  const { companyGlobalSearchId, companyGlobalSearchName, companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
 
@@ -251,9 +251,14 @@ function Main() {
   useEffect(() => {
     const doesDashboardRouteMatch = (routeStr: string): boolean => {
       const [basePath, existingQuery] = routeStr.split("?");
-      if (location.pathname !== basePath) {
+      if (location.pathname !== basePath && !location.pathname.startsWith(`${basePath}/`)) {
         return false;
       }
+
+      if (location.pathname !== basePath) {
+        return true;
+      }
+
       const routeParams = new URLSearchParams(existingQuery || "");
       const currentParams = new URLSearchParams(location.search);
       return Array.from(routeParams.entries()).every(
@@ -314,7 +319,18 @@ function Main() {
       return companyGlobalSearchTicker ? "Company" : "";
     };
 
-    setExpandedGroup(computeActiveGroup());
+    setExpandedGroups((prev) => {
+      const activeGroup = computeActiveGroup();
+      if (!activeGroup || activeGroup === "Company") {
+        return prev;
+      }
+
+      if (prev.includes(activeGroup)) {
+        return prev;
+      }
+
+      return [...prev, activeGroup];
+    });
   }, [
     location.pathname,
     location.search,
@@ -326,7 +342,9 @@ function Main() {
   ]);
 
   const handleToggleGroup = (group: string) => {
-    setExpandedGroup((prev) => (prev === group ? "" : group));
+    setExpandedGroups((prev) =>
+      prev.includes(group) ? prev.filter((item) => item !== group) : [...prev, group]
+    );
   };
 
   window.onscroll = () => {
@@ -563,7 +581,8 @@ function Main() {
   useEffect(() => {
     getModulesCount();
     getNotificationList();
-  }, [companyGlobalSearchName]);
+    prefetchActivistFilings();
+  }, [companyGlobalSearchName, companyGlobalSearchId]);
 
   const getModulesCount = async () => {
     try {
@@ -571,11 +590,33 @@ function Main() {
         global_search: companyGlobalSearchName,
       });
       if (res?.result) {
-        setModulesData(res?.result);
+        setModulesData((prev: any) => ({ ...prev, ...res.result }));
       }
     } catch (error) {
       return error;
     } finally {
+    }
+  };
+
+  const prefetchActivistFilings = async () => {
+    if (!companyGlobalSearchId) return;
+
+    try {
+      const response = await dashboardService.getActivistFilings(companyGlobalSearchId);
+      const result = response?.result || response || {};
+      const filings = Array.isArray(result?.filings) ? result.filings : [];
+      const excludedTypes = ["DEF 14A", "DEFA14A", "PRE 14A"];
+      const relevantCount = filings.filter((filing: any) => {
+        const filingType = String(filing?.["Filing Type"] || "").trim();
+        return filingType && !excludedTypes.includes(filingType);
+      }).length;
+
+      setModulesData((prev: any) => ({
+        ...prev,
+        activist_filings: relevantCount,
+      }));
+    } catch (error) {
+      return error;
     }
   };
 
@@ -717,7 +758,7 @@ function Main() {
               {/* Koyfin-style dashboard navigation for the selected company */}
               <DashboardSidebarNav
                 modulesData={modulesData}
-                expandedGroup={expandedGroup}
+                expandedGroups={expandedGroups}
                 onToggleGroup={handleToggleGroup}
               />
               {/* BEGIN: First Child */}
@@ -731,7 +772,7 @@ function Main() {
                   (currentGroup !== "Administration" ||
                     user.user_type === "Admin" ||
                     user.user_type === "Analyst");
-                const isGroupExpanded = expandedGroup === currentGroup;
+                const isGroupExpanded = currentGroup ? expandedGroups.includes(currentGroup) : false;
 
                 return (
                   <Fragment key={menuKey}>
@@ -1060,7 +1101,6 @@ function Main() {
                   "/voting-data",
                   "/investor-profile",
                   "/engagement-question",
-                  "/custom-reports",
                   "/voting-guidelines",
                   "/proxy-contest",
                   "/executive-compensation",

@@ -84,6 +84,9 @@ interface CompanySliceState {
   instituteName: string | null;
   companySearchLoading: boolean;
   totalNPXCount: number;
+  npxProposalVotingStats: any | null;
+  npxProposalVotingStatsLoading: boolean;
+  npxProposalVotingStatsRequestKey: string | null;
   searchCompletion: number;
   tab: "Top-20" | "All-Investor" | "Top-5" | "";
   proxyContestinvestorFilter: any;
@@ -113,6 +116,47 @@ interface CompanySliceState {
   institutionStatsLoading: boolean;
 }
 
+const getSortedMeetingYears = (results: any): string[] => {
+  if (Array.isArray(results?.total_year) && results.total_year.length > 0) {
+    return results.total_year
+      .map((year: any) => year?.toString())
+      .filter(Boolean)
+      .sort((a: string, b: string) => Number(b) - Number(a));
+  }
+
+  if (results?.meeting_details_yearly_data) {
+    return Object.keys(results.meeting_details_yearly_data)
+      .filter(Boolean)
+      .sort((a: string, b: string) => Number(b) - Number(a));
+  }
+
+  return [];
+};
+
+const normalizeAGMSummaryResults = (results: any) => {
+  if (!results?.meeting_details_yearly_data) {
+    return results;
+  }
+
+  const availableYears = getSortedMeetingYears(results);
+  const latestYearKey = availableYears[0];
+  const latestYearData = latestYearKey
+    ? results.meeting_details_yearly_data?.[latestYearKey]
+    : undefined;
+
+  if (!latestYearData) {
+    return results;
+  }
+
+  return {
+    ...results,
+    ...latestYearData,
+    total_year: latestYearData?.total_year || availableYears.map((year) => Number(year)),
+    meeting_details_yearly_data: results.meeting_details_yearly_data,
+    meeting_details_years_data: results.meeting_details_years_data,
+  };
+};
+
 const initialState: CompanySliceState = {
   companyDataList: [],
   companyData: null,
@@ -141,6 +185,9 @@ const initialState: CompanySliceState = {
   totalNPXCount: 0,
   npxProxyDetails: [],
   npxProxyLoading: false,
+  npxProposalVotingStats: null,
+  npxProposalVotingStatsLoading: false,
+  npxProposalVotingStatsRequestKey: null,
   investorProfileDetails: "",
   investorProfileLoading: true,
   tempSearch: null,
@@ -291,13 +338,38 @@ export const fetchNpxProxyDashboard = createAsyncThunk<
     // Get year from URL or use default
     const urlParams = new URLSearchParams(window.location.search);
     const yearParam = urlParams.get('year') || '2024';
-    
+
     // Add year parameter to the URL
     finalUrl = url.includes('?') ? `${url}&year=${yearParam}` : `${url}?year=${yearParam}`;
   }
   console.log("fetchNpxProxyDashboard with URL:", finalUrl);
   return await dashboardService.fetchNpxProxyDashboard(finalUrl);
 });
+
+export const fetchNpxProposalVotingStats = createAsyncThunk<
+  { result: any },
+  { view?: string; filters?: any; requestKey?: string }
+>(
+  `${name}/fetchNpxProposalVotingStats`,
+  async ({ view, filters }) => {
+    const response = await dashboardService.getNpxProposalVotingStats({
+      view,
+      ...filters,
+    });
+    return { result: response.result };
+  },
+  {
+    condition: ({ requestKey }, { getState }) => {
+      if (!requestKey) return true;
+      const state = getState() as any;
+      const dashboardState = state.dashboard;
+      return !(
+        dashboardState?.npxProposalVotingStatsRequestKey === requestKey &&
+        dashboardState?.npxProposalVotingStats
+      );
+    },
+  }
+);
 
 export const fetchInvestorProfileDetails = createAsyncThunk<
   { results: any },
@@ -585,7 +657,8 @@ const companySlice = createSlice({
         (state, action: PayloadAction<{ results: any }> & { meta: { requestId: string } }) => {
           if (state.agmRequestId !== action.meta.requestId) return;
           state.loading = false;
-          const results = action.payload.results;
+          const results = normalizeAGMSummaryResults(action.payload.results);
+          const availableYears = getSortedMeetingYears(results);
           
           // Check if backend explicitly says no data
           if (results?.has_data === false) {
@@ -594,15 +667,14 @@ const companySlice = createSlice({
             state.agmSummaryDetails = results;
             state.agmErrorMessage = null;
           } else if (results?.has_data === true) {
-            // Data exists
             state.agmRequestStatus = 'success';
-            state.agmHasData = true;
+            state.agmHasData = Boolean(results?.Year || availableYears.length > 0);
             state.agmSummaryDetails = results;
             state.agmErrorMessage = null;
           } else {
             // Fallback: infer from Year field (backward compatibility)
             state.agmRequestStatus = 'success';
-            state.agmHasData = Boolean(results?.Year);
+            state.agmHasData = Boolean(results?.Year || availableYears.length > 0);
             state.agmSummaryDetails = results;
             state.agmErrorMessage = null;
           }
@@ -816,6 +888,25 @@ const companySlice = createSlice({
         state.npxProxyLoading = false;
         state.error =
           action.error.message || "Failed to fetch company dashboard";
+      })
+
+      .addCase(fetchNpxProposalVotingStats.pending, (state) => {
+        state.npxProposalVotingStatsLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchNpxProposalVotingStats.fulfilled,
+        (state, action: PayloadAction<{ result: any }>) => {
+          state.npxProposalVotingStatsLoading = false;
+          state.npxProposalVotingStats = action.payload.result;
+          state.npxProposalVotingStatsRequestKey = (action as any)?.meta?.arg?.requestKey ?? null;
+        }
+      )
+      .addCase(fetchNpxProposalVotingStats.rejected, (state, action) => {
+        state.npxProposalVotingStatsLoading = false;
+        state.error =
+          action.error.message || "Failed to fetch NPX proposal voting stats";
+        state.npxProposalVotingStatsRequestKey = (action as any)?.meta?.arg?.requestKey ?? state.npxProposalVotingStatsRequestKey;
       })
 
       .addCase(fetchInvestorProfileDetails.pending, (state) => {

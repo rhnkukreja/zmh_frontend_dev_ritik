@@ -600,6 +600,17 @@ function ProposalVotesList({ proposals }: {
 }) {
   const { agmSummaryDetails } = useAppSelector((state: any) => state.dashboard);
 
+  const hasMeaningfulTopInvestorVotes = (votes?: Array<{ institution: string; vote: string }>) => {
+    if (!votes?.length) return false;
+
+    const meaningfulVotes = votes.filter((institutionVote) => {
+      const vote = String(institutionVote?.vote || "").trim().toUpperCase();
+      return vote && vote !== "N/A" && vote !== "-";
+    });
+
+    return meaningfulVotes.length > 0 && meaningfulVotes.length > votes.length / 2;
+  };
+
   const getFallbackProposal = (proposalName: string) => {
 
     if (
@@ -740,7 +751,10 @@ function ProposalVotesList({ proposals }: {
               <div className={pillClass}>{renderText}</div>
             </div>
 
-            {proposal.institution_votes?.length > 0 && (
+            {proposal.institution_votes?.some((institutionVote) => {
+              const vote = String(institutionVote?.vote || "").trim().toUpperCase();
+              return vote && vote !== "N/A" && vote !== "-";
+            }) && (
               <>
                 <Separator className="my-3" />
                 <div className="mb-2 text-[13px] font-semibold text-slate-500">Top Investor Votes</div>
@@ -1027,6 +1041,16 @@ export default function CompanyOverviewSummaryTab({
 }: SummaryTabProps) {
   const isLoading = yearsLoading || companyOverviewLoading;
   const report = filtered[0];
+  const shareholderProposalVotes = report?.shareholderProposals?.proposalVotes ?? [];
+  const hasMeaningfulTopInvestorVotes = shareholderProposalVotes.some((proposal: any) => {
+    const votes = proposal?.institution_votes ?? [];
+    const meaningfulVotes = votes.filter((institutionVote: any) => {
+      const vote = String(institutionVote?.vote || "").trim().toUpperCase();
+      return vote && vote !== "N/A" && vote !== "-";
+    });
+
+    return meaningfulVotes.length > 0 && meaningfulVotes.length > votes.length / 2;
+  });
 
   return (
     <div className="min-h-screen bg-white mt-3.5 p-6">
@@ -1172,7 +1196,7 @@ export default function CompanyOverviewSummaryTab({
                             {report.board.lowestSupport.length > 1 ? "Directors" : "Director"}{" "}
                           </>
                         )}
-                        Lowest support
+                        with Lowest Support
                       </div>
                       <BulletList items={report.board.lowestSupport} />
                     </>
@@ -1220,7 +1244,9 @@ export default function CompanyOverviewSummaryTab({
       <>
         <Separator className="my-4" />
         <div className="mb-3 text-[15px] font-semibold text-slate-500">
-          Proposal Details with Top Investor Votes
+          {hasMeaningfulTopInvestorVotes
+            ? "Proposal Details with Top Investor Votes"
+            : "Proposal Details"}
         </div>
         <ProposalVotesList proposals={report.shareholderProposals.proposalVotes} />
       </>

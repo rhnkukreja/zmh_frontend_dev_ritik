@@ -82,11 +82,13 @@ import PeerAnalysis from "@/pages/PeerAnalysis";
 import AISearchOnly from "../pages/AISearchOnly";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
+import ActivistFilings from "@/pages/ActivistFilings";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
 import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
-import VdsProxyVoting from "@/pages/VdsProxyVoting";
-import InvestorCompanyDetails from "@/pages/InvestorCompanyDetails";
+import VdsProxyVoting from "../pages/VdsProxyVoting";
+import NpxProposalVotingStats from "../pages/NpxProposalVotingStats";
+import InvestorCompanyDetails from "../pages/InvestorCompanyDetails";
 import UserDetails from "@/pages/UserDetails";
 import UserLoginHistory from "@/pages/UserDetails/components/UserLoginHistory";
 import Notes from "@/pages/Notes";
@@ -486,6 +488,11 @@ function Router() {
           data: { titleName: "Case Studies AI - ZMH Analytics" },
         },
         {
+          path: "activist-filings",
+          element: <ActivistFilings />,
+          data: { titleName: "Activist Filings - ZMH Analytics" },
+        },
+        {
           path: "investor-details",
           element: <InvestorCardDetails />,
           data: { titleName: "Investor Detail - ZMH Analytics" },
@@ -580,6 +587,11 @@ function Router() {
           path: "voting-data",
           element: <VdsEuropean />,
           data: { titleName: "Voting Data - ZMH Analytics" },
+        },
+        {
+          path: "npx-proposal-voting-stats",
+          element: <NpxProposalVotingStats />,
+          data: { titleName: "N-PX Proposal Voting Stats - ZMH Analytics" },
         },
         {
           path: "executive-compensation",

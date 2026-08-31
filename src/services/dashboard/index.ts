@@ -244,6 +244,11 @@ class DashboardService {
     return Array.from(new Set(years)).sort((a, b) => b - a);
   }
 
+  public async getActivistFilings(companyId: number | string): Promise<any> {
+    const url = `${baseURL}/api/activist_filed/?company_id=${companyId}`;
+    return await this.fetchWithCache<any>(url);
+  }
+
   public async fetchCaseStudiesTopProxyContext(url: string): Promise<{
     count: number;
     results: any[];
@@ -430,6 +435,38 @@ class DashboardService {
 
     return {
       result: response.data,
+    };
+  }
+
+  public async getNpxProposalVotingStats(params?: any): Promise<{ result: any }> {
+    const url = createDynamicURL(`/api/npx-proposal-voting-stats/`, params);
+    const cacheKey = dashboardCacheManager.generateKey(url);
+    const strategy = getDashboardCacheStrategyForUrl(url);
+
+    const cached = dashboardCacheManager.get(cacheKey);
+    if (cached) {
+      return { result: cached };
+    }
+
+    const inFlightPromise = dashboardCacheManager.getInFlightPromise(cacheKey);
+    if (inFlightPromise) {
+      const result = await inFlightPromise;
+      return { result };
+    }
+
+    const requestPromise = axiosInstance.get(url).then((response) => {
+      const data = response.data;
+      dashboardCacheManager.set(cacheKey, data, {
+        ttl: strategy.ttl,
+        tags: strategy.tags,
+      });
+      return data;
+    });
+
+    dashboardCacheManager.trackRequest(cacheKey, requestPromise);
+    const result = await requestPromise;
+    return {
+      result,
     };
   }
 

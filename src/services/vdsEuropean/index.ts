@@ -1,5 +1,7 @@
 import { createDynamicURL } from "@/utils/helper";
 import { axiosInstance } from "../index";
+import { dashboardCacheManager } from "@/utils/cacheManager";
+import { getDashboardCacheStrategyForUrl } from "@/utils/dashboardCacheStrategy";
 
 class VDSEuropeanService {
   public async getVDSEuropean(url: string): Promise<{
@@ -69,9 +71,33 @@ class VDSEuropeanService {
   public async getVDSEuropeanAnalytics(url: string): Promise<{
     response: any[];
   }> {
-    const response = await axiosInstance.get(url);
+    const cacheKey = dashboardCacheManager.generateKey(url);
+    const strategy = getDashboardCacheStrategyForUrl(url);
+
+    const cached = dashboardCacheManager.get(cacheKey);
+    if (cached) {
+      return { response: cached };
+    }
+
+    const inFlightPromise = dashboardCacheManager.getInFlightPromise(cacheKey);
+    if (inFlightPromise) {
+      const response = await inFlightPromise;
+      return { response };
+    }
+
+    const requestPromise = axiosInstance.get(url).then((response) => {
+      const data = response.data;
+      dashboardCacheManager.set(cacheKey, data, {
+        ttl: strategy.ttl,
+        tags: strategy.tags,
+      });
+      return data;
+    });
+
+    dashboardCacheManager.trackRequest(cacheKey, requestPromise);
+    const response = await requestPromise;
     return {
-      response: response.data,
+      response,
     };
   }
 

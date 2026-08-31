@@ -13,7 +13,9 @@ export type DashboardSection =
   | "voting-data"
   | "company-case-studies"
   | "company-engagement-details"
-  | "company-shareholder-proposals";
+  | "company-shareholder-proposals"
+  | "company-comprehensive-report"
+  | "company-activist-filings";
 
 export interface DashboardNavState {
   activeSection: DashboardSection;

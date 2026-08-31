@@ -37,7 +37,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { Fragment, useEffect, useMemo, useReducer, useState } from "react";
 
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 
@@ -75,6 +75,17 @@ interface InvestorCardProps {
   pendingInvestors?: Set<string>;
 }
 
+type OwnershipYearData = {
+  year?: number;
+  say_on_pay_column_check?: boolean;
+  holdings_data?: CompanyDashboard[];
+  total_percent_ownership?: string;
+  data_as_of?: string;
+  analytics?: Record<string, string>;
+};
+
+type OwnershipView = "all" | "separate";
+
 const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }: InvestorCardProps) => {
 
   const [isScrapingPdf, setIsScrapingPdf] = useState(false);
@@ -89,8 +100,10 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
 
   const dispatch: AppDispatch = useAppDispatch();
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const yearFromQuery = searchParams.get("year") || "";
+  const ownershipView: OwnershipView =
+    searchParams.get("ownership_view") === "all" ? "all" : "separate";
 
   const {
     dashboardDataList,
@@ -118,24 +131,18 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const [addNoteModalVisible, setAddNoteModalVisible] = useState<boolean>(false);
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
 
-  const showSayOnPayColumn =
-    dashboardDataList?.all_year_data?.[selectedIndex || 0]
-      ?.say_on_pay_column_check === true;
+  const allYearData: OwnershipYearData[] = useMemo(() => {
+    const data = Array.isArray((dashboardDataList as any)?.all_year_data)
+      ? [...(dashboardDataList as any).all_year_data]
+      : [];
 
-  const isColumnGrayedOut = !showSayOnPayColumn;
+    return data.sort((a, b) => Number(b?.year || 0) - Number(a?.year || 0));
+  }, [dashboardDataList]);
 
-  // Holdings for the selected year, exactly as returned by the API (genuine
-  // repeats are preserved). Memoized so switching year tabs does not visually
-  // re-duplicate rows; stable keys in the render handle reconciliation.
-  const currentHoldings: CompanyDashboard[] = useMemo(() => {
-    const holdings =
-      dashboardDataList?.all_year_data?.[selectedIndex || 0]?.holdings_data;
-    return Array.isArray(holdings) ? holdings : [];
-  }, [dashboardDataList, selectedIndex]);
+  const latestYearData = allYearData[0];
 
   const [summaryModalVisible, setSummaryModalVisible] = useState<boolean>(false);
   const [summaryData, setSummaryData] = useState<any>(null);
@@ -391,20 +398,109 @@ const getNormalizedScrapedInfo = (name: string) => {
 
   const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery);
 
+  const getAvailableYears = () => {
+    if (allYearData.length > 0) {
+      return allYearData
+        .map((yearData) => yearData?.year?.toString())
+        .filter((year): year is string => Boolean(year));
+    }
+
+    if (!dashboardDataList?.total_year?.length) return [];
+    return [...dashboardDataList.total_year]
+      .map((year: any) => year.toString())
+      .sort((a: string, b: string) => Number(b) - Number(a));
+  };
+
   const activeYear =
     selectedYear?.toString() !== ""
       ? selectedYear?.toString()
-      : dashboardDataList?.all_year_data?.[selectedIndex || 0]?.year?.toString();
+      : latestYearData?.year?.toString();
 
-  const handleAGMYearTab = (tab: string, index: number) => {
-    setSelectedIndex(index);
-    setSelectedYear(tab);
-  }
+  const selectedYearData =
+    allYearData.find((yearData) => yearData?.year?.toString() === activeYear) ||
+    latestYearData;
 
-  const getAvailableYears = () => {
-    if (!dashboardDataList?.total_year?.length) return [];
-    return dashboardDataList.total_year.map((year: any) => year.toString());
+  const displayYearData = ownershipView === "all" ? latestYearData : selectedYearData;
+
+  const showSayOnPayColumn = selectedYearData?.say_on_pay_column_check === true;
+  const isColumnGrayedOut = !showSayOnPayColumn;
+
+  const currentHoldings: CompanyDashboard[] = useMemo(() => {
+    const holdings = selectedYearData?.holdings_data;
+    return Array.isArray(holdings) ? holdings : [];
+  }, [selectedYearData]);
+
+  const handleOwnershipViewChange = (view: OwnershipView) => {
+    setSearchParams((previousParams) => {
+      const params = new URLSearchParams(previousParams);
+      params.set("ownership_view", view);
+      return params;
+    });
   };
+
+  const getHoldingLookupKey = (holding?: Partial<CompanyDashboard> | null) => {
+    if (!holding) return "";
+    if (holding.institution_id) return `institution:${holding.institution_id}`;
+
+    const normalizedName = (holding.institution_name || holding.filer_name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
+    if (normalizedName) return `name:${normalizedName}`;
+    if (holding.filer_id) return `filer:${holding.filer_id}`;
+    return "";
+  };
+
+  const mergedAllYearRows = useMemo(() => {
+    const latestHoldings = Array.isArray(latestYearData?.holdings_data)
+      ? latestYearData.holdings_data
+      : [];
+
+    if (!latestHoldings.length) {
+      return [];
+    }
+
+    const holdingsByYear = new Map<string, Map<string, CompanyDashboard>>();
+
+    allYearData.forEach((yearData) => {
+      const perYearMap = new Map<string, CompanyDashboard>();
+      const holdings = Array.isArray(yearData?.holdings_data) ? yearData.holdings_data : [];
+
+      holdings.forEach((holding) => {
+        const key = getHoldingLookupKey(holding);
+        if (key && !perYearMap.has(key)) {
+          perYearMap.set(key, holding);
+        }
+      });
+
+      if (yearData?.year) {
+        holdingsByYear.set(yearData.year.toString(), perYearMap);
+      }
+    });
+
+    return latestHoldings.map((holding, index) => {
+      const key = getHoldingLookupKey(holding);
+      const yearlyVotes = allYearData.reduce<Record<string, CompanyDashboard | undefined>>(
+        (accumulator, yearData) => {
+          const yearKey = yearData?.year?.toString();
+          if (!yearKey) {
+            return accumulator;
+          }
+
+          accumulator[yearKey] = key ? holdingsByYear.get(yearKey)?.get(key) : undefined;
+          return accumulator;
+        },
+        {}
+      );
+
+      return {
+        index: index + 1,
+        holding,
+        yearlyVotes,
+      };
+    });
+  }, [allYearData, latestYearData]);
 
   // Dynamic year context for column header tooltips (no hardcoded 2024/2025).
   // The latest "expected" meeting year is the current calendar year; if it is
@@ -419,26 +515,19 @@ const getNormalizedScrapedInfo = (name: string) => {
   })();
   const isLatestMeetingMissing = !getAvailableYears().includes(currentExpectedYear.toString());
 
-  const getSelectedTabIndex = () => {
-    const availableYears = getAvailableYears();
-    const tabIndex = availableYears.findIndex((year: string) => year === (selectedYear?.toString() !== "" ?
-      selectedYear?.toString() : dashboardDataList?.all_year_data[0]?.year?.toString()));
-    return tabIndex >= 0 ? tabIndex : 0;
-  };
-
-  useEffect(() => {
-    const index = getSelectedTabIndex();
-    setSelectedIndex(index);
-  }, [selectedYear])
-
   useEffect(() => {
     if (yearFromQuery && yearFromQuery !== selectedYear) {
       setSelectedYear(yearFromQuery);
+      return;
     }
-  }, [yearFromQuery])
+
+    if (!yearFromQuery && selectedYear !== "") {
+      setSelectedYear("");
+    }
+  }, [yearFromQuery, selectedYear]);
 
   const getAnalyticsData = () => {
-    const analyticsData = dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics;
+    const analyticsData = displayYearData?.analytics;
     if (!analyticsData) return [];
 
     return Object.entries(analyticsData).map(([key, value]) => ({
@@ -446,6 +535,53 @@ const getNormalizedScrapedInfo = (name: string) => {
       value: parseFloat(String(value).replace('%', '')),
       displayValue: String(value)
     }));
+  };
+
+  const renderVotingStatus = (value: any, message?: string, fallbackMessage?: string) => {
+    const truthy = new Set(["true", "yes", "y", "1", "t"]);
+    const falsy = new Set(["false", "no", "n", "0", "f"]);
+    const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+
+    if (
+      value === true ||
+      truthy.has(normalized) ||
+      (Array.isArray(value) && value.length > 0) ||
+      (typeof value === "number" && value > 0)
+    ) {
+      return (
+        <div className="flex w-full items-center justify-center">
+          <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+            &#10004;
+          </div>
+        </div>
+      );
+    }
+
+    if (
+      value === false ||
+      value === null ||
+      value === undefined ||
+      value === "" ||
+      falsy.has(normalized) ||
+      (Array.isArray(value) && value.length === 0) ||
+      (typeof value === "number" && value === 0)
+    ) {
+      return null;
+    }
+
+    if (typeof value === "string") {
+      return (
+        <div className="flex w-full items-center justify-center text-primary">
+          <Tippy content={message || fallbackMessage || "No Data"} options={{ theme: "light" }}>
+            <span className="inline-flex items-center justify-center">
+              <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
+            </span>
+          </Tippy>
+        </div>
+      );
+    }
+
+    return null;
   };
 
   const ANALYTICS_COLORS = ["#4F83FF", "#E74C8C", "#9B59B6", "#1ABC9C", "#F39C12"];
@@ -476,9 +612,9 @@ const getNormalizedScrapedInfo = (name: string) => {
                 <div className="flex items-center">
                   <h1 className="text-xl font-bold">
                     Top {dashboardDataList?.length || 20} Investors{" "}
-                    {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership && (
+                    {displayYearData?.total_percent_ownership && (
                       <span className="text-lg font-bold">
-                        ({dashboardDataList?.all_year_data?.[selectedIndex || 0]?.total_percent_ownership} of shares outstanding)
+                        ({displayYearData.total_percent_ownership} of shares outstanding)
                       </span>
                     )}
                   </h1>
@@ -500,9 +636,19 @@ const getNormalizedScrapedInfo = (name: string) => {
                     <Tippy content="Expand View" options={{ theme: "light" }}>
                       <div
                         className="box p-2 cursor-pointer"
-                        onClick={() =>
-                          navigate(`/investor-details?ticker=${ticker}`)
-                        }
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          if (ticker) {
+                            params.set("ticker", ticker);
+                          }
+                          if (ownershipView) {
+                            params.set("ownership_view", ownershipView);
+                          }
+                          if (selectedYear) {
+                            params.set("year", selectedYear);
+                          }
+                          navigate(`/investor-details?${params.toString()}`);
+                        }}
                       >
                         <img alt="tab-icon" src={tabIcon} />
                       </div>
@@ -512,37 +658,231 @@ const getNormalizedScrapedInfo = (name: string) => {
               </div>
 
               <div className="mt-5">
-                {locationPathName !== "/" && getAvailableYears().length > 0 && (
-                  <div className="mb-4">
-                    <Tab.Group selectedIndex={getSelectedTabIndex()} defaultIndex={0}>
-                      <Tab.List
-                        variant="boxed-tabs"
-                        className="w-fit border-none bg-transparent"
-                      >
-                        {getAvailableYears().map((tab: string, index: number) => (
-                          <Tab key={index} className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer
-                                   last:rounded-r-[0.6rem] [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
-                            <Tab.Button
-                              className="w-24 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
-                              as="button"
-                              onClick={() => handleAGMYearTab(tab, index)}>
-                              {tab}
-                            </Tab.Button>
-                          </Tab>
-                        ))}
-                      </Tab.List>
-                    </Tab.Group>
-                  </div>
-                )}
+                <div className="mb-4">
+                  <Tab.Group selectedIndex={ownershipView === "separate" ? 0 : 1}>
+                    <Tab.List
+                      variant="boxed-tabs"
+                      className="w-fit border-none bg-transparent"
+                    >
+                      <Tab className="active px-1 border-primary/10 first:rounded-l-[0.6rem] cursor-pointer [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
+                        <Tab.Button
+                          className="w-32 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                          as="button"
+                          onClick={() => handleOwnershipViewChange("separate")}
+                        >
+                          Latest
+                        </Tab.Button>
+                      </Tab>
+                      <Tab className="active px-1 border-primary/10 last:rounded-r-[0.6rem] cursor-pointer [&[aria-selected='true']_button]:text-white [&[aria-selected='true']_button]:bg-red-800">
+                        <Tab.Button
+                          className="w-52 whitespace-nowrap rounded-[0.6rem] font-medium text-primary bg-primary/10 border border-primary/10 cursor-pointer"
+                          as="button"
+                          onClick={() => handleOwnershipViewChange("all")}
+                        >
+                          Year-on-Year Comparison
+                        </Tab.Button>
+                      </Tab>
+                    </Tab.List>
+                  </Tab.Group>
+                </div>
 
                 <div className="grid gap-6 grid-cols-1">
                   <div className="col-span-1">
+                    {ownershipView === "all" && (
+                      <TableWrapper>
+                        <div
+                          className={clsx([
+                            locationPathName === "/" && "max-h-[600px]",
+                            "max-h-[60vh] overflow-y-auto overflow-x-hidden"
+                          ])}
+                        >
+                          <Table className="table w-full table-fixed">
+                            <Table.Thead className="sticky top-0 z-10 bg-header [&_tr]:bg-header [&_td]:bg-header">
+                              <Table.Tr className="row bg-header">
+                                <Table.Td rowSpan={2} className="cell w-[36px] px-2 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] align-middle text-center">
+                                  No.
+                                </Table.Td>
+                                <Table.Td rowSpan={2} className="cell w-[180px] px-3 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] align-middle text-left">
+                                  Shareholder
+                                </Table.Td>
+                                <Table.Td rowSpan={2} className="cell w-[88px] px-2 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] align-middle text-center whitespace-normal leading-tight">
+                                  <span
+                                    id="footnote-1"
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                      window.scrollBy({
+                                        top: 350,
+                                        behavior: "smooth",
+                                      });
+                                    }}
+                                  >
+                                    Current Ownership
+                                    <sup
+                                      className="bold-sup cursor-pointer"
+                                      style={{ fontSize: "0.8em" }}
+                                    >
+                                      1
+                                    </sup>
+                                  </span>
+                                </Table.Td>
+                                <Table.Td rowSpan={2} className="cell w-[122px] px-2 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] whitespace-normal leading-tight align-middle text-left">
+                                  <span>Proxy Advisory Influence {displayYearData?.analytics && (
+                                    <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
+                                      <Lucide
+                                        icon="BarChart3"
+                                        className="w-4 h-4 ml-1 text-primary cursor-pointer inline hover:text-primary/80"
+                                        onClick={() => setChartModalVisible(true)}
+                                      />
+                                    </Tippy>
+                                  )}
+                                  </span>
+                                </Table.Td>
+                                {allYearData.map((yearData) => (
+                                  <Table.Td
+                                    key={`year-header-${yearData?.year}`}
+                                    colSpan={2}
+                                    className="cell relative z-10 px-1 text-[13px] py-2 font-semibold h-[40px] bg-header border-[#0000000D] border-b-0 text-[#000000B2] text-center before:absolute before:bottom-[-2px] before:left-0 before:right-0 before:h-[4px] before:bg-[#f1f5f9] before:content-[''] after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-300 after:content-['']"
+                                  >
+                                    {yearData?.year}
+                                  </Table.Td>
+                                ))}
+                              </Table.Tr>
+                              <Table.Tr className="row bg-header">
+                                {allYearData.map((yearData) => (
+                                  <Fragment key={`year-subheader-${yearData?.year}`}>
+                                    <Table.Td className="cell relative z-10 w-[72px] px-1 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] text-center whitespace-normal leading-tight before:absolute before:left-0 before:right-0 before:top-[-2px] before:h-[4px] before:bg-[#f1f5f9] before:content-[''] after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-300 after:content-['']">
+                                      Voted Against Directors
+                                    </Table.Td>
+                                    <Table.Td className="cell relative z-10 w-[72px] px-1 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] text-center whitespace-normal leading-tight before:absolute before:left-0 before:right-0 before:top-[-2px] before:h-[4px] before:bg-[#f1f5f9] before:content-['']">
+                                      Voted Against Say on Pay
+                                    </Table.Td>
+                                  </Fragment>
+                                ))}
+                              </Table.Tr>
+                            </Table.Thead>
+                            <Table.Tbody>
+                              {investorCardLoading &&
+                                Array.from({ length: 10 }).map((_, rowIdx) => (
+                                  <Table.Tr key={`all-years-skeleton-${rowIdx}`} className="row [&_td]:last:border-b-0">
+                                    {Array.from({ length: 4 + allYearData.length * 2 }).map((_, colIdx) => (
+                                      <Table.Td key={colIdx} className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                        <div
+                                          className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                                          style={{ width: `${[85, 70, 60, 75, 55, 65, 80, 50, 72][(rowIdx + colIdx) % 9]}%` }}
+                                        />
+                                      </Table.Td>
+                                    ))}
+                                  </Table.Tr>
+                                ))}
+
+                              {!investorCardLoading && mergedAllYearRows.length === 0 && (
+                                <Table.Tr className="row">
+                                  <Table.Td colSpan={4 + allYearData.length * 2} className="py-10 text-center font-semibold text-slate-500">
+                                    No Ownership data found for this company.
+                                  </Table.Td>
+                                </Table.Tr>
+                              )}
+
+                              {!investorCardLoading &&
+                                mergedAllYearRows.length > 0 &&
+                                mergedAllYearRows.map(({ holding, index, yearlyVotes }) => {
+                                  const scrapedInfo = getNormalizedScrapedInfo(holding?.institution_name);
+                                  const rawProxy = holding?.proxy_advisor_influence || scrapedInfo?.proxy_influence;
+                                  const dynInstId = holding?.institution_id || scrapedInfo?.institution_id || scrapedInfo?.id || holding?.investor_profile_id;
+                                  const isInternallyCovered = typeof rawProxy === "string" && rawProxy.toLowerCase().includes("internal");
+                                  const isCoveredInDB = Boolean(dynInstId || holding?.is_doc === true || isInternallyCovered);
+
+                                  return (
+                                    <Table.Tr
+                                      key={`${holding?.filer_id ?? holding?.institution_name ?? "row"}-${index}`}
+                                      className="row [&_td]:last:border-b-0"
+                                    >
+                                      <Table.Td className="cell px-2 py-2 h-[50px] border-dashed dark:bg-darkmode-600 align-middle text-[13px]">
+                                        <div className="flex items-center font-semibold justify-center">{index}</div>
+                                      </Table.Td>
+                                      <Table.Td className="relative w-full px-3 py-2 border-dashed dark:bg-darkmode-600 align-middle">
+                                        <div className="flex min-w-0 items-start gap-2">
+                                          {!isCoveredInDB && (
+                                            <sup
+                                              className="cursor-pointer text-base absolute left-0.5 top-1/2 -translate-y-1/2 text-red-500"
+                                              onClick={() => {
+                                                window.scrollBy({ top: 350, behavior: "smooth" });
+                                              }}
+                                            >
+                                              *
+                                            </sup>
+                                          )}
+                                          <h1
+                                            onClick={() => {
+                                              if (holding?.is_doc === true && dynInstId) {
+                                                window.open(`/investor-company-details/${dynInstId}`, "_blank");
+                                              }
+                                            }}
+                                            className={clsx([
+                                              "block min-w-0 max-w-[165px] break-words whitespace-normal capitalize font-semibold leading-tight text-[13px]",
+                                              holding?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
+                                            ])}
+                                          >
+                                            {holding?.institution_name}
+                                          </h1>
+                                          {holding?.flag_13d === true && (
+                                            <img className="ml-1 mt-0.5 w-3 shrink-0" alt="flag-icon" src={flagIcon} />
+                                          )}
+                                        </div>
+                                      </Table.Td>
+                                      <Table.Td className="cell px-2 py-2 border-dashed dark:bg-darkmode-600 text-left align-middle text-[13px]">
+                                        <div className="whitespace-nowrap flex items-center justify-center">
+                                          {holding?.percent_ownership}%
+                                        </div>
+                                      </Table.Td>
+                                      <Table.Td className="cell px-2 py-2 border-dashed dark:bg-darkmode-600 text-left align-middle text-[13px]">
+                                        <div className="whitespace-normal break-words leading-tight text-left">
+                                          {!rawProxy || rawProxy === "Not Disclosed" || rawProxy.toLowerCase() === "not disclosed" ? (
+                                            <span className="text-gray-400">-</span>
+                                          ) : (
+                                            rawProxy
+                                          )}
+                                        </div>
+                                      </Table.Td>
+                                      {allYearData.map((yearData) => {
+                                        const yearKey = yearData?.year?.toString() || "";
+                                        const yearHolding = yearlyVotes[yearKey];
+
+                                        return (
+                                          <Fragment key={`${holding?.filer_id ?? holding?.institution_name ?? "row"}-${yearKey}`}>
+                                            <Table.Td className="cell relative px-1 py-2 border-dashed dark:bg-darkmode-600 text-center align-middle after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-200 after:content-['']">
+                                              {renderVotingStatus(
+                                                yearHolding?.voted_against_directors,
+                                                yearHolding?.voted_against_directors_message,
+                                                "No Data"
+                                              )}
+                                            </Table.Td>
+                                            <Table.Td className="cell px-1 py-2 border-dashed dark:bg-darkmode-600 text-center align-middle">
+                                              {renderVotingStatus(
+                                                yearHolding?.voted_against_say_on_pay,
+                                                yearHolding?.voted_against_say_on_pay_message,
+                                                yearKey ? `Say on Pay not on ballot at ${yearKey} shareholder meeting` : "No Data"
+                                              )}
+                                            </Table.Td>
+                                          </Fragment>
+                                        );
+                                      })}
+                                    </Table.Tr>
+                                  );
+                                })}
+                            </Table.Tbody>
+                          </Table>
+                        </div>
+                      </TableWrapper>
+                    )}
+
+                    {ownershipView === "separate" && (
                     <TableWrapper>
                       <div
                         className={clsx([
                           locationPathName === "/" &&
                           "max-h-[600px]",
-                          "max-h-[60vh] overflow-y-scroll"
+                          "max-h-[60vh] overflow-y-auto overflow-x-auto"
                         ])}
                       >
                         <Table className="table w-full">
@@ -575,7 +915,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                                 </span>
                               </Table.Td>
                               <Table.Td className="cell text-[13px] py-2 font-semibold h-[50px] bg-header first:rounded-tl-[0.6rem] last:rounded-tr-[0.6rem] border-[#0000000D] text-[#000000B2] min-w-[150px] whitespace-normal leading-tight">
-                                <span>Proxy Advisory Influence {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.analytics && (
+                                <span>Proxy Advisory Influence {displayYearData?.analytics && (
                                   <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
                                     <Lucide
                                       icon="BarChart3"
@@ -673,8 +1013,8 @@ const getNormalizedScrapedInfo = (name: string) => {
                                           </div>
                                         </Table.Td>
       
-      <Table.Td className="relative w-full px-4 py-2 pr-10">
-    <div className="flex items-center whitespace-nowrap gap-2">
+      <Table.Td className="relative w-full min-w-[320px] px-4 py-2 pr-28">
+    <div className="flex min-w-0 items-start gap-2">
         
         {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
         {(() => {
@@ -720,7 +1060,7 @@ const getNormalizedScrapedInfo = (name: string) => {
     }
   }}
   className={clsx([
-    "cell whitespace-nowrap capitalize text-wrap font-semibold",
+    "block min-w-0 max-w-[260px] break-words whitespace-normal capitalize font-semibold leading-tight",
     dashboard?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
   ])}
 >
@@ -735,14 +1075,14 @@ const getNormalizedScrapedInfo = (name: string) => {
 })()}
 
       {dashboard?.flag_13d === true && (
-        <img className="w-3 ml-2" alt="flag-icon" src={flagIcon} />
+        <img className="ml-2 w-3 shrink-0" alt="flag-icon" src={flagIcon} />
       )}
    {/* ========================================== */}
     {/* 2. ACTION BUTTONS (EYE ICON LOGIC)         */}
     {/* ========================================== */}
     {/* 2. SILENT ACTION TRAYS (CLEAN RENDER VIEW) */}
     {/* ========================================== */}
-    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center gap-x-2 w-5">
+    <div className="absolute right-3 top-1/2 flex w-[120px] -translate-y-1/2 items-center justify-end gap-2 pl-2">
       {dashboard?.investor_profile_id || dashboard?.institution_name?.toLowerCase().includes('vanguard') ? (
         /* Show Investor Profile if it exists (or forced for Vanguard) */
         <Tippy
@@ -930,72 +1270,19 @@ const isActivelyScraping =
                                           </div>
                                         </Table.Td>
                                         <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-
-                                          <>
-                                            {dashboard?.voted_against_directors ===
-                                              true && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                    &#10004;
-                                                  </div>
-                                                </div>
-                                              )}
-                                            {dashboard?.voted_against_directors ===
-                                              'ND' && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content={dashboard?.voted_against_directors_message || "No Data"} options={{ theme: "light" }}>
-                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                    </Tippy>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            {dashboard?.voted_against_directors ===
-                                              'NSE' && (
-                                                <div className="whitespace-nowrap flex items-center justify-center">
-                                                  <div className="flex items-center w-full h-full text-primary justify-center">
-                                                    <Tippy content={dashboard?.voted_against_directors_message || "Not disclosed in NPX"} options={{ theme: "light" }}>
-                                                      <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                    </Tippy>
-                                                  </div>
-                                                </div>
-                                              )}
-                                          </>
+                                          {renderVotingStatus(
+                                            dashboard?.voted_against_directors,
+                                            dashboard?.voted_against_directors_message,
+                                            "Not disclosed in NPX"
+                                          )}
                                         </Table.Td>
                                         <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
                                           {showSayOnPayColumn ? (
-                                            <>
-                                              {dashboard?.voted_against_say_on_pay ===
-                                                true && (
-                                                  <div className="whitespace-nowrap flex items-center justify-center">
-                                                    <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white ">
-                                                      &#10004;
-                                                    </div>
-                                                  </div>
-                                                )}
-
-                                              {dashboard?.voted_against_say_on_pay ===
-                                                'ND' && (
-                                                  <div className="whitespace-nowrap flex items-center justify-center">
-                                                    <div className="flex items-center w-full h-full text-primary justify-center">
-                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || "No Data"} options={{ theme: "light" }}>
-                                                        <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                      </Tippy>
-                                                    </div>
-                                                  </div>
-                                                )}
-
-                                              {dashboard?.voted_against_say_on_pay ===
-                                                'NSE' && (
-                                                  <div className="whitespace-nowrap flex items-center justify-center">
-                                                    <div className="flex items-center w-full h-full text-primary justify-center">
-                                                      <Tippy content={dashboard?.voted_against_say_on_pay_message || `Say on Pay not on ballot at ${activeYear || currentExpectedYear} shareholder meeting`} options={{ theme: "light" }}>
-                                                        <MegaphoneOff size={18} strokeWidth={1.2} absoluteStrokeWidth />
-                                                      </Tippy>
-                                                    </div>
-                                                  </div>
-                                                )}
-                                            </>
+                                            renderVotingStatus(
+                                              dashboard?.voted_against_say_on_pay,
+                                              dashboard?.voted_against_say_on_pay_message,
+                                              `Say on Pay not on ballot at ${activeYear || currentExpectedYear} shareholder meeting`
+                                            )
                                           ) : (
                                             <div className="whitespace-nowrap flex items-center justify-center">
                                               <div className="text-gray-400">
@@ -1013,6 +1300,7 @@ const isActivelyScraping =
                         </Table>
                       </div>
                     </TableWrapper>
+                    )}
                   </div>
 
                 </div>
@@ -1033,20 +1321,22 @@ const isActivelyScraping =
                     </sup>
                     <p id="footnote" className="">
                       Source: Whalewisdom. Data as of{" "}
-                      {dashboardDataList?.all_year_data?.[selectedIndex || 0]?.data_as_of || todayDate}
+                      {displayYearData?.data_as_of || todayDate}
                     </p>
                   </span>
-                  <span className="!pt-3 flex items-center ">
-                    <sup
-                      className="cursor-pointer ml-1"
-                      style={{ fontSize: "0.8em" }}
-                    >
-                      2
-                    </sup>
-                    <p id="footnote">
-                      As disclosed by the investor in the last three years.
-                    </p>
-                  </span>
+                  {ownershipView === "separate" && (
+                    <span className="!pt-3 flex items-center ">
+                      <sup
+                        className="cursor-pointer ml-1"
+                        style={{ fontSize: "0.8em" }}
+                      >
+                        2
+                      </sup>
+                      <p id="footnote">
+                        As disclosed by the investor in the last three years.
+                      </p>
+                    </span>
+                  )}
                 </div>
 
                 <div>

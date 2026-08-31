@@ -10,6 +10,7 @@ import {
   getBoardDirectorMembers,
   setPage,
   setTempSearch,
+  fetchNpxProposalVotingStats,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -47,6 +48,8 @@ import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot
 import { toast } from "react-toastify";
 import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
 import {  pollWhaleWisdomStatus } from "@/pages/AIChatbot/api";
+import { fetchCompensationProposals } from "@/stores/compensationProposalsSlice";
+import { vdsEuropeanService } from "@/services/vdsEuropean";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -127,6 +130,7 @@ function Main() {
   // Loading states for both components
   const [isOwnershipLoaded, setIsOwnershipLoaded] = useState(false);
   const [isMeetingLoaded, setIsMeetingLoaded] = useState(false);
+  const institutionInsightsPrefetchDoneRef = useRef(false);
 
   // Format date function - Month and Year only
   const formatDate = (dateString: string) => {
@@ -171,14 +175,26 @@ function Main() {
     (state: RootState) => state.authentiction
   );
   const [searchParams] = useSearchParams();
+  const ownershipView = searchParams.get("ownership_view") === "all" ? "all" : "separate";
+  const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "all" ? "all" : "separate";
 
   const { companySearchAndUpdate } = useCompanySearch();
   const { dashboardDataList, tempSearch, graphQLBoardData, graphQLBoardDataLoading, agmSummaryDetails } =
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
+  const agmYearlyData = agmSummaryDetails?.meeting_details_yearly_data;
+  const agmAvailableYears = (
+    Array.isArray(agmSummaryDetails?.total_year)
+      ? agmSummaryDetails.total_year.map(String)
+      : agmYearlyData
+        ? Object.keys(agmYearlyData)
+        : []
+  ).sort((a: string, b: string) => Number(b) - Number(a));
+  const dashboardSelectedMeetingYear = searchParams.get("year") || agmAvailableYears[0];
+  const dashboardMeetingDetails =
+    agmYearlyData?.[dashboardSelectedMeetingYear] || agmSummaryDetails;
 
-  // Extract meeting date from AGM summary to show next to the main heading
-  const _companyDetails = agmSummaryDetails?.company ? (agmSummaryDetails.company[0] as any) : undefined;
+  const _companyDetails = dashboardMeetingDetails?.company ? (dashboardMeetingDetails.company[0] as any) : undefined;
   const _companyNameKey = _companyDetails ? Object.keys(_companyDetails)[0] : undefined;
   const _meetingDetailsStr = _companyNameKey ? _companyDetails[_companyNameKey] : undefined;
   const meetingDateHeader = typeof _meetingDetailsStr === 'string' ? _meetingDetailsStr.split(" - ").pop() : undefined;
@@ -355,6 +371,70 @@ function Main() {
   //   }
   // }, [companyGlobalSearchBoardName, companyGlobalSearchName, dispatch]);
 
+  // Determine whether the current company has ANY voting data at all
+  // (VDS or NPX). When neither exists, the three Voting Data sub-tabs
+  // (By Fund Family, Voting Rationale, N-PX) should show a "no data"
+  // message instead of spinning forever waiting for a meeting date/year
+  // that will never arrive.
+  const [votingDataAvailability, setVotingDataAvailability] = useState<{
+    checkedFor: string;
+    hasData: boolean;
+  } | null>(null);
+  const [checkingVotingData, setCheckingVotingData] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkVotingDataAvailability = async () => {
+      if (!companyGlobalSearchId) {
+        setVotingDataAvailability(null);
+        return;
+      }
+
+      setCheckingVotingData(true);
+      try {
+        const { result } = await dashboardService.getVdsNpxMeetingDates(companyGlobalSearchId);
+        const vdsEntries = Array.isArray(result?.VDS_data)
+          ? result.VDS_data
+          : Array.isArray(result?.VDS_Data)
+            ? result.VDS_Data
+            : Array.isArray(result?.vds_data)
+              ? result.vds_data
+              : [];
+        const npxEntries = Array.isArray(result?.NPX_Data)
+          ? result.NPX_Data
+          : Array.isArray(result?.npx_data)
+            ? result.npx_data
+            : [];
+
+        if (cancelled) return;
+        setVotingDataAvailability({
+          checkedFor: String(companyGlobalSearchId),
+          hasData: vdsEntries.length > 0 || npxEntries.length > 0,
+        });
+      } catch (error) {
+        console.warn("Failed to check voting data availability:", error);
+        if (!cancelled) {
+          // Fail open so we don't hide the tabs on a transient network error.
+          setVotingDataAvailability({ checkedFor: String(companyGlobalSearchId), hasData: true });
+        }
+      } finally {
+        if (!cancelled) setCheckingVotingData(false);
+      }
+    };
+
+    checkVotingDataAvailability();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyGlobalSearchId]);
+
+  const hasVotingData =
+    votingDataAvailability?.checkedFor === String(companyGlobalSearchId)
+      ? votingDataAvailability.hasData
+      : true; // assume available until we know otherwise, to avoid a flash of the empty state
+
   // Fetch modules count when company changes
   useEffect(() => {
     const fetchModulesCount = async () => {
@@ -372,6 +452,59 @@ function Main() {
 
     fetchModulesCount();
   }, [companyGlobalSearchName]);
+
+  useEffect(() => {
+    if (!companyGlobalSearchTicker || !companyGlobalSearchId) return;
+    if (institutionInsightsPrefetchDoneRef.current) return;
+    institutionInsightsPrefetchDoneRef.current = true;
+
+    const prefetchedYear = searchParams.get("year") || String(new Date().getFullYear());
+
+    const npxFilters = {
+      view: "by_institution",
+      page: 1,
+      page_size: 25,
+      investor_company: ["BlackRock, Inc."],
+      year: [prefetchedYear],
+    };
+
+    const compensationFilters = {
+      year: [new Date().getFullYear()],
+      index: "S&P 500",
+      vote: [],
+      investor_company: ["BlackRock, Inc.", "The Vanguard Group", "State Street Investment Management"],
+      category: "Say on Pay",
+      keyword: "",
+      page_size: 25,
+    };
+
+    dispatch(
+      fetchNpxProposalVotingStats({
+        view: "by_institution",
+        filters: npxFilters,
+        requestKey: createDynamicURL(`/api/npx-proposal-voting-stats/`, npxFilters),
+      })
+    );
+
+    dispatch(
+      fetchCompensationProposals({
+        filters: compensationFilters,
+        requestKey: createDynamicURL(`/api/compensation-proposals/stats/`, compensationFilters),
+      } as any)
+    );
+
+    const aggregateVotingFilters = {
+      investor_company: ["BlackRock, Inc.", "The Vanguard Group"],
+      company_name: [companyGlobalSearchName],
+      year: [parseInt(prefetchedYear, 10)],
+      country: ["USA"],
+      page: 1,
+    };
+
+    vdsEuropeanService.getVDSEuropeanAnalytics(
+      createDynamicURL(`${baseURL}/api/proposal-voting-stats/`, aggregateVotingFilters)
+    );
+  }, [companyGlobalSearchTicker, companyGlobalSearchId, dispatch, searchParams]);
 
   // Fetch all tab data on initial load
   useEffect(() => {
@@ -414,7 +547,7 @@ function Main() {
             fetchAGMSummaryDashboard(
               createDynamicURL(
                 `${baseURL}/voting_report_8k/`,
-                { ticker: companyGlobalSearchTicker }
+                { ticker: companyGlobalSearchTicker, include_all_years_data: "true" }
               )
             )
           );
@@ -472,7 +605,7 @@ function Main() {
       <section>
         {/* Contextual section header (navigation moved to the Koyfin-style sidebar) */}
         <div className="w-full sticky z-30 header-card transition-all duration-300 ease-in-out bg-white shadow-md" style={{ top: `${headerHeight + 50}px` }}>
-          <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div ref={contentRef} className="bg-gradient-to-r from-white to-gray-50 flex items-center justify-between px-6 py-4 border-b border-gray-200 min-h-[4.5rem]">
             <div>
               <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-slate-500">{headerGroup}</span>
@@ -489,13 +622,13 @@ function Main() {
                 source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
               />
             )}
-            {activeTab === 'shareholder-meeting-results' && agmSummaryDetails?.total_year?.length > 0 && (
+            {activeTab === 'shareholder-meeting-results' && shareholderMeetingView === 'separate' && agmAvailableYears.length > 0 && (
               <YearSelector
-                years={agmSummaryDetails.total_year.map(String)}
+                years={agmAvailableYears}
                 label="Meeting Year"
               />
             )}
-            {activeTab === 'ownership' && dashboardDataList?.total_year?.length > 0 && (
+            {activeTab === 'ownership' && ownershipView === 'separate' && dashboardDataList?.total_year?.length > 0 && (
               <YearSelector
                 years={dashboardDataList.total_year.map(String)}
                 label="Meeting Year"
@@ -547,7 +680,21 @@ function Main() {
 
           {activeTab === 'voting-data' && (
             <div id="voting-data" className="col-span-12 xl:col-span-12">
-              {activeVotingSubTab === 'npx' ? (
+              {activeVotingSubTab !== 'npx-analytics' && checkingVotingData ? (
+                <div className="p-5 mt-1 box">
+                  <div className="h-52 flex items-center justify-center">
+                    <LoadingIcon icon="three-dots" className="w-10 h-10 text-primary" />
+                  </div>
+                </div>
+              ) : activeVotingSubTab !== 'npx-analytics' && !hasVotingData ? (
+                <div className="p-5 mt-1 box">
+                  <div className="h-52 flex items-center justify-center">
+                    <div className="text-center text-gray-400 text-lg font-semibold">
+                      <div>No such company data available</div>
+                    </div>
+                  </div>
+                </div>
+              ) : activeVotingSubTab === 'npx' ? (
                 <NPXPage />
               ) : activeVotingSubTab === 'npx-analytics' && isAdmin ? (
                 <NPXAnalyticsPage embedded />

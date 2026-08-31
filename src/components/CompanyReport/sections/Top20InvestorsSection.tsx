@@ -158,11 +158,11 @@ const Top20InvestorsSection = ({ data, totalPercentOwnership }: Top20InvestorsSe
       <div className="flex gap-6 items-start">
       {/* Main Table */}
       <div className="flex-1 overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
+        <table className="w-full table-fixed text-xs border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b-2 border-gray-200">
               <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-12">No.</th>
-              <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs min-w-[200px]">Shareholder</th>
+              <th className="text-left py-4 px-4 font-semibold text-gray-600 text-xs w-[320px]">Shareholder</th>
               <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[120px]">Ownership<sup>1</sup></th>
               <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[150px]">Proxy Advisory Influence</th>
               <th className="text-center py-4 px-4 font-semibold text-gray-600 text-xs w-[100px]">UN PRI Signatory</th>
@@ -177,9 +177,15 @@ const Top20InvestorsSection = ({ data, totalPercentOwnership }: Top20InvestorsSe
               return (
                 <tr key={item.filer_id || index} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-4 px-4 text-gray-600 font-medium">{index + 1}</td>
-                  <td className="py-4 px-4 text-gray-700 font-semibold">
-                    {!item.investor_profile_id && <sup style={{ fontSize: '1em', fontWeight: 'bold' }}>*</sup>}
-                    {item.institution_name || item.institution__institution}
+                  <td className="py-4 px-4 text-gray-700 font-semibold align-middle">
+                    <div className="flex min-w-0 items-start gap-2">
+                      {!item.investor_profile_id && (
+                        <sup className="mt-0.5 shrink-0 whitespace-nowrap text-[11px] font-bold leading-none">*</sup>
+                      )}
+                      <span className="min-w-0 break-words leading-snug">
+                        {item.institution_name || item.institution__institution}
+                      </span>
+                    </div>
                   </td>
                   <td className="py-4 px-4 text-center text-gray-700">
                     {ownership.toFixed(2)}%

@@ -88,6 +88,33 @@ const URL_RULES: Array<{ pattern: RegExp; strategy: DashboardCacheStrategy }> = 
       prefetchTabs: ["investor_summary"],
     },
   },
+  {
+    pattern: /\/api\/npx-proposal-voting-stats\//,
+    strategy: {
+      scope: "compensation",
+      ttl: 15 * MINUTE,
+      tags: ["npx_proposal_voting_stats"],
+      prefetchTabs: [],
+    },
+  },
+  {
+    pattern: /\/api\/compensation-proposals\/stats\//,
+    strategy: {
+      scope: "compensation",
+      ttl: 15 * MINUTE,
+      tags: ["compensation_proposals_stats"],
+      prefetchTabs: [],
+    },
+  },
+  {
+    pattern: /\/api\/proposal-voting-stats\//,
+    strategy: {
+      scope: "compensation",
+      ttl: 15 * MINUTE,
+      tags: ["proposal_voting_stats"],
+      prefetchTabs: [],
+    },
+  },
 ];
 
 export const defaultDashboardCacheStrategy: DashboardCacheStrategy = {

@@ -17,6 +17,7 @@ import {
   ClipboardList,
   FileSearch2,
   Files,
+  FileText,
   MessageSquare,
   Network,
   LineChart,
@@ -54,7 +55,13 @@ interface SectionDef {
   // active section (the dashboard has no matching tab for it).
   preserveActiveSection?: boolean;
   // Optional count badge key pulled from modulesData.
-  countKey?: "case_studies" | "engagement_details" | "shareholder_proposal";
+  countKey?: "case_studies" | "engagement_details" | "shareholder_proposal" | "activist_filings";
+  // Hide the item entirely when the count is zero.
+  hideWhenEmpty?: boolean;
+  // When true, the entire section is only visible to Admin users.
+  adminOnly?: boolean;
+  // Render a small BETA badge next to the label.
+  beta?: boolean;
 }
 
 // Koyfin-style navigation for the main dashboard.
@@ -149,6 +156,27 @@ const BASE_SECTIONS: SectionDef[] = [
     countKey: "shareholder_proposal",
   },
   {
+    key: "company-comprehensive-report",
+    label: "Comprehensive Report",
+    icon: FileText,
+    group: "Company",
+    subItems: [],
+    route: "/custom-reports?tab=comprehensive",
+    preserveActiveSection: true,
+  },
+  {
+    key: "company-activist-filings",
+    label: "Activist Filings",
+    icon: FileText,
+    group: "Company",
+    subItems: [],
+    route: "/activist-filings?source=company",
+    preserveActiveSection: true,
+    countKey: "activist_filings",
+    hideWhenEmpty: true,
+    beta: true,
+  },
+  {
     key: "investor-overview",
     label: "Overview",
     icon: BarChart3,
@@ -175,6 +203,16 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "investor-overview",
+    label: "N-PX Voting Data",
+    icon: ClipboardList,
+    group: "Institution Insights",
+    route: "/npx-proposal-voting-stats",
+    subItems: [],
+    adminOnly: true,
+    beta: true,
+  },
+  {
+    key: "investor-overview",
     label: "Exec. Comp. Voting Data",
     icon: Briefcase,
     group: "Institution Insights",
@@ -185,11 +223,11 @@ const BASE_SECTIONS: SectionDef[] = [
 
 const DashboardSidebarNav = ({
   modulesData = {},
-  expandedGroup,
+  expandedGroups,
   onToggleGroup,
 }: {
   modulesData?: any;
-  expandedGroup: string;
+  expandedGroups: string[];
   onToggleGroup: (group: string) => void;
 }) => {
   const dispatch = useAppDispatch();
@@ -222,15 +260,25 @@ const DashboardSidebarNav = ({
 
   // Build sections dynamically based on user role, count availability, and required ordering.
   const sections: SectionDef[] = BASE_SECTIONS.filter((s) => {
+    if (s.adminOnly) {
+      const userType = user?.user_type;
+      return userType === "Admin";
+    }
     // Compensation is restricted to Admins/Analysts
     if (s.key === "compensation") {
       const userType = user?.user_type;
       return userType === "Admin" || userType === "Analyst";
     }
-    // Hide count-driven tabs when there is no data for the selected company.
+    // Hide count-driven tabs when there is no data for the selected company,
+    // except for sections that should stay visible but disabled.
     if (s.countKey) {
       const count = modulesData?.[s.countKey];
-      return !!count && count > 0;
+      if ((!count || count <= 0) && s.hideWhenEmpty) {
+        return false;
+      }
+      if (!count && !s.hideWhenEmpty) {
+        return false;
+      }
     }
     return true;
   });
@@ -281,13 +329,19 @@ const DashboardSidebarNav = ({
         const routeQuery = section.route ? section.route.split("?")[1] : undefined;
         const routeParams = routeQuery ? new URLSearchParams(routeQuery) : null;
         const currentParams = new URLSearchParams(location.search);
+        const routeSource = routeParams?.get("source") || undefined;
+        const currentSource = locationState?.source || currentParams.get("source") || undefined;
+        const isNestedRoute = section.route
+          ? location.pathname !== routeBasePath && location.pathname.startsWith(`${routeBasePath}/`)
+          : false;
         const routeQueryMatches = routeParams
           ? Array.from(routeParams.entries()).every(
               ([key, value]) => currentParams.get(key) === value
             )
           : true;
         const isActive = section.route
-          ? location.pathname === routeBasePath && routeQueryMatches
+          ? (location.pathname === routeBasePath && routeQueryMatches) ||
+            (isNestedRoute && (!routeSource || currentSource === routeSource))
           : location.pathname === "/" &&
             activeSection === section.key &&
             (!section.subSection ||
@@ -305,60 +359,64 @@ const DashboardSidebarNav = ({
           (sub) => !sub.adminOnly || user?.user_type === "Admin"
         );
         const hasSubs = visibleSubItems.length > 0;
-        const countValue = section.countKey ? modulesData?.[section.countKey] : null;
+        const countValue = section.countKey ? Number(modulesData?.[section.countKey]) : null;
+        const hasCountValue = countValue !== null && Number.isFinite(countValue);
+        const isDisabled = false;
 
-        const isCompanyGroup = section.group === "Company";
-        const isGroupExpanded = isCompanyGroup
-          ? true
-          : expandedGroup === section.group;
+        const isGroupExpanded = expandedGroups.includes(section.group);
 
         return (
           <Fragment key={`${section.key}-${section.label}`}>
             {section.group !== previousSection?.group && (
-              isCompanyGroup ? (
-                <li className="side-menu__divider side-menu__section-label !text-xs">
-                  <span>{section.group}</span>
-                </li>
-              ) : (
-                <li
-                  className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
-                  onClick={() => onToggleGroup(section.group)}
-                >
-                  <span>{section.group}</span>
-                  <ChevronRight
-                    className={clsx([
-                      "w-5 h-5 transition-transform duration-200",
-                      { "rotate-90": isGroupExpanded },
-                    ])}
-                  />
-                </li>
-              )
+              <li
+                className="side-menu__divider side-menu__section-label !text-xs flex items-center justify-between cursor-pointer select-none"
+                onClick={() => onToggleGroup(section.group)}
+              >
+                <span>{section.group}</span>
+                <ChevronRight
+                  className={clsx([
+                    "w-5 h-5 transition-transform duration-200",
+                    { "rotate-90": isGroupExpanded },
+                  ])}
+                />
+              </li>
             )}
             {isGroupExpanded && (
             <li>
             <a
               href=""
+              aria-disabled={isDisabled}
               onClick={(e) => {
                 e.preventDefault();
+                if (isDisabled) return;
                 handleSectionClick(section);
               }}
               className={clsx([
-                "side-menu__link",
+                "side-menu__link relative",
                 { "side-menu__link--active": resolvedIsActive },
+                isDisabled && "pointer-events-none cursor-not-allowed opacity-50",
               ])}
             >
               <span className="relative">
                 <Icon className="side-menu__link__icon w-[18px] h-[18px]" />
-                {countValue > 0 && (
+                {hasCountValue && section.countKey !== "activist_filings" && (countValue! > 0 || section.hideWhenEmpty) && (
                   <span
-                    className="bg-[#DC661F] absolute rounded-full min-w-[16px] h-4 px-1 text-[9px] font-semibold text-white -top-1.5 left-2.5 flex items-center justify-center"
+                    className={clsx([
+                      "absolute rounded-full min-w-[16px] h-4 px-1 text-[9px] font-semibold text-white -top-1.5 left-2.5 flex items-center justify-center",
+                      countValue > 0 ? "bg-[#DC661F]" : "bg-slate-400",
+                    ])}
                   >
                     {countValue}
                   </span>
                 )}
               </span>
-              <div className="side-menu__link__title link_color">
-                {section.label}
+              <div className="side-menu__link__title link_color flex items-center gap-1.5">
+                <span>{section.label}</span>
+                {section.beta && (
+                  <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
+                    BETA
+                  </span>
+                )}
               </div>
               {hasSubs && (
                 <ChevronRight
