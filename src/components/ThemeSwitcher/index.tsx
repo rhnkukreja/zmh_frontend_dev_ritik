@@ -22,6 +22,7 @@ function Main() {
   const dispatch = useAppDispatch();
   const activeColorScheme = useAppSelector(selectColorScheme);
   const activeTheme = useAppSelector(selectTheme);
+  const [isNotificationDrawerOpen, setIsNotificationDrawerOpen] = useState(false);
   const [tempActiveColorScheme, setTempActiveColorScheme] =
     useState(activeColorScheme);
   const [tempActiveTheme, setTempActiveTheme] = useState(activeTheme);
@@ -108,6 +109,18 @@ function Main() {
         switchTheme(selectedTheme.name);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const handleNotificationDrawer = (event: Event) => {
+      const customEvent = event as CustomEvent<{ open?: boolean }>;
+      setIsNotificationDrawerOpen(!!customEvent.detail?.open);
+    };
+
+    window.addEventListener("zmh:notification-drawer", handleNotificationDrawer as EventListener);
+    return () => {
+      window.removeEventListener("zmh:notification-drawer", handleNotificationDrawer as EventListener);
+    };
   }, []);
 
   return (
@@ -259,12 +272,13 @@ function Main() {
 
 
         {/* AI Bot Modal & Button */}
-        <div className="fixed bottom-0 right-0 z-50 flex items-center justify-center mb-5 mr-5 text-white
-           rounded-full shadow-lg cursor-pointer
-            bg-gradient-to-b to-[#000000CC] from-[#9F1239]"
-        >
-          <ScrollTop />
-        </div>
+        {!isNotificationDrawerOpen && (
+          <div className="fixed bottom-24 right-5 z-[59] flex w-[90px] justify-center text-white">
+            <div className="rounded-full shadow-lg cursor-pointer bg-gradient-to-b to-[#000000CC] from-[#9F1239]">
+              <ScrollTop />
+            </div>
+          </div>
+        )}
 
       {/* <CModal isModalOpen={basicModalPreview}></CModal> */}
 

@@ -73,7 +73,7 @@ export const proposal_keywords = {
 export const subSidebarRoutes = ["/notes"];
 
 export const pageTitles: Record<string, string | null> = {
-  "/notes": "Notes",
+  "/notes": "Meeting Notes",
   "/investor-profile": null,
   "/custom-reports": null,
   "/engagement-question": null,

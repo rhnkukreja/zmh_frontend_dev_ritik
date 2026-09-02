@@ -14,6 +14,33 @@ interface InstitutionHierarchyProps {
   setSelectedCompany: React.Dispatch<React.SetStateAction<string>>;
 }
 
+const HierarchySkeleton = () => (
+  <div>
+    <div className="p-4 border-b border-gray-200">
+      <div className="h-10 w-full rounded-lg bg-slate-100 animate-pulse" />
+    </div>
+    <div className="p-3 space-y-3">
+      {Array.from({ length: 7 }).map((_, index) => (
+        <div key={index} className="border border-gray-100 rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between p-4">
+            <div
+              className="h-4 rounded bg-slate-200 animate-pulse"
+              style={{ width: `${60 + ((index % 3) + 1) * 8}%` }}
+            />
+            <div className="h-5 w-5 rounded bg-slate-200 animate-pulse" />
+          </div>
+          {index === 1 && (
+            <div className="px-4 pb-4 ml-6 border-l border-gray-100 space-y-2">
+              <div className="h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
+              <div className="h-4 w-2/3 rounded bg-slate-100 animate-pulse" />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
   selectedInstitution,
   setSelectedInstitution,
@@ -30,16 +57,19 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
   const [isSearching, setIsSearching] = useState(false);
 
   const toggleInstitution = (institutionName: string) => {
-    if (expandedInstitutions.includes(institutionName)) {
-      setExpandedInstitutions(expandedInstitutions.filter(name => name !== institutionName));
-    } else {
-      setExpandedInstitutions([...expandedInstitutions, institutionName]);
-    }
+    setExpandedInstitutions((prev) =>
+      prev.includes(institutionName)
+        ? prev.filter((name) => name !== institutionName)
+        : [...prev, institutionName]
+    );
   };
 
-  const handleInstitutionClick = (institutionName: string) => {
+  const handleInstitutionClick = (institutionName: string, companies: string[]) => {
+    const isCurrentlyExpanded = expandedInstitutions.includes(institutionName);
     setSelectedInstitution(institutionName);
-    setSelectedCompany("");
+    if (!isCurrentlyExpanded && companies.length > 0) {
+      setSelectedCompany(companies[0]);
+    }
     toggleInstitution(institutionName);
   };
 
@@ -82,42 +112,28 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
   };
 
   useEffect(() => {
-    if (searchTerm.trim().length > 0) {
+    if (searchTerm.trim().length > 0 || !institutionHierarchy?.length) {
       return;
     }
 
-    if (institutionHierarchy && institutionHierarchy.length > 0) {
-      const currentInstitution =
-        institutionHierarchy.find((item) => item.main_heading === selectedInstitution) ||
-        institutionHierarchy[0];
-      const institutionName = currentInstitution.main_heading;
-      const companies = Object.keys(currentInstitution.sub_heading || {});
+    const currentInstitution =
+      institutionHierarchy.find((item) => item.main_heading === selectedInstitution) ||
+      institutionHierarchy[0];
+    const institutionName = currentInstitution.main_heading;
+    const companies = Object.keys(currentInstitution.sub_heading || {});
 
-      if (!selectedInstitution) {
-        setSelectedInstitution(institutionName);
-        setExpandedInstitutions([institutionName]);
-      }
-
-      if (!selectedCompany && companies.length > 0) {
-        setSelectedCompany(companies[0]);
-      }
-
-      if (selectedInstitution && !expandedInstitutions.includes(selectedInstitution)) {
-        setExpandedInstitutions([selectedInstitution]);
-      }
+    if (!selectedInstitution) {
+      setSelectedInstitution(institutionName);
+      setExpandedInstitutions([institutionName]);
     }
-  }, [institutionHierarchy, selectedInstitution, selectedCompany, searchTerm, expandedInstitutions, setSelectedCompany, setSelectedInstitution]);
+
+    if (!selectedCompany && companies.length > 0) {
+      setSelectedCompany(companies[0]);
+    }
+  }, [institutionHierarchy, selectedInstitution, selectedCompany, searchTerm, setSelectedCompany, setSelectedInstitution]);
 
   if (loadingInstitutionHierarchy) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingIcon
-          icon="three-dots"
-          className="w-10 h-10 text-primary"
-          color="#800000"
-        />
-      </div>
-    );
+    return <HierarchySkeleton />;
   }
 
   if (!institutionHierarchy || institutionHierarchy.length === 0) {
@@ -179,7 +195,7 @@ const InstitutionHierarchy: React.FC<InstitutionHierarchyProps> = ({
                     "flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors",
                     selectedInstitution === institutionName && "bg-red-50 border-l-4 border-primary"
                   )}
-                  onClick={() => handleInstitutionClick(institutionName)}
+                  onClick={() => handleInstitutionClick(institutionName, companies)}
                 >
                   <div className="flex items-center flex-1">
                     <span className="font-medium text-gray-800">

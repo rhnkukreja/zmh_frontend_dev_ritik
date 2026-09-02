@@ -15,6 +15,7 @@ export type DashboardSection =
   | "company-engagement-details"
   | "company-shareholder-proposals"
   | "company-comprehensive-report"
+  | "company-knowledge-base"
   | "company-activist-filings";
 
 export interface DashboardNavState {
