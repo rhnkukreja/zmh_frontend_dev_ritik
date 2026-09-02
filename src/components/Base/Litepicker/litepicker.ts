@@ -46,6 +46,11 @@ const init = (el: LitepickerElement, props: LitepickerProps) => {
             });
           }
         });
+        picker.on("show", () => {
+          if (props.onShow) {
+            props.onShow(picker);
+          }
+        });
       }
     },
   });

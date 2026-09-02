@@ -440,31 +440,8 @@ class DashboardService {
 
   public async getNpxProposalVotingStats(params?: any): Promise<{ result: any }> {
     const url = createDynamicURL(`/api/npx-proposal-voting-stats/`, params);
-    const cacheKey = dashboardCacheManager.generateKey(url);
-    const strategy = getDashboardCacheStrategyForUrl(url);
-
-    const cached = dashboardCacheManager.get(cacheKey);
-    if (cached) {
-      return { result: cached };
-    }
-
-    const inFlightPromise = dashboardCacheManager.getInFlightPromise(cacheKey);
-    if (inFlightPromise) {
-      const result = await inFlightPromise;
-      return { result };
-    }
-
-    const requestPromise = axiosInstance.get(url).then((response) => {
-      const data = response.data;
-      dashboardCacheManager.set(cacheKey, data, {
-        ttl: strategy.ttl,
-        tags: strategy.tags,
-      });
-      return data;
-    });
-
-    dashboardCacheManager.trackRequest(cacheKey, requestPromise);
-    const result = await requestPromise;
+    const response = await axiosInstance.get(url);
+    const result = response.data;
     return {
       result,
     };

@@ -14,6 +14,33 @@ interface CompanyHierarchyProps {
   setSelectedInstitution: React.Dispatch<React.SetStateAction<string>>;
 }
 
+const HierarchySkeleton = () => (
+  <div>
+    <div className="p-4 border-b border-gray-200">
+      <div className="h-10 w-full rounded-lg bg-slate-100 animate-pulse" />
+    </div>
+    <div className="p-3 space-y-3">
+      {Array.from({ length: 7 }).map((_, index) => (
+        <div key={index} className="border border-gray-100 rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between p-4">
+            <div
+              className="h-4 rounded bg-slate-200 animate-pulse"
+              style={{ width: `${60 + ((index % 3) + 1) * 8}%` }}
+            />
+            <div className="h-5 w-5 rounded bg-slate-200 animate-pulse" />
+          </div>
+          {index === 1 && (
+            <div className="px-4 pb-4 ml-6 border-l border-gray-100 space-y-2">
+              <div className="h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
+              <div className="h-4 w-2/3 rounded bg-slate-100 animate-pulse" />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
   selectedCompany,
   setSelectedCompany,
@@ -30,11 +57,11 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
   const [isSearching, setIsSearching] = useState(false);
 
   const toggleCompany = (companyName: string) => {
-    if (expandedCompanies.includes(companyName)) {
-      setExpandedCompanies(expandedCompanies.filter(name => name !== companyName));
-    } else {
-      setExpandedCompanies([...expandedCompanies, companyName]);
-    }
+    setExpandedCompanies((prev) =>
+      prev.includes(companyName)
+        ? prev.filter((name) => name !== companyName)
+        : [...prev, companyName]
+    );
   };
 
   const handleCompanyClick = (companyName: string) => {
@@ -82,33 +109,27 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
 
   // Auto-select first company and institution when data loads or when selections are cleared
   useEffect(() => {
-    if (companyHierarchy && companyHierarchy.length > 0) {
-      const firstCompany = companyHierarchy[0];
-      const companyName = firstCompany.main_heading;
-      const institutions = firstCompany.sub_headings || [];
-
-      // Always select first company and institution if nothing is selected
-      if (!selectedCompany) {
-        setSelectedCompany(companyName);
-        setExpandedCompanies([companyName]);
-      }
-
-      if (!selectedInstitution && institutions.length > 0) {
-        setSelectedInstitution(institutions[0]);
-      }
+    if (!companyHierarchy?.length) {
+      return;
     }
-  }, [companyHierarchy, selectedCompany, selectedInstitution]);
+
+    const currentCompany =
+      companyHierarchy.find((item) => item.main_heading === selectedCompany) || companyHierarchy[0];
+    const companyName = currentCompany.main_heading;
+    const institutions = Object.keys(currentCompany.sub_heading || {});
+
+    if (!selectedCompany) {
+      setSelectedCompany(companyName);
+      setExpandedCompanies([companyName]);
+    }
+
+    if (!selectedInstitution && institutions.length > 0) {
+      setSelectedInstitution(institutions[0]);
+    }
+  }, [companyHierarchy, selectedCompany, selectedInstitution, setSelectedCompany, setSelectedInstitution]);
 
   if (loadingCompanyHierarchy) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingIcon
-          icon="three-dots"
-          className="w-10 h-10 text-primary"
-          color="#800000"
-        />
-      </div>
-    );
+    return <HierarchySkeleton />;
   }
 
   if (!companyHierarchy || companyHierarchy.length === 0) {

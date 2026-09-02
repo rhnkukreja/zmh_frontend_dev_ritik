@@ -25,10 +25,10 @@ const index = () => {
   return (
     isVisible && (
       <div
-        className="cursor-pointer bg-red border w-10 h-10 rounded-3xl p-3 text-2xl flex items-center justify-center "
+        className="cursor-pointer border w-10 h-10 rounded-full p-3 text-2xl flex items-center justify-center bg-gradient-to-b to-[#000000CC] from-[#9F1239] text-white"
         onClick={scrollToTop}
       >
-        <ArrowUp />
+        <ArrowUp className="w-4 h-4" />
       </div>
     )
   );

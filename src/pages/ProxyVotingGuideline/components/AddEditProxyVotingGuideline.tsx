@@ -20,6 +20,7 @@ import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 
 interface PolicyGuidelineFormData {
+  name: string;
   institution: string;
   year: string;
   category: string;
@@ -111,6 +112,7 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
     formState: { errors },
   } = useForm<PolicyGuidelineFormData>({
     defaultValues: {
+      name: selectedProxyVotingGuideline?.name || "",
       institution: selectedProxyVotingGuideline?.institution?.toString(),
       year: selectedProxyVotingGuideline?.year || getYearRange(25)?.[0],
       // category: selectedProxyVotingGuideline?.category || "Environmental",
@@ -217,6 +219,32 @@ export const AddEditPolicyGuideline: React.FC<AddEditPolicyGuidelineProps> = ({
           </Dialog.Title>
           <Dialog.Description className="px-6 py-4 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="w-full">
+                <FormCheck.Label
+                  htmlFor="name"
+                  className="block text-[1rem] font-semibold text-gray-800 mb-2 text-left"
+                >
+                  Report Name
+                </FormCheck.Label>
+
+                <Controller
+                  name="name"
+                  control={control}
+                  rules={{ required: "Report Name is required" }}
+                  render={({ field }) => (
+                    <FormInput
+                      id="name"
+                      placeholder="Enter Report Name"
+                      {...field}
+                    />
+                  )}
+                />
+
+                {errors.name && (
+                  <Error className="max-w-[100%] ">{errors.name.message}</Error>
+                )}
+              </div>
+
               <div className="w-full">
                 <FormCheck.Label
                   htmlFor="year"

@@ -157,7 +157,7 @@ const NotesList: React.FC<NotesFieldProps> = ({
     <div className="w-full border-r border-gray-200 h-screen overflow-y-auto no-scrollbar">
       <div className="flex justify-between items-center  px-4 py-4  ">
         <h2 className="text-lg font-semibold">
-          Notes
+          Meeting Notes
         </h2>
         <button
           className="flex items-center gap-x-2 px-4 py-2 text-white bg-primary border-primary dark:border-primary rounded "

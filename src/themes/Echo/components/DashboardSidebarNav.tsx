@@ -165,6 +165,15 @@ const BASE_SECTIONS: SectionDef[] = [
     preserveActiveSection: true,
   },
   {
+    key: "company-knowledge-base",
+    label: "Meeting Notes",
+    icon: FileText,
+    group: "Company",
+    subItems: [],
+    route: "/notes",
+    preserveActiveSection: true,
+  },
+  {
     key: "company-activist-filings",
     label: "Activist Filings",
     icon: FileText,

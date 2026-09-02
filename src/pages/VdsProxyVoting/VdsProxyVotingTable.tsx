@@ -856,66 +856,64 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                 )}
 
                 <Tab.Panel className="leading-relaxed">
-                  <div className="bg-slate-50 dark:bg-darkmode-700 p-4 rounded-lg mb-6">
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                      <div className="flex items-end gap-4">
-                        <div className="w-4/12">
-                          <div className="text-left text-slate-600 dark:text-slate-400 flex justify-between mb-2">
-                            <span className="font-medium text-sm">Use the dropdown below to view more Institutions.</span>
+                  {activeVdsView !== "voting-rationale" && (
+                    <div className="bg-slate-50 dark:bg-darkmode-700 p-4 rounded-lg mb-6">
+                      <form onSubmit={handleSubmit(onSubmit)}>
+                        <div className="flex items-end gap-4">
+                          <div className="w-4/12">
+                            <div className="text-left text-slate-600 dark:text-slate-400 flex justify-between mb-2">
+                              <span className="font-medium text-sm">Use the dropdown below to view more Institutions.</span>
+                            </div>
+
+                            <Controller
+                              name="institution"
+                              control={control}
+                              defaultValue={[]}
+                              render={({ field }) => (
+                                <TomSelect
+                                  value={field.value || []}
+                                  onChange={(event) => {
+                                    field.onChange(event);
+                                  }}
+                                  options={{ placeholder: "Institution" }}
+                                  className="w-full"
+                                  multiple
+                                >
+                                  {apiDropdownOptions.length > 0 &&
+                                      apiDropdownOptions?.map((institution: string) => {
+                                        return (
+                                          <option value={institution}>
+                                            {institution}
+                                          </option>
+                                        );
+                                      })}
+                                </TomSelect>
+                              )}
+                            />
                           </div>
-                        
-
-                        <Controller
-                          name="institution"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <TomSelect
-
-                              value={field.value || []}
-                              onChange={(event) => {
-                                field.onChange(event);
+                          <div className="flex items-center mt-7">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => {
+                                onFilterClear();
                               }}
-                              options={{ placeholder: "Institution" }}
-                              className="w-full"
-                              multiple
+                              className="w-32 ml-auto"
                             >
-                              {apiDropdownOptions.length > 0 &&
-                                  apiDropdownOptions?.map(
-                                    (institution: string) => {
-                                      return (
-                                        <option value={institution}>
-                                          {institution}
-                                        </option>
-                                      );
-                                    }
-                                  )}
-                            </TomSelect>
-                          )}
-                        />
-                      </div>
-                      <div className="flex items-center mt-7">
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => {
-                            onFilterClear();
-                          }}
-                          className="w-32 ml-auto"
-                        >
-                          Clear
-                        </Button>
-                        <Button
-                          type="submit"
-                          variant="primary"
-                          className="w-32 ml-2"
-                        >
-                          Apply
-                        </Button>
-                      </div>
+                              Clear
+                            </Button>
+                            <Button
+                              type="submit"
+                              variant="primary"
+                              className="w-32 ml-2"
+                            >
+                              Apply
+                            </Button>
+                          </div>
+                        </div>
+                      </form>
                     </div>
-                  </form>
-                  </div>
+                  )}
                   <div className="flex justify-end items-center gap-4 mb-4 xs:mt-4 md:mt-0">
                     {activeVdsView === "voting-data" && vdsProxyAllInvestorDetails?.vds_report?.length > 0 && (
                       <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">

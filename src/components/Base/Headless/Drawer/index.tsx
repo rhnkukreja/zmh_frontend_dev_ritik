@@ -2,7 +2,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import Lucide from "../../Lucide";
 
-export default function Drawer({ open, setOpen, children }) {
+export default function Drawer({ open, setOpen, children, headerActions, headerContent }) {
   return (
     <Transition show={open} as={Fragment}>
       <Dialog as="div" className="relative z-10" onClose={setOpen}>
@@ -32,21 +32,28 @@ export default function Drawer({ open, setOpen, children }) {
                 leaveFrom="translate-x-0"
                 leaveTo="translate-x-full"
               >
-                <Dialog.Panel className="pointer-events-auto relative w-screen max-w-md">
-                  <div className="flex h-full flex-col overflow-y-auto bg-white py-6 shadow-xl">
-                    <div className="flex px-4 sm:px-6 justify-between items-center">
-                      <h2 className="text-base font-semibold text-gray-900">
-                        Notifications
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => setOpen(false)}
-                        className="rounded-md text-gray-500 hover:text-gray-700 focus:outline-none"
-                      >
-                          <Lucide icon="X" className="w-6 h-6 text-slate-400" />
-                      </button>
+                <Dialog.Panel className="pointer-events-auto relative w-screen max-w-[460px]">
+                  <div className="flex h-full flex-col overflow-hidden border-l border-slate-200 bg-slate-50 shadow-2xl">
+                    <div className="border-b border-slate-200 bg-white px-4 py-2.5 sm:px-6">
+                      <div className="flex items-center justify-between gap-2.5">
+                        <h2 className="text-lg font-semibold leading-none text-slate-900">
+                          Notifications
+                        </h2>
+                        <div className="flex items-center gap-1.5">
+                          {headerActions}
+                          <button
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-slate-700 shadow-sm transition-all hover:border-slate-400 hover:bg-slate-200 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#9F1239]/30"
+                            aria-label="Close notifications"
+                          >
+                            <Lucide icon="X" className="h-5 w-5 stroke-[2.4]" />
+                          </button>
+                        </div>
+                      </div>
+                      {headerContent && <div className="mt-3">{headerContent}</div>}
                     </div>
-                    <div className="relative mt-6 flex-1 px-4 sm:px-6">
+                    <div className="relative flex h-full flex-1 flex-col overflow-y-auto px-4 py-4 sm:px-6">
                       {children}
                     </div>
                   </div>

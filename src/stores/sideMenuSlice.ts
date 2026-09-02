@@ -170,7 +170,7 @@ const initialState: any = {
     {
       icon: "FileText",
       pathname: "/notes",
-      title: "Knowledge Base",
+      title: "Meeting Notes",
     },
     {
       icon: "BarChart2",
