@@ -2788,15 +2788,15 @@ const index = () => {
                         </button>
                       </div>
                       {openGroups[getCompanyGroupKey(ele, yearIdx, index)] && Array.isArray(ele.sample_proposals) && (
-                        <div className="mt-2 mb-4 bg-gray-50 overflow-x-auto">
-                          <table className="min-w-[1100px] w-full table-auto">
+                        <div className="mt-2 mb-4 bg-gray-50">
+                          <table className="w-full table-fixed">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
                                 <th className="px-2 py-2 text-center font-semibold w-[8%] max-w-[60px] whitespace-nowrap">No.</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[52%] max-w-[600px]">Proposal</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Mgmt Rec</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Vote Cast</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[14%] max-w-[120px]">Institution Name</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[44%]">Proposal</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Mgmt Rec</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Vote Cast</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[14%]">Institution Name</th>
                               </tr>
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -2809,11 +2809,11 @@ const index = () => {
                                     <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-[8%] max-w-[60px]">
                                       {vds?.proposal_num}
                                     </td>
-                                    <td className="px-4 py-2 align-middle w-[52%] max-w-[600px]">
+                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[44%]">
                                       {vds?.proposal}
                                     </td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[13%] max-w-[100px]">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[13%] max-w-[100px]">
+                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">
                                       <span className="inline-flex items-center gap-1.5">
                                         <span className={clsx([
                                           (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
@@ -2832,7 +2832,7 @@ const index = () => {
                                           )}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-2 align-middle break-words w-[20%]">{vds?.institution_name}</td>
+                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[14%]">{vds?.institution_name}</td>
                                   </tr>
                                   {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
                                     <tr className="bg-gray-50">
