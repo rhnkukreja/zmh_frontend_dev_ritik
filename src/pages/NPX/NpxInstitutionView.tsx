@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import TableWrapper from "@/components/TableWrapper";
@@ -7,15 +7,18 @@ import Lucide from "@/components/Base/Lucide";
 import Tippy from "@/components/Base/Tippy";
 import Litepicker from "@/components/Base/Litepicker";
 import { dashboardService } from "@/services/dashboard";
+import { axiosInstance } from "@/services";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchNpxProposalVotingStats } from "@/stores/dashboardSlice";
-import { createDynamicURL, downloadFileFromAPI } from "@/utils/helper";
+import { createDynamicURL } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import CompanySelect from "@/components/ReactSelectAsync";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { MdOutlineClear } from "react-icons/md";
+import { toast } from "react-toastify";
 import { FaSearch, FaTimes, FaUniversity, FaCalendarAlt, FaCheckCircle, FaTags, FaLayerGroup, FaListUl } from "react-icons/fa";
 import CPagination from "@/components/Pagination";
 import clsx from "clsx";
@@ -59,7 +62,19 @@ const formatValue = (value: any) => {
   return String(value);
 };
 
+const formatNumberWithCommas = (value: any) => {
+  if (value === null || value === undefined || value === "") return "-";
+
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) return String(value);
+
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(numericValue);
+};
+
 const DEFAULT_INVESTOR = "BlackRock, Inc.";
+const NPX_INSTITUTION_GLOBAL_SEARCH_NAME = "Apple Inc.";
 
 const NpxInstitutionView = () => {
   const dispatch = useAppDispatch();
@@ -72,7 +87,7 @@ const NpxInstitutionView = () => {
   );
 
   const [filters, setFilters] = useState<FilterState>({
-    investor_company: [DEFAULT_INVESTOR],
+    investor_company: [],
     year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
   });
   const [dropdowns, setDropdowns] = useState<any>({});
@@ -87,6 +102,9 @@ const NpxInstitutionView = () => {
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const [prevYearSelection, setPrevYearSelection] = useState<string[]>([]);
   const [prevDateRangeSelection, setPrevDateRangeSelection] = useState("");
+  const [showInstitutionFirstMessage, setShowInstitutionFirstMessage] = useState(false);
+  const hasBootstrappedInstitutionRef = useRef(false);
+  const hasSelectedInstitution = Boolean(filters.investor_company && filters.investor_company.length > 0 && filters.investor_company[0]);
 
   const viewData = useMemo(() => npxProposalVotingStats || {}, [npxProposalVotingStats]);
   const byInstitution = useMemo(() => viewData.by_institution || [], [viewData]);
@@ -108,6 +126,9 @@ const NpxInstitutionView = () => {
     if (!selectedInstitution?.years) return null;
     return selectedInstitution.years[selectedYearKey] || null;
   }, [selectedInstitution, selectedYearKey]);
+
+  const hasStatsData = Boolean(npxProposalVotingStats);
+  const isStatsLoading = npxProposalVotingStatsLoading && !hasStatsData;
 
   const availableDateRange = useMemo(() => {
     const range = dropdowns?.available_date_range;
@@ -171,7 +192,11 @@ const NpxInstitutionView = () => {
   }, [byCompany]);
 
   const proposalSections = useMemo(() => {
-    const sections: Array<{ key: string; year: string; company: any }> = [];
+    const sections: Array<{
+      key: string;
+      year: string;
+      company: any;
+    }> = [];
 
     byCompany.forEach((yearBlock: any) => {
       const blockYear = String(yearBlock?.year || "");
@@ -186,16 +211,6 @@ const NpxInstitutionView = () => {
 
     return sections;
   }, [byCompany]);
-
-  useEffect(() => {
-    if (!proposalSections.length) return;
-    const nextOpenGroups: { [key: string]: boolean } = {};
-    proposalSections.forEach((section) => {
-      nextOpenGroups[section.key] = true;
-    });
-    setOpenGroups(nextOpenGroups);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proposalSections]);
 
   const toggleGroup = (key: string) => {
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -214,14 +229,24 @@ const NpxInstitutionView = () => {
   };
 
   const loadDropdowns = async (selectedInstitution?: string[]) => {
+    const resolvedInstitution = selectedInstitution && selectedInstitution.length > 0
+      ? selectedInstitution
+      : (filters.investor_company && filters.investor_company.length > 0 ? filters.investor_company : []);
+
+    if (!resolvedInstitution.length) {
+      setDropdowns({});
+      setShowFundName(false);
+      setApiFundNameDropdown({ fund_name: [] });
+      setDropdownLoading(false);
+      return;
+    }
+
     setDropdownLoading(true);
     try {
-      const resolvedInstitution = selectedInstitution && selectedInstitution.length > 0
-        ? selectedInstitution
-        : (filters.investor_company && filters.investor_company.length > 0 ? filters.investor_company : [DEFAULT_INVESTOR]);
       const params: any = { investor_company: resolvedInstitution };
       if (filters.year && filters.year.length > 0) params.year = filters.year;
-      if (filters.date_range && filters.date_range.trim()) params.date_range = filters.date_range;
+      const normalizedDateRange = typeof filters.date_range === "string" ? filters.date_range : "";
+      if (normalizedDateRange.trim()) params.date_range = normalizedDateRange;
       if (meetingDate) params.meeting_date = meetingDate;
       const response = await dashboardService.getDynamicNPXDropdownValues(params);
       if (response?.result) {
@@ -257,9 +282,98 @@ const NpxInstitutionView = () => {
     }
   };
 
+  const pickDefaultInstitution = (institutions: string[]) => {
+    const blackRockMatch = institutions.find((institution) => {
+      const normalized = String(institution).toLowerCase();
+      return normalized.includes("blackrock");
+    });
+
+    return blackRockMatch || institutions[0] || "";
+  };
+
+  useEffect(() => {
+    if (hasSelectedInstitution || hasBootstrappedInstitutionRef.current) {
+      return;
+    }
+
+    const bootstrapDefaultInstitution = async () => {
+      try {
+        setDropdownLoading(true);
+
+        const fallbackYear =
+          filters.year && filters.year.length > 0
+            ? filters.year
+            : [searchParams.get("year") || new Date().getFullYear().toString()];
+
+        const params: any = {
+          global_search: NPX_INSTITUTION_GLOBAL_SEARCH_NAME,
+          year: fallbackYear,
+        };
+
+        if (meetingDate) params.meeting_date = meetingDate;
+
+        const response = await dashboardService.getDynamicNPXDropdownValues(params);
+        const institutions = Array.isArray(response?.result?.all_institution)
+          ? response.result.all_institution.filter(Boolean)
+          : [];
+
+        hasBootstrappedInstitutionRef.current = true;
+
+        if (!response?.result) {
+          return;
+        }
+
+        setDropdowns(response.result);
+
+        const availableYears = sortYearsDesc(response.result.year || []);
+        const resolvedYear = fallbackYear.length > 0
+          ? fallbackYear
+          : [availableYears[0] || new Date().getFullYear().toString()];
+
+        if ((!filters.year || filters.year.length === 0) && resolvedYear.length > 0) {
+          setFilters((prev) => ({
+            ...prev,
+            year: resolvedYear,
+          }));
+        }
+
+        const fundData = Array.isArray(response.result?.fund_name) ? response.result.fund_name : [];
+        const isConnectedInstitution = response.result?.is_institution !== false;
+
+        setApiFundNameDropdown({
+          ...response.result,
+          fund_name: fundData,
+        });
+        setShowFundName(isConnectedInstitution && fundData.length > 0);
+
+        const defaultInstitution = pickDefaultInstitution(institutions);
+
+        if (defaultInstitution) {
+          setFilters((prev) => ({
+            ...prev,
+            investor_company: [defaultInstitution],
+            fund_name: [],
+          }));
+          setShowInstitutionFirstMessage(false);
+        }
+      } catch (err) {
+        console.error("[NpxInstitutionView] bootstrapDefaultInstitution error:", err);
+      } finally {
+        setDropdownLoading(false);
+      }
+    };
+
+    bootstrapDefaultInstitution();
+  }, [filters.year, hasSelectedInstitution, meetingDate, searchParams]);
+
   const loadStats = (page = 1) => {
+    if (!hasSelectedInstitution) {
+      return;
+    }
+
     const investor = filters.investor_company?.[0] || DEFAULT_INVESTOR;
-    const hasDateRange = Boolean(filters.date_range && filters.date_range.trim());
+    const normalizedDateRange = typeof filters.date_range === "string" ? filters.date_range : "";
+    const hasDateRange = Boolean(normalizedDateRange.trim());
     const resolvedYear = !hasDateRange && filters.year && filters.year.length > 0
       ? filters.year
       : [sortYearsDesc(dropdowns.year || [])[0] || searchParams.get("year") || new Date().getFullYear().toString()];
@@ -269,7 +383,7 @@ const NpxInstitutionView = () => {
       page_size: pageSize,
       investor_company: [investor],
       ...filters,
-      ...(hasDateRange ? { date_range: filters.date_range } : { year: resolvedYear }),
+      ...(hasDateRange ? { date_range: normalizedDateRange } : { year: resolvedYear }),
     };
     if (meetingDate) payload.meeting_date = meetingDate;
     dispatch(
@@ -282,16 +396,29 @@ const NpxInstitutionView = () => {
   };
 
   useEffect(() => {
+    if (!hasSelectedInstitution) {
+      setDropdowns({});
+      setShowFundName(false);
+      setApiFundNameDropdown({ fund_name: [] });
+      setDropdownLoading(false);
+      setPrevYearSelection([]);
+      setPrevDateRangeSelection("");
+      return;
+    }
+
     loadDropdowns(filters.investor_company);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, filters.investor_company, meetingDate]);
+  }, [filters.year, filters.date_range, filters.investor_company, meetingDate, hasSelectedInstitution]);
 
   useEffect(() => {
+    if (!hasSelectedInstitution) {
+      return;
+    }
     if ((!filters.year || filters.year.length === 0) && !filters.date_range) return;
     loadStats(1);
     setActivePage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, meetingDate]);
+  }, [filters.year, filters.date_range, meetingDate, hasSelectedInstitution]);
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
     setFilters((prev) => {
@@ -304,7 +431,10 @@ const NpxInstitutionView = () => {
       }
 
       if (key === "date_range") {
-        next.year = typeof value === "string" && value.trim() ? [] : (prevYearSelection.length > 0 ? prevYearSelection : prev.year || []);
+        const currentYear = String(new Date().getFullYear());
+        next.year = typeof value === "string" && value.trim()
+          ? []
+          : (prevYearSelection.length > 0 ? prevYearSelection : [currentYear]);
         setPrevDateRangeSelection(typeof value === "string" ? value : "");
         if (typeof value === "string" && value.trim()) {
           setPrevYearSelection([]);
@@ -316,14 +446,32 @@ const NpxInstitutionView = () => {
   };
 
   const handleRemoveChip = (key: keyof FilterState, value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: (prev[key] as string[] | undefined)?.filter((v) => v !== value) || [],
-    }));
+    setFilters((prev) => {
+      const next: FilterState = { ...prev };
+
+      if (key === "date_range") {
+        const currentYear = String(new Date().getFullYear());
+        next.date_range = "";
+        const fallbackYear =
+          prevYearSelection.length > 0
+            ? prevYearSelection
+            : (next.year && next.year.length > 0)
+              ? next.year
+              : [sortYearsDesc(dropdowns.year || [])[0] || currentYear];
+
+        next.year = fallbackYear;
+        setPrevDateRangeSelection("");
+      } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword") {
+        next[key] = (prev[key] as string[] | undefined)?.filter((v) => v !== value) || [];
+      }
+
+      return next;
+    });
   };
 
   const handleInstitutionChange = async (selected: any) => {
     const institutionValue = selected?.label ? String(selected.label) : "";
+    setShowInstitutionFirstMessage(false);
     setFilters((prev) => ({
       ...prev,
       investor_company: institutionValue ? [institutionValue] : [],
@@ -331,50 +479,38 @@ const NpxInstitutionView = () => {
     }));
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
-    if (institutionValue) {
-      await loadDropdowns([institutionValue]);
-    } else {
-      await loadDropdowns();
-    }
   };
 
   const handleApply = () => {
+    if (!hasSelectedInstitution) {
+      setShowInstitutionFirstMessage(true);
+      return;
+    }
+
+    setShowInstitutionFirstMessage(false);
     setActivePage(1);
     loadStats(1);
   };
 
   const handleClear = () => {
     const fallbackYear = sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString();
-    setFilters({ investor_company: [DEFAULT_INVESTOR], year: [fallbackYear], fund_name: [], date_range: "" });
+    setFilters({ investor_company: [], year: [fallbackYear], fund_name: [], date_range: "" });
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
     setPrevYearSelection([]);
     setPrevDateRangeSelection("");
+    setShowInstitutionFirstMessage(false);
     setActivePage(1);
-    dispatch(
-      fetchNpxProposalVotingStats({
-        view: "by_institution",
-        filters: {
-          year: fallbackYear,
-          meeting_date: meetingDate,
-          date_range: undefined,
-          page: 1,
-          page_size: pageSize,
-          investor_company: [DEFAULT_INVESTOR],
-        },
-        requestKey: createDynamicURL(`/api/npx-proposal-voting-stats/`, {
-          year: fallbackYear,
-          meeting_date: meetingDate,
-          page: 1,
-          page_size: pageSize,
-          investor_company: [DEFAULT_INVESTOR],
-        }),
-      })
-    );
   };
 
   const handleDownload = () => {
-    const params: any = { view: "by_institution", download: true, investor_company: [DEFAULT_INVESTOR], ...filters };
+    if (!hasSelectedInstitution) return;
+    const params: any = {
+      view: "by_institution",
+      download: true,
+      investor_company: filters.investor_company,
+      ...filters,
+    };
     if (filters.date_range && filters.date_range.trim()) {
       delete params.year;
     } else {
@@ -383,12 +519,40 @@ const NpxInstitutionView = () => {
         : [sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString()];
     }
     if (meetingDate) params.meeting_date = meetingDate;
-    downloadFileFromAPI({
-      url: createDynamicURL(`${baseURL}/api/npx-proposal-voting-stats/`, params),
-      fileName: `npx_institution_${companyGlobalSearchTicker || "export"}.xlsx`,
-      serviceMethod: dashboardService.getNpxProposalVotingStats,
-      setLoading: setDownloadLoading,
-    });
+
+    const downloadUrl = createDynamicURL(`${baseURL}/api/npx-proposal-voting-stats/`, params);
+    const fileName = `NPX_Proposal_Voting_Stats_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+
+    setDownloadLoading(true);
+    axiosInstance
+      .get(downloadUrl, { responseType: "blob", timeout: 120000 })
+      .then((response) => {
+        const blob = response.data;
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(link);
+      })
+      .catch((error) => {
+        console.error("Error downloading NPX proposal voting stats:", error);
+        const status = error?.response?.status;
+        const isTimeout = String(error?.message || "").toLowerCase().includes("timeout");
+        const message =
+          status === 413 || status === 504 || isTimeout
+            ? "Export is too large or timed out. Please narrow the filters and try again."
+            : "Failed to download NPX Proposal Voting Stats. Please try again or narrow the filters.";
+        toast.error(message, {
+          autoClose: 10000,
+          pauseOnHover: true,
+        });
+      })
+      .finally(() => {
+        setDownloadLoading(false);
+      });
   };
 
   const totalPages = useMemo(() => viewData.pagination?.total_pages || 1, [viewData]);
@@ -464,34 +628,63 @@ const NpxInstitutionView = () => {
   const renderSummaryCard = () => {
     if (!selectedInstitution) return null;
 
+    const hasSummaryData = Boolean(
+      selectedYearStats &&
+      (
+        selectedYearStats.unique_companies !== undefined ||
+        selectedYearStats.total_proposals !== undefined ||
+        selectedYearStats.for_votes !== undefined ||
+        selectedYearStats.split_votes !== undefined ||
+        selectedYearStats.against_votes !== undefined ||
+        selectedYearStats.abstain_votes !== undefined ||
+        selectedYearStats.aligned_with_mgmt !== undefined ||
+        selectedYearStats.alignment_percentage !== undefined
+      )
+    );
+
+    if (!hasSummaryData) {
+      return (
+        <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8">
+          <div className="bg-primary text-white px-6 py-3 rounded-t-2xl">
+            <h3 className="text-base font-semibold">Summary</h3>
+          </div>
+          <div className="flex flex-col items-center justify-center px-6 py-10 text-center text-slate-500">
+            <FaTimes className="text-3xl text-slate-300 mb-3" />
+            <p className="font-medium text-slate-600">No summary data available</p>
+            <p className="text-sm mt-1">Try changing the institution, year, or date range.</p>
+          </div>
+        </div>
+      );
+    }
+
     const summaryRows = [
       {
         label: "No. of unique companies",
-        value: formatValue(selectedYearStats?.unique_companies),
+        value: formatNumberWithCommas(selectedYearStats?.unique_companies),
       },
       {
         label: "No of proposals",
-        value: formatValue(selectedYearStats?.total_proposals),
+        value: formatNumberWithCommas(selectedYearStats?.total_proposals),
       },
       {
         label: "No. of FOR votes",
-        value: `${formatValue(selectedYearStats?.for_votes)} (${formatValue(selectedYearStats?.for_percentage)}%)`,
+        value: `${formatNumberWithCommas(selectedYearStats?.for_votes)} (${formatValue(selectedYearStats?.for_percentage)}%)`,
       },
       {
         label: "No. of SPLIT votes",
-        value: `${formatValue(selectedYearStats?.split_votes)} (${formatValue(selectedYearStats?.split_percentage)}%)`,
+        value: `${formatNumberWithCommas(selectedYearStats?.split_votes)} (${formatValue(selectedYearStats?.split_percentage)}%)`,
       },
       {
         label: "No. of AGAINST/WITHHOLD votes",
-        value: `${formatValue(selectedYearStats?.against_votes)} (${formatValue(selectedYearStats?.against_percentage)}%)`,
+        value: `${formatNumberWithCommas(selectedYearStats?.against_votes)} (${formatValue(selectedYearStats?.against_percentage)}%)`,
       },
       {
         label: "No. of Abstain votes",
-        value: `${formatValue(selectedYearStats?.abstain_votes)} (${formatValue(selectedYearStats?.abstain_percentage)}%)`,
+        value: `${formatNumberWithCommas(selectedYearStats?.abstain_votes)} (${formatValue(selectedYearStats?.abstain_percentage)}%)`,
       },
       {
         label: "Alignment with management (Votes Cast/Management Recommendation)",
-        value: formatValue(selectedYearStats?.aligned_with_mgmt),
+        value: formatNumberWithCommas(selectedYearStats?.aligned_with_mgmt),
       },
       {
         label: "Alignment percentage",
@@ -540,14 +733,6 @@ const NpxInstitutionView = () => {
     return (
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
         <div className="flex justify-end gap-3 mb-4 px-4 pt-4">
-          <Tippy content="Download Excel">
-            <div
-              className={`box p-[5px] ${downloadLoading ? "cursor-wait opacity-50 pointer-events-none" : "cursor-pointer"}`}
-              onClick={downloadLoading ? undefined : handleDownload}
-            >
-              <img alt="download-icon" src={downloadIcon} className="w-6 h-6" />
-            </div>
-          </Tippy>
           <button
             onClick={expandAllGroups}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors duration-200 font-medium text-sm"
@@ -576,42 +761,46 @@ const NpxInstitutionView = () => {
                 </div>
 
                 {isOpen && (
-                  <div className="mt-2 mb-4 bg-gray-50 overflow-x-auto">
-                    <table className="min-w-[1200px] w-full table-auto">
+                  <div className="mt-2 mb-4 bg-gray-50">
+                    <table className="w-full table-fixed">
                       <thead>
-                        <tr className="bg-primary text-white text-sm">
-                          <th className="px-2 py-2 text-center font-semibold whitespace-nowrap">No.</th>
-                          <th className="px-4 py-2 text-left font-semibold">Proposal</th>
-                          <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">Mgmt Rec</th>
-                          <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">Vote Cast</th>
-                          <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">Institution Name</th>
-                          <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">Fund Name</th>
-                          <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">Vote Category</th>
-                          <th className="px-2 py-2 text-left font-semibold whitespace-nowrap">Shares Voted</th>
+                        <tr className="bg-primary text-white text-xs md:text-sm">
+                          <th className="px-4 py-2 text-left font-semibold w-[30%] break-words whitespace-normal leading-tight">Proposal</th>
+                          <th className="px-2 py-2 text-left font-semibold w-[10%] break-words whitespace-normal leading-tight">Mgmt Rec</th>
+                          <th className="px-2 py-2 text-left font-semibold w-[12%] break-words whitespace-normal leading-tight">Vote Cast</th>
+                          <th className="px-2 py-2 text-left font-semibold w-[14%] break-words whitespace-normal leading-tight">Institution Name</th>
+                          <th className="px-2 py-2 text-left font-semibold w-[16%] break-words whitespace-normal leading-tight">Fund Name</th>
+                          <th className="px-2 py-2 text-left font-semibold w-[14%] break-words whitespace-normal leading-tight">Vote Category</th>
+                          <th className="px-2 py-2 text-left font-semibold w-[8%] break-words whitespace-normal leading-tight">Shares Voted</th>
                         </tr>
                       </thead>
                       <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                         {proposals.map((proposal: any, proposalIndex: number) => (
                           <tr key={`${company?.company_id}-${proposalIndex}`} className="hover:bg-primary/10">
-                            <td className="px-2 py-2 align-middle text-center whitespace-nowrap">
-                              {proposalIndex + 1}
-                            </td>
-                            <td className="px-4 py-2 align-middle">{formatValue(proposal.proposal)}</td>
-                            <td className="px-2 py-2 align-middle whitespace-nowrap">{formatValue(proposal.mgt_rec)}</td>
-                            <td className="px-2 py-2 align-middle whitespace-nowrap">
+                            <td className="px-4 py-2 align-top break-words whitespace-normal leading-tight w-[30%]">{formatValue(proposal.proposal)}</td>
+                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[10%]">{formatValue(proposal.mgt_rec)}</td>
+                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[12%]">
                               <span
                                 className={clsx(
                                   (String(proposal.vote).includes("Against") || String(proposal.vote).includes("Withhold")) &&
                                     "text-red-700 font-semibold"
                                 )}
                               >
-                                {formatValue(proposal.vote)}
+                                {String(proposal.vote).includes("Against/Withhold") ? (
+                                  <span className="whitespace-normal leading-tight">
+                                    <span>Against/</span>
+                                    <br />
+                                    <span>Withhold</span>
+                                  </span>
+                                ) : (
+                                  formatValue(proposal.vote)
+                                )}
                               </span>
                             </td>
-                            <td className="px-2 py-2 align-middle whitespace-nowrap">{formatValue(proposal.institution_name)}</td>
-                            <td className="px-2 py-2 align-middle whitespace-nowrap">{formatValue(proposal.fund_name)}</td>
-                            <td className="px-2 py-2 align-middle whitespace-nowrap">{formatValue(proposal.vote_category)}</td>
-                            <td className="px-2 py-2 align-middle whitespace-nowrap">{formatValue(proposal.shares_voted)}</td>
+                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[14%]">{formatValue(proposal.institution_name)}</td>
+                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[16%]">{formatValue(proposal.fund_name)}</td>
+                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[14%]">{formatValue(proposal.vote_category)}</td>
+                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[8%]">{formatValue(proposal.shares_voted)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -675,12 +864,19 @@ const NpxInstitutionView = () => {
             <div className="flex items-center gap-2">
               <div className="flex gap-2">
                 <Tippy content="Download Excel">
-                  <div
-                    className={`box p-[5px] ${downloadLoading ? "cursor-wait opacity-50 pointer-events-none" : "cursor-pointer"}`}
+                  <button
+                    type="button"
+                    className={`box p-[5px] transition-opacity duration-200 ${downloadLoading ? "cursor-wait opacity-80" : "cursor-pointer"}`}
                     onClick={downloadLoading ? undefined : handleDownload}
+                    disabled={downloadLoading}
+                    aria-label="Download Excel"
                   >
-                    <img alt="download-icon" src={downloadIcon} className="w-6 h-6" />
-                  </div>
+                    {downloadLoading ? (
+                      <LoadingIcon icon="tail-spin" color="#800000" className="w-6 h-6" />
+                    ) : (
+                      <img alt="download-icon" src={downloadIcon} className="w-6 h-6 transition-transform duration-200" />
+                    )}
+                  </button>
                 </Tippy>
                 <Button
                   variant="outline-secondary"
@@ -725,18 +921,37 @@ const NpxInstitutionView = () => {
             </div>
 
             <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
-              <div>
+              <div className="relative">
+                {showInstitutionFirstMessage ? (
+                  <div className="absolute -top-8 left-0 z-10 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2.5 py-1 inline-flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+                    <Lucide icon="Info" className="w-4 h-4" />
+                    Select institution first
+                  </div>
+                ) : null}
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaUniversity className="text-gray-400" /> Institution
                 </label>
                 <CompanySelect
                   isInstitution={true}
                   value={selectedInstitutionValue}
+                  companyGlobalSearchName={NPX_INSTITUTION_GLOBAL_SEARCH_NAME}
                   year={filters.year?.[0] || defaultYear}
                   isClearable={true}
                   onChange={(option: any) => handleInstitutionChange(option)}
                   placeholder="Select Investor Company(s)"
                   showDefaultOptions={false}
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                  <FaCalendarAlt className="text-gray-400" /> Year
+                </label>
+                <MultiSelectDropdown
+                  data={yearOptions}
+                  loading={dropdownLoading}
+                  selectedOption={(filters.date_range ? [] : (filters.year && filters.year.length > 0 ? filters.year : [defaultYear])).filter(Boolean)}
+                  onChange={(opts) => handleFilterChange("year", opts.map((o) => o.value))}
+                  placeholder="Select Year"
                 />
               </div>
               <div>
@@ -793,18 +1008,6 @@ const NpxInstitutionView = () => {
               ) : null}
               <div>
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                  <FaCalendarAlt className="text-gray-400" /> Year
-                </label>
-                <MultiSelectDropdown
-                  data={yearOptions}
-                  loading={dropdownLoading}
-                  selectedOption={(filters.date_range ? [] : (filters.year && filters.year.length > 0 ? filters.year : [defaultYear])).filter(Boolean)}
-                  onChange={(opts) => handleFilterChange("year", opts.map((o) => o.value))}
-                  placeholder="Select Year"
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaCheckCircle className="text-gray-400" /> Vote
                 </label>
                 <MultiSelectDropdown
@@ -843,11 +1046,11 @@ const NpxInstitutionView = () => {
           </div>
         )}
 
-        <TableWrapper isLoading={npxProposalVotingStatsLoading} rows={6} columns={5}>
+        <TableWrapper isLoading={isStatsLoading} rows={6} columns={5}>
           <>
             {renderSummaryCard()}
             {renderProposalSections()}
-            {tableRows.length === 0 && !npxProposalVotingStatsLoading ? (
+            {tableRows.length === 0 && !isStatsLoading ? (
               <div className="h-52 flex items-center justify-center rounded-2xl border border-slate-200 bg-white">
                 <div className="text-center text-slate-500">
                   <Lucide icon="FileX" className="w-10 h-10 mx-auto mb-2" />
