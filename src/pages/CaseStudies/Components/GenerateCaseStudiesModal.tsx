@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { AI_CHATBOT_API_BASE } from "@/pages/AIChatbot/api";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
+import { caseStudiesService } from "@/services/caseStudies";
 
 interface ExtractedCaseStudy {
   extracted: {
@@ -19,6 +20,11 @@ interface ExtractedCaseStudy {
   };
   resolved_company: { id: number; name: string; symbol: string; matched_on: string } | null;
   source_link: string;
+  // Item 3: whether the backend could confirm engagement_details is an exact
+  // copy of the source document. Optional/defensive -- undefined (an older
+  // job result, or a field-name mismatch) is treated as "no warning", not as
+  // flagged; only an explicit `false` shows the warning.
+  engagement_details_verbatim?: boolean;
 }
 
 interface DocumentInfo {
@@ -50,6 +56,24 @@ interface JobSummary {
   classified_yes: number;
   case_studies_found: number;
   results: DocumentResult[];
+  // Item 3: count of extracted case studies whose engagement_details_verbatim
+  // came back false. Optional -- an older job result won't have it.
+  non_verbatim_count?: number;
+  // Item 4: not live on the backend yet ("may land after yours" per the
+  // task) -- field names below are a best-effort guess at what it'll be
+  // called. Every read of these is defensive (optional chaining / Array.isArray
+  // checks), so an absent or differently-shaped field renders nothing rather
+  // than erroring.
+  unreadable_documents_count?: number;
+  unreadable_documents?: Array<{
+    document_name?: string;
+    name?: string;
+    file_name?: string;
+    reason?: string;
+    error?: string;
+    message?: string;
+    [key: string]: any;
+  }>;
 }
 
 interface GenerateCaseStudiesModalProps {
@@ -64,6 +88,83 @@ const POLL_INTERVAL_MS = 6000;
 // being validated — full history can be enabled once this is trusted.
 const GENERATION_YEARS = [2025, 2026];
 
+// ─── Approve payload ────────────────────────────────────────────────────────
+// Mirrors AddEditCaseStudies.tsx's onSubmit transformedData shape exactly:
+// same field names, same null-vs-empty conventions (company/caspio_company_name
+// mutual exclusivity, primary_source_link as a filtered array).
+//
+// The 7 fields the create form's react-hook-form `rules` mark required have no
+// counterpart in the extraction (that's a client-side UX rule, not a Postgres
+// constraint — confirmed against the live table, all nullable with no
+// default). Six go null; the analyst fills them in via the existing edit form
+// after approving, same as most of the 4,326 existing rows. The seventh,
+// primary_source, is NOT one of those six -- it's set to the source
+// document's own name, which we do have.
+// The extractor emits the literal string "N/A" (see the render guards below,
+// e.g. `e.company_ticker !== "N/A"`) rather than omitting the field, so a
+// naive pass-through would write the string "N/A" into a nullable column.
+// Collapses "N/A" (any case), empty, and whitespace-only values to null.
+const normalizeExtractedValue = (value: string | undefined | null): string | null => {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed || trimmed.toUpperCase() === "N/A") return null;
+  return trimmed;
+};
+
+const buildApprovedCaseStudyPayload = (item: FlatCaseStudy) => {
+  const { document, cs } = item;
+  const e = cs.extracted;
+
+  return {
+    institution: document.institution_id,
+    company: cs.resolved_company ? cs.resolved_company.id : null,
+    caspio_company_name: cs.resolved_company ? null : (e.company || null),
+    esg_themes: e.theme && e.theme.trim() ? e.theme.trim() : null,
+    year: e.year,
+    market: e.market,
+    engagement_details: e.engagement_details,
+    resolution_engagement_topic: e.resolution,
+    primary_source_link: cs.source_link ? [cs.source_link] : [],
+    approval_status: "Approved",
+    // Set, not null -- literally the source document's name, which we have.
+    primary_source: document.name,
+    // Also shown on the preview card and already extracted -- previously
+    // dropped from the payload entirely. "N/A"/blank normalized to null.
+    caspio_company_ticker: normalizeExtractedValue(e.company_ticker),
+    caspio_company_sector: normalizeExtractedValue(e.company_sector),
+    // Separate column from caspio_company_sector, same source value.
+    industry: normalizeExtractedValue(e.company_sector),
+    // Nullable in Postgres with no default; the create form's `required`
+    // rules are react-hook-form UX only, not a schema constraint. The
+    // analyst fills these in via the edit form after approving.
+    proposal_type: null,
+    voting_details: null,
+    voting_rationale: null,
+    page_reference: null,
+    esg_category: null,
+    // Deliberately null, not the blank-form's "Equity" UI default -- we never
+    // extracted a holding type, and inventing one would be fabricating data.
+    investment_type: null,
+  };
+};
+
+// DRF validation errors come back as {field: ["msg", ...], ...} rather than a
+// single string -- surfaced field-by-field rather than collapsed into a
+// generic "failed to save" message, per the requirement to show the real
+// server error.
+const extractServerErrorMessage = (err: any): string => {
+  const data = err?.response?.data;
+  if (!data) return err?.message || "Failed to save this case study.";
+  if (typeof data === "string") return data;
+  if (data.detail) return String(data.detail);
+  if (typeof data === "object") {
+    const parts = Object.entries(data).map(
+      ([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(" ") : String(messages)}`
+    );
+    if (parts.length > 0) return parts.join(" | ");
+  }
+  return "Failed to save this case study.";
+};
+
 const GenerateCaseStudiesModal: React.FC<GenerateCaseStudiesModalProps> = ({
   isOpen,
   institutionNames,
@@ -77,6 +178,49 @@ const GenerateCaseStudiesModal: React.FC<GenerateCaseStudiesModalProps> = ({
   const jobIdRef = useRef<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Per-item Approve state, keyed by that item's index into flatCaseStudies
+  // below (stable for the lifetime of a given `summary`, since flatCaseStudies
+  // is derived from it deterministically) -- lives here rather than inside
+  // CaseStudyDetailCard so it survives the pager swapping which item is on
+  // screen, not just a single card's local state.
+  const [approvalState, setApprovalState] = useState<Record<number, "saving" | "saved" | "error">>({});
+  const [approvalErrors, setApprovalErrors] = useState<Record<number, string>>({});
+
+  const flatCaseStudies = useMemo<FlatCaseStudy[]>(() => {
+    if (!summary) return [];
+    return summary.results
+      .filter((r) => r.status === "extracted")
+      .flatMap((r) => r.case_studies.map((cs) => ({ document: r.document, cs })));
+  }, [summary]);
+
+  const handleApprove = async (index: number) => {
+    const item = flatCaseStudies[index];
+    if (!item) return;
+    // Already saving or already saved -- an approved item can't be approved
+    // twice, and a second click mid-flight can't start a duplicate request.
+    if (approvalState[index] === "saving" || approvalState[index] === "saved") return;
+
+    setApprovalState((prev) => ({ ...prev, [index]: "saving" }));
+    setApprovalErrors((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+
+    try {
+      const payload = buildApprovedCaseStudyPayload(item);
+      await caseStudiesService.addNewCaseStudies(payload);
+      // The POST above is the real, server-side save -- once it resolves,
+      // this case study exists in the database regardless of anything that
+      // happens to this modal afterward (including closing it).
+      setApprovalState((prev) => ({ ...prev, [index]: "saved" }));
+    } catch (err: any) {
+      console.error("Failed to approve case study:", err);
+      setApprovalErrors((prev) => ({ ...prev, [index]: extractServerErrorMessage(err) }));
+      setApprovalState((prev) => ({ ...prev, [index]: "error" }));
+    }
+  };
+
   const stopPolling = () => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -89,6 +233,10 @@ const GenerateCaseStudiesModal: React.FC<GenerateCaseStudiesModalProps> = ({
     setStep("Queued...");
     setErrorMsg("");
     setSummary(null);
+    // A fresh run produces a fresh set of items -- any approval state from a
+    // previous run in this same modal instance no longer maps to anything.
+    setApprovalState({});
+    setApprovalErrors({});
 
     try {
       const startRes = await axios.post(`${AI_CHATBOT_API_BASE}/api/case-studies/generate`, {
@@ -188,14 +336,9 @@ const GenerateCaseStudiesModal: React.FC<GenerateCaseStudiesModalProps> = ({
           )}
 
           {phase === "done" && summary && (() => {
-            const flat: FlatCaseStudy[] = summary.results
-              .filter((r) => r.status === "extracted")
-              .flatMap((r) => r.case_studies.map((cs) => ({ document: r.document, cs })));
-
-            if (flat.length === 0) {
+            if (flatCaseStudies.length === 0) {
               return (
                 <div className="space-y-4">
-                  <PreviewBanner />
                   <StatPillRow summary={summary} />
                   <div className="text-sm text-slate-500 py-8 text-center">
                     No case studies were found in this institution's documents.
@@ -204,12 +347,16 @@ const GenerateCaseStudiesModal: React.FC<GenerateCaseStudiesModalProps> = ({
               );
             }
 
-            const current = flat[currentIndex];
+            const current = flatCaseStudies[currentIndex];
             return (
               <div className="space-y-4">
-                <PreviewBanner />
                 <StatPillRow summary={summary} />
-                <CaseStudyDetailCard item={current} />
+                <CaseStudyDetailCard
+                  item={current}
+                  status={approvalState[currentIndex] || "idle"}
+                  errorMessage={approvalErrors[currentIndex]}
+                  onApprove={() => handleApprove(currentIndex)}
+                />
               </div>
             );
           })()}
@@ -233,13 +380,6 @@ const GenerateCaseStudiesModal: React.FC<GenerateCaseStudiesModalProps> = ({
     </div>
   );
 };
-
-const PreviewBanner: React.FC = () => (
-  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-    Preview only — nothing has been saved to the database yet. Review each extracted case study
-    before anything is written.
-  </div>
-);
 
 const StatPillRow: React.FC<{ summary: JobSummary }> = ({ summary }) => (
   <div className="flex flex-wrap gap-3 text-xs">
@@ -302,13 +442,41 @@ const getDocumentName = (url: string) => {
   }
 };
 
-const CaseStudyDetailCard: React.FC<{ item: FlatCaseStudy }> = ({ item }) => {
+const CaseStudyDetailCard: React.FC<{
+  item: FlatCaseStudy;
+  status: "idle" | "saving" | "saved" | "error";
+  errorMessage?: string;
+  onApprove: () => void;
+}> = ({ item, status, errorMessage, onApprove }) => {
   const { document, cs } = item;
   const e = cs.extracted;
   return (
     <div className="p-6 bg-white border rounded-lg space-y-4">
-      <div className="pb-3 border-b border-slate-200">
+      <div className="pb-3 border-b border-slate-200 flex items-start justify-between gap-4">
         <h1 className="font-semibold text-lg">Case Studies</h1>
+
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {status === "saved" ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium">
+              <Lucide icon="CheckCircle2" className="w-4 h-4" />
+              Approved — saved
+            </span>
+          ) : (
+            <Button variant="primary" onClick={onApprove} disabled={status === "saving"}>
+              {status === "saving" ? (
+                <>
+                  <Lucide icon="Loader" className="w-4 h-4 mr-1.5 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                "Approve"
+              )}
+            </Button>
+          )}
+          {status === "error" && errorMessage && (
+            <span className="text-xs text-red-600 max-w-xs text-right">{errorMessage}</span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

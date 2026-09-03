@@ -42,7 +42,7 @@ import localStorageHelper, {
 } from "@/utils/helper";
 import headerLogo from "../../assets/images/logo/Vantage ZMH-01.png";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
-import { BellRing, FilterX, Mail } from "lucide-react";
+import { BellRing, FilterX, Mail, Megaphone } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -130,6 +130,11 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
+  // user_type comes straight from the API and isn't guaranteed to be
+  // title-cased -- normalized rather than a strict === "Admin" comparison,
+  // which is what silently locked real admins out of Edit Mode (see
+  // ActivistDashboard.tsx:668-673).
+  const isAdmin = (user?.user_type || "").trim().toLowerCase() === "admin";
   const { selectedGroup } = useAppSelector((state) => state.notes);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const selectedName =
@@ -1143,12 +1148,32 @@ function Main() {
                 )}
 
                 {/* BEGIN: AI Assistant - Open /ai-assistant in new tab */}
-                <AIAssistantButton 
+                <AIAssistantButton
                   href="/ai-assistant"
                   className="ml-2 hidden md:flex border-4 hover:border-transparent"
                   size="md"
                 />
                 {/* END: AI Assistant - Open /ai-assistant in new tab */}
+
+                {/* BEGIN: Activist Campaigns - admin-only shortcut, SPA nav (no full
+                    reload). className intentionally mirrors AIAssistantButton's
+                    own rendered class list above (variant="primary" size="md"
+                    plus that same call site's ml-2/border override) so the two
+                    sit as a matched pair rather than an approximation. */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/activist-campaigns")}
+                    className="ai-assistant-cta px-3 py-1.5 text-sm md:flex relative inline-flex items-center justify-center gap-0.2rem rounded-full border overflow-hidden transition-all duration-200 cursor-pointer ml-2 hidden md:flex border-4 hover:border-transparent"
+                    aria-label="Activist Campaigns"
+                  >
+                    <Megaphone className="w-4 h-4 flex-shrink-0" />
+                    <span className="ai-assistant-cta__label ml-2 font-medium hidden xl:flex">
+                      Activist Campaigns
+                    </span>
+                  </button>
+                )}
+                {/* END: Activist Campaigns */}
               </>
 
               <QuickSearch
