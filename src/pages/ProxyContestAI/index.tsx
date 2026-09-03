@@ -20,8 +20,10 @@ import { Popover, Dialog } from "@/components/Base/Headless";
 
 type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
 
-const DEFAULT_INSTITUTION_IDS = [33, 34];
-const DEFAULT_YEARS = ["2025", "2026"];
+// BlackRock (BAIS), BlackRock (BIS), Vanguard Capital Management,
+// State Street Investment Management, Vanguard Portfolio Management
+const DEFAULT_INSTITUTION_IDS = [1345, 1346, 999, 38, 1000];
+const DEFAULT_YEARS = ["2026"];
 
 // ── In-memory data cache with TTL (clears on page refresh) ─────────────────
 const DATA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
