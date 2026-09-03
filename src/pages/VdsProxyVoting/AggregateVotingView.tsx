@@ -6,8 +6,14 @@ import { baseURL } from "@/constant";
 import { convertToTitleCase, createDynamicURL } from "@/utils/helper";
 import { vdsEuropeanService } from "@/services/vdsEuropean";
 
-const DEFAULT_INSTITUTIONS = ["BlackRock, Inc.", "The Vanguard Group"];
-const MAX_INSTITUTIONS = 3;
+const DEFAULT_INSTITUTIONS = [
+  "BlackRock Active Investment Stewardship (BAIS)",
+  "BlackRock Investment Stewardship (BIS)",
+  "Vanguard Capital Management",
+  "State Street Investment Management",
+  "Vanguard Portfolio Management",
+];
+const MAX_INSTITUTIONS = 5;
 
 interface AggregateVotingViewProps {
   companyName: string;
@@ -18,12 +24,20 @@ interface AggregateVotingViewProps {
 const pickDefaultInstitutions = (options: string[]): string[] => {
   if (!options || options.length === 0) return DEFAULT_INSTITUTIONS;
 
-  const blackrock = options.find((option) => option.toLowerCase().includes("blackrock"));
-  const vanguard = options.find((option) => option.toLowerCase().includes("vanguard"));
-  const picked = [blackrock, vanguard].filter(Boolean) as string[];
+  const normalizedOptions = options.map((option) => option.trim());
+  const picked = DEFAULT_INSTITUTIONS
+    .map((name) => {
+      const exactMatch = normalizedOptions.find((option) => option.toLowerCase() === name.toLowerCase());
+      if (exactMatch) return exactMatch;
 
-  if (picked.length > 0) return picked;
-  return options.slice(0, 2);
+      const prefix = name.toLowerCase().split(" (")[0];
+      const partialMatch = normalizedOptions.find((option) => option.toLowerCase().includes(prefix));
+      return partialMatch || null;
+    })
+    .filter(Boolean) as string[];
+
+  if (picked.length > 0) return picked.slice(0, MAX_INSTITUTIONS);
+  return options.slice(0, MAX_INSTITUTIONS);
 };
 
 const AggregateVotingView: React.FC<AggregateVotingViewProps> = ({

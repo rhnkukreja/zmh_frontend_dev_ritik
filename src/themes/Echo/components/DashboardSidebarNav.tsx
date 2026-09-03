@@ -217,7 +217,6 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Institution Insights",
     route: "/npx-proposal-voting-stats",
     subItems: [],
-    adminOnly: true,
     beta: true,
   },
   {
