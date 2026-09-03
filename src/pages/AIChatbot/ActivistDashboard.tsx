@@ -691,6 +691,11 @@ const ActivistIntelligenceDashboard = ({
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [generateInvestorName, setGenerateInvestorName] = useState("");
   const [generateCik, setGenerateCik] = useState("");
+  // Additional CIK rows beyond the primary `generateCik` field, added via
+  // "+ Add another CIK" -- lets a user who already knows 2+ specific CIKs
+  // (e.g. Camac Partners + Camac Fund) combine them directly, without relying
+  // on the name-search picker's fuzzy match happening to surface both.
+  const [extraCiks, setExtraCiks] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateStep, setGenerateStep] = useState("");
   // Scoped to the Generate modal so a failed generation shows inline there
@@ -722,6 +727,17 @@ const ActivistIntelligenceDashboard = ({
   // needs this before a profile has ever been opened, since a combined profile
   // can't be merged again and its checkbox has to say so up front.
   const [combinationMeta, setCombinationMeta] = useState<Record<string, { isCombination: boolean; combinationOf: string[] }>>({});
+
+  // has_advanced per base slug, from the index (GET /api/activist-profiles already
+  // returns it per entry, e.g. a multi-CIK combined profile or a Basic-only publish
+  // that never ran Advanced generation). Lets the activeInvestorKey effect below skip
+  // the Advanced-profile fetch entirely for a key already known to have none, instead
+  // of firing it anyway and eating a guaranteed 404 (harmless -- the catch block
+  // already treats that as legitimate -- but a wasted round-trip and console noise on
+  // every single Basic-only profile view, not just combined ones). undefined (key
+  // absent) means "not yet known", not "no Advanced profile" -- the effect still
+  // attempts the fetch in that case, same as before this existed.
+  const [hasAdvancedProfileMap, setHasAdvancedProfileMap] = useState<Record<string, boolean>>({});
 
   // Which panel shows when an investor has BOTH a Basic and an Advanced
   // profile — only meaningful in that case; when only one exists, the render
@@ -784,6 +800,7 @@ const ActivistIntelligenceDashboard = ({
     if (!isGenerating) {
       setGenerateInvestorName("");
       setGenerateCik("");
+      setExtraCiks([]);
     }
   };
 
@@ -839,10 +856,42 @@ const ActivistIntelligenceDashboard = ({
     };
   }, [selectorOpen]);
 
-  // A fresh search (or a freshly (re)opened dropdown) always starts the
-  // keyboard highlight back at the top result.
+  // Tracks the previous selectorOpen value across renders so the effect below
+  // can tell a fresh open apart from a search change while already open —
+  // both land in the same effect (same dependency array as before), but only
+  // the former should land on the active profile's row.
+  const wasSelectorOpenRef = useRef(false);
+
+  // On a fresh open: land the keyboard highlight (and, via the scrollIntoView
+  // effect below, the scroll position) on whichever row is the currently
+  // active profile, so reopening the dropdown picks up where the user left
+  // off instead of always snapping back to the top. Falls back to the top
+  // when nothing is active or the active profile isn't in the list — at open
+  // time that's the full list, since selectorSearch is cleared on toggle.
+  //
+  // On a search change while already open: unchanged from before — always
+  // reset to the top of the newly filtered list, so scroll position follows
+  // what's actually on screen rather than a stale index into the old list.
   useEffect(() => {
+    const justOpened = selectorOpen && !wasSelectorOpenRef.current;
+    wasSelectorOpenRef.current = selectorOpen;
+
+    if (!selectorOpen) return;
+
+    if (justOpened) {
+      const activeIndex = filteredInvestors.findIndex((item) => item.key === activeInvestorKey);
+      setSelectorHighlightedIndex(activeIndex >= 0 ? activeIndex : 0);
+      return;
+    }
+
     setSelectorHighlightedIndex(0);
+    // filteredInvestors is deliberately omitted -- it's a new array every
+    // render (recomputed off investorNames/scoring too), and including it
+    // would re-run this effect, and thus re-jump the highlight, on changes
+    // that have nothing to do with opening or typing (e.g. a background name
+    // prefetch resolving while the dropdown sits open) — exactly the "fight
+    // the user's scrolling afterwards" this must not do.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectorSearch, selectorOpen]);
 
   useEffect(() => {
@@ -1048,6 +1097,19 @@ const ActivistIntelligenceDashboard = ({
           };
         }
       });
+      // has_advanced, straight off every entry (unlike combinationsFromIndex above,
+      // this is recorded even when false -- false is exactly the signal the
+      // activeInvestorKey effect needs to skip a doomed Advanced-profile fetch).
+      const hasAdvancedFromIndex: Record<string, boolean> = {};
+      listPayload.forEach((entry: any) => {
+        if (entry && typeof entry === "object" && entry.slug && typeof entry.has_advanced === "boolean") {
+          hasAdvancedFromIndex[toBaseSlug(entry.slug)] = entry.has_advanced;
+        }
+      });
+      if (Object.keys(hasAdvancedFromIndex).length > 0) {
+        setHasAdvancedProfileMap((prev) => ({ ...prev, ...hasAdvancedFromIndex }));
+      }
+
       if (Object.keys(combinationsFromIndex).length > 0) {
         setCombinationMeta((prev) => ({ ...prev, ...combinationsFromIndex }));
       }
@@ -1192,7 +1254,20 @@ const ActivistIntelligenceDashboard = ({
     // that tab can't leave activeTab pointing at a tab that no longer renders
     // (which would otherwise show a blank pane with no tab visually active).
     setActiveTab("summary");
+    // Skip the fetch entirely when the index already told us this key has no
+    // Advanced profile (e.g. a multi-CIK combined profile, or any other
+    // Basic-only publish) -- otherwise this fires anyway and eats a guaranteed,
+    // if harmless, 404 on every single such profile view. Deliberately NOT a
+    // dependency of this effect: hasAdvancedProfileMap is still read fresh from
+    // this render's closure either way, and listing it would re-run this on
+    // every unrelated fetchAllProfiles() call (delete/rename/merge elsewhere all
+    // trigger one), not just on an actual activeInvestorKey change.
+    if (hasAdvancedProfileMap[toBaseSlug(activeInvestorKey)] === false) {
+      setLoading(false);
+      return;
+    }
     loadProfileForKey(activeInvestorKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeInvestorKey]);
 
   // Loads the Basic profile for `key` from cache or GET .../basic/{baseSlug}.
@@ -1546,6 +1621,7 @@ const ActivistIntelligenceDashboard = ({
     setGenerateModalOpen(false);
     setGenerateInvestorName("");
     setGenerateCik("");
+    setExtraCiks([]);
   };
 
   // ── Generate modal, step 1: Basic profile PREVIEW ───────────────────────
@@ -1594,6 +1670,73 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
+  // For 2+ WhaleWisdom filers checked in the disambiguation picker, OR for 2+
+  // CIKs entered directly via "+ Add another CIK" in the form
+  // (handleGenerateModalSubmit below) -- posts to basic/generate-combined
+  // with the list of {whalewisdom_filer_id, whalewisdom_cik} pairs for every
+  // filer. whalewisdom_filer_id is omitted per-entry when unknown (the
+  // direct-CIK-entry path only ever has a cik, no filer id — same as the
+  // single-CIK path's own `filer?.id` handling above), so resolve_filer() on
+  // the backend resolves each bare CIK directly, with zero fuzzy name
+  // matching involved.
+  //
+  // UNLIKE runBasicGenerate/basic/generate, this endpoint persists the
+  // combined profile directly server-side and returns only a thin
+  // {status, message, slug, name, is_multi_cik_combination, constituent_filers}
+  // envelope -- not a full profile body (confirmed live: it has no
+  // investor_name/generated_at/sections, so feeding it through the
+  // preview-then-Approve path left BasicProfilePanel rendering everything as
+  // "unavailable"). There's nothing to preview or publish -- it's already
+  // saved -- so this follows the same fetch-then-select pattern as the
+  // existing handleMergeProfiles (another action-that-persists-and-returns-
+  // just-a-slug endpoint): refetch the index, resolve the new slug against
+  // it (falling back to the raw slug if the index hasn't caught up yet), and
+  // land the user on it directly.
+  const runCombinedBasicGenerate = async (filersToCombine: WhaleWisdomFiler[]) => {
+    setIsSubmittingBasic(true);
+    setGenerateError(null);
+    try {
+      const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/generate-combined`, {
+        investor_name: generateInvestorName,
+        creator_email: getCreatorEmail(),
+        filers: filersToCombine.map((filer) => ({
+          ...(filer.id ? { whalewisdom_filer_id: filer.id } : {}),
+          ...(filer.cik ? { whalewisdom_cik: filer.cik } : {}),
+        })),
+      });
+      const result = response.data?.data || response.data;
+      const resultSlug = result?.slug;
+      if (!resultSlug) {
+        throw new Error("Combined profile generation finished but no profile slug came back.");
+      }
+
+      // The combined profile only enters the index on the backend's write,
+      // so the list has to be refetched before anything can select it.
+      const freshKeys = await fetchAllProfiles();
+      const matchedKey = (freshKeys || investorKeys).find((k) => toBaseSlug(k) === resultSlug) || resultSlug;
+
+      setGenerateModalOpen(false);
+      setGenerateModalStep("form");
+      setModalBasicResult(null);
+      setSelectorOpen(false);
+      setSelectorSearch("");
+      setActiveInvestorKey(matchedKey);
+      // A combined profile is a Condensed profile — never land on Comprehensive.
+      setProfileViewMode("basic");
+      setGenerateInvestorName("");
+      setGenerateCik("");
+      setExtraCiks([]);
+      toast.success(result?.message || `${result?.name || "Combined profile"} created.`);
+    } catch (err: any) {
+      console.error("Combined basic profile generation failed:", err);
+      setGenerateError(
+        err.response?.data?.detail || err.message || "We couldn't generate a combined profile for the selected filers."
+      );
+    } finally {
+      setIsSubmittingBasic(false);
+    }
+  };
+
   // Checks whether the backend already has a resolved WhaleWisdom filer on
   // record for this investor name — GET .../basic/known-filer, which does
   // its own fuzzy name matching server-side (the same matching used
@@ -1622,6 +1765,17 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
+  // Row management for the "+ Add another CIK" rows below the primary CIK
+  // field. Each row strips non-digits as the user types, same as the primary
+  // field, since a CIK is numeric-only.
+  const addCikRow = () => setExtraCiks((prev) => [...prev, ""]);
+  const updateCikRow = (index: number, value: string) => {
+    setExtraCiks((prev) => prev.map((c, i) => (i === index ? value.replace(/\D/g, "") : c)));
+  };
+  const removeCikRow = (index: number) => {
+    setExtraCiks((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // "Generate Preview" click. First checks whether the backend already has a
   // resolved filer on record for this investor name — if so, generation
   // proceeds straight through with it, no WhaleWisdom search or picker at
@@ -1633,8 +1787,9 @@ const ActivistIntelligenceDashboard = ({
   // with a subtle note so the user knows why no filer was attached.
   const handleGenerateModalSubmit = async () => {
     if (isSubmittingBasic || isResolvingWhaleWisdom) return;
-    const trimmedCik = generateCik.trim();
-    if (!generateInvestorName.trim() && !trimmedCik) {
+    const trimmedCiks = [generateCik, ...extraCiks].map((c) => c.trim()).filter(Boolean);
+    const trimmedCik = trimmedCiks[0] || "";
+    if (!generateInvestorName.trim() && trimmedCiks.length === 0) {
       setGenerateError("Enter an activist name or a CIK to generate a profile.");
       return;
     }
@@ -1642,6 +1797,17 @@ const ActivistIntelligenceDashboard = ({
     setWhaleWisdomNoMatch(false);
     setIsResolvingWhaleWisdom(true);
     try {
+      if (trimmedCiks.length >= 2) {
+        // 2+ known CIKs entered directly -- same bypass as the single-CIK
+        // branch just below (skip the known-filer cache, the WhaleWisdom name
+        // search, and the disambiguation picker entirely), just routed to the
+        // combined endpoint instead of the single-CIK one.
+        await runCombinedBasicGenerate(
+          trimmedCiks.map((cik) => ({ id: "", cik, name: generateInvestorName, link: "" }))
+        );
+        return;
+      }
+
       if (trimmedCik) {
         // User supplied an exact CIK -- skip the known-filer cache, the
         // WhaleWisdom name search, and the disambiguation picker entirely.
@@ -1680,6 +1846,11 @@ const ActivistIntelligenceDashboard = ({
   const handleWhaleWisdomFilerConfirm = async (filer: WhaleWisdomFiler) => {
     setShowWhaleWisdomPicker(false);
     await runBasicGenerate(filer);
+  };
+
+  const handleWhaleWisdomFilersConfirmMultiple = async (filersToCombine: WhaleWisdomFiler[]) => {
+    setShowWhaleWisdomPicker(false);
+    await runCombinedBasicGenerate(filersToCombine);
   };
 
   const handleWhaleWisdomFilerCancel = () => {
@@ -1738,6 +1909,7 @@ const ActivistIntelligenceDashboard = ({
       // investor) already puts the user right in front of.
       setGenerateInvestorName("");
       setGenerateCik("");
+      setExtraCiks([]);
     } catch (err: any) {
       console.error("Basic publish failed:", err);
       setGenerateError(err.response?.data?.detail || "Failed to publish the basic profile.");
@@ -2017,8 +2189,14 @@ const ActivistIntelligenceDashboard = ({
         mergeName
       );
 
-      // The combined profile only enters the index on the backend's write, so
-      // the list has to be refetched before anything can select it.
+      // The backend now deletes both source profiles as part of this call, in
+      // addition to the combined profile only entering the index on the
+      // backend's write -- so the list has to be refetched either way before
+      // anything can select it. Deliberately a full refetch rather than
+      // optimistically filtering mergeSelection's two slugs out of
+      // investorKeys: the server-returned index is the only source of truth
+      // for what was actually deleted, so this refresh alone is what makes
+      // the two source profiles disappear from the list below.
       const freshKeys = await fetchAllProfiles();
       // Fall back to the returned slug itself if the index hasn't caught up —
       // the basic-profile GET is keyed by that slug either way, so the new
@@ -2188,6 +2366,18 @@ const ActivistIntelligenceDashboard = ({
   const lastUpdatedLabel = updatedCandidates.length
     ? formatUpdatedDate(new Date(Math.max(...updatedCandidates.map((d) => d.getTime()))))
     : "";
+
+  // "Combined from" badge — only ever set on a profile produced by the
+  // multi-CIK combined-generate flow (see runCombinedBasicGenerate above).
+  // Reads off whichever profile object is actually on screen so this stays
+  // purely additive: absent/false on every existing single-CIK profile means
+  // this renders nothing, with zero visual change to those profiles.
+  const combinedProfileSource: any = effectiveProfileView === "basic" ? basicProfile : rawProfile;
+  const isMultiCikCombination = !!combinedProfileSource?.is_multi_cik_combination;
+  const constituentFilers: Array<{ name?: string; cik?: string; filer_id?: string | number }> =
+    isMultiCikCombination && Array.isArray(combinedProfileSource?.constituent_filers)
+      ? combinedProfileSource.constituent_filers
+      : [];
 
   // ── Edit Mode controls ──
   // Admin-only — showEditButton is the single gate, so end users never see the
@@ -2514,6 +2704,19 @@ const ActivistIntelligenceDashboard = ({
                           style={{ width: "100%", padding: "8px 10px", fontSize: 12.5, border: "1px solid #e5e7eb", borderRadius: 6, outline: "none", boxSizing: "border-box", color: "#111827", background: "#fff" }}
                         />
 
+                        {/* Merging is destructive server-side (the two source
+                            profiles are deleted once the merge completes) —
+                            shown right where the only path to trigger it is,
+                            so it can't be missed before that click. */}
+                        {mergeSelection.length === MERGE_PAIR_SIZE && (
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6 }}>
+                            <span style={{ flexShrink: 0, lineHeight: 1, color: "#b91c1c" }}>⚠</span>
+                            <span style={{ fontSize: 11.5, color: "#b91c1c", lineHeight: 1.5 }}>
+                              Merging will <strong>permanently delete both original profiles</strong> above — only the combined profile will remain.
+                            </span>
+                          </div>
+                        )}
+
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <button
                             type="button"
@@ -2612,6 +2815,30 @@ const ActivistIntelligenceDashboard = ({
 
             {/* Fallback position — only when no header slot was provided. */}
             {!headerActionsSlot && editControls}
+          </div>
+        )}
+
+        {isMultiCikCombination && constituentFilers.length > 0 && (
+          <div style={{ padding: "0 24px 14px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+              </svg>
+              Combined from:
+            </span>
+            {constituentFilers.map((filer, i) => (
+              <span
+                key={filer.filer_id ?? filer.cik ?? i}
+                style={{ display: "inline-flex", alignItems: "center", fontSize: 11, color: THEME_MAROON, background: "#fdf2f2", border: `1px solid ${THEME_MAROON}40`, borderRadius: 999, padding: "2px 10px", fontWeight: 500, whiteSpace: "nowrap" }}
+              >
+                {filer.name || "Unknown filer"}
+                {filer.cik ? ` (CIK ${filer.cik})` : ""}
+              </span>
+            ))}
           </div>
         )}
 
@@ -3188,7 +3415,7 @@ const ActivistIntelligenceDashboard = ({
                   />
                 </label>
 
-                <label style={{ display: "block", marginBottom: 24, fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                <label style={{ display: "block", marginBottom: 8, fontSize: 13, fontWeight: 600, color: "#374151" }}>
                   CIK <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span>
                   <input
                     className="zmh-investor-input"
@@ -3201,10 +3428,52 @@ const ActivistIntelligenceDashboard = ({
                       borderRadius: 6, boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s",
                     }}
                   />
-                  <span style={{ display: "block", marginTop: 6, fontSize: 12, fontWeight: 400, color: "#6b7280" }}>
-                    If you already know the exact SEC CIK, enter it here to skip the name search entirely.
-                  </span>
                 </label>
+
+                {extraCiks.map((cik, index) => (
+                  <div key={index} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <input
+                      className="zmh-investor-input"
+                      value={cik}
+                      onChange={(e) => updateCikRow(index, e.target.value)}
+                      placeholder="e.g. 1516478"
+                      disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
+                      style={{
+                        flex: 1, padding: "10px 14px", fontSize: 14,
+                        borderRadius: 6, boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeCikRow(index)}
+                      disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
+                      title="Remove this CIK"
+                      style={{ background: "transparent", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, display: "inline-flex", flexShrink: 0 }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+
+                <div style={{ marginBottom: 6 }}>
+                  <button
+                    type="button"
+                    onClick={addCikRow}
+                    disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, fontSize: 12.5, fontWeight: 600, padding: 0 }}
+                  >
+                    + Add another CIK
+                  </button>
+                </div>
+
+                <span style={{ display: "block", marginBottom: 24, fontSize: 12, fontWeight: 400, color: "#6b7280" }}>
+                  {extraCiks.length > 0
+                    ? "Enter each known SEC CIK to generate one combined profile from them, skipping the name search entirely."
+                    : "If you already know the exact SEC CIK, enter it here to skip the name search entirely. Add another to combine multiple filers into one profile."}
+                </span>
 
                 {isResolvingWhaleWisdom && (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 14px", background: "#fdf2f2", border: `1px solid ${THEME_MAROON}30`, borderRadius: 6 }}>
@@ -3280,7 +3549,13 @@ const ActivistIntelligenceDashboard = ({
                     disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
                     style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? "wait" : "pointer", fontWeight: 600, opacity: (isGenerating || matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom) ? 0.7 : 1 }}
                   >
-                    {isResolvingWhaleWisdom ? "Researching..." : isSubmittingBasic ? "Generating..." : (isGenerating || matchingActiveJob) ? "Generating..." : "Generate Preview"}
+                    {(() => {
+                      if (isResolvingWhaleWisdom) return "Researching...";
+                      if (isSubmittingBasic) return "Generating...";
+                      if (isGenerating || matchingActiveJob) return "Generating...";
+                      const filledCikCount = [generateCik, ...extraCiks].filter((c) => c.trim()).length;
+                      return filledCikCount >= 2 ? `Generate Combined Profile (${filledCikCount})` : "Generate Preview";
+                    })()}
                   </button>
                 </div>
               </>
@@ -3292,6 +3567,8 @@ const ActivistIntelligenceDashboard = ({
             isOpen={showWhaleWisdomPicker}
             onConfirm={handleWhaleWisdomFilerConfirm}
             onCancel={handleWhaleWisdomFilerCancel}
+            allowMultiple
+            onConfirmMultiple={handleWhaleWisdomFilersConfirmMultiple}
           />
         </div>
       )}

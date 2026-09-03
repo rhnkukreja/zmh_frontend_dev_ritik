@@ -32,7 +32,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <PersistGate loading={null} persistor={persistor}>
           <ToastContainer
             position="top-right"
-            autoClose={3000}
+            autoClose={5000}
             limit={3}
             hideProgressBar={true}
             newestOnTop={false}

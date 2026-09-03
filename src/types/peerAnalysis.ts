@@ -28,6 +28,7 @@ export type FlterDropdown = {
 
 export interface InvestorData {
   institution__institution: string;
+  year?: number | string;
   unique_companies: number;
   environmental: number;
   social: number;

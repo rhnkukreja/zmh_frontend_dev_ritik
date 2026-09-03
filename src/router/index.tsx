@@ -83,6 +83,7 @@ import AISearchOnly from "../pages/AISearchOnly";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
 import ActivistFilings from "@/pages/ActivistFilings";
+import ActivistCampaigns from "@/pages/ActivistCampaigns";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
 import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
@@ -491,6 +492,11 @@ function Router() {
           path: "activist-filings",
           element: <ActivistFilings />,
           data: { titleName: "Activist Filings - ZMH Analytics" },
+        },
+        {
+          path: "activist-campaigns",
+          element: <ActivistCampaigns />,
+          data: { titleName: "Activist Campaigns - ZMH Analytics" },
         },
         {
           path: "investor-details",
