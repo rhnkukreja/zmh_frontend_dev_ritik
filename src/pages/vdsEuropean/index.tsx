@@ -58,6 +58,14 @@ import Litepicker from "@/components/Base/Litepicker";
 import React from "react";
 import dayjs from "dayjs";
 
+const DEFAULT_ANALYTICS_INSTITUTIONS = [
+  "BlackRock Active Investment",
+  "BlackRock Investment",
+  "Vanguard Capital Management",
+  "State Street Investment Management",
+  "Vanguard Portfolio Management",
+];
+
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
   const {
@@ -464,7 +472,7 @@ const index = () => {
 
       const getDefaultYears = () => {
         const year = new Date().getFullYear();
-        return [(year - 1).toString(), year.toString()];
+        return [year.toString()];
       };
 
       const getDefaultDateRange = () => {
@@ -477,7 +485,7 @@ const index = () => {
 
       if (isViewAnalysis) {
         const defaultAnalyticsFilters = {
-          institution_name: ["BlackRock, Inc."],
+          institution_name: DEFAULT_ANALYTICS_INSTITUTIONS,
           index: ["S&P 500"],
           country: ["USA"],
           analyticsYear: getDefaultYears()
@@ -622,12 +630,12 @@ const index = () => {
       if (institutions.length > 0) {
         getInstitutionDependentOptions(institutions);
       } else {
-        // Fetch vote and year options with default institution (BlackRock)
-        getInstitutionDependentOptions(["BlackRock, Inc."]);
+        // Fetch vote and year options with default institutions
+        getInstitutionDependentOptions(DEFAULT_ANALYTICS_INSTITUTIONS);
       }
     } else {
-      // Fetch vote and year options with default institution (BlackRock)
-      getInstitutionDependentOptions(["BlackRock, Inc."]);
+      // Fetch vote and year options with default institutions
+      getInstitutionDependentOptions(DEFAULT_ANALYTICS_INSTITUTIONS);
     }
 
     // Load default companies on initial page load
@@ -854,7 +862,7 @@ const index = () => {
       try {
         // Search: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=[SELECTED_INSTITUTION_NAME]&company_name={SEARCH_TEXT}
         const res = await vdsEuropeanService.getCompanySearchDropdownValues({
-          institution_name: institutionNames || ["BlackRock, Inc."],
+          institution_name: institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS,
           company_name: searchTerm // Send as string for search
         });
         if (res.result) {
@@ -888,7 +896,7 @@ const index = () => {
 
       // Selection: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=["BlackRock, Inc."]&company_name=["Apple Inc."]
       const currentFilters = {
-        institution_name: institutionNames || ["BlackRock, Inc."],
+        institution_name: institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS,
         company_name: companyNames, // Send as array for selection
       };
 
@@ -1291,8 +1299,8 @@ const index = () => {
 
     // Clear all filters except mandatory ones
     const currentYear = (new Date().getFullYear() - 1).toString();
-    const defaultYears = [(new Date().getFullYear() - 1).toString(), new Date().getFullYear().toString()];
-    let institutionsToKeep = ["BlackRock, Inc."];
+    const defaultYears = [new Date().getFullYear().toString()];
+    let institutionsToKeep = DEFAULT_ANALYTICS_INSTITUTIONS;
     let countryToKeep = ["USA"];
     let indexToKeep = ["S&P 500"];
 
@@ -1421,10 +1429,10 @@ const index = () => {
     });
     if (onAnalyticsTab) {
       const currentYear = (new Date().getFullYear() - 1).toString();
-      const defaultYears = [(new Date().getFullYear() - 1).toString(), new Date().getFullYear().toString()];
+      const defaultYears = [new Date().getFullYear().toString()];
 
       // If we have query parameters with institutions, preserve them
-      let institutionsToUse = ["BlackRock, Inc."];
+      let institutionsToUse = DEFAULT_ANALYTICS_INSTITUTIONS;
       if (hasQueryParams && institutionParam) {
         const institutions = institutionParam.split('||').map(inst => decodeURIComponent(inst.trim()));
         if (institutions.length > 0) {
@@ -1488,10 +1496,10 @@ const index = () => {
         if (institutions.length > 0) {
           setValue("institution_name", institutions);
         } else {
-          setValue("institution_name", ["BlackRock, Inc."]);
+          setValue("institution_name", DEFAULT_ANALYTICS_INSTITUTIONS);
         }
       } else {
-        setValue("institution_name", ["BlackRock, Inc."]);
+        setValue("institution_name", DEFAULT_ANALYTICS_INSTITUTIONS);
       }
       setValue("vote", []);
       setValue("category", []);
@@ -2274,20 +2282,20 @@ const index = () => {
                           data={institutionOptions.map(option => ({
                             value: option,
                             label: option,
-                            isDisabled: field.value?.length >= 3 && !field.value.includes(option)
+                            isDisabled: field.value?.length >= 5 && !field.value.includes(option)
                           }))}
                           placeholder="Select Institutions"
                           loading={getFundNameDropdownLoader}
                           onChange={(selectedOptions) => {
                             const selectedValues = selectedOptions.map((option) => option.value);
 
-                            // Prevent selecting more than 3 institutions
-                            if (selectedValues.length > 3) {
-                              return; // Don't update the field if more than 3 are selected
+                            // Prevent selecting more than 5 institutions
+                            if (selectedValues.length > 5) {
+                              return; // Don't update the field if more than 5 are selected
                             }
 
-                            // Show/hide message when 3 institutions are selected
-                            if (selectedValues.length === 3) {
+                            // Show/hide message when 5 institutions are selected
+                            if (selectedValues.length === 5) {
                               setShowMaxInstitutionMessage(true);
                               setTimeout(() => {
                                 setShowMaxInstitutionMessage(false);
@@ -2308,7 +2316,7 @@ const index = () => {
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
-                            <span>Maximum 3 institutions are selected</span>
+                            <span>Maximum 5 institutions are selected</span>
                           </div>
                         )}
                         {(!field.value || field.value?.length === 0) && (
@@ -2489,7 +2497,7 @@ const index = () => {
                           }
 
                           // Only call API when there's an actual change in selection
-                          const currentInstitutions = watch("institution_name") || ["BlackRock, Inc."];
+                          const currentInstitutions = watch("institution_name") || DEFAULT_ANALYTICS_INSTITUTIONS;
                           const previousCompanies = field.value || [];
 
                           // Check if the selection actually changed
@@ -2504,7 +2512,7 @@ const index = () => {
                         arrayKeyName="company_name"
                         // Pass current institution filter as context
                         currentFilters={{
-                          institution_name: watch("institution_name") || ["BlackRock, Inc."]
+                          institution_name: watch("institution_name") || DEFAULT_ANALYTICS_INSTITUTIONS
                         }}
                         placeholder="Search Companies"
                         isMulti={true}
