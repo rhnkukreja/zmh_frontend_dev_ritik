@@ -6,6 +6,7 @@ import Lucide from "@/components/Base/Lucide";
 interface ChartComponentProps {
     investorData: {
         institution__institution: string;
+        year?: number | string;
         unique_companies: number;
         environmental: number;
         social: number;
@@ -77,6 +78,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-primary text-white">
+                                        <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Year</th>
                                         <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
                                         <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
                                             {isAllCompanySelected ? "No of unique companies" : "No of Engagements"}
@@ -89,6 +91,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <tbody>
                                     {Array.from({ length: 6 }).map((_, index) => (
                                         <tr key={`engagement-chart-skeleton-row-${index}`} className="border-b border-slate-200 dark:border-slate-600">
+                                            <td className="py-2 px-3 text-center">
+                                                <div className="h-4 w-10 rounded bg-slate-200 animate-pulse mx-auto" />
+                                            </td>
                                             <td className="py-2 px-3 text-left">
                                                 <div className="h-4 w-[85%] rounded bg-slate-200 animate-pulse" />
                                             </td>
@@ -183,6 +188,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                 <table className="w-full border-collapse">
                                     <thead>
                                         <tr className="bg-primary text-white">
+                                            <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>Year</th>
                                             <th className="py-2 px-3 text-left font-medium" style={{ fontSize: '14px' }}>Institution</th>
                                             <th className="py-2 px-3 text-center font-medium" style={{ fontSize: '14px' }}>
                                                 {isAllCompanySelected ? "No of unique companies" : "No of Engagements"}
@@ -195,6 +201,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ investorData, pieChartD
                                     <tbody>
                                         {investorData.map((investor, index) => (
                                             <tr key={index} className="border-b border-slate-200 dark:border-slate-600">
+                                                <td className="py-2 px-3 text-center" style={{ fontSize: '14px' }}>
+                                                    {investor.year ?? "-"}
+                                                </td>
                                                 <td
                                                     className="py-2 px-3 text-left"
                                                     style={{ fontSize: '14px' }}

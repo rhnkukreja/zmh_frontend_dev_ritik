@@ -70,10 +70,11 @@ export const proposal_keywords = {
   "auditor": ["ratify auditor", "auditor"]
 };
 
-export const subSidebarRoutes = ["/notes"];
+export const subSidebarRoutes = ["/notes", "/institution-notes"];
 
 export const pageTitles: Record<string, string | null> = {
   "/notes": "Meeting Notes",
+  "/institution-notes": "Notes",
   "/investor-profile": null,
   "/custom-reports": null,
   "/engagement-question": null,

@@ -406,7 +406,7 @@ const GovernanceProfileTab = () => {
             <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary to-primary/90 flex-shrink-0 rounded-t-2xl">
               <div>
                 <h2 className="text-lg font-bold text-white">{modalCompanyName}</h2>
-                <p className="text-sm text-white/80">Governance Screener</p>
+                <p className="text-sm text-white/80">Corp. Governance</p>
               </div>
               <button
                 onClick={() => setModalCompanyId(null)}
@@ -599,6 +599,18 @@ const CustomReports = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [tableExpanded, setTableExpanded] = useState<boolean>(false);
+
+  const formatOwnershipValue = (value: string | number | null | undefined) => {
+    if (value === null || value === undefined || value === "") return "-";
+
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return String(value);
+
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(numericValue);
+  };
   const companySearchCache = useRef<Record<string, any[]>>({});
 
   // Update selected tickers when global company changes, but only on initial load or when empty
@@ -898,7 +910,7 @@ const CustomReports = () => {
                             </Table.Td>
                             <Table.Td className="cell_ownership py-2 border-dashed dark:bg-darkmode-600 w-[140px] text-center">
                               <h1>
-                                {inv.percent_ownership}%
+                                {formatOwnershipValue(inv.percent_ownership)}%
                               </h1>
                             </Table.Td>
                           </React.Fragment>

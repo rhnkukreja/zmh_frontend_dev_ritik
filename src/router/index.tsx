@@ -83,6 +83,7 @@ import AISearchOnly from "../pages/AISearchOnly";
 import CaseStudies from "@/pages/CaseStudies";
 import DetailCaseStudies from "@/pages/CaseStudies/DetailCaseStudies";
 import ActivistFilings from "@/pages/ActivistFilings";
+import ActivistCampaigns from "@/pages/ActivistCampaigns";
 import DetailShareHolder from "@/pages/sharedHolder/components/DetailShareHolder";
 import InvestorCardDetails from "@/pages/InvestorCardDetails";
 import AgmSummaryDetails from "@/pages/AgmSummaryDetails";
@@ -493,6 +494,11 @@ function Router() {
           data: { titleName: "Activist Filings - ZMH Analytics" },
         },
         {
+          path: "activist-campaigns",
+          element: <ActivistCampaigns />,
+          data: { titleName: "Activist Campaigns - ZMH Analytics" },
+        },
+        {
           path: "investor-details",
           element: <InvestorCardDetails />,
           data: { titleName: "Investor Detail - ZMH Analytics" },
@@ -543,6 +549,11 @@ function Router() {
           element: <Notes />,
           data: { titleName: "Meeting Notes - ZMH Analytics" },
         },
+        {
+          path: "/institution-notes",
+          element: <Notes />,
+          data: { titleName: "Notes - ZMH Analytics" },
+        },
         // {
         //   path: "/newsletter-old",
         //   element: <Newsletter />,
@@ -581,7 +592,7 @@ function Router() {
           {
             path: "custom-reports",
             element: <CustomReports />,
-            data: { titleName: "Custom Reports - ZMH Analytics" },
+            data: { titleName: "Benchmarking - ZMH Analytics" },
           },
         {
           path: "voting-data",

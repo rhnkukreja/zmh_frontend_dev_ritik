@@ -66,8 +66,10 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
     useState<boolean>(false);
 
   useEffect(() => {
-    dispatch(fetchFolders());
-  }, [dispatch]);
+    if (activeTab === "other") {
+      dispatch(fetchFolders());
+    }
+  }, [dispatch, activeTab]);
 
   const handleFolderClick = (folder: FolderData) => {
     dispatch(setSelectedFolder(folder));
@@ -144,8 +146,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
 
   return (
     <div
-      className={`w-80 bg-white dark:bg-darkmode-700 border-r border-gray-300 dark:border-darkmode-500 h-full shadow-sm rounded-md mt-2 box-border flex-shrink-0`}
-      style={{ overflowY: "scroll" }}
+      className={`flex h-full min-h-0 w-80 flex-shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white dark:border-darkmode-500 dark:bg-darkmode-700`}
     >
       {activeTab === "other" && (
         <div className="w-full flex justify-center mb-3">
@@ -208,7 +209,7 @@ const SubSidebar: React.FC<NotesFieldProps> = ({
         </div>
       )} */}
 
-      {folders?.length === 0 && loading && (
+      {activeTab === "other" && folders?.length === 0 && loading && (
         <div className="flex justify-center items-center p-8">
           <div className="flex flex-row items-center justify-end col-span-6 sm:col-span-3 xl:col-span-2">
             <LoadingIcon

@@ -630,7 +630,7 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
     <>
       <Separator className="my-4" />
       <div className="text-[15px] font-semibold text-slate-500 mb-3">
-        Voting Rationale Disclosures <span>(Against or Withhold votes for top 20 investors only)</span>
+        Voting Rationale Disclosures <span>(Against or Withhold votes only)</span>
       </div>
       {summary && (
         <p className="mb-3 text-[15px] text-slate-700">{summary}</p>
@@ -1199,26 +1199,6 @@ export default function CompanyOverview() {
   }, [companyGlobalSearchId]);
 
   useEffect(() => {
-    if (!companyGlobalSearchId || availableYears.length === 0) return;
-
-    const prefetchKey = `${companyGlobalSearchId}:${availableYears.join(",")}`;
-    if (prefetchedOverviewYearsRef.current === prefetchKey) {
-      return;
-    }
-    prefetchedOverviewYearsRef.current = prefetchKey;
-
-    void Promise.all(
-      availableYears.map((year) =>
-        dashboardService.getCompanyOverview(
-          `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${year}`
-        ).catch((error) => {
-          console.error(`Failed to prefetch company overview for year ${year}:`, error);
-        })
-      )
-    );
-  }, [companyGlobalSearchId, availableYears]);
-
-  useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
     if (isCompanyYearsLoadingRef.current) return;
     if (availableYears.length > 0 && !availableYears.includes(selectedYear)) return;
@@ -1244,6 +1224,37 @@ export default function CompanyOverview() {
     //   );
     // }
   }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs, availableYears]);
+
+  useEffect(() => {
+    if (!companyGlobalSearchId || !selectedYear || availableYears.length === 0) return;
+
+    const remainingYears = availableYears.filter((year) => year !== selectedYear);
+    if (remainingYears.length === 0) {
+      return;
+    }
+
+    const prefetchKey = `${companyGlobalSearchId}:${selectedYear}:${remainingYears.join(",")}`;
+    if (prefetchedOverviewYearsRef.current === prefetchKey) {
+      return;
+    }
+    prefetchedOverviewYearsRef.current = prefetchKey;
+
+    const timeoutId = window.setTimeout(() => {
+      void Promise.all(
+        remainingYears.map((year) =>
+          dashboardService.getCompanyOverview(
+            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${year}`
+          ).catch((error) => {
+            console.error(`Failed to prefetch company overview for year ${year}:`, error);
+          })
+        )
+      );
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [companyGlobalSearchId, availableYears, selectedYear]);
 
   // Transform API data to UI format
   const apiReport = useMemo(() => {

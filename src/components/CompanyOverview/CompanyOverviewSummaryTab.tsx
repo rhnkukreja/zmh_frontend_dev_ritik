@@ -257,12 +257,12 @@ function ShareholderEngagementSection({
             <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
               <MessageSquareQuote className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex min-w-0 items-start gap-2">
+            <div className="flex min-w-0 items-start gap-4">
               <h3 className="max-w-[180px] whitespace-normal text-base font-semibold leading-6 text-slate-900">
                 <span className="block whitespace-nowrap">{displayYear} Proxy Disclosure:</span>
                 <span className="block whitespace-nowrap">Shareholder Engagement</span>
               </h3>
-              <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] font-extrabold leading-none text-white shadow-sm">
+              <span className="ml-1 mt-0.5 inline-flex shrink-0 items-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] font-extrabold leading-none text-white shadow-sm">
                 BETA
               </span>
             </div>
@@ -360,11 +360,11 @@ function ShareholderEngagementSection({
               <div className="rounded-lg border border-primary bg-primary/10 p-1.5 shadow-sm">
                 <MessageSquareQuote className="h-4 w-4 text-primary" />
               </div>
-              <div className="flex min-w-0 items-start gap-2">
+              <div className="flex min-w-0 items-start gap-4">
                 <h2 className="max-w-[760px] whitespace-normal text-xl font-semibold leading-6 text-slate-900">
                   {displayYear} Proxy Disclosure: Shareholder Engagement
                 </h2>
-                <span className="inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
+                <span className="ml-1 mt-0.5 inline-flex shrink-0 items-center rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-extrabold leading-none text-white shadow-sm">
                   BETA
                 </span>
               </div>
@@ -839,7 +839,7 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
     <>
       <Separator className="my-4" />
       <div className="mb-3 text-[15px] font-semibold text-slate-500">
-        Voting Rationale Disclosures <span>(Against or Withhold votes for top 20 investors only)</span>
+        Voting Rationale Disclosures <span>(Against or Withhold votes only)</span>
       </div>
       {summary && <p className="mb-3 text-[15px] text-slate-700">{summary}</p>}
       <div className="space-y-3">

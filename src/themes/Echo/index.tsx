@@ -42,7 +42,7 @@ import localStorageHelper, {
 } from "@/utils/helper";
 import headerLogo from "../../assets/images/logo/Vantage ZMH-01.png";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
-import { Headphones, Mail } from "lucide-react";
+import { Headphones, BellRing, FilterX, Mail, Megaphone } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -109,7 +109,7 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
 
   if (
     [
-      "Custom Reports",
+      "Benchmarking",
       "Podcasts",
       "Newsletter",
       "Email Alert",
@@ -271,6 +271,11 @@ const groupCategoryNotifications = (items: NotificationItem[] = []) => {
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
+  // user_type comes straight from the API and isn't guaranteed to be
+  // title-cased -- normalized rather than a strict === "Admin" comparison,
+  // which is what silently locked real admins out of Edit Mode (see
+  // ActivistDashboard.tsx:668-673).
+  const isAdmin = (user?.user_type || "").trim().toLowerCase() === "admin";
   const { selectedGroup } = useAppSelector((state) => state.notes);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const selectedName =
@@ -321,7 +326,7 @@ function Main() {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["Company"]);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
-  const isNotesPage = location.pathname === "/notes";
+  const isNotesPage = ["/notes", "/institution-notes"].includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
   // Embed mode: renders the routed page without the app chrome (sidebar/topbar)
   // so it can be shown inside an in-page panel/iframe instead of a new tab.
@@ -1218,6 +1223,7 @@ function Main() {
 
                 {[
                   "/notes",
+                  "/institution-notes",
                   "/proxy-contest-detail",
                   "/voting-data",
                   "/investor-profile",
@@ -1266,12 +1272,32 @@ function Main() {
                 )}
 
                 {/* BEGIN: AI Assistant - Open /ai-assistant in new tab */}
-                <AIAssistantButton 
+                <AIAssistantButton
                   href="/ai-assistant"
                   className="ml-2 hidden md:flex border-4 hover:border-transparent"
                   size="md"
                 />
                 {/* END: AI Assistant - Open /ai-assistant in new tab */}
+
+                {/* BEGIN: Activist Campaigns - admin-only shortcut, SPA nav (no full
+                    reload). className intentionally mirrors AIAssistantButton's
+                    own rendered class list above (variant="primary" size="md"
+                    plus that same call site's ml-2/border override) so the two
+                    sit as a matched pair rather than an approximation. */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/activist-campaigns")}
+                    className="ai-assistant-cta px-3 py-1.5 text-sm md:flex relative inline-flex items-center justify-center gap-0.2rem rounded-full border overflow-hidden transition-all duration-200 cursor-pointer ml-2 hidden md:flex border-4 hover:border-transparent"
+                    aria-label="Activist Campaigns"
+                  >
+                    <Megaphone className="w-4 h-4 flex-shrink-0" />
+                    <span className="ai-assistant-cta__label ml-2 font-medium hidden xl:flex">
+                      Activist Campaigns
+                    </span>
+                  </button>
+                )}
+                {/* END: Activist Campaigns */}
               </>
 
               <QuickSearch
@@ -1739,15 +1765,16 @@ function Main() {
 
       <div
         className={clsx([
-          "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
+          "transition-[margin,width] duration-500 pt-[54px] relative z-10 group mode",
+          shouldShowSidebar ? "h-[calc(100vh-54px)] overflow-hidden pb-0" : "pb-8",
           { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
         ])}
       >
-        <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
-          <div className="px-5 mt-10 w-full">
-            <div className={clsx({ container: !shouldShowSidebar })}>
+        <div className={clsx({ "pt-[10px] h-full flex overflow-hidden": shouldShowSidebar })}>
+          <div className={clsx("w-full px-5", shouldShowSidebar ? "flex h-full min-h-0 flex-col pt-10 overflow-hidden" : "mt-10")}>
+            <div className={clsx(shouldShowSidebar ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "", { container: !shouldShowSidebar })}>
               <div
                 className={clsx(
                   "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",

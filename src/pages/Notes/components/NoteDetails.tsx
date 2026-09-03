@@ -294,11 +294,11 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
         ((activeTab === "institution" && selectedInstitution && selectedCompany) || 
          (activeTab === "company" && selectedCompany && selectedInstitution))) ? (
         <>
-          <div className="w-full h-full overflow-y-auto no-scrollbar !z-10">
-            <div className="flex justify-between items-center px-4 py-2">
+          <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white !z-10">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <div className="flex items-center">
-                  <h2 className="text-lg font-semibold text-gray-800">
+                  <h2 className="text-lg font-semibold leading-6 text-slate-900">
                     {selectedNoteName}
                   </h2>
 
@@ -308,113 +308,114 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
                       onClick={() => {
                         setAddNoteModalVisible(true);
                       }}
-                      className=" text-primary stroke-[1.3] w-5 h-5 ml-2  cursor-pointer"
+                      className="ml-2 h-5 w-5 cursor-pointer text-primary stroke-[1.3]"
                     />
                   )}
                 </div>
               </div>
             </div>
-            <div className="border-b border-muted mb-2 !z-10"></div>
             
             {/* Display current notes for hierarchy tabs or selectedGroup data for other tab */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             {((activeTab === "institution" || activeTab === "company") ? currentNotes : (selectedGroup?.data || [])).length > 0 ? (
               ((activeTab === "institution" || activeTab === "company") ? currentNotes : (selectedGroup?.data || [])).map((item, index) => (
-                <div className="mx-4 mb-6" key={index}>
+                <div className="mb-5" key={index}>
                   <div
                     className={clsx(
-                      "rounded-md mb-4",
-                      !isEditing && "border border-gray p-4"
+                      "rounded-xl border border-slate-200 bg-white p-5 shadow-sm",
+                      !isEditing && "transition hover:shadow-md"
                     )}
                   >
-                  {isEditing ? null : (
-                    <div>
-                      <div className="flex">
-                        <div className="w-full">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1 pr-4">
+                    {isEditing ? null : (
+                      <div>
+                        <div className="flex">
+                          <div className="w-full">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 pr-2">
+                                <div
+                                  className="prose max-w-none text-sm leading-7 text-slate-700"
+                                  dangerouslySetInnerHTML={{
+                                    __html: DOMPurify.sanitize(item.notes),
+                                  }}
+                                />
+                              </div>
+                              {item.update_delete_check === true && (
+                                <div className="flex flex-shrink-0 gap-1">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => {
+                                      setIsEditing(true);
+                                      setData({
+                                        company_id: item?.company,
+                                        institution_id: item?.institution,
+                                        institution_name: item?.institution_name,
+                                        company_name: item?.company_name,
+                                      });
+                                      setNoteDetails(item);
+                                    }}
+                                  >
+                                    <Tippy
+                                      content="Edit Note"
+                                      options={{ theme: "light" }}
+                                    >
+                                      <Lucide icon="Pen" className="w-4 h-4" />
+                                    </Tippy>
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => handleDeleteNote(item)}
+                                  >
+                                    <Tippy
+                                      content="Delete Note"
+                                      options={{ theme: "light" }}
+                                    >
+                                      <Lucide icon="Trash" className="w-4 h-4" />
+                                    </Tippy>
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {item.comments?.map((comment, index) => (
+                          <div
+                            key={index}
+                            className="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm"
+                          >
+                            <div className="flex items-start justify-between gap-4">
                               <div
-                                className="prose max-w-none"
+                                className="text-sm text-slate-700"
                                 dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(item.notes),
+                                  __html: comment.comments,
                                 }}
                               />
+                              <span className="whitespace-nowrap text-xs italic text-slate-500">
+                                – {comment.name}
+                              </span>
                             </div>
-                            {item.update_delete_check === true && (
-                              <div className="flex gap-1 flex-shrink-0">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => {
-                                    setIsEditing(true);
-                                    setData({
-                                      company_id: item?.company,
-                                      institution_id: item?.institution,
-                                      institution_name: item?.institution_name,
-                                      company_name: item?.company_name,
-                                    });
-                                    setNoteDetails(item);
-                                  }}
-                                >
-                                  <Tippy
-                                    content="Edit Note"
-                                    options={{ theme: "light" }}
-                                  >
-                                    <Lucide icon="Pen" className="w-4 h-4" />
-                                  </Tippy>
-                                </Button>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={() => handleDeleteNote(item)}
-                                >
-                                  <Tippy
-                                    content="Delete Note"
-                                    options={{ theme: "light" }}
-                                  >
-                                    <Lucide icon="Trash" className="w-4 h-4" />
-                                  </Tippy>
-                                </Button>
-                              </div>
-                            )}
                           </div>
+                        ))}
+                        <div className="mt-4 flex justify-end">
+                          <span className="whitespace-nowrap text-xs font-medium text-slate-400">
+                            {item.formatted_date || item.date}
+                          </span>
                         </div>
                       </div>
-
-                      {item.comments?.map((comment, index) => (
-                        <div
-                          key={index}
-                          className="border-l-4 border-primary/80 px-4 py-1 bg-white dark:bg-darkmode-600 rounded-md shadow-sm mt-5"
-                        >
-                          <div className="flex justify-between items-start gap-4">
-                            <div
-                              className="text-gray-800 dark:text-gray-100 text-sm"
-                              dangerouslySetInnerHTML={{
-                                __html: comment.comments,
-                              }}
-                            />
-                            <span className="text-xs text-gray-500 dark:text-gray-400 italic whitespace-nowrap">
-                              – {comment.name}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                      <div className="flex justify-end mt-3">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                          {item.formatted_date || item.date}
-                        </span> 
-                      </div>
-                    </div>
-                  )}
+                    )}
                   </div>
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 mx-4">
-                <Lucide icon="FileText" className="w-16 h-16 text-gray-300 mb-4" />
-                <p className="text-gray-500 text-lg">No notes found</p>
-                <p className="text-gray-400 text-sm">There are no notes for this selection yet.</p>
+              <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60">
+                <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                <p className="text-base font-semibold text-slate-600">No notes found</p>
+                <p className="mt-1 text-sm text-slate-400">There are no notes for this selection yet.</p>
               </div>
             )}
+          </div>
           </div>
           
           <AddDomainNoteModal

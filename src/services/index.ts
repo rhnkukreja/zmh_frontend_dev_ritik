@@ -24,6 +24,7 @@ const multipartFormDataUrls = [
   "/proxy_contest/press_release_presentation/",
   "/api/institution-stats/upload-key-contacts/",
   "/api/key_overboarding_policy_document/",
+  "/activist-campaigns/upload-excel",
 ];
 
 const isNotMultipartFormDataUrls = [

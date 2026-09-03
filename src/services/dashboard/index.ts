@@ -4,6 +4,7 @@ import { CompanyDashboard } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
 import { BoardDirectorMembers, ProxyVotingRationale } from "@/types/dashboard";
 import { baseURL } from "@/constant";
+import { activistCampaignsApiBaseURL } from "@/config/environment";
 import { dashboardCacheManager } from "@/utils/cacheManager";
 import { getDashboardCacheStrategyForUrl } from "@/utils/dashboardCacheStrategy";
 
@@ -247,6 +248,30 @@ class DashboardService {
   public async getActivistFilings(companyId: number | string): Promise<any> {
     const url = `${baseURL}/api/activist_filed/?company_id=${companyId}`;
     return await this.fetchWithCache<any>(url);
+  }
+
+  public async getActivistCampaigns(): Promise<any> {
+    const response = await axiosInstance.get(`/api/activist-campaigns`, {
+      baseURL: activistCampaignsApiBaseURL,
+    });
+    return response.data;
+  }
+
+  public async updateActivistCampaign(
+    id: number | string,
+    data: { status?: string; notes?: string }
+  ): Promise<any> {
+    const response = await axiosInstance.patch(`/api/activist-campaigns/${id}`, data, {
+      baseURL: activistCampaignsApiBaseURL,
+    });
+    return response.data;
+  }
+
+  public async uploadActivistCampaignsExcel(formData: FormData): Promise<any> {
+    const response = await axiosInstance.post(`/api/activist-campaigns/upload-excel`, formData, {
+      baseURL: activistCampaignsApiBaseURL,
+    });
+    return response.data;
   }
 
   public async fetchCaseStudiesTopProxyContext(url: string): Promise<{

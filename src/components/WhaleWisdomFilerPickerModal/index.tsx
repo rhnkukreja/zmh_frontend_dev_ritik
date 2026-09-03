@@ -18,6 +18,15 @@ interface WhaleWisdomFilerPickerModalProps {
   isOpen: boolean;
   onConfirm: (filer: WhaleWisdomFiler) => void;
   onCancel: () => void;
+  // Opt-in checkbox mode: lets the caller check 2+ candidates and generate one
+  // combined profile from them. Defaults to false so every other consumer of
+  // this modal (e.g. the institution-linking flow) keeps its exact existing
+  // single-select radio behavior, unchanged.
+  allowMultiple?: boolean;
+  // Only invoked when allowMultiple is true AND 2+ candidates are checked.
+  // Checking exactly one candidate always calls onConfirm instead, same as
+  // single-select mode -- the single-CIK generate flow stays untouched.
+  onConfirmMultiple?: (filers: WhaleWisdomFiler[]) => void;
 }
 
 const buildFilerUrl = (link: string): string => {
@@ -32,8 +41,11 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
   isOpen,
   onConfirm,
   onCancel,
+  allowMultiple = false,
+  onConfirmMultiple,
 }) => {
   const [selectedFilerId, setSelectedFilerId] = useState<string>("");
+  const [selectedFilerIds, setSelectedFilerIds] = useState<Set<string>>(new Set());
   const [filerSearchQuery, setFilerSearchQuery] = useState<string>("");
 
   // A stale selection/search from a previous open (possibly against a
@@ -41,6 +53,7 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
   useEffect(() => {
     if (isOpen) {
       setSelectedFilerId("");
+      setSelectedFilerIds(new Set());
       setFilerSearchQuery("");
     }
   }, [isOpen, filers]);
@@ -52,6 +65,18 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
       String(filer.cik).includes(filerSearchQuery)
   );
 
+  const toggleFilerChecked = (filerId: string) => {
+    setSelectedFilerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(filerId)) {
+        next.delete(filerId);
+      } else {
+        next.add(filerId);
+      }
+      return next;
+    });
+  };
+
   const handleConfirm = (e: React.MouseEvent) => {
     e.preventDefault();
     // This Dialog renders via a Portal — React still bubbles the click
@@ -60,14 +85,32 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
     // click-to-close handler. Stop it here so "Confirm Selection" can't be
     // mistaken for a click on that outer overlay.
     e.stopPropagation();
-    if (!selectedFilerId) {
-      toast.error("Please select a Filer ID from the list.");
+
+    if (!allowMultiple) {
+      if (!selectedFilerId) {
+        toast.error("Please select a Filer ID from the list.");
+        return;
+      }
+      const selectedFiler = filers.find((f) => String(f.id) === selectedFilerId);
+      if (selectedFiler) {
+        onConfirm(selectedFiler);
+      }
       return;
     }
-    const selectedFiler = filers.find((f) => String(f.id) === selectedFilerId);
-    if (selectedFiler) {
-      onConfirm(selectedFiler);
+
+    if (selectedFilerIds.size === 0) {
+      toast.error("Please select at least one Filer ID from the list.");
+      return;
     }
+
+    const checkedFilers = filers.filter((f) => selectedFilerIds.has(String(f.id)));
+    if (checkedFilers.length === 1) {
+      // Exactly one checked -- same single-CIK generate flow as non-multi mode.
+      onConfirm(checkedFilers[0]);
+      return;
+    }
+
+    onConfirmMultiple?.(checkedFilers);
   };
 
   return (
@@ -100,6 +143,11 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
               onChange={(e) => setFilerSearchQuery(e.target.value)}
             />
           </div>
+          {allowMultiple && (
+            <p className="mt-2 text-xs text-slate-500">
+              Select one filer to generate its profile, or check 2 or more to generate one combined profile from them.
+            </p>
+          )}
         </div>
 
         <Dialog.Description className="px-4 pb-4 max-h-[60vh] overflow-y-auto">
@@ -118,7 +166,9 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
                 {filteredFilerOptions.length > 0 ? (
                   filteredFilerOptions.map((filer) => {
                     const finalUrl = buildFilerUrl(filer.link);
-                    const isSelected = selectedFilerId === String(filer.id);
+                    const isSelected = allowMultiple
+                      ? selectedFilerIds.has(String(filer.id))
+                      : selectedFilerId === String(filer.id);
 
                     return (
                       <tr
@@ -132,15 +182,26 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
                         }
                       >
                         <td className="p-3 text-center">
-                          <FormCheck.Input
-                            type="radio"
-                            name="filerSelectionRadio"
-                            className="cursor-pointer w-4 h-4"
-                            style={{ accentColor: "#9b1b30" }}
-                            checked={isSelected}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={() => setSelectedFilerId(String(filer.id))}
-                          />
+                          {allowMultiple ? (
+                            <FormCheck.Input
+                              type="checkbox"
+                              className="cursor-pointer w-4 h-4"
+                              style={{ accentColor: "#9b1b30" }}
+                              checked={isSelected}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={() => toggleFilerChecked(String(filer.id))}
+                            />
+                          ) : (
+                            <FormCheck.Input
+                              type="radio"
+                              name="filerSelectionRadio"
+                              className="cursor-pointer w-4 h-4"
+                              style={{ accentColor: "#9b1b30" }}
+                              checked={isSelected}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={() => setSelectedFilerId(String(filer.id))}
+                            />
+                          )}
                         </td>
                         <td className="p-3">{filer.id}</td>
                         <td className="p-3 font-medium">{filer.name}</td>
@@ -197,7 +258,9 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
             variant="primary"
             onClick={handleConfirm}
           >
-            Confirm Selection
+            {allowMultiple && selectedFilerIds.size > 1
+              ? `Confirm Selection (${selectedFilerIds.size})`
+              : "Confirm Selection"}
           </Button>
         </Dialog.Footer>
       </Dialog.Panel>

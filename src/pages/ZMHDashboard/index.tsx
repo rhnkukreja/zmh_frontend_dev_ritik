@@ -10,7 +10,6 @@ import {
   getBoardDirectorMembers,
   setPage,
   setTempSearch,
-  fetchNpxProposalVotingStats,
 } from "@/stores/dashboardSlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -48,8 +47,6 @@ import { generateWhaleWisdomId, scrapeQuickWhaleWisdom } from "@/pages/AIChatbot
 import { toast } from "react-toastify";
 import {  scrapeBulkWhaleWisdom } from "@/pages/AIChatbot/api";
 import {  pollWhaleWisdomStatus } from "@/pages/AIChatbot/api";
-import { fetchCompensationProposals } from "@/stores/compensationProposalsSlice";
-import { vdsEuropeanService } from "@/services/vdsEuropean";
 
 function Main() {
   const dispatch: AppDispatch = useAppDispatch();
@@ -453,58 +450,6 @@ function Main() {
     fetchModulesCount();
   }, [companyGlobalSearchName]);
 
-  useEffect(() => {
-    if (!companyGlobalSearchTicker || !companyGlobalSearchId) return;
-    if (institutionInsightsPrefetchDoneRef.current) return;
-    institutionInsightsPrefetchDoneRef.current = true;
-
-    const prefetchedYear = searchParams.get("year") || String(new Date().getFullYear());
-
-    const npxFilters = {
-      view: "by_institution",
-      page: 1,
-      page_size: 25,
-      investor_company: ["BlackRock, Inc."],
-      year: [prefetchedYear],
-    };
-
-    const compensationFilters = {
-      year: [new Date().getFullYear()],
-      index: "S&P 500",
-      vote: [],
-      investor_company: ["BlackRock, Inc.", "The Vanguard Group", "State Street Investment Management"],
-      category: "Say on Pay",
-      keyword: "",
-      page_size: 25,
-    };
-
-    dispatch(
-      fetchNpxProposalVotingStats({
-        view: "by_institution",
-        filters: npxFilters,
-        requestKey: createDynamicURL(`/api/npx-proposal-voting-stats/`, npxFilters),
-      })
-    );
-
-    dispatch(
-      fetchCompensationProposals({
-        filters: compensationFilters,
-        requestKey: createDynamicURL(`/api/compensation-proposals/stats/`, compensationFilters),
-      } as any)
-    );
-
-    const aggregateVotingFilters = {
-      investor_company: ["BlackRock, Inc.", "The Vanguard Group"],
-      company_name: [companyGlobalSearchName],
-      year: [parseInt(prefetchedYear, 10)],
-      country: ["USA"],
-      page: 1,
-    };
-
-    vdsEuropeanService.getVDSEuropeanAnalytics(
-      createDynamicURL(`${baseURL}/api/proposal-voting-stats/`, aggregateVotingFilters)
-    );
-  }, [companyGlobalSearchTicker, companyGlobalSearchId, dispatch, searchParams]);
 
   // Fetch all tab data on initial load
   useEffect(() => {
