@@ -3,6 +3,7 @@ import { useForm, Controller } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
 import FormInput from "@/components/Base/Form/FormInput";
+import FormCheck from "@/components/Base/Form/FormCheck";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect";
@@ -10,6 +11,29 @@ import axios from "axios";
 import { baseURL } from "@/constant";
 import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
 import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
+
+// Reserved tag riding along inside the existing free-text `tags` value sent to
+// the FastAPI /api/upload endpoint -- an explicit human signal that a
+// document contains a case study, since the backend's LLM classifier only
+// picks up to 2 categories and can bury a case study inside e.g. a
+// "Stewardship Report" tag. Deliberately not a new form field on the Django
+// side (institute_documents/) -- no schema change, no migration.
+const CASE_STUDY_TAG = "case-study";
+
+// Appends CASE_STUDY_TAG to whatever the user typed in Tags, without
+// reformatting it, and without duplicating the tag if they already typed it
+// themselves (any casing/spacing).
+const appendCaseStudyTag = (tagsValue: string): string => {
+  const alreadyTagged = tagsValue
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .includes(CASE_STUDY_TAG);
+
+  if (alreadyTagged) return tagsValue;
+
+  const trimmed = tagsValue.trim();
+  return trimmed ? `${trimmed}, ${CASE_STUDY_TAG}` : CASE_STUDY_TAG;
+};
 
 /**
  * Robust AddDocumentModal with:
@@ -25,6 +49,7 @@ interface DocumentFormData {
   year: string;
   tags: string;
   priority: string;
+  is_case_study: boolean;
 }
 
 interface AddDocumentModalProps {
@@ -101,6 +126,7 @@ const AddDocumentModal = ({
       year: currentYear.toString(),
       tags: "",
       priority: "Medium",
+      is_case_study: false,
     },
   });
 
@@ -130,7 +156,7 @@ const AddDocumentModal = ({
       formData.append("month", data.month); // Added this so month saves properly
       formData.append("document_name", data.document_name);
       formData.append("document_type", data.category);
-      formData.append("tags", data.tags);
+      formData.append("tags", data.is_case_study ? appendCaseStudyTag(data.tags) : data.tags);
       formData.append("priority", data.priority);
       formData.append("active", "true");
       formData.append("document", documentFile);
@@ -153,7 +179,7 @@ const AddDocumentModal = ({
           document_type: data.category,
           year: data.year,
           month: data.month,
-          tags: data.tags,
+          tags: data.is_case_study ? appendCaseStudyTag(data.tags) : data.tags,
           priority: data.priority,
           file_url: expectedUrl,
           file_name: documentFile.name
@@ -367,6 +393,26 @@ const AddDocumentModal = ({
             <span className="text-slate-500 text-xs mt-1 block">
               Separate multiple tags with commas
             </span>
+          </div>
+
+          <div className="col-span-12 sm:col-span-6 flex items-end">
+            <Controller
+              name="is_case_study"
+              control={control}
+              render={({ field }) => (
+                <FormCheck className="flex items-center mb-1">
+                  <FormCheck.Input
+                    id="is_case_study"
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                  <FormCheck.Label htmlFor="is_case_study" className="ml-2">
+                    This document contains a case study
+                  </FormCheck.Label>
+                </FormCheck>
+              )}
+            />
           </div>
 
           <div className="col-span-12">
