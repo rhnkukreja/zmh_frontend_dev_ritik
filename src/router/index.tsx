@@ -543,6 +543,11 @@ function Router() {
           element: <Notes />,
           data: { titleName: "Meeting Notes - ZMH Analytics" },
         },
+        {
+          path: "/institution-notes",
+          element: <Notes />,
+          data: { titleName: "Notes - ZMH Analytics" },
+        },
         // {
         //   path: "/newsletter-old",
         //   element: <Newsletter />,
@@ -581,7 +586,7 @@ function Router() {
           {
             path: "custom-reports",
             element: <CustomReports />,
-            data: { titleName: "Custom Reports - ZMH Analytics" },
+            data: { titleName: "Benchmarking - ZMH Analytics" },
           },
         {
           path: "voting-data",

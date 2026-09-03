@@ -109,7 +109,7 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
 
   if (
     [
-      "Custom Reports",
+      "Benchmarking",
       "Podcasts",
       "Newsletter",
       "Email Alert",
@@ -321,7 +321,7 @@ function Main() {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["Company"]);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
-  const isNotesPage = location.pathname === "/notes";
+  const isNotesPage = ["/notes", "/institution-notes"].includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
   // Embed mode: renders the routed page without the app chrome (sidebar/topbar)
   // so it can be shown inside an in-page panel/iframe instead of a new tab.
@@ -1218,6 +1218,7 @@ function Main() {
 
                 {[
                   "/notes",
+                  "/institution-notes",
                   "/proxy-contest-detail",
                   "/voting-data",
                   "/investor-profile",
@@ -1739,15 +1740,16 @@ function Main() {
 
       <div
         className={clsx([
-          "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
+          "transition-[margin,width] duration-500 pt-[54px] relative z-10 group mode",
+          shouldShowSidebar ? "h-[calc(100vh-54px)] overflow-hidden pb-0" : "pb-8",
           { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
         ])}
       >
-        <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
-          <div className="px-5 mt-10 w-full">
-            <div className={clsx({ container: !shouldShowSidebar })}>
+        <div className={clsx({ "pt-[10px] h-full flex overflow-hidden": shouldShowSidebar })}>
+          <div className={clsx("w-full px-5", shouldShowSidebar ? "flex h-full min-h-0 flex-col pt-10 overflow-hidden" : "mt-10")}>
+            <div className={clsx(shouldShowSidebar ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "", { container: !shouldShowSidebar })}>
               <div
                 className={clsx(
                   "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",

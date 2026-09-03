@@ -113,7 +113,8 @@ const nestedMenu = (menu: Array<Menu | string>, location: Location) => {
         !menuItem.subMenu;
 
       if (menuItem.subMenu) {
-        menuItem.activeDropdown = findActiveMenu(menuItem.subMenu, location);
+        menuItem.activeDropdown =
+          menuItem.title === "Benchmarking" || findActiveMenu(menuItem.subMenu, location);
 
         const subMenu: Array<FormattedMenu> = [];
         nestedMenu(menuItem.subMenu, location).map(

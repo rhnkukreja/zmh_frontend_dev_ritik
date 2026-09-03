@@ -228,6 +228,15 @@ const BASE_SECTIONS: SectionDef[] = [
     route: "/executive-compensation",
     subItems: [],
   },
+  {
+    key: "institution-notes",
+    label: "Notes",
+    icon: FileText,
+    group: "Institution Insights",
+    route: "/institution-notes",
+    subItems: [],
+    preserveActiveSection: true,
+  },
 ];
 
 const DashboardSidebarNav = ({
