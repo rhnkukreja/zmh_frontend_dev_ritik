@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import AsyncSelect from "react-select/async";
-import _, { remove } from "lodash";
+import _ from "lodash";
 import { dashboardService } from "@/services/dashboard";
 import { MultiValue } from "react-select";
 
@@ -120,31 +120,39 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   const [isLoadingDefault, setIsLoadingDefault] = useState(showDefaultOptions);
   const [isFocused, setIsFocused] = useState(false);
 
-  const loadOptions = useCallback(
-    _.debounce(
-      (inputValue: string, callback: (options: OptionType[]) => void) => {
-        // Always ensure year parameter is included for NPX-related components
-        const yearParam = year || 
-                         (window.location.search.includes('year=') ? 
-                          new URLSearchParams(window.location.search).get('year') : 
-                          '2024');
-                          
-        fetchOptions(
-          inputValue,
-          isInstitution,
-          companyGlobalSearchName,
-          exactUrl,
-          arrayKeyName,
-          isHideCurrentCompany,
-          currentCompany,
-          currentFilters,
-          yearParam // Always pass year parameter
-        ).then((options) => {
-          callback(options);
-        });
-      },
-      300
-    ),
+  const loadOptions = useMemo(
+    () =>
+      _.debounce(
+        (inputValue: string, callback: (options: OptionType[]) => void) => {
+          const trimmedValue = inputValue.trim();
+
+          if (trimmedValue.length < 2) {
+            callback([]);
+            return;
+          }
+
+          // Always ensure year parameter is included for NPX-related components
+          const yearParam = year ||
+            (window.location.search.includes('year=') ?
+              new URLSearchParams(window.location.search).get('year') :
+              '2024');
+
+          fetchOptions(
+            trimmedValue,
+            isInstitution,
+            companyGlobalSearchName,
+            exactUrl,
+            arrayKeyName,
+            isHideCurrentCompany,
+            currentCompany,
+            currentFilters,
+            yearParam // Always pass year parameter
+          ).then((options) => {
+            callback(options);
+          });
+        },
+        450
+      ),
     [
       companyGlobalSearchName,
       isInstitution,
@@ -153,10 +161,15 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       isHideCurrentCompany,
       currentCompany,
       currentFilters,
-      // Always include year in dependencies
-      year
+      year,
     ]
   );
+
+  useEffect(() => {
+    return () => {
+      loadOptions.cancel();
+    };
+  }, [loadOptions]);
 
   useEffect(() => {
     if (!showDefaultOptions) {
@@ -199,8 +212,13 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     // Clear input value after selection
     setInputValue("");
   };
-  const handleInputChange = (newValue: string) => {
+  const handleInputChange = (newValue: string, actionMeta?: { action?: string }) => {
     const safeValue = newValue || "";
+
+    if (actionMeta?.action && actionMeta.action !== "input-change") {
+      return inputValue;
+    }
+
     setInputValue(safeValue);
     return safeValue;
   };

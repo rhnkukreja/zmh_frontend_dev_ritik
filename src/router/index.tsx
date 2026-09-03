@@ -547,7 +547,7 @@ function Router() {
         {
           path: "/notes",
           element: <Notes />,
-          data: { titleName: "Notes - ZMH Analytics" },
+          data: { titleName: "Meeting Notes - ZMH Analytics" },
         },
         // {
         //   path: "/newsletter-old",

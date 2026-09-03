@@ -56,6 +56,7 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import { getVdsEuropeanDropdownValues } from "@/services/vdsEuropeanDropdown";
 import Litepicker from "@/components/Base/Litepicker";
 import React from "react";
+import dayjs from "dayjs";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -117,6 +118,7 @@ const index = () => {
     });
   const [voteOptions, setVoteOptions] = useState<string[]>([]);
   const [yearOptions, setYearOptions] = useState<number[]>([]);
+  const [availableDateRange, setAvailableDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
   const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
@@ -206,10 +208,21 @@ const index = () => {
       [index]: !prev[index],
     }));
   };
-  const toggleGroup = (company_name: string) => {
+  const getCompanyGroupKey = (company: any, yearIdx?: number, index?: number) => {
+    return [
+      company?.company_id ?? "no-id",
+      company?.company_name ?? "no-company",
+      company?.meeting_date ?? "no-date",
+      company?.meeting_type ?? "no-type",
+      yearIdx ?? "no-year",
+      index ?? "no-index",
+    ].join("|");
+  };
+
+  const toggleGroup = (groupKey: string) => {
     setOpenGroups((prevState) => ({
       ...prevState,
-      [company_name]: !prevState[company_name],
+      [groupKey]: !prevState[groupKey],
     }));
   };
 
@@ -217,11 +230,12 @@ const index = () => {
     if (!analytics?.by_company) return;
 
     const allCompanyNames: string[] = [];
-    analytics.by_company.forEach((yearEntry: any) => {
+    analytics.by_company.forEach((yearEntry: any, yearIdx: number) => {
       if (Array.isArray(yearEntry.companies)) {
-        yearEntry.companies.forEach((company: any) => {
-          if (company.company_name) {
-            allCompanyNames.push(company.company_name);
+        yearEntry.companies.forEach((company: any, index: number) => {
+          const groupKey = getCompanyGroupKey(company, yearIdx, index);
+          if (groupKey) {
+            allCompanyNames.push(groupKey);
           }
         });
       }
@@ -246,11 +260,12 @@ const index = () => {
     if (!analytics?.by_company) return false;
 
     const allCompanyNames: string[] = [];
-    analytics.by_company.forEach((yearEntry: any) => {
+    analytics.by_company.forEach((yearEntry: any, yearIdx: number) => {
       if (Array.isArray(yearEntry.companies)) {
-        yearEntry.companies.forEach((company: any) => {
-          if (company.company_name) {
-            allCompanyNames.push(company.company_name);
+        yearEntry.companies.forEach((company: any, index: number) => {
+          const groupKey = getCompanyGroupKey(company, yearIdx, index);
+          if (groupKey) {
+            allCompanyNames.push(groupKey);
           }
         });
       }
@@ -655,6 +670,20 @@ const index = () => {
   const watchedYear = watch("year");
   const watchedAnalyticsYear = watch("analyticsYear");
 
+  // Navigate the calendar to the latest/selected year exactly when it opens,
+  // without affecting the currently selected/displayed date range value.
+  const handleDateRangePickerShow = (picker: any) => {
+    const fallbackEnd = availableDateRange?.endDate || new Date().toISOString().split("T")[0];
+    const targetYear = fallbackEnd.slice(0, 4);
+    if (!targetYear) return;
+    try {
+      picker.gotoDate(new Date(`${targetYear}-01-01`), 0);
+      picker.gotoDate(new Date(`${targetYear}-02-01`), 1);
+    } catch (err) {
+      console.error("Failed to navigate date picker:", err);
+    }
+  };
+
   // Set default values only if no query parameters are present
   useEffect(() => {
     const institutionParam = searchParams.get('institution');
@@ -762,6 +791,21 @@ const index = () => {
     }
   };
 
+  // Parse the API's available_date_range (e.g. "03 Jan, 2022") into ISO date strings
+  const parseAvailableDateRange = (range: any) => {
+    if (!range?.start_meeting || !range?.end_meeting) return null;
+
+    const startDate = dayjs(range.start_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+    const endDate = dayjs(range.end_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+
+    if (!startDate.isValid() || !endDate.isValid()) return null;
+
+    return {
+      startDate: startDate.format("YYYY-MM-DD"),
+      endDate: endDate.format("YYYY-MM-DD"),
+    };
+  };
+
   // New function to get vote and year options based on selected institution
   const getInstitutionDependentOptions = async (institutionNames: string[]) => {
     if (!institutionNames || institutionNames.length === 0) {
@@ -778,6 +822,7 @@ const index = () => {
       if (res.result) {
         setVoteOptions(res.result.vote || []);
         setYearOptions(res.result.year || []);
+        setAvailableDateRange(parseAvailableDateRange(res.result.available_date_range));
       }
     } catch (error) {
       setVoteOptions([]);
@@ -2360,35 +2405,35 @@ const index = () => {
                         <Litepicker
                           value={field.value}
                           onChange={(date) => field.onChange(date)}
+                          onShow={handleDateRangePickerShow}
                           placeholder="Select Date Range"
-                          options={{
-                            autoApply: false,
-                            singleMode: false,
-                            numberOfColumns: 2,
-                            numberOfMonths: 2,
-                            showWeekNumbers: true,
-                            splitView: true,
-                            dropdowns: {
-                              minYear: 2023,
-                              maxYear: 2025,
-                              months: true,
-                              years: true,
-                            },
-                            maxDate: (() => {
-                              // Get current US date (considering Pakistan is ahead by ~10-11 hours)
+                          options={(() => {
+                            const fallbackStart = availableDateRange?.startDate || "2023-01-01";
+                            const fallbackEnd = availableDateRange?.endDate || (() => {
                               const now = new Date();
                               const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
                               return usDate.toISOString().split("T")[0];
-                            })(),
-                            minDate: "2023-01-01",
-                            startDate: "2025-01-01",
-                            endDate: (() => {
-                              // Get current US date (considering Pakistan is ahead by ~10-11 hours)
-                              const now = new Date();
-                              const usDate = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-                              return usDate.toISOString().split("T")[0];
-                            })(),
-                          }}
+                            })();
+
+                            return {
+                              autoApply: false,
+                              singleMode: false,
+                              numberOfColumns: 2,
+                              numberOfMonths: 2,
+                              showWeekNumbers: true,
+                              splitView: true,
+                              dropdowns: {
+                                minYear: Number(fallbackStart.slice(0, 4)),
+                                maxYear: Number(fallbackEnd.slice(0, 4)),
+                                months: true,
+                                years: true,
+                              },
+                              minDate: fallbackStart,
+                              maxDate: fallbackEnd,
+                              startDate: fallbackStart,
+                              endDate: fallbackEnd,
+                            };
+                          })()}
                           className="pl-12"
                         />
                       )}
@@ -2715,10 +2760,13 @@ const index = () => {
               {analytics.by_company.map((yearEntry, yearIdx) => (
                 Array.isArray(yearEntry.companies)
                   ? yearEntry.companies.map((ele, index) => (
-                    <div key={ele.company_id || `${yearIdx}-${index}`} className="py-2">
+                    <div
+                      key={getCompanyGroupKey(ele, yearIdx, index)}
+                      className="py-2"
+                    >
                       <div
                         className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200 font-medium text-base"
-                        onClick={() => toggleGroup(ele.company_name)}
+                        onClick={() => toggleGroup(getCompanyGroupKey(ele, yearIdx, index))}
                       >
                         <span className="text-gray-800">
                           {`${ele.meeting_date} - ${ele.company_name}`}
@@ -2726,7 +2774,7 @@ const index = () => {
                         </span>
 
                         <button className="text-primary hover:text-primary/80 transition-colors duration-200">
-                          {openGroups[ele.company_name] ? (
+                          {openGroups[getCompanyGroupKey(ele, yearIdx, index)] ? (
                             <Lucide
                               icon="ChevronUp"
                               className="w-5 h-5"
@@ -2739,16 +2787,16 @@ const index = () => {
                           )}
                         </button>
                       </div>
-                      {openGroups[ele.company_name] && Array.isArray(ele.sample_proposals) && (
-                        <div className="mt-2 mb-4 bg-gray-50 overflow-x-auto">
-                          <table className="min-w-[1100px] w-full table-auto">
+                      {openGroups[getCompanyGroupKey(ele, yearIdx, index)] && Array.isArray(ele.sample_proposals) && (
+                        <div className="mt-2 mb-4 bg-gray-50">
+                          <table className="w-full table-fixed">
                             <thead>
                               <tr className="bg-primary text-white text-sm">
                                 <th className="px-2 py-2 text-center font-semibold w-[8%] max-w-[60px] whitespace-nowrap">No.</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[52%] max-w-[600px]">Proposal</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Mgmt Rec</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[13%] max-w-[100px]">Vote Cast</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[14%] max-w-[120px]">Institution Name</th>
+                                <th className="px-4 py-2 text-left font-semibold w-[44%]">Proposal</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Mgmt Rec</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Vote Cast</th>
+                                <th className="px-2 py-2 text-left font-semibold w-[14%]">Institution Name</th>
                               </tr>
                             </thead>
                             <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -2761,19 +2809,30 @@ const index = () => {
                                     <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-[8%] max-w-[60px]">
                                       {vds?.proposal_num}
                                     </td>
-                                    <td className="px-4 py-2 align-middle w-[52%] max-w-[600px]">
+                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[44%]">
                                       {vds?.proposal}
                                     </td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[13%] max-w-[100px]">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[13%] max-w-[100px]">
-                                      <span className={clsx([
-                                        (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                        "text-red-700 font-semibold",
-                                      ])}>
-                                        {vds?.vote}
+                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">{convertToTitleCase(vds?.mgt_rec)}</td>
+                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">
+                                      <span className="inline-flex items-center gap-1.5">
+                                        <span className={clsx([
+                                          (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                          "text-red-700 font-semibold",
+                                        ])}>
+                                          {vds?.vote}
+                                        </span>
+                                        {vds?.vote?.includes("Split") &&
+                                          vds?.split_count &&
+                                          vds.split_count !== "None" && (
+                                            <Tippy content={vds.split_count} options={{ theme: "light" }}>
+                                              <span>
+                                                <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
+                                              </span>
+                                            </Tippy>
+                                          )}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-2 align-middle break-words w-[20%]">{vds?.institution_name}</td>
+                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[14%]">{vds?.institution_name}</td>
                                   </tr>
                                   {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
                                     <tr className="bg-gray-50">
@@ -2885,17 +2944,13 @@ const index = () => {
                         }, {});
 
                         return Object.entries(groupedData).map(([institutionName, institutionData]: [string, any]) => (
-                          <>
-                            {/* Institution Header Row */}
+                          <React.Fragment key={institutionName}>
                             <Table.Tr
                               key={`header-${institutionName}`}
                               className="bg-gray-50 dark:bg-darkmode-700 cursor-pointer sticky top-12 z-10 hover:bg-gray-100 dark:hover:bg-darkmode-600 transition-all duration-200"
                               onClick={() => toggleInstitutionGroup(institutionName)}
                             >
-                              <Table.Td
-                                colSpan={5}
-                                className="font-semibold py-3 px-4"
-                              >
+                              <Table.Td colSpan={5} className="font-semibold py-3 px-4">
                                 <div className="flex flex-row justify-between items-center">
                                   <div className="flex items-center">
                                     <span className="text-gray-800 dark:text-white font-medium">
@@ -2904,22 +2959,15 @@ const index = () => {
                                   </div>
                                   <button className="text-primary hover:text-primary/80 transition-colors duration-200">
                                     {openInstitutionGroups[institutionName] ? (
-                                      <Lucide
-                                        icon="ChevronUp"
-                                        className="w-5 h-5"
-                                      />
+                                      <Lucide icon="ChevronUp" className="w-5 h-5" />
                                     ) : (
-                                      <Lucide
-                                        icon="ChevronDown"
-                                        className="w-5 h-5"
-                                      />
+                                      <Lucide icon="ChevronDown" className="w-5 h-5" />
                                     )}
                                   </button>
                                 </div>
                               </Table.Td>
                             </Table.Tr>
 
-                            {/* Institution Data Rows - Show when expanded */}
                             {openInstitutionGroups[institutionName] &&
                               institutionData.map((vds: any, index: number) => (
                                 <Table.Tr
@@ -2927,9 +2975,7 @@ const index = () => {
                                   className="[&_td]:last:border-b-0"
                                   style={getSequentialBorderStyle(vds?.proposal_num, institutionData, index)}
                                 >
-                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800">
-                                    {/* Empty cell for institution name since it's in the header */}
-                                  </Table.Td>
+                                  <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800" />
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
                                     <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">
                                       {convertToTitleCase(vds?.meeting_type)}
@@ -2942,7 +2988,9 @@ const index = () => {
                                   </Table.Td>
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
                                     <div className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm">
-                                      <span className="block truncate" title={vds?.proposal}>{vds?.proposal}</span>
+                                      <span className="block truncate" title={vds?.proposal}>
+                                        {vds?.proposal}
+                                      </span>
                                     </div>
                                   </Table.Td>
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
@@ -2952,10 +3000,14 @@ const index = () => {
                                           <span className="text-yellow-800 text-sm font-medium">{vds?.vote}</span>
                                         </Tippy>
                                       ) : (
-                                        <span className={clsx([
-                                          "text-sm font-medium",
-                                          (vds?.vote?.includes("Against") || vds?.vote?.includes("Withhold")) ? "text-red-600" : "text-gray-700"
-                                        ])}>
+                                        <span
+                                          className={clsx([
+                                            "text-sm font-medium",
+                                            (vds?.vote?.includes("Against") || vds?.vote?.includes("Withhold"))
+                                              ? "text-red-600"
+                                              : "text-gray-700",
+                                          ])}
+                                        >
                                           {vds?.vote}
                                         </span>
                                       )}
@@ -2968,7 +3020,7 @@ const index = () => {
                                   </Table.Td>
                                 </Table.Tr>
                               ))}
-                          </>
+                          </React.Fragment>
                         ));
                       })()
                     ) : (
