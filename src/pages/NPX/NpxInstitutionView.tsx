@@ -1033,6 +1033,11 @@ const NpxInstitutionView = () => {
               <div>
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaTags className="text-gray-400" /> Keywords (Beta)
+                  <Tippy content="Keyword search applies on proposal text" options={{ theme: "light" }}>
+                    <span>
+                      <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
+                    </span>
+                  </Tippy>
                 </label>
                 <CreatableInputSelect
                   placeholder="Type and press Enter to add keywords"

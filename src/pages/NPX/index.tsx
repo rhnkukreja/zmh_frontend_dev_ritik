@@ -1324,6 +1324,11 @@ const index = () => {
                   <div className="flex items-center justify-between mb-1">
                     <label className="flex items-center gap-2 text-slate-600 font-semibold">
                       <FaSearch className="text-gray-400" /> Keywords
+                      <Tippy content="Keyword search applies on proposal text" options={{ theme: "light" }}>
+                        <span>
+                          <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
+                        </span>
+                      </Tippy>
                     </label>
                     {keywordDropdownOptions.length > 0 && (
                       <button
