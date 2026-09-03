@@ -133,6 +133,19 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
+  const [expandedHoldingRows, setExpandedHoldingRows] = useState<Set<string>>(new Set());
+
+  const toggleHoldingRow = (rowKey: string) => {
+    setExpandedHoldingRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowKey)) {
+        next.delete(rowKey);
+      } else {
+        next.add(rowKey);
+      }
+      return next;
+    });
+  };
 
   const allYearData: OwnershipYearData[] = useMemo(() => {
     const data = Array.isArray((dashboardDataList as any)?.all_year_data)
@@ -429,6 +442,23 @@ const getNormalizedScrapedInfo = (name: string) => {
     const holdings = selectedYearData?.holdings_data;
     return Array.isArray(holdings) ? holdings : [];
   }, [selectedYearData]);
+
+  useEffect(() => {
+    const rowsWithChildren = currentHoldings.reduce<string[]>((acc, dashboard, index) => {
+      if (Array.isArray(dashboard?.child_holdings_data) && dashboard.child_holdings_data.length > 0) {
+        acc.push(`${dashboard.filer_id ?? dashboard.institution_name ?? "row"}-${index}`);
+      }
+      return acc;
+    }, []);
+
+    if (rowsWithChildren.length > 0) {
+      setExpandedHoldingRows((prev) => {
+        const next = new Set(prev);
+        rowsWithChildren.forEach((key) => next.add(key));
+        return next;
+      });
+    }
+  }, [currentHoldings]);
 
   const handleOwnershipViewChange = (view: OwnershipView) => {
     setSearchParams((previousParams) => {
@@ -1000,9 +1030,13 @@ const getNormalizedScrapedInfo = (name: string) => {
                             {!investorCardLoading &&
                               currentHoldings.length > 0 &&
                               currentHoldings.map(
-                                (dashboard: CompanyDashboard, index: number) => (
+                                (dashboard: CompanyDashboard, index: number) => {
+                                const rowKey = `${dashboard.filer_id ?? dashboard.institution_name ?? "row"}-${index}`;
+                                const hasChildren = Array.isArray(dashboard?.child_holdings_data) && dashboard.child_holdings_data.length > 0;
+                                const isRowExpanded = expandedHoldingRows.has(rowKey);
+                                return (
+                                <Fragment key={rowKey}>
                                   <Table.Tr
-                                    key={`${dashboard.filer_id ?? dashboard.institution_name ?? "row"}-${index}`}
                                     className="row [&_td]:last:border-b-0"
                                   >
                                     {dashboard?.institution_name && (
@@ -1015,7 +1049,18 @@ const getNormalizedScrapedInfo = (name: string) => {
       
       <Table.Td className="relative w-full min-w-[320px] px-4 py-2 pr-28">
     <div className="flex min-w-0 items-start gap-2">
-        
+        {hasChildren && (
+          <button
+            type="button"
+            onClick={() => toggleHoldingRow(rowKey)}
+            className="absolute left-1 top-1/2 -translate-y-1/2 shrink-0 flex items-center justify-center w-5 h-5 rounded hover:bg-slate-100 text-slate-500"
+          >
+            <Lucide
+              icon={isRowExpanded ? "ChevronUp" : "ChevronDown"}
+              className="w-4 h-4"
+            />
+          </button>
+        )}
         {/* 🌟 1. Grab the ID from either the DB OR the background scraped data */}
         {(() => {
   const name = dashboard?.institution_name;
@@ -1269,15 +1314,25 @@ const isActivelyScraping =
                                             </div>
                                           </div>
                                         </Table.Td>
-                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
-                                          {renderVotingStatus(
-                                            dashboard?.voted_against_directors,
-                                            dashboard?.voted_against_directors_message,
-                                            "Not disclosed in NPX"
+                                        <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${hasChildren ? 'bg-gray-50' : ''}`}>
+                                          {hasChildren ? (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="text-gray-300">—</div>
+                                            </div>
+                                          ) : (
+                                            renderVotingStatus(
+                                              dashboard?.voted_against_directors,
+                                              dashboard?.voted_against_directors_message,
+                                              "Not disclosed in NPX"
+                                            )
                                           )}
                                         </Table.Td>
-                                        <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
-                                          {showSayOnPayColumn ? (
+                                        <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${(isColumnGrayedOut || hasChildren) ? 'bg-gray-50' : ''}`}>
+                                          {hasChildren ? (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="text-gray-300">—</div>
+                                            </div>
+                                          ) : showSayOnPayColumn ? (
                                             renderVotingStatus(
                                               dashboard?.voted_against_say_on_pay,
                                               dashboard?.voted_against_say_on_pay_message,
@@ -1294,8 +1349,77 @@ const isActivelyScraping =
                                       </>
                                     )}
                                   </Table.Tr>
-                                )
-                              )}
+                                  {isRowExpanded &&
+                                    hasChildren &&
+                                    dashboard.child_holdings_data!.map((child, childIdx) => (
+                                      <Table.Tr
+                                        key={`${rowKey}-child-${child?.institution_id ?? childIdx}`}
+                                        className="row [&_td]:last:border-b-0"
+                                      >
+                                        <Table.Td className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
+                                          <div className="flex items-center justify-center text-slate-500 text-[12px] font-semibold">
+                                            {index + 1}.{childIdx + 1}
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="relative w-full min-w-[320px] px-4 py-2 pr-28">
+                                          <div className="pl-7">
+                                            <h1 className="block max-w-[260px] break-words whitespace-normal capitalize font-semibold leading-tight text-slate-700">
+                                              {child?.institution_name}
+                                            </h1>
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left bg-gray-50">
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="text-gray-300">—</div>
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left min-w-[150px] bg-gray-50">
+                                          <div className="whitespace-normal text-left">
+                                            <span className="text-gray-300">—</span>
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left bg-gray-50">
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="text-gray-300">—</div>
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left bg-gray-50">
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="text-gray-300">—</div>
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left bg-gray-50">
+                                          <div className="whitespace-nowrap flex items-center justify-center">
+                                            <div className="text-gray-300">—</div>
+                                          </div>
+                                        </Table.Td>
+                                        <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left">
+                                          {renderVotingStatus(
+                                            child?.voted_against_directors,
+                                            child?.voted_against_directors_message,
+                                            "Not disclosed in NPX"
+                                          )}
+                                        </Table.Td>
+                                        <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
+                                          {showSayOnPayColumn ? (
+                                            renderVotingStatus(
+                                              child?.voted_against_say_on_pay,
+                                              child?.voted_against_say_on_pay_message,
+                                              `Say on Pay not on ballot at ${activeYear || currentExpectedYear} shareholder meeting`
+                                            )
+                                          ) : (
+                                            <div className="whitespace-nowrap flex items-center justify-center">
+                                              <div className="text-gray-400">
+                                                —
+                                              </div>
+                                            </div>
+                                          )}
+                                        </Table.Td>
+                                      </Table.Tr>
+                                    ))}
+                                </Fragment>
+                                );
+                              })}
                           </Table.Tbody>
                         </Table>
                       </div>

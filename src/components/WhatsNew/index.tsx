@@ -41,6 +41,45 @@ interface GetHelpProps {
   setWhatsNewFormVisible: (value: boolean) => void;
 }
 
+let cachedInstitutionOptions: Array<{ value: any; label: string }> | null = null;
+let institutionOptionsRequest: Promise<Array<{ value: any; label: string }>> | null = null;
+
+const loadInstitutionOptions = async () => {
+  if (cachedInstitutionOptions) {
+    return cachedInstitutionOptions;
+  }
+
+  if (!institutionOptionsRequest) {
+    institutionOptionsRequest = (async () => {
+      let data: any;
+      try {
+        const res1 = await axiosInstance.get(`${baseURL}/institute/?institution_type=investor&all=true`);
+        data = res1.data;
+      } catch (e) {
+        const res2 = await fetch(`${baseURL}/institute/?institution_type=investor&all=true`);
+        data = await res2.json();
+      }
+
+      const list = Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
+      const opts = list
+        .map((x: any) => {
+          const value = x?.id ?? x?.value ?? x?.pk ?? x?.institute_id ?? x;
+          const rawLabel = x?.institution ?? x?.name ?? x?.label ?? x?.institution_name ?? (typeof x === 'string' ? x : (x?.toString ? x.toString() : ''));
+          const label = typeof rawLabel === 'string' ? rawLabel : String(rawLabel);
+          return { value, label };
+        })
+        .filter((o: any) => o && o.label);
+
+      cachedInstitutionOptions = opts;
+      return opts;
+    })().finally(() => {
+      institutionOptionsRequest = null;
+    });
+  }
+
+  return institutionOptionsRequest;
+};
+
 const GetWhatsNew = ({
   whatsNewFormVisible,
   setWhatsNewFormVisible,
@@ -78,25 +117,15 @@ const GetWhatsNew = ({
   };
 
   const fetchInstitutions = async () => {
+    if (cachedInstitutionOptions) {
+      setInstitutionOptions(cachedInstitutionOptions);
+      setInstitutionLoading(false);
+      return;
+    }
+
     setInstitutionLoading(true);
     try {
-      let data: any;
-      try {
-        const res1 = await axiosInstance.get(`${baseURL}/institute/?institution_type=investor&all=true`);
-        data = res1.data;
-      } catch (e) {
-        const res2 = await fetch(`${baseURL}/institute/?institution_type=investor&all=true`);
-        data = await res2.json();
-      }
-      const list = Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
-      const opts = list
-        .map((x: any) => {
-          const value = x?.id ?? x?.value ?? x?.pk ?? x?.institute_id ?? x;
-          const rawLabel = x?.institution ?? x?.name ?? x?.label ?? x?.institution_name ?? (typeof x === 'string' ? x : (x?.toString ? x.toString() : ''));
-          const label = typeof rawLabel === 'string' ? rawLabel : String(rawLabel);
-          return { value, label };
-        })
-        .filter((o: any) => o && o.label);
+      const opts = await loadInstitutionOptions();
       setInstitutionOptions(opts);
     } catch (e) {
       setInstitutionOptions([]);
@@ -153,9 +182,12 @@ const GetWhatsNew = ({
   };
 
   useEffect(() => {
+    fetchInstitutions();
+  }, []);
+
+  useEffect(() => {
     if (whatsNewFormVisible) {
       fetchEmailAlerts();
-      fetchInstitutions();
       setEditingAlert(null);
       setFormMode('create');
       setActiveTab(0);

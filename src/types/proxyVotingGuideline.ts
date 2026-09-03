@@ -1,6 +1,7 @@
 export type ProxyVotingGuideline = {
   id: number;
   proxy_voting_guidelines_id: string;
+  name?: string;
   institution: number;
   institution_name: string;
   institution_name_raw: string;

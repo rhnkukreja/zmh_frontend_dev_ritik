@@ -42,6 +42,8 @@ export type CompanyDashboard = {
   company_name: string;
   engagement_questions: boolean
   results: any
+  child_holdings_data?: CompanyDashboard[];
+  parent_institution_id?: number;
   // percent_ownership: string;
 };
 
@@ -358,17 +360,7 @@ export const fetchNpxProposalVotingStats = createAsyncThunk<
     });
     return { result: response.result };
   },
-  {
-    condition: ({ requestKey }, { getState }) => {
-      if (!requestKey) return true;
-      const state = getState() as any;
-      const dashboardState = state.dashboard;
-      return !(
-        dashboardState?.npxProposalVotingStatsRequestKey === requestKey &&
-        dashboardState?.npxProposalVotingStats
-      );
-    },
-  }
+  {}
 );
 
 export const fetchInvestorProfileDetails = createAsyncThunk<
