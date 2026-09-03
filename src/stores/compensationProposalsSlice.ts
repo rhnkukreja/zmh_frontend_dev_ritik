@@ -20,9 +20,11 @@ interface CompensationProposalsState {
 }
 
 const DEFAULT_INVESTORS = [
-  "BlackRock, Inc.",
-  "The Vanguard Group",
+  "BlackRock (BAIS)",
+  "BlackRock (BIS)",
+  "Vanguard Capital Management",
   "State Street Investment Management",
+  "Vanguard Portfolio Management",
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
