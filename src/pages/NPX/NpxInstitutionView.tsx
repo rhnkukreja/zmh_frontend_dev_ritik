@@ -75,6 +75,34 @@ const formatNumberWithCommas = (value: any) => {
 
 const DEFAULT_INVESTOR = "BlackRock, Inc.";
 const NPX_INSTITUTION_GLOBAL_SEARCH_NAME = "Apple Inc.";
+const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
+const NPX_RELOAD_SESSION_KEY = "npxVotingReloadHandled";
+
+const isPageReloadOnce = (sessionKey: string) => {
+  if (typeof window === "undefined") return false;
+  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
+  const isReload = navEntry?.type ? navEntry.type === "reload" : (window.performance as any)?.navigation?.type === 1;
+  try {
+    const handled = sessionStorage.getItem(sessionKey) === "true";
+    if (isReload && !handled) {
+      sessionStorage.setItem(sessionKey, "true");
+      return true;
+    }
+    return false;
+  } catch {
+    return isReload;
+  }
+};
+
+const readCachedFilters = (): FilterState | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem(NPX_FILTER_CACHE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
 
 const NpxInstitutionView = () => {
   const dispatch = useAppDispatch();
@@ -87,8 +115,32 @@ const NpxInstitutionView = () => {
   );
 
   const [filters, setFilters] = useState<FilterState>({
-    investor_company: [],
-    year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
+    ...(() => {
+      if (isPageReloadOnce(NPX_RELOAD_SESSION_KEY)) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(NPX_FILTER_CACHE_KEY);
+        }
+        return {
+          investor_company: [],
+          year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
+        };
+      }
+
+      const cachedFilters = readCachedFilters();
+      if (cachedFilters) {
+        return {
+          ...cachedFilters,
+          year: searchParams.get("year")
+            ? [searchParams.get("year") as string]
+            : cachedFilters.year || [],
+        };
+      }
+
+      return {
+        investor_company: [],
+        year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
+      };
+    })(),
   });
   const [dropdowns, setDropdowns] = useState<any>({});
   const [dropdownLoading, setDropdownLoading] = useState(false);
@@ -105,6 +157,12 @@ const NpxInstitutionView = () => {
   const [showInstitutionFirstMessage, setShowInstitutionFirstMessage] = useState(false);
   const hasBootstrappedInstitutionRef = useRef(false);
   const hasSelectedInstitution = Boolean(filters.investor_company && filters.investor_company.length > 0 && filters.investor_company[0]);
+
+  useEffect(() => {
+    if (isPageReloadOnce(NPX_RELOAD_SESSION_KEY)) return;
+    if (!hasBootstrappedInstitutionRef.current && !hasSelectedInstitution) return;
+    localStorage.setItem(NPX_FILTER_CACHE_KEY, JSON.stringify(filters));
+  }, [filters]);
 
   const viewData = useMemo(() => npxProposalVotingStats || {}, [npxProposalVotingStats]);
   const byInstitution = useMemo(() => viewData.by_institution || [], [viewData]);
@@ -501,6 +559,7 @@ const NpxInstitutionView = () => {
     setPrevDateRangeSelection("");
     setShowInstitutionFirstMessage(false);
     setActivePage(1);
+    localStorage.removeItem(NPX_FILTER_CACHE_KEY);
   };
 
   const handleDownload = () => {
