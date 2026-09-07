@@ -257,6 +257,29 @@ class DashboardService {
     return response.data;
   }
 
+  // One row per captured SEC filing (not one row per company+filer campaign) --
+  // returns { results, total }, sorted filed_at DESC server-side. Callers must
+  // paginate against `total`/limit/offset rather than fetching everything, and
+  // date_from/date_to filter in the database, not client-side.
+  public async getActivistCampaignFilings(params: Record<string, any>): Promise<any> {
+    const response = await axiosInstance.get(`/api/activist-campaigns/filings`, {
+      baseURL: activistCampaignsApiBaseURL,
+      params,
+    });
+    return response.data;
+  }
+
+  // Emails the configured alert recipients (backend-owned list) about one
+  // specific filing. Returns { sent, alert_sent_at, alert_sent_by } on success.
+  public async sendActivistCampaignFilingAlert(filingId: number | string): Promise<any> {
+    const response = await axiosInstance.post(
+      `/api/activist-campaigns/filings/${filingId}/send-alert`,
+      {},
+      { baseURL: activistCampaignsApiBaseURL }
+    );
+    return response.data;
+  }
+
   public async updateActivistCampaign(
     id: number | string,
     data: { status?: string; notes?: string }
