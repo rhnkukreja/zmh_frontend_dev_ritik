@@ -9,29 +9,59 @@ import { FormCheck } from "@/components/Base/Form";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import FilterChips from "@/components/FilterChips";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
+import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
 
 const THEME_MAROON = "#8b1828";
+const PAGE_SIZE = 50;
 
-type CampaignItem = {
+// One row per captured SEC filing -- NOT one row per company+filer campaign.
+// The same investor filing three times against one company shows as three
+// separate rows here. status/notes/campaign_id are joined in from a campaign
+// record when one exists for this company+filer pair, and are null otherwise.
+type FilingItem = {
   id: string | number;
+  accession_number?: string;
+  form_type?: string;
   company_name?: string;
-  cik?: string;
+  subject_cik?: string;
   ticker?: string;
   filer?: string;
+  filer_cik?: string;
   in_activism_flow?: boolean;
-  status?: string;
-  notes?: string;
-  filing_type?: string;
-  first_filed_date?: string;
-  last_updated?: string;
+  filing_url?: string;
+  filed_at?: string;
+  alert_sent_at?: string | null;
+  alert_sent_by?: string | null;
+  status?: string | null;
+  notes?: string | null;
+  campaign_id?: string | number | null;
+  // Local-only: set when send-alert returns sent:true with alert_sent_at
+  // still null and a `warning` -- the email genuinely went out, only the
+  // database write of when recording it failed. Never comes from a GET; only
+  // ever set from a send-alert response, and never cleared by a refetch.
+  alertSendWarning?: string | null;
   [key: string]: any;
 };
 
 const toTrimmedString = (value: unknown) => String(value ?? "").trim();
 
+const formatDateOnly = (value: any): string => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+};
+
+const formatDateTime = (value: any): string => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+};
+
 // ─── Filing category buckets ──────────────────────────────────────────────
-// The backend stores filing_type as free-form strings ("Schedule 13D",
+// The backend stores form_type as free-form strings ("Schedule 13D",
 // "DEF 14A", ...) with inconsistent case/spacing seen in the data, so
 // matching is done on a normalized (uppercased, whitespace-collapsed) form
 // rather than the raw string. Anything that doesn't match either named
@@ -44,8 +74,8 @@ const FILING_CATEGORY_ORDER = ["Ownership filings", "Proxy filings", FILING_CATE
 
 const normalizeFilingType = (value: unknown) => toTrimmedString(value).toUpperCase().replace(/\s+/g, " ");
 
-const getFilingCategory = (filingType: unknown): string => {
-  const normalized = normalizeFilingType(filingType);
+const getFilingCategory = (formType: unknown): string => {
+  const normalized = normalizeFilingType(formType);
   if (OWNERSHIP_FILING_TYPES.has(normalized)) return "Ownership filings";
   if (PROXY_FILING_TYPES.has(normalized)) return "Proxy filings";
   return FILING_CATEGORY_OTHER;
@@ -101,26 +131,78 @@ const CampaignFilterPanel = ({
   </div>
 );
 
+// Date range filter, same visual container as CampaignFilterPanel above.
+// Native <input type="date"> -- same date-input pattern already used
+// elsewhere in this codebase (e.g. ProxyContestModal.tsx), no new
+// date-picker dependency.
+const DateRangeFilterPanel = ({
+  draftFrom,
+  draftTo,
+  onDraftFromChange,
+  onDraftToChange,
+}: {
+  draftFrom: string;
+  draftTo: string;
+  onDraftFromChange: (value: string) => void;
+  onDraftToChange: (value: string) => void;
+}) => (
+  <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+    <div className="flex items-center gap-2 text-slate-600 font-semibold mb-3">
+      <Lucide icon="Calendar" className="w-4 h-4 text-slate-400" />
+      First Filed
+    </div>
+
+    <div className="flex flex-col gap-3">
+      <label className="block">
+        <span className="block text-xs text-slate-500 mb-1">From</span>
+        <input
+          type="date"
+          value={draftFrom}
+          onChange={(e) => onDraftFromChange(e.target.value)}
+          className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 bg-white focus:border-primary focus:outline-none"
+        />
+      </label>
+      <label className="block">
+        <span className="block text-xs text-slate-500 mb-1">To</span>
+        <input
+          type="date"
+          value={draftTo}
+          onChange={(e) => onDraftToChange(e.target.value)}
+          className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 bg-white focus:border-primary focus:outline-none"
+        />
+      </label>
+    </div>
+  </div>
+);
+
 function ActivistCampaigns() {
   const [loading, setLoading] = useState(false);
-  const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
+  const [filings, setFilings] = useState<FilingItem[]>([]);
+  const [totalFilings, setTotalFilings] = useState(0);
+  const [page, setPage] = useState(1);
 
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedTickers, setSelectedTickers] = useState<string[]>([]);
   const [selectedFilers, setSelectedFilers] = useState<string[]>([]);
   const [selectedFilingCategories, setSelectedFilingCategories] = useState<string[]>([]);
+  const [selectedDateFrom, setSelectedDateFrom] = useState("");
+  const [selectedDateTo, setSelectedDateTo] = useState("");
   const [draftStatuses, setDraftStatuses] = useState<string[]>([]);
   const [draftTickers, setDraftTickers] = useState<string[]>([]);
   const [draftFilers, setDraftFilers] = useState<string[]>([]);
   const [draftFilingCategories, setDraftFilingCategories] = useState<string[]>([]);
+  const [draftDateFrom, setDraftDateFrom] = useState("");
+  const [draftDateTo, setDraftDateTo] = useState("");
 
-  // Local-only, per-row "send an alert for this campaign" flag (Item 2) --
-  // deliberately plain React state, not persisted anywhere: there is no
-  // backend field for it, so it must honestly reset on refresh rather than
-  // pretend to be saved via localStorage.
-  const [sendAlertFlags, setSendAlertFlags] = useState<Record<string, boolean>>({});
+  // Send Alert -- replaces the old local-only sendAlertFlags entirely. The
+  // checkbox's checked state now reflects the real alert_sent_at on the row,
+  // not unsent local intent; clicking it opens a confirm dialog rather than
+  // toggling anything directly.
+  const [alertConfirmTarget, setAlertConfirmTarget] = useState<FilingItem | null>(null);
+  const [sendingAlertId, setSendingAlertId] = useState<string | number | null>(null);
+  const [alertSendError, setAlertSendError] = useState<string | null>(null);
 
-  const [editingCampaign, setEditingCampaign] = useState<CampaignItem | null>(null);
+  const [editingFiling, setEditingFiling] = useState<FilingItem | null>(null);
   const [editStatus, setEditStatus] = useState("ongoing");
   const [editNotes, setEditNotes] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -130,25 +212,40 @@ function ActivistCampaigns() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
 
-  const fetchCampaigns = useCallback(async () => {
+  // Server-side pagination + date filtering, per the backend contract --
+  // never fetch everything and paginate/filter dates in the browser, since
+  // this table will hold thousands of rows.
+  const fetchFilings = useCallback(async (targetPage: number, dateFrom: string, dateTo: string) => {
     setLoading(true);
     try {
-      const response = await dashboardService.getActivistCampaigns();
-      const list = Array.isArray(response)
-        ? response
-        : response?.results || response?.campaigns || response?.data || [];
-      setCampaigns(Array.isArray(list) ? list : []);
+      const response = await dashboardService.getActivistCampaignFilings({
+        limit: PAGE_SIZE,
+        offset: (targetPage - 1) * PAGE_SIZE,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+      });
+      const list = response?.filings || response?.results || response?.data || [];
+      const results = Array.isArray(list) ? list : [];
+      setFilings(results);
+      setTotalFilings(typeof response?.total === "number" ? response.total : results.length);
     } catch (error) {
-      console.error("Failed to load activist campaigns:", error);
-      setCampaigns([]);
+      console.error("Failed to load activist campaign filings:", error);
+      setFilings([]);
+      setTotalFilings(0);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchCampaigns();
-  }, [fetchCampaigns]);
+    fetchFilings(1, "", "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    fetchFilings(newPage, selectedDateFrom, selectedDateTo);
+  };
 
   // ─── Excel upload dropzone — mirrors src/components/UploadFile/index.tsx's
   // addedfile/error handling exactly. ───────────────────────────────────────
@@ -182,31 +279,40 @@ function ActivistCampaigns() {
     };
   }, []);
 
+  // NOTE: Status/Ticker/Filer/Filing Category filters below are client-side,
+  // applied only to the currently-loaded page of filings -- the documented
+  // backend contract for GET .../filings has no query params for exact
+  // status/ticker/filer matching (only date_from/date_to, form_type,
+  // in_activism_flow, and a single fuzzy `search`). This is a pre-existing
+  // limitation carried over from before this change, just made more visible
+  // now that the table is genuinely paginated -- flagged rather than
+  // silently left, since it's the same "only filters the current page" trap
+  // the date filter was explicitly required to avoid.
   const statusOptions = useMemo(
-    () => Array.from(new Set(campaigns.map((c) => toTrimmedString(c.status)).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [campaigns]
+    () => Array.from(new Set(filings.map((f) => toTrimmedString(f.status)).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [filings]
   );
   const tickerOptions = useMemo(
-    () => Array.from(new Set(campaigns.map((c) => toTrimmedString(c.ticker)).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [campaigns]
+    () => Array.from(new Set(filings.map((f) => toTrimmedString(f.ticker)).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [filings]
   );
   const filerOptions = useMemo(
-    () => Array.from(new Set(campaigns.map((c) => toTrimmedString(c.filer)).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
-    [campaigns]
+    () => Array.from(new Set(filings.map((f) => toTrimmedString(f.filer)).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [filings]
   );
   const filingCategoryOptions = useMemo(() => {
-    const present = new Set(campaigns.map((c) => getFilingCategory(c.filing_type)));
+    const present = new Set(filings.map((f) => getFilingCategory(f.form_type)));
     // Fixed order (not alpha) so "Other" always trails the two named
     // buckets instead of sorting wherever "O" happens to land.
     return FILING_CATEGORY_ORDER.filter((category) => present.has(category));
-  }, [campaigns]);
+  }, [filings]);
 
-  const filteredCampaigns = useMemo(() => {
-    return campaigns.filter((campaign) => {
-      const status = toTrimmedString(campaign.status);
-      const ticker = toTrimmedString(campaign.ticker);
-      const filer = toTrimmedString(campaign.filer);
-      const filingCategory = getFilingCategory(campaign.filing_type);
+  const filteredFilings = useMemo(() => {
+    return filings.filter((filing) => {
+      const status = toTrimmedString(filing.status);
+      const ticker = toTrimmedString(filing.ticker);
+      const filer = toTrimmedString(filing.filer);
+      const filingCategory = getFilingCategory(filing.form_type);
 
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(status)) return false;
       if (selectedTickers.length > 0 && !selectedTickers.includes(ticker)) return false;
@@ -215,17 +321,24 @@ function ActivistCampaigns() {
 
       return true;
     });
-  }, [campaigns, selectedStatuses, selectedTickers, selectedFilers, selectedFilingCategories]);
+  }, [filings, selectedStatuses, selectedTickers, selectedFilers, selectedFilingCategories]);
 
   const activeFiltersCount =
-    selectedStatuses.length + selectedTickers.length + selectedFilers.length + selectedFilingCategories.length;
+    selectedStatuses.length +
+    selectedTickers.length +
+    selectedFilers.length +
+    selectedFilingCategories.length +
+    (selectedDateFrom ? 1 : 0) +
+    (selectedDateTo ? 1 : 0);
 
   const syncDraftFilters = useCallback(() => {
     setDraftStatuses(selectedStatuses);
     setDraftTickers(selectedTickers);
     setDraftFilers(selectedFilers);
     setDraftFilingCategories(selectedFilingCategories);
-  }, [selectedStatuses, selectedTickers, selectedFilers, selectedFilingCategories]);
+    setDraftDateFrom(selectedDateFrom);
+    setDraftDateTo(selectedDateTo);
+  }, [selectedStatuses, selectedTickers, selectedFilers, selectedFilingCategories, selectedDateFrom, selectedDateTo]);
 
   const applyFilters = useCallback(
     (close?: () => void) => {
@@ -233,76 +346,175 @@ function ActivistCampaigns() {
       setSelectedTickers(draftTickers);
       setSelectedFilers(draftFilers);
       setSelectedFilingCategories(draftFilingCategories);
+      setSelectedDateFrom(draftDateFrom);
+      setSelectedDateTo(draftDateTo);
+      setPage(1);
+      // Only date_from/date_to actually need a refetch (server-side); the
+      // other filters just re-narrow whatever page is already loaded. Still
+      // safe/cheap to always refetch page 1 here since Apply is an explicit,
+      // infrequent action, not something firing on every keystroke.
+      fetchFilings(1, draftDateFrom, draftDateTo);
       close?.();
     },
-    [draftStatuses, draftTickers, draftFilers, draftFilingCategories]
+    [draftStatuses, draftTickers, draftFilers, draftFilingCategories, draftDateFrom, draftDateTo, fetchFilings]
   );
 
-  const clearFilters = useCallback((close?: () => void) => {
-    setDraftStatuses([]);
-    setDraftTickers([]);
-    setDraftFilers([]);
-    setDraftFilingCategories([]);
-    setSelectedStatuses([]);
-    setSelectedTickers([]);
-    setSelectedFilers([]);
-    setSelectedFilingCategories([]);
-    close?.();
-  }, []);
+  const clearFilters = useCallback(
+    (close?: () => void) => {
+      setDraftStatuses([]);
+      setDraftTickers([]);
+      setDraftFilers([]);
+      setDraftFilingCategories([]);
+      setDraftDateFrom("");
+      setDraftDateTo("");
+      setSelectedStatuses([]);
+      setSelectedTickers([]);
+      setSelectedFilers([]);
+      setSelectedFilingCategories([]);
+      setSelectedDateFrom("");
+      setSelectedDateTo("");
+      setPage(1);
+      fetchFilings(1, "", "");
+      close?.();
+    },
+    [fetchFilings]
+  );
 
-  const handleRemoveChip = useCallback((removeKey: string, removeValue: string | number) => {
-    const value = String(removeValue);
+  const handleRemoveChip = useCallback(
+    (removeKey: string, removeValue: string | number) => {
+      const value = String(removeValue);
 
-    if (removeKey === "status") {
-      setSelectedStatuses((prev) => prev.filter((item) => item !== value));
-      setDraftStatuses((prev) => prev.filter((item) => item !== value));
-      return;
-    }
-    if (removeKey === "ticker") {
-      setSelectedTickers((prev) => prev.filter((item) => item !== value));
-      setDraftTickers((prev) => prev.filter((item) => item !== value));
-      return;
-    }
-    if (removeKey === "filer") {
-      setSelectedFilers((prev) => prev.filter((item) => item !== value));
-      setDraftFilers((prev) => prev.filter((item) => item !== value));
-      return;
-    }
-    if (removeKey === "filing_category") {
-      setSelectedFilingCategories((prev) => prev.filter((item) => item !== value));
-      setDraftFilingCategories((prev) => prev.filter((item) => item !== value));
-    }
-  }, []);
+      if (removeKey === "status") {
+        setSelectedStatuses((prev) => prev.filter((item) => item !== value));
+        setDraftStatuses((prev) => prev.filter((item) => item !== value));
+        return;
+      }
+      if (removeKey === "ticker") {
+        setSelectedTickers((prev) => prev.filter((item) => item !== value));
+        setDraftTickers((prev) => prev.filter((item) => item !== value));
+        return;
+      }
+      if (removeKey === "filer") {
+        setSelectedFilers((prev) => prev.filter((item) => item !== value));
+        setDraftFilers((prev) => prev.filter((item) => item !== value));
+        return;
+      }
+      if (removeKey === "filing_category") {
+        setSelectedFilingCategories((prev) => prev.filter((item) => item !== value));
+        setDraftFilingCategories((prev) => prev.filter((item) => item !== value));
+        return;
+      }
+      if (removeKey === "date_from") {
+        setSelectedDateFrom("");
+        setDraftDateFrom("");
+        setPage(1);
+        fetchFilings(1, "", selectedDateTo);
+        return;
+      }
+      if (removeKey === "date_to") {
+        setSelectedDateTo("");
+        setDraftDateTo("");
+        setPage(1);
+        fetchFilings(1, selectedDateFrom, "");
+      }
+    },
+    [fetchFilings, selectedDateFrom, selectedDateTo]
+  );
 
-  const openEditModal = (campaign: CampaignItem) => {
-    setEditingCampaign(campaign);
-    setEditStatus(toTrimmedString(campaign.status).toLowerCase() === "closed" ? "closed" : "ongoing");
-    setEditNotes(campaign.notes || "");
+  const openEditModal = (filing: FilingItem) => {
+    if (filing.campaign_id == null) return;
+    setEditingFiling(filing);
+    setEditStatus(toTrimmedString(filing.status).toLowerCase() === "closed" ? "closed" : "ongoing");
+    setEditNotes(filing.notes || "");
   };
 
   const closeEditModal = () => {
     if (isSavingEdit) return;
-    setEditingCampaign(null);
+    setEditingFiling(null);
   };
 
   const saveEdit = async () => {
-    if (!editingCampaign) return;
+    if (!editingFiling || editingFiling.campaign_id == null) return;
+    const campaignId = editingFiling.campaign_id;
     setIsSavingEdit(true);
     try {
-      await dashboardService.updateActivistCampaign(editingCampaign.id, {
+      await dashboardService.updateActivistCampaign(campaignId, {
         status: editStatus,
         notes: editNotes,
       });
-      setCampaigns((prev) =>
-        prev.map((c) => (c.id === editingCampaign.id ? { ...c, status: editStatus, notes: editNotes } : c))
+      // Every filing row sharing this campaign_id reflects the same
+      // underlying campaign, so all of them get the update, not just the
+      // one row that was clicked.
+      setFilings((prev) =>
+        prev.map((f) => (f.campaign_id != null && f.campaign_id === campaignId ? { ...f, status: editStatus, notes: editNotes } : f))
       );
       toast.success("Campaign updated.");
-      setEditingCampaign(null);
+      setEditingFiling(null);
     } catch (error) {
       console.error("Failed to update activist campaign:", error);
       toast.error("Failed to update the campaign.");
     } finally {
       setIsSavingEdit(false);
+    }
+  };
+
+  const openAlertConfirm = (filing: FilingItem) => {
+    setAlertSendError(null);
+    setAlertConfirmTarget(filing);
+  };
+
+  const closeAlertConfirm = () => {
+    if (sendingAlertId != null) return;
+    setAlertConfirmTarget(null);
+    setAlertSendError(null);
+  };
+
+  const confirmSendAlert = async () => {
+    if (!alertConfirmTarget) return;
+    const target = alertConfirmTarget;
+    setSendingAlertId(target.id);
+    setAlertSendError(null);
+    try {
+      const response = await dashboardService.sendActivistCampaignFilingAlert(target.id);
+
+      if (!response?.sent) {
+        // A 2xx response that isn't actually a success (sent:false, or a
+        // shape we don't recognize) -- treated exactly like a thrown error:
+        // the row stays not-sent, and the server's own message is shown.
+        setAlertSendError(response?.detail || response?.message || "Failed to send the alert.");
+        return;
+      }
+
+      setFilings((prev) =>
+        prev.map((f) =>
+          f.id === target.id
+            ? {
+                ...f,
+                alert_sent_at: response?.alert_sent_at ?? f.alert_sent_at,
+                alert_sent_by: response?.alert_sent_by ?? f.alert_sent_by,
+                // sent:true with alert_sent_at still null + a `warning` means
+                // the email genuinely went out -- only the database write of
+                // *when* it was sent failed. Cleared once a real
+                // alert_sent_at comes back, so a later successful send
+                // doesn't leave a stale warning on the row.
+                alertSendWarning: response?.alert_sent_at ? null : response?.warning || null,
+              }
+            : f
+        )
+      );
+      toast.success(
+        response?.warning
+          ? `Alert sent for ${target.company_name || "this filing"} — ${response.warning}`
+          : `Alert sent for ${target.company_name || "this filing"}.`
+      );
+      setAlertConfirmTarget(null);
+    } catch (error: any) {
+      console.error("Failed to send alert:", error);
+      // Never optimistically mark the row as sent -- on failure it's left
+      // exactly as it was (still shows its previous alert_sent_at, if any).
+      setAlertSendError(error?.response?.data?.detail || error?.message || "Failed to send the alert.");
+    } finally {
+      setSendingAlertId(null);
     }
   };
 
@@ -330,7 +542,7 @@ function ActivistCampaigns() {
       }
 
       setUploadFile(null);
-      await fetchCampaigns();
+      await fetchFilings(page, selectedDateFrom, selectedDateTo);
     } catch (error: any) {
       console.error("Failed to upload activist campaigns Excel:", error);
       toast.error(error?.response?.data?.detail || error?.message || "Failed to upload the file.");
@@ -338,6 +550,8 @@ function ActivistCampaigns() {
       setIsUploading(false);
     }
   };
+
+  const totalPages = Math.max(1, Math.ceil(totalFilings / PAGE_SIZE));
 
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
@@ -418,7 +632,7 @@ function ActivistCampaigns() {
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <span className="text-slate-500">Count:</span>
                 <span className="inline-flex items-center rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-white">
-                  {filteredCampaigns.length}
+                  {totalFilings}
                 </span>
               </div>
 
@@ -442,7 +656,7 @@ function ActivistCampaigns() {
                       <div className="mb-5 flex items-start justify-between gap-4">
                         <div>
                           <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
-                          <p className="text-xs text-slate-500 mt-1">Filter the campaigns shown below.</p>
+                          <p className="text-xs text-slate-500 mt-1">Filter the filings shown below.</p>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -488,6 +702,12 @@ function ActivistCampaigns() {
                           onDraftChange={setDraftFilingCategories}
                           loading={loading}
                         />
+                        <DateRangeFilterPanel
+                          draftFrom={draftDateFrom}
+                          draftTo={draftDateTo}
+                          onDraftFromChange={setDraftDateFrom}
+                          onDraftToChange={setDraftDateTo}
+                        />
                       </div>
                     </Popover.Panel>
                   </>
@@ -503,121 +723,161 @@ function ActivistCampaigns() {
                     ...selectedTickers.map((ticker) => ({ key: "ticker", value: ticker })),
                     ...selectedFilers.map((filer) => ({ key: "filer", value: filer })),
                     ...selectedFilingCategories.map((category) => ({ key: "filing_category", value: category })),
+                    ...(selectedDateFrom ? [{ key: "date_from", value: selectedDateFrom }] : []),
+                    ...(selectedDateTo ? [{ key: "date_to", value: selectedDateTo }] : []),
                   ]}
                   onRemove={handleRemoveChip}
                 />
               </div>
             )}
 
-            <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={11} maxHeight="68vh" className="table-fixed">
+            <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={13} maxHeight="68vh" className="table-fixed">
               <StandardizedTable.Header>
-                <StandardizedTable.Cell isHeader width="13%">Company Name</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">CIK</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Ticker</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="11%">Filer</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="9%">In Activism Flow</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Status</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="14%">Notes</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Filing Type</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="12%">Company Name</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="6%">CIK</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="6%">Ticker</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="10%">Filer</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="8%">In Activism Flow</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="6%">Status</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="12%">Notes</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="6%">Filing Type</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader width="7%">First Filed</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Last Updated</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">
-                  <div className="flex flex-col">
-                    <span>Send Alert</span>
-                    <span className="text-[10px] font-normal normal-case text-slate-400"></span>
-                  </div>
-                </StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="6%">Last Updated</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="8%">Alert Sent</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="7%">Send Alert</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader width="4%"> </StandardizedTable.Cell>
               </StandardizedTable.Header>
               <Table.Tbody>
-                {filteredCampaigns.length > 0 ? (
-                  filteredCampaigns.map((campaign, index) => (
-                    <StandardizedTable.Row key={campaign.id ?? index} index={index}>
+                {filteredFilings.length > 0 ? (
+                  filteredFilings.map((filing, index) => (
+                    <StandardizedTable.Row key={filing.id ?? index} index={index}>
                       <StandardizedTable.Cell>
-                        <span className="text-sm font-medium text-slate-700">{campaign.company_name || "-"}</span>
+                        <span className="text-sm font-medium text-slate-700">{filing.company_name || "-"}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{campaign.cik || "-"}</span>
+                        <span className="text-sm text-slate-600">{filing.subject_cik || "-"}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{campaign.ticker || "-"}</span>
+                        <span className="text-sm text-slate-600">{filing.ticker || "-"}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{campaign.filer || "-"}</span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            campaign.in_activism_flow ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                          }`}
-                        >
-                          {campaign.in_activism_flow ? "Yes" : "No"}
-                        </span>
+                        <span className="text-sm text-slate-600">{filing.filer || "-"}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            toTrimmedString(campaign.status).toLowerCase() === "closed"
-                              ? "bg-slate-200 text-slate-600"
-                              : "bg-primary/10 text-primary"
+                            filing.in_activism_flow ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
                           }`}
                         >
-                          {campaign.status || "-"}
+                          {filing.in_activism_flow ? "Yes" : "No"}
                         </span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600 line-clamp-2">{campaign.notes || "-"}</span>
+                        {filing.status ? (
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              toTrimmedString(filing.status).toLowerCase() === "closed"
+                                ? "bg-slate-200 text-slate-600"
+                                : "bg-primary/10 text-primary"
+                            }`}
+                          >
+                            {filing.status}
+                          </span>
+                        ) : null}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{campaign.filing_type || "-"}</span>
+                        <span className="text-sm text-slate-600 line-clamp-2">{filing.notes || ""}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{campaign.first_filed_date || "-"}</span>
+                        <span className="text-sm text-slate-600">{filing.form_type || "-"}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{campaign.last_updated || "-"}</span>
+                        <span className="text-sm text-slate-600">{formatDateOnly(filing.filed_at) || "-"}</span>
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
+                        {/* No field for a filing-level "last updated" timestamp
+                            in the documented filings response -- left blank
+                            rather than guessing a field name. Flagged in the
+                            handoff; needs a decision (drop the column, or the
+                            backend adds the field). */}
+                        <span className="text-sm text-slate-600"></span>
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
+                        {filing.alert_sent_at ? (
+                          <span className="text-sm text-slate-600">{formatDateTime(filing.alert_sent_at)}</span>
+                        ) : filing.alertSendWarning ? (
+                          <div className="flex items-start gap-1.5 text-xs text-amber-700">
+                            <Lucide icon="AlertTriangle" className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              <span className="font-semibold">Sent, not recorded:</span> {filing.alertSendWarning}
+                            </span>
+                          </div>
+                        ) : null}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <input
                           type="checkbox"
-                          checked={!!sendAlertFlags[String(campaign.id)]}
-                          onChange={(e) =>
-                            setSendAlertFlags((prev) => ({ ...prev, [String(campaign.id)]: e.target.checked }))
+                          checked={!!(filing.alert_sent_at || filing.alertSendWarning)}
+                          readOnly
+                          disabled={sendingAlertId === filing.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            openAlertConfirm(filing);
+                          }}
+                          title={
+                            filing.alert_sent_at
+                              ? `Alert already sent ${formatDateTime(filing.alert_sent_at)} — click to send again`
+                              : filing.alertSendWarning
+                              ? `Alert already sent (not recorded: ${filing.alertSendWarning}) — click to send again`
+                              : "Send an alert for this filing"
                           }
-                          title="Send an alert for this campaign — not saved, resets on refresh"
                           className="w-4 h-4 cursor-pointer"
                           style={{ accentColor: THEME_MAROON }}
                         />
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(campaign)}
-                          title="Edit status / notes"
-                          style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, padding: 4 }}
-                        >
-                          <Lucide icon="Pencil" className="w-4 h-4" />
-                        </button>
+                        {filing.campaign_id != null && (
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(filing)}
+                            title="Edit status / notes"
+                            style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, padding: 4 }}
+                          >
+                            <Lucide icon="Pencil" className="w-4 h-4" />
+                          </button>
+                        )}
                       </StandardizedTable.Cell>
                     </StandardizedTable.Row>
                   ))
                 ) : (
                   <Table.Tr>
-                    <Table.Td colSpan={12} className="text-center py-12 text-slate-500">
+                    <Table.Td colSpan={13} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Lucide icon="FileSearch" className="w-10 h-10 opacity-40" />
-                        <span className="text-sm font-medium text-slate-600">No activist campaigns found</span>
+                        <span className="text-sm font-medium text-slate-600">No filings found</span>
                       </div>
                     </Table.Td>
                   </Table.Tr>
                 )}
               </Table.Tbody>
             </StandardizedTable>
+
+            {totalPages > 1 && (
+              <div className="flex justify-end mt-4">
+                <CPagination
+                  page={page}
+                  totalPages={totalPages}
+                  handlePageChange={handlePageChange}
+                  handlePreviousPage={() => { if (page > 1) handlePageChange(page - 1); }}
+                  handleNextPage={() => { if (page < totalPages) handlePageChange(page + 1); }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {editingCampaign && (
+      {editingFiling && (
         <div
           onClick={(e) => {
             if (e.target === e.currentTarget) closeEditModal();
@@ -629,7 +889,7 @@ function ActivistCampaigns() {
             style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 440, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
           >
             <h2 style={{ margin: "0 0 20px", color: "#111827", fontSize: 17, fontWeight: 600 }}>
-              Edit Campaign{editingCampaign.company_name ? ` — ${editingCampaign.company_name}` : ""}
+              Edit Campaign{editingFiling.company_name ? ` — ${editingFiling.company_name}` : ""}
             </h2>
 
             <label style={{ display: "block", marginBottom: 18, fontSize: 13, fontWeight: 600, color: "#374151" }}>
@@ -681,6 +941,81 @@ function ActivistCampaigns() {
                 }}
               >
                 {isSavingEdit ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {alertConfirmTarget && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAlertConfirm();
+          }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "white", padding: 28, borderRadius: 12, width: "100%", maxWidth: 460, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
+          >
+            <h2 style={{ margin: "0 0 16px", color: "#111827", fontSize: 17, fontWeight: 600 }}>Send Alert?</h2>
+
+            {(alertConfirmTarget.alert_sent_at || alertConfirmTarget.alertSendWarning) && (
+              <div style={{ display: "flex", gap: 10, padding: "10px 14px", marginBottom: 16, background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6 }}>
+                <span style={{ color: "#b91c1c", flexShrink: 0, lineHeight: 1 }}>⚠</span>
+                <span style={{ fontSize: 13, color: "#b91c1c", lineHeight: 1.5 }}>
+                  {alertConfirmTarget.alert_sent_at ? (
+                    <>
+                      An alert has <strong>already been sent</strong> for this filing, on{" "}
+                      {formatDateTime(alertConfirmTarget.alert_sent_at)}.
+                    </>
+                  ) : (
+                    <>
+                      An alert has <strong>already been sent</strong> for this filing — it was not recorded
+                      ({alertConfirmTarget.alertSendWarning}), but the email did go out.
+                    </>
+                  )}{" "}
+                  Sending again will email the configured alert recipients a second time.
+                </span>
+              </div>
+            )}
+
+            <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.6, margin: "0 0 16px" }}>
+              Confirming will <strong>immediately email the configured alert recipients</strong> about this filing:
+            </p>
+
+            <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "12px 16px", marginBottom: 20, fontSize: 13.5, color: "#111827", lineHeight: 1.7 }}>
+              <div><strong>Company:</strong> {alertConfirmTarget.company_name || "-"}</div>
+              <div><strong>Filer:</strong> {alertConfirmTarget.filer || "-"}</div>
+              <div><strong>Form Type:</strong> {alertConfirmTarget.form_type || "-"}</div>
+            </div>
+
+            {alertSendError && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6 }}>
+                <span style={{ flexShrink: 0, lineHeight: 1, color: "#b91c1c" }}>⚠</span>
+                <span style={{ fontSize: 12.5, color: "#b91c1c", lineHeight: 1.5 }}>{alertSendError}</span>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button
+                type="button"
+                onClick={closeAlertConfirm}
+                disabled={sendingAlertId != null}
+                style={{ padding: "8px 16px", background: "#f3f4f6", border: "none", borderRadius: 6, cursor: sendingAlertId != null ? "wait" : "pointer", fontWeight: 600, color: "#374151" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmSendAlert}
+                disabled={sendingAlertId != null}
+                style={{
+                  padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6,
+                  cursor: sendingAlertId != null ? "wait" : "pointer", fontWeight: 600, opacity: sendingAlertId != null ? 0.7 : 1,
+                }}
+              >
+                {sendingAlertId != null ? "Sending…" : "Confirm and Send"}
               </button>
             </div>
           </div>
