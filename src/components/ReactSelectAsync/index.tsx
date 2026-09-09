@@ -10,7 +10,7 @@ interface CompanyData {
 }
 
 interface OptionType {
-  value: number;
+  value: any;
   label: string;
   symbol?: string;
   company?: any;
@@ -34,11 +34,15 @@ interface CompanySelectProps {
   year?: string; // Add year parameter
   showDefaultOptions?: boolean;
   hideDropdownIndicator?: boolean;
+  includeSelectAllOption?: boolean;
+  selectAllLabel?: string;
 }
 
 const fetchOptions = async (
   inputValue: string,
   isInstitution?: boolean,
+  includeSelectAllOption?: boolean,
+  selectAllLabel?: string,
   companyGlobalSearchName?: string,
   exactUrl?: string,
   arrayKeyName?: string,
@@ -68,10 +72,19 @@ const fetchOptions = async (
         );
 
     if (isInstitution) {
-      return response.results.map((institution: any) => ({
+      const institutionOptions = response.results.map((institution: any) => ({
         value: institution,
         label: institution,
       }));
+
+      const selectAllOption: OptionType = {
+        value: '__select_all__',
+        label: selectAllLabel || 'Select All',
+      };
+
+      return includeSelectAllOption
+        ? [selectAllOption, ...institutionOptions]
+        : institutionOptions;
     } else {
       if (isHideCurrentCompany && currentCompany) {
         return response.results
@@ -114,6 +127,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   year,
   showDefaultOptions = true,
   hideDropdownIndicator = false,
+  includeSelectAllOption = false,
+  selectAllLabel,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
@@ -140,6 +155,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           fetchOptions(
             trimmedValue,
             isInstitution,
+            includeSelectAllOption,
+            selectAllLabel,
             companyGlobalSearchName,
             exactUrl,
             arrayKeyName,
@@ -156,6 +173,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     [
       companyGlobalSearchName,
       isInstitution,
+      includeSelectAllOption,
+      selectAllLabel,
       exactUrl,
       arrayKeyName,
       isHideCurrentCompany,
@@ -188,6 +207,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
         const options = await fetchOptions(
           "a",
           isInstitution,
+          includeSelectAllOption,
+          selectAllLabel,
           companyGlobalSearchName,
           exactUrl,
           arrayKeyName,
@@ -206,9 +227,9 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     };
 
     fetchDefaultOptions();
-  }, [companyGlobalSearchName, year, showDefaultOptions, isInstitution, exactUrl, arrayKeyName, isHideCurrentCompany, currentCompany, currentFilters]);
-  const onChangeSelect = (newValue: MultiValue<OptionType>) => {
-    onChange(newValue as OptionType[]);
+  }, [companyGlobalSearchName, year, showDefaultOptions, isInstitution, includeSelectAllOption, selectAllLabel, exactUrl, arrayKeyName, isHideCurrentCompany, currentCompany, currentFilters]);
+  const onChangeSelect = (newValue: MultiValue<OptionType> | OptionType | null) => {
+    onChange(newValue as OptionType | OptionType[] | null);
     // Clear input value after selection
     setInputValue("");
   };
@@ -245,6 +266,12 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       setInputValue("");
     }
   };
+
+  const resolvedDefaultOptions = showDefaultOptions
+    ? (isLoadingDefault ? true : (defaultOptions?.length ? defaultOptions?.slice(0, 5) : false))
+    : (isInstitution && includeSelectAllOption
+      ? [{ value: '__select_all__', label: selectAllLabel || 'Select All' }]
+      : false);
 
   useEffect(() => {
     handleInputChange(setDefaultValue?.label ?? setDefaultValue ?? "");
@@ -341,7 +368,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       styles={customStyles}
       isMulti={isMulti}
       loadOptions={loadOptions}
-      defaultOptions={showDefaultOptions ? (isLoadingDefault ? true : (defaultOptions?.length ? defaultOptions?.slice(0,5) : false)) : false}
+      defaultOptions={resolvedDefaultOptions}
       placeholder={
         showDefaultOptions && isLoadingDefault 
           ? "Loading..." 
