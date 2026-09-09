@@ -71,6 +71,26 @@ class DomainNotesService {
     };
   }
 
+  public async getInstitutionNotesByName(
+    institutionName: string,
+  ): Promise<{
+    results: any[];
+  }> {
+    const encodedInstitutionName = encodeURIComponent(JSON.stringify([institutionName]));
+    const response = await axiosInstance.get(
+      `/user/get_domain_notes/?filter=institution&institution_name=${encodedInstitutionName}`
+    );
+    const results = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.results)
+        ? response.data.results
+        : [];
+
+    return {
+      results,
+    };
+  }
+
   public async getCompanyHierarchyNotes(): Promise<{
     results: any[];
   }> {

@@ -89,7 +89,8 @@ const AddDomainNoteModal = ({
     try {
       const trimmedData = {
         ...data,
-        notes: removeTrailingSpaces(data.notes), 
+        notes: removeTrailingSpaces(data.notes),
+        shared: Boolean(data.shared),
       };
       if (selectedNote?.id && mode == "edit") {
         // For edit mode, only send the fields that are actually being edited
@@ -102,6 +103,7 @@ const AddDomainNoteModal = ({
             notes: trimmedData.notes,
             date: trimmedData.date,
             category: trimmedData.category,
+            shared: trimmedData.shared,
           };
         // Testing: omit `company` from payload when user is NOT corporate
         if (isCorporateUser) {
@@ -153,20 +155,25 @@ const AddDomainNoteModal = ({
       open={addNoteModalVisible}
       onClose={() => setAddNoteModalVisible(false)}
     >
-      
-      <Dialog.Panel>
-        <Dialog.Title className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
-            {mode === "edit" ? "Edit note" : "New note"}
-          </h2>
-          <button
-            onClick={() => setAddNoteModalVisible(false)}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-white transition"
-          >
-            <Lucide icon="X" className="w-5 h-5" />
-          </button>
+      <Dialog.Panel className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <button
+          type="button"
+          onClick={() => setAddNoteModalVisible(false)}
+          className="absolute right-6 top-3 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-100 hover:text-slate-700"
+          aria-label="Close note modal"
+        >
+          <Lucide icon="X" className="h-5 w-5" />
+        </button>
+        <Dialog.Title>
+          <div className="px-6 py-3 pr-20">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {mode === "edit" ? "Edit Note" : "New Note"}
+              </h2>
+            </div>
+          </div>
         </Dialog.Title>
-        <Dialog.Description>
+        <Dialog.Description className="bg-slate-50 px-6 py-6">
           <NoteForm
             mode={mode}
             initialData={selectedNote || {}}

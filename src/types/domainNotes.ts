@@ -15,6 +15,7 @@ export interface DomainNote {
   institution_name: string;
   investor_name: string;
   notes: string;
+  shared?: boolean;
   starred: boolean;
   comments: DomainNoteComment[];
   update_delete_check: boolean;

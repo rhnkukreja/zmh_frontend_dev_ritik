@@ -4,6 +4,8 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
 import { useEffect, useMemo, useState, useRef } from "react";
+import DOMPurify from "dompurify";
+import { decryptNotesText } from "@/utils/notesCrypto";
 
 import _ from "lodash";
 import Button from "@/components/Base/Button";
@@ -18,6 +20,7 @@ import {
 import { Dialog } from "@/components/Base/Headless";
 import { investersProfileService } from "@/services/investersProfile";
 import { institutionStatsService } from "@/services/institutionStats";
+import { domainNotesService } from "@/services/domainNotes";
 
 import LoadingWrapper from "@/components/LoadingWrapper";
 
@@ -31,10 +34,12 @@ import {
   investorProfileEditableSectionsInvestors,
 } from "@/constant";
 import { toast } from "react-toastify";
+import { DomainNote, InstitutionHierarchyItem } from "@/types/domainNotes";
 import { InvestersProfile, KeyContact } from "@/types/investerProfiles";
 
 import clsx from "clsx";
 import { FormSwitch } from "@/components/Base/Form";
+import FormInput from "@/components/Base/Form/FormInput";
 import { Controller, useForm } from "react-hook-form";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { ChevronLeft } from "lucide-react";
@@ -150,9 +155,33 @@ function Main() {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloadingProfile, setIsDownloadingProfile] = useState(false);
+  const [isViewNotesModalOpen, setIsViewNotesModalOpen] = useState(false);
+  const [isInstitutionNotesLoading, setIsInstitutionNotesLoading] = useState(false);
+  const [hasInstitutionNotes, setHasInstitutionNotes] = useState(false);
+  const [institutionNotesHierarchy, setInstitutionNotesHierarchy] = useState<InstitutionHierarchyItem[]>([]);
+  const [selectedInstitutionNoteCompany, setSelectedInstitutionNoteCompany] = useState("");
+  const [institutionNoteSearch, setInstitutionNoteSearch] = useState("");
+  const [isContactEmailModalOpen, setIsContactEmailModalOpen] = useState(false);
+  const [isDeleteContactEmailModalOpen, setIsDeleteContactEmailModalOpen] = useState(false);
+  const [contactEmailDraft, setContactEmailDraft] = useState("");
+  const [isSavingContactEmail, setIsSavingContactEmail] = useState(false);
+  const [isDeletingContactEmail, setIsDeletingContactEmail] = useState(false);
 
   const navigate = useNavigate();
   const { handleBack } = useNavigationHistory();
+  const isAdminOrAnalyst = user?.user_type === "Analyst" || user?.user_type === "Admin";
+  const isClientUser = user?.user_type === "Client";
+  const institutionDisplayName =
+    singleInvesterProfile?.institution_name || singleInvesterProfile?.institution || "";
+  const hasTeamContactDetails = Boolean(singleInvesterProfile?.contact_email);
+  const hasKeyContacts = Boolean(singleInvesterProfile?.key_contacts?.length);
+  const shouldShowContactsSidebar =
+    params?.type === "investor" &&
+    (isAdminOrAnalyst || (isClientUser ? hasKeyContacts : hasTeamContactDetails || hasKeyContacts));
+  const isEmailContact = singleInvesterProfile?.contact_email
+    ? /\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
+    : true;
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -172,6 +201,94 @@ function Main() {
   useEffect(() => {
     getSingleInvesterProfile(params.id!, params?.type!);
   }, [params.id, params?.type]);
+
+  useEffect(() => {
+    setContactEmailDraft(singleInvesterProfile?.contact_email || "");
+  }, [singleInvesterProfile?.contact_email]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    setHasInstitutionNotes(false);
+    setInstitutionNotesHierarchy([]);
+    setSelectedInstitutionNoteCompany("");
+
+    const checkInstitutionNotesAvailability = async () => {
+      if (params?.type !== "investor" || !institutionDisplayName) {
+        return;
+      }
+
+      try {
+        const response = await domainNotesService.getInstitutionNotesByName(
+          institutionDisplayName
+        );
+
+        if (!isMounted) return;
+
+        const results = response.results || [];
+        setHasInstitutionNotes(results.length > 0);
+        setInstitutionNotesHierarchy(results);
+      } catch (error) {
+        console.error("Institution notes availability error:", error);
+        if (isMounted) {
+          setHasInstitutionNotes(false);
+          setInstitutionNotesHierarchy([]);
+          setSelectedInstitutionNoteCompany("");
+        }
+      }
+    };
+
+    checkInstitutionNotesAvailability();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [institutionDisplayName, params?.type, singleInvesterProfile?.id]);
+
+  const institutionNoteCompanies = useMemo(() => {
+    const companyMap = new Map<string, DomainNote[]>();
+
+    institutionNotesHierarchy.forEach((item) => {
+      Object.entries(item?.sub_heading || {}).forEach(([companyName, notes]) => {
+        companyMap.set(companyName, [...(companyMap.get(companyName) || []), ...notes]);
+      });
+    });
+
+    return Array.from(companyMap.entries()).map(([companyName, notes]) => ({
+      companyName,
+      notes,
+    }));
+  }, [institutionNotesHierarchy]);
+
+  const filteredInstitutionNoteCompanies = useMemo(() => {
+    const normalizedSearch = institutionNoteSearch.trim().toLowerCase();
+    if (!normalizedSearch) return institutionNoteCompanies;
+
+    return institutionNoteCompanies.filter((item) =>
+      item.companyName.toLowerCase().includes(normalizedSearch)
+    );
+  }, [institutionNoteCompanies, institutionNoteSearch]);
+
+  const selectedInstitutionCompanyNotes = useMemo(() => {
+    return filteredInstitutionNoteCompanies.find(
+      (item) => item.companyName === selectedInstitutionNoteCompany
+    )?.notes || [];
+  }, [filteredInstitutionNoteCompanies, selectedInstitutionNoteCompany]);
+
+  useEffect(() => {
+    if (!filteredInstitutionNoteCompanies.length) {
+      setSelectedInstitutionNoteCompany("");
+      return;
+    }
+
+    const hasSelectedCompany = filteredInstitutionNoteCompanies.some(
+      (item) => item.companyName === selectedInstitutionNoteCompany
+    );
+
+    if (!hasSelectedCompany) {
+      setSelectedInstitutionNoteCompany(filteredInstitutionNoteCompanies[0].companyName);
+    }
+  }, [filteredInstitutionNoteCompanies, selectedInstitutionNoteCompany]);
 
   const handleApiCall = async (
     data: { [key: string]: any },
@@ -343,6 +460,143 @@ function Main() {
     }
   };
 
+  const handleDownloadProfile = async () => {
+    const profileId = Number(params.id || singleInvesterProfile?.id);
+    if (!profileId) {
+      toast.error("Profile ID not found");
+      return;
+    }
+
+    try {
+      setIsDownloadingProfile(true);
+      const response = await investersProfileService.downloadInvestersProfiles(
+        [profileId],
+        "document"
+      );
+      const blob = response.data as Blob;
+      const disposition =
+        (response.headers as any)["content-disposition"] ||
+        (response.headers as any)["Content-Disposition"];
+      let filename: string | null = null;
+
+      if (disposition) {
+        const fileNameMatch = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/);
+        if (fileNameMatch) {
+          filename = decodeURIComponent(fileNameMatch[1] || fileNameMatch[2]);
+        }
+      }
+
+      if (!filename) {
+        const name =
+          singleInvesterProfile?.institution_name ||
+          singleInvesterProfile?.institution ||
+          singleInvesterProfile?.equity_firm_name ||
+          "Investor Profile";
+        filename = `${name} Investor Profile.docx`;
+      }
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error: any) {
+      console.error("Download error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Download failed")) return;
+      toast.error(error?.response?.data?.message || "Download failed");
+    } finally {
+      setIsDownloadingProfile(false);
+    }
+  };
+
+  const handleSaveContactEmail = async () => {
+    const profileId = Number(params.id || singleInvesterProfile?.id);
+    const contactEmail = contactEmailDraft.trim();
+
+    if (!profileId) {
+      toast.error("Profile ID not found");
+      return;
+    }
+
+    if (!contactEmail) {
+      toast.error("Contact email is required");
+      return;
+    }
+
+    try {
+      setIsSavingContactEmail(true);
+      await investersProfileService.patchInvestersProfile(profileId, params?.type!, {
+        contact_email: contactEmail,
+      });
+      toast.success(
+        hasTeamContactDetails
+          ? "Team contact details updated successfully"
+          : "Team contact details added successfully"
+      );
+      setIsContactEmailModalOpen(false);
+      getSingleInvesterProfile(params.id!, params?.type!);
+    } catch (error: any) {
+      console.error("Contact email update error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Failed to update team contact details")) return;
+      toast.error(error?.response?.data?.message || "Failed to update team contact details");
+    } finally {
+      setIsSavingContactEmail(false);
+    }
+  };
+
+  const handleDeleteContactEmail = async () => {
+    const profileId = Number(params.id || singleInvesterProfile?.id);
+
+    if (!profileId) {
+      toast.error("Profile ID not found");
+      return;
+    }
+
+    try {
+      setIsDeletingContactEmail(true);
+      await investersProfileService.patchInvestersProfile(profileId, params?.type!, {
+        contact_email: null,
+      });
+      toast.success("Team contact details deleted successfully");
+      setIsDeleteContactEmailModalOpen(false);
+      setIsContactEmailModalOpen(false);
+      getSingleInvesterProfile(params.id!, params?.type!);
+    } catch (error: any) {
+      console.error("Contact email delete error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Failed to delete team contact details")) return;
+      toast.error(error?.response?.data?.message || "Failed to delete team contact details");
+    } finally {
+      setIsDeletingContactEmail(false);
+    }
+  };
+
+  const handleOpenInstitutionNotes = async () => {
+    if (!institutionDisplayName) {
+      toast.error("Institution name not found");
+      return;
+    }
+
+    try {
+      setIsViewNotesModalOpen(true);
+      setInstitutionNoteSearch("");
+      setIsInstitutionNotesLoading(true);
+      const response = await domainNotesService.getInstitutionNotesByName(
+        institutionDisplayName
+      );
+      setInstitutionNotesHierarchy(response.results || []);
+    } catch (error: any) {
+      console.error("Institution notes fetch error:", error);
+      if (shouldSuppressLocalErrorToast(error, "Failed to load notes")) return;
+      toast.error(error?.response?.data?.message || "Failed to load notes");
+      setInstitutionNotesHierarchy([]);
+    } finally {
+      setIsInstitutionNotesLoading(false);
+    }
+  };
+
   const { companyGlobalSearchTicker } = useAppSelector(
     (state: RootState) => state.authentiction
   );
@@ -388,7 +642,7 @@ function Main() {
   return (
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12 ">
-        <div className="flex flex-col justify-between	md:mt-0 md:h-10 md:items-center md:flex-row mb-4">
+        <div className="mb-4 flex flex-col justify-between md:mt-0 md:h-10 md:flex-row md:items-center">
           <Button
             onClick={backToPreviousPage}
             variant="primary"
@@ -402,16 +656,39 @@ function Main() {
             Back
           </Button>
 
-          {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+          <div className="mt-3 flex shrink-0 items-center gap-2 md:mt-0">
+            {params?.type === "investor" && institutionDisplayName && hasInstitutionNotes && (
+              <Button
+                onClick={handleOpenInstitutionNotes}
+                variant="danger"
+                className="shrink-0 whitespace-nowrap bg-theme-2 border-bg-theme-2"
+                disabled={isInstitutionNotesLoading}
+              >
+                <Lucide icon="FileText" className="mr-2 h-4 w-4" />
+                {isInstitutionNotesLoading ? "Loading Notes..." : "View Notes"}
+              </Button>
+            )}
             <Button
-              onClick={() => setIsDeleteModalOpen(true)}
+              onClick={handleDownloadProfile}
               variant="danger"
-              className="bg-theme-2 border-bg-theme-2"
+              className="shrink-0 whitespace-nowrap bg-theme-2 border-bg-theme-2"
+              disabled={isDownloadingProfile}
             >
-              <Lucide icon="Trash2" className="w-4 h-4 mr-2" />
-              Delete Profile
+              <Lucide icon="Download" className="mr-2 h-4 w-4" />
+              {isDownloadingProfile ? "Downloading..." : "Download Profile"}
             </Button>
-          )}
+
+            {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
+              <Button
+                onClick={() => setIsDeleteModalOpen(true)}
+                variant="danger"
+                className="shrink-0 bg-theme-2 border-bg-theme-2 whitespace-nowrap"
+              >
+                <Lucide icon="Trash2" className="w-4 h-4 mr-2" />
+                Delete Profile
+              </Button>
+            )}
+          </div>
         </div>
  
         <div ref={contentRef}>
@@ -478,8 +755,8 @@ function Main() {
               {clsx(
                 "flex flex-col w-full gap-y-2",
                 params?.type! === "investor" && (user?.user_type === "Analyst" || user?.user_type === "Admin") && "lg:w-[60%] 2xl:w-[54rem]",
-                params?.type! === "investor" && user?.user_type !== "Analyst" && !singleInvesterProfile?.key_contacts && "lg:w-[100%] 2xl:w-[80rem]",
-                params?.type! === "investor" && user?.user_type !== "Analyst" && singleInvesterProfile?.key_contacts && "lg:w-[60%] 2xl:w-[54rem]"
+                params?.type! === "investor" && !isAdminOrAnalyst && !shouldShowContactsSidebar && "lg:w-[100%] 2xl:w-[80rem]",
+                params?.type! === "investor" && !isAdminOrAnalyst && shouldShowContactsSidebar && "lg:w-[60%] 2xl:w-[54rem]"
               )}
             >
 
@@ -573,35 +850,82 @@ function Main() {
                 )}
             </div>
 
-            {params?.type! === "investor" && (((user?.user_type === "Analyst" || user?.user_type === "Admin")) || (user?.user_type !== "Analyst" && user?.user_type !== "Admin" && singleInvesterProfile?.key_contacts?.length > 0)) && (
+            {shouldShowContactsSidebar && (
                 <div className="w-full lg:w-[39%] 2xl:w-[25rem] flex-none lg:mt-0 md:mt-0 sm:mt-2">
-                  {singleInvesterProfile?.contact_email && (
-                    <div className="flex flex-col box mb-4 p-4 border border-gray-200 rounded-md">
-                      <h4 className="text-[18px] font-semibold text-left text-black">
-                      {/\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
-                          ? "Team Contact Details"
-                          : "Link to Contact Form"}
-                      </h4>
-                      <a
-                        href={
-                        /\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
-                            ? `mailto:${singleInvesterProfile.contact_email}`
-                            : singleInvesterProfile.contact_email
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline mt-2 break-words"
-                      >
-                        {singleInvesterProfile.contact_email}
-                      </a>
+                  {(singleInvesterProfile?.contact_email || isAdminOrAnalyst) && (
+                    <div className="mb-4 flex flex-col rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-left text-[18px] font-semibold text-black">
+                            {hasTeamContactDetails && !isEmailContact
+                              ? "Link to Contact Form"
+                              : "Team Contact Details"}
+                          </h4>
+                          {singleInvesterProfile?.contact_email ? (
+                            <a
+                              href={
+                                isEmailContact
+                                  ? `mailto:${singleInvesterProfile.contact_email}`
+                                  : singleInvesterProfile.contact_email
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 block break-words text-blue-500 hover:underline"
+                            >
+                              {singleInvesterProfile.contact_email}
+                            </a>
+                          ) : (
+                            <p className="mt-2 text-sm leading-6 text-slate-500">
+                              No team contact details have been added yet.
+                            </p>
+                          )}
+                        </div>
+
+                        {isAdminOrAnalyst && (
+                          <div className="exclude-from-pdf flex shrink-0 items-center gap-2">
+                            <Tippy
+                              content={singleInvesterProfile?.contact_email ? "Edit" : "Add"}
+                              options={{ theme: "light" }}
+                            >
+                              <Button
+                                size="sm"
+                                type="button"
+                                variant="outline-primary"
+                                className="h-9 w-9 p-0"
+                                onClick={() => {
+                                  setContactEmailDraft(singleInvesterProfile?.contact_email || "");
+                                  setIsContactEmailModalOpen(true);
+                                }}
+                              >
+                                <Lucide
+                                  icon={singleInvesterProfile?.contact_email ? "Pencil" : "Plus"}
+                                  className="h-4 w-4"
+                                />
+                              </Button>
+                            </Tippy>
+                            {singleInvesterProfile?.contact_email && (
+                              <Tippy content="Delete" options={{ theme: "light" }}>
+                                <Button
+                                  size="sm"
+                                  type="button"
+                                  variant="outline-danger"
+                                  className="h-9 w-9 p-0"
+                                  onClick={() => setIsDeleteContactEmailModalOpen(true)}
+                                >
+                                  <Lucide icon="Trash2" className="h-4 w-4" />
+                                </Button>
+                              </Tippy>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   <div className="flex flex-col box">
                     <div
                       className={clsx(
                         "relative flex border-b-2 border-gray-100 flex-col px-4 sm:px-2 items-center transition-all duration-300 ease-in-out",
-                        isExpanded ? "min-h-[270px]" : "h-[70px]",
-                        !singleInvesterProfile?.key_contacts && "h-[120px]"
+                        isExpanded ? "min-h-[270px]" : "h-[70px]"
                       )}
                   // user?.user_type?.toLowerCase() === "admin"
                   //     ? "h-[70px] mt-4"
@@ -670,21 +994,15 @@ function Main() {
                         </div>
                       )}
 
-                    {(!singleInvesterProfile?.key_contacts || singleInvesterProfile?.key_contacts?.length === 0) && !loading &&
-                          <div className="p-5 flex items-center justify-center">
-                            <h1 className="">No Key Contacts Available</h1>
-                          </div>
-
-                    }
                     </div>
                     <div className="pb-4">
                       {loading ? (
                         <div className="mt-[-20px]">
                           <LoadingWrapper height={200} />
                         </div>
-                      ) : (
+                      ) : singleInvesterProfile?.key_contacts?.length ? (
                         <>
-                          {singleInvesterProfile?.key_contacts?.map(
+                          {singleInvesterProfile.key_contacts.map(
                             (contacts: KeyContact, index: any) => (
                               <div
                                 key={index}
@@ -753,6 +1071,18 @@ function Main() {
                             )
                           )}
                         </>
+                      ) : (
+                        <div className="mx-4 mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+                            <Lucide icon="Users" className="h-5 w-5 text-slate-400" />
+                          </div>
+                          <div className="text-sm font-semibold text-slate-700">
+                            No key contacts available
+                          </div>
+                          <div className="mt-1 text-xs leading-5 text-slate-500">
+                            Key contact information has not been added for this investor profile yet.
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -761,6 +1091,282 @@ function Main() {
           </div>
         </div>
       </div>
+
+      {isViewNotesModalOpen && (
+        <Dialog
+          size="xl"
+          open={isViewNotesModalOpen}
+          onClose={() => {
+            setIsViewNotesModalOpen(false);
+          }}
+        >
+          <Dialog.Panel className="relative flex h-[82vh] w-[95vw] max-w-[1180px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <button
+              type="button"
+              aria-label="Close notes modal"
+              className="absolute right-5 top-5 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:bg-slate-100 hover:text-slate-600"
+              onClick={() => setIsViewNotesModalOpen(false)}
+            >
+              <Lucide icon="X" className="h-5 w-5" />
+            </button>
+            <Dialog.Title>
+              <div className="px-6 py-5 pr-20">
+                <h2 className="text-lg font-semibold text-slate-800">
+                  Notes - {institutionDisplayName}
+                </h2>
+              </div>
+            </Dialog.Title>
+            <Dialog.Description className="min-h-0 flex-1 bg-slate-50 p-5">
+              <div className="flex h-full min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex w-[320px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/80">
+                  <div className="border-b border-slate-200 px-4 py-4">
+                    <div className="relative">
+                      <Lucide
+                        icon="Search"
+                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                      />
+                      <FormInput
+                        type="text"
+                        value={institutionNoteSearch}
+                        onChange={(e) => setInstitutionNoteSearch(e.target.value)}
+                        placeholder="Search companies"
+                        className="h-11 rounded-xl border-slate-200 bg-white pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+                    {isInstitutionNotesLoading ? (
+                      <div className="space-y-2 p-2">
+                        {Array.from({ length: 8 }).map((_, index) => (
+                          <div
+                            key={index}
+                            className="h-16 animate-pulse rounded-xl border border-slate-200 bg-white"
+                          />
+                        ))}
+                      </div>
+                    ) : filteredInstitutionNoteCompanies.length > 0 ? (
+                      filteredInstitutionNoteCompanies.map(({ companyName, notes }) => {
+                        const isActive = companyName === selectedInstitutionNoteCompany;
+
+                        return (
+                          <button
+                            key={companyName}
+                            type="button"
+                            onClick={() => setSelectedInstitutionNoteCompany(companyName)}
+                            className={clsx(
+                              "mb-2 w-full rounded-xl border px-4 py-3 text-left transition",
+                              isActive
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                            )}
+                          >
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold leading-5 text-slate-800">
+                                {companyName}
+                              </div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                {notes.length} {notes.length === 1 ? "note" : "notes"}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="flex h-full min-h-[240px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-5 text-center">
+                        <Lucide icon="FileText" className="mb-3 h-12 w-12 text-slate-300" />
+                        <div className="text-sm font-semibold text-slate-700">
+                          {institutionNoteSearch.trim() ? "No matching companies" : "No notes available"}
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-slate-500">
+                          {institutionNoteSearch.trim()
+                            ? "Try a different company name."
+                            : "There are no institution notes available for this profile."}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-hidden bg-white">
+                  {isInstitutionNotesLoading ? (
+                    <div className="space-y-4 p-6">
+                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                    </div>
+                  ) : selectedInstitutionNoteCompany ? (
+                    <div className="flex h-full min-h-0 flex-col">
+                      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                        {selectedInstitutionCompanyNotes.length > 0 ? (
+                          selectedInstitutionCompanyNotes.map((item) => (
+                            <div key={item.id} className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm last:mb-0">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0 flex-1 pr-2">
+                                  <div
+                                    className="prose max-w-none text-sm leading-7 text-slate-700"
+                                    dangerouslySetInnerHTML={{
+                                      __html: DOMPurify.sanitize(decryptNotesText(item.notes)),
+                                    }}
+                                  />
+                                </div>
+                                <div className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                                  {item.formatted_date || dayjs(item.date_updated || item.date).format("MMMM DD, YYYY")}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 text-center">
+                            <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                            <div className="text-base font-semibold text-slate-600">No notes found</div>
+                            <div className="mt-1 text-sm text-slate-400">
+                              There are no notes for the selected company yet.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center text-slate-500">
+                      <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                      <div className="text-base font-semibold text-slate-600">Select a company</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        Choose a company from the left to review the institution notes.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Dialog.Description>
+          </Dialog.Panel>
+        </Dialog>
+      )}
+
+      {isContactEmailModalOpen && (
+        <Dialog
+          size="md"
+          open={isContactEmailModalOpen}
+          onClose={() => {
+            if (!isSavingContactEmail) {
+              setIsContactEmailModalOpen(false);
+            }
+          }}
+        >
+          <Dialog.Panel className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+            <Dialog.Title>
+              <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold text-slate-800">
+                    {hasTeamContactDetails ? "Edit Team Contact Details" : "Add Team Contact Details"}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Update the email shown in the Team Contact Details section.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close modal"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  onClick={() => {
+                    if (!isSavingContactEmail) {
+                      setIsContactEmailModalOpen(false);
+                    }
+                  }}
+                >
+                  <Lucide icon="X" className="h-5 w-5" />
+                </button>
+              </div>
+            </Dialog.Title>
+            <Dialog.Description className="bg-slate-50 px-6 py-6">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Contact Email
+                </label>
+                <FormInput
+                  type="text"
+                  value={contactEmailDraft}
+                  onChange={(e) => setContactEmailDraft(e.target.value)}
+                  placeholder="Enter team contact email"
+                  className="h-11"
+                />
+              </div>
+            </Dialog.Description>
+            <Dialog.Footer className="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => setIsContactEmailModalOpen(false)}
+                disabled={isSavingContactEmail}
+                className="min-w-24"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSaveContactEmail}
+                disabled={isSavingContactEmail}
+                className="min-w-24 bg-theme-2 border-bg-theme-2"
+              >
+                {isSavingContactEmail
+                  ? hasTeamContactDetails
+                    ? "Saving..."
+                    : "Adding..."
+                  : hasTeamContactDetails
+                    ? "Save"
+                    : "Add"}
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Panel>
+        </Dialog>
+      )}
+
+      {isDeleteContactEmailModalOpen && (
+        <Dialog
+          size="md"
+          open={isDeleteContactEmailModalOpen}
+          onClose={() => {
+            if (!isDeletingContactEmail) {
+              setIsDeleteContactEmailModalOpen(false);
+            }
+          }}
+        >
+          <Dialog.Panel className="p-0 text-center">
+            <div className="p-5 text-center">
+              <Lucide
+                icon="XCircle"
+                className="w-16 h-16 mx-auto mt-3 text-danger"
+              />
+              <div className="mt-5 text-3xl">Delete team contact details?</div>
+              <div className="mt-2 text-slate-500">
+                This will remove the current contact email from the investor profile.
+              </div>
+            </div>
+            <div className="px-5 pb-8 text-center">
+              <Button
+                variant="outline-secondary"
+                type="button"
+                onClick={() => {
+                  setIsDeleteContactEmailModalOpen(false);
+                }}
+                className="w-24 mr-1"
+                disabled={isDeletingContactEmail}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                type="button"
+                className="w-24"
+                onClick={handleDeleteContactEmail}
+                disabled={isDeletingContactEmail}
+              >
+                {isDeletingContactEmail ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </Dialog.Panel>
+        </Dialog>
+      )}
 
       {isDeleteModalOpen && (
         <Dialog

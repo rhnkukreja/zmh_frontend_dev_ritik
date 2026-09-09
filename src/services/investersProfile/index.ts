@@ -56,6 +56,23 @@ class InvestersProfileService {
       results,
     };
   }
+
+  public async patchInvestersProfile(
+    id: number,
+    type: string,
+    data: Partial<InvestersProfile>
+  ): Promise<{
+    results: InvestersProfile;
+  }> {
+    const response = await axiosInstance.patch(
+      `/investor_profile/${id}/?type=${type}`,
+      data
+    );
+    const results = response.data;
+    return {
+      results,
+    };
+  }
   public async AddNewInvestersProfile(
     data: Partial<AddNewInvesterType>
   ): Promise<{
@@ -81,6 +98,14 @@ class InvestersProfileService {
     return {
       results,
     };
+  }
+
+  public async downloadInvestersProfiles(
+    profileIds: number[],
+    format: "pdf" | "document"
+  ) {
+    const endpoint = `/api/download_multiple_investor_profiles/?profile_ids=[${profileIds.join(",")} ]&format_type=${format}`.replace(/\s+/g, "");
+    return axiosInstance.get(endpoint, { responseType: "blob" });
   }
 
   public async deleteInvestersProfile(id: number): Promise<any> {

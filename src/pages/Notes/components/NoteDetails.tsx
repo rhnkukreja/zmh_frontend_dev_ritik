@@ -36,6 +36,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
   selectedInstitution, 
   selectedCompany 
 }) => {
+  const canManageNote = (value: unknown) => value === true || value === 1 || value === "true";
   const dispatch = useAppDispatch();
 
   const { selectedNote, selectedGroup } = useAppSelector(
@@ -339,43 +340,6 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
                                   }}
                                 />
                               </div>
-                              {item.update_delete_check === true && (
-                                <div className="flex flex-shrink-0 gap-1">
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => {
-                                      setIsEditing(true);
-                                      setData({
-                                        company_id: item?.company,
-                                        institution_id: item?.institution,
-                                        institution_name: item?.institution_name,
-                                        company_name: item?.company_name,
-                                      });
-                                      setNoteDetails(item);
-                                    }}
-                                  >
-                                    <Tippy
-                                      content="Edit Note"
-                                      options={{ theme: "light" }}
-                                    >
-                                      <Lucide icon="Pen" className="w-4 h-4" />
-                                    </Tippy>
-                                  </Button>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => handleDeleteNote(item)}
-                                  >
-                                    <Tippy
-                                      content="Delete Note"
-                                      options={{ theme: "light" }}
-                                    >
-                                      <Lucide icon="Trash" className="w-4 h-4" />
-                                    </Tippy>
-                                  </Button>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </div>

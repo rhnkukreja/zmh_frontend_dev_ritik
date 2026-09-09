@@ -26,6 +26,7 @@ import {
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import pdfMake from "pdfmake/build/pdfmake";
+import summaryPdfLogo from "@/assets/images/logo/Vantage ZMH-01.png";
 
 
 const cx = (...classes: Array<string | undefined | false>) =>
@@ -797,19 +798,37 @@ export default function CompanyOverviewGPT() {
     });
   }, [reports, query]);
 
-  const generatePDF = (report: CompanyReport) => {
+  const getPdfAssetDataUrl = async (assetUrl: string) => {
+    const response = await fetch(assetUrl);
+    const blob = await response.blob();
+
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () =>
+        resolve(typeof reader.result === "string" ? reader.result : "");
+      reader.onerror = () => reject(new Error("Failed to load PDF asset"));
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const generatePDF = async (report: CompanyReport) => {
     const primaryColor = "#b91c1c";
     const gray50 = "#f9fafb";
     const gray200 = "#e5e7eb";
+    const gray400 = "#d1d5db";
     const gray600 = "#4b5563";
     const gray700 = "#374151";
     const gray900 = "#111827";
+    const footerTextColor = "#c5b9b1";
 
     const content: any[] = [];
     setLoading(true);
 
-    // Title
-    content.push({
+    try {
+      const logoDataUrl = await getPdfAssetDataUrl(summaryPdfLogo);
+
+      // Title
+      content.push({
       text: `${report.company} (${report.ticker})`,
       style: "title",
       margin: [0, 0, 0, 5]
@@ -1159,30 +1178,68 @@ export default function CompanyOverviewGPT() {
 
     const docDefinition: any = {
       pageSize: "A4",
-      pageMargins: [40, 60, 40, 60],
-      header: (currentPage: number, pageCount: number) => ({
-        text: `${report.company} (${report.ticker}) - Key Governance & Investor Summary`,
-        alignment: "center",
-        fontSize: 9,
-        color: gray600,
-        margin: [40, 20, 40, 0]
-      }),
-      footer: (currentPage: number, pageCount: number) => ({
-        columns: [
+      pageMargins: [40, 78, 40, 72],
+      images: {
+        summaryLogo: logoDataUrl,
+      },
+      header: (currentPage: number, pageCount: number, pageSize: { width: number }) => ({
+        margin: [40, 18, 40, 0],
+        stack: [
           {
-            text: `As of ${report.asOf}`,
-            alignment: "left",
-            fontSize: 8,
-            color: gray600
+            columns: [
+              {
+                text: `${report.company} (${report.ticker}) - Key Governance & Investor Summary`,
+                fontSize: 9,
+                color: gray600,
+                margin: [0, 16, 0, 0],
+              },
+              {
+                image: "summaryLogo",
+                fit: [78, 36],
+                alignment: "right",
+              },
+            ],
           },
           {
-            text: `Page ${currentPage} of ${pageCount}`,
-            alignment: "right",
-            fontSize: 8,
-            color: gray600
-          }
+            canvas: [
+              {
+                type: "line",
+                x1: 0,
+                y1: 10,
+                x2: pageSize.width - 80,
+                y2: 10,
+                lineWidth: 0.75,
+                lineColor: gray200,
+              },
+            ],
+          },
         ],
-        margin: [40, 0, 40, 20]
+      }),
+      footer: (currentPage: number, pageCount: number, pageSize: { width: number }) => ({
+        margin: [40, 0, 40, 18],
+        stack: [
+          {
+            canvas: [
+              {
+                type: "line",
+                x1: 0,
+                y1: 0,
+                x2: pageSize.width - 80,
+                y2: 0,
+                lineWidth: 0.75,
+                lineColor: gray400,
+              },
+            ],
+          },
+          {
+            text: "Copyright ZMH. Confidential. Do not distribute without prior written permission of ZMH Advisors",
+            alignment: "center",
+            fontSize: 10,
+            color: footerTextColor,
+            italics: true,
+            margin: [0, 8, 0, 0],
+          },
+        ],
       }),
       content,
       styles: {
@@ -1273,8 +1330,9 @@ export default function CompanyOverviewGPT() {
 
     const fileName = `${report.company.replace(/[^a-z0-9]/gi, '_')}_Overview_${new Date().toISOString().split('T')[0]}.pdf`;
     pdfMake.createPdf(docDefinition).download(fileName);
-
-    setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
