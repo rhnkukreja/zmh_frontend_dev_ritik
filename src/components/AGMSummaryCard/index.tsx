@@ -219,7 +219,13 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     console.log('Voting Data click:', { yearToCheck, proxyContest2024, proxyContest2025, proxyContest });
     if (yearToCheck === "2025") {
       if (Boolean(proxyContest2025) === true) {
-        const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
+        const institutionArr = [
+          "BlackRock Active Investment Stewardship (BAIS)",
+          "BlackRock Investment Stewardship (BIS)",
+          "Vanguard Capital Management",
+          "State Street Investment Management",
+          "Vanguard Portfolio Management",
+        ];
         const companyArr = [companyGlobalSearchName];
         const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
         const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
@@ -234,7 +240,13 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       }
     } else if (yearToCheck === "2024") {
       if (Boolean(proxyContest2024) === true) {
-        const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
+        const institutionArr = [
+          "BlackRock Active Investment Stewardship (BAIS)",
+          "BlackRock Investment Stewardship (BIS)",
+          "Vanguard Capital Management",
+          "State Street Investment Management",
+          "Vanguard Portfolio Management",
+        ];
         const companyArr = [companyGlobalSearchName];
         const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
         const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');
@@ -249,7 +261,13 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
       }
     } else {
       if (Boolean(proxyContest) === true) {
-        const institutionArr = ["The Vanguard Group", "BlackRock, Inc.", "AllianceBernstein"];
+        const institutionArr = [
+          "BlackRock Active Investment Stewardship (BAIS)",
+          "BlackRock Investment Stewardship (BIS)",
+          "Vanguard Capital Management",
+          "State Street Investment Management",
+          "Vanguard Portfolio Management",
+        ];
         const companyArr = [companyGlobalSearchName];
         const institutions = institutionArr.map(inst => encodeURIComponent(inst)).join('||');
         const company = companyArr.map(comp => encodeURIComponent(comp)).join('||');

@@ -107,13 +107,14 @@ export default function VotingGuidelinesPage() {
                 const allInvestorsData: InvestorItem[] = data.investors || [];
 
                 const priorityOrder = [
-                    "c4a5a2c7-c493-414b-854f-1c99c9aef7ed",
-                    "2b622a0e-1a72-43fd-add2-d4b863f0731c",
+                    "52924af3-97c7-47a8-bb66-016b0f81df9e",  // BlackRock Active Investment Stewardship (BAIS)
+                    "7172529e-92d3-4733-bf29-b285567ed1c8",  // BlackRock Investment Stewardship (BIS)
+                    "2b622a0e-1a72-43fd-add2-d4b863f0731c",  // State Street Investment Management
                     "347446c8-649d-4b5a-be03-9c178c82ff2a",  // Vanguard
                     "e9a43ac6-5b14-41e7-97f0-27e5c5e13b6a",  // Vanguard Capital Management
                     "75279f0d-b6b2-4d04-9ec5-a24c70ec463b",  // Vanguard Portfolio Management
-                    "21881b9b-7970-414e-baae-c84635d03d45",
-                    "4f383fdd-b46d-4952-b128-624c9603c411"
+                    "21881b9b-7970-414e-baae-c84635d03d45",  // Glass Lewis
+                    "4f383fdd-b46d-4952-b128-624c9603c411"   // Institutional Shareholder Services
                 ];
                 
                 const priorityInvestors = priorityOrder

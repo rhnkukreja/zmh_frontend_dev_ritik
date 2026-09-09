@@ -1136,9 +1136,7 @@ const getNormalizedScrapedInfo = (name: string) => {
           className="w-5 h-5"
           onClick={() => {
             const effectiveProfileId = dashboard?.investor_profile_id || 27;
-            
-            // 🌟 REMOVED '?from=dashboard' FROM THE URL BELOW
-            navigate(`/investor-profile/investor/${effectiveProfileId}`);
+            navigate(`/investor-profile/investor/${effectiveProfileId}?from=ownership`);
           }}
         >
           <div className="flex items-center justify-center w-6 h-6 text-primary">
@@ -1366,6 +1364,36 @@ const isActivelyScraping =
                                             <h1 className="block max-w-[260px] break-words whitespace-normal capitalize font-semibold leading-tight text-slate-700">
                                               {child?.institution_name}
                                             </h1>
+                                          </div>
+                                          <div className="absolute right-3 top-1/2 flex w-[120px] -translate-y-1/2 items-center justify-end gap-2 pl-2">
+                                            {child?.investor_profile_id ? (
+                                              <Tippy
+                                                content="Investor Profile"
+                                                options={{ theme: "light" }}
+                                                className="w-5 h-5"
+                                                onClick={() => navigate(`/investor-profile/investor/${child.investor_profile_id}?from=ownership`)}
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                  <Lucide icon="FileText" className="w-4 h-4 stroke-[1.3]" />
+                                                </div>
+                                              </Tippy>
+                                            ) : (
+                                              <div className="w-6 h-6" />
+                                            )}
+                                            {child?.case_studies_id ? (
+                                              <Tippy
+                                                content="Case Studies"
+                                                options={{ theme: "light" }}
+                                                className="w-6 h-6 mt-1"
+                                                onClick={() => redirectCaseStudy(child?.institution_name)}
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary">
+                                                  <Lucide icon="FileSearch2" className="w-4 h-4 stroke-[1.5]" />
+                                                </div>
+                                              </Tippy>
+                                            ) : (
+                                              <div className="w-6 h-6" />
+                                            )}
                                           </div>
                                         </Table.Td>
                                         <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left bg-gray-50">

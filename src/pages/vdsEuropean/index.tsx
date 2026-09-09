@@ -59,12 +59,38 @@ import React from "react";
 import dayjs from "dayjs";
 
 const DEFAULT_ANALYTICS_INSTITUTIONS = [
-  "BlackRock Active Investment",
-  "BlackRock Investment",
+  "BlackRock Active Investment Stewardship (BAIS)",
+  "BlackRock Investment Stewardship (BIS)",
   "Vanguard Capital Management",
   "State Street Investment Management",
   "Vanguard Portfolio Management",
 ];
+
+const isPageReload = () => {
+  if (typeof window === "undefined") return false;
+  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
+  if (navEntry?.type) return navEntry.type === "reload";
+  return (window.performance as any)?.navigation?.type === 1;
+};
+
+const VDS_RELOAD_SESSION_KEY = "vdsEuropeanReloadHandled";
+const isPageReloadOnce = (sessionKey: string) => {
+  if (typeof window === "undefined") return false;
+  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
+  const isReload = navEntry?.type ? navEntry.type === "reload" : (window.performance as any)?.navigation?.type === 1;
+  try {
+    const handled = sessionStorage.getItem(sessionKey) === "true";
+    if (isReload && !handled) {
+      sessionStorage.setItem(sessionKey, "true");
+      return true;
+    }
+    return false;
+  } catch {
+    return isReload;
+  }
+};
+
+const VDS_VIEW_MODE_KEY = "vdsEuropeanIsViewAnalysis";
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -110,7 +136,15 @@ const index = () => {
     index: [],
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(true);
+  const [isViewAnalysis, setIsViewAnalysis] = useState<boolean>(() => {
+    if (isPageReload()) return true;
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem(VDS_VIEW_MODE_KEY) : null;
+      return saved ? saved === "true" : true;
+    } catch {
+      return true;
+    }
+  });
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   const [openInstitutionGroups, setOpenInstitutionGroups] = useState<{ [key: string]: boolean }>({});
   const [getDynamicDropdownLoader, setGetDynamicDropdownLoader] =
@@ -342,6 +376,13 @@ const index = () => {
     const restoreFilters = () => {
       setIsRestoringFromLocalStorage(true);
 
+      const shouldIgnoreSavedFilters = isPageReloadOnce(VDS_RELOAD_SESSION_KEY);
+      if (shouldIgnoreSavedFilters) {
+        localStorage.removeItem("vdsEuropeanAnalyticsFilters");
+        localStorage.removeItem("vdsEuropeanFilters");
+        localStorage.removeItem(VDS_VIEW_MODE_KEY);
+      }
+
       // Check if query parameters are present first - they take precedence
       const institutionParam = searchParams.get('institution');
       const companyParam = searchParams.get('company');
@@ -394,7 +435,7 @@ const index = () => {
       const savedAnalyticsFilters = localStorage.getItem("vdsEuropeanAnalyticsFilters");
       const savedRegularFilters = localStorage.getItem("vdsEuropeanFilters");
 
-      if (isViewAnalysis && savedAnalyticsFilters) {
+      if (!shouldIgnoreSavedFilters && isViewAnalysis && savedAnalyticsFilters) {
         try {
           const parsed = JSON.parse(savedAnalyticsFilters);
 
@@ -423,7 +464,7 @@ const index = () => {
         }
       }
 
-      if (!isViewAnalysis && savedRegularFilters) {
+      if (!shouldIgnoreSavedFilters && !isViewAnalysis && savedRegularFilters) {
         try {
           const parsed = JSON.parse(savedRegularFilters);
           // If year is present in query params, auto-select it
@@ -520,6 +561,29 @@ const index = () => {
     // Use setTimeout to ensure component is fully mounted
     setTimeout(restoreFilters, 50);
   }, [isViewAnalysis, searchParams]);
+
+  // Persist sub-view selection across in-app navigation (but not across hard reload)
+  useEffect(() => {
+    if (isPageReload()) return;
+    try {
+      localStorage.setItem(VDS_VIEW_MODE_KEY, String(isViewAnalysis));
+    } catch {}
+  }, [isViewAnalysis]);
+
+  // Persist applied filters continuously during session navigation
+  useEffect(() => {
+    if (isRestoringFromLocalStorage) return;
+    if (!isViewAnalysis && hasAnyValidFilter(allApplyFilter)) {
+      localStorage.setItem("vdsEuropeanFilters", JSON.stringify(allApplyFilter));
+    }
+  }, [allApplyFilter, isViewAnalysis, isRestoringFromLocalStorage]);
+
+  useEffect(() => {
+    if (isRestoringFromLocalStorage) return;
+    if (isViewAnalysis && hasAnyValidFilter(allAnalyticsFilter)) {
+      localStorage.setItem("vdsEuropeanAnalyticsFilters", JSON.stringify(allAnalyticsFilter));
+    }
+  }, [allAnalyticsFilter, isViewAnalysis, isRestoringFromLocalStorage]);
 
   useEffect(() => {
     const fetchData = async () => {
