@@ -340,6 +340,17 @@ class DashboardService {
     return { results };
   }
 
+  public async getNpxProxyDashboardFile(url: string): Promise<{
+    result: Blob;
+  }> {
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+    return {
+      result: response.data,
+    };
+  }
+
   public async fetchNpxProxyDashboard(
     url: string
   ): Promise<{ results: any; count: number }> {
