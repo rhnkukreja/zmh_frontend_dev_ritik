@@ -48,21 +48,44 @@ export const decryptNotesText = (value: string): string => {
     return DECRYPTION_FALLBACK_TEXT;
   }
 
-  try {
-    const cipherText = value.slice(ENCRYPTION_PREFIX.length);
-    const bytes = CryptoJS.AES.decrypt(cipherText, key);
-    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+  const cipherText = value.slice(ENCRYPTION_PREFIX.length).trim();
+  const candidates = Array.from(
+    new Set([
+      cipherText,
+      cipherText.replace(/\s+/g, "+"),
+      cipherText.replace(/ /g, "+"),
+      (() => {
+        try {
+          return decodeURIComponent(cipherText);
+        } catch {
+          return cipherText;
+        }
+      })(),
+      (() => {
+        try {
+          return decodeURIComponent(cipherText).replace(/\s+/g, "+");
+        } catch {
+          return cipherText.replace(/\s+/g, "+");
+        }
+      })(),
+    ].map((candidate) => candidate.replace(/^"|"$/g, "").trim()))
+  );
 
-    if (decrypted === "" && cipherText.length > 0) {
-      console.error("Failed to decrypt note text: empty plaintext result.");
-      return DECRYPTION_FALLBACK_TEXT;
+  for (const candidate of candidates) {
+    try {
+      const bytes = CryptoJS.AES.decrypt(candidate, key);
+      const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
+      if (decrypted !== "") {
+        return decrypted;
+      }
+    } catch (error) {
+      console.error("Failed to decrypt note text candidate:", error);
     }
-
-    return decrypted;
-  } catch (error) {
-    console.error("Failed to decrypt note text:", error);
-    return DECRYPTION_FALLBACK_TEXT;
   }
+
+  console.error("Failed to decrypt note text: empty plaintext result.");
+  return DECRYPTION_FALLBACK_TEXT;
 };
 
 export const encryptNotesField = <T extends Record<string, any>>(data: T): T => {
