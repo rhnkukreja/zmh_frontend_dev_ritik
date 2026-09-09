@@ -50,6 +50,17 @@ import React from "react";
 
 const NPX_DETAILS_CACHE_KEY = "npxDetailsFilters";
 const NPX_DETAILS_RELOAD_SESSION_KEY = "npxDetailsReloadHandled";
+const SELECT_ALL_INSTITUTION_LABELS = ["Select All", "All Institutions"];
+
+const isSelectAllInstitution = (value?: string) =>
+  SELECT_ALL_INSTITUTION_LABELS.some(
+    (label) => String(value || "").trim().toLowerCase() === label.toLowerCase()
+  );
+
+const normalizeInstitutionForApi = (value?: string | string[] | null) => {
+  const institutionValue = Array.isArray(value) ? value[0] : value;
+  return institutionValue && !isSelectAllInstitution(institutionValue) ? [institutionValue] : undefined;
+};
 
 const isPageReloadOnce = (sessionKey: string) => {
   if (typeof window === "undefined") return false;
@@ -194,7 +205,7 @@ const index = () => {
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || '2024', // Always provide a year value
-        institution_name: [value], // Include the selected institution as an array
+        ...(normalizeInstitutionForApi(value) ? { institution_name: normalizeInstitutionForApi(value) } : {}),
         ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
       };
       try {
@@ -286,32 +297,63 @@ const index = () => {
 
         if (normalizedList.length > 0) {
           setAllInstitutions(normalizedList);
+          // "All Institutions" is a sentinel, not a real entry in normalizedList — preserve
+          // it as-is across a year change instead of falling back to the first institution.
           const firstInstitution =
-            (savedInstitution && normalizedList.includes(savedInstitution))
-              ? savedInstitution
-              : normalizedList[0];
+            isSelectAllInstitution(savedInstitution)
+              ? savedInstitution!
+              : (savedInstitution && normalizedList.includes(savedInstitution))
+                ? savedInstitution
+                : normalizedList[0];
+          const isAllInstitutionsSelected = isSelectAllInstitution(firstInstitution);
+
+          // Re-apply whatever fund/proposal/vote/category/keyword filters were selected
+          // before this company/year change, so they carry over instead of being dropped.
+          const savedFilters = savedFiltersRef.current || {};
+          const restoredFundNames = Array.isArray(savedFilters.fund_name) ? savedFilters.fund_name : [];
+          const restoredCategory = Array.isArray(savedFilters.vote_category)
+            ? savedFilters.vote_category
+            : (savedFilters.vote_category ? [savedFilters.vote_category] : []);
+          const restoredProposal = Array.isArray(savedFilters.proposal) ? savedFilters.proposal : [];
+          const restoredVote = Array.isArray(savedFilters.vote) ? savedFilters.vote : [];
+          const restoredKeyword = Array.isArray(savedFilters.keyword) ? savedFilters.keyword : [];
 
           // Format for the dropdown and set
           const institutionValue = { label: firstInstitution, value: firstInstitution };
           setValue('institution_name', institutionValue);
-          handleDropdownChange('institution_name', firstInstitution);
+          setValue('fund_name', restoredFundNames);
+          setValue('vote_category', restoredCategory);
+          setValue('proposal', restoredProposal);
+          setValue('vote', restoredVote);
+          setValue('keyword', restoredKeyword);
+          setDropdownValues((prev: any) => ({
+            ...prev,
+            institution_name: firstInstitution,
+            fund_name: restoredFundNames,
+            vote_category: restoredCategory,
+          }));
 
           // 2) Build base filters including the meeting_date we already know for this company/year
-          const filterObj = {
+          const filterObj: any = {
             global_search: companyGlobalSearchName,
-            institution_name: [firstInstitution],
+            ...(isAllInstitutionsSelected ? {} : { institution_name: [firstInstitution] }),
             year: year || undefined,
+            ...(restoredFundNames.length > 0 && { fund_name: restoredFundNames }),
+            ...(restoredCategory.length > 0 && { vote_category: restoredCategory }),
+            ...(restoredProposal.length > 0 && { proposal: restoredProposal }),
+            ...(restoredVote.length > 0 && { vote: restoredVote }),
+            ...(restoredKeyword.length > 0 && { keyword: restoredKeyword }),
             ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }),
           };
 
           // Reflect in UI chips immediately
           const filterObjForChips = {
             institution_name: [firstInstitution],
-            fund_name: [],
-            proposal: [],
-            vote: [],
-            vote_category: [],
-            keyword: "",
+            fund_name: restoredFundNames,
+            proposal: restoredProposal,
+            vote: restoredVote,
+            vote_category: restoredCategory,
+            keyword: restoredKeyword,
           };
           setallApplyFilter(filterObj);
           setSelectedChipFilters(generateFilterChips(filterObjForChips));
@@ -327,7 +369,12 @@ const index = () => {
           );
 
           // 3) Make a SINGLE dropdown API call scoped to (global_search, year, meeting_date, institution_name)
-          await getFundNameDependentDropdown(firstInstitution, currentMeetingDate ? formatMeetingDate(currentMeetingDate) : undefined);
+          if (isAllInstitutionsSelected) {
+            setShowFundName(false);
+            setApiFundNameDropdown({ fund_name: [] });
+          } else {
+            await getFundNameDependentDropdown(firstInstitution, currentMeetingDate ? formatMeetingDate(currentMeetingDate) : undefined);
+          }
 
           // Ensure local meeting_date state is in sync (in case it wasn't set yet)
           if (currentMeetingDate) setMeetingDate(currentMeetingDate);
@@ -348,18 +395,56 @@ const index = () => {
             return;
           }
           setAllInstitutions(institutions);
-          const firstInstitution = (savedInstitution && institutions.includes(savedInstitution)) ? savedInstitution : institutions[0];
+          const firstInstitution =
+            isSelectAllInstitution(savedInstitution)
+              ? savedInstitution!
+              : (savedInstitution && institutions.includes(savedInstitution))
+                ? savedInstitution
+                : institutions[0];
+          const isAllInstitutionsSelected = isSelectAllInstitution(firstInstitution);
+
+          const savedFilters = savedFiltersRef.current || {};
+          const restoredFundNames = Array.isArray(savedFilters.fund_name) ? savedFilters.fund_name : [];
+          const restoredCategory = Array.isArray(savedFilters.vote_category)
+            ? savedFilters.vote_category
+            : (savedFilters.vote_category ? [savedFilters.vote_category] : []);
+          const restoredProposal = Array.isArray(savedFilters.proposal) ? savedFilters.proposal : [];
+          const restoredVote = Array.isArray(savedFilters.vote) ? savedFilters.vote : [];
+          const restoredKeyword = Array.isArray(savedFilters.keyword) ? savedFilters.keyword : [];
+
           const institutionValue = { label: firstInstitution, value: firstInstitution };
           setValue('institution_name', institutionValue);
-          handleDropdownChange('institution_name', firstInstitution);
+          setValue('fund_name', restoredFundNames);
+          setValue('vote_category', restoredCategory);
+          setValue('proposal', restoredProposal);
+          setValue('vote', restoredVote);
+          setValue('keyword', restoredKeyword);
+          setDropdownValues((prev: any) => ({
+            ...prev,
+            institution_name: firstInstitution,
+            fund_name: restoredFundNames,
+            vote_category: restoredCategory,
+          }));
 
-          const filterObj = {
+          const filterObj: any = {
             global_search: companyGlobalSearchName,
-            institution_name: [firstInstitution],
+            ...(isAllInstitutionsSelected ? {} : { institution_name: [firstInstitution] }),
             year: year || undefined,
+            ...(restoredFundNames.length > 0 && { fund_name: restoredFundNames }),
+            ...(restoredCategory.length > 0 && { vote_category: restoredCategory }),
+            ...(restoredProposal.length > 0 && { proposal: restoredProposal }),
+            ...(restoredVote.length > 0 && { vote: restoredVote }),
+            ...(restoredKeyword.length > 0 && { keyword: restoredKeyword }),
             ...(res.result?.meeting_date && { meeting_date: formatMeetingDate(res.result.meeting_date) }),
           };
-          const chipsObj = { institution_name: [firstInstitution], fund_name: [], proposal: [], vote: [], vote_category: [], keyword: '' };
+          const chipsObj = {
+            institution_name: [firstInstitution],
+            fund_name: restoredFundNames,
+            proposal: restoredProposal,
+            vote: restoredVote,
+            vote_category: restoredCategory,
+            keyword: restoredKeyword,
+          };
           setallApplyFilter(filterObj);
           setSelectedChipFilters(generateFilterChips(chipsObj));
           setFiltersLength(countValidFilters(chipsObj));
@@ -368,7 +453,12 @@ const index = () => {
           dispatch(fetchNpxProxyDashboard(createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)));
 
           // Single scoped dropdown call for dependent data
-          await getFundNameDependentDropdown(firstInstitution, res.result?.meeting_date ? formatMeetingDate(res.result.meeting_date) : undefined);
+          if (isAllInstitutionsSelected) {
+            setShowFundName(false);
+            setApiFundNameDropdown({ fund_name: [] });
+          } else {
+            await getFundNameDependentDropdown(firstInstitution, res.result?.meeting_date ? formatMeetingDate(res.result.meeting_date) : undefined);
+          }
           if (res.result?.meeting_date) setMeetingDate(res.result.meeting_date);
         }
       } catch (e) {
@@ -432,7 +522,7 @@ const index = () => {
         fund_name: cachedFundNames,
         vote_category: cachedCategory,
       });
-      setShowFundName(!!cachedInstitution);
+      setShowFundName(!!cachedInstitution && !isSelectAllInstitution(cachedInstitution));
 
       const currentDate = dateForYear || cache?.meetingDate || '';
       if (currentDate) setMeetingDate(currentDate);
@@ -444,8 +534,12 @@ const index = () => {
         ...(currentDate && { meeting_date: formatMeetingDate(currentDate) }),
       };
 
+      if (isSelectAllInstitution(cachedInstitution)) {
+        delete filterObj.institution_name;
+      }
+
       const filterObjForChips = {
-        ...(filterObj.institution_name ? { institution_name: filterObj.institution_name } : {}),
+        ...(cachedInstitution ? { institution_name: [cachedInstitution] } : (filterObj.institution_name ? { institution_name: filterObj.institution_name } : {})),
         fund_name: filterObj.fund_name,
         proposal: filterObj.proposal,
         vote: filterObj.vote,
@@ -453,7 +547,7 @@ const index = () => {
         keyword: filterObj.keyword,
       } as any;
 
-      setallApplyFilter(filterObj);
+      setallApplyFilter(isSelectAllInstitution(cachedInstitution) ? { ...filterObjForChips } : filterObj);
       setSelectedChipFilters(generateFilterChips(filterObjForChips));
       setFiltersLength(countValidFilters(filterObjForChips));
 
@@ -483,16 +577,13 @@ const index = () => {
     try {
       // Prepare parameters with year and selected institution if any
       const currentMeetingDate = meetingDate; // Use state only
+      const institutionParam = normalizeInstitutionForApi(dropdownValues?.institution_name);
       const paramFilter = {
         global_search: companyGlobalSearchName,
         year: year || undefined,
         ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }), // Include formatted meeting date if available
         // Include selected institution if available
-        ...(dropdownValues?.institution_name && {
-          institution_name: Array.isArray(dropdownValues.institution_name)
-            ? dropdownValues.institution_name
-            : [dropdownValues.institution_name]
-        }),
+        ...(institutionParam ? { institution_name: institutionParam } : {}),
       };
 
       // Make a single API call
@@ -640,7 +731,8 @@ const index = () => {
 
   const getDependentDropdown = async (
     overrideCategories?: string[],
-    overrideInstitution?: string | null
+    overrideInstitution?: string | null,
+    overrideFundNames?: string[]
   ) => {
     // Prepare parameters for API call
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
@@ -656,10 +748,14 @@ const index = () => {
     const hasCategory = effectiveCats.length > 0;
     const effectiveInstitution =
       overrideInstitution !== undefined ? overrideInstitution : dropdownValues?.institution_name;
+    const institutionParam = normalizeInstitutionForApi(effectiveInstitution);
+    const effectiveFundNames = Array.isArray(overrideFundNames)
+      ? overrideFundNames.filter(Boolean)
+      : (Array.isArray(dropdownValues?.fund_name) ? dropdownValues.fund_name : []);
     const isCategoryOnly =
       hasCategory &&
-      !effectiveInstitution &&
-      !(Array.isArray(dropdownValues?.fund_name) && dropdownValues.fund_name.length > 0);
+      !institutionParam &&
+      !(effectiveFundNames.length > 0);
 
     const baseParams: any = {
       global_search: companyGlobalSearchName,
@@ -671,18 +767,11 @@ const index = () => {
         ? { meeting_date: formatMeetingDate(currentMeetingDate) }
         : {};
 
-    const institutionPart =
-      effectiveInstitution
-        ? {
-            institution_name: Array.isArray(effectiveInstitution)
-              ? effectiveInstitution
-              : [effectiveInstitution],
-          }
-        : {};
+    const institutionPart = institutionParam ? { institution_name: institutionParam } : {};
 
     const fundPart =
-      Array.isArray(dropdownValues?.fund_name) && dropdownValues.fund_name.length > 0
-        ? { fund_name: dropdownValues.fund_name }
+      effectiveFundNames.length > 0
+        ? { fund_name: effectiveFundNames }
         : {};
 
     const categoryPart = hasCategory
@@ -844,8 +933,22 @@ const index = () => {
   useEffect(() => {
     if (allInstitutions.length === 0) return;
 
-    const hasInstitution = !!dropdownValues?.institution_name;
+    const selectedInstitution = dropdownValues?.institution_name;
+    const hasInstitution = !!selectedInstitution && !isSelectAllInstitution(selectedInstitution);
     if (hasInstitution) return; // handled by getFundNameDependentDropdown instead
+
+    if (isSelectAllInstitution(selectedInstitution)) {
+      const cats = Array.isArray(dropdownValues?.vote_category)
+        ? dropdownValues.vote_category
+        : (dropdownValues?.vote_category ? [dropdownValues.vote_category] : []);
+      const hasCategory = cats.length > 0;
+      const hasFund = Array.isArray(dropdownValues?.fund_name) && dropdownValues.fund_name.length > 0;
+
+      if (hasCategory || hasFund) {
+        getDependentDropdown(hasCategory ? cats : undefined, null);
+      }
+      return;
+    }
 
     const cats = Array.isArray(dropdownValues?.vote_category)
       ? dropdownValues.vote_category
@@ -859,27 +962,41 @@ const index = () => {
     }
   }, [dropdownValues.institution_name, dropdownValues.fund_name, dropdownValues.vote_category, allInstitutions.length]);
 
-  useEffect(() => {
-    // Only handle pagination changes, not initial data loading
-    if (allApplyFilter && Object.keys(allApplyFilter).length > 0 && page > 1) {
-      const currentMeetingDate = meetingDate; // Use state — always correct for the current company
-      hasTriggeredStatsRequestRef.current = true;
-      dispatch(
-        fetchNpxProxyDashboard(
-          createDynamicURL(
-            `${baseURL}/npx/detail/`,
-            {
-              ...allApplyFilter,
-              year: year || '2024',
-              ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) })
-            },
-            undefined,
-            page
-          )
-        )
-      );
-    }
+  // Fetches /npx/detail for an explicit target page using the latest applied filters.
+  // Called directly by the pagination handlers below for EVERY page change (including
+  // returning to page 1), so navigating back to page 1 always re-fetches instead of
+  // silently relying on stale data from whatever page was previously loaded.
+  const fetchNpxDetailForPage = useCallback((targetPage: number) => {
+    const currentApplyFilter = allApplyFilterRef.current;
+    if (!currentApplyFilter || Object.keys(currentApplyFilter).length === 0) return;
 
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
+    const paginationFilters = { ...currentApplyFilter } as any;
+    if (isSelectAllInstitution(paginationFilters.institution_name?.[0])) {
+      delete paginationFilters.institution_name;
+    }
+    hasTriggeredStatsRequestRef.current = true;
+    setInitialLoading(true);
+    const paginationUrl = createDynamicURL(
+      `${baseURL}/npx/detail/`,
+      {
+        ...paginationFilters,
+        // Always re-inject the live company context — never rely solely on whatever
+        // was captured in the stored filter snapshot, so global_search can never be
+        // silently dropped.
+        global_search: companyGlobalSearchName,
+        year: year || '2024',
+        ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) })
+      },
+      undefined,
+      targetPage
+    );
+    console.log("NPX pagination fetch (page " + targetPage + "):", paginationUrl);
+    dispatch(fetchNpxProxyDashboard(paginationUrl));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyGlobalSearchName, year, meetingDate]);
+
+  useEffect(() => {
     // Handle company change reset
     if (isCompanySelected) {
       reset();
@@ -889,7 +1006,7 @@ const index = () => {
       fetchAllInstitutions(savedInstitutionRef.current, md);
       dispatch(setIsCompanySelected(false));
     }
-  }, [page, isCompanySelected]);
+  }, [isCompanySelected]);
 
   const isObject = (item: any) => {
     if (typeof item === "object") {
@@ -994,12 +1111,32 @@ const index = () => {
     setSelectedChipFilters(generateFilterChips(filterObjForChips));
     setFiltersLength(countValidFilters(filterObjForChips));
 
+    const refreshedInstitution = normalizeInstitutionForApi(updatedFilters.institution_name);
+    const refreshedCategories = Array.isArray(updatedFilters.vote_category)
+      ? updatedFilters.vote_category.filter(Boolean)
+      : (updatedFilters.vote_category ? [updatedFilters.vote_category] : []);
+
+    const refreshedFundNames = Array.isArray(updatedFilters.fund_name)
+      ? updatedFilters.fund_name.filter(Boolean)
+      : [];
+
+    getDependentDropdown(
+      refreshedCategories.length > 0 ? refreshedCategories : undefined,
+      refreshedInstitution ? refreshedInstitution[0] : null,
+      refreshedFundNames
+    );
+
     // Always explicitly include year parameter and meeting date
     const yearParam = year || '2024'; // Ensure we always have a year value
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
-    updatedFilters.year = yearParam;
+    const requestFilters = { ...updatedFilters } as any;
+    if (isSelectAllInstitution(requestFilters.institution_name?.[0])) {
+      delete requestFilters.institution_name;
+    }
+    requestFilters.global_search = companyGlobalSearchName;
+    requestFilters.year = yearParam;
     if (currentMeetingDate) {
-      updatedFilters.meeting_date = formatMeetingDate(currentMeetingDate); // Include formatted meeting date
+      requestFilters.meeting_date = formatMeetingDate(currentMeetingDate); // Include formatted meeting date
     }
 
     // Dispatch data fetch with updated filters
@@ -1008,7 +1145,7 @@ const index = () => {
     setInitialLoading(true);
     dispatch(
       fetchNpxProxyDashboard(
-        createDynamicURL(`${baseURL}/npx/detail/`, updatedFilters, undefined, 1)
+        createDynamicURL(`${baseURL}/npx/detail/`, requestFilters, undefined, 1)
       )
     );
   };
@@ -1018,11 +1155,17 @@ const index = () => {
     console.log("Raw form data:", npxFilter);
 
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
+    const selectedInstitutionLabel = npxFilter?.institution_name?.label || "";
+    const hasAllInstitutionsSelected = isSelectAllInstitution(selectedInstitutionLabel);
     const filterObj = {
       global_search: companyGlobalSearchName,
-      ...(npxFilter?.institution_name?.label && npxFilter?.institution_name?.label !== "Select"
-        ? { institution_name: [npxFilter.institution_name.label] }
-        : {}),
+      ...(
+        npxFilter?.institution_name?.label &&
+        npxFilter?.institution_name?.label !== "Select" &&
+        !hasAllInstitutionsSelected
+          ? { institution_name: [npxFilter.institution_name.label] }
+          : {}
+      ),
       fund_name: Array.isArray(npxFilter?.fund_name) ? npxFilter?.fund_name : [],
       proposal: "Select" === npxFilter?.proposal ? "" : npxFilter?.proposal,
       vote: "Select" === npxFilter?.vote ? "" : npxFilter?.vote,
@@ -1037,7 +1180,9 @@ const index = () => {
     console.log("=== END DEBUG ===");
 
     const filterObjForChips = {
-      ...(filterObj.institution_name ? { institution_name: filterObj.institution_name } : {}),
+      ...(selectedInstitutionLabel
+        ? { institution_name: [selectedInstitutionLabel] }
+        : (filterObj.institution_name ? { institution_name: filterObj.institution_name } : {})),
       fund_name: filterObj.fund_name,
       proposal: filterObj.proposal,
       vote: filterObj.vote,
@@ -1132,18 +1277,47 @@ const index = () => {
 
   const handleNextPage = () => {
     if (page < totalPages) {
-      dispatch(setPage(page + 1));
+      const nextPage = page + 1;
+      dispatch(setPage(nextPage));
+      fetchNpxDetailForPage(nextPage);
     }
   };
 
   const handlePreviousPage = () => {
     if (page > 1) {
-      dispatch(setPage(page - 1));
+      const previousPage = page - 1;
+      dispatch(setPage(previousPage));
+      fetchNpxDetailForPage(previousPage);
     }
   };
 
   const handlePageChange = (newPage: number) => {
     dispatch(setPage(newPage));
+    fetchNpxDetailForPage(newPage);
+  };
+
+  const handleDownload = () => {
+    const currentApplyFilter = allApplyFilterRef.current;
+    const currentMeetingDate = meetingDate; // Use state — always correct for the current company
+    const downloadFilters = { ...currentApplyFilter } as any;
+    if (isSelectAllInstitution(downloadFilters.institution_name?.[0])) {
+      delete downloadFilters.institution_name;
+    }
+
+    downloadFileFromAPI({
+      url: createDynamicURL(
+        `${baseURL}/npx/detail/`,
+        {
+          ...downloadFilters,
+          global_search: companyGlobalSearchName,
+          year: year || '2024',
+          ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) })
+        }
+      ),
+      fileName: `NPX Voting Data - ${new Date().toISOString().split('T')[0]}.xlsx`,
+      setLoading: setLoadingDownload,
+      serviceMethod: dashboardService.getNpxProxyDashboardFile,
+    });
   };
 
   useEffect(() => {
@@ -1175,6 +1349,20 @@ const index = () => {
               <h2 className="text-xs font-semibold text-slate-500">
                 Count: {totalNPXCount.toLocaleString()}
               </h2>
+            )}
+            {npxProxyDetails?.length > 0 && (
+              <Tippy content="Download Excel" options={{ theme: "light" }}>
+                <div
+                  className="box p-[5px] cursor-pointer border border-gray-200 rounded flex items-center justify-center w-9 h-9"
+                  onClick={() => !loadingDownload && handleDownload()}
+                >
+                  {loadingDownload ? (
+                    <Lucide icon="Loader" className="w-4 h-4 stroke-[1.3] animate-spin" />
+                  ) : (
+                    <img alt="download-icon" src={downloadIcon} className="w-5 h-5" />
+                  )}
+                </div>
+              </Tippy>
             )}
             <Popover className="inline-block">
               {({ close }) => (
@@ -1241,6 +1429,8 @@ const index = () => {
                     render={({ field }) => (
                       <CompanySelect
                         isInstitution={true}
+                        includeSelectAllOption={true}
+                        selectAllLabel="All Institutions"
                         companyGlobalSearchName={companyGlobalSearchName}
                         value={field.value}
                         year={year} // Pass year from URL
@@ -1248,11 +1438,24 @@ const index = () => {
                         onChange={(value: any) => {
                           field.onChange(value);
                           // Pass the selected institution value for API calls
+                          const selectedLabel = value?.label || "";
                           handleDropdownChange(
                             "institution_name",
-                            value?.label || ""
+                            selectedLabel
                           );
-                          if (value?.label) {
+                          if (isSelectAllInstitution(selectedLabel)) {
+                            // Treat Select All as "no institution" and refresh dropdowns without
+                            // institution_name so the user sees the all-institutions behavior explicitly.
+                            setShowFundName(false);
+                            setApiFundNameDropdown({ fund_name: [] });
+                            const cats = watch('vote_category');
+                            const normalizedCats = Array.isArray(cats) ? cats : (cats ? [cats] : []);
+                            if (normalizedCats.length > 0) {
+                              getDependentDropdown(normalizedCats, null);
+                            } else {
+                              getDependentDropdown(undefined, null);
+                            }
+                          } else if (value?.label) {
                             getFundNameDependentDropdown(value.label);
                           } else {
                             // Clear fund dropdown when institution is cleared.
