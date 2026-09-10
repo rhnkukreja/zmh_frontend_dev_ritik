@@ -27,6 +27,10 @@ interface WhaleWisdomFilerPickerModalProps {
   // Checking exactly one candidate always calls onConfirm instead, same as
   // single-select mode -- the single-CIK generate flow stays untouched.
   onConfirmMultiple?: (filers: WhaleWisdomFiler[]) => void;
+  // Hard cap on how many candidates can be checked at once, in checkbox mode.
+  // Undefined means no cap, so consumers that don't pass it (the
+  // institution-linking flow) behave exactly as before.
+  maxSelection?: number;
 }
 
 const buildFilerUrl = (link: string): string => {
@@ -43,6 +47,7 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
   onCancel,
   allowMultiple = false,
   onConfirmMultiple,
+  maxSelection,
 }) => {
   const [selectedFilerId, setSelectedFilerId] = useState<string>("");
   const [selectedFilerIds, setSelectedFilerIds] = useState<Set<string>>(new Set());
@@ -65,12 +70,19 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
       String(filer.cik).includes(filerSearchQuery)
   );
 
+  // Checked already, or there's still room. Unticking is always allowed, so a
+  // full selection is never a dead end.
+  const selectionIsFull = maxSelection !== undefined && selectedFilerIds.size >= maxSelection;
+
   const toggleFilerChecked = (filerId: string) => {
     setSelectedFilerIds((prev) => {
       const next = new Set(prev);
       if (next.has(filerId)) {
         next.delete(filerId);
       } else {
+        // Refuse silently past the cap -- the box is disabled with a reason on
+        // it, so this is only the backstop for a programmatic toggle.
+        if (maxSelection !== undefined && next.size >= maxSelection) return prev;
         next.add(filerId);
       }
       return next;
@@ -146,6 +158,15 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
           {allowMultiple && (
             <p className="mt-2 text-xs text-slate-500">
               Select one filer to generate its profile, or check 2 or more to generate one combined profile from them.
+              {maxSelection !== undefined && (
+                <>
+                  {" "}
+                  <span className={selectionIsFull ? "font-semibold text-red-800" : "font-semibold"}>
+                    {selectedFilerIds.size} of {maxSelection} selected
+                  </span>
+                  {selectionIsFull && " — untick one to choose a different set."}
+                </>
+              )}
             </p>
           )}
         </div>
@@ -185,9 +206,18 @@ export const WhaleWisdomFilerPickerModal: React.FC<WhaleWisdomFilerPickerModalPr
                           {allowMultiple ? (
                             <FormCheck.Input
                               type="checkbox"
-                              className="cursor-pointer w-4 h-4"
+                              // Disabled, never hidden, once the cap is reached:
+                              // a box that vanishes reads as a bug, one that
+                              // greys out with a reason explains the limit.
+                              className={selectionIsFull && !isSelected ? "w-4 h-4" : "cursor-pointer w-4 h-4"}
                               style={{ accentColor: "#9b1b30" }}
                               checked={isSelected}
+                              disabled={selectionIsFull && !isSelected}
+                              title={
+                                selectionIsFull && !isSelected
+                                  ? `Up to ${maxSelection} filers can be combined — untick one to choose a different set.`
+                                  : undefined
+                              }
                               onClick={(e) => e.stopPropagation()}
                               onChange={() => toggleFilerChecked(String(filer.id))}
                             />

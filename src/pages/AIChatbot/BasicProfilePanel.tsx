@@ -195,15 +195,25 @@ const SectionCard = ({
   children,
   collapsible = false,
   defaultOpen = true,
+  bare = false,
 }: {
   title: string;
   icon: string;
   children: React.ReactNode;
   collapsible?: boolean;
   defaultOpen?: boolean;
+  // Drops the card entirely — no border, no title row, no icon, no chevron —
+  // and always shows the body. Used when the section IS the tab panel: the tab
+  // already names it, and a collapsible chevron there would let the reader fold
+  // away the only thing on screen. It also has to override defaultOpen, since
+  // three of these sections default to closed and would otherwise open onto an
+  // empty panel.
+  bare?: boolean;
 }) => {
   const [open, setOpen] = useState(defaultOpen);
-  const showBody = !collapsible || open;
+  const showBody = bare || !collapsible || open;
+
+  if (bare) return <>{children}</>;
 
   return (
     <div className="bg-white border border-slate-200 rounded-md shadow-sm">
@@ -230,18 +240,49 @@ const SectionCard = ({
 // own SectionCard. The anchor text is the full URL rather than a title, so
 // the destination is visible without hovering; the same URL arriving twice
 // from the API collapses into a single row.
-const RelevantLinksList = ({ links }: { links: any[] }) => {
+const LinksSection = ({ section, inCard = false }: { section: any; inCard?: boolean }) => {
   const [open, setOpen] = useState(true);
 
-  if (!Array.isArray(links) || links.length === 0) return null;
+  if (!inCard && (!section || section.status !== "ok")) {
+    return <UnavailableNotice label="Relevant links" error={section?.error} />;
+  }
 
+  const links = section?.firm_links;
   const urls: string[] = [];
-  links.forEach((link: any) => {
+  (Array.isArray(links) ? links : []).forEach((link: any) => {
     const raw = link?.url || link?.link;
     const url = typeof raw === "string" ? raw.trim() : "";
     if (url && !urls.includes(url)) urls.push(url);
   });
-  if (urls.length === 0) return null;
+
+  // Inside the card an empty list stays invisible, exactly as before. As a tab
+  // of its own it has to say something -- the tab always exists, so an empty
+  // one would otherwise read as a failed load.
+  if (urls.length === 0) {
+    return inCard ? null : <p className="text-sm text-slate-500 m-0">No links available.</p>;
+  }
+
+  const list = (
+    <ul className={`p-0 m-0 list-none flex flex-col gap-2 ${inCard ? "pb-4" : ""}`}>
+      {urls.map((url: string, i: number) => (
+        <li key={i} className="flex items-start">
+          <span className="text-red-800 mr-2 text-base leading-none">▸</span>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-w-0 text-sm text-blue-700 no-underline font-medium hover:underline break-all leading-relaxed"
+          >
+            {url}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+
+  // Standalone: no heading row and no chevron -- the tab is the heading, and
+  // the negative margins below only make sense against the card's padding.
+  if (!inCard) return list;
 
   return (
     <div className="border-t border-slate-100 mt-4 -mx-6 px-6">
@@ -258,23 +299,7 @@ const RelevantLinksList = ({ links }: { links: any[] }) => {
           className={`w-5 h-5 text-slate-500 transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         />
       </div>
-      {open && (
-        <ul className="p-0 m-0 pb-4 list-none flex flex-col gap-2">
-          {urls.map((url: string, i: number) => (
-            <li key={i} className="flex items-start">
-              <span className="text-red-800 mr-2 text-base leading-none">▸</span>
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="min-w-0 text-sm text-blue-700 no-underline font-medium hover:underline break-all leading-relaxed"
-              >
-                {url}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+      {open && list}
     </div>
   );
 };
@@ -308,30 +333,118 @@ const BulletList = ({ heading, items, boxed = false }: { heading: string; items:
   );
 };
 
-// "ancora-advisors" -> "Ancora Advisors". Only used for the combination
-// footer when the dashboard hasn't supplied a real legal name for a slug.
-const prettifySlug = (slug: string) =>
-  (slug || "")
-    .replace(/[-_]profile$/i, "")
-    .split(/[-_]/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-
 // ─── Sections ─────────────────────────────────────────────────────────────
 
-const OverviewSection = ({
+// ── Combined-profile per-entity shape ─────────────────────────────────────
+// The same rule HoldingsSection follows for per_filer[]: the combined shape is
+// detected from the PRESENCE of the array, never from the profile-level
+// is_combination flag. There is more than one combine path on the backend and
+// they don't emit identical shapes, and profiles stored before per_entity
+// existed carry none at all. No per_entity[] means the flat rendering below
+// runs exactly as it does today.
+const getPerEntity = (section: any): any[] =>
+  Array.isArray(section?.per_entity) ? section.per_entity.filter(Boolean) : [];
+
+// Every field name this UI reads off an entity lives here, so aligning with the
+// backend contract is one edit rather than a hunt through four sections.
+const entityLabel = (entity: any, index: number): string =>
+  entity?.entity_name || entity?.entity || entity?.name || entity?.filer ||
+  entity?.investor_name || `Entity ${index + 1}`;
+
+const entityBrochureUrl = (entity: any): string =>
+  entity?.adv_brochure_url_manual || entity?.adv_brochure_url || entity?.brochure_url || "";
+
+// Entity names stamped on a flat item (a filing, a letter). An item can name
+// several — a 13D co-filed by three entities belongs to all three.
+const itemEntityNames = (item: any): string[] => {
+  const raw = item?.entities ?? item?.source_entities ?? item?.entity ?? item?.filer;
+  if (Array.isArray(raw)) {
+    return raw
+      .map((x: any) => (typeof x === "string" ? x : entityLabel(x, 0)))
+      .filter((n: string) => !!n && n.trim().length > 0);
+  }
+  return typeof raw === "string" && raw.trim() ? [raw.trim()] : [];
+};
+
+// Splits a section's flat items across per_entity[]. Two backend shapes are
+// accepted: the entity nesting its own items (nestedKeys), or the flat items
+// each naming their entities. An item naming several appears under each.
+//
+// Returns [] when per_entity is absent OR when nothing at all landed in a
+// group, so a mismatch between this and whatever the backend actually emits
+// degrades to today's flat rendering rather than to a column of empty headings.
+const groupByEntity = <T,>(
+  section: any,
+  items: T[],
+  nestedKeys: string[]
+): { label: string; items: T[] }[] => {
+  const entities = getPerEntity(section);
+  if (entities.length === 0) return [];
+
+  const groups = entities.map((entity, i) => {
+    const label = entityLabel(entity, i);
+    const nested = nestedKeys.map((k) => entity?.[k]).find((v) => Array.isArray(v));
+    if (nested) return { label, items: nested as T[] };
+
+    const wanted = label.trim().toLowerCase();
+    return {
+      label,
+      items: items.filter((item) =>
+        itemEntityNames(item).some((n) => n.trim().toLowerCase() === wanted)
+      ),
+    };
+  });
+
+  return groups.some((g) => g.items.length > 0) ? groups : [];
+};
+
+// The per-filer header treatment the 13F tab already uses, so a grouped
+// Overview / Brochure / Filings / Letters tab reads as the same thing.
+const EntityGroup = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="bg-slate-50 border border-slate-100 rounded-md p-3">
+    <h5 className="text-sm font-bold text-slate-800 m-0 mb-2 flex items-center gap-2">
+      <Lucide icon="Building2" className="w-4 h-4 text-red-800 shrink-0" />
+      {label}
+    </h5>
+    {children}
+  </div>
+);
+
+// ── whalewisdom_overview, split four ways ─────────────────────────────────
+// Overview / Owners / Links / Brochure are separate components so each can be
+// a tab of its own, but all four read the SAME section object
+// (sections.whalewisdom_overview) and write back through the SAME callback.
+// None of them copies `section` into local state: every edit spreads the live
+// prop ({...section, field}), so an edit made on one tab can't be reverted by
+// a stale snapshot held by another. The parent's basicProfile is the single
+// source of truth. In particular the brochure keeps writing
+// adv_brochure_url_manual onto this same object -- a section key of its own
+// would look like it worked and be dropped on Save.
+//
+// `inCard` means "rendered inside the stacked Investor Overview card", which is
+// what the preview modal still shows: the card supplies the heading and the
+// px-6 padding that these blocks break out of with -mx-6. Without it they are
+// standalone tab panels, so they carry their own unavailable/empty states and
+// drop the breakout margins.
+
+const BrochureSection = ({
   section,
   slug,
   isEditMode,
   onChange,
+  inCard = false,
 }: {
   section: any;
   slug?: string;
   isEditMode: boolean;
   onChange: (updated: any) => void;
+  inCard?: boolean;
 }) => {
-  const [showBrochure, setShowBrochure] = useState(false);
+  // Closed inside the stacked card, where it's one row among many and opening
+  // every profile with a 600px PDF would bury everything under it. Open when
+  // standalone: the brochure IS the tab, so leaving it collapsed means the tab
+  // opens on nothing but its own header row.
+  const [showBrochure, setShowBrochure] = useState(!inCard);
   const [showBrochureUploader, setShowBrochureUploader] = useState(false);
   const [brochureUrlDraft, setBrochureUrlDraft] = useState("");
   const [brochureError, setBrochureError] = useState<string | null>(null);
@@ -390,110 +503,65 @@ const OverviewSection = ({
     applyBrochureUrl(trimmed);
   };
 
-  if (!section || section.status !== "ok") {
-    return (
-      <SectionCard title="Investor Overview" icon="Globe">
-        <UnavailableNotice label="Investor overview" error={section?.error} />
-      </SectionCard>
-    );
+  if (!inCard && (!section || section.status !== "ok")) {
+    return <UnavailableNotice label="ADV brochure" error={section?.error} />;
   }
 
   // A manually attached brochure wins over the IAPD-derived one: it's the
   // deliberate choice someone made in Edit Mode, and it's the only one of the
   // two that survives a regenerate.
-  const brochureUrl = section.adv_brochure_url_manual || section.adv_brochure_url;
+  const brochureUrl = section?.adv_brochure_url_manual || section?.adv_brochure_url;
 
-  const bodyText = section.ai_enriched_summary || section.summary;
-  // Edit whichever field actually holds the text — ai_enriched_summary when
-  // present, otherwise the plain summary — same precedence as bodyText above.
-  const summaryField = section.ai_enriched_summary != null ? "ai_enriched_summary" : "summary";
-  const summaryValue = section[summaryField] ?? "";
+  // On a combination the flat field above holds only ONE entity's brochure —
+  // the others are stored on per_entity and were invisible here. Read side
+  // only: Edit Mode still attaches to the single adv_brochure_url_manual, so it
+  // keeps the flat row below rather than growing per-entity upload controls.
+  // Entities without a brochure are left out entirely, not given an empty row.
+  const entityBrochures = isEditMode
+    ? []
+    : getPerEntity(section)
+        .map((entity, i) => ({ label: entityLabel(entity, i), url: entityBrochureUrl(entity) }))
+        .filter((e) => !!e.url);
+
+  if (entityBrochures.length > 0) {
+    return (
+      <div className={inCard ? "border-t border-slate-100 mt-4 -mx-6 px-6" : ""}>
+        <div className={`flex items-center gap-2 ${inCard ? "py-4" : "mb-3"}`}>
+          <Lucide icon="FileText" className="w-5 h-5 text-red-800" />
+          <h4 className="text-sm font-bold text-slate-800">SEC Form ADV Part 2 Brochure</h4>
+        </div>
+        <div className={`flex flex-col gap-3 ${inCard ? "pb-4" : ""}`}>
+          {entityBrochures.map((entity, i) => (
+            <EntityGroup key={`${entity.label}-${i}`} label={entity.label}>
+              <div className="border border-slate-200 rounded-md overflow-hidden bg-slate-100 shadow-inner">
+                <iframe
+                  src={entity.url}
+                  width="100%"
+                  height="600px"
+                  title={`SEC Brochure PDF — ${entity.label}`}
+                  className="w-full"
+                />
+              </div>
+            </EntityGroup>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Nothing to show and no way to add one. Inside the card that means the row
+  // simply isn't there, unchanged; as a tab it needs to say so, because the tab
+  // is rendered either way.
+  if (!brochureUrl && !isEditMode) {
+    return inCard ? null : (
+      <p className="text-sm text-slate-500 m-0">
+        No brochure attached — turn on Edit Mode to attach one.
+      </p>
+    );
+  }
 
   return (
-    <SectionCard title="Investor Overview" icon="Globe" collapsible>
-      {/* Region and CIK badges removed — the region is already stated in the
-          overview text below, and the CIK number is not something this view
-          needs to lead with. The row only renders now when a profile actually
-          carries a proxy-influence rating. */}
-      {section.proxy_influence && (
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <Badge label="Proxy Influence" value={section.proxy_influence} />
-        </div>
-      )}
-
-      {isEditMode ? (
-        <textarea
-          value={summaryValue}
-          onChange={(e) => onChange({ ...section, [summaryField]: e.target.value })}
-          rows={7}
-          placeholder="Investor overview text…"
-          className="w-full text-base leading-relaxed text-slate-700 bg-white p-4 rounded-md border border-slate-300 focus:border-red-800 focus:outline-none resize-y"
-        />
-      ) : (
-        <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
-          {renderTextAsBullets(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
-        </div>
-      )}
-
-      {/* investment_strategy is a genuinely separate field from summary
-          (not an alternate phrasing of it) — its own labeled sub-section.
-          Same text-base + boxed-card treatment as the Overview paragraph
-          above, so both read as one consistent visual unit rather than
-          Overview looking like a card and this floating below it as plain text. */}
-      {isEditMode ? (
-        <div className="mt-4">
-          <h4 className="text-sm font-bold text-slate-800 mb-2">Investment Strategy</h4>
-          <textarea
-            value={section.investment_strategy || ""}
-            onChange={(e) => onChange({ ...section, investment_strategy: e.target.value })}
-            rows={5}
-            placeholder="Investment strategy…"
-            className="w-full text-base leading-relaxed text-slate-700 bg-white p-4 rounded-md border border-slate-300 focus:border-red-800 focus:outline-none resize-y"
-          />
-        </div>
-      ) : (
-        section.investment_strategy && (
-          <div className="mt-4">
-            <h4 className="text-sm font-bold text-slate-800 mb-2">Investment Strategy</h4>
-            <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
-              {renderTextAsBullets(section.investment_strategy)}
-            </div>
-          </div>
-        )
-      )}
-
-      {isEditMode && Array.isArray(section.owners) && section.owners.length > 0 ? (
-        <div className="mt-4">
-          <h4 className="text-sm font-bold text-slate-800 mb-2">Owners</h4>
-          <div className="bg-slate-50 p-4 rounded-md border border-slate-100 flex flex-col gap-2">
-            {section.owners.map((owner: any, i: number) => (
-              <input
-                key={i}
-                type="text"
-                value={owner || ""}
-                onChange={(e) => {
-                  const updated = section.owners.map((o: any, oi: number) => (oi === i ? e.target.value : o));
-                  onChange({ ...section, owners: updated });
-                }}
-                className="w-full text-sm text-slate-800 border border-slate-300 rounded px-2 py-1.5 bg-white focus:border-red-800 focus:outline-none"
-              />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <BulletList heading="Owners" items={section.owners} boxed />
-      )}
-      <BulletList heading="Known Email Addresses" items={section.known_email_addresses} />
-
-      <RelevantLinksList links={section.firm_links} />
-
-
-      {/* The brochure row renders whenever there's a brochure to show OR the
-          panel is in Edit Mode — so a profile that came back without one still
-          offers somewhere to attach it, instead of the whole section silently
-          not existing. Read view is unchanged: no brochure, no row. */}
-      {(brochureUrl || isEditMode) && (
-        <div className="border-t border-slate-100 mt-4 -mx-6 px-6">
+    <div className={inCard ? "border-t border-slate-100 mt-4 -mx-6 px-6" : ""}>
           <div
             onClick={() => {
               // Only a row that actually has a PDF behind it toggles.
@@ -650,8 +718,229 @@ const OverviewSection = ({
               </div>
             </div>
           )}
+    </div>
+  );
+};
+
+const OverviewSection = ({
+  section,
+  isEditMode,
+  onChange,
+  inCard = false,
+}: {
+  section: any;
+  isEditMode: boolean;
+  onChange: (updated: any) => void;
+  inCard?: boolean;
+}) => {
+  if (!inCard && (!section || section.status !== "ok")) {
+    return <UnavailableNotice label="Investor overview" error={section?.error} />;
+  }
+
+  const bodyText = section.ai_enriched_summary || section.summary;
+  // Edit whichever field actually holds the text — ai_enriched_summary when
+  // present, otherwise the plain summary — same precedence as bodyText above.
+  const summaryField = section.ai_enriched_summary != null ? "ai_enriched_summary" : "summary";
+  const summaryValue = section[summaryField] ?? "";
+
+  // One block per source entity when the combined profile carries its
+  // entities' own text. Read side only (Edit Mode edits the flat field below,
+  // as before), and any entity that yields no text at all is dropped, so an
+  // empty per_entity[] or one that doesn't carry text falls through to the
+  // flat rendering rather than showing bare headings. A /merge-built profile
+  // has a deliberately blended single summary and no per-entity text, so it
+  // takes that fallback by design.
+  const entityOverviews = isEditMode
+    ? []
+    : getPerEntity(section)
+        .map((entity, i) => ({
+          label: entityLabel(entity, i),
+          summary: entity?.ai_enriched_summary || entity?.summary || "",
+          business: entity?.business_description || "",
+          strategy: entity?.investment_strategy || "",
+        }))
+        .filter((e) => e.summary || e.business || e.strategy);
+
+  if (entityOverviews.length > 0) {
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Profile-level, not per entity — kept above the groups so a combined
+            profile doesn't silently lose it. */}
+        {section.proxy_influence && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <Badge label="Proxy Influence" value={section.proxy_influence} />
+          </div>
+        )}
+        {entityOverviews.map((entity, i) => (
+          <EntityGroup key={`${entity.label}-${i}`} label={entity.label}>
+            <div className="flex flex-col gap-3">
+              {entity.summary && (
+                <div className="text-slate-600 text-base leading-relaxed">
+                  {renderTextAsBullets(entity.summary)}
+                </div>
+              )}
+              {entity.business && (
+                <div>
+                  <h6 className="text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Business Description</h6>
+                  <div className="text-slate-600 text-sm leading-relaxed">
+                    {renderTextAsBullets(entity.business)}
+                  </div>
+                </div>
+              )}
+              {entity.strategy && (
+                <div>
+                  <h6 className="text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Investment Strategy</h6>
+                  <div className="text-slate-600 text-sm leading-relaxed">
+                    {renderTextAsBullets(entity.strategy)}
+                  </div>
+                </div>
+              )}
+            </div>
+          </EntityGroup>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Region and CIK badges removed — the region is already stated in the
+          overview text below, and the CIK number is not something this view
+          needs to lead with. The row only renders now when a profile actually
+          carries a proxy-influence rating. */}
+      {section.proxy_influence && (
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <Badge label="Proxy Influence" value={section.proxy_influence} />
         </div>
       )}
+
+      {isEditMode ? (
+        <textarea
+          value={summaryValue}
+          onChange={(e) => onChange({ ...section, [summaryField]: e.target.value })}
+          rows={7}
+          placeholder="Investor overview text…"
+          className="w-full text-base leading-relaxed text-slate-700 bg-white p-4 rounded-md border border-slate-300 focus:border-red-800 focus:outline-none resize-y"
+        />
+      ) : (
+        <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
+          {renderTextAsBullets(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
+        </div>
+      )}
+
+      {/* investment_strategy is a genuinely separate field from summary
+          (not an alternate phrasing of it) — its own labeled sub-section.
+          Same text-base + boxed-card treatment as the Overview paragraph
+          above, so both read as one consistent visual unit rather than
+          Overview looking like a card and this floating below it as plain text. */}
+      {isEditMode ? (
+        <div className="mt-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Investment Strategy</h4>
+          <textarea
+            value={section.investment_strategy || ""}
+            onChange={(e) => onChange({ ...section, investment_strategy: e.target.value })}
+            rows={5}
+            placeholder="Investment strategy…"
+            className="w-full text-base leading-relaxed text-slate-700 bg-white p-4 rounded-md border border-slate-300 focus:border-red-800 focus:outline-none resize-y"
+          />
+        </div>
+      ) : (
+        section.investment_strategy && (
+          <div className="mt-4">
+            <h4 className="text-sm font-bold text-slate-800 mb-2">Investment Strategy</h4>
+            <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
+              {renderTextAsBullets(section.investment_strategy)}
+            </div>
+          </div>
+        )
+      )}
+    </>
+  );
+};
+
+const OwnersSection = ({
+  section,
+  isEditMode,
+  onChange,
+  inCard = false,
+}: {
+  section: any;
+  isEditMode: boolean;
+  onChange: (updated: any) => void;
+  inCard?: boolean;
+}) => {
+  if (!inCard && (!section || section.status !== "ok")) {
+    return <UnavailableNotice label="Owners" error={section?.error} />;
+  }
+
+  const owners = section?.owners;
+  const emails = section?.known_email_addresses;
+  const hasOwners = Array.isArray(owners) && owners.length > 0;
+  const hasEmails = Array.isArray(emails) && emails.length > 0;
+
+  // BulletList renders nothing at all when its array is empty. That's right
+  // inside the shared card, where the neighbouring blocks still fill it, and
+  // wrong as a tab of its own, which would open on blank space.
+  if (!inCard && !hasOwners && !hasEmails) {
+    return <p className="text-sm text-slate-500 m-0">No owners listed for this filer.</p>;
+  }
+
+  return (
+    <>
+      {isEditMode && hasOwners ? (
+        <div className="mt-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Owners</h4>
+          <div className="bg-slate-50 p-4 rounded-md border border-slate-100 flex flex-col gap-2">
+            {owners.map((owner: any, i: number) => (
+              <input
+                key={i}
+                type="text"
+                value={owner || ""}
+                onChange={(e) => {
+                  const updated = owners.map((o: any, oi: number) => (oi === i ? e.target.value : o));
+                  onChange({ ...section, owners: updated });
+                }}
+                className="w-full text-sm text-slate-800 border border-slate-300 rounded px-2 py-1.5 bg-white focus:border-red-800 focus:outline-none"
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <BulletList heading="Owners" items={owners} boxed />
+      )}
+      <BulletList heading="Known Email Addresses" items={emails} />
+    </>
+  );
+};
+
+// The stacked Investor Overview card: the four sections above in the order and
+// chrome they had when they were one component. This is what the Condensed
+// preview modal renders, so it stays exactly as it was.
+const WhaleWisdomOverviewCard = ({
+  section,
+  slug,
+  isEditMode,
+  onChange,
+}: {
+  section: any;
+  slug?: string;
+  isEditMode: boolean;
+  onChange: (updated: any) => void;
+}) => {
+  if (!section || section.status !== "ok") {
+    return (
+      <SectionCard title="Investor Overview" icon="Globe">
+        <UnavailableNotice label="Investor overview" error={section?.error} />
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard title="Investor Overview" icon="Globe" collapsible>
+      <OverviewSection section={section} isEditMode={isEditMode} onChange={onChange} inCard />
+      <OwnersSection section={section} isEditMode={isEditMode} onChange={onChange} inCard />
+      <LinksSection section={section} inCard />
+      <BrochureSection section={section} slug={slug} isEditMode={isEditMode} onChange={onChange} inCard />
     </SectionCard>
   );
 };
@@ -689,14 +978,19 @@ const HoldingsSection = ({
   section,
   isEditMode,
   onChange,
+  bare = false,
 }: {
   section: any;
   isEditMode: boolean;
   onChange: (updated: any) => void;
+  // Forwarded straight to SectionCard: strips the card chrome and forces the
+  // body open when this section IS the tab panel. Set on the unavailable card
+  // too, so a failed section still shows its notice in tab mode.
+  bare?: boolean;
 }) => {
   if (!section || section.status !== "ok") {
     return (
-      <SectionCard title="Current 13F Holdings" icon="Briefcase">
+      <SectionCard title="Current 13F Holdings" icon="Briefcase" bare={bare}>
         <UnavailableNotice label="13F holdings" error={section?.error} />
       </SectionCard>
     );
@@ -730,7 +1024,7 @@ const HoldingsSection = ({
   };
 
   return (
-    <SectionCard title="Current 13F Holdings" icon="Briefcase" collapsible defaultOpen={false}>
+    <SectionCard title="Current 13F Holdings" icon="Briefcase" collapsible defaultOpen={false} bare={bare}>
       {filerHeaders.length > 0 ? (
         <div className="flex flex-col gap-3 mb-4">
           {filerHeaders.map((filer: any, i: number) => (
@@ -907,14 +1201,16 @@ const ActivistFilingsSection = ({
   section,
   isEditMode,
   onChange,
+  bare = false,
 }: {
   section: any;
   isEditMode: boolean;
   onChange: (updated: any) => void;
+  bare?: boolean;
 }) => {
   if (!section || section.status !== "ok") {
     return (
-      <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText">
+      <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText" bare={bare}>
         <UnavailableNotice label="Activist filings" message="None" error={section?.error} />
       </SectionCard>
     );
@@ -922,13 +1218,21 @@ const ActivistFilingsSection = ({
 
   const filings = Array.isArray(section.filings) ? section.filings : [];
 
+  // One table per source entity on a combination. Grouping rather than a source
+  // column because the column would have to go inside ActivistFilingsTable,
+  // which isn't this file's to change. A filing naming several entities is
+  // listed under each of them — a co-filed 13D belongs to every co-filer, not
+  // just whichever one happens to be first. Read side only; Edit Mode keeps the
+  // flat list of editable rows.
+  const filingGroups = isEditMode ? [] : groupByEntity<any>(section, filings, ["filings"]);
+
   const updateFiling = (index: number, field: string, value: string) => {
     const updated = filings.map((f: any, i: number) => (i === index ? { ...f, [field]: value } : f));
     onChange({ ...section, filings: updated });
   };
 
   return (
-    <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText" collapsible defaultOpen={false}>
+    <SectionCard title="Activist Filings (13D & Proxy Contests)" icon="FileText" collapsible defaultOpen={false} bare={bare}>
       {isEditMode ? (
         filings.length > 0 ? (
           <div className="flex flex-col gap-3">
@@ -970,6 +1274,21 @@ const ActivistFilingsSection = ({
         ) : (
           <p className="text-sm text-slate-500 m-0">No activist filings found in the last 5 years.</p>
         )
+      ) : filingGroups.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {filingGroups.map((group, i) => (
+            <EntityGroup key={`${group.label}-${i}`} label={group.label}>
+              {group.items.length > 0 ? (
+                <ActivistFilingsTable filings={group.items} variant="tailwind" />
+              ) : (
+                // Said explicitly rather than left out: "this entity filed
+                // nothing" and "we didn't retrieve this entity" look identical
+                // when the group simply isn't rendered.
+                <p className="text-sm text-slate-500 m-0">No activist filings found in the last 5 years.</p>
+              )}
+            </EntityGroup>
+          ))}
+        </div>
       ) : (
         <ActivistFilingsTable filings={filings} variant="tailwind" />
       )}
@@ -1034,14 +1353,16 @@ const ShareholderLettersSection = ({
   section,
   isEditMode,
   onChange,
+  bare = false,
 }: {
   section: any;
   isEditMode: boolean;
   onChange: (updated: any) => void;
+  bare?: boolean;
 }) => {
   if (!section || section.status !== "ok") {
     return (
-      <SectionCard title="Shareholder Letters" icon="Mail">
+      <SectionCard title="Shareholder Letters" icon="Mail" bare={bare}>
         <UnavailableNotice label="Shareholder letters" error={section?.error} />
       </SectionCard>
     );
@@ -1051,23 +1372,64 @@ const ShareholderLettersSection = ({
 
   // Newest first. Letters we could not date keep their original API order and
   // sink below the dated ones, so an undated result never masquerades as recent.
-  const sortedResults = rawResults
-    .map((r: any, i: number) => ({ r, i, time: getLetterDate(r)?.getTime() ?? null }))
-    .sort((a, b) => {
-      if (a.time === null || b.time === null) {
-        if (a.time === b.time) return a.i - b.i;
-        return a.time === null ? 1 : -1;
-      }
-      return b.time - a.time;
-    });
+  // Applied per group as well as to the flat list, so grouping doesn't quietly
+  // change the ordering rule.
+  const sortLetters = (results: any[]) =>
+    results
+      .map((r: any, i: number) => ({ r, i, time: getLetterDate(r)?.getTime() ?? null }))
+      .sort((a, b) => {
+        if (a.time === null || b.time === null) {
+          if (a.time === b.time) return a.i - b.i;
+          return a.time === null ? 1 : -1;
+        }
+        return b.time - a.time;
+      });
+
+  // One list per source entity on a combination; read side only, so Edit Mode
+  // keeps the single flat list of editable rows.
+  const letterGroups = isEditMode ? [] : groupByEntity<any>(section, rawResults, ["results", "letters"]);
 
   const updateLetter = (index: number, field: string, value: string) => {
     const updated = rawResults.map((r: any, i: number) => (i === index ? { ...r, [field]: value } : r));
     onChange({ ...section, results: updated });
   };
 
+  // Shared by the flat list and by each entity group, so the two can't drift.
+  const renderLetters = (results: any[]) => {
+    const sorted = sortLetters(results);
+    if (sorted.length === 0) {
+      return <p className="text-sm text-slate-500 m-0">No shareholder letters found.</p>;
+    }
+    return (
+      <ul className="p-0 m-0 list-none flex flex-col gap-4">
+        {sorted.map(({ r, time }, i: number) => (
+          <li key={i} className="flex items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+            <span className="text-red-800 mr-2 text-base leading-none">▸</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-slate-600 m-0 leading-relaxed">
+                {r.url ? (
+                  <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-medium hover:underline">
+                    {r.title || "Untitled letter"}
+                  </a>
+                ) : (
+                  <span className="font-medium">{r.title || "Untitled letter"}</span>
+                )}
+              </p>
+              {/* Title + date only. The snippet is still read by
+                  getLetterDate() above to derive that date — it just isn't
+                  rendered any more. */}
+              {time !== null && (
+                <p className="text-xs text-slate-400 m-0 mt-1">{formatDate(time)}</p>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
-    <SectionCard title="Shareholder Letters" icon="Mail" collapsible defaultOpen={false}>
+    <SectionCard title="Shareholder Letters" icon="Mail" collapsible defaultOpen={false} bare={bare}>
       {isEditMode ? (
         rawResults.length > 0 ? (
           <div className="flex flex-col gap-3">
@@ -1113,33 +1475,16 @@ const ShareholderLettersSection = ({
         ) : (
           <p className="text-sm text-slate-500 m-0">No shareholder letters found.</p>
         )
-      ) : sortedResults.length > 0 ? (
-        <ul className="p-0 m-0 list-none flex flex-col gap-4">
-          {sortedResults.map(({ r, time }, i: number) => (
-            <li key={i} className="flex items-start pb-4 border-b border-slate-100 last:border-0 last:pb-0">
-              <span className="text-red-800 mr-2 text-base leading-none">▸</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-600 m-0 leading-relaxed">
-                  {r.url ? (
-                    <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 no-underline font-medium hover:underline">
-                      {r.title || "Untitled letter"}
-                    </a>
-                  ) : (
-                    <span className="font-medium">{r.title || "Untitled letter"}</span>
-                  )}
-                </p>
-                {/* Title + date only. The snippet is still read by
-                    getLetterDate() above to derive that date — it just isn't
-                    rendered any more. */}
-                {time !== null && (
-                  <p className="text-xs text-slate-400 m-0 mt-1">{formatDate(time)}</p>
-                )}
-              </div>
-            </li>
+      ) : letterGroups.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {letterGroups.map((group, i) => (
+            <EntityGroup key={`${group.label}-${i}`} label={group.label}>
+              {renderLetters(group.items)}
+            </EntityGroup>
           ))}
-        </ul>
+        </div>
       ) : (
-        <p className="text-sm text-slate-500 m-0">No shareholder letters found.</p>
+        renderLetters(rawResults)
       )}
     </SectionCard>
   );
@@ -1167,23 +1512,46 @@ export interface BasicProfileData {
   };
 }
 
+// The Condensed tabs, in the order they appear in the tab bar. Exported so the
+// dashboard renders the bar from the same list this panel switches on — a tab
+// can't exist in the nav without a panel behind it, or the reverse.
+export const BASIC_PROFILE_TABS: { id: string; label: string }[] = [
+  { id: "overview", label: "Investor Overview" },
+  
+  
+  // Deliberately shorter than the headings these carry in stacked mode ("SEC
+  // Form ADV Part 2 Brochure", "Activist Filings (13D & Proxy Contests)"), so
+  // all seven labels fit one row.
+  { id: "brochure", label: "ADV Brochure" },
+  { id: "holdings", label: "13F Holdings" },
+  { id: "activist_filings", label: "Activist Filings" },
+  { id: "letters", label: "Shareholder Letters" },
+  { id: "owners", label: "Owners" },
+  { id: "links", label: "Relevant Links" },
+];
+
+export const BASIC_PROFILE_DEFAULT_TAB = "overview";
+
 const BasicProfilePanel = ({
   data,
   loading,
   error,
   isEditMode,
   onChange,
-  resolveProfileName,
+  layout = "stacked",
+  activeTab = BASIC_PROFILE_DEFAULT_TAB,
 }: {
   data: BasicProfileData | null;
   loading: boolean;
   error: string | null;
   isEditMode: boolean;
   onChange: (updated: BasicProfileData) => void;
-  // Turns one of combination_of's slugs into the name the rest of the app shows
-  // for it. The dashboard passes its own index-backed lookup; on its own this
-  // panel can only prettify the slug.
-  resolveProfileName?: (slug: string) => string;
+  // "stacked" is every section one under another, scrollable — what the
+  // Condensed Profile Preview modal wants, where a reviewer reads the whole
+  // profile before approving it rather than hunting through seven tabs. The
+  // dashboard passes "tabs" and drives activeTab from its own tab bar.
+  layout?: "tabs" | "stacked";
+  activeTab?: string;
 }) => {
   if (loading && !data) {
     return (
@@ -1211,18 +1579,65 @@ const BasicProfilePanel = ({
 
   const sections = data.sections || {};
 
-  // Names of the two profiles a combined profile was merged from — real legal
-  // names when the dashboard supplied a resolver, prettified slugs otherwise.
-  const sourceProfileNames: string[] = (data.combination_of || [])
-    .filter(Boolean)
-    .map((slug) => (resolveProfileName ? resolveProfileName(slug) : prettifySlug(slug)));
-
   // Merges a section-level edit back into the full BasicProfileData object
   // (immutable, same shape) and hands it up to the parent, which holds the
   // live draft in its own basicProfile state.
   const updateSection = (key: keyof BasicProfileData["sections"], updatedSection: any) => {
     onChange({ ...data, sections: { ...data.sections, [key]: updatedSection } });
   };
+
+  // All four whalewisdom_overview tabs write through this one callback, so an
+  // edit on any of them lands on the same section object.
+  const overview = sections.whalewisdom_overview;
+  const onOverviewChange = (updated: any) => updateSection("whalewisdom_overview", updated);
+
+  if (layout === "tabs") {
+    return (
+      <div>
+        {loading && <p className="text-xs text-slate-400 m-0 mb-4">Refreshing…</p>}
+
+        {activeTab === "overview" && (
+          <OverviewSection section={overview} isEditMode={isEditMode} onChange={onOverviewChange} />
+        )}
+        {activeTab === "owners" && (
+          <OwnersSection section={overview} isEditMode={isEditMode} onChange={onOverviewChange} />
+        )}
+        {activeTab === "links" && <LinksSection section={overview} />}
+        {activeTab === "brochure" && (
+          <BrochureSection
+            section={overview}
+            slug={data.slug}
+            isEditMode={isEditMode}
+            onChange={onOverviewChange}
+          />
+        )}
+        {activeTab === "holdings" && (
+          <HoldingsSection
+            section={sections.current_13f_holdings}
+            isEditMode={isEditMode}
+            onChange={(s) => updateSection("current_13f_holdings", s)}
+            bare
+          />
+        )}
+        {activeTab === "activist_filings" && (
+          <ActivistFilingsSection
+            section={sections.activist_filings}
+            isEditMode={isEditMode}
+            onChange={(s) => updateSection("activist_filings", s)}
+            bare
+          />
+        )}
+        {activeTab === "letters" && (
+          <ShareholderLettersSection
+            section={sections.shareholder_letters_web}
+            isEditMode={isEditMode}
+            onChange={(s) => updateSection("shareholder_letters_web", s)}
+            bare
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -1238,11 +1653,11 @@ const BasicProfilePanel = ({
           here, where the sections it applies to are. */}
       {loading && <p className="text-xs text-slate-400 m-0">Refreshing…</p>}
 
-      <OverviewSection
-        section={sections.whalewisdom_overview}
+      <WhaleWisdomOverviewCard
+        section={overview}
         slug={data.slug}
         isEditMode={isEditMode}
-        onChange={(s) => updateSection("whalewisdom_overview", s)}
+        onChange={onOverviewChange}
       />
       <HoldingsSection
         section={sections.current_13f_holdings}
@@ -1260,50 +1675,16 @@ const BasicProfilePanel = ({
         onChange={(s) => updateSection("shareholder_letters_web", s)}
       />
 
-      {/* Explains the "Combined" marker carried next to this profile's name in
-          the header and the investor dropdown, and names the two profiles the
-          merge was built from. */}
-      {data.is_combination && (
-        <div className="flex items-start gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-md">
-          <Lucide icon="GitMerge" className="w-4 h-4 text-red-800 shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-600 m-0 leading-relaxed">
-            <span className="font-bold text-slate-800">Combined profile.</span>{" "}
-            {sourceProfileNames.length > 0 ? (
-              <>
-                Everything above was synthesised from{" "}
-                {sourceProfileNames.map((name, i) => (
-                  <React.Fragment key={`${name}-${i}`}>
-                    {i > 0 && " and "}
-                    <span className="font-semibold text-slate-800">{name}</span>
-                  </React.Fragment>
-                ))}
-                , which stay available as their own profiles.
-              </>
-            ) : (
-              "Everything above was synthesised from two other profiles, which stay available as their own profiles."
-            )}{" "}
-            The marker next to the name flags it as a combination rather than a single firm's profile.
-          </p>
-        </div>
-      )}
+      {/* Two combination-only blocks used to render here: a paragraph explaining
+          the "Combined" marker and the profiles the merge was built from, and a
+          folded "What this merge decided" list of combination_notes. Both were
+          dropped from the client-facing view at the client's request — the
+          "Combined" badge beside the profile name is the only marker now.
 
-      {/* The backend records every merge decision that wasn't a clean union —
-          which source won a field the two disagreed on, a filer that reported no
-          13F holdings, and so on. Folded away by default: it's an audit trail,
-          not something the reader needs in front of them, but it must not be
-          dropped either. */}
-      {data.is_combination && (data.combination_notes || []).length > 0 && (
-        <details className="bg-slate-50 border border-slate-200 rounded-md px-3 py-2">
-          <summary className="text-xs font-semibold text-slate-700 cursor-pointer select-none">
-            What this merge decided ({(data.combination_notes || []).length})
-          </summary>
-          <ul className="pl-5 mt-2 mb-0 list-disc flex flex-col gap-1.5 text-xs text-slate-600 leading-relaxed">
-            {(data.combination_notes || []).map((note: string, i: number) => (
-              <li key={i}>{note}</li>
-            ))}
-          </ul>
-        </details>
-      )}
+          Nothing was removed from the data: is_combination, combination_of and
+          combination_notes are still on the profile type above, still stored,
+          and still populated by the merge. The audit trail the notes provide is
+          intact in the saved profile — it simply isn't rendered here. */}
     </div>
   );
 };

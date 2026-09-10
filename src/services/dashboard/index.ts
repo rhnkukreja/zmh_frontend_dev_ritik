@@ -280,6 +280,24 @@ class DashboardService {
     return response.data;
   }
 
+  // The filing's own text, not an embedded sec.gov page -- SEC.gov serves
+  // X-Frame-Options: SAMEORIGIN, so an iframe would render blank. Returns
+  // { filing, sec_url, primary_document_url, item2_text, item4_text,
+  // background_of_solicitation, reasons_for_solicitation, blocks,
+  // body_text, exhibits, unavailable_reason }.
+  //
+  // item2_text/item4_text are the Schedule 13D sections;
+  // background_of_solicitation/reasons_for_solicitation are their
+  // contested-proxy counterparts (PREC14A, DEFC14A, DFAN14A, PRRN14A,
+  // DEFN14A) and run far longer. Each set is null on the other form type, and
+  // on any filing where the section wasn't found.
+  public async getActivistCampaignFilingPreview(filingId: number | string): Promise<any> {
+    const response = await axiosInstance.get(`/api/activist-campaigns/filings/${filingId}/preview`, {
+      baseURL: activistCampaignsApiBaseURL,
+    });
+    return response.data;
+  }
+
   public async updateActivistCampaign(
     id: number | string,
     data: { status?: string; notes?: string }
