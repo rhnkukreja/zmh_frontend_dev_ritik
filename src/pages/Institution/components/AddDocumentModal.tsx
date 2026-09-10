@@ -37,29 +37,6 @@ const appendCaseStudyTag = (tagsValue: string): string => {
   return trimmed ? `${trimmed}, ${CASE_STUDY_TAG}` : CASE_STUDY_TAG;
 };
 
-// Reserved tag riding along inside the existing free-text `tags` value sent to
-// the FastAPI /api/upload endpoint -- an explicit human signal that a
-// document contains a case study, since the backend's LLM classifier only
-// picks up to 2 categories and can bury a case study inside e.g. a
-// "Stewardship Report" tag. Deliberately not a new form field on the Django
-// side (institute_documents/) -- no schema change, no migration.
-const CASE_STUDY_TAG = "case-study";
-
-// Appends CASE_STUDY_TAG to whatever the user typed in Tags, without
-// reformatting it, and without duplicating the tag if they already typed it
-// themselves (any casing/spacing).
-const appendCaseStudyTag = (tagsValue: string): string => {
-  const alreadyTagged = tagsValue
-    .split(",")
-    .map((t) => t.trim().toLowerCase())
-    .includes(CASE_STUDY_TAG);
-
-  if (alreadyTagged) return tagsValue;
-
-  const trimmed = tagsValue.trim();
-  return trimmed ? `${trimmed}, ${CASE_STUDY_TAG}` : CASE_STUDY_TAG;
-};
-
 /**
  * Robust AddDocumentModal with:
  * - safe File extraction from Dropzone wrapper shapes
