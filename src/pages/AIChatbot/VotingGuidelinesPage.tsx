@@ -3,6 +3,7 @@ import {
     Send, Bot, Users, FileText, X, ChevronDown, Check,
     Eye, EyeOff, Search, Trash2, Maximize2, ArrowRight, FileSearch 
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { fetchInvestors, AI_CHATBOT_API_BASE } from "./api";
 import { useChat } from "./ChatContext.tsx";
 
@@ -50,6 +51,18 @@ type GuidelineResult = {
     file_url?: string;
 };
 
+type SummaryAnswer = {
+    investor_name: string;
+    document_title: string;
+    year: number | null;
+    answer: string;
+};
+
+type SummaryRequest = {
+    question: string;
+    answers: SummaryAnswer[];
+};
+
 export default function VotingGuidelinesPage() {
     // ─────────────────────────────────────────────────────────
     // STATE
@@ -87,7 +100,16 @@ export default function VotingGuidelinesPage() {
     const [showFilters, setShowFilters] = useState(true);
     
     const [selectedResult, setSelectedResult] = useState<GuidelineResult | null>(null);
-    
+
+    // ─── Generate Summary modal ───
+    // The request is held in state (rather than the history item it came from)
+    // so a retry after a failure re-sends exactly what was sent the first time,
+    // without touching the Analyze flow or the answers already on screen.
+    const [summaryRequest, setSummaryRequest] = useState<SummaryRequest | null>(null);
+    const [summaryLoading, setSummaryLoading] = useState(false);
+    const [summaryText, setSummaryText] = useState("");
+    const [summaryError, setSummaryError] = useState<string | null>(null);
+
     const [isInvestorDropdownOpen, setIsInvestorDropdownOpen] = useState(false);
     const [investorSearchQuery, setInvestorSearchQuery] = useState("");
     const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
@@ -155,14 +177,25 @@ export default function VotingGuidelinesPage() {
         }
     }, [history, analyzing]);
 
+    // Escape closes the summary modal, matching the dropdown/modal handling
+    // elsewhere in this app (ActivistFilingsTable, ActivistDashboard).
+    useEffect(() => {
+        if (!summaryRequest) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") closeSummary();
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [summaryRequest]);
+
     // ─────────────────────────────────────────────────────────
     // HANDLERS
     // ─────────────────────────────────────────────────────────
     const toggleInvestor = (id: string) => {
         setSelectedInvestors((() => {
             if (selectedInvestors.includes(id)) return selectedInvestors.filter(item => item !== id);
-            if (selectedInvestors.length >= 5) {
-                alert("Maximum 5 investors allowed for comparison.");
+            if (selectedInvestors.length >= 10) {
+                alert("Maximum 10 investors allowed for comparison.");
                 return selectedInvestors;
             }
             return [...selectedInvestors, id];
@@ -208,6 +241,79 @@ export default function VotingGuidelinesPage() {
         if (count === 4) return "w-1/4 min-w-[220px]";
         if (count === 3) return "w-1/3 min-w-[250px]";
         return "flex-1 min-w-[280px]";
+    };
+
+    // ─────────────────────────────────────────────────────────
+    // GENERATE SUMMARY
+    // ─────────────────────────────────────────────────────────
+    // The FULL answer, not the two-line preview the table shows. The table
+    // renders only answer_segments[0], clipped by line-clamp; sending that
+    // would hand the model half a sentence per investor.
+    const getFullAnswerText = (res: GuidelineResult): string => {
+        const segments = res.answer_segments ?? [];
+        const text = segments.length > 0
+            ? segments.map(s => s.text).join("\n\n")
+            : (res.summary ?? "");
+        return text.trim();
+    };
+
+    // Only investors that actually came back with an answer can be compared.
+    const buildSummaryAnswers = (results: GuidelineResult[] = []): SummaryAnswer[] =>
+        results
+            .map(res => ({
+                investor_name: allInvestors.find(i => i.id === res.investor_id)?.name || res.investor_id,
+                document_title: res.pdf_name,
+                year: res.year,
+                answer: getFullAnswerText(res),
+            }))
+            .filter(answer => answer.answer.length > 0);
+
+    const runSummary = async (request: SummaryRequest) => {
+        setSummaryLoading(true);
+        setSummaryError(null);
+        setSummaryText("");
+
+        try {
+            const response = await fetch(`${AI_CHATBOT_API_BASE}/api/voting-guidelines-summary`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(request),
+            });
+
+            const payload = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                // Show what the server actually said — a generic message would
+                // hide the reason the user needs in order to judge whether
+                // retrying is worth anything.
+                throw new Error(payload?.detail || payload?.message || `Summary failed (${response.status}).`);
+            }
+
+            const text: string = payload?.summary ?? payload?.comparison ?? "";
+            if (!text.trim()) throw new Error("The summary came back empty.");
+
+            setSummaryText(text);
+        } catch (error) {
+            setSummaryError(error instanceof Error ? error.message : "Failed to generate summary.");
+        } finally {
+            setSummaryLoading(false);
+        }
+    };
+
+    // The answers are already in state from Analyze — this never re-runs the query.
+    const handleGenerateSummary = (item: HistoryItem) => {
+        const answers = buildSummaryAnswers(item.results);
+        if (answers.length < 2) return;
+
+        const request: SummaryRequest = { question: item.question, answers };
+        setSummaryRequest(request);
+        runSummary(request);
+    };
+
+    const closeSummary = () => {
+        setSummaryRequest(null);
+        setSummaryText("");
+        setSummaryError(null);
     };
 
     const isReady = selectedInvestors.length > 0 && question.trim().length > 0 && !analyzing;
@@ -281,6 +387,68 @@ export default function VotingGuidelinesPage() {
     return (
         <div className="flex flex-col h-[calc(100vh-140px)] relative bg-white p-8">
             
+            {/* GENERATE SUMMARY MODAL */}
+            {summaryRequest && (
+                <div
+                    onClick={closeSummary}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white border border-[#931638]/50 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                    >
+                        <div className="px-6 py-4 border-b border-[#931638]/50 flex justify-between items-start bg-gray-50">
+                            <div className="flex flex-col gap-1.5">
+                                <div className="text-lg font-bold text-[#931638] flex items-center gap-2">
+                                    <FileText size={18} />
+                                    Comparison Summary
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500 font-medium bg-white px-2 py-1 rounded border border-gray-200">
+                                    <Users size={14} className="text-[#931638]"/>
+                                    {summaryRequest.answers.length} investors · {summaryRequest.question}
+                                </div>
+                            </div>
+                            <button onClick={closeSummary} className="text-gray-500 hover:text-black p-2 hover:bg-gray-200 rounded-lg transition-colors bg-gray-100">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar bg-white">
+                            {summaryLoading && (
+                                <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#931638]"></div>
+                                    <p className="text-sm text-gray-500 font-medium animate-pulse">
+                                        Comparing answers across investors...
+                                    </p>
+                                    <p className="text-xs text-gray-400">This usually takes a few seconds.</p>
+                                </div>
+                            )}
+
+                            {/* The modal stays open on failure so the message can be read and retried. */}
+                            {!summaryLoading && summaryError && (
+                                <div className="flex flex-col items-start gap-3 p-4 bg-red-50 rounded-lg border-2 border-red-200">
+                                    <div>
+                                        <p className="text-sm font-medium text-red-900 mb-1">Error</p>
+                                        <p className="text-xs text-red-700 whitespace-pre-wrap">{summaryError}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => runSummary(summaryRequest)}
+                                        className="bg-[#931638] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#931638]/90 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                    >
+                                        <Send size={14}/> Try Again
+                                    </button>
+                                </div>
+                            )}
+
+                            {!summaryLoading && !summaryError && summaryText && (
+                                <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none">
+                                    <ReactMarkdown>{summaryText}</ReactMarkdown>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* FULL TEXT MODAL */}
             {selectedResult && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -389,7 +557,7 @@ export default function VotingGuidelinesPage() {
                                 >
                                     <span className="truncate text-black font-medium flex items-center gap-2">
                                         <Users size={12} className="text-gray-500" />
-                                        {selectedInvestors.length === 0 ? "Select Investors (Max 5)" : `${selectedInvestors.length} Investors Selected`}
+                                        {selectedInvestors.length === 0 ? "Select Investors (Max 10)" : `${selectedInvestors.length} Investors Selected`}
                                     </span>
                                     <ChevronDown size={12} className={`text-gray-500 transition-transform ${isInvestorDropdownOpen ? 'rotate-180' : ''}`} />
                                 </button>
@@ -555,6 +723,24 @@ export default function VotingGuidelinesPage() {
                         {/* Results table */}
                         {!item.loading && !item.error && item.results && item.results.length > 0 && (
                             <div className="animate-in slide-in-from-bottom-4 duration-500 pb-4">
+                                {/* A comparison needs at least two answers to compare. */}
+                                {(() => {
+                                    const comparableCount = buildSummaryAnswers(item.results).length;
+                                    return (
+                                        <div className="flex justify-start mb-2">
+                                            <button
+                                                onClick={() => handleGenerateSummary(item)}
+                                                disabled={comparableCount < 2 || summaryLoading}
+                                                title={comparableCount < 2 ? "At least 2 investors with answers are needed for a comparison." : "Compare these answers"}
+                                                className="bg-[#931638] text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-[#931638]/90 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                            >
+                                                {summaryLoading ? <span className="animate-spin">⏳</span> : <FileText size={14}/>}
+                                                {summaryLoading ? "Generating..." : "Generate Summary"}
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
+
                                 <div className="border border-[#931638]/20 rounded-lg shadow-md bg-white overflow-hidden">
                                     <table className="w-full">
                                         <thead>

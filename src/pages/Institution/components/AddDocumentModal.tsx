@@ -11,6 +11,31 @@ import axios from "axios";
 import { baseURL } from "@/constant";
 import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
 import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
+import { getCreatorEmail } from "@/utils/currentUser";
+import { useAppSelector } from "@/stores/hooks";
+
+// Reserved tag riding along inside the existing free-text `tags` value sent to
+// the FastAPI /api/upload endpoint -- an explicit human signal that a
+// document contains a case study, since the backend's LLM classifier only
+// picks up to 2 categories and can bury a case study inside e.g. a
+// "Stewardship Report" tag. Deliberately not a new form field on the Django
+// side (institute_documents/) -- no schema change, no migration.
+const CASE_STUDY_TAG = "case-study";
+
+// Appends CASE_STUDY_TAG to whatever the user typed in Tags, without
+// reformatting it, and without duplicating the tag if they already typed it
+// themselves (any casing/spacing).
+const appendCaseStudyTag = (tagsValue: string): string => {
+  const alreadyTagged = tagsValue
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .includes(CASE_STUDY_TAG);
+
+  if (alreadyTagged) return tagsValue;
+
+  const trimmed = tagsValue.trim();
+  return trimmed ? `${trimmed}, ${CASE_STUDY_TAG}` : CASE_STUDY_TAG;
+};
 
 // Reserved tag riding along inside the existing free-text `tags` value sent to
 // the FastAPI /api/upload endpoint -- an explicit human signal that a
@@ -130,6 +155,11 @@ const AddDocumentModal = ({
     },
   });
 
+  // Read only to stamp the ingestion request with who asked for it. Resolved
+  // the same way here as on the manual-upload path, so both routes record the
+  // same answer for the same analyst.
+  const { user } = useAppSelector((state) => state.authentiction);
+
   const handleClose = () => {
     reset();
     setDocumentFile(null);
@@ -173,6 +203,11 @@ const AddDocumentModal = ({
       try {
         const expectedUrl = `https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Investor_Documents/${encodeURIComponent(documentFile.name)}`;
         
+        // Optional server-side. Omitted entirely rather than sent empty when no
+        // email resolves, so an upload by a caller we can't identify behaves
+        // exactly as it did before this field existed.
+        const requestedByEmail = getCreatorEmail(user);
+
         const jsonPayload = {
           institution_id: String(institutionId),
           document_name: data.document_name,
@@ -182,7 +217,8 @@ const AddDocumentModal = ({
           tags: data.is_case_study ? appendCaseStudyTag(data.tags) : data.tags,
           priority: data.priority,
           file_url: expectedUrl,
-          file_name: documentFile.name
+          file_name: documentFile.name,
+          ...(requestedByEmail ? { requested_by_email: requestedByEmail } : {})
         };
 
         const aibackendkUrl = `${AI_CHATBOT_API_BASE}/api/upload`;

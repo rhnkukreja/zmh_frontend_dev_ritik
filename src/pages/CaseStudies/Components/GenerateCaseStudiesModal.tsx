@@ -88,6 +88,60 @@ const POLL_INTERVAL_MS = 6000;
 // being validated — full history can be enabled once this is trusted.
 const GENERATION_YEARS = [2025, 2026];
 
+// ─── Prose formatting ───────────────────────────────────────────────────────
+// The same component renders two differently-shaped bodies, and both have to
+// come out right:
+//
+//   legacy rows   paragraphs separated by a blank line, few or no single
+//                 newlines within a paragraph
+//   PDF-extracted a newline at the end of every VISUAL line, because that's
+//                 what text extraction preserves
+//
+// Splitting on every "\n" (what this did before) happens to work for the first
+// and breaks the second badly: one sentence becomes three margined paragraphs.
+// So a blank line is a paragraph break, and a lone newline is a soft wrap to be
+// rejoined -- the same rule sec_13d_monitor.py's preview formatter applies to
+// SEC filing text.
+
+// A line that begins a list item is a genuine break, not a wrap, and must not
+// be folded into the sentence above it: a bullet, or a number/letter marker
+// ("1.", "1)", "(1)", "a.").
+//
+// The letter form is restricted to lowercase on purpose. Uppercase would match
+// the initial in a personal name ("J. Smith...") landing at the start of a
+// wrapped line, which is plausible in this material and would split a sentence
+// for no reason.
+const LIST_ITEM_START = /^(?:[•\-–—*]|\(?\d+[.)]|\(?[a-z][.)])\s+/;
+
+// Blank-line-separated paragraphs. Within each, wrapped lines are rejoined with
+// a single space, while list items keep their own line (the retained "\n" is
+// rendered by whitespace-pre-line on the <p>). Empty paragraphs are dropped,
+// same as before.
+const toParagraphs = (text: string): string[] =>
+  text
+    .split(/\n\s*\n/)
+    .map((block) =>
+      block
+        .split("\n")
+        .reduce<string[]>((lines, rawLine) => {
+          const line = rawLine.trim();
+          if (!line) return lines;
+          if (lines.length === 0 || LIST_ITEM_START.test(line)) {
+            lines.push(line);
+          } else {
+            lines[lines.length - 1] += ` ${line}`;
+          }
+          return lines;
+        }, [])
+        .join("\n")
+        // Collapses the runs of spaces that joining can produce (a line ending
+        // in a space, then joined to the next). Deliberately not \s, so the
+        // list-item newlines above survive.
+        .replace(/[ \t]+/g, " ")
+        .trim()
+    )
+    .filter((block) => block.length > 0);
+
 // ─── Approve payload ────────────────────────────────────────────────────────
 // Mirrors AddEditCaseStudies.tsx's onSubmit transformedData shape exactly:
 // same field names, same null-vs-empty conventions (company/caspio_company_name
@@ -539,14 +593,13 @@ const CaseStudyDetailCard: React.FC<{
       {e.engagement_details && (
         <div>
           <h3 className="font-semibold mb-2 text-sm">Engagement/Voting Details</h3>
-          {e.engagement_details.split("\n").map(
-            (paragraph, idx) =>
-              paragraph.trim() !== "" && (
-                <p key={idx} className="mb-3 text-justify">
-                  {paragraph}
-                </p>
-              )
-          )}
+          {/* whitespace-pre-line so the newlines toParagraphs deliberately kept
+              -- list-item breaks, nothing else -- render as line breaks. */}
+          {toParagraphs(e.engagement_details).map((paragraph, idx) => (
+            <p key={idx} className="mb-3 text-justify whitespace-pre-line">
+              {paragraph}
+            </p>
+          ))}
         </div>
       )}
 
