@@ -3,7 +3,7 @@ import { Popover, Dialog } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -519,63 +519,6 @@ function CaseStudies() {
     }
   };
 
-  const multSearchUrl = useMemo(() => {
-    const baseUrl = `/get_case_studies_dropdown_values/`;
-    const params = new URLSearchParams();
-
-    // Add global_search parameter if not all companies selected
-    if (!isAllCompanySelected) {
-      const globalSearch = companyGlobalSearchName || filters?.global_search?.[0];
-      if (globalSearch) {
-        params.append('global_search', globalSearch);
-      }
-    }
-
-    // Add current filters to the search URL
-    if (filters.year && filters.year.length > 0) {
-      params.append('year', JSON.stringify(filters.year));
-    }
-
-    if (filters.market && filters.market.length > 0) {
-      params.append('market', JSON.stringify(filters.market));
-    }
-
-    if (filters.sector && filters.sector.length > 0) {
-      params.append('sector', JSON.stringify(filters.sector));
-    }
-
-    if (filters.themes && filters.themes.length > 0) {
-      params.append('themes', JSON.stringify(filters.themes));
-    }
-
-    if (filters.proposal_type && filters.proposal_type.length > 0) {
-      params.append('proposal_type', JSON.stringify(filters.proposal_type));
-    }
-
-    if (filters.vote && filters.vote.length > 0) {
-      params.append('vote', JSON.stringify(filters.vote));
-    }
-
-    if (filters.approval_status) {
-      params.append('approval_status', filters.approval_status);
-    }
-
-    if (filters.caspio_company_name) {
-      params.append('caspio_company_name', filters.caspio_company_name);
-    }
-
-    if (filters.keyword) {
-      params.append('keyword', filters.keyword);
-    }
-
-    if (filters.index && filters.index.length > 0) {
-      params.append('index', JSON.stringify(filters.index));
-    }
-
-    const queryString = params.toString();
-    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-  }, [isAllCompanySelected, companyGlobalSearchName, filters]);
-
   const handleViewAllChange = async (event: any) => {
     if (event?.target?.checked) {
       const currentYear = new Date().getFullYear();
@@ -706,8 +649,24 @@ function CaseStudies() {
                       }}
                       searchTerms={searchTerms}
                       setSearchTerms={setSearchTerms}
-                      url={multSearchUrl}
-                      getOptionKey="institution_name"
+                      // The institution list, not the case-study facets. The
+                      // facets endpoint only ever returned institutions that
+                      // already had case studies inside a 3-year window -- ~90
+                      // of 1306 -- so an institution whose case studies predate
+                      // the window read as "No results found", and Generate
+                      // Case Studies (which this same box feeds) could only be
+                      // aimed at institutions that already had some.
+                      //
+                      // Same configuration the Institution page uses with this
+                      // component. getOptionKey MUST be "institution": that's
+                      // the field /institute/ returns, where the facets
+                      // endpoint returned institution_name. A wrong key here
+                      // doesn't fall through to anything -- results.map() over
+                      // a missing field yields an array of undefined, which is
+                      // truthy, so the dropdown fills with blank rows.
+                      url="/institute/"
+                      getOptionKey="institution"
+                      queryKey="institution_name"
                       placeHolder="Search Institution"
                       onSearchChange={resetPage}
                       isSingle={true}
@@ -1377,7 +1336,23 @@ function CaseStudies() {
                     />
                     <div className="text-xl font-bold text-slate-700">No Case Studies Found</div>
                     <div className="text-slate-500 mt-2">
-                      Try adjusting your filters or keyword search
+                      {/* Selecting an institution that has no case studies is
+                          now a normal, expected outcome rather than a sign
+                          something went wrong -- the search covers every
+                          institution, not just those already covered. So the
+                          empty state names the institution and points at the
+                          action that fixes it, instead of suggesting the
+                          filters are at fault. The generate hint is gated on
+                          the same roles that can see the button. */}
+                      {searchTerms.length > 0 ? (
+                        <>
+                          No case studies found for {searchTerms[0]}.
+                          {(user?.user_type === "Analyst" || user?.user_type === "Admin") &&
+                            " Use Generate Case Studies above to create them."}
+                        </>
+                      ) : (
+                        "Try adjusting your filters or keyword search"
+                      )}
                     </div>
                   </div>
                 )}
