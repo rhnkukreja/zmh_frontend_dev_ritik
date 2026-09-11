@@ -1042,6 +1042,10 @@ const index = () => {
       meeting_date: ''
     },
   });
+  const watchedInstitution = watch("institution_name");
+  const isAllInstitutionsSelected = isSelectAllInstitution(
+    watchedInstitution?.label ?? watchedInstitution?.value ?? watchedInstitution
+  );
 
   const handleRemoveChip = (removeKey: any, removeValue: any) => {
     const updatedFilters = { ...allApplyFilter };
@@ -1605,7 +1609,8 @@ const index = () => {
                             console.log("Proposal item added:", value);
                           }
                         }}
-                        className="w-full"
+                        className={clsx("w-full", isAllInstitutionsSelected && "opacity-60 cursor-not-allowed")}
+                        disabled={isAllInstitutionsSelected}
                         multiple
                       >
                         {getDynamicDropdownLoader ? (
