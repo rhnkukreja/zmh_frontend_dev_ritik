@@ -21,6 +21,12 @@ import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
 import { baseURL } from "@/constant";
+import { getCreatorEmail } from "@/utils/currentUser";
+
+// Local marker for "the status request itself failed", kept distinct from the
+// backend's own "error" status so a network blip is never reported to the
+// analyst as a failed document.
+const STATUS_CHECK_FAILED = "__status_check_failed__";
 
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
 // Split link_sources into add_sources and remove_sources
@@ -289,6 +295,72 @@ const InstitutionDocuments = () => {
     }
   }, [linkingInProgress.bulk, profileMode]);
 
+  // Ingestion outlives this component: an analyst starts one, navigates away,
+  // and comes back to a page that has forgotten all about it -- the "+" looks
+  // clickable again, so they start a duplicate and then report the upload
+  // failed. processingDocs is component-local, so it can only be recovered by
+  // asking the server what is actually still in flight.
+  //
+  // The server is the source of truth rather than localStorage: it survives a
+  // hard refresh, a different browser, a different machine and a different
+  // analyst, none of which browser storage does.
+  //
+  // Seeding this state is all that's needed -- the existing 10s poll below is
+  // keyed on processingDocs and picks up again on its own. No second poller.
+  useEffect(() => {
+    if (!params.id) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await axios.get(`${AI_CHATBOT_API_BASE}/api/upload/in-flight`, {
+          params: { institution_id: params.id }
+        });
+        if (cancelled) return;
+
+        const jobs = Array.isArray(res.data?.jobs) ? res.data.jobs : [];
+        const rehydrated = jobs
+          .map((job: any) => {
+            // The poller looks a job up by document_name, so an entry without
+            // one can never resolve -- it would spin forever. Dropped instead.
+            const documentName = typeof job?.document_name === "string" ? job.document_name.trim() : "";
+            if (!documentName) return null;
+            return {
+              id: typeof job?.id === "number" ? job.id : typeof job?.document_id === "number" ? job.document_id : undefined,
+              document_name: documentName,
+              institution_id: String(job?.institution_id ?? params.id),
+            };
+          })
+          .filter(Boolean) as { id?: number; document_name: string; institution_id: string }[];
+
+        if (rehydrated.length === 0) return;
+
+        // Merged, not replaced: an upload started between this request going
+        // out and coming back must not be wiped by a snapshot taken before it.
+        setProcessingDocs((prev) => {
+          const merged = [...rehydrated];
+          prev.forEach((existing) => {
+            const alreadyThere = merged.some(
+              (job) =>
+                (job.id && existing.id && job.id === existing.id) ||
+                job.document_name.toLowerCase() === existing.document_name.toLowerCase()
+            );
+            if (!alreadyThere) merged.push(existing);
+          });
+          return merged;
+        });
+      } catch (error) {
+        // Never blocks the page: without this the documents table still works,
+        // it just can't show what was already running.
+        console.warn("Could not load in-flight ingestion jobs; continuing with none.", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id]);
+
   useEffect(() => {
     if (processingDocs.length === 0) return;
 
@@ -299,15 +371,43 @@ const InstitutionDocuments = () => {
             const res = await axios.get(`${AI_CHATBOT_API_BASE}/api/upload/status`, {
               params: { document_name: doc.document_name, institution_id: doc.institution_id }
             });
-            return { doc, status: res.data.status };
+            return { doc, status: res.data?.status, errorMessage: res.data?.error_message as string | null };
           } catch {
-            return { doc, status: "error" };
+            // The status CHECK failed, which says nothing about the job. Kept
+            // in the list so a network blip doesn't silently stop tracking a
+            // document that is still processing, and doesn't raise a "failed"
+            // toast for a document that hasn't failed.
+            return { doc, status: STATUS_CHECK_FAILED, errorMessage: null };
           }
         })
       );
-      const stillProcessing = resolved.filter(({ status }) => status === "queued" || status === "processing").map(({ doc }) => doc);
+      const stillProcessing = resolved
+        .filter(({ status }) => status === "queued" || status === "processing" || status === STATUS_CHECK_FAILED)
+        .map(({ doc }) => doc);
       const justFinished = resolved.filter(({ status }) => status === "done");
       if (justFinished.length > 0) dispatch(fetchInstitutionDocuments(Number(params.id)));
+
+      // Anything that isn't still running and isn't done has stopped without
+      // producing a document. These used to be dropped from the list silently:
+      // the spinner just vanished and the analyst read that as success. Each is
+      // named, and reported once -- it leaves processingDocs on this same tick,
+      // so the next tick can't repeat the toast.
+      resolved.forEach(({ doc, status, errorMessage }) => {
+        if (status === "error") {
+          toast.error(
+            errorMessage
+              ? `Processing failed for "${doc.document_name}": ${errorMessage}`
+              : `Processing failed for "${doc.document_name}".`
+          );
+        } else if (status === "not_found") {
+          // Distinct from an error: the job isn't known to the queue at all,
+          // which usually means it was never enqueued rather than that it ran
+          // and broke.
+          toast.error(
+            `"${doc.document_name}" was not found in the processing queue — it may never have started. Try processing it again.`
+          );
+        }
+      });
 
       setProcessingDocs(stillProcessing);
     }, 10000);
@@ -320,9 +420,14 @@ const InstitutionDocuments = () => {
     if (!params.id) return;
     setProcessingDocs(prev => [...prev, { id: doc.id, document_name: doc.name || "", institution_id: params.id! }]);
     try {
+      // Optional server-side, so it's omitted entirely rather than sent empty
+      // when no email can be resolved -- the upload has to work exactly as
+      // before for a caller we can't identify.
+      const requestedByEmail = getCreatorEmail(user);
       await axios.post(`${AI_CHATBOT_API_BASE}/api/upload`, {
         institution_id: params.id, document_name: doc.name || "", document_type: doc.document_type || "Stewardship Report",
-        year: String(doc.year || ""), month: "", tags: "", priority: doc.priority || "Medium", file_name: doc.name || "", link: doc.link || ""
+        year: String(doc.year || ""), month: "", tags: "", priority: doc.priority || "Medium", file_name: doc.name || "", link: doc.link || "",
+        ...(requestedByEmail ? { requested_by_email: requestedByEmail } : {})
       });
       toast.success(`Processing started for: ${doc.name}`);
     } catch (e) {

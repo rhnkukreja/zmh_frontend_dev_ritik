@@ -6,7 +6,8 @@ import { toast } from "react-toastify";
 import { AI_CHATBOT_API_BASE, IS_LOCAL_ENV, generateWhaleWisdomId, mergeBasicProfiles } from '@/pages/AIChatbot/api';
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
-import BasicProfilePanel from "@/pages/AIChatbot/BasicProfilePanel";
+import BasicProfilePanel, { BASIC_PROFILE_TABS, BASIC_PROFILE_DEFAULT_TAB } from "@/pages/AIChatbot/BasicProfilePanel";
+import { getCreatorEmail } from "@/utils/currentUser";
 import ActivistFilingsTable from "@/pages/AIChatbot/ActivistFilingsTable";
 import { DeleteConfirmationModal } from "@/components/DeleteModal";
 import { WhaleWisdomFilerPickerModal, WhaleWisdomFiler } from "@/components/WhaleWisdomFilerPickerModal";
@@ -22,6 +23,14 @@ const THEME_MAROON = "#8b1828";
 // Exactly two. The merge endpoint takes slug_a and slug_b, so the picker caps
 // selection there rather than letting a third tick silently do nothing.
 const MERGE_PAIR_SIZE = 2;
+
+// A separate feature from MERGE_PAIR_SIZE above, and deliberately a different
+// number. That one is /merge, which takes a slug_a + slug_b pair of already
+// published profiles. This one is the combined-GENERATE flow
+// (basic/generate-combined), which builds one profile from several WhaleWisdom
+// filers at once -- reached either by entering the CIKs directly or by checking
+// candidates in the filer picker. Both routes cap here.
+const MAX_COMBINED_FILERS = 3;
 
 // ⚠️ TEMPORARY — dev testing only.  The backend only sends the "profile ready"
 // email when the /generate request carries a creator_email (see the
@@ -559,6 +568,51 @@ const GenerationProgressBar = ({ job, onClick }: { job: ActiveGenerationJob; onC
 
 // ─── Investor trigger button (header only) ────────────────────────────────────
 
+// The one tab row for both profile views. Comprehensive and Condensed render
+// the same component rather than two copies of the same markup, so they cannot
+// drift apart in position, border or active-underline treatment.
+const ProfileTabBar = ({
+  tabs,
+  activeTab,
+  onChange,
+}: {
+  tabs: { id: string; label: string }[];
+  activeTab: string;
+  onChange: (id: string) => void;
+}) => (
+  <div
+    role="tablist"
+    // Scrolls rather than wraps: a wrapped second row would leave the bottom
+    // border (and the active tab's underline, which sits on it via the -1px
+    // margin) running through the middle of the row.
+    style={{
+      padding: "0 24px", borderBottom: "1px solid #e5e7eb", borderTop: "1px solid #e5e7eb",
+      background: "#fff", display: "flex", gap: 24, overflowX: "auto", whiteSpace: "nowrap",
+    }}
+  >
+    {tabs.map((tab) => (
+      <button
+        key={tab.id}
+        type="button"
+        role="tab"
+        aria-selected={activeTab === tab.id}
+        onClick={() => onChange(tab.id)}
+        style={{
+          padding: "16px 4px", border: "none", cursor: "pointer", background: "transparent",
+          color: activeTab === tab.id ? THEME_MAROON : "#6b7280", fontWeight: activeTab === tab.id ? 600 : 500,
+          borderBottom: activeTab === tab.id ? `2px solid ${THEME_MAROON}` : "2px solid transparent",
+          transition: "all 0.2s ease", marginBottom: "-1px", fontSize: 13,
+          // Without these the buttons compress and their labels wrap instead of
+          // the row scrolling.
+          whiteSpace: "nowrap", flexShrink: 0,
+        }}
+      >
+        {tab.label}
+      </button>
+    ))}
+  </div>
+);
+
 const InvestorTrigger = ({
   label,
   open,
@@ -685,6 +739,13 @@ const ActivistIntelligenceDashboard = ({
 
   const [investorNames, setInvestorNames] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState("summary");
+  // Deliberately NOT shared with activeTab above. The two views have disjoint
+  // tab ids -- Comprehensive is summary/campaigns/holdings/activist_filings/
+  // personnel/sources, Condensed is overview/owners/links/brochure/holdings/
+  // activist_filings/letters -- so one state would leave the other view on an
+  // id it has no tab for: a blank pane with nothing highlighted. Same failure
+  // the reset in the activeInvestorKey effect already guards against.
+  const [basicActiveTab, setBasicActiveTab] = useState(BASIC_PROFILE_DEFAULT_TAB);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [newInvestorName, setNewInvestorName] = useState("");
   const [selectedJsonFiles, setSelectedJsonFiles] = useState<File[]>([]);
@@ -835,6 +896,17 @@ const ActivistIntelligenceDashboard = ({
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [selectorSearch, setSelectorSearch] = useState("");
   const [selectorHighlightedIndex, setSelectorHighlightedIndex] = useState(0);
+  // Bumped on every fresh open so the scrollIntoView effect below runs even
+  // when the highlighted index it needs to scroll to is the one already in
+  // state. Without it that effect is silently skipped: setting state to its
+  // current value doesn't re-render, so the effect's only dependency never
+  // changes. That is the common case, not a corner one -- hovering a row to
+  // click it leaves selectorHighlightedIndex on that row (see onMouseEnter on
+  // the option buttons), and that row is the profile that just became active,
+  // so reopening computes the very same index. Meanwhile the list itself is
+  // unmounted while closed, so each open starts at scrollTop 0 with the
+  // highlighted row off-screen.
+  const [selectorScrollNonce, setSelectorScrollNonce] = useState(0);
   const selectorContainerRef = useRef<HTMLDivElement>(null);
   const selectorOptionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -883,6 +955,10 @@ const ActivistIntelligenceDashboard = ({
     if (justOpened) {
       const activeIndex = filteredInvestors.findIndex((item) => item.key === activeInvestorKey);
       setSelectorHighlightedIndex(activeIndex >= 0 ? activeIndex : 0);
+      // Request the scroll unconditionally: whether the line above changed the
+      // index or left it as-is, the freshly mounted list still needs bringing
+      // to that row.
+      setSelectorScrollNonce((n) => n + 1);
       return;
     }
 
@@ -896,9 +972,12 @@ const ActivistIntelligenceDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectorSearch, selectorOpen]);
 
+  // Runs on a real highlight move (arrow keys, hover, search reset) and on
+  // every fresh open via the nonce. By the time either fires the list has
+  // already been committed, so the option refs are populated.
   useEffect(() => {
     selectorOptionRefs.current[selectorHighlightedIndex]?.scrollIntoView({ block: "nearest" });
-  }, [selectorHighlightedIndex]);
+  }, [selectorHighlightedIndex, selectorScrollNonce]);
 
   // Admin-only inline rename of a firm's display name (header title and/or
   // investor picker). Keyed by which investor key is currently being edited
@@ -1256,6 +1335,7 @@ const ActivistIntelligenceDashboard = ({
     // that tab can't leave activeTab pointing at a tab that no longer renders
     // (which would otherwise show a blank pane with no tab visually active).
     setActiveTab("summary");
+    setBasicActiveTab(BASIC_PROFILE_DEFAULT_TAB);
     // Skip the fetch entirely when the index already told us this key has no
     // Advanced profile (e.g. a multi-CIK combined profile, or any other
     // Basic-only publish) -- otherwise this fires anyway and eats a guaranteed,
@@ -1348,7 +1428,7 @@ const ActivistIntelligenceDashboard = ({
     // being true once activeJobs is empty. The whole point of this poll is
     // to recover state we don't yet know about, so it must never gate on
     // state that's exactly what it's trying to discover.
-    const creatorEmail = getCreatorEmail();
+    const creatorEmail = getCreatorEmail(user);
     if (!creatorEmail) return;
     try {
       const url = `${AI_CHATBOT_API_BASE}/api/activist-profiles/generate/active`;
@@ -1460,16 +1540,6 @@ const ActivistIntelligenceDashboard = ({
   const getActiveJobForKey = (key: string): ActiveGenerationJob | undefined =>
     activeJobs.find((j) => slugMatches(j.slug, key));
 
-  const getCreatorEmail = (): string | undefined => {
-    if (user?.email) return user.email;
-    try {
-      const stored = JSON.parse(localStorage.getItem("User") || "null");
-      return stored?.email || undefined;
-    } catch {
-      return undefined;
-    }
-  };
-
   // Shared by the manual "Approve & Publish" button (handleSaveProfile) and
   // the regular-user auto-publish path in runGeneration below.
   const publishProfileToS3 = async (payload: any) => {
@@ -1500,7 +1570,7 @@ const ActivistIntelligenceDashboard = ({
       setGenerateStep("Starting...");
       setGenerateError(null);
 
-      const creatorEmail = SEND_GENERATION_EMAIL ? getCreatorEmail() : undefined;
+      const creatorEmail = SEND_GENERATION_EMAIL ? getCreatorEmail(user) : undefined;
       if (SEND_GENERATION_EMAIL && !creatorEmail) {
         // Not fatal — the profile still generates, the user just won't get the
         // "your profile is ready" mail.
@@ -1644,7 +1714,7 @@ const ActivistIntelligenceDashboard = ({
     try {
       const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/generate`, {
         investor_name: generateInvestorName,
-        creator_email: getCreatorEmail(),
+        creator_email: getCreatorEmail(user),
         ...(filer?.id ? { whalewisdom_filer_id: filer.id } : {}),
         ...(filer?.cik ? { whalewisdom_cik: filer.cik } : {}),
       });
@@ -1695,12 +1765,20 @@ const ActivistIntelligenceDashboard = ({
   // it (falling back to the raw slug if the index hasn't caught up yet), and
   // land the user on it directly.
   const runCombinedBasicGenerate = async (filersToCombine: WhaleWisdomFiler[]) => {
+    // The single choke point both routes in here pass through, so the cap holds
+    // even if a caller's own guard is ever bypassed or a new caller is added.
+    if (filersToCombine.length > MAX_COMBINED_FILERS) {
+      setGenerateError(
+        `Up to ${MAX_COMBINED_FILERS} filers can be combined into one profile — ${filersToCombine.length} were selected.`
+      );
+      return;
+    }
     setIsSubmittingBasic(true);
     setGenerateError(null);
     try {
       const response = await axios.post(`${AI_CHATBOT_API_BASE}/api/activist-profiles/basic/generate-combined`, {
         investor_name: generateInvestorName,
-        creator_email: getCreatorEmail(),
+        creator_email: getCreatorEmail(user),
         filers: filersToCombine.map((filer) => ({
           ...(filer.id ? { whalewisdom_filer_id: filer.id } : {}),
           ...(filer.cik ? { whalewisdom_cik: filer.cik } : {}),
@@ -1770,7 +1848,10 @@ const ActivistIntelligenceDashboard = ({
   // Row management for the "+ Add another CIK" rows below the primary CIK
   // field. Each row strips non-digits as the user types, same as the primary
   // field, since a CIK is numeric-only.
-  const addCikRow = () => setExtraCiks((prev) => [...prev, ""]);
+  // The primary `generateCik` field counts toward the cap, so the extra rows
+  // top out one below it.
+  const addCikRow = () =>
+    setExtraCiks((prev) => (prev.length + 1 >= MAX_COMBINED_FILERS ? prev : [...prev, ""]));
   const updateCikRow = (index: number, value: string) => {
     setExtraCiks((prev) => prev.map((c, i) => (i === index ? value.replace(/\D/g, "") : c)));
   };
@@ -1793,6 +1874,14 @@ const ActivistIntelligenceDashboard = ({
     const trimmedCik = trimmedCiks[0] || "";
     if (!generateInvestorName.trim() && trimmedCiks.length === 0) {
       setGenerateError("Enter an activist name or a CIK to generate a profile.");
+      return;
+    }
+    // The row control below stops a fourth input being offered; this catches a
+    // set that got past it (rows filled in a different order, a stale draft).
+    if (trimmedCiks.length > MAX_COMBINED_FILERS) {
+      setGenerateError(
+        `Up to ${MAX_COMBINED_FILERS} CIKs can be combined into one profile — ${trimmedCiks.length} were entered.`
+      );
       return;
     }
     setGenerateError(null);
@@ -2221,12 +2310,6 @@ const ActivistIntelligenceDashboard = ({
     }
   };
 
-  // combination_of holds base slugs, while the index keys profiles that also
-  // have an Advanced document as "{slug}-profile" — try both before giving up
-  // and prettifying the slug.
-  const resolveProfileName = (slug: string) =>
-    investorNames[slug] || investorNames[`${slug}-profile`] || formatKeyToLabel(slug);
-
   // "Not in our database" fallback — pre-fills and opens the exact same
   // Generate New Profile flow as the header's own CTA (see the
   // primaryActiveJob onClick above).
@@ -2474,7 +2557,19 @@ const ActivistIntelligenceDashboard = ({
         <div style={{ borderRadius: "10px 10px 0 0", position: "relative" }}>
           
           <div style={{ background: THEME_MAROON, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, borderRadius: "10px 10px 0 0" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* Lets a long firm name wrap onto further lines instead of forcing
+                the header wider than the bar, which is what used to bump the
+                controls on the right onto a row of their own.
+
+                The flex-basis MUST stay 0, and min-width 0 with it. This row
+                wraps, and a flex container breaks its lines using each item's
+                base size BEFORE any shrinking happens -- so with basis auto
+                (base size = the full width of the name) this group claimed the
+                whole line and pushed the controls down before min-width 0 could
+                ever shrink it. At basis 0 it enters the line with no width at
+                all, both groups always share one line, and the name then wraps
+                inside whatever space the controls leave. */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flex: "1 1 0", minWidth: 0 }}>
               {editingNameKey === activeInvestorKey ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {/* The frame lives on this wrapper, not the input: a global
@@ -2516,8 +2611,14 @@ const ActivistIntelligenceDashboard = ({
                   </button>
                 </div>
               ) : (
-                <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                  {displayName}
+                <h1 style={{ fontSize: 18, fontWeight: 600, color: "white", margin: 0, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, minWidth: 0 }}>
+                  {/* The name is its own shrinkable item so it wraps by itself
+                      rather than widening the header. overflowWrap covers the
+                      case of a single token longer than the line -- it breaks
+                      rather than overflowing, so the header never scrolls
+                      sideways. No ellipsis and no size change: the full name
+                      stays readable however long it is. */}
+                  <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{displayName}</span>
                   {activeIsCombination && <CombinedBadge onDark />}
                   {isAdmin && (
                     <button
@@ -2536,7 +2637,13 @@ const ActivistIntelligenceDashboard = ({
               )}
             </div>
             
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* Pinned to the top of the bar and never shrunk, so the dropdown,
+                rename and delete controls hold the same spot whether the name
+                beside them is one line or several. With a single-line name this
+                group is the tallest item in the row, so flex-start and the row's
+                center alignment resolve to the same place -- an ordinary profile
+                header is unchanged. */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, alignSelf: "flex-start" }}>
               {primaryActiveJob && (
                 <GenerationProgressBar
                   job={primaryActiveJob}
@@ -2839,29 +2946,11 @@ const ActivistIntelligenceDashboard = ({
           </div>
         )}
 
-        {isMultiCikCombination && constituentFilers.length > 0 && (
-          <div style={{ padding: "0 24px 14px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, color: "#6b7280", fontWeight: 600 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <circle cx="18" cy="5" r="3"></circle>
-                <circle cx="6" cy="12" r="3"></circle>
-                <circle cx="18" cy="19" r="3"></circle>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-              </svg>
-              Combined from:
-            </span>
-            {constituentFilers.map((filer, i) => (
-              <span
-                key={filer.filer_id ?? filer.cik ?? i}
-                style={{ display: "inline-flex", alignItems: "center", fontSize: 11, color: THEME_MAROON, background: "#fdf2f2", border: `1px solid ${THEME_MAROON}40`, borderRadius: 999, padding: "2px 10px", fontWeight: 500, whiteSpace: "nowrap" }}
-              >
-                {filer.name || "Unknown filer"}
-                {filer.cik ? ` (CIK ${filer.cik})` : ""}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* The "Combined from:" row -- a chip per constituent filer, with its
+            name and CIK -- was dropped from the client-facing view at the
+            client's request. constituentFilers and isMultiCikCombination are
+            still derived and still in state for the logic that reads them; only
+            this presentation of them is gone. */}
 
         {portalledEditControls}
 
@@ -2893,8 +2982,8 @@ const ActivistIntelligenceDashboard = ({
         {effectiveProfileView === "advanced" ? (
           <>
             {/* ── Tabs Navigation ── */}
-                  <div style={{ padding: "0 24px", borderBottom: "1px solid #e5e7eb", borderTop: "1px solid #e5e7eb", background: "#fff", display: "flex", gap: 24 }}>
-                    {[
+                  <ProfileTabBar
+                    tabs={[
                       { id: "summary",   label: "Summary" },
                       { id: "campaigns", label: "Campaigns" },
                       { id: "holdings",  label: "13F Holdings" },
@@ -2907,20 +2996,10 @@ const ActivistIntelligenceDashboard = ({
                         : []),
                       { id: "personnel", label: "Personnel" },
                       { id: "sources",   label: "Sources" },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        style={{
-                          padding: "16px 4px", border: "none", cursor: "pointer", background: "transparent",
-                          color: activeTab === tab.id ? THEME_MAROON : "#6b7280", fontWeight: activeTab === tab.id ? 600 : 500,
-                          borderBottom: activeTab === tab.id ? `2px solid ${THEME_MAROON}` : "2px solid transparent", transition: "all 0.2s ease", marginBottom: "-1px", fontSize: 13
-                        }}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
+                    ]}
+                    activeTab={activeTab}
+                    onChange={setActiveTab}
+                  />
 
                   {/* ── Tab Content Container ── */}
                   <div style={{ padding: "24px" }}>
@@ -3245,16 +3324,36 @@ const ActivistIntelligenceDashboard = ({
                   </div>
                 </>
               ) : (
-                <div style={{ padding: 24 }}>
-                  <BasicProfilePanel
-                    data={basicProfile}
-                    loading={basicLoading}
-                    error={basicError}
-                    isEditMode={isEditMode}
-                    onChange={(updated) => setBasicProfile(updated)}
-                    resolveProfileName={resolveProfileName}
-                  />
-                </div>
+                <>
+                  {/* Outside the padded wrapper below on purpose: the bar's top
+                      and bottom borders have to span the whole card, the way the
+                      Comprehensive one does. Inset by 24px they'd stop short at
+                      both ends. */}
+                  {/* Every tab always renders once there IS a profile, empty
+                      data or not. The whole bar is gated only on there being
+                      one at all -- this view doubles as the fallback when an
+                      investor has no Condensed profile yet, and a row of seven
+                      tabs above "No Condensed profile available yet" would be
+                      offering navigation into nothing. */}
+                  {basicProfile && (
+                    <ProfileTabBar
+                      tabs={BASIC_PROFILE_TABS}
+                      activeTab={basicActiveTab}
+                      onChange={setBasicActiveTab}
+                    />
+                  )}
+                  <div style={{ padding: 24 }}>
+                    <BasicProfilePanel
+                      data={basicProfile}
+                      loading={basicLoading}
+                      error={basicError}
+                      isEditMode={isEditMode}
+                      onChange={(updated) => setBasicProfile(updated)}
+                      layout="tabs"
+                      activeTab={basicActiveTab}
+                    />
+                  </div>
+                </>
               )}
       </div>
 
@@ -3480,14 +3579,23 @@ const ActivistIntelligenceDashboard = ({
                 ))}
 
                 <div style={{ marginBottom: 6 }}>
-                  <button
-                    type="button"
-                    onClick={addCikRow}
-                    disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
-                    style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, fontSize: 12.5, fontWeight: 600, padding: 0 }}
-                  >
-                    + Add another CIK
-                  </button>
+                  {/* At the cap the control is replaced by the reason rather
+                      than left in place doing nothing when clicked. Removing a
+                      row brings it straight back. */}
+                  {extraCiks.length + 1 >= MAX_COMBINED_FILERS ? (
+                    <span style={{ fontSize: 12.5, color: "#6b7280" }}>
+                      Up to {MAX_COMBINED_FILERS} CIKs can be combined into one profile.
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={addCikRow}
+                      disabled={isGenerating || !!matchingActiveJob || isSubmittingBasic || isResolvingWhaleWisdom}
+                      style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, fontSize: 12.5, fontWeight: 600, padding: 0 }}
+                    >
+                      + Add another CIK
+                    </button>
+                  )}
                 </div>
 
                 <span style={{ display: "block", marginBottom: 24, fontSize: 12, fontWeight: 400, color: "#6b7280" }}>
@@ -3590,6 +3698,7 @@ const ActivistIntelligenceDashboard = ({
             onCancel={handleWhaleWisdomFilerCancel}
             allowMultiple
             onConfirmMultiple={handleWhaleWisdomFilersConfirmMultiple}
+            maxSelection={MAX_COMBINED_FILERS}
           />
         </div>
       )}

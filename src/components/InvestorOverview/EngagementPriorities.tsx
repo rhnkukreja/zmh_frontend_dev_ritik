@@ -9,12 +9,34 @@ interface EngagementPrioritiesProps {
 
 type SubTab = 'takeaways' | 'breakdown';
 
+// The GET response's third key, alongside `exists` and `data`. Every field is
+// optional: the key is absent on any deployment where the backend hasn't
+// shipped it yet, and absent must read as "not stale" rather than breaking the
+// page or claiming staleness it can't support.
+type StaleInfo = {
+  is_stale?: boolean;
+  reason?: string | null;
+  investors?: string[];
+};
+
+// One row of an investor's `documents` array. Optional throughout — most
+// investors carry no documents at all, and the ones that do may be missing any
+// individual field.
+type SourceDocument = {
+  id?: number;
+  name?: string;
+  year?: number | string;
+  link?: string;
+};
+
 const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTicker = "" }) => {
   // Application State
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isCreatingEngagement, setIsCreatingEngagement] = useState(false);
   const [engagementData, setEngagementData] = useState<any>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [staleInfo, setStaleInfo] = useState<StaleInfo | null>(null);
+  const [showStaleInvestors, setShowStaleInvestors] = useState(false);
   
   // Tab & Accordion States
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('takeaways');
@@ -27,6 +49,10 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
       if (!companyTicker) return;
       
       setIsInitialLoading(true);
+      // Dropped up front so a previous company's staleness can't sit over the
+      // next one's data if this request fails partway.
+      setStaleInfo(null);
+      setShowStaleInvestors(false);
       try {
         const response = await fetch(`${AI_CHATBOT_API_BASE}/api/company-engagement/${companyTicker}`, {
           headers: { 'ngrok-skip-browser-warning': 'true' }
@@ -39,6 +65,9 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
         if (result.exists && result.data) {
           console.log("✅ Data found! Loading existing engagement data.");
           setEngagementData(result.data);
+          // Optional third key. `?? null` keeps a response that predates it
+          // (or omits it) as plainly not-stale instead of undefined.
+          setStaleInfo(result.stale ?? null);
           setActiveSubTab('takeaways');
           if (result.data.raw_data && result.data.raw_data.length > 0) {
             setExpandedInvestors({ 0: true });
@@ -84,6 +113,11 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
 
       const data = await response.json();
       setEngagementData(data);
+      // Just rebuilt from current sources, so whatever made it stale no longer
+      // applies — the badge goes without waiting for a reload. The POST
+      // response carries no `stale` key of its own to read back.
+      setStaleInfo(null);
+      setShowStaleInvestors(false);
       setSaveSuccess(true);
       
       setActiveSubTab('takeaways'); 
@@ -161,6 +195,119 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
     return parse(html, options);
   };
 
+  // Only an explicit true counts. A missing `stale` key, a missing is_stale,
+  // or anything non-boolean all mean not stale.
+  const isStale = staleInfo?.is_stale === true;
+  const staleReason = typeof staleInfo?.reason === 'string' ? staleInfo.reason.trim() : '';
+  const staleInvestors = Array.isArray(staleInfo?.investors)
+    ? staleInfo.investors.filter((name) => typeof name === 'string' && name.trim().length > 0)
+    : [];
+
+  // Rendered once, below whichever tab's content is on screen: staleness is a
+  // property of the page, not of one view. A footnote rather than a banner —
+  // same idiom as the Ownership tab's "¹Source: Whalewisdom…" line (small,
+  // muted, separated by a light rule) rather than a new treatment. It sat in
+  // the header row before, where a full sentence of explanation squeezed the
+  // tab labels onto three lines.
+  const staleFootnote = isStale ? (
+    <div className="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-500 leading-relaxed">
+      <p className="m-0">
+        {/* The backend owns the wording; the asterisk is the only thing added
+            to it. The fallback covers a response that flags staleness without
+            saying why, so the footnote still means something. */}
+        <span className="mr-1">*</span>
+        {staleReason || 'This insight may be out of date.'}
+      </p>
+
+      {staleInvestors.length > 0 && (
+        <>
+          {/* The affected investors stay reachable, just folded away — a full
+              list of names would drown the footnote it belongs to. */}
+          <button
+            onClick={() => setShowStaleInvestors((v) => !v)}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors"
+          >
+            {showStaleInvestors ? 'Hide' : 'Show'} affected investors ({staleInvestors.length})
+            {showStaleInvestors ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+
+          {showStaleInvestors && (
+            <div className="mt-2 flex flex-wrap gap-1.5 animate-in fade-in duration-200">
+              {staleInvestors.map((investor, invIdx) => (
+                <span
+                  key={invIdx}
+                  className="text-[11px] px-2 py-1 rounded border border-slate-200 bg-slate-50 text-slate-600"
+                >
+                  {investor}
+                </span>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  ) : null;
+
+  // The "Sources" block under an investor's priorities. Returns null — no
+  // heading, no placeholder — whenever there's nothing worth linking to: most
+  // investors have no documents at all, and a heading over an empty list on
+  // nearly every row would read as broken.
+  const renderSources = (documents: any) => {
+    const docs: SourceDocument[] = (Array.isArray(documents) ? documents : [])
+      .filter((doc: any) => doc && typeof doc === 'object')
+      // An entry with neither a name nor a link has nothing to show, so it's
+      // dropped rather than rendered as an untitled non-link.
+      .filter((doc: SourceDocument) => {
+        const hasName = typeof doc.name === 'string' && doc.name.trim().length > 0;
+        const hasLink = typeof doc.link === 'string' && doc.link.trim().length > 0;
+        return hasName || hasLink;
+      });
+
+    if (docs.length === 0) return null;
+
+    return (
+      <div className="mt-5 pt-4 border-t border-slate-100 border-dashed">
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
+          Sources
+        </p>
+        <ul className="flex flex-col gap-1.5 list-none p-0 m-0">
+          {docs.map((doc, docIdx) => {
+            const name = typeof doc.name === 'string' ? doc.name.trim() : '';
+            const link = typeof doc.link === 'string' ? doc.link.trim() : '';
+            // Falls back to the URL itself, so a nameless document is still
+            // identifiable without inventing a label for it.
+            const label = name || link;
+            // Omitted entirely when absent, rather than rendering "()".
+            const year =
+              doc.year === null || doc.year === undefined || String(doc.year).trim() === ''
+                ? ''
+                : String(doc.year).trim();
+
+            return (
+              <li key={doc.id ?? docIdx} className="text-[13px] flex items-baseline gap-2">
+                <span className="text-slate-300 flex-shrink-0">▸</span>
+                {link ? (
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#981b1e] font-medium hover:underline break-all"
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  // No link — plain text, never an anchor that goes nowhere.
+                  <span className="text-slate-700 font-medium break-all">{label}</span>
+                )}
+                {year && <span className="text-slate-400 flex-shrink-0">({year})</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  };
+
   // --- DATA PROCESSING: SORT GOVERNANCE FIRST, CLIMATE LAST ---
   let processedTakeaways: any[] = [];
   if (engagementData?.summary_data?.key_takeaways) {
@@ -188,23 +335,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-8 min-h-[400px] shadow-sm">
-      {/* Header and Action Buttons */}
-      <div className="flex items-center justify-between mb-4">
-        
-        {/* <button
-          onClick={handleCreateEngagement}
-          disabled={isCreatingEngagement || isInitialLoading}
-          className="px-6 py-2.5 bg-[#0096c7] hover:bg-[#0077b6] text-white text-[14px] font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50 flex items-center gap-2"
-        >
-          {isCreatingEngagement ? (
-            'Generating...' 
-          ) : engagementData ? (
-            <> <RefreshCw className="w-4 h-4" /> Regenerate Insight </>
-          ) : (
-            'Create Insight'
-          )}
-        </button> */}
-      </div>
+      
 
       {/* Main Content Area */}
       {(isInitialLoading || isCreatingEngagement) ? (
@@ -227,47 +358,70 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
       ) : engagementData ? (
         <div>
 
-          {/* Sub-Tabs Navigation */}
-          <div className="bg-white pt-3 pb-3 flex items-center gap-8 border-b border-slate-200">
-            {/* Key Themes */}
-            <button
-              onClick={() => setActiveSubTab('takeaways')}
-              className={`relative pb-4 text-[15px] font-bold transition-all duration-200 flex items-center gap-2 ${
-                activeSubTab === 'takeaways'
-                  ? 'text-slate-900'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              {activeSubTab === 'takeaways' ? (
-                <CheckCircle2 className="w-5 h-5 text-[#f26522]" fill="#fff1eb" />
-              ) : (
-                <CheckCircle2 className="w-5 h-5 text-slate-400" />
-              )}
-              <span>Key Themes</span>
-
-              {activeSubTab === 'takeaways' && (
-                <span className="absolute left-0 bottom-0 h-[2px] w-[calc(100%+20px)] bg-[#981b1e] rounded-full"></span>
-              )}
-            </button>
-
-            {/* Investor-Level Details */}
-            <button
-              onClick={() => setActiveSubTab('breakdown')}
-              className={`relative pb-4 text-[15px] font-bold transition-all duration-200 flex items-center gap-2 ${
-                activeSubTab === 'breakdown'
-                  ? 'text-slate-900'
-                  : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              <List
-                className={`w-5 h-5 ${
-                  activeSubTab === 'breakdown' ? 'text-[#981b1e]' : 'text-slate-400'
+          {/* Sub-Tabs Navigation & Action Button */}
+          <div className="bg-white pt-3 pb-3 flex items-center justify-between border-b border-slate-200">
+            
+            {/* Left Side: Tabs */}
+            <div className="flex items-center gap-8">
+              {/* Key Themes */}
+              <button
+                onClick={() => setActiveSubTab('takeaways')}
+                className={`relative pb-4 text-[15px] font-bold transition-all duration-200 flex items-center gap-2 ${
+                  activeSubTab === 'takeaways'
+                    ? 'text-slate-900'
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
-              />
-              <span>Investor-Level Details</span>
+              >
+                {activeSubTab === 'takeaways' ? (
+                  <CheckCircle2 className="w-5 h-5 text-[#f26522]" fill="#fff1eb" />
+                ) : (
+                  <CheckCircle2 className="w-5 h-5 text-slate-400" />
+                )}
+                <span>Key Themes</span>
 
-              {activeSubTab === 'breakdown' && (
-                <span className="absolute left-0 bottom-0 h-[2px] w-full bg-[#981b1e] rounded-full"></span>
+                {activeSubTab === 'takeaways' && (
+                  <span className="absolute left-0 bottom-0 h-[2px] w-[calc(100%+20px)] bg-[#981b1e] rounded-full"></span>
+                )}
+              </button>
+
+              {/* Investor-Level Details */}
+              <button
+                onClick={() => setActiveSubTab('breakdown')}
+                className={`relative pb-4 text-[15px] font-bold transition-all duration-200 flex items-center gap-2 ${
+                  activeSubTab === 'breakdown'
+                    ? 'text-slate-900'
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <List
+                  className={`w-5 h-5 ${
+                    activeSubTab === 'breakdown' ? 'text-[#981b1e]' : 'text-slate-400'
+                  }`}
+                />
+                <span>Investor-Level Details</span>
+
+                {activeSubTab === 'breakdown' && (
+                  <span className="absolute left-0 bottom-0 h-[2px] w-full bg-[#981b1e] rounded-full"></span>
+                )}
+              </button>
+            </div>
+
+            {/* Right Side: Regenerate Button. Nothing sits between this and the
+                tabs -- the staleness notice used to, and squeezed the tab
+                labels onto three lines. It's a footnote under the content now
+                (staleFootnote below); this button is the action, not the
+                explanation, so it stays exactly where it was. */}
+            <button
+              onClick={handleCreateEngagement}
+              disabled={isCreatingEngagement || isInitialLoading}
+              className="ml-auto px-5 py-2 bg-white text-[#981b1e] border border-[#981b1e] hover:bg-[#981b1e] hover:text-white text-[13px] font-semibold rounded-lg shadow-sm transition-all duration-200 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-[#981b1e] flex items-center gap-2"
+            >
+              {isCreatingEngagement ? (
+                'Generating...'
+              ) : engagementData ? (
+                <> <RefreshCw className="w-4 h-4" /> Regenerate Insight </>
+              ) : (
+                'Create Insight'
               )}
             </button>
           </div>
@@ -385,6 +539,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
                         <div className="px-6 pb-6 pt-2">
                           <div className="text-slate-700 leading-relaxed px-2 py-1">
                             {item.priorities ? renderPriorities(item.priorities) : "No priorities data provided."}
+                            {renderSources(item.documents)}
                           </div>
                         </div>
                       </div>
@@ -395,6 +550,11 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
               })}
             </div>
           )}
+
+          {/* After the last tile on Key Themes, after the last investor row on
+              Investor-Level Details. One placement rather than one per tab, so
+              the two can't drift apart. */}
+          {staleFootnote}
 
         </div>
       ) : (
