@@ -7,6 +7,13 @@ import ReactMarkdown from "react-markdown";
 import { fetchInvestors, AI_CHATBOT_API_BASE } from "./api";
 import { useChat } from "./ChatContext.tsx";
 
+// Hides the "Generate Summary" button above each results table. The feature is
+// switched off, not removed: handleGenerateSummary, buildSummaryAnswers, the
+// summary state and the summary modal are all still here, and flipping this to
+// true brings the button back unchanged. The button's JSX stays in place behind
+// this flag, which is also what keeps those functions referenced.
+const SHOW_GENERATE_SUMMARY = false;
+
 const getInvestorDisplayName = (name: string): string => {
     const words = name.split(/\s+/);
     const norm = (w: string) => w.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -723,8 +730,12 @@ export default function VotingGuidelinesPage() {
                         {/* Results table */}
                         {!item.loading && !item.error && item.results && item.results.length > 0 && (
                             <div className="animate-in slide-in-from-bottom-4 duration-500 pb-4">
-                                {/* A comparison needs at least two answers to compare. */}
-                                {(() => {
+                                {/* A comparison needs at least two answers to compare.
+                                    Gated on SHOW_GENERATE_SUMMARY: when it's false this
+                                    renders nothing at all -- not even the mb-2 wrapper --
+                                    so the table below starts where the button was, with
+                                    no empty gap. */}
+                                {SHOW_GENERATE_SUMMARY && (() => {
                                     const comparableCount = buildSummaryAnswers(item.results).length;
                                     return (
                                         <div className="flex justify-start mb-2">
