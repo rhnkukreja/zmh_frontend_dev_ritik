@@ -290,15 +290,15 @@ const MeetingRow: React.FC<{
 
         {/* Expanded vote records */}
         {isExpanded && (
-          <div className="border-t border-slate-100 overflow-x-auto">
-            <Table>
+          <div className="border-t border-slate-100 overflow-x-auto xl:overflow-visible">
+            <Table className="w-full min-w-[760px] xl:min-w-0 table-fixed">
               <Table.Thead>
                 <Table.Tr className="bg-primary">
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-14">No.</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm min-w-[340px]">Proposal</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Mgmt Rec</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Vote Cast</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Institution Name</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[6%]">No.</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[40%]">Proposal</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[10%] whitespace-nowrap">Mgmt Rec</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[10%] whitespace-nowrap">Vote Cast</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[34%]">Institution Name</Table.Td>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -307,20 +307,20 @@ const MeetingRow: React.FC<{
                   return (
                     <React.Fragment key={row.id || i}>
                       <Table.Tr className="hover:bg-gray-50">
-                        <Table.Td className="py-2.5 border-dashed text-sm text-gray-500">{row.proposal_num || (i + 1)}</Table.Td>
-                        <Table.Td className="py-2.5 border-dashed text-sm min-w-[340px]">{row.proposal}</Table.Td>
-                        <Table.Td className="py-2.5 border-dashed text-sm">{row.mgt_rec}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm text-gray-500 align-top">{row.proposal_num || (i + 1)}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm align-top break-words whitespace-normal">{row.proposal}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm align-top break-words whitespace-normal">{row.mgt_rec}</Table.Td>
                         <Table.Td className="py-2.5 border-dashed text-sm">
-                          <span className={clsx("font-semibold", (row.vote === "Against" || row.vote === "Withhold") ? "text-red-600" : "text-slate-800")}>
+                          <span className={clsx("font-semibold break-words whitespace-normal", (row.vote === "Against" || row.vote === "Withhold") ? "text-red-600" : "text-slate-800")}>
                             {row.vote}
                           </span>
                         </Table.Td>
-                        <Table.Td className="py-2.5 border-dashed text-sm whitespace-nowrap">{row.institution_name}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm align-top break-words whitespace-normal">{row.institution_name}</Table.Td>
                       </Table.Tr>
                       {rationale && (
                         <Table.Tr className="bg-slate-50">
                           <Table.Td className="border-dashed" />
-                          <Table.Td colSpan={4} className="py-1.5 border-dashed text-sm text-slate-600 italic">
+                          <Table.Td colSpan={4} className="py-1.5 border-dashed text-sm text-slate-600 italic break-words whitespace-normal">
                             <span className="font-semibold not-italic text-slate-500">Voting Rationale: </span>{rationale}
                           </Table.Td>
                         </Table.Tr>
@@ -401,20 +401,20 @@ const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
   }
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 flex min-h-0 flex-col overflow-visible">
       {/* Sub-header */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <h3 className="font-bold text-slate-800 text-base flex items-center gap-2 min-w-0">
           <Lucide icon="ClipboardList" className="w-5 h-5 text-primary" />
-          Voting Records
-          <span className="text-xs text-slate-400 font-normal">({votingRecords.total_companies ?? votingRecords.count} total companies)</span>
+          <span className="truncate">Voting Records</span>
+          <span className="text-xs text-slate-400 font-normal whitespace-nowrap">({votingRecords.total_companies ?? votingRecords.count} total companies)</span>
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           {onDownload && (
             <button
               onClick={onDownload}
               disabled={downloading}
-              className="flex items-center gap-2 px-3 py-1.5 bg-primary border border-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-3 py-1.5 bg-primary border border-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {downloading ? (
                 <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
@@ -426,7 +426,7 @@ const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
           )}
           <button
             onClick={handleExpandAll}
-            className="flex items-center gap-2 px-3 py-1.5 bg-primary border border-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary border border-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap"
           >
             <Lucide icon={allExpanded ? "ChevronsUp" : "ChevronsDown"} className="w-4 h-4" />
             {allExpanded ? "Collapse All" : "Expand All"}
@@ -435,7 +435,7 @@ const VotingRecordsList: React.FC<VotingRecordsListProps> = ({
       </div>
 
       {/* Accordion list */}
-      <div>
+      <div className="pr-1">
         {groups.map((group) => (
           <MeetingRow
             key={group.key}
