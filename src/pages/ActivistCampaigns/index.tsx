@@ -67,7 +67,13 @@ const ALERT_STATE_ALL = "all";
 const ALERT_STATE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: ALERT_STATE_ALL, label: "All" },
   { value: "sent", label: "Alert sent" },
-  { value: "suppressed", label: "Held by filter" },
+  // Covers BOTH chip kinds, because alert_state has one value for them:
+  // "suppressed". The label names both rather than borrowing one chip's wording,
+  // which would have implied this option excluded the other kind. Splitting it
+  // needs a backend value per group -- filter_held / not_campaign and every
+  // other guess 400s today, and narrowing client-side would only filter the
+  // page already loaded, hiding matches on later pages.
+  { value: "suppressed", label: "Held or not a campaign" },
   { value: "no_alert", label: "No alert" },
 ];
 
@@ -81,6 +87,47 @@ const alertStateLabel = (value: string): string =>
 // It also means the bulk flow clears the chip without being touched.
 const isFilingHeld = (filing: FilingItem): boolean =>
   !!filing.alert_suppressed_at && !filing.alert_sent_at && !filing.alertSendWarning;
+
+// alert_suppressed_rule carries ids from two sources, and they mean different
+// things to a reviewer: a phrase rule held a filing that might still be worth
+// sending, whereas the standing gate decided it isn't a campaign at all.
+//
+// Grouped on the rule ID, never on alert_suppressed_reason: the reason is prose
+// written for a human and its wording will change, so matching on it would be a
+// silent breakage waiting to happen.
+// ─── Proxy Status ───────────────────────────────────────────────────────────
+// Derived entirely on the client from form_type. A different axis from the
+// Status column, which is the CAMPAIGN's own state -- deliberately not inferred
+// from that, from in_activism_flow, or from whether an alert went out.
+//
+// Keyed on the form type with all whitespace removed, so "DEF 14A" and "DEF14A"
+// reach the same entry. DEFA14A stays distinct from DEF14A once the spaces are
+// gone, so the soliciting-material and definitive forms can't collide.
+const PROXY_STATUS_BY_FORM: Record<string, string> = {
+  PRE14A: "Preliminary",
+  PRE14C: "Preliminary",
+  PREC14A: "Preliminary",
+  PRRN14A: "Preliminary",
+  DEF14A: "Definitive",
+  DEF14C: "Definitive",
+  DEFC14A: "Definitive",
+  DEFN14A: "Definitive",
+  DEFA14A: "Soliciting material",
+  DFAN14A: "Soliciting material",
+};
+
+// Blank for anything unlisted, every 13D form included. Blank rather than "-":
+// this column is empty for most rows, and a dash there reads like a value.
+const getProxyStatus = (formType: unknown): string =>
+  PROXY_STATUS_BY_FORM[toTrimmedString(formType).toUpperCase().replace(/\s+/g, "")] || "";
+
+const GATE_RULE_IDS = new Set(["routine_proxy_no_activist", "no_item4_no_activist"]);
+
+// Anything not in that set -- including a rule id this build has never seen --
+// falls to the phrase-rule label, so a rule added later renders as "Held by
+// filter" rather than as a blank or unlabelled chip.
+const isGateSuppressed = (filing: FilingItem): boolean =>
+  GATE_RULE_IDS.has(toTrimmedString(filing.alert_suppressed_rule).toLowerCase());
 
 
 const formatDateOnly = (value: any): string => {
@@ -1274,7 +1321,7 @@ function ActivistCampaigns() {
               </div>
             )}
 
-            <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={14} maxHeight="68vh" className="table-fixed">
+            <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={16} maxHeight="68vh" className="table-fixed">
               <StandardizedTable.Header>
                 <StandardizedTable.Cell isHeader width="4%">
                   <input
@@ -1287,17 +1334,26 @@ function ActivistCampaigns() {
                     style={{ accentColor: THEME_MAROON }}
                   />
                 </StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="10%">Company Name</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="5%">CIK</StandardizedTable.Cell>
+                {/* Two CIK columns now, so each says whose it is: this one is
+                    subject_cik (the company the filing is about), the one after
+                    Filer is filer_cik (who filed it). Label change only -- both
+                    read the same fields they always did, and nothing downstream
+                    depends on these strings. */}
+                <StandardizedTable.Cell isHeader width="8%">Company Name</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="5%">Subject CIK</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader width="5%">Ticker</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="9%">Filer</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="8%">In Activism Flow</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="7%">Filer</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="5%">Filer CIK</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="6%">In Activism Flow</StandardizedTable.Cell>
+                {/* The CAMPAIGN's state. Proxy Status below is a separate axis
+                    derived from form_type; neither feeds the other. */}
                 <StandardizedTable.Cell isHeader width="6%">Status</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="10%">Notes</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="7%">Notes</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader width="6%">Filing Type</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">First Filed</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="6%">Last Updated</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="8%">Alert Sent</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="7%">Proxy Status</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="6%">First Filed</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="5%">Last Updated</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width="7%">Alert Sent</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader width="7%">Send Alert</StandardizedTable.Cell>
                 <StandardizedTable.Cell isHeader width="6%"> </StandardizedTable.Cell>
               </StandardizedTable.Header>
@@ -1329,6 +1385,12 @@ function ActivistCampaigns() {
                         <span className="text-sm text-slate-600">{filing.filer || "-"}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
+                        {/* Blank, not the "-" its neighbours use: plenty of
+                            routine filings have no separate filer, and a dash
+                            in a column of numbers reads like a value. */}
+                        <span className="text-sm text-slate-600">{filing.filer_cik || ""}</span>
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
                             filing.in_activism_flow ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
@@ -1355,6 +1417,11 @@ function ActivistCampaigns() {
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <span className="text-sm text-slate-600">{filing.form_type || "-"}</span>
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell>
+                        {/* Blank for every form the mapping doesn't cover (all
+                            13Ds), same treatment as Filer CIK. */}
+                        <span className="text-sm text-slate-600">{getProxyStatus(filing.form_type)}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <span className="text-sm text-slate-600">{formatDateOnly(filing.filed_at) || "-"}</span>
@@ -1406,17 +1473,30 @@ function ActivistCampaigns() {
                             style={{ accentColor: THEME_MAROON }}
                           />
                           {isFilingHeld(filing) && (
-                            // Neutral slate, not red: being held is the filter
-                            // working as intended, not a failure. The reason is
-                            // the backend's own sentence, shown verbatim on
-                            // hover; no title at all if it didn't send one,
-                            // rather than wording invented here.
+                            // Two labels off one condition: isFilingHeld decides
+                            // WHETHER a chip shows (unchanged), the rule id
+                            // decides WHICH. Both stay neutral slate -- neither
+                            // is a failure, and colouring one of them would read
+                            // as severity that isn't there. They differ by label
+                            // and icon only.
+                            //
+                            // The tooltip is untouched: the backend's own
+                            // sentence, verbatim, on both kinds; no title at all
+                            // when it didn't send one.
+                            //
+                            // No whitespace-nowrap -- these labels are longer
+                            // than the "Held" they replace, and this column is
+                            // narrow, so they wrap inside the cell rather than
+                            // spilling over the one beside it.
                             <span
                               title={toTrimmedString(filing.alert_suppressed_reason) || undefined}
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 whitespace-nowrap"
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600"
                             >
-                              <Lucide icon="PauseCircle" className="w-3 h-3 shrink-0" />
-                              Held
+                              <Lucide
+                                icon={isGateSuppressed(filing) ? "MinusCircle" : "PauseCircle"}
+                                className="w-3 h-3 shrink-0"
+                              />
+                              {isGateSuppressed(filing) ? "Not a campaign" : "Held by filter"}
                             </span>
                           )}
                         </div>
@@ -1447,7 +1527,7 @@ function ActivistCampaigns() {
                   ))
                 ) : (
                   <Table.Tr>
-                    <Table.Td colSpan={14} className="text-center py-12 text-slate-500">
+                    <Table.Td colSpan={16} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Lucide icon="FileSearch" className="w-10 h-10 opacity-40" />
                         <span className="text-sm font-medium text-slate-600">No filings found</span>
@@ -1671,18 +1751,65 @@ function ActivistCampaigns() {
                     <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #e5e7eb" }}>
                       <h3 style={{ fontSize: 13, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>Exhibits</h3>
                       <ul style={{ display: "flex", flexDirection: "column", gap: 6, paddingLeft: 18, margin: 0 }}>
-                        {previewData.exhibits.map((exhibit: { name?: string; url?: string }, i: number) => (
-                          <li key={i} style={{ fontSize: 13 }}>
-                            <a
-                              href={exhibit.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: THEME_MAROON, textDecoration: "underline" }}
-                            >
-                              {exhibit.name || exhibit.url}
-                            </a>
-                          </li>
-                        ))}
+                        {previewData.exhibits.map(
+                          (
+                            exhibit: {
+                              name?: string;
+                              url?: string;
+                              // Added by the backend in parallel with this, and
+                              // each independently absent -- roughly a third of
+                              // exhibits are PDFs that yield none of them. Every
+                              // one is rendered only when it actually has text,
+                              // so with all three missing this <li> contains the
+                              // link and nothing else: byte-identical to what it
+                              // rendered before these fields existed. That
+                              // matters because the backend may deploy after
+                              // this does.
+                              title?: string | null;
+                              category?: string | null;
+                              description?: string | null;
+                            },
+                            i: number
+                          ) => {
+                            const category = toTrimmedString(exhibit.category);
+                            const title = toTrimmedString(exhibit.title);
+                            const description = toTrimmedString(exhibit.description);
+
+                            return (
+                              <li key={i} style={{ fontSize: 13 }}>
+                                <a
+                                  href={exhibit.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{ color: THEME_MAROON, textDecoration: "underline" }}
+                                >
+                                  {exhibit.name || exhibit.url}
+                                </a>
+                                {category && (
+                                  <span
+                                    style={{
+                                      marginLeft: 8, fontSize: 11, color: "#6b7280", background: "#f3f4f6",
+                                      border: "1px solid #e5e7eb", borderRadius: 999, padding: "1px 8px",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {category}
+                                  </span>
+                                )}
+                                {title && (
+                                  <div style={{ marginTop: 3, fontSize: 12.5, fontWeight: 600, color: "#374151" }}>
+                                    {title}
+                                  </div>
+                                )}
+                                {description && (
+                                  <div style={{ marginTop: 2, fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
+                                    {description}
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          }
+                        )}
                       </ul>
                     </div>
                   )}

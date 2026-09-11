@@ -1516,18 +1516,17 @@ export interface BasicProfileData {
 // dashboard renders the bar from the same list this panel switches on — a tab
 // can't exist in the nav without a panel behind it, or the reverse.
 export const BASIC_PROFILE_TABS: { id: string; label: string }[] = [
+  // Owners and Relevant Links have no tab of their own: they're shown inside
+  // Investor Overview, below the overview text, the way the stacked layout has
+  // always grouped them.
   { id: "overview", label: "Investor Overview" },
-  
-  
-  // Deliberately shorter than the headings these carry in stacked mode ("SEC
-  // Form ADV Part 2 Brochure", "Activist Filings (13D & Proxy Contests)"), so
-  // all seven labels fit one row.
+  // Shorter than the headings these carry in stacked mode ("SEC Form ADV Part 2
+  // Brochure", "Activist Filings (13D & Proxy Contests)") so the row stays
+  // compact.
   { id: "brochure", label: "ADV Brochure" },
   { id: "holdings", label: "13F Holdings" },
   { id: "activist_filings", label: "Activist Filings" },
   { id: "letters", label: "Shareholder Letters" },
-  { id: "owners", label: "Owners" },
-  { id: "links", label: "Relevant Links" },
 ];
 
 export const BASIC_PROFILE_DEFAULT_TAB = "overview";
@@ -1596,13 +1595,38 @@ const BasicProfilePanel = ({
       <div>
         {loading && <p className="text-xs text-slate-400 m-0 mb-4">Refreshing…</p>}
 
+        {/* Investor Overview carries Owners and Relevant Links below the
+            overview text -- the same three sections, in the same order, that
+            the stacked layout's WhaleWisdomOverviewCard shows. All three read
+            and write the one whalewisdom_overview section through the same
+            onOverviewChange, so Edit Mode behaves as it did on the old tabs.
+
+            OverviewSection runs unguarded, so a failed section still shows its
+            single "unavailable" notice. Owners and Links render only when the
+            section is actually usable, and with `inCard`, which is what makes
+            this read as one page rather than three:
+              - neither repeats the unavailable notice; they read the same
+                section as Overview, so it would be the same error three times
+              - an empty Owners or Links renders nothing, instead of the
+                "No owners listed" / "No links available" placeholder each
+                needed when it was a tab of its own and would otherwise have
+                opened on a blank panel
+              - Links gets its "Relevant Links" heading row. Standalone it
+                rendered a bare list, because the tab label WAS its heading.
+                Its -mx-6 edge-to-edge rule lines up with the 24px padding the
+                dashboard wraps this panel in, so it spans the panel exactly as
+                it spans the card in the stacked layout. */}
         {activeTab === "overview" && (
-          <OverviewSection section={overview} isEditMode={isEditMode} onChange={onOverviewChange} />
+          <>
+            <OverviewSection section={overview} isEditMode={isEditMode} onChange={onOverviewChange} />
+            {overview?.status === "ok" && (
+              <>
+                <OwnersSection section={overview} isEditMode={isEditMode} onChange={onOverviewChange} inCard />
+                <LinksSection section={overview} inCard />
+              </>
+            )}
+          </>
         )}
-        {activeTab === "owners" && (
-          <OwnersSection section={overview} isEditMode={isEditMode} onChange={onOverviewChange} />
-        )}
-        {activeTab === "links" && <LinksSection section={overview} />}
         {activeTab === "brochure" && (
           <BrochureSection
             section={overview}
