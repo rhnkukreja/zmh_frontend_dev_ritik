@@ -32,11 +32,11 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              <th className="bg-primary/30 px-4 py-3 rounded-tl-xl min-w-[200px]">
+              <th className="bg-primary/30 px-4 py-3 rounded-tl-xl min-w-[140px] sm:min-w-[160px]">
                 <div className="h-4 bg-white/30 rounded w-20" />
               </th>
               {Array.from({ length: SKELETON_COLS }).map((_, i) => (
-                <th key={i} className={`bg-primary/30 px-4 py-3 min-w-[160px] ${i === SKELETON_COLS - 1 ? 'rounded-tr-xl' : ''}`}>
+                <th key={i} className={`bg-primary/30 px-4 py-3 min-w-[140px] sm:min-w-[160px] ${i === SKELETON_COLS - 1 ? 'rounded-tr-xl' : ''}`}>
                   <div className="h-4 bg-white/30 rounded w-28 mx-auto mb-1" />
                   <div className="h-2.5 bg-white/20 rounded w-36 mx-auto" />
                 </th>
@@ -79,7 +79,7 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr>
-            <th className="bg-primary text-white text-left px-4 py-3 font-semibold rounded-tl-xl min-w-[200px]">
+            <th className="bg-primary text-white text-left px-4 py-3 font-semibold rounded-tl-xl min-w-[140px] sm:min-w-[160px]">
               Summary
             </th>
             {institutions.map((name, i) => {
@@ -87,13 +87,13 @@ const OverviewSummaryTable: React.FC<OverviewSummaryTableProps> = ({ summaryData
               return (
                 <th
                   key={name}
-                  className={`bg-primary text-white text-center px-4 py-1.5 font-semibold min-w-[160px] ${
+                  className={`bg-primary text-white text-center px-4 py-1.5 font-semibold min-w-[140px] sm:min-w-[160px] ${
                     i === institutions.length - 1 ? "rounded-tr-xl" : ""
                   }`}
                 >
-                  <div className="font-semibold leading-tight">{name}</div>
+                  <div className="font-semibold leading-tight break-words">{name}</div>
                   {dateRange && (
-                    <div className="text-xs font-semibold opacity-90 mt-0.5 leading-tight">
+                    <div className="text-xs font-semibold opacity-90 mt-0.5 leading-tight break-words">
                       {dateRange.start} – {dateRange.end}
                     </div>
                   )}

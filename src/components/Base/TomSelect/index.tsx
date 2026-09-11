@@ -140,9 +140,17 @@ function TomSelect<T extends string | string[]>({
           props,
           computedOptions
         );
+
+        if (clonedEl?.TomSelect) {
+          if (computedProps.disabled) {
+            clonedEl.TomSelect.disable();
+          } else {
+            clonedEl.TomSelect.enable();
+          }
+        }
       }
     }
-  }, [tomSelectRef, props.value, props.className]);
+  }, [tomSelectRef, props.value, props.className, computedProps.disabled]);
 
   return (
     <select

@@ -45,7 +45,7 @@ const SearchPicker: React.FC<SearchPickerProps> = ({ label, placeholder, allItem
   );
 
   return (
-    <div>
+    <div className="min-w-0">
       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">{label}</h4>
 
       {/* Search input */}
@@ -58,7 +58,7 @@ const SearchPicker: React.FC<SearchPickerProps> = ({ label, placeholder, allItem
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-          className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+          className="w-full min-w-0 pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
         />
         {query && (
           <button
