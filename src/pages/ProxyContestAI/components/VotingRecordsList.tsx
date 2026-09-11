@@ -295,10 +295,10 @@ const MeetingRow: React.FC<{
               <Table.Thead>
                 <Table.Tr className="bg-primary">
                   <Table.Td className="py-2.5 font-semibold text-white text-sm w-[6%]">No.</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[34%]">Proposal</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[11%] whitespace-nowrap">Mgmt Rec</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[11%] whitespace-nowrap">Vote Cast</Table.Td>
-                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[37%]">Institution Name</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[30%]">Proposal</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[12%] whitespace-nowrap">Mgmt Rec</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[12%] whitespace-nowrap">Vote Cast</Table.Td>
+                  <Table.Td className="py-2.5 font-semibold text-white text-sm w-[40%]">Institution Name</Table.Td>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -309,7 +309,7 @@ const MeetingRow: React.FC<{
                       <Table.Tr className="hover:bg-gray-50">
                         <Table.Td className="py-2.5 border-dashed text-sm text-gray-500 align-top">{row.proposal_num || (i + 1)}</Table.Td>
                         <Table.Td className="py-2.5 border-dashed text-sm align-top break-words whitespace-normal">{row.proposal}</Table.Td>
-                        <Table.Td className="py-2.5 border-dashed text-sm align-top break-words whitespace-normal">{row.mgt_rec}</Table.Td>
+                        <Table.Td className="py-2.5 border-dashed text-sm whitespace-nowrap">{row.mgt_rec}</Table.Td>
                         <Table.Td className="py-2.5 border-dashed text-sm whitespace-nowrap">
                           <span className={clsx("font-semibold whitespace-nowrap", (row.vote === "Against" || row.vote === "Withhold") ? "text-red-600" : "text-slate-800")}>
                             {row.vote}
