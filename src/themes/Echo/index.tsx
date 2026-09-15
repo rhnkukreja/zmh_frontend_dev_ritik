@@ -26,7 +26,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { FormattedMenu, linkTo, nestedMenu, enter, leave } from "./side-menu";
 import { BookOpen } from "lucide-react";
-import Lucide from "@/components/Base/Lucide";
+import Lucide, { type AppIconName } from "@/components/Base/Lucide";
 import { Dialog } from "@/components/Base/Headless";
 import clsx from "clsx";
 import SimpleBar from "simplebar";
@@ -42,7 +42,7 @@ import localStorageHelper, {
 } from "@/utils/helper";
 import headerLogo from "../../assets/images/logo/Vantage ZMH-01.png";
 import { logout, setDashboardGlobalSearch } from "@/stores/authenticationSlice";
-import { BellRing, FilterX, Mail } from "lucide-react";
+import { Headphones, BellRing, FilterX, Mail, Megaphone } from "lucide-react";
 import { persistor, RootState } from "@/stores/store";
 
 import LoadingIcon from "@/components/Base/LoadingIcon";
@@ -113,7 +113,7 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
       "Podcasts",
       "Newsletter",
       "Email Alert",
-      "Knowledge Base",
+      "Meeting Notes",
       "Help",
     ].includes(menu.title)
   ) {
@@ -127,9 +127,155 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
   return "";
 };
 
+type NotificationItem = {
+  company: string | null;
+  institution: string | null;
+  date: string;
+  viewed: boolean;
+  module: string;
+  action: string;
+  count: number;
+};
+
+type NotificationTab = {
+  tab_name: string;
+  tab_notifications?: Record<string, NotificationItem[]>;
+};
+
+type NotificationResponse = {
+  notification_status: boolean;
+  notifications: NotificationTab[];
+};
+
+type NotificationCompanyGroup = {
+  company: string;
+  items: NotificationItem[];
+  unreadCount: number;
+  totalCount: number;
+  latestDate: string;
+};
+
+const notificationModuleIcons: Partial<Record<string, AppIconName>> = {
+  "Investor Profile": "Landmark",
+  "Case Studies": "FileSearch2",
+  "Engagement Detail": "Network",
+  "Proxy Voting Guideline": "FileCheck2",
+  "Shareholder Proposal": "Files",
+  "Voting Data": "Vote",
+  "Activist Filings": "FileText",
+};
+
+const getNotificationModuleIcon = (moduleName: string): AppIconName => {
+  return notificationModuleIcons[moduleName] || "BellRing";
+};
+
+const getNotificationTimestamp = (value?: string | null) => {
+  const timestamp = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+const getNotificationListCount = (
+  items: NotificationItem[] = [],
+  unreadOnly = false
+) => {
+  return unreadOnly ? items.filter((item) => !item.viewed).length : items.length;
+};
+
+const getNotificationTabCount = (
+  tab?: NotificationTab,
+  unreadOnly = false
+) => {
+  return Object.values(tab?.tab_notifications || {}).reduce(
+    (sum, items) => sum + getNotificationListCount(Array.isArray(items) ? items : [], unreadOnly),
+    0
+  );
+};
+
+const getDefaultNotificationTabIndex = (tabs: NotificationTab[] = []) => {
+  if (tabs.length === 0) {
+    return 0;
+  }
+
+  const allTabIndex = tabs.findIndex((tab) => tab.tab_name === "All");
+  const companyTabIndex = tabs.findIndex((tab, index) => index !== allTabIndex);
+
+  if (companyTabIndex === -1) {
+    return allTabIndex === -1 ? 0 : allTabIndex;
+  }
+
+  const companyTabCount = getNotificationTabCount(tabs[companyTabIndex]);
+  if (companyTabCount > 0) {
+    return companyTabIndex;
+  }
+
+  if (allTabIndex !== -1 && getNotificationTabCount(tabs[allTabIndex]) > 0) {
+    return allTabIndex;
+  }
+
+  return companyTabIndex;
+};
+
+const formatNotificationAction = (action?: string) => {
+  if (!action) {
+    return "Updated";
+  }
+
+  return action.charAt(0).toUpperCase() + action.slice(1);
+};
+
+const groupCategoryNotifications = (items: NotificationItem[] = []) => {
+  const standaloneItems: NotificationItem[] = [];
+  const companyGroups = new Map<string, NotificationCompanyGroup>();
+
+  items.forEach((item) => {
+    if (!item.company) {
+      standaloneItems.push(item);
+      return;
+    }
+
+    const existingGroup = companyGroups.get(item.company);
+    if (existingGroup) {
+      existingGroup.items.push(item);
+      existingGroup.totalCount += 1;
+      existingGroup.unreadCount += item.viewed ? 0 : 1;
+      if (getNotificationTimestamp(item.date) > getNotificationTimestamp(existingGroup.latestDate)) {
+        existingGroup.latestDate = item.date;
+      }
+      return;
+    }
+
+    companyGroups.set(item.company, {
+      company: item.company,
+      items: [item],
+      totalCount: 1,
+      unreadCount: item.viewed ? 0 : 1,
+      latestDate: item.date,
+    });
+  });
+
+  const sortByDate = (a: { date: string }, b: { date: string }) =>
+    getNotificationTimestamp(b.date) - getNotificationTimestamp(a.date);
+
+  standaloneItems.sort(sortByDate);
+
+  return {
+    standaloneItems,
+    companyGroups: Array.from(companyGroups.values())
+      .map((group) => ({ ...group, items: [...group.items].sort(sortByDate) }))
+      .sort(
+        (a, b) => getNotificationTimestamp(b.latestDate) - getNotificationTimestamp(a.latestDate)
+      ),
+  };
+};
+
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
+  // user_type comes straight from the API and isn't guaranteed to be
+  // title-cased -- normalized rather than a strict === "Admin" comparison,
+  // which is what silently locked real admins out of Edit Mode (see
+  // ActivistDashboard.tsx:668-673).
+  const isAdmin = (user?.user_type || "").trim().toLowerCase() === "admin";
   const { selectedGroup } = useAppSelector((state) => state.notes);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const selectedName =
@@ -180,6 +326,7 @@ function Main() {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["Company"]);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
+  const isNotesPage = location.pathname === "/notes";
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
   // Embed mode: renders the routed page without the app chrome (sidebar/topbar)
   // so it can be shown inside an in-page panel/iframe instead of a new tab.
@@ -220,7 +367,11 @@ function Main() {
       new SimpleBar(scrollableRef.current);
     }
 
-    setFormattedMenu(filterMenu(sideMenu()));
+    setFormattedMenu(
+      filterMenu(sideMenu()).filter(
+        (menu) => typeof menu === "string" || !["Meeting Notes", "Help"].includes(menu.title)
+      )
+    );
 
     // Fix table border issues
     const fixTableStyles = () => {
@@ -514,75 +665,60 @@ function Main() {
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
   const [modulesData, setModulesData] = useState<any>({});
-  const [notificationData, setNotificationData] = useState<any>({});
-  const [activeTabIndex, setActiveTabIndex] = useState(0); // default first tab
-  const activeTab = notificationData?.notifications?.[activeTabIndex];
+  const [notificationData, setNotificationData] = useState<NotificationResponse | null>(null);
+  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const notificationTabs = notificationData?.notifications || [];
+  const activeTab = notificationTabs[activeTabIndex] || notificationTabs[0];
   const categories = activeTab?.tab_notifications
     ? Object.keys(activeTab.tab_notifications)
     : [];
-  const dummyData =
-  {
-    notification_status: false,
-    notifications: [
-      {
-        tab_name: "Amazon.com, Inc.",
-        tab_notifications: {
-
-        },
-      },
-      {
-        tab_name: "All",
-        tab_notifications: {
-          "Investor Profile": [
-            {
-              text: "Updated for Aberdeen Standard Investments",
-              date: "August 12, 2025",
-              viewed: false,
-              module: "Investor Profile",
-            },
-          ],
-          "Engagement Detail": [
-            {
-              text: "Updated for Aberdeen Standard Investments",
-              date: "August 13, 2025",
-              viewed: false,
-              module: "Engagement Detail",
-            },
-          ],
-          "Voting Data": [
-            {
-              text: "Updated for Aberdeen Standard Investments",
-              date: "August 14, 2025",
-              viewed: false,
-              module: "Voting Data",
-            },
-          ],
-          "Proxy Contest": [
-            {
-              text: "Updated for Aberdeen Standard Investments",
-              date: "August 14, 2025",
-              viewed: false,
-              module: "Proxy Contest",
-            },
-          ],
-          "Case Studies": [
-            {
-              text: "Updated for Aberdeen Standard Investments",
-              date: "August 14, 2025",
-              viewed: false,
-              module: "Case Studies",
-            },
-          ],
-        },
-      },
-    ],
-  };
+  const filteredNotificationSections = Object.entries(activeTab?.tab_notifications || {}).filter(
+    ([category]) => (selectedCategory === "All" ? true : category === selectedCategory)
+  );
   useEffect(() => {
     getModulesCount();
     getNotificationList();
     prefetchActivistFilings();
   }, [companyGlobalSearchName, companyGlobalSearchId]);
+
+  useEffect(() => {
+    if (notificationTabs.length === 0) {
+      if (activeTabIndex !== 0) {
+        setActiveTabIndex(0);
+      }
+      return;
+    }
+
+    const defaultTabIndex = getDefaultNotificationTabIndex(notificationTabs);
+
+    if (activeTabIndex >= notificationTabs.length) {
+      setActiveTabIndex(defaultTabIndex);
+      return;
+    }
+
+    if (!open && activeTabIndex !== defaultTabIndex) {
+      setActiveTabIndex(defaultTabIndex);
+    }
+  }, [activeTabIndex, notificationTabs, open]);
+
+  useEffect(() => {
+    if (selectedCategory !== "All" && !categories.includes(selectedCategory)) {
+      setSelectedCategory("All");
+    }
+  }, [categories, selectedCategory]);
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("zmh:notification-drawer", { detail: { open } })
+    );
+
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent("zmh:notification-drawer", { detail: { open: false } })
+      );
+    };
+  }, [open]);
 
   const getModulesCount = async () => {
     try {
@@ -622,17 +758,18 @@ function Main() {
 
   const getNotificationList = async (tab?: number) => {
     try {
+      const targetIndex = typeof tab === "number" ? tab : activeTabIndex;
+      const targetTabName = notificationTabs[targetIndex]?.tab_name;
       const param =
         notificationData?.notification_status === false
-          ? tab === 0
-            ? "?mark_viewed_company=true"
-            : "?mark_viewed_all=true"
+          ? targetTabName === "All"
+            ? "?mark_viewed_all=true"
+            : "?mark_viewed_company=true"
           : "";
       const res = await dashboardService.getNotifications(param);
       if (res?.result) {
         setNotificationData(res?.result);
       }
-
     } catch (error) {
       return error;
     } finally {
@@ -640,24 +777,8 @@ function Main() {
   };
 
   const getTotalNotificationsCount = (): number => {
-    if (!notificationData?.notifications) return 0;
-
-
-    const allTab = notificationData.notifications.find(
-      (tab) => tab.tab_name === "All"
-    );
-
-    if (!allTab?.tab_notifications) return 0;
-
-
-    let totalCount = 0;
-    Object.values(allTab.tab_notifications).forEach((notiList) => {
-      if (Array.isArray(notiList)) {
-        totalCount += notiList.filter((noti) => noti.viewed === false).length;
-      }
-    });
-
-    return totalCount;
+    const allTab = notificationTabs.find((tab) => tab.tab_name === "All");
+    return getNotificationTabCount(allTab, true);
   };
 
 
@@ -805,9 +926,7 @@ function Main() {
                       ])}
                       onClick={(event: MouseEvent) => {
                         event.preventDefault();
-                        if (menu.title === "Help") {
-                          setHelpFormVisible(true);
-                        } else if (menu.title === "Email Alert") {
+                        if (menu.title === "Email Alert") {
                           setWhatsNewFormVisible(true);
                         } else if (menu.title === "Podcasts") {
                           setPodcastModalVisible(true);
@@ -869,15 +988,7 @@ function Main() {
                         )}
                       </Tippy>
 
-                      {menu?.title !== "Help" ? (
-                        <div className="side-menu__link__title link_color">
-                          {menu?.title}
-                        </div>
-                      ) : (
-                        <div className="side-menu__link__title link_color">
-                          {menu?.title}
-                        </div>
-                      )}
+                      <div className="side-menu__link__title link_color">{menu?.title}</div>
                       {menu.badge && (
                         typeof menu.badge === "string" ? (
                           <span className="absolute top-0.5 right-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-1 text-[7px] font-extrabold uppercase tracking-tighter text-white leading-none shadow-sm">
@@ -1052,6 +1163,21 @@ function Main() {
             whatsNewFormVisible={whatsNewFormVisible}
             setWhatsNewFormVisible={setWhatsNewFormVisible}
           />
+          {!open && (
+            <Tippy content="Help" options={{ theme: "light", placement: "left" }}>
+              <button
+                type="button"
+                onClick={() => setHelpFormVisible(true)}
+                className="fixed bottom-5 right-5 z-[60] flex h-12 w-[90px] items-center gap-1.5 rounded-full bg-gradient-to-r from-[#9F1239] to-[#6B102D] px-2 pr-3 text-white shadow-[0_12px_30px_rgba(82,16,38,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(82,16,38,0.4)] focus:outline-none focus:ring-2 focus:ring-[#9F1239] focus:ring-offset-2"
+                aria-label="Open help"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25 backdrop-blur-sm">
+                  <Headphones className="h-4.5 w-4.5 text-white" />
+                </span>
+                <span className="text-xs font-semibold tracking-[0.02em]">Help</span>
+              </button>
+            </Tippy>
+          )}
         </div>
         <div className="fixed h-[65px] transition-[margin] duration-100 xl:ml-[280px] group-[.side-menu--collapsed]:xl:ml-[90px] bg-white inset-x-0 top-0">
           <div
@@ -1115,12 +1241,14 @@ function Main() {
                     activeSection === "investor-overview" &&
                     (activeSubSection === "voting_rationale" ||
                       !activeSubSection)) ? (
-                  <h1 className="font-semibold text-2xl">
-                    {pageTitles[location.pathname]}{" "}
-                    {location.pathname.includes("/notes") &&
-                      selectedName &&
-                      `- ${selectedName}`}
-                  </h1>
+                  !isNotesPage && (
+                    <h1 className="font-semibold text-2xl">
+                      {pageTitles[location.pathname]}{" "}
+                      {location.pathname.includes("/notes") &&
+                        selectedName &&
+                        `- ${selectedName}`}
+                    </h1>
+                  )
                 ) : (
                   <div
                     className="relative justify-center hidden md:flex md:ml-2"
@@ -1149,6 +1277,26 @@ function Main() {
                   size="md"
                 />
                 {/* END: AI Assistant - Open /ai-assistant in new tab */}
+
+                {/* BEGIN: Activist Campaigns - admin-only shortcut, SPA nav (no full
+                    reload). className intentionally mirrors AIAssistantButton's
+                    own rendered class list above (variant="primary" size="md"
+                    plus that same call site's ml-2/border override) so the two
+                    sit as a matched pair rather than an approximation. */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/activist-campaigns")}
+                    className="ai-assistant-cta px-3 py-1.5 text-sm md:flex relative inline-flex items-center justify-center gap-0.2rem rounded-full border overflow-hidden transition-all duration-200 cursor-pointer ml-2 hidden md:flex border-4 hover:border-transparent"
+                    aria-label="Activist Campaigns"
+                  >
+                    <Megaphone className="w-4 h-4 flex-shrink-0" />
+                    <span className="ai-assistant-cta__label ml-2 font-medium hidden xl:flex">
+                      Activist Campaigns
+                    </span>
+                  </button>
+                )}
+                {/* END: Activist Campaigns */}
               </>
 
               <QuickSearch
@@ -1179,9 +1327,12 @@ function Main() {
                       <div
                         className="flex items-center justify-center w-10 mx-4 relative cursor-pointer"
                         onClick={() => {
+                          const defaultTabIndex = getDefaultNotificationTabIndex(notificationTabs);
+                          setActiveTabIndex(defaultTabIndex);
+                          setSelectedCategory("All");
                           setOpen(true);
                           if (!notificationData?.notification_status) {
-                            getNotificationList(activeTabIndex);
+                            getNotificationList(defaultTabIndex);
                           }
                         }}
                       >
@@ -1202,116 +1353,273 @@ function Main() {
                     <Drawer
                       open={open}
                       setOpen={setOpen}
+                      headerActions={
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpen(false);
+                            setWhatsNewFormVisible(true);
+                          }}
+                          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:border-[#9F1239]/30 hover:text-[#9F1239] focus:outline-none focus:ring-2 focus:ring-[#9F1239]/30"
+                        >
+                          <Mail className="h-4 w-4" strokeWidth={1.8} />
+                          Manage Alerts
+                        </button>
+                      }
+                      headerContent={
+                        notificationTabs.length > 0 ? (
+                          <div className="rounded-2xl bg-slate-100 p-1">
+                            <div
+                              className="grid gap-1"
+                              style={{
+                                gridTemplateColumns: `repeat(${notificationTabs.length}, minmax(0, 1fr))`,
+                              }}
+                            >
+                              {notificationTabs.map((tab, index) => {
+                                const unreadCount = getNotificationTabCount(tab, true);
+                                const totalCount = getNotificationTabCount(tab);
+
+                                return (
+                                  <button
+                                    key={tab.tab_name}
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveTabIndex(index);
+                                      getNotificationList(index);
+                                      setSelectedCategory("All");
+                                    }}
+                                    className={`rounded-[14px] px-4 py-2.5 text-left transition-all ${activeTabIndex === index
+                                      ? "bg-primary text-white shadow-[0_12px_30px_rgba(159,18,57,0.25)]"
+                                      : "bg-transparent text-slate-600 hover:bg-white hover:text-slate-900"
+                                      }`}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <span className="line-clamp-2 whitespace-normal text-[13px] font-semibold leading-4.5 break-words [word-break:normal]">
+                                        {tab.tab_name}
+                                      </span>
+                                      <span className={`mt-0.5 inline-flex min-w-[24px] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${activeTabIndex === index
+                                        ? "bg-white/20 text-white"
+                                        : "bg-white text-slate-600"
+                                        }`}>
+                                        {unreadCount || totalCount}
+                                      </span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null
+                      }
                       children={
                         <>
-                          <div className="flex w-full gap-1 dark:bg-darkmode-800">
-                            {notificationData?.notifications?.map(
-                              (tab, index) => (
+                          {categories.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
                                 <button
-                                  key={index}
-                                  onClick={() => {
-                                    setActiveTabIndex(index);
-                                    getNotificationList(index);
-                                    setSelectedCategory("All");
-                                  }}
-                                  className={`w-1/2 px-5 py-2 rounded-t-lg font-semibold transition-all ${activeTabIndex === index
-                                    ? "bg-primary text-white shadow"
-                                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                                  type="button"
+                                  onClick={() => setSelectedCategory("All")}
+                                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-all ${selectedCategory === "All"
+                                    ? "bg-[#9F1239] text-white shadow"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                                     }`}
                                 >
-                                  {tab.tab_name}
+                                  <span>All</span>
+                                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${selectedCategory === "All"
+                                    ? "bg-white/20 text-white"
+                                    : "bg-white text-slate-500"
+                                    }`}>
+                                    {getNotificationTabCount(activeTab)}
+                                  </span>
                                 </button>
-                              )
-                            )}
-                          </div>
+                                {categories.map((category) => {
+                                  const categoryCount = getNotificationListCount(
+                                    Array.isArray(activeTab?.tab_notifications?.[category])
+                                      ? activeTab?.tab_notifications?.[category]
+                                      : []
+                                  );
 
-                          {/* Category Filter */}
-                          <div className="flex gap-2 my-3 flex-wrap">
-                            {categories?.length > 0 && (
-                              <button
-                                onClick={() => setSelectedCategory("All")}
-                                className={`px-4 py-1 rounded ${selectedCategory === "All"
-                                  ? "border-b-primary rounded-none border-b-2 text-primary"
-                                  : "bg-gray-200 text-gray-700"
-                                  }`}
-                              >
-                                All
-                              </button>
-                            )}
-                            {categories.map((category) => (
-                              <button
-                                key={category}
-                                onClick={() => setSelectedCategory(category)}
-                                className={`px-4 py-1 rounded ${selectedCategory === category
-                                  ? "border-b-primary rounded-none border-b-2 text-primary"
-                                  : "bg-gray-200 text-gray-700"
-                                  }`}
-                              >
-                                {category}
-                              </button>
-                            ))}
-                          </div>
-                          {activeTab?.tab_notifications &&
-                            Object.keys(activeTab.tab_notifications).length >
-                            0 ? (
-                            Object.entries(activeTab.tab_notifications)
-                              .filter(([category]) =>
-                                selectedCategory === "All"
-                                  ? true
-                                  : category === selectedCategory
-                              )
-                              .map(([category, notiList]) => (
-                                <div key={category}>
-                                  {/* Category title */}
-                                  <h2 className="text-sm font-bold text-gray-600 dark:text-gray-300 mt-4 mb-2">
-                                    {category}
-                                  </h2>
-
-                                  {(Array.isArray(notiList)
-                                    ? notiList
-                                    : []
-                                  ).map((noti, i) => (
-                                    <div
-                                      key={`${activeTabIndex}-${category}-${i}`}
-                                      className="py-4 border-b"
+                                  return (
+                                    <button
+                                      key={category}
+                                      type="button"
+                                      onClick={() => setSelectedCategory(category)}
+                                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-all ${selectedCategory === category
+                                        ? "bg-[#9F1239] text-white shadow"
+                                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                        }`}
                                     >
-                                      <p className="text-xs text-gray-400 pb-2">
-                                        {getCustomRelativeDate(noti.date)}
-                                      </p>
-                                      <div className="flex items-center gap-4 text-left">
-                                        <div className="flex flex-col items-end relative">
-                                          {!noti.viewed && (
+                                      <span>{category}</span>
+                                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${selectedCategory === category
+                                        ? "bg-white/20 text-white"
+                                        : "bg-white text-slate-500"
+                                        }`}>
+                                        {categoryCount}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                          {activeTab?.tab_notifications &&
+                          Object.keys(activeTab.tab_notifications).length > 0 ? (
+                            <div className="mt-4 space-y-4 pb-6">
+                              {filteredNotificationSections.map(([category, rawNotifications]) => {
+                                const notifications = Array.isArray(rawNotifications)
+                                  ? rawNotifications
+                                  : [];
+                                const { standaloneItems, companyGroups } =
+                                  groupCategoryNotifications(notifications);
+                                const totalCount = getNotificationListCount(notifications);
+                                const showCategoryHeader = selectedCategory === "All";
+
+                                return (
+                                  <section
+                                    key={category}
+                                    className={showCategoryHeader
+                                      ? "rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm"
+                                      : "space-y-3"}
+                                  >
+                                    {showCategoryHeader && (
+                                      <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                          <div className="rounded-2xl bg-white p-2.5 text-[#9F1239] shadow-sm ring-1 ring-slate-200">
                                             <Lucide
-                                              icon="Dot"
-                                              className="stroke-[11] w-[18px] absolute top-[-7px] left-[-7px] text-[#DC661F]"
-                                            />
-                                          )}
-                                          <div className="bg-[rgb(245,231,235)] rounded-md p-3">
-                                            <img
-                                              src={notificationIcon2}
-                                              alt="ai icon"
-                                              className="w-[20px] h-[20px] opacity-[0.7]"
+                                              icon={getNotificationModuleIcon(category)}
+                                              className="h-5 w-5"
                                             />
                                           </div>
+                                          <div className="min-w-0">
+                                            <h2 className="text-sm font-semibold text-slate-900">
+                                              {category}
+                                            </h2>
+                                          </div>
                                         </div>
-                                        <div className="w-[78%] flex-1 prose prose-sm">
-                                          <p
-                                            dangerouslySetInnerHTML={{ __html: noti.text }}
-                                          />
-                                        </div>
+                                        <span className="inline-flex min-w-[32px] items-center justify-center rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+                                          {totalCount}
+                                        </span>
                                       </div>
+                                    )}
+
+                                    <div className={showCategoryHeader ? "mt-4 space-y-3" : "space-y-3"}>
+                                      {companyGroups.map((group) => {
+                                        const showCompanyGroupHeader =
+                                          activeTab?.tab_name === "All" || activeTab?.tab_name !== group.company;
+
+                                        return (
+                                          <div
+                                            key={`${category}-${group.company}`}
+                                            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_25px_rgba(15,23,42,0.05)]"
+                                          >
+                                            {showCompanyGroupHeader && (
+                                              <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                  <div className="flex items-center gap-2">
+                                                    {group.unreadCount > 0 && (
+                                                      <span className="h-2.5 w-2.5 rounded-full bg-[#DC661F]" />
+                                                    )}
+                                                    <h3 className="text-sm font-semibold text-slate-900">
+                                                      {group.company}
+                                                    </h3>
+                                                  </div>
+                                                </div>
+                                                <span className="inline-flex min-w-[34px] items-center justify-center rounded-full bg-[#9F1239]/10 px-2.5 py-1 text-xs font-semibold text-[#9F1239]">
+                                                  {group.totalCount}
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            <div className={showCompanyGroupHeader ? "mt-3 space-y-2" : "space-y-2"}>
+                                              {group.items.map((item, index) => (
+                                                <div
+                                                  key={`${category}-${group.company}-${item.institution || index}`}
+                                                  className="rounded-xl bg-slate-50 px-3.5 py-3 ring-1 ring-slate-200/80"
+                                                >
+                                                  <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                      <p className="text-sm font-medium text-slate-800">
+                                                        {item.institution || "Institution unavailable"}
+                                                      </p>
+                                                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                                                        <span className="inline-flex whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                                                          {item.date}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                    <div className="flex shrink-0 items-center gap-2">
+                                                      <span className="inline-flex whitespace-nowrap rounded-full bg-[#9F1239]/10 px-3 py-1 text-xs font-semibold text-[#9F1239]">
+                                                        {formatNotificationAction(item.action)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+
+                                      {standaloneItems.map((noti, index) => (
+                                        <div
+                                          key={`${activeTabIndex}-${category}-${noti.institution || index}`}
+                                          className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_25px_rgba(15,23,42,0.05)]"
+                                        >
+                                          <div className="flex items-start gap-3">
+                                            <div className="relative mt-0.5">
+                                              {!noti.viewed && (
+                                                <span className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#DC661F] ring-2 ring-white" />
+                                              )}
+                                              <div className="rounded-2xl bg-[#9F1239]/10 p-2.5 text-[#9F1239]">
+                                                <Lucide
+                                                  icon={getNotificationModuleIcon(
+                                                    noti.module || category
+                                                  )}
+                                                  className="h-5 w-5"
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                  <h3 className="text-sm font-semibold text-slate-900">
+                                                    {noti.company || noti.institution || "Notification"}
+                                                  </h3>
+                                                  {noti.company && noti.institution && (
+                                                    <p className="mt-1 text-xs text-slate-500">
+                                                      {noti.institution}
+                                                    </p>
+                                                  )}
+                                                  <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                                                    <span className="inline-flex whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                                                      {noti.date}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <div className="flex shrink-0 items-center gap-2">
+                                                  <span className="inline-flex whitespace-nowrap rounded-full bg-[#9F1239]/10 px-3 py-1 text-xs font-semibold text-[#9F1239]">
+                                                    {formatNotificationAction(noti.action)}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
                                     </div>
-                                  ))}
-                                </div>
-                              ))
+                                  </section>
+                                );
+                              })}
+                            </div>
                           ) : (
-                            <div className="flex items-center justify-center h-[100%]">
-                              <img
-                                src={notificationIcon2}
-                                alt="ai icon"
-                                className="w-4 h-4 mr-2 opacity-[0.7]"
-                              />
-                              <h1>No Notifications Found.</h1>
+                            <div className="mt-4 flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
+                              <div className="rounded-full bg-[#9F1239]/10 p-3 text-[#9F1239]">
+                                <Lucide icon="BellRing" className="h-6 w-6" />
+                              </div>
+                              <div>
+                                <h1 className="text-base font-semibold text-slate-900">
+                                  No notifications yet
+                                </h1>
+                              </div>
                             </div>
                           )}
                         </>

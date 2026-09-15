@@ -117,124 +117,133 @@ const Notes: React.FC = () => {
     ? ["institution" as const]
     : (["institution", "company", "other"] as const);
   return (
-    <div className="container m-auto h-[calc(100vh-70px)] flex flex-col my-[-35px] pb-[30px]">
-      <div className="w-full flex justify-between px-4 py-6 bg-white dark:bg-darkmode-800">
-        <div className="flex gap-4">
-          {visibleTabs.map((tab) => (
-            <button
-              key={tab}
-              className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-                activeTab === tab
-                  ? "bg-primary text-white shadow"
-                  : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-              }`}
-              onClick={() => handleTabSwitch(tab)}
-            >
-              {tab === "institution"
-                ? "Institution"
-                : tab === "company"
-                  ? "Company"
-                  : "Other"}
-            </button>
-          ))}
-        </div>
-        {activeTab === "institution" || activeTab === "company" ? (
-          <button
-            className="flex items-center gap-x-2 px-4 py-2 text-white bg-primary border-primary dark:border-primary rounded "
-            onClick={() => setAddNoteModalVisible(true)}
-          >
-            <Lucide icon="Plus" className="w-4 h-4" />
-            Add Notes
-          </button>
-        ) : null}
+    <div className="container m-auto h-[calc(100vh-70px)] flex flex-col pt-3 pb-[30px]">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 mb-3">
+        <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
+          <span className="text-slate-500">Company</span>
+          <span className="text-slate-400">›</span>
+          <span>Meeting Notes</span>
+        </h1>
       </div>
+      <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:bg-darkmode-800">
+        <div className="w-full flex justify-between px-4 py-6 bg-white dark:bg-darkmode-800">
+          <div className="flex gap-4">
+            {visibleTabs.map((tab) => (
+              <button
+                key={tab}
+                className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
+                  activeTab === tab
+                    ? "bg-primary text-white shadow"
+                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
+                }`}
+                onClick={() => handleTabSwitch(tab)}
+              >
+                {tab === "institution"
+                  ? "Institution"
+                  : tab === "company"
+                    ? "Company"
+                    : "Other"}
+              </button>
+            ))}
+          </div>
+          {activeTab === "institution" || activeTab === "company" ? (
+            <button
+              className="flex items-center gap-x-2 px-4 py-2 text-white bg-primary border-primary dark:border-primary rounded "
+              onClick={() => setAddNoteModalVisible(true)}
+            >
+              <Lucide icon="Plus" className="w-4 h-4" />
+              Add Notes
+            </button>
+          ) : null}
+        </div>
 
-      <div className="flex h-full">
-        <SubSidebar
-          activeTab={activeTab}
-          setCompanyName={setCompanyName}
-          setInstitutionName={setInstitutionName}
-          companyName={companyName}
-          institutionName={institutionName}
-          selectedInstitution={selectedInstitution}
-          setSelectedInstitution={setSelectedInstitution}
-          selectedCompany={selectedCompany}
-          setSelectedCompany={setSelectedCompany}
-        />
+        <div className="flex h-full">
+          <SubSidebar
+            activeTab={activeTab}
+            setCompanyName={setCompanyName}
+            setInstitutionName={setInstitutionName}
+            companyName={companyName}
+            institutionName={institutionName}
+            selectedInstitution={selectedInstitution}
+            setSelectedInstitution={setSelectedInstitution}
+            selectedCompany={selectedCompany}
+            setSelectedCompany={setSelectedCompany}
+          />
 
-        <div className="flex flex-col ml-5 overflow-hidden w-full">
-          <Header />
-          <div className="flex flex-col lg:flex-row lg:flex-1 h-full pb-2 bg-white dark:bg-darkmode-800 rounded-b-lg p-4">
-            {activeTab === "institution" && (
-              <>
-                {selectedInstitution && selectedCompany ? (
-                  <div className="w-full h-full">
-                    <NoteDetails
-                      key={`institution-${selectedInstitution}-${selectedCompany}`}
-                      activeTab={activeTab}
-                      companyName={companyName}
-                      institutionName={institutionName}
-                      selectedInstitution={selectedInstitution}
-                      selectedCompany={selectedCompany}
-                    />
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon="NotebookPen"
-                    message={!selectedInstitution ? "Select an institution" : "Select a company"}
-                  />
-                )}
-              </>
-            )}
-            {activeTab === "company" && (
-              <>
-                {selectedCompany && selectedInstitution ? (
-                  <div className="w-full h-full">
-                    <NoteDetails
-                      key={`company-${selectedCompany}-${selectedInstitution}`}
-                      activeTab={activeTab}
-                      companyName={companyName}
-                      institutionName={institutionName}
-                      selectedInstitution={selectedInstitution}
-                      selectedCompany={selectedCompany}
-                    />
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon="NotebookPen"
-                    message={!selectedCompany ? "Select a company" : "Select an institution"}
-                  />
-                )}
-              </>
-            )}
-            {activeTab === "other" && (
-              <>
-                {selectedFolder === null ? (
-                  <EmptyState icon="NotebookPen" message="No folder selected" />
-                ) : (
-                  <>
-                    <div className="lg:w-2/5 w-full h-full">
-                      <NotesList activeTab={activeTab} />
+          <div className="flex flex-col ml-5 overflow-hidden w-full">
+            <Header />
+            <div className="flex flex-col lg:flex-row lg:flex-1 h-full pb-2 bg-white dark:bg-darkmode-800 p-4">
+              {activeTab === "institution" && (
+                <>
+                  {selectedInstitution && selectedCompany ? (
+                    <div className="w-full h-full">
+                      <NoteDetails
+                        key={`institution-${selectedInstitution}-${selectedCompany}`}
+                        activeTab={activeTab}
+                        companyName={companyName}
+                        institutionName={institutionName}
+                        selectedInstitution={selectedInstitution}
+                        selectedCompany={selectedCompany}
+                      />
                     </div>
-
-                    <div className="lg:w-3/5 w-full h-full">
-                      <NoteDetails activeTab={activeTab} />
+                  ) : (
+                    <EmptyState
+                      icon="NotebookPen"
+                      message={!selectedInstitution ? "Select an institution" : "Select a company"}
+                    />
+                  )}
+                </>
+              )}
+              {activeTab === "company" && (
+                <>
+                  {selectedCompany && selectedInstitution ? (
+                    <div className="w-full h-full">
+                      <NoteDetails
+                        key={`company-${selectedCompany}-${selectedInstitution}`}
+                        activeTab={activeTab}
+                        companyName={companyName}
+                        institutionName={institutionName}
+                        selectedInstitution={selectedInstitution}
+                        selectedCompany={selectedCompany}
+                      />
                     </div>
-                  </>
-                )}
-              </>
-            )}
+                  ) : (
+                    <EmptyState
+                      icon="NotebookPen"
+                      message={!selectedCompany ? "Select a company" : "Select an institution"}
+                    />
+                  )}
+                </>
+              )}
+              {activeTab === "other" && (
+                <>
+                  {selectedFolder === null ? (
+                    <EmptyState icon="NotebookPen" message="No folder selected" />
+                  ) : (
+                    <>
+                      <div className="lg:w-2/5 w-full h-full">
+                        <NotesList activeTab={activeTab} />
+                      </div>
 
-            {addNoteModalVisible && (
-              <AddDomainNoteModal
-                mode={"add"}
-                addNoteModalVisible={addNoteModalVisible}
-                setAddNoteModalVisible={setAddNoteModalVisible}
-                title="Create New Note"
-                noteModule={true}
-                fetchData={fetchData}
-              />
-            )}
+                      <div className="lg:w-3/5 w-full h-full">
+                        <NoteDetails activeTab={activeTab} />
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {addNoteModalVisible && (
+                <AddDomainNoteModal
+                  mode={"add"}
+                  addNoteModalVisible={addNoteModalVisible}
+                  setAddNoteModalVisible={setAddNoteModalVisible}
+                  title="Create New Note"
+                  noteModule={true}
+                  fetchData={fetchData}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

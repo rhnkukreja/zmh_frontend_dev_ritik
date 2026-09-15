@@ -24,6 +24,7 @@ export interface LitepickerProps
   }) => void;
   value?: string | undefined;
   getRef?: (el: LitepickerElement) => void;
+  onShow?: (picker: LitepickerJs) => void;
 }
 
 function Litepicker({
@@ -31,13 +32,25 @@ function Litepicker({
   value = "",
   onChange = () => {},
   getRef = () => {},
+  onShow,
   ...computedProps
 }: LitepickerProps) {
+  // Keep the latest onShow callback in a ref so the "show" listener
+  // (bound once at init time) always calls the most recent handler
+  // instead of a stale closure from whenever init/reInit last ran.
+  const onShowRef = useRef(onShow);
+  useEffect(() => {
+    onShowRef.current = onShow;
+  });
+
   const props = {
     options: options,
     value: value,
     onChange: onChange,
     getRef: getRef,
+    onShow: (picker: LitepickerJs) => {
+      onShowRef.current?.(picker);
+    },
   };
   const initialRender = useRef(true);
   const litepickerRef = createRef<LitepickerElement>();

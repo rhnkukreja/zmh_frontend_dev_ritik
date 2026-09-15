@@ -67,13 +67,10 @@ const index = () => {
 
   const {
     companyGlobalSearchName,
-    companyGlobalSearchTicker,
     companyGlobalSearchId,
     isCompanySelected,
   } = useAppSelector((state: RootState) => state.authentiction);
 
-  const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
-  const searchTicker = searchParams.get("ticker");
   const year = searchParams.get("year") ?? ""; // derive from meeting date if missing
   const meetingDateFromURL = searchParams.get("meeting_date"); // Get meeting date from URL if available
 
@@ -113,6 +110,7 @@ const index = () => {
 
   // Local loading state to prevent "No data found" flash
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const hasTriggeredStatsRequestRef = useRef(false);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
 
@@ -220,7 +218,7 @@ const index = () => {
     // Stamp this call; if a newer call starts before this one resolves, discard this result
     const requestId = ++fetchRequestId.current;
     try {
-      // Keep initial loading true until we complete the process
+      // Keep initial loading true until the stats request completes
       setInitialLoading(true);
 
       // Use the explicitly passed meeting date — avoids stale closure issues.
@@ -285,6 +283,7 @@ const index = () => {
 
         // Reset page and fetch NPX data with the selected institution
         dispatch(resetPage());
+        hasTriggeredStatsRequestRef.current = true;
         dispatch(
           fetchNpxProxyDashboard(
             createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
@@ -356,6 +355,7 @@ const index = () => {
           setSelectedChipFilters(generateFilterChips(fullChipsObj));
           setFiltersLength(countValidFilters(fullChipsObj));
           dispatch(resetPage());
+          hasTriggeredStatsRequestRef.current = true;
           dispatch(fetchNpxProxyDashboard(createDynamicURL(`${baseURL}/npx/detail/`, fullFilterObj, undefined, 1)));
         }
 
@@ -396,6 +396,7 @@ const index = () => {
             }));
             setFiltersLength(1);
             dispatch(resetPage());
+            hasTriggeredStatsRequestRef.current = true;
             dispatch(
               fetchNpxProxyDashboard(
                 createDynamicURL(`${baseURL}/npx/detail/`, filterObj, undefined, 1)
@@ -408,22 +409,19 @@ const index = () => {
             if (currentMeetingDate) setMeetingDate(currentMeetingDate);
           } else {
             setAllInstitutions([]);
-            setInitialLoading(false);
           }
         } catch (e) {
           if (requestId !== fetchRequestId.current) return;
           setAllInstitutions([]);
-          setInitialLoading(false);
         }
       }
     } catch (error) {
       if (requestId !== fetchRequestId.current) return;
       console.error("Error fetching institutions:", error);
       setAllInstitutions([]);
-      setInitialLoading(false);
     } finally {
       // Only mark loading done if this is still the active request
-      if (requestId === fetchRequestId.current) {
+      if (requestId === fetchRequestId.current && npxProxyLoading) {
         setInitialLoading(false);
       }
     }
@@ -521,20 +519,6 @@ const index = () => {
       : (typeof dropdownValues.institution_name === 'string' ? dropdownValues.institution_name : '');
     if (inst) savedInstitutionRef.current = inst;
   }, [dropdownValues.institution_name]);
-
-  // Keep URL ticker in sync when user changes company via global search
-  useEffect(() => {
-    if (!companyGlobalSearchTicker) return;
-    const newTicker = companyGlobalSearchTicker.split('-')[0];
-    setSearchParams(prev => {
-      const params = new URLSearchParams(prev);
-      if (params.get('ticker') !== newTicker) {
-        params.set('ticker', newTicker);
-        params.delete('meeting_date'); // remove stale meeting_date for the old company
-      }
-      return params;
-    });
-  }, [companyGlobalSearchTicker]);
 
   // Update URL meeting_date and year once the API returns the correct date for the current company
   useEffect(() => {
@@ -731,6 +715,7 @@ const index = () => {
     // Only handle pagination changes, not initial data loading
     if (allApplyFilter && Object.keys(allApplyFilter).length > 0 && page > 1) {
       const currentMeetingDate = meetingDate; // Use state — always correct for the current company
+      hasTriggeredStatsRequestRef.current = true;
       dispatch(
         fetchNpxProxyDashboard(
           createDynamicURL(
@@ -867,6 +852,8 @@ const index = () => {
 
     // Dispatch data fetch with updated filters
     dispatch(resetPage());
+    hasTriggeredStatsRequestRef.current = true;
+    setInitialLoading(true);
     dispatch(
       fetchNpxProxyDashboard(
         createDynamicURL(`${baseURL}/npx/detail/`, updatedFilters, undefined, 1)
@@ -963,6 +950,7 @@ const index = () => {
     setallApplyFilter({});
 
     // Reset pagination and fetch fresh data with just basic parameters
+    setInitialLoading(true);
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     dispatch(resetPage());
     dispatch(
@@ -1008,6 +996,12 @@ const index = () => {
   const handlePageChange = (newPage: number) => {
     dispatch(setPage(newPage));
   };
+
+  useEffect(() => {
+    if (hasTriggeredStatsRequestRef.current && !npxProxyLoading) {
+      setInitialLoading(false);
+    }
+  }, [npxProxyLoading]);
 
   return (
     <>
