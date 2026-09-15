@@ -40,7 +40,11 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
   
   // Tab & Accordion States
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('takeaways');
-  const [expandedInvestors, setExpandedInvestors] = useState<Record<number, boolean>>({});
+  // Keyed by a string path, not the raw index: "3" is the fourth investor, "3.1"
+  // its first sub-investor. The two forms can't collide, so a child's open/closed
+  // state never bleeds into a parent's -- which a numeric offset scheme would
+  // only avoid by assuming a maximum child count.
+  const [expandedInvestors, setExpandedInvestors] = useState<Record<string, boolean>>({});
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
   // 1. GET ENDPOINT INTEGRATION: Fetch from S3 on component load
@@ -70,7 +74,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
           setStaleInfo(result.stale ?? null);
           setActiveSubTab('takeaways');
           if (result.data.raw_data && result.data.raw_data.length > 0) {
-            setExpandedInvestors({ 0: true });
+            setExpandedInvestors({ "0": true });
           }
         } else {
           console.log("⚙️ No data found. Generating new engagement data...");
@@ -122,7 +126,7 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
       
       setActiveSubTab('takeaways'); 
       if (data.raw_data && data.raw_data.length > 0) {
-        setExpandedInvestors({ 0: true });
+        setExpandedInvestors({ "0": true });
       }
 
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -133,8 +137,8 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
     }
   };
 
-  const toggleInvestorRow = (idx: number) => {
-    setExpandedInvestors(prev => ({ ...prev, [idx]: !prev[idx] }));
+  const toggleInvestorRow = (key: string) => {
+    setExpandedInvestors(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const toggleCard = (idx: number) => {
@@ -304,6 +308,67 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
             );
           })}
         </ul>
+      </div>
+    );
+  };
+
+  // Sub-investors under a raw_data entry (e.g. an asset manager's separately
+  // run stewardship teams). Optional: the key is absent for almost every
+  // investor, and the backend may deploy after this does. Anything that isn't a
+  // usable array of named entries yields [], which renders the parent exactly
+  // as it rendered before children existed. A child with no name is dropped
+  // rather than shown as a card with a blank heading.
+  const getInvestorChildren = (item: any): any[] =>
+    Array.isArray(item?.children)
+      ? item.children.filter(
+          (child: any) =>
+            child && typeof child === 'object' && typeof child.investor === 'string' && child.investor.trim().length > 0
+        )
+      : [];
+
+  // One card, used for a top-level investor and for each sub-investor alike, so
+  // the priorities/Sources rendering exists once. `nested` only lightens the
+  // chrome. With nested=false every class string below is character-for-
+  // character what this card used before sub-investors existed, which is what
+  // keeps a page with no children looking unchanged.
+  const renderInvestorCard = (item: any, key: string, nested: boolean = false) => {
+    const isExpanded = expandedInvestors[key] === true;
+
+    return (
+      <div
+        key={key}
+        className={`border rounded-xl transition-all duration-300 overflow-hidden ${
+          isExpanded
+            ? (nested ? 'border-slate-300 shadow-sm bg-white' : 'border-slate-300 shadow-md bg-white')
+            : (nested ? 'border-slate-200 bg-white hover:bg-slate-50' : 'border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm')
+        }`}
+      >
+        <button
+          onClick={() => toggleInvestorRow(key)}
+          className={`w-full flex items-center justify-between ${nested ? 'px-4 py-3' : 'p-5'} text-left transition-colors focus:outline-none`}
+        >
+          <div className={`flex items-center ${nested ? 'gap-3' : 'gap-4'}`}>
+            <div className={`${nested ? 'w-2 h-2' : 'w-2.5 h-2.5'} rounded-full transition-colors ${isExpanded ? 'bg-[#981b1e]' : 'bg-slate-300'}`}></div>
+            <h5 className={`${nested ? 'font-semibold text-[14.5px]' : 'font-bold text-[16px]'} transition-colors ${isExpanded ? 'text-slate-900' : 'text-slate-700'}`}>
+              {item.investor}
+            </h5>
+          </div>
+          <div className={`border rounded-full ${nested ? 'p-1' : 'p-1.5'} shadow-sm transition-all duration-300 ${isExpanded ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-400 border-slate-200'}`}>
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </div>
+        </button>
+
+        <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+          <div className="overflow-hidden">
+            <div className={nested ? 'px-5 pb-5 pt-1' : 'px-6 pb-6 pt-2'}>
+              <div className="text-slate-700 leading-relaxed px-2 py-1">
+                {item.priorities ? renderPriorities(item.priorities) : "No priorities data provided."}
+                {renderSources(item.documents)}
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     );
   };
@@ -508,43 +573,30 @@ const EngagementPriorities: React.FC<EngagementPrioritiesProps> = ({ companyTick
           {activeSubTab === 'breakdown' && (
             <div className="flex flex-col gap-4 animate-in fade-in duration-500 mt-6">
               {engagementData.raw_data?.map((item: any, idx: number) => {
-                const isExpanded = expandedInvestors[idx] === true;
+                const parentKey = String(idx);
+                const children = getInvestorChildren(item);
 
+                // No sub-investors (the normal case): the card alone, as a
+                // direct child of this list -- no wrapper, so the markup and
+                // the gap-4 spacing are exactly what they were.
+                if (children.length === 0) return renderInvestorCard(item, parentKey);
+
+                // With sub-investors: parent and children grouped so the split
+                // reads at a glance, like the Ownership tab's 1.1 / 1.2 rows.
+                // The children sit OUTSIDE the parent's collapsible body, so
+                // they stay visible whether or not the parent is expanded; each
+                // is its own expandable card, keyed "3.1", "3.2", ... so its
+                // state can't collide with a parent's "3". Sub-investors are
+                // only ever shown here -- Key Themes is built from summary_data,
+                // not raw_data, so they don't enter the theme lists.
                 return (
-                  <div 
-                    key={idx} 
-                    className={`border rounded-xl transition-all duration-300 overflow-hidden ${
-                      isExpanded 
-                        ? 'border-slate-300 shadow-md bg-white' 
-                        : 'border-slate-200 bg-slate-50 hover:bg-white hover:shadow-sm'
-                    }`}
-                  >
-                    <button
-                      onClick={() => toggleInvestorRow(idx)}
-                      className="w-full flex items-center justify-between p-5 text-left transition-colors focus:outline-none"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-2.5 h-2.5 rounded-full transition-colors ${isExpanded ? 'bg-[#981b1e]' : 'bg-slate-300'}`}></div>
-                        <h5 className={`font-bold text-[16px] transition-colors ${isExpanded ? 'text-slate-900' : 'text-slate-700'}`}>
-                          {item.investor}
-                        </h5>
-                      </div>
-                      <div className={`border rounded-full p-1.5 shadow-sm transition-all duration-300 ${isExpanded ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-400 border-slate-200'}`}>
-                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </div>
-                    </button>
-
-                    <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                      <div className="overflow-hidden">
-                        <div className="px-6 pb-6 pt-2">
-                          <div className="text-slate-700 leading-relaxed px-2 py-1">
-                            {item.priorities ? renderPriorities(item.priorities) : "No priorities data provided."}
-                            {renderSources(item.documents)}
-                          </div>
-                        </div>
-                      </div>
+                  <div key={parentKey} className="flex flex-col gap-2">
+                    {renderInvestorCard(item, parentKey)}
+                    <div className="ml-6 pl-4 border-l-2 border-slate-200 flex flex-col gap-2">
+                      {children.map((child: any, childIdx: number) =>
+                        renderInvestorCard(child, `${parentKey}.${childIdx + 1}`, true)
+                      )}
                     </div>
-
                   </div>
                 );
               })}
