@@ -44,6 +44,14 @@ type FilingItem = {
   status?: string | null;
   notes?: string | null;
   campaign_id?: string | number | null;
+  // Where the row came from: "SEC EDGAR", or a newswire ("PR Newswire",
+  // "GlobeNewswire"). Absent on every row from a deployment predating
+  // newswire capture -- absent must read as SEC, so today's rows render
+  // exactly as they always have. See isPressRelease below.
+  source?: string | null;
+  // Newswire rows only; null on SEC rows. Read through getPressReleaseDetails,
+  // never directly, so the field names live in one place.
+  details?: Record<string, any> | null;
   // Local-only: set when send-alert returns sent:true with alert_sent_at
   // still null and a `warning` -- the email genuinely went out, only the
   // database write of when recording it failed. Never comes from a GET; only
@@ -128,6 +136,159 @@ const GATE_RULE_IDS = new Set(["routine_proxy_no_activist", "no_item4_no_activis
 // filter" rather than as a blank or unlabelled chip.
 const isGateSuppressed = (filing: FilingItem): boolean =>
   GATE_RULE_IDS.has(toTrimmedString(filing.alert_suppressed_rule).toLowerCase());
+
+// The newswire pipeline's own reasons for not alerting. Each gets its own label
+// rather than "Held by filter", which would tell a reviewer a phrase rule fired
+// when none did. Keyed on the rule id, same as GATE_RULE_IDS and for the same
+// reason: the reason text is prose and will be reworded.
+const NEWSWIRE_RULE_LABELS: Record<string, string> = {
+  newswire_not_activism: "Not activism",
+  newswire_below_threshold: "Low confidence",
+  newswire_no_activist: "No activist named",
+  newswire_duplicate: "Duplicate",
+  newswire_before_start: "Before monitoring started",
+};
+
+// Which chip a held row shows. isFilingHeld decides WHETHER it shows; this only
+// decides the label and icon. Newswire rules are standing decisions made by
+// the pipeline, not phrase matches, so they share the gate's icon.
+const getHeldChip = (filing: FilingItem): { label: string; icon: AppIconName } => {
+  const newswireLabel = NEWSWIRE_RULE_LABELS[toTrimmedString(filing.alert_suppressed_rule).toLowerCase()];
+  if (newswireLabel) return { label: newswireLabel, icon: "MinusCircle" };
+  if (isGateSuppressed(filing)) return { label: "Not a campaign", icon: "MinusCircle" };
+  return { label: "Held by filter", icon: "PauseCircle" };
+};
+
+// ─── Source: SEC filing vs newswire press release ──────────────────────────
+// A closed list, matched case- and space-insensitively. Deliberately NOT "any
+// source other than SEC EDGAR": an SEC row whose source came back spelled some
+// other way must still render as SEC, since nothing may change for SEC rows.
+// The cost is that a wire added later renders as SEC until it's listed here.
+const NEWSWIRE_SOURCES = new Set(["PR NEWSWIRE", "GLOBENEWSWIRE"]);
+
+const normalizeSource = (value: unknown) => toTrimmedString(value).toUpperCase().replace(/\s+/g, " ");
+
+// No source field at all means SEC -- that's every row until the backend
+// change deploys.
+const isPressRelease = (filing: FilingItem | null | undefined): boolean =>
+  !!filing && NEWSWIRE_SOURCES.has(normalizeSource(filing.source));
+
+// The badge text: "SEC" for SEC EDGAR, otherwise the source as the backend
+// sent it (the wire's own name). Empty when the row has no source, so today's
+// rows get no badge and the Filing Type cell is unchanged until the backend
+// actually reports a source.
+const getSourceBadgeLabel = (filing: FilingItem): string => {
+  const source = toTrimmedString(filing.source);
+  if (!source) return "";
+  return normalizeSource(source) === "SEC EDGAR" ? "SEC" : source;
+};
+
+// Server-side, like alert_state: the backend's `source` param takes one of
+// these values. Omitted entirely for "all", so an unfiltered request is
+// byte-identical to what it was before this param existed.
+const SOURCE_ALL = "all";
+const SOURCE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: SOURCE_ALL, label: "All" },
+  { value: "sec", label: "SEC filings" },
+  { value: "newswire", label: "Press releases" },
+];
+
+const sourceLabel = (value: string): string =>
+  SOURCE_OPTIONS.find((option) => option.value === value)?.label || value;
+
+// SEC forms offered in the type dropdown beside the search bar, sent verbatim
+// as the backend's `form_type` param -- so these are the exact strings it
+// stores, spaces included ("DEF 14A", "SCHEDULE 13D/A"). The same forms
+// PROXY_STATUS_BY_FORM and the Filing Category buckets already cover.
+const SEC_FORM_TYPE_OPTIONS = [
+  "SCHEDULE 13D",
+  "SCHEDULE 13D/A",
+  "PREC14A",
+  "DEFC14A",
+  "DFAN14A",
+  "PRRN14A",
+  "DEFN14A",
+  "PRE 14A",
+  "DEF 14A",
+  "DEFA14A",
+  "PRE 14C",
+  "DEF 14C",
+];
+
+// The dropdown is one control over two server-side params, so its value
+// encodes which one it sets: "all", "source:<source>" or "form:<form type>".
+// A form type implies SEC, so picking one resets source to all rather than
+// sending both.
+const TYPE_ALL = "all";
+
+const toTypeValue = (source: string, formType: string): string =>
+  formType ? `form:${formType}` : source !== SOURCE_ALL ? `source:${source}` : TYPE_ALL;
+
+// Anything not in the closed lists reads as "all", never passed through.
+const parseTypeValue = (value: string): { source: string; formType: string } => {
+  if (value.startsWith("form:")) {
+    const formType = value.slice("form:".length);
+    return { source: SOURCE_ALL, formType: SEC_FORM_TYPE_OPTIONS.includes(formType) ? formType : "" };
+  }
+  if (value.startsWith("source:")) {
+    const source = value.slice("source:".length);
+    return { source: SOURCE_OPTIONS.some((o) => o.value === source) ? source : SOURCE_ALL, formType: "" };
+  }
+  return { source: SOURCE_ALL, formType: "" };
+};
+
+// The single read of `details`. Every field is independently optional: a
+// missing one is left out of the preview rather than rendered as a blank.
+type PressReleaseDetails = {
+  headline: string;
+  initiatingParty: string;
+  formalProxyContest: boolean | null;
+  keyDemands: string[];
+  summary: string;
+  secMatch: { formType: string; filedAt: string; filingUrl: string } | null;
+};
+
+// initiating_party_type arrives lower-case ("activist", "target company",
+// "third party"); shown with its first letter capitalised.
+const capitalizeFirst = (value: string): string => (value ? value.charAt(0).toUpperCase() + value.slice(1) : "");
+
+// Accepts a real boolean, and "yes"/"no"/"true"/"false" in case the flag
+// arrives as text. Anything else is unknown (null), shown as "-", never
+// guessed as No.
+const toYesNo = (value: unknown): boolean | null => {
+  if (typeof value === "boolean") return value;
+  const text = toTrimmedString(value).toLowerCase();
+  if (text === "yes" || text === "true") return true;
+  if (text === "no" || text === "false") return false;
+  return null;
+};
+
+const getPressReleaseDetails = (filing: FilingItem): PressReleaseDetails => {
+  const details = filing.details && typeof filing.details === "object" ? filing.details : {};
+  const rawDemands = details.key_demands;
+  const demandList = Array.isArray(rawDemands) ? rawDemands : rawDemands ? [rawDemands] : [];
+  // sec_match is on every press-release row: {"text": "no", "verdict": "no"}
+  // when nothing matched. It counts as a match only when verdict is "yes" AND
+  // it names a form type.
+  const rawSecMatch = details.sec_match && typeof details.sec_match === "object" ? details.sec_match : null;
+  const secMatchFormType = toTrimmedString(rawSecMatch?.form_type);
+  const isSecMatch = toTrimmedString(rawSecMatch?.verdict).toLowerCase() === "yes" && !!secMatchFormType;
+
+  return {
+    headline: toTrimmedString(details.headline),
+    initiatingParty: capitalizeFirst(toTrimmedString(details.initiating_party_type)),
+    formalProxyContest: toYesNo(details.is_formal_proxy_contest),
+    keyDemands: demandList.map(toTrimmedString).filter(Boolean),
+    summary: toTrimmedString(details.one_line_summary),
+    secMatch: isSecMatch
+      ? {
+          formType: secMatchFormType,
+          filedAt: toTrimmedString(rawSecMatch.filed_at),
+          filingUrl: toTrimmedString(rawSecMatch.filing_url),
+        }
+      : null,
+  };
+};
 
 
 const formatDateOnly = (value: any): string => {
@@ -280,20 +441,27 @@ const DateRangeFilterPanel = ({
   </div>
 );
 
-// Alert Status filter. Same container treatment as DateRangeFilterPanel above
-// so it reads as one of the filter panels, but a native single-select rather
-// than the checkbox lists, because alert_state accepts exactly one value.
-const AlertStateFilterPanel = ({
+// Alert Status and Source filters. Same container treatment as
+// DateRangeFilterPanel above so they read as filter panels, but a native
+// single-select rather than the checkbox lists, because alert_state and source
+// each accept exactly one value.
+const SingleSelectFilterPanel = ({
+  label,
+  icon,
+  options,
   draft,
   onDraftChange,
 }: {
+  label: string;
+  icon: AppIconName;
+  options: Array<{ value: string; label: string }>;
   draft: string;
   onDraftChange: (value: string) => void;
 }) => (
   <div className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
     <div className="flex items-center gap-2 text-slate-600 font-semibold mb-3">
-      <Lucide icon="BellRing" className="w-4 h-4 text-slate-400" />
-      Alert Status
+      <Lucide icon={icon} className="w-4 h-4 text-slate-400" />
+      {label}
     </div>
 
     <select
@@ -301,7 +469,7 @@ const AlertStateFilterPanel = ({
       onChange={(e) => onDraftChange(e.target.value)}
       className="w-full text-sm border border-slate-300 rounded-md px-2.5 py-1.5 bg-white focus:border-primary focus:outline-none"
     >
-      {ALERT_STATE_OPTIONS.map((option) => (
+      {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
         </option>
@@ -420,6 +588,82 @@ const SolicitationSection: React.FC<{ title: string; text: string }> = ({ title,
   </div>
 );
 
+// Press-release preview body. Everything comes from the row itself (filer =
+// the activist, company/ticker = the target, `details` for the rest), so it
+// needs no preview fetch. The Item 2 / Item 4, solicitation and Exhibits
+// blocks are SEC-document concepts and are never rendered here.
+const PressReleasePreview: React.FC<{ filing: FilingItem }> = ({ filing }) => {
+  const details = getPressReleaseDetails(filing);
+  const target = toTrimmedString(filing.company_name);
+  const ticker = toTrimmedString(filing.ticker);
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.02em" };
+  const valueStyle: React.CSSProperties = { fontSize: 13.5, color: "#111827", lineHeight: 1.5 };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "8px 16px", alignItems: "baseline" }}>
+        <span style={labelStyle}>Activist → Target</span>
+        <span style={valueStyle}>
+          {toTrimmedString(filing.filer) || "-"} → {target || "-"}
+          {ticker ? ` (${ticker})` : ""}
+        </span>
+
+        <span style={labelStyle}>Initiating party</span>
+        <span style={valueStyle}>{details.initiatingParty || "-"}</span>
+
+        <span style={labelStyle}>Formal proxy contest</span>
+        <span style={valueStyle}>
+          {details.formalProxyContest === null ? "-" : details.formalProxyContest ? "Yes" : "No"}
+        </span>
+      </div>
+
+      {details.keyDemands.length > 0 && (
+        <div>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>Key demands</h3>
+          <ul style={{ margin: 0, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 4, listStyleType: "disc" }}>
+            {details.keyDemands.map((demand, i) => (
+              <li key={i} style={{ fontSize: 13.5, color: "#374151", lineHeight: 1.6 }}>
+                {demand}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {details.summary && (
+        <div>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>Summary</h3>
+          <p style={{ fontSize: 13.5, color: "#374151", lineHeight: 1.7, maxWidth: "70ch", margin: 0, whiteSpace: "pre-wrap" }}>
+            {details.summary}
+          </p>
+        </div>
+      )}
+
+      {details.secMatch && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13, color: "#374151" }}>
+          <Lucide icon="FileText" className="w-4 h-4 shrink-0 text-slate-400" />
+          <span>
+            <strong>Also filed with the SEC:</strong>{" "}
+            {details.secMatch.filingUrl ? (
+              <a
+                href={details.secMatch.filingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: THEME_MAROON, textDecoration: "underline" }}
+              >
+                {details.secMatch.formType}
+              </a>
+            ) : (
+              details.secMatch.formType
+            )}
+            {details.secMatch.filedAt ? ` on ${formatDateOnly(details.secMatch.filedAt)}` : ""}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function ActivistCampaigns() {
   const [loading, setLoading] = useState(false);
   const [filings, setFilings] = useState<FilingItem[]>([]);
@@ -431,6 +675,10 @@ function ActivistCampaigns() {
   const [selectedFilers, setSelectedFilers] = useState<string[]>([]);
   const [selectedFilingCategories, setSelectedFilingCategories] = useState<string[]>([]);
   const [selectedAlertState, setSelectedAlertState] = useState<string>(ALERT_STATE_ALL);
+  const [selectedSource, setSelectedSource] = useState<string>(SOURCE_ALL);
+  // Set only from the type dropdown beside the search bar; no draft, because
+  // that dropdown applies immediately rather than through the Filter popover.
+  const [selectedFormType, setSelectedFormType] = useState("");
   // searchInput is what's in the box; appliedSearch is what the loaded rows
   // actually reflect. Kept apart so the debounce below can tell "the user is
   // still typing" from "this is already the query on screen", and so every
@@ -445,6 +693,7 @@ function ActivistCampaigns() {
   const [draftFilers, setDraftFilers] = useState<string[]>([]);
   const [draftFilingCategories, setDraftFilingCategories] = useState<string[]>([]);
   const [draftAlertState, setDraftAlertState] = useState<string>(ALERT_STATE_ALL);
+  const [draftSource, setDraftSource] = useState<string>(SOURCE_ALL);
   const [draftDateFrom, setDraftDateFrom] = useState("");
   const [draftDateTo, setDraftDateTo] = useState("");
 
@@ -493,7 +742,7 @@ function ActivistCampaigns() {
   // Server-side pagination + date filtering, per the backend contract --
   // never fetch everything and paginate/filter dates in the browser, since
   // this table will hold thousands of rows.
-  const fetchFilings = useCallback(async (targetPage: number, dateFrom: string, dateTo: string, alertState: string = ALERT_STATE_ALL, search: string = "") => {
+  const fetchFilings = useCallback(async (targetPage: number, dateFrom: string, dateTo: string, alertState: string = ALERT_STATE_ALL, search: string = "", source: string = SOURCE_ALL, formType: string = "") => {
     setLoading(true);
     try {
       const response = await dashboardService.getActivistCampaignFilings({
@@ -513,6 +762,12 @@ function ActivistCampaigns() {
           alertState && alertState !== ALERT_STATE_ALL && ALERT_STATE_OPTIONS.some((o) => o.value === alertState)
             ? alertState
             : undefined,
+        // Same treatment as alert_state: omitted for "all", and only ever one
+        // of the closed list.
+        source:
+          source && source !== SOURCE_ALL && SOURCE_OPTIONS.some((o) => o.value === source) ? source : undefined,
+        // Likewise omitted unless it's one of the listed forms.
+        form_type: formType && SEC_FORM_TYPE_OPTIONS.includes(formType) ? formType : undefined,
       });
       const list = response?.filings || response?.results || response?.data || [];
       const results = Array.isArray(list) ? list : [];
@@ -547,7 +802,7 @@ function ActivistCampaigns() {
     const timer = setTimeout(() => {
       setAppliedSearch(trimmed);
       setPage(1);
-      fetchFilings(1, selectedDateFrom, selectedDateTo, selectedAlertState, trimmed);
+      fetchFilings(1, selectedDateFrom, selectedDateTo, selectedAlertState, trimmed, selectedSource, selectedFormType);
     }, 400);
 
     return () => clearTimeout(timer);
@@ -556,7 +811,19 @@ function ActivistCampaigns() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    fetchFilings(newPage, selectedDateFrom, selectedDateTo, selectedAlertState, appliedSearch);
+    fetchFilings(newPage, selectedDateFrom, selectedDateTo, selectedAlertState, appliedSearch, selectedSource, selectedFormType);
+  };
+
+  // The type dropdown beside the search bar. Applies at once, like the search
+  // box, and writes the same source state the Filter popover's Source panel
+  // edits, so the two can never disagree.
+  const handleTypeChange = (value: string) => {
+    const { source, formType } = parseTypeValue(value);
+    setSelectedSource(source);
+    setDraftSource(source);
+    setSelectedFormType(formType);
+    setPage(1);
+    fetchFilings(1, selectedDateFrom, selectedDateTo, selectedAlertState, appliedSearch, source, formType);
   };
 
   // ─── Excel upload dropzone — mirrors src/components/UploadFile/index.tsx's
@@ -630,8 +897,9 @@ function ActivistCampaigns() {
       if (selectedTickers.length > 0 && !selectedTickers.includes(ticker)) return false;
       if (selectedFilers.length > 0 && !selectedFilers.includes(filer)) return false;
       if (selectedFilingCategories.length > 0 && !selectedFilingCategories.includes(filingCategory)) return false;
-      // Alert Status is deliberately absent here: it's applied by the backend
-      // via alert_state, across every page, not just the one in memory.
+      // Alert Status and Source are deliberately absent here: they're applied
+      // by the backend (alert_state / source), across every page, not just the
+      // one in memory.
 
       return true;
     });
@@ -643,6 +911,8 @@ function ActivistCampaigns() {
     selectedFilers.length +
     selectedFilingCategories.length +
     (selectedAlertState !== ALERT_STATE_ALL ? 1 : 0) +
+    (selectedSource !== SOURCE_ALL ? 1 : 0) +
+    (selectedFormType ? 1 : 0) +
     (selectedDateFrom ? 1 : 0) +
     (selectedDateTo ? 1 : 0);
 
@@ -652,9 +922,10 @@ function ActivistCampaigns() {
     setDraftFilers(selectedFilers);
     setDraftFilingCategories(selectedFilingCategories);
     setDraftAlertState(selectedAlertState);
+    setDraftSource(selectedSource);
     setDraftDateFrom(selectedDateFrom);
     setDraftDateTo(selectedDateTo);
-  }, [selectedStatuses, selectedTickers, selectedFilers, selectedFilingCategories, selectedAlertState, selectedDateFrom, selectedDateTo]);
+  }, [selectedStatuses, selectedTickers, selectedFilers, selectedFilingCategories, selectedAlertState, selectedSource, selectedDateFrom, selectedDateTo]);
 
   const applyFilters = useCallback(
     (close?: () => void) => {
@@ -663,17 +934,24 @@ function ActivistCampaigns() {
       setSelectedFilers(draftFilers);
       setSelectedFilingCategories(draftFilingCategories);
       setSelectedAlertState(draftAlertState);
+      setSelectedSource(draftSource);
+      // A press release has no SEC form type, so choosing Press releases here
+      // drops a form type picked in the dropdown rather than sending a
+      // combination that can only ever come back empty.
+      const nextFormType = draftSource === "newswire" ? "" : selectedFormType;
+      setSelectedFormType(nextFormType);
       setSelectedDateFrom(draftDateFrom);
       setSelectedDateTo(draftDateTo);
       setPage(1);
-      // date_from/date_to and alert_state are server-side and genuinely need
-      // this refetch; the rest just re-narrow whatever page is already loaded.
-      // Still safe/cheap to always refetch page 1 here since Apply is an
-      // explicit, infrequent action, not something firing on every keystroke.
-      fetchFilings(1, draftDateFrom, draftDateTo, draftAlertState, appliedSearch);
+      // date_from/date_to, alert_state and source are server-side and
+      // genuinely need this refetch; the rest just re-narrow whatever page is
+      // already loaded. Still safe/cheap to always refetch page 1 here since
+      // Apply is an explicit, infrequent action, not something firing on every
+      // keystroke.
+      fetchFilings(1, draftDateFrom, draftDateTo, draftAlertState, appliedSearch, draftSource, nextFormType);
       close?.();
     },
-    [draftStatuses, draftTickers, draftFilers, draftFilingCategories, draftAlertState, draftDateFrom, draftDateTo, appliedSearch, fetchFilings]
+    [draftStatuses, draftTickers, draftFilers, draftFilingCategories, draftAlertState, draftSource, draftDateFrom, draftDateTo, appliedSearch, selectedFormType, fetchFilings]
   );
 
   const clearFilters = useCallback(
@@ -683,6 +961,7 @@ function ActivistCampaigns() {
       setDraftFilers([]);
       setDraftFilingCategories([]);
       setDraftAlertState(ALERT_STATE_ALL);
+      setDraftSource(SOURCE_ALL);
       setDraftDateFrom("");
       setDraftDateTo("");
       setSelectedStatuses([]);
@@ -690,6 +969,11 @@ function ActivistCampaigns() {
       setSelectedFilers([]);
       setSelectedFilingCategories([]);
       setSelectedAlertState(ALERT_STATE_ALL);
+      setSelectedSource(SOURCE_ALL);
+      // Cleared along with Source: the dropdown is one view of both, so
+      // leaving the form type behind would leave it showing a filter the
+      // popover just said it cleared.
+      setSelectedFormType("");
       setSelectedDateFrom("");
       setSelectedDateTo("");
       setPage(1);
@@ -732,23 +1016,37 @@ function ActivistCampaigns() {
         setSelectedAlertState(ALERT_STATE_ALL);
         setDraftAlertState(ALERT_STATE_ALL);
         setPage(1);
-        fetchFilings(1, selectedDateFrom, selectedDateTo, ALERT_STATE_ALL, appliedSearch);
+        fetchFilings(1, selectedDateFrom, selectedDateTo, ALERT_STATE_ALL, appliedSearch, selectedSource, selectedFormType);
+        return;
+      }
+      if (removeKey === "source") {
+        // Server-side, same as alert_state above.
+        setSelectedSource(SOURCE_ALL);
+        setDraftSource(SOURCE_ALL);
+        setPage(1);
+        fetchFilings(1, selectedDateFrom, selectedDateTo, selectedAlertState, appliedSearch, SOURCE_ALL, selectedFormType);
+        return;
+      }
+      if (removeKey === "form_type") {
+        setSelectedFormType("");
+        setPage(1);
+        fetchFilings(1, selectedDateFrom, selectedDateTo, selectedAlertState, appliedSearch, selectedSource, "");
         return;
       }
       if (removeKey === "date_from") {
         setSelectedDateFrom("");
         setDraftDateFrom("");
         setPage(1);
-        // Carries the current alert_state and search through: dropping a date
-        // chip must not silently drop the other two along with it.
-        fetchFilings(1, "", selectedDateTo, selectedAlertState, appliedSearch);
+        // Carries the current alert_state, search and source through:
+        // dropping a date chip must not silently drop the others with it.
+        fetchFilings(1, "", selectedDateTo, selectedAlertState, appliedSearch, selectedSource, selectedFormType);
         return;
       }
       if (removeKey === "date_to") {
         setSelectedDateTo("");
         setDraftDateTo("");
         setPage(1);
-        fetchFilings(1, selectedDateFrom, "", selectedAlertState, appliedSearch);
+        fetchFilings(1, selectedDateFrom, "", selectedAlertState, appliedSearch, selectedSource, selectedFormType);
         return;
       }
       if (removeKey.startsWith("selected_filing_")) {
@@ -768,7 +1066,7 @@ function ActivistCampaigns() {
         });
       }
     },
-    [fetchFilings, selectedDateFrom, selectedDateTo, selectedAlertState, appliedSearch]
+    [fetchFilings, selectedDateFrom, selectedDateTo, selectedAlertState, appliedSearch, selectedSource, selectedFormType]
   );
 
   const openEditModal = (filing: FilingItem) => {
@@ -1007,6 +1305,13 @@ function ActivistCampaigns() {
     setPreviewFiling(filing);
     setPreviewData(null);
     setPreviewError(null);
+    // A press release's preview is built entirely from the row (see
+    // PressReleasePreview), so it doesn't call the SEC preview endpoint,
+    // which exists to extract text from an SEC document.
+    if (isPressRelease(filing)) {
+      setPreviewLoading(false);
+      return;
+    }
     setPreviewLoading(true);
     try {
       const data = await dashboardService.getActivistCampaignFilingPreview(filing.id);
@@ -1034,6 +1339,9 @@ function ActivistCampaigns() {
     : null;
   const previewHeaderFiling = previewData?.filing || currentPreviewFiling;
   const previewSecUrl = previewData?.sec_url || currentPreviewFiling?.filing_url || "";
+  const previewIsPressRelease = isPressRelease(currentPreviewFiling);
+  const previewPressDetails =
+    previewIsPressRelease && currentPreviewFiling ? getPressReleaseDetails(currentPreviewFiling) : null;
 
   const handleUpload = async () => {
     if (!uploadFile || isUploading) return;
@@ -1181,6 +1489,30 @@ function ActivistCampaigns() {
                   )}
                 </div>
 
+                {/* One click to press releases, all SEC filings, or a single
+                    SEC form. Server-side (source / form_type), so it narrows
+                    every page, not just the one loaded. */}
+                <select
+                  value={toTypeValue(selectedSource, selectedFormType)}
+                  onChange={(e) => handleTypeChange(e.target.value)}
+                  title="Show press releases, SEC filings, or one SEC form"
+                  className="text-sm border border-slate-300 rounded-md px-2.5 py-2 bg-white focus:border-primary focus:outline-none"
+                >
+                  <option value={TYPE_ALL}>All types</option>
+                  {SOURCE_OPTIONS.filter((option) => option.value !== SOURCE_ALL).map((option) => (
+                    <option key={option.value} value={`source:${option.value}`}>
+                      {option.label}
+                    </option>
+                  ))}
+                  <optgroup label="SEC form">
+                    {SEC_FORM_TYPE_OPTIONS.map((formType) => (
+                      <option key={formType} value={`form:${formType}`}>
+                        {formType}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+
                 <Popover className="inline-block">
                 {({ close }) => (
                   <>
@@ -1256,7 +1588,22 @@ function ActivistCampaigns() {
                             from the loaded rows, so "Held by filter" stays
                             selectable on a page where nothing happens to be
                             held -- which is exactly when it's needed. */}
-                        <AlertStateFilterPanel draft={draftAlertState} onDraftChange={setDraftAlertState} />
+                        <SingleSelectFilterPanel
+                          label="Alert Status"
+                          icon="BellRing"
+                          options={ALERT_STATE_OPTIONS}
+                          draft={draftAlertState}
+                          onDraftChange={setDraftAlertState}
+                        />
+                        {/* Server-side for the same reason as Alert Status:
+                            press releases are scattered through every page. */}
+                        <SingleSelectFilterPanel
+                          label="Source"
+                          icon="Radio"
+                          options={SOURCE_OPTIONS}
+                          draft={draftSource}
+                          onDraftChange={setDraftSource}
+                        />
                         <DateRangeFilterPanel
                           draftFrom={draftDateFrom}
                           draftTo={draftDateTo}
@@ -1313,6 +1660,8 @@ function ActivistCampaigns() {
                     ...(selectedAlertState !== ALERT_STATE_ALL
                       ? [{ key: "alert_state", value: alertStateLabel(selectedAlertState) }]
                       : []),
+                    ...(selectedSource !== SOURCE_ALL ? [{ key: "source", value: sourceLabel(selectedSource) }] : []),
+                    ...(selectedFormType ? [{ key: "form_type", value: selectedFormType }] : []),
                     ...(selectedDateFrom ? [{ key: "date_from", value: selectedDateFrom }] : []),
                     ...(selectedDateTo ? [{ key: "date_to", value: selectedDateTo }] : []),
                   ]}
@@ -1376,7 +1725,12 @@ function ActivistCampaigns() {
                         <span className="text-sm font-medium text-slate-700">{filing.company_name || "-"}</span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{filing.subject_cik || "-"}</span>
+                        {/* Press releases have no CIK -- blank for them, like
+                            Filer CIK below, rather than a dash that reads like
+                            a value we failed to load. SEC rows keep their "-". */}
+                        <span className="text-sm text-slate-600">
+                          {filing.subject_cik || (isPressRelease(filing) ? "" : "-")}
+                        </span>
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <span className="text-sm text-slate-600">{filing.ticker || "-"}</span>
@@ -1417,6 +1771,23 @@ function ActivistCampaigns() {
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         <span className="text-sm text-slate-600">{filing.form_type || "-"}</span>
+                        {/* Source badge, under the form type rather than in a
+                            column of its own. Only rendered once the backend
+                            reports a source, so until then this cell is exactly
+                            what it was. Violet for press releases -- a colour
+                            nothing else on this page uses -- and the same
+                            neutral slate as the other quiet chips for SEC. */}
+                        {getSourceBadgeLabel(filing) && (
+                          <div className="mt-1">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                isPressRelease(filing) ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
+                              {getSourceBadgeLabel(filing)}
+                            </span>
+                          </div>
+                        )}
                       </StandardizedTable.Cell>
                       <StandardizedTable.Cell>
                         {/* Blank for every form the mapping doesn't cover (all
@@ -1473,12 +1844,12 @@ function ActivistCampaigns() {
                             style={{ accentColor: THEME_MAROON }}
                           />
                           {isFilingHeld(filing) && (
-                            // Two labels off one condition: isFilingHeld decides
-                            // WHETHER a chip shows (unchanged), the rule id
-                            // decides WHICH. Both stay neutral slate -- neither
-                            // is a failure, and colouring one of them would read
-                            // as severity that isn't there. They differ by label
-                            // and icon only.
+                            // Several labels off one condition: isFilingHeld
+                            // decides WHETHER a chip shows (unchanged), the rule
+                            // id decides WHICH (getHeldChip). All stay neutral
+                            // slate -- none is a failure, and colouring one of
+                            // them would read as severity that isn't there. They
+                            // differ by label and icon only.
                             //
                             // The tooltip is untouched: the backend's own
                             // sentence, verbatim, on both kinds; no title at all
@@ -1492,11 +1863,8 @@ function ActivistCampaigns() {
                               title={toTrimmedString(filing.alert_suppressed_reason) || undefined}
                               className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600"
                             >
-                              <Lucide
-                                icon={isGateSuppressed(filing) ? "MinusCircle" : "PauseCircle"}
-                                className="w-3 h-3 shrink-0"
-                              />
-                              {isGateSuppressed(filing) ? "Not a campaign" : "Held by filter"}
+                              <Lucide icon={getHeldChip(filing).icon} className="w-3 h-3 shrink-0" />
+                              {getHeldChip(filing).label}
                             </span>
                           )}
                         </div>
@@ -1506,7 +1874,7 @@ function ActivistCampaigns() {
                           <button
                             type="button"
                             onClick={() => openPreview(filing)}
-                            title="Preview filing"
+                            title={isPressRelease(filing) ? "Preview press release" : "Preview filing"}
                             style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, padding: 4 }}
                           >
                             <Lucide icon="Eye" className="w-4 h-4" />
@@ -1635,17 +2003,33 @@ function ActivistCampaigns() {
             style={{ background: "white", borderRadius: 12, width: "100%", maxWidth: 720, maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
           >
             <div style={{ padding: "20px 24px", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-              <div>
-                <h2 style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 600, color: "#111827" }}>
-                  {previewHeaderFiling?.company_name || "-"}
-                </h2>
-                <div style={{ fontSize: 13, color: "#6b7280", display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-                  <span><strong>Filer:</strong> {previewHeaderFiling?.filer || "-"}</span>
-                  <span><strong>Form Type:</strong> {previewHeaderFiling?.form_type || "-"}</span>
-                  <span><strong>Filed:</strong> {formatDateOnly(previewHeaderFiling?.filed_at) || "-"}</span>
-                  <span><strong>Ticker:</strong> {previewHeaderFiling?.ticker || "-"}</span>
+              {previewPressDetails ? (
+                // Press release: the headline is the title (the target's name
+                // if none came through), then the wire and the release date.
+                <div>
+                  <h2 style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 600, color: "#111827", lineHeight: 1.4 }}>
+                    {previewPressDetails.headline || currentPreviewFiling.company_name || "-"}
+                  </h2>
+                  <div style={{ fontSize: 13, color: "#6b7280", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 10px" }}>
+                    <span className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold bg-violet-100 text-violet-700">
+                      {getSourceBadgeLabel(currentPreviewFiling)}
+                    </span>
+                    <span>{formatDateOnly(currentPreviewFiling.filed_at) || "-"}</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <h2 style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 600, color: "#111827" }}>
+                    {previewHeaderFiling?.company_name || "-"}
+                  </h2>
+                  <div style={{ fontSize: 13, color: "#6b7280", display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+                    <span><strong>Filer:</strong> {previewHeaderFiling?.filer || "-"}</span>
+                    <span><strong>Form Type:</strong> {previewHeaderFiling?.form_type || "-"}</span>
+                    <span><strong>Filed:</strong> {formatDateOnly(previewHeaderFiling?.filed_at) || "-"}</span>
+                    <span><strong>Ticker:</strong> {previewHeaderFiling?.ticker || "-"}</span>
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={closePreview}
@@ -1656,7 +2040,14 @@ function ActivistCampaigns() {
             </div>
 
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-              {previewLoading && (
+              {/* Press releases never fetch. The SEC branches below (Item 2 /
+                  Item 4, solicitation, document text, Exhibits) are also gated
+                  on the row not being one, so a slow SEC preview that lands
+                  after the modal has moved on to a press release can't render
+                  under it. Always true for SEC rows. */}
+              {previewIsPressRelease && <PressReleasePreview filing={currentPreviewFiling} />}
+
+              {!previewIsPressRelease && previewLoading && (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "32px 0", color: "#6b7280" }}>
                   <div style={{ width: 16, height: 16, border: "2px solid #e5e7eb", borderTopColor: THEME_MAROON, borderRadius: "50%", animation: "acp-spin 0.8s linear infinite" }} />
                   <span style={{ fontSize: 13.5 }}>Loading filing preview…</span>
@@ -1664,13 +2055,13 @@ function ActivistCampaigns() {
                 </div>
               )}
 
-              {!previewLoading && previewError && (
+              {!previewIsPressRelease && !previewLoading && previewError && (
                 <div style={{ padding: "12px 14px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6, color: "#b91c1c", fontSize: 13.5 }}>
                   {previewError}
                 </div>
               )}
 
-              {!previewLoading && !previewError && previewData && (
+              {!previewIsPressRelease && !previewLoading && !previewError && previewData && (
                 <>
                   {previewData.unavailable_reason ? (
                     <div style={{ padding: "12px 14px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 6, color: "#92400e", fontSize: 13.5 }}>
@@ -1818,7 +2209,21 @@ function ActivistCampaigns() {
             </div>
 
             <div style={{ padding: "16px 24px", borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              {previewSecUrl ? (
+              {previewIsPressRelease ? (
+                currentPreviewFiling.filing_url ? (
+                  <a
+                    href={currentPreviewFiling.filing_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: 13.5, fontWeight: 600, color: THEME_MAROON, display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    Read the full release
+                    <Lucide icon="ExternalLink" className="w-3.5 h-3.5" />
+                  </a>
+                ) : (
+                  <span />
+                )
+              ) : previewSecUrl ? (
                 <a
                   href={previewSecUrl}
                   target="_blank"
