@@ -148,6 +148,31 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
   const [top20Loaded, setTop20Loaded] = useState(false);
   const [isProxyContestYear, setIsProxyContestYear] = useState(false);
 
+  // When the company changes via global search, the "meeting_date" URL param
+  // still holds the PREVIOUS company's date for a brief moment (until
+  // MeetingYearSelector resolves the new company's dates asynchronously).
+  // Without this guard, the data-loading effect below fires immediately with
+  // the new company id + stale meeting_date, the API returns an empty report
+  // for that mismatched combination, and the "Not Found" empty state flashes
+  // before the correct data arrives. Clearing the stale date (and flagging
+  // the transition) prevents that premature fetch/flash.
+  const prevCompanyIdRef = useRef(companyGlobalSearchId);
+  const [companyTransitioning, setCompanyTransitioning] = useState(false);
+
+  useEffect(() => {
+    if (prevCompanyIdRef.current === companyGlobalSearchId) return;
+    prevCompanyIdRef.current = companyGlobalSearchId;
+
+    if (searchParams.get("meeting_date")) {
+      setCompanyTransitioning(true);
+      setSearchParams((previousParams) => {
+        const params = new URLSearchParams(previousParams);
+        params.delete("meeting_date");
+        return params;
+      });
+    }
+  }, [companyGlobalSearchId, searchParams, setSearchParams]);
+
   // Keep the view locked to the prop when a specific sub-tab is selected via the sidebar.
   useEffect(() => {
     if (view) {
@@ -179,9 +204,20 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
 
         const match = entries.find((item: any) => String(item?.year) === String(yearTicker));
         if (!cancelled) setIsProxyContestYear(!!match?.proxy_contest);
+
+        // Safety net: if this company genuinely has no meeting dates,
+        // MeetingYearSelector will never populate "meeting_date" in the URL,
+        // so the company-switch transition flag above would otherwise stay
+        // stuck forever. End it here so the "Not Found" state can show.
+        if (!cancelled && entries.length === 0) {
+          setCompanyTransitioning(false);
+        }
       } catch (error) {
         console.warn("Failed to determine proxy contest status:", error);
-        if (!cancelled) setIsProxyContestYear(false);
+        if (!cancelled) {
+          setIsProxyContestYear(false);
+          setCompanyTransitioning(false);
+        }
       }
     };
 
@@ -347,6 +383,11 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
     if (!companyGlobalSearchId || !meetingDate) return;
 
     console.log('📊 Loading data for:', companyGlobalSearchId, meetingDate, 'tab:', tab);
+
+    // meetingDate is guaranteed to belong to the current company at this point
+    // (stale dates are cleared by the company-switch effect above), so it's
+    // safe to end the transition state now.
+    setCompanyTransitioning(false);
 
     // Always load top-20 data so we can decide whether to show the tab
     loadTop20Data();
@@ -643,7 +684,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
 
                   <div className={activeVdsView === "voting-data" ? "block" : "hidden"}>
                   <TableWrapper
-                    isLoading={vdsProxyLoading}
+                    isLoading={vdsProxyLoading || companyTransitioning}
                     rows={8}
                     columns={vdsProxyDetails?.vds_report_headers?.length || 8}
                   >
@@ -934,7 +975,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
 
                   <div className={activeVdsView === "voting-data" ? "block" : "hidden"}>
                   <TableWrapper
-                    isLoading={vdsProxyAllInvestorLoading}
+                    isLoading={vdsProxyAllInvestorLoading || companyTransitioning}
                     rows={8}
                     columns={vdsProxyAllInvestorDetails?.vds_report_headers?.length || 8}
                   >
