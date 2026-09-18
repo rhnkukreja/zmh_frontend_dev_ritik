@@ -52,11 +52,14 @@ const loadInstitutionOptions = async () => {
   if (!institutionOptionsRequest) {
     institutionOptionsRequest = (async () => {
       let data: any;
+      // Only id/institution are actually used for this dropdown — ask the
+      // backend to slim the payload down instead of returning full records.
+      const url = `${baseURL}/institute/?institution_type=investor&all=true&fields=id,institution`;
       try {
-        const res1 = await axiosInstance.get(`${baseURL}/institute/?institution_type=investor&all=true`);
+        const res1 = await axiosInstance.get(url);
         data = res1.data;
       } catch (e) {
-        const res2 = await fetch(`${baseURL}/institute/?institution_type=investor&all=true`);
+        const res2 = await fetch(url);
         data = await res2.json();
       }
 
@@ -181,12 +184,11 @@ const GetWhatsNew = ({
     setActiveTab(0);
   };
 
-  useEffect(() => {
-    fetchInstitutions();
-  }, []);
-
+  // Lazy-load: only fetch the institution list (and email alerts) once the
+  // modal is actually opened, instead of on every dashboard mount.
   useEffect(() => {
     if (whatsNewFormVisible) {
+      fetchInstitutions();
       fetchEmailAlerts();
       setEditingAlert(null);
       setFormMode('create');

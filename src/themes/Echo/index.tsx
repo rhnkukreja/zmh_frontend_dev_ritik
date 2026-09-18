@@ -1706,10 +1706,14 @@ function Main() {
                 switchAccount={switchAccount}
                 setSwitchAccount={setSwitchAccount}
               />
-              <NotificationAlert
+              {/* NotificationAlert ("What's New") is hidden — nothing in the current
+                  UI opens it, but it was still mounted here and firing a GET to
+                  /whatsnew/ on every dashboard load. Keeping the component and its
+                  state around (unused) in case this feature is revisited later. */}
+              {/* <NotificationAlert
                 notificationModalVisible={notificationModalVisible}
                 setNotificationModalVisible={setNotificationModalVisible}
-              />
+              /> */}
               {/* END: Notification & User Menu */}
             </div>
           </div>
