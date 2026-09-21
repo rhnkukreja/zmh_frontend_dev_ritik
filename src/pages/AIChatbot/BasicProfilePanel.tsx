@@ -351,6 +351,27 @@ const entityLabel = (entity: any, index: number): string =>
   entity?.entity_name || entity?.entity || entity?.name || entity?.filer ||
   entity?.investor_name || `Entity ${index + 1}`;
 
+// Placeholders older combined profiles stored in place of an entity's missing
+// text. Read as empty so the block drops rather than showing the stub.
+const EMPTY_TEXT_PLACEHOLDERS = [
+  "(WhaleWisdom has no text on file for this entity.)",
+  "(No description text is on file for this entity.)",
+];
+const cleanText = (text: any): string => {
+  const trimmed = typeof text === "string" ? text.trim() : "";
+  return EMPTY_TEXT_PLACEHOLDERS.includes(trimmed) ? "" : trimmed;
+};
+
+// Duplicate check for overview sub-sections: stored profiles often carry the
+// same paragraph in summary and business_description. Case, whitespace and
+// trailing punctuation don't count as a difference; empty is never a duplicate.
+const isSameText = (a: any, b: any): boolean => {
+  const norm = (t: any) =>
+    cleanText(t).replace(/\s+/g, " ").toLowerCase().replace(/[\s.,;:!?]+$/, "");
+  const na = norm(a);
+  return !!na && na === norm(b);
+};
+
 const entityBrochureUrl = (entity: any): string =>
   entity?.adv_brochure_url_manual || entity?.adv_brochure_url || entity?.brochure_url || "";
 
@@ -753,12 +774,18 @@ const OverviewSection = ({
   const entityOverviews = isEditMode
     ? []
     : getPerEntity(section)
-        .map((entity, i) => ({
-          label: entityLabel(entity, i),
-          summary: entity?.ai_enriched_summary || entity?.summary || "",
-          business: entity?.business_description || "",
-          strategy: entity?.investment_strategy || "",
-        }))
+        .map((entity, i) => {
+          const summary = cleanText(entity?.ai_enriched_summary) || cleanText(entity?.summary);
+          const business = cleanText(entity?.business_description);
+          const strategy = cleanText(entity?.investment_strategy);
+          return {
+            label: entityLabel(entity, i),
+            summary,
+            // Hide a sub-section that only repeats text already shown above it.
+            business: isSameText(business, summary) ? "" : business,
+            strategy: isSameText(strategy, summary) || isSameText(strategy, business) ? "" : strategy,
+          };
+        })
         .filter((e) => e.summary || e.business || e.strategy);
 
   if (entityOverviews.length > 0) {
@@ -826,6 +853,31 @@ const OverviewSection = ({
         <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
           {renderTextAsBullets(bodyText) || <p className="text-slate-500 m-0">No overview text available.</p>}
         </div>
+      )}
+
+      {/* business_description is the brochure's own text, separate from the
+          summary. Hidden in read mode when it only repeats the overview above
+          (older profiles stored the same paragraph in both fields). */}
+      {isEditMode ? (
+        <div className="mt-4">
+          <h4 className="text-sm font-bold text-slate-800 mb-2">Business Description</h4>
+          <textarea
+            value={section.business_description || ""}
+            onChange={(e) => onChange({ ...section, business_description: e.target.value })}
+            rows={5}
+            placeholder="Business description…"
+            className="w-full text-base leading-relaxed text-slate-700 bg-white p-4 rounded-md border border-slate-300 focus:border-red-800 focus:outline-none resize-y"
+          />
+        </div>
+      ) : (
+        cleanText(section.business_description) && !isSameText(section.business_description, bodyText) && (
+          <div className="mt-4">
+            <h4 className="text-sm font-bold text-slate-800 mb-2">Business Description</h4>
+            <div className="text-slate-600 text-base leading-relaxed bg-slate-50 p-4 rounded-md border border-slate-100">
+              {renderTextAsBullets(cleanText(section.business_description))}
+            </div>
+          </div>
+        )
       )}
 
       {/* investment_strategy is a genuinely separate field from summary
