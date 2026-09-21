@@ -12,6 +12,7 @@ import { Dialog } from "@/components/Base/Headless";
 import { caseStudiesService } from "@/services/caseStudies";
 import { toast } from "react-toastify";
 import Tippy from "@/components/Base/Tippy";
+import CaseStudyText from "@/components/CaseStudyText";
 
 const DetailCaseStudies = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -194,14 +195,7 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Engagement/Voting Details
                   </h3>
-                  {singleCaseStudy.engagement_details.split('\n').map((paragraph, index) => (
-                    // Only render the paragraph if it's not an empty string
-                    paragraph.trim() !== '' && (
-                      <p key={index} className="mb-3 text-justify">
-                        {paragraph}
-                      </p>
-                    )
-                  ))}
+                  <CaseStudyText text={singleCaseStudy.engagement_details} />
                 </div>
               )}
             </div>
@@ -212,13 +206,13 @@ const DetailCaseStudies = () => {
                   <h3 className="font-semibold min-w-[150px] mb-2">
                     Rationale
                   </h3>
-                  <p className="whitespace-pre-line text-justify">{singleCaseStudy?.voting_rationale}</p>
+                  <CaseStudyText text={singleCaseStudy?.voting_rationale} />
                 </div>
               )}
               {singleCaseStudy?.voting_details && (
                 <div>
                   <h3 className="font-semibold min-w-[150px] mb-2">Details</h3>
-                  <p className="whitespace-pre-line text-justify">{singleCaseStudy?.voting_details}</p>
+                  <CaseStudyText text={singleCaseStudy?.voting_details} />
                 </div>
               )}
             </div>

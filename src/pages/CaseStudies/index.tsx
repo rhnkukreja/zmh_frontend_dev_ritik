@@ -35,6 +35,7 @@ import { toast } from "react-toastify";
 import CompanySelect from "@/components/ReactSelectAsync";
 import { modifyRoute } from "@/stores/themeSlice";
 import AddNewCaseStudies from "./Components/AddEditCaseStudies";
+import CaseStudyText from "@/components/CaseStudyText";
 import { setInstitution } from "@/stores/dashboardSlice";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
 import useCaseStudyDropdowns from "@/hooks/useGetCaseStudiesDropdownValues";
@@ -1400,18 +1401,32 @@ function CaseStudies() {
                           <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
                             <FaBuilding size={12} /> Background & Details
                           </h4>
-                          <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                            {selectedCaseStudies?.engagement_details || 'No details available.'}
-                          </p>
+                          {selectedCaseStudies?.engagement_details ? (
+                            <CaseStudyText
+                              text={selectedCaseStudies.engagement_details}
+                              className="text-slate-600 leading-relaxed"
+                            />
+                          ) : (
+                            <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                              No details available.
+                            </p>
+                          )}
                         </div>
 
                         <div>
                           <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
                             <FaHandshake size={12} /> Engagement/Voting Summary
                           </h4>
-                          <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                            {selectedCaseStudies?.voting_details || 'No voting details available.'}
-                          </p>
+                          {selectedCaseStudies?.voting_details ? (
+                            <CaseStudyText
+                              text={selectedCaseStudies.voting_details}
+                              className="text-slate-600 leading-relaxed"
+                            />
+                          ) : (
+                            <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                              No voting details available.
+                            </p>
+                          )}
                         </div>
 
                         <div>
@@ -1429,9 +1444,16 @@ function CaseStudies() {
                                 Vote: {selectedCaseStudies?.vote || 'Pending'}
                               </span>
                             </div>
-                            <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-lg border border-slate-100 italic">
-                              {selectedCaseStudies?.voting_rationale || 'No rationale provided.'}
-                            </p>
+                            {selectedCaseStudies?.voting_rationale ? (
+                              <CaseStudyText
+                                text={selectedCaseStudies.voting_rationale}
+                                className="text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100 italic"
+                              />
+                            ) : (
+                              <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-lg border border-slate-100 italic">
+                                No rationale provided.
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>

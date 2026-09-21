@@ -3,6 +3,7 @@ import axios from "axios";
 import { AI_CHATBOT_API_BASE } from "@/pages/AIChatbot/api";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
+import CaseStudyText from "@/components/CaseStudyText";
 import { caseStudiesService } from "@/services/caseStudies";
 
 interface ExtractedCaseStudy {
@@ -110,59 +111,8 @@ const POLL_INTERVAL_MS = 6000;
 // being validated — full history can be enabled once this is trusted.
 const GENERATION_YEARS = [2025, 2026];
 
-// ─── Prose formatting ───────────────────────────────────────────────────────
-// The same component renders two differently-shaped bodies, and both have to
-// come out right:
-//
-//   legacy rows   paragraphs separated by a blank line, few or no single
-//                 newlines within a paragraph
-//   PDF-extracted a newline at the end of every VISUAL line, because that's
-//                 what text extraction preserves
-//
-// Splitting on every "\n" (what this did before) happens to work for the first
-// and breaks the second badly: one sentence becomes three margined paragraphs.
-// So a blank line is a paragraph break, and a lone newline is a soft wrap to be
-// rejoined -- the same rule sec_13d_monitor.py's preview formatter applies to
-// SEC filing text.
-
-// A line that begins a list item is a genuine break, not a wrap, and must not
-// be folded into the sentence above it: a bullet, or a number/letter marker
-// ("1.", "1)", "(1)", "a.").
-//
-// The letter form is restricted to lowercase on purpose. Uppercase would match
-// the initial in a personal name ("J. Smith...") landing at the start of a
-// wrapped line, which is plausible in this material and would split a sentence
-// for no reason.
-const LIST_ITEM_START = /^(?:[•\-–—*]|\(?\d+[.)]|\(?[a-z][.)])\s+/;
-
-// Blank-line-separated paragraphs. Within each, wrapped lines are rejoined with
-// a single space, while list items keep their own line (the retained "\n" is
-// rendered by whitespace-pre-line on the <p>). Empty paragraphs are dropped,
-// same as before.
-const toParagraphs = (text: string): string[] =>
-  text
-    .split(/\n\s*\n/)
-    .map((block) =>
-      block
-        .split("\n")
-        .reduce<string[]>((lines, rawLine) => {
-          const line = rawLine.trim();
-          if (!line) return lines;
-          if (lines.length === 0 || LIST_ITEM_START.test(line)) {
-            lines.push(line);
-          } else {
-            lines[lines.length - 1] += ` ${line}`;
-          }
-          return lines;
-        }, [])
-        .join("\n")
-        // Collapses the runs of spaces that joining can produce (a line ending
-        // in a space, then joined to the next). Deliberately not \s, so the
-        // list-item newlines above survive.
-        .replace(/[ \t]+/g, " ")
-        .trim()
-    )
-    .filter((block) => block.length > 0);
+// Prose formatting (paragraphs, soft wraps, headings) lives in the shared
+// CaseStudyText component, so this preview and the saved page render alike.
 
 // ─── Approve payload ────────────────────────────────────────────────────────
 // Mirrors AddEditCaseStudies.tsx's onSubmit transformedData shape exactly:
@@ -546,6 +496,10 @@ const CaseStudyDetailCard: React.FC<{
   const vote = normalizeExtractedValue(e.vote);
   const votingRationale = normalizeExtractedValue(e.voting_rationale);
   const votingDetails = normalizeExtractedValue(e.voting_details);
+  // The document's institution is the real one (the approve payload uses its
+  // id); the extractor's value is often the literal "N/A", which is truthy.
+  const institution =
+    normalizeExtractedValue(document.institution_name) ?? normalizeExtractedValue(e.institution);
   return (
     <div className="p-6 bg-white border rounded-lg space-y-4">
       <div className="pb-3 border-b border-slate-200 flex items-start justify-between gap-4">
@@ -576,10 +530,12 @@ const CaseStudyDetailCard: React.FC<{
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <h3 className="font-semibold mb-2 text-sm">Institution</h3>
-          <p>{e.institution || document.institution_name}</p>
-        </div>
+        {institution && (
+          <div>
+            <h3 className="font-semibold mb-2 text-sm">Institution</h3>
+            <p>{institution}</p>
+          </div>
+        )}
         {e.theme && (
           <div>
             <h3 className="font-semibold mb-2 text-sm">Theme</h3>
@@ -644,13 +600,7 @@ const CaseStudyDetailCard: React.FC<{
         <div>
           <h3 className="font-semibold mb-2 text-sm">Engagement/Voting Details</h3>
           {cs.engagement_details_verbatim === false && <NonVerbatimWarning />}
-          {/* whitespace-pre-line so the newlines toParagraphs deliberately kept
-              -- list-item breaks, nothing else -- render as line breaks. */}
-          {toParagraphs(e.engagement_details).map((paragraph, idx) => (
-            <p key={idx} className="mb-3 text-justify whitespace-pre-line">
-              {paragraph}
-            </p>
-          ))}
+          <CaseStudyText text={e.engagement_details} />
         </div>
       )}
 
@@ -668,11 +618,7 @@ const CaseStudyDetailCard: React.FC<{
           {/* Only ever true for a "quoted" rationale: an ai_written one is not
               checked against the source, so its flag is null, not false. */}
           {cs.voting_rationale_verbatim === false && <NonVerbatimWarning />}
-          {toParagraphs(votingRationale).map((paragraph, idx) => (
-            <p key={idx} className="mb-3 text-justify whitespace-pre-line">
-              {paragraph}
-            </p>
-          ))}
+          <CaseStudyText text={votingRationale} />
         </div>
       )}
 
@@ -680,11 +626,7 @@ const CaseStudyDetailCard: React.FC<{
         <div>
           <h3 className="font-semibold mb-2 text-sm">Details</h3>
           {cs.voting_details_verbatim === false && <NonVerbatimWarning />}
-          {toParagraphs(votingDetails).map((paragraph, idx) => (
-            <p key={idx} className="mb-3 text-justify whitespace-pre-line">
-              {paragraph}
-            </p>
-          ))}
+          <CaseStudyText text={votingDetails} />
         </div>
       )}
 
