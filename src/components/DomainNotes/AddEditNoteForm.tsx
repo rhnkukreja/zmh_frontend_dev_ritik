@@ -42,6 +42,21 @@ interface SelectedNoteData {
   company_name?: string;
 }
 
+const getCompanyId = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => Number(note?.company || note?.company_id || fallback?.company_id || 0);
+
+const getInstitutionId = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => Number(note?.institution || note?.institution_id || fallback?.institution_id || 0);
+
+const getInstitutionDisplayName = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => note?.institution_name || note?.investor_name || fallback?.institution_name || "";
+
 const NoteForm: React.FC<NoteFormProps> = ({
   initialData,
   onSubmit,
@@ -67,12 +82,25 @@ const NoteForm: React.FC<NoteFormProps> = ({
   const [showInsDropdown, setInsShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const today = new Date().toISOString().split("T")[0];
-  
-  // Format date to YYYY-MM-DD format
-  const formatDate = (dateString: string) => {
+
+  const formatDate = (dateString?: string) => {
     if (!dateString) return today;
-    const date = new Date(dateString);
-    return date.toISOString().split("T")[0];
+
+    const normalizedDate = String(dateString).trim();
+    const datePartMatch = normalizedDate.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (datePartMatch) {
+      return datePartMatch[1];
+    }
+
+    const parsedDate = new Date(normalizedDate);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return today;
+    }
+
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(parsedDate.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
   const isLoading = useSelector(
     (state: { domainNotes: { loadingCompanyDropdown: boolean } }) =>
@@ -109,27 +137,31 @@ const NoteForm: React.FC<NoteFormProps> = ({
     return () => clearTimeout(debounce);
   }, [institutionsSearchTerm, dispatch]);
 
-  // Initialize selectedData when editing a note
   useEffect(() => {
-    if (mode === "edit" && initialData && noteModule) {
-      console.log("Initializing edit form with:", initialData);
-      setSelectedData({
-        company:
-          isCorporateUser && corporateCompanyId
-            ? corporateCompanyId
-            : initialData.company || 0,
-        institution: initialData.institution || 0,
-        investor_name: initialData.investor_name || "",
-      });
-      setSearchTerm(initialData.company_name || "");
-      setInstitutionsSearchTerm(initialData.investor_name || "");
-    }
+    if (mode !== "edit" || !initialData) return;
+
+    setSelectedData({
+      company:
+        isCorporateUser && corporateCompanyId
+          ? corporateCompanyId
+          : getCompanyId(initialData, data),
+      institution: getInstitutionId(initialData, data),
+      investor_name: getInstitutionDisplayName(initialData, data),
+      company_name: initialData.company_name || data?.company_name || "",
+    });
+    setSearchTerm(initialData.company_name || data?.company_name || "");
+    setInstitutionsSearchTerm(
+      initialData.institution_name || initialData.investor_name || data?.institution_name || ""
+    );
   }, [
     mode,
     initialData,
-    noteModule,
     isCorporateUser,
     corporateCompanyId,
+    data?.company_id,
+    data?.company_name,
+    data?.institution_id,
+    data?.institution_name,
     setSelectedData,
   ]);
 
@@ -149,36 +181,54 @@ const NoteForm: React.FC<NoteFormProps> = ({
     setSelectedData,
   ]);
 
+  const getFormValues = (): Partial<DomainNote> =>
+    mode === "add"
+      ? {
+          attendees: "",
+          notes: "",
+          date: today,
+          category: "",
+          company:
+            isCorporateUser && corporateCompanyId
+              ? corporateCompanyId
+              : data?.company_id || 0,
+          institution: data?.institution_id || null,
+          investor_name: data?.institution_name || "",
+          company_name: data?.company_name || "",
+          shared: Boolean(initialData?.shared),
+        }
+      : {
+          attendees: initialData?.attendees || "",
+          notes: initialData?.notes || "",
+          date: formatDate(initialData?.date),
+          category: initialData?.category || "",
+          company:
+            isCorporateUser && corporateCompanyId
+              ? corporateCompanyId
+              : getCompanyId(initialData, data),
+          institution: getInstitutionId(initialData, data) || null,
+          investor_name: getInstitutionDisplayName(initialData, data),
+          company_name: initialData?.company_name || data?.company_name || "",
+          shared: Boolean(initialData?.shared),
+        };
+
   const { control, handleSubmit, reset } = useForm<DomainNote>({
-    defaultValues:
-      mode === "add"
-        ? {
-            attendees: "",
-            notes: "",
-            date: today,
-            category: "Shareholder Engagement",
-            company:
-              isCorporateUser && corporateCompanyId
-                ? corporateCompanyId
-                : data?.company_id || 0,
-            institution: data?.institution_id || null,
-            investor_name: data?.institution_name || "",
-            shared: Boolean(initialData?.shared),
-          }
-        : {
-            attendees: initialData?.attendees || "",
-            notes: initialData?.notes || "",
-            date: formatDate(initialData?.date) || today,
-            category: initialData?.category || "",
-            company:
-              isCorporateUser && corporateCompanyId
-                ? corporateCompanyId
-                : data?.company_id || 0,
-            institution: data?.institution_id || null,
-            investor_name: data?.institution_name || "",
-            shared: Boolean(initialData?.shared),
-          },
+    defaultValues: getFormValues(),
   });
+
+  useEffect(() => {
+    reset(getFormValues());
+  }, [
+    mode,
+    initialData,
+    data?.company_id,
+    data?.company_name,
+    data?.institution_id,
+    data?.institution_name,
+    isCorporateUser,
+    corporateCompanyId,
+    reset,
+  ]);
   const fieldsToRender =
     mode === "add" ? ["attendees", "notes", "date", "category"] : fieldsToEdit;
   const handleSelect = (id: number, name: string, from: string) => {
@@ -193,7 +243,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
     } else {
       setSearchTerm(name);
       setShowDropdown(false);
-      setSelectedData({ ...selectedData, company: id });
+      setSelectedData({ ...selectedData, company: id, company_name: name });
     }
   };
   useEffect(() => {
@@ -218,7 +268,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Company
           </label>
-          {noteModule ? (
+          {noteModule || mode === "edit" ? (
             <>
               <FormInput
                 ref={inputRef}
@@ -276,7 +326,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Institution
           </label>
-          {noteModule ? (
+          {noteModule || mode === "edit" ? (
             <>
               <FormInput
                 ref={inputRef}

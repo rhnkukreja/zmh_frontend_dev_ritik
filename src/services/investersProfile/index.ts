@@ -102,10 +102,21 @@ class InvestersProfileService {
 
   public async downloadInvestersProfiles(
     profileIds: number[],
-    format: "pdf" | "document"
+    format: "pdf" | "document",
+    companyId?: number
   ) {
-    const endpoint = `/api/download_multiple_investor_profiles/?profile_ids=[${profileIds.join(",")} ]&format_type=${format}`.replace(/\s+/g, "");
-    return axiosInstance.get(endpoint, { responseType: "blob" });
+    const params = new URLSearchParams();
+    params.append("profile_ids", `[${profileIds.join(",")}]`);
+    params.append("format_type", format);
+
+    if (companyId) {
+      params.append("company_id", String(companyId));
+    }
+
+    return axiosInstance.get(
+      `/api/download_multiple_investor_profiles/?${params.toString()}`,
+      { responseType: "blob" }
+    );
   }
 
   public async deleteInvestersProfile(id: number): Promise<any> {

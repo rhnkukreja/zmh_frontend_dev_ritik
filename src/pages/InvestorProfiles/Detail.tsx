@@ -158,10 +158,12 @@ function Main() {
   const [isDownloadingProfile, setIsDownloadingProfile] = useState(false);
   const [isViewNotesModalOpen, setIsViewNotesModalOpen] = useState(false);
   const [isInstitutionNotesLoading, setIsInstitutionNotesLoading] = useState(false);
-  const [hasInstitutionNotes, setHasInstitutionNotes] = useState(false);
+  const [hasInvestorProfileNotes, setHasInvestorProfileNotes] = useState(false);
   const [institutionNotesHierarchy, setInstitutionNotesHierarchy] = useState<InstitutionHierarchyItem[]>([]);
   const [selectedInstitutionNoteCompany, setSelectedInstitutionNoteCompany] = useState("");
   const [institutionNoteSearch, setInstitutionNoteSearch] = useState("");
+  const [investorProfileCompanyNotes, setInvestorProfileCompanyNotes] = useState<DomainNote[]>([]);
+  const [activeViewNotesTab, setActiveViewNotesTab] = useState<"company" | "all">("company");
   const [isContactEmailModalOpen, setIsContactEmailModalOpen] = useState(false);
   const [isDeleteContactEmailModalOpen, setIsDeleteContactEmailModalOpen] = useState(false);
   const [contactEmailDraft, setContactEmailDraft] = useState("");
@@ -172,8 +174,16 @@ function Main() {
   const { handleBack } = useNavigationHistory();
   const isAdminOrAnalyst = user?.user_type === "Analyst" || user?.user_type === "Admin";
   const isClientUser = user?.user_type === "Client";
+  const { companyGlobalSearchId } = useAppSelector(
+    (state: RootState) => state.authentiction
+  );
   const institutionDisplayName =
     singleInvesterProfile?.institution_name || singleInvesterProfile?.institution || "";
+  const investorProfileInstitutionId = Number(
+    singleInvesterProfile?.institution_id ?? singleInvesterProfile?.institution ?? 0
+  );
+  const investorProfileCompanyName = investorProfileCompanyNotes[0]?.company_name || "";
+  const investorProfileNotesTabsEnabled = false;
   const hasTeamContactDetails = Boolean(singleInvesterProfile?.contact_email);
   const hasKeyContacts = Boolean(singleInvesterProfile?.key_contacts?.length);
   const shouldShowContactsSidebar =
@@ -209,47 +219,79 @@ function Main() {
   useEffect(() => {
     let isMounted = true;
 
-    setHasInstitutionNotes(false);
+    setHasInvestorProfileNotes(false);
     setInstitutionNotesHierarchy([]);
+    setInvestorProfileCompanyNotes([]);
     setSelectedInstitutionNoteCompany("");
+    setInstitutionNoteSearch("");
+    setActiveViewNotesTab("company");
 
-    const checkInstitutionNotesAvailability = async () => {
-      if (params?.type !== "investor" || !institutionDisplayName) {
+    const preloadInvestorProfileNotes = async () => {
+      if (
+        params?.type !== "investor" ||
+        !investorProfileInstitutionId ||
+        !companyGlobalSearchId
+      ) {
         return;
       }
 
+      setIsInstitutionNotesLoading(true);
+
       try {
-        const response = await domainNotesService.getInstitutionNotesByName(
-          institutionDisplayName
+        const response = await domainNotesService.getCompanyInstitutionNotes(
+          companyGlobalSearchId,
+          investorProfileInstitutionId
         );
 
         if (!isMounted) return;
 
-        const results = response.results || [];
-        setHasInstitutionNotes(results.length > 0);
-        setInstitutionNotesHierarchy(results);
+        const companyNotesResults = Array.isArray(response?.results)
+          ? response.results
+          : [];
+
+        setInvestorProfileCompanyNotes(companyNotesResults);
+        setHasInvestorProfileNotes(companyNotesResults.length > 0);
       } catch (error) {
-        console.error("Institution notes availability error:", error);
+        console.error("Investor profile notes availability error:", error);
         if (isMounted) {
-          setHasInstitutionNotes(false);
-          setInstitutionNotesHierarchy([]);
-          setSelectedInstitutionNoteCompany("");
+          setHasInvestorProfileNotes(false);
+          setInvestorProfileCompanyNotes([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsInstitutionNotesLoading(false);
         }
       }
     };
 
-    checkInstitutionNotesAvailability();
+    preloadInvestorProfileNotes();
 
     return () => {
       isMounted = false;
     };
-  }, [institutionDisplayName, params?.type, singleInvesterProfile?.id]);
+  }, [companyGlobalSearchId, investorProfileInstitutionId, params?.type, singleInvesterProfile?.id]);
 
   const institutionNoteCompanies = useMemo(() => {
     const companyMap = new Map<string, DomainNote[]>();
+    const normalizedGlobalCompanyName = investorProfileCompanyName.trim().toLowerCase();
 
     institutionNotesHierarchy.forEach((item) => {
       Object.entries(item?.sub_heading || {}).forEach(([companyName, notes]) => {
+        const normalizedCompanyName = companyName.trim().toLowerCase();
+        const belongsToGlobalCompany = notes.some((note) => {
+          const noteCompanyId = Number(note.company_id ?? note.company ?? 0);
+          const noteCompanyName = (note.company_name || companyName).trim().toLowerCase();
+
+          return (
+            (companyGlobalSearchId && noteCompanyId === companyGlobalSearchId) ||
+            (!!normalizedGlobalCompanyName && noteCompanyName === normalizedGlobalCompanyName)
+          );
+        });
+
+        if (belongsToGlobalCompany) {
+          return;
+        }
+
         companyMap.set(companyName, [...(companyMap.get(companyName) || []), ...notes]);
       });
     });
@@ -258,7 +300,7 @@ function Main() {
       companyName,
       notes,
     }));
-  }, [institutionNotesHierarchy]);
+  }, [companyGlobalSearchId, institutionNotesHierarchy, investorProfileCompanyName]);
 
   const filteredInstitutionNoteCompanies = useMemo(() => {
     const normalizedSearch = institutionNoteSearch.trim().toLowerCase();
@@ -274,6 +316,8 @@ function Main() {
       (item) => item.companyName === selectedInstitutionNoteCompany
     )?.notes || [];
   }, [filteredInstitutionNoteCompanies, selectedInstitutionNoteCompany]);
+
+  const investorProfileCompanyNotesCount = investorProfileCompanyNotes.length;
 
   useEffect(() => {
     if (!filteredInstitutionNoteCompanies.length) {
@@ -471,7 +515,8 @@ function Main() {
       setIsDownloadingProfile(true);
       const response = await investersProfileService.downloadInvestersProfiles(
         [profileId],
-        "document"
+        "document",
+        companyGlobalSearchId
       );
       const blob = response.data as Blob;
       const disposition =
@@ -573,33 +618,14 @@ function Main() {
     }
   };
 
-  const handleOpenInstitutionNotes = async () => {
+  const handleOpenInstitutionNotes = () => {
     if (!institutionDisplayName) {
       toast.error("Institution name not found");
       return;
     }
 
-    try {
-      setIsViewNotesModalOpen(true);
-      setInstitutionNoteSearch("");
-      setIsInstitutionNotesLoading(true);
-      const response = await domainNotesService.getInstitutionNotesByName(
-        institutionDisplayName
-      );
-      setInstitutionNotesHierarchy(response.results || []);
-    } catch (error: any) {
-      console.error("Institution notes fetch error:", error);
-      if (shouldSuppressLocalErrorToast(error, "Failed to load notes")) return;
-      toast.error(error?.response?.data?.message || "Failed to load notes");
-      setInstitutionNotesHierarchy([]);
-    } finally {
-      setIsInstitutionNotesLoading(false);
-    }
+    setIsViewNotesModalOpen(true);
   };
-
-  const { companyGlobalSearchTicker } = useAppSelector(
-    (state: RootState) => state.authentiction
-  );
 
   const backToPreviousPage = () => {
     if (from === 'ownership') {
@@ -657,7 +683,7 @@ function Main() {
           </Button>
 
           <div className="mt-3 flex shrink-0 items-center gap-2 md:mt-0">
-            {params?.type === "investor" && institutionDisplayName && hasInstitutionNotes && (
+            {params?.type === "investor" && institutionDisplayName && hasInvestorProfileNotes && (
               <Button
                 onClick={handleOpenInstitutionNotes}
                 variant="danger"
@@ -1100,145 +1126,322 @@ function Main() {
             setIsViewNotesModalOpen(false);
           }}
         >
-          <Dialog.Panel className="relative flex h-[82vh] w-[95vw] max-w-[1180px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-            <button
-              type="button"
-              aria-label="Close notes modal"
-              className="absolute right-5 top-5 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:bg-slate-100 hover:text-slate-600"
-              onClick={() => setIsViewNotesModalOpen(false)}
-            >
-              <Lucide icon="X" className="h-5 w-5" />
-            </button>
-            <Dialog.Title>
-              <div className="px-6 py-5 pr-20">
-                <h2 className="text-lg font-semibold text-slate-800">
-                  Notes - {institutionDisplayName}
-                </h2>
-              </div>
-            </Dialog.Title>
-            <Dialog.Description className="min-h-0 flex-1 bg-slate-50 p-5">
-              <div className="flex h-full min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex w-[320px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/80">
-                  <div className="border-b border-slate-200 px-4 py-4">
-                    <div className="relative">
-                      <Lucide
-                        icon="Search"
-                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                      />
-                      <FormInput
-                        type="text"
-                        value={institutionNoteSearch}
-                        onChange={(e) => setInstitutionNoteSearch(e.target.value)}
-                        placeholder="Search companies"
-                        className="h-11 rounded-xl border-slate-200 bg-white pl-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-                    {isInstitutionNotesLoading ? (
-                      <div className="space-y-2 p-2">
-                        {Array.from({ length: 8 }).map((_, index) => (
-                          <div
-                            key={index}
-                            className="h-16 animate-pulse rounded-xl border border-slate-200 bg-white"
-                          />
-                        ))}
-                      </div>
-                    ) : filteredInstitutionNoteCompanies.length > 0 ? (
-                      filteredInstitutionNoteCompanies.map(({ companyName, notes }) => {
-                        const isActive = companyName === selectedInstitutionNoteCompany;
-
-                        return (
-                          <button
-                            key={companyName}
-                            type="button"
-                            onClick={() => setSelectedInstitutionNoteCompany(companyName)}
-                            className={clsx(
-                              "mb-2 w-full rounded-xl border px-4 py-3 text-left transition",
-                              isActive
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
-                            )}
-                          >
-                            <div className="min-w-0">
-                              <div className="text-sm font-semibold leading-5 text-slate-800">
-                                {companyName}
-                              </div>
-                              <div className="mt-1 text-xs text-slate-500">
-                                {notes.length} {notes.length === 1 ? "note" : "notes"}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <div className="flex h-full min-h-[240px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-5 text-center">
-                        <Lucide icon="FileText" className="mb-3 h-12 w-12 text-slate-300" />
-                        <div className="text-sm font-semibold text-slate-700">
-                          {institutionNoteSearch.trim() ? "No matching companies" : "No notes available"}
-                        </div>
-                        <div className="mt-1 text-xs leading-5 text-slate-500">
-                          {institutionNoteSearch.trim()
-                            ? "Try a different company name."
-                            : "There are no institution notes available for this profile."}
-                        </div>
-                      </div>
-                    )}
+          {investorProfileNotesTabsEnabled ? (
+            <Dialog.Panel className="relative flex h-[82vh] w-[95vw] max-w-[1180px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+              <button
+                type="button"
+                aria-label="Close notes modal"
+                className="absolute right-5 top-5 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:bg-slate-100 hover:text-slate-600"
+                onClick={() => setIsViewNotesModalOpen(false)}
+              >
+                <Lucide icon="X" className="h-5 w-5" />
+              </button>
+              <Dialog.Title>
+                <div className="border-b border-slate-200 bg-white px-6 py-5 pr-20">
+                  <h2 className="text-lg font-semibold text-slate-800">
+                    Notes - {institutionDisplayName}
+                  </h2>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveViewNotesTab("company")}
+                      className={clsx(
+                        "rounded-full border px-4 py-2 text-sm font-semibold transition",
+                        activeViewNotesTab === "company"
+                          ? "border-primary bg-primary text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-primary/30 hover:text-primary"
+                      )}
+                    >
+                      {investorProfileCompanyName}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveViewNotesTab("all")}
+                      className={clsx(
+                        "rounded-full border px-4 py-2 text-sm font-semibold transition",
+                        activeViewNotesTab === "all"
+                          ? "border-primary bg-primary text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-primary/30 hover:text-primary"
+                      )}
+                    >
+                      All
+                    </button>
                   </div>
                 </div>
-
-                <div className="min-h-0 flex-1 overflow-hidden bg-white">
-                  {isInstitutionNotesLoading ? (
-                    <div className="space-y-4 p-6">
-                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
-                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
-                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+              </Dialog.Title>
+              <Dialog.Description className="min-h-0 flex-1 bg-slate-50 p-5">
+                {activeViewNotesTab === "company" ? (
+                  <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                    <div className="border-b border-slate-200 bg-slate-50 px-6 pb-5 pt-8">
+                      <div className="min-w-0 pr-16">
+                        <h3 className="text-[18px] font-semibold tracking-[0.01em] text-slate-800 sm:text-[20px]">
+                          {investorProfileCompanyName}
+                        </h3>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-600 shadow-sm">
+                            {institutionDisplayName}
+                          </span>
+                          <span className="inline-flex items-center rounded-full border border-primary/15 bg-primary/[0.06] px-3 py-1 text-sm font-semibold text-primary shadow-sm">
+                            {investorProfileCompanyNotesCount} {investorProfileCompanyNotesCount === 1 ? "note" : "notes"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  ) : selectedInstitutionNoteCompany ? (
-                    <div className="flex h-full min-h-0 flex-col">
-                      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                        {selectedInstitutionCompanyNotes.length > 0 ? (
-                          selectedInstitutionCompanyNotes.map((item) => (
-                            <div key={item.id} className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm last:mb-0">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="min-w-0 flex-1 pr-2">
+
+                    <div className="min-h-0 flex-1 overflow-hidden bg-white">
+                      {isInstitutionNotesLoading ? (
+                        <div className="space-y-4 p-6">
+                          <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                          <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                          <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                        </div>
+                      ) : investorProfileCompanyNotes.length > 0 ? (
+                        <div className="flex h-full min-h-0 flex-col">
+                          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                            {investorProfileCompanyNotes.map((item) => (
+                              <div
+                                key={item.id}
+                                className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm last:mb-0"
+                              >
+                                <div>
                                   <div
                                     className="prose max-w-none text-sm leading-7 text-slate-700"
                                     dangerouslySetInnerHTML={{
                                       __html: DOMPurify.sanitize(decryptNotesText(item.notes)),
                                     }}
                                   />
-                                </div>
-                                <div className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-                                  {item.formatted_date || dayjs(item.date_updated || item.date).format("MMMM DD, YYYY")}
+                                  <div className="mt-4 flex justify-end">
+                                    <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                                      {item.created_by_name
+                                        ? `By ${item.created_by_name} • ${item.formatted_date || item.date_updated || item.date}`
+                                        : item.formatted_date || item.date_updated || item.date}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center text-slate-500">
+                          <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                          <div className="text-base font-semibold text-slate-600">No notes found</div>
+                          <div className="mt-1 text-sm text-slate-400">
+                            There are no notes available for this institution and company.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="flex w-[280px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/80">
+                      <div className="border-b border-slate-200 px-4 py-4">
+                        <div className="relative">
+                          <Lucide
+                            icon="Search"
+                            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                          />
+                          <FormInput
+                            type="text"
+                            value={institutionNoteSearch}
+                            onChange={(e) => setInstitutionNoteSearch(e.target.value)}
+                            placeholder="Search companies"
+                            className="h-11 rounded-xl border-slate-200 bg-white pl-10"
+                          />
+                        </div>
+                      </div>
+                      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+                        {isInstitutionNotesLoading ? (
+                          <div className="space-y-2 p-2">
+                            {Array.from({ length: 8 }).map((_, index) => (
+                              <div
+                                key={index}
+                                className="h-16 animate-pulse rounded-xl border border-slate-200 bg-white"
+                              />
+                            ))}
+                          </div>
+                        ) : filteredInstitutionNoteCompanies.length > 0 ? (
+                          filteredInstitutionNoteCompanies.map(({ companyName, notes }) => {
+                            const isActive = companyName === selectedInstitutionNoteCompany;
+
+                            return (
+                              <button
+                                key={companyName}
+                                type="button"
+                                onClick={() => setSelectedInstitutionNoteCompany(companyName)}
+                                className={clsx(
+                                  "mb-2 w-full rounded-xl border px-4 py-3 text-left transition",
+                                  isActive
+                                    ? "border-primary bg-primary/5 shadow-sm"
+                                    : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                                )}
+                              >
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold leading-5 text-slate-800">
+                                    {companyName}
+                                  </div>
+                                  <div className="mt-1 text-xs text-slate-500">
+                                    {notes.length} {notes.length === 1 ? "note" : "notes"}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })
                         ) : (
-                          <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 text-center">
-                            <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
-                            <div className="text-base font-semibold text-slate-600">No notes found</div>
-                            <div className="mt-1 text-sm text-slate-400">
-                              There are no notes for the selected company yet.
+                          <div className="flex h-full min-h-[240px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-white px-5 text-center">
+                            <Lucide icon="FileText" className="mb-3 h-12 w-12 text-slate-300" />
+                            <div className="text-sm font-semibold text-slate-700">
+                              {institutionNoteSearch.trim() ? "No matching companies" : "No notes found"}
+                            </div>
+                            <div className="mt-1 text-xs leading-5 text-slate-500">
+                              {institutionNoteSearch.trim()
+                                ? "Try a different company name."
+                                : "There are no notes available in the All tab."}
                             </div>
                           </div>
                         )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center text-slate-500">
-                      <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
-                      <div className="text-base font-semibold text-slate-600">Select a company</div>
-                      <div className="mt-1 text-sm text-slate-400">
-                        Choose a company from the left to review the institution notes.
+
+                    <div className="min-h-0 flex-1 overflow-hidden bg-white">
+                      {isInstitutionNotesLoading ? (
+                        <div className="space-y-4 p-6">
+                          <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                          <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                          <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                        </div>
+                      ) : selectedInstitutionNoteCompany ? (
+                        <div className="flex h-full min-h-0 flex-col">
+                          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                            {selectedInstitutionCompanyNotes.length > 0 ? (
+                              selectedInstitutionCompanyNotes.map((item) => (
+                                <div key={item.id} className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm last:mb-0">
+                                  <div>
+                                    <div
+                                      className="prose max-w-none text-sm leading-7 text-slate-700"
+                                      dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(decryptNotesText(item.notes)),
+                                      }}
+                                    />
+                                    <div className="mt-4 flex justify-end">
+                                      <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                                        {item.created_by_name
+                                          ? `By ${item.created_by_name} • ${item.formatted_date || dayjs(item.date_updated || item.date).format("MMMM DD, YYYY")}`
+                                          : item.formatted_date || dayjs(item.date_updated || item.date).format("MMMM DD, YYYY")}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-6 text-center">
+                                <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                                <div className="text-base font-semibold text-slate-600">No notes found</div>
+                                <div className="mt-1 text-sm text-slate-400">
+                                  There are no notes for the selected company yet.
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center text-slate-500">
+                          <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                          <div className="text-base font-semibold text-slate-600">No notes found</div>
+                          <div className="mt-1 text-sm text-slate-400">
+                            There are no companies with notes in the All tab.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Dialog.Description>
+            </Dialog.Panel>
+          ) : (
+            <Dialog.Panel className="relative flex h-[82vh] w-[95vw] max-w-[1180px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl">
+              <button
+                type="button"
+                aria-label="Close notes modal"
+                className="absolute right-6 top-6 z-20 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-300 shadow-md transition hover:bg-slate-50 hover:text-slate-500"
+                onClick={() => setIsViewNotesModalOpen(false)}
+              >
+                <Lucide icon="X" className="h-5 w-5" />
+              </button>
+              <Dialog.Title className="sr-only">
+                Investor profile notes for {institutionDisplayName}
+              </Dialog.Title>
+              <Dialog.Description className="min-h-0 flex-1 bg-slate-50/80 p-5">
+                <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b border-slate-200 bg-slate-50 px-6 pb-5 pt-8">
+                    <div className="min-w-0 pr-16">
+                      {investorProfileCompanyName ? (
+                        <h3 className="text-[18px] font-semibold tracking-[0.01em] text-slate-800 sm:text-[20px]">
+                          {investorProfileCompanyName}
+                        </h3>
+                      ) : (
+                        <div className="h-7 w-64 animate-pulse rounded-lg bg-slate-200" />
+                      )}
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-600 shadow-sm">
+                          {institutionDisplayName}
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-primary/15 bg-primary/[0.06] px-3 py-1 text-sm font-semibold text-primary shadow-sm">
+                          {investorProfileCompanyNotesCount} {investorProfileCompanyNotesCount === 1 ? "note" : "notes"}
+                        </span>
                       </div>
                     </div>
-                  )}
+                  </div>
+
+                  <div className="min-h-0 flex-1 overflow-hidden bg-white">
+                    {isInstitutionNotesLoading ? (
+                      <div className="space-y-4 p-6">
+                        <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                        <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                        <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                      </div>
+                    ) : investorProfileCompanyNotes.length > 0 ? (
+                      <div className="flex h-full min-h-0 flex-col">
+                        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                          {investorProfileCompanyNotes.map((item) => (
+                            <div
+                              key={item.id}
+                              className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm last:mb-0"
+                            >
+                              <div>
+                                <div
+                                  className="prose max-w-none text-sm leading-7 text-slate-700"
+                                  dangerouslySetInnerHTML={{
+                                    __html: DOMPurify.sanitize(decryptNotesText(item.notes)),
+                                  }}
+                                />
+                                <div className="mt-4 flex justify-end">
+                                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                                    {item.created_by_name
+                                      ? `By ${item.created_by_name} • ${item.formatted_date || item.date_updated || item.date}`
+                                      : item.formatted_date || item.date_updated || item.date}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center text-slate-500">
+                        <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                        <div className="text-base font-semibold text-slate-600">No notes found</div>
+                        <div className="mt-1 text-sm text-slate-400">
+                          There are no notes available for this institution and company.
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Dialog.Description>
-          </Dialog.Panel>
+              </Dialog.Description>
+            </Dialog.Panel>
+          )}
         </Dialog>
       )}
 
