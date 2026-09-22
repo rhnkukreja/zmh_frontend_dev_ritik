@@ -25,6 +25,7 @@ import InvestorOverview from "@/components/InvestorOverview";
 import VdsProxyVoting from "@/pages/VdsProxyVoting";
 import MeetingYearSelector from "@/pages/VdsProxyVoting/MeetingYearSelector";
 import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
+import MeetingDateSelector from "@/pages/VdsProxyVoting/MeetingDateSelector";
 import NPXPage from "@/pages/NPX";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
@@ -187,6 +188,14 @@ function Main() {
         ? Object.keys(agmYearlyData)
         : []
   ).sort((a: string, b: string) => Number(b) - Number(a));
+  // A company can hold more than one meeting in the same year (e.g. a special
+  // meeting plus the annual meeting), so the dropdown needs the individual
+  // (year, meeting_date) pairs rather than a deduped list of years.
+  const agmAvailableMeetingDates = Array.isArray(agmSummaryDetails?.total_meeting_date_years)
+    ? agmSummaryDetails.total_meeting_date_years
+        .filter((item: any) => item?.year && item?.meeting_date)
+        .map((item: any) => ({ year: String(item.year), date: String(item.meeting_date) }))
+    : [];
   const dashboardSelectedMeetingYear = searchParams.get("year") || agmAvailableYears[0];
   const dashboardMeetingDetails =
     agmYearlyData?.[dashboardSelectedMeetingYear] || agmSummaryDetails;
@@ -487,12 +496,14 @@ function Main() {
       //   );
       // }
 
-          // 4. Fetch Shareholder Meeting Results data
+          // 4. Fetch Shareholder Meeting Results data — company_id only,
+          // no meeting_date, defaults to the most recent meeting. Switching
+          // meetings afterwards is handled by AGMSummaryCard's own effect.
           dispatch(
             fetchAGMSummaryDashboard(
               createDynamicURL(
                 `${baseURL}/voting_report_8k/`,
-                { ticker: companyGlobalSearchTicker, include_all_years_data: "true" }
+                { company_id: companyGlobalSearchId }
               )
             )
           );
@@ -567,11 +578,18 @@ function Main() {
                 source={activeVotingSubTab === 'npx' ? "NPX" : "VDS"}
               />
             )}
-            {activeTab === 'shareholder-meeting-results' && shareholderMeetingView === 'separate' && agmAvailableYears.length > 0 && (
-              <YearSelector
-                years={agmAvailableYears}
-                label="Meeting Year"
-              />
+            {activeTab === 'shareholder-meeting-results' && shareholderMeetingView === 'separate' && (
+              agmAvailableMeetingDates.length > 0 ? (
+                <MeetingDateSelector
+                  options={agmAvailableMeetingDates}
+                  label="Meeting Year"
+                />
+              ) : agmAvailableYears.length > 0 ? (
+                <YearSelector
+                  years={agmAvailableYears}
+                  label="Meeting Year"
+                />
+              ) : null
             )}
             {activeTab === 'ownership' && ownershipView === 'separate' && dashboardDataList?.total_year?.length > 0 && (
               <YearSelector

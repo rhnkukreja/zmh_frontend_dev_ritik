@@ -28,11 +28,22 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
 
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
-  const lastRequestedTickerRef = useRef<string>("");
+  // Tracks `${companyId}:${meetingDate}` so a fetch fires again whenever
+  // either changes, not just once per company.
+  const lastRequestedKeyRef = useRef<string>("");
+
+  // "Year-on-Year Comparison" needs the old bulk multi-year payload. Fetched
+  // on demand (only when that tab is opened) and kept in local state instead
+  // of the shared agmSummaryDetails slice, so it never overwrites the
+  // single-meeting data the "Latest" tab relies on.
+  const [mergedYearsData, setMergedYearsData] = useState<any>(null);
+  const [mergedYearsLoading, setMergedYearsLoading] = useState<boolean>(false);
+  const mergedYearsRequestedForRef = useRef<string>("");
 
   const { finhub, companyGlobalSearchId } = useAppSelector((state) => state.authentiction);
   const shareholderMeetingView = searchParams.get("shareholder_meeting_view") === "all" ? "all" : "separate";
   const yearFromQuery = searchParams.get("year");
+  const meetingDateFromQuery = searchParams.get("meeting_date") || undefined;
   const [selectedYear, setSelectedYear] = useState<string>(yearFromQuery || "");
 
   const yearlyMeetingData = agmSummaryDetails?.meeting_details_yearly_data;
@@ -52,7 +63,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const selectedYearKey = selectedYear || yearFromQuery || latestYear;
   const selectedYearData = yearlyMeetingData?.[selectedYearKey] || agmSummaryDetails;
   const activeMeetingYear = selectedYearData?.Year?.toString() || selectedYearKey || latestYear;
-  const mergedMeetingData = agmSummaryDetails?.meeting_details_years_data;
+  const mergedMeetingData = mergedYearsData?.meeting_details_years_data;
   const displayMeetingData = shareholderMeetingView === "separate" ? selectedYearData : yearlyMeetingData?.[latestYear] || agmSummaryDetails;
 
   const companyDetails = displayMeetingData?.company?.[0] || null;
@@ -64,7 +75,9 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     setSelectedYear(yearFromQuery || "");
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
-    lastRequestedTickerRef.current = "";
+    lastRequestedKeyRef.current = "";
+    setMergedYearsData(null);
+    mergedYearsRequestedForRef.current = "";
   }, [yearFromQuery]);
 
   const prevTickerRef = useRef<string | null>(null);
@@ -75,30 +88,55 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   }, [companyGlobalSearchTicker, resetCompanyScopedState]);
 
+  // Fetch by company_id (+ meeting_date when a specific meeting is selected).
+  // Omitting meeting_date defaults to the most recent meeting. Re-fires
+  // whenever the company or the selected meeting_date changes — switching
+  // meetings now means a brand-new request, not a client-side slice of one
+  // bulk payload.
   useEffect(() => {
-    if (!companyGlobalSearchTicker || agmRequestStatus === "loading") return;
+    if (!companyGlobalSearchId || agmRequestStatus === "loading") return;
 
-    const alreadyHasData = Boolean(
-      agmSummaryDetails?.meeting_details_yearly_data ||
-      agmSummaryDetails?.Year ||
-      agmSummaryDetails?.company ||
-      availableYears.length > 0
-    );
+    const requestKey = `${companyGlobalSearchId}:${meetingDateFromQuery || ""}`;
+    if (lastRequestedKeyRef.current === requestKey) return;
 
-    if (alreadyHasData || lastRequestedTickerRef.current === companyGlobalSearchTicker) {
-      return;
-    }
-
-    lastRequestedTickerRef.current = companyGlobalSearchTicker;
+    lastRequestedKeyRef.current = requestKey;
     dispatch(
       fetchAGMSummaryDashboard(
         createDynamicURL(`${baseURL}/voting_report_8k/`, {
-          ticker: companyGlobalSearchTicker,
-          include_all_years_data: "true",
+          company_id: companyGlobalSearchId,
+          ...(meetingDateFromQuery ? { meeting_date: meetingDateFromQuery } : {}),
         })
       )
     );
-  }, [companyGlobalSearchTicker, agmSummaryDetails, agmRequestStatus, availableYears.length, dispatch]);
+  }, [companyGlobalSearchId, meetingDateFromQuery, agmRequestStatus, dispatch]);
+
+  // "Year-on-Year Comparison" tab — fetched on demand (once per company),
+  // using company_id + include_all_years_data, same as before, but kept out
+  // of the shared agmSummaryDetails slice.
+  useEffect(() => {
+    if (shareholderMeetingView !== "all" || !companyGlobalSearchId) return;
+    if (mergedYearsRequestedForRef.current === String(companyGlobalSearchId)) return;
+
+    mergedYearsRequestedForRef.current = String(companyGlobalSearchId);
+    setMergedYearsLoading(true);
+    dashboardService
+      .fetchAGMSummaryDashboard(
+        createDynamicURL(`${baseURL}/voting_report_8k/`, {
+          company_id: companyGlobalSearchId,
+          include_all_years_data: "true",
+        })
+      )
+      .then((response) => {
+        setMergedYearsData(response?.results ?? null);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch Year-on-Year comparison data:', error);
+        mergedYearsRequestedForRef.current = "";
+      })
+      .finally(() => {
+        setMergedYearsLoading(false);
+      });
+  }, [shareholderMeetingView, companyGlobalSearchId]);
 
   useEffect(() => {
     if (!selectedYear && latestYear) {
@@ -182,8 +220,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   useEffect(() => {
     setHasLoadingStarted(false);
     setHasNotifiedLoaded(false);
-    lastRequestedTickerRef.current = "";
-  }, [companyGlobalSearchTicker, yearFromQuery]);
+  }, [companyGlobalSearchTicker, meetingDateFromQuery]);
 
   useEffect(() => {
     if (loading) {
@@ -436,25 +473,26 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     }
   };
 
-  // Analytics API call
+  // Analytics API call — scoped by company_id (+ meeting_date when a
+  // specific meeting is selected; omitted it defaults to the most recent one).
   const fetchAnalyticsData = useCallback(async () => {
-    if (!companyGlobalSearchTicker) return;
+    if (!companyGlobalSearchId) return;
 
     try {
-      const response = await dashboardService.getVotingAnalytics(companyGlobalSearchTicker);
+      const response = await dashboardService.getVotingAnalytics(companyGlobalSearchId, meetingDateFromQuery);
       if (response.result?.analytics) {
         setAnalyticsData(response.result.analytics);
       }
     } catch (error) {
       console.error('Failed to fetch analytics data:', error);
     }
-  }, [companyGlobalSearchTicker]);
+  }, [companyGlobalSearchId, meetingDateFromQuery]);
 
   useEffect(() => {
-    if (companyGlobalSearchTicker) {
+    if (companyGlobalSearchId) {
       fetchAnalyticsData();
     }
-  }, [companyGlobalSearchTicker, fetchAnalyticsData]);
+  }, [companyGlobalSearchId, meetingDateFromQuery, fetchAnalyticsData]);
 
   // Download analytics handler
   const handleDownloadAnalytics = async () => {
@@ -649,9 +687,23 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   };
 
   const handleAGMYearTab = (tab: string) => {
+    // Switching years now needs a real meeting_date to refetch against (a
+    // year can have more than one meeting) — pick the most recent meeting
+    // for that year from total_meeting_date_years when available.
+    const meetingsForYear = Array.isArray(agmSummaryDetails?.total_meeting_date_years)
+      ? agmSummaryDetails.total_meeting_date_years.filter((item: any) => String(item?.year) === String(tab))
+      : [];
+    const latestForYear = meetingsForYear
+      .map((item: any) => String(item?.meeting_date || ""))
+      .filter(Boolean)
+      .sort((a: string, b: string) => (a < b ? 1 : a > b ? -1 : 0))[0];
+
     setSearchParams((previousParams) => {
       const params = new URLSearchParams(previousParams);
       params.set("year", tab);
+      if (latestForYear) {
+        params.set("meeting_date", latestForYear);
+      }
       return params;
     }, { replace: true });
   };
@@ -850,7 +902,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                 {shareholderMeetingView === "all" ? (
                   <>
                     <TableWrapper
-                      isLoading={loading}
+                      isLoading={loading || mergedYearsLoading}
                       rows={4}
                       columns={Math.max(mergedYearColumns.length + 1, 2)}
                     >
@@ -899,7 +951,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                     </TableWrapper>
                     <br />
                     <TableWrapper
-                      isLoading={loading}
+                      isLoading={loading || mergedYearsLoading}
                       rows={4}
                       columns={Math.max(mergedYearColumns.length + 1, 2)}
                     >
