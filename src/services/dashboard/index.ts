@@ -600,10 +600,15 @@ class DashboardService {
   //   };
   // }
 
-  public async getVotingAnalytics(ticker: string): Promise<{
+  public async getVotingAnalytics(companyId: string | number, meetingDate?: string): Promise<{
     result: any;
   }> {
-    const url = `${baseURL}/voting_report_8k/?ticker=${ticker}`;
+    // By default (no meeting_date) the backend returns the most recent
+    // meeting's data; passing meeting_date scopes it to a specific meeting
+    // (a company can hold more than one meeting in the same year).
+    const url = meetingDate
+      ? `${baseURL}/voting_report_8k/?company_id=${companyId}&meeting_date=${meetingDate}`
+      : `${baseURL}/voting_report_8k/?company_id=${companyId}`;
     const result = await this.fetchWithCache<any>(url);
     return {
       result,
