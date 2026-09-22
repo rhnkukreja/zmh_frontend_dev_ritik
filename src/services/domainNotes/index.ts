@@ -91,16 +91,75 @@ class DomainNotesService {
     };
   }
 
-  public async getCompanyHierarchyNotes(): Promise<{
+  public async getInstitutionNotesById(
+    institutionId: number,
+  ): Promise<{
     results: any[];
   }> {
-    const response = await axiosInstance.get(`/user/get_domain_notes/?filter=company`);
+    const response = await axiosInstance.get(
+      `/user/get_domain_notes/?filter=institution&institution_id=${institutionId}`
+    );
+    const results = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.results)
+        ? response.data.results
+        : [];
+
+    return {
+      results,
+    };
+  }
+
+  public async getCompanyHierarchyNotes(
+    companyName?: string,
+  ): Promise<{
+    results: any[];
+  }> {
+    const encodedCompanyName = companyName
+      ? `&company_name=${encodeURIComponent(JSON.stringify([companyName]))}`
+      : "";
+    const response = await axiosInstance.get(
+      `/user/get_domain_notes/?filter=company${encodedCompanyName}`
+    );
     const results = decryptNotesDeep(response.data);
     return {
       results,
     };
   }
 
+  public async getCompanyInstitutionNotes(
+    companyId: number,
+    institutionId: number,
+  ): Promise<{
+    results: DomainNote[];
+  }> {
+    const params = new URLSearchParams();
+    params.append("company_id", String(companyId));
+    params.append("institution_id", String(institutionId));
+
+    const response = await axiosInstance.get(
+      `/user/get_domain_notes/?${params.toString()}`
+    );
+    const rawResults = Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.results)
+        ? response.data.results
+        : [];
+
+    const flattenedResults = rawResults.flatMap((item: any) => {
+      if (item && typeof item === "object" && item.sub_heading && typeof item.sub_heading === "object") {
+        return Object.values(item.sub_heading).flatMap((notes) =>
+          Array.isArray(notes) ? notes : []
+        );
+      }
+
+      return item ? [item] : [];
+    });
+
+    return {
+      results: decryptNotesDeep(flattenedResults),
+    };
+  }
 
   public async domainNoteDropDownValuesByCompany(
     companyName: string,
@@ -143,6 +202,27 @@ class DomainNotesService {
     };
 
     const response = await axiosInstance.post(`/user/notes_comments/`, payload);
+    return {
+      results: response.data,
+    };
+  }
+
+  public async updateNoteComment(
+    id: number,
+    data: Partial<DomainNoteComment>
+  ): Promise<{
+    results: DomainNoteComment;
+  }> {
+    const response = await axiosInstance.put(`/user/notes_comments/${id}/`, data);
+    return {
+      results: response.data,
+    };
+  }
+
+  public async deleteNoteComment(id: number): Promise<{
+    results: unknown;
+  }> {
+    const response = await axiosInstance.delete(`/user/notes_comments/${id}/`);
     return {
       results: response.data,
     };

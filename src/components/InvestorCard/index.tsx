@@ -38,6 +38,7 @@ import {
 } from "react-router-dom";
 
 import { Fragment, useEffect, useMemo, useReducer, useState } from "react";
+import DOMPurify from "dompurify";
 
 import { createDynamicURL, downloadCSV } from "@/utils/helper";
 
@@ -50,9 +51,7 @@ import Lucide from "../Base/Lucide";
 import { Dialog, Tab } from "../Base/Headless";
 
 import TradingViewWidget from "../TradingViewWidget";
-import EngagementQuestionsDialog from "../EngagementQuestionsDialog";
 
-import AddNoteModal from "@/pages/Notes/AddNotesModal";
 import AddDomainNoteModal from "../DomainNotes/AddDomainNotesModal";
 
 import {
@@ -66,6 +65,9 @@ import FormCheck from "@/components/Base/Form/FormCheck";
 import { toast } from "react-toastify";
 import { scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
 import { MegaphoneOff, ChevronLeft, ChevronDown } from "lucide-react";
+import { domainNotesService } from "@/services/domainNotes";
+import { DomainNote } from "@/types/domainNotes";
+import { decryptNotesText } from "@/utils/notesCrypto";
 
 
 // ✅ INTERFACE UPDATED TO ACCEPT LIFTED STATE
@@ -125,11 +127,14 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const ticker = searchParams.get("ticker") ?? companyGlobalSearchTicker;
   const searchTicker = searchParams.get("ticker");
   const [todayDate, setTodayDate] = useState("");
-  const [institutionName, setInstitutionName] = useState<string>("");
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [data, setData] = useState<CompanyDashboard>();
   const [addNoteModalVisible, setAddNoteModalVisible] = useState<boolean>(false);
   const [chartModalVisible, setChartModalVisible] = useState<boolean>(false);
+  const [isViewNotesModalOpen, setIsViewNotesModalOpen] = useState(false);
+  const [isOwnershipNotesLoading, setIsOwnershipNotesLoading] = useState(false);
+  const [ownershipInstitutionNotes, setOwnershipInstitutionNotes] = useState<DomainNote[]>([]);
+  const [activeNotesCompanyName, setActiveNotesCompanyName] = useState("");
+  const [activeNotesInstitutionName, setActiveNotesInstitutionName] = useState("");
   const [validImages, setValidImages] = useState<{ [key: string]: string }>({});
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
@@ -165,6 +170,8 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const [filerOptions, setFilerOptions] = useState<any[]>([]);
   const [selectedFilerLink, setSelectedFilerLink] = useState<string>("");
   const [activeInstitutionName, setActiveInstitutionName] = useState<string>("");
+  const canViewInstitutionNotes = (value: unknown) =>
+    value === true || value === 1 || value === "true";
 
   // Helper to normalize names
   const normalizeInstitutionName = (name: string) => {
@@ -191,6 +198,41 @@ const getNormalizedScrapedInfo = (name: string) => {
 
   return autoKey ? autoScrapedData[autoKey] : {};
 };
+
+  const handleViewOwnershipNotes = async (dashboard: CompanyDashboard) => {
+    const institutionName = dashboard?.institution_name?.trim();
+    const companyId = Number(dashboard?.company_id || 0);
+    const institutionId = Number(dashboard?.institution_id || 0);
+
+    if (!institutionName || !companyId || !institutionId) {
+      toast.error("Unable to load notes for this institution.");
+      return;
+    }
+
+    setActiveNotesInstitutionName(institutionName);
+    setActiveNotesCompanyName("");
+    setOwnershipInstitutionNotes([]);
+    setIsOwnershipNotesLoading(true);
+    setIsViewNotesModalOpen(true);
+
+    try {
+      const response = await domainNotesService.getCompanyInstitutionNotes(
+        companyId,
+        institutionId
+      );
+      const notes = Array.isArray(response?.results) ? response.results : [];
+      setOwnershipInstitutionNotes(notes);
+      if (notes[0]?.company_name) {
+        setActiveNotesCompanyName(notes[0].company_name);
+      }
+    } catch (error) {
+      console.error("Ownership notes fetch error:", error);
+      toast.error("Unable to load notes for this institution.");
+      setOwnershipInstitutionNotes([]);
+    } finally {
+      setIsOwnershipNotesLoading(false);
+    }
+  };
 
   const handleViewSummary = async (institutionName: string | undefined) => {
     if (!institutionName) return;
@@ -397,11 +439,6 @@ const getNormalizedScrapedInfo = (name: string) => {
 
   const redirectCaseStudy = (institution_name: string) => {
     navigate(`/case-studies?institution_name=${encodeURIComponent(institution_name)}`);
-  };
-
-  const openEngagementQuestionsDialog = (dashboard: CompanyDashboard) => {
-    setData(dashboard);
-    setIsDialogOpen(true);
   };
 
   const openAddNotesDialog = (dashboard: CompanyDashboard) => {
@@ -1053,7 +1090,7 @@ const getNormalizedScrapedInfo = (name: string) => {
           <button
             type="button"
             onClick={() => toggleHoldingRow(rowKey)}
-            className="absolute left-1 top-1/2 -translate-y-1/2 shrink-0 flex items-center justify-center w-5 h-5 rounded hover:bg-slate-100 text-slate-500"
+            className="absolute -left-2 top-1/2 -translate-y-1/2 shrink-0 flex items-center justify-center w-5 h-5 rounded hover:bg-slate-100 text-slate-500"
           >
             <Lucide
               icon={isRowExpanded ? "ChevronUp" : "ChevronDown"}
@@ -1214,15 +1251,20 @@ const isActivelyScraping =
                                               ) : (
                                                 <div className="w-6 h-6" />
                                               )}
-                                              {(dashboard?.notes || dashboard?.engagement_questions) ? (
+                                              {canViewInstitutionNotes(dashboard?.notes) ? (
                                                 <Tippy
                                                   content="View Notes"
                                                   options={{ theme: "light" }}
                                                   className="w-6 h-6 mt-1"
-                                                  onClick={() => openEngagementQuestionsDialog(dashboard)}
+                                                  onClick={() => handleViewOwnershipNotes(dashboard)}
                                                 >
                                                   <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
-                                                    <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
+                                                    {isOwnershipNotesLoading &&
+                                                    activeNotesInstitutionName === dashboard?.institution_name ? (
+                                                      <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                                                    ) : (
+                                                      <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
+                                                    )}
                                                   </div>
                                                 </Tippy>
                                               ) : (
@@ -1394,6 +1436,34 @@ const isActivelyScraping =
                                             ) : (
                                               <div className="w-6 h-6" />
                                             )}
+                                            {canViewInstitutionNotes(child?.notes) ? (
+                                              <Tippy
+                                                content="View Notes"
+                                                options={{ theme: "light" }}
+                                                className="w-6 h-6 mt-1"
+                                                onClick={() => handleViewOwnershipNotes(child as CompanyDashboard)}
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary cursor-pointer">
+                                                  {isOwnershipNotesLoading &&
+                                                  activeNotesInstitutionName === child?.institution_name ? (
+                                                    <Lucide icon="Loader2" className="w-4 h-4 stroke-[1.5] animate-spin" />
+                                                  ) : (
+                                                    <Lucide icon="NotebookPen" className="w-4 h-4 stroke-[1.5]" />
+                                                  )}
+                                                </div>
+                                              </Tippy>
+                                            ) : (
+                                              <Tippy
+                                                content="Add Notes"
+                                                options={{ theme: "light" }}
+                                                className="w-6 h-6 mt-1"
+                                                onClick={() => openAddNotesDialog(child as CompanyDashboard)}
+                                              >
+                                                <div className="flex items-center justify-center w-6 h-6 text-primary ">
+                                                  <Lucide icon="Plus" className="w-4 h-4 stroke-[1.5]" />
+                                                </div>
+                                              </Tippy>
+                                            )}
                                           </div>
                                         </Table.Td>
                                         <Table.Td className="cell py-2 border-dashed dark:bg-darkmode-600 text-left bg-gray-50">
@@ -1516,6 +1586,98 @@ const isActivelyScraping =
         <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
           <h1 className="font-semibold"> Investors Records Not Found..</h1>
         </div>
+      )}
+
+      {isViewNotesModalOpen && (
+        <Dialog
+          size="xl"
+          open={isViewNotesModalOpen}
+          onClose={() => {
+            setIsViewNotesModalOpen(false);
+          }}
+        >
+          <Dialog.Panel className="relative flex h-[82vh] w-[95vw] max-w-[1180px] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-xl">
+            <button
+              type="button"
+              aria-label="Close notes modal"
+              className="absolute right-6 top-6 z-20 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-300 shadow-md transition hover:bg-slate-50 hover:text-slate-500"
+              onClick={() => setIsViewNotesModalOpen(false)}
+            >
+              <Lucide icon="X" className="h-5 w-5" />
+            </button>
+            <Dialog.Title className="sr-only">
+              Ownership notes for {activeNotesInstitutionName}
+            </Dialog.Title>
+            <Dialog.Description className="min-h-0 flex-1 bg-slate-50/80 p-5">
+              <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 bg-slate-50 px-6 pb-5 pt-8">
+                  <div className="min-w-0 pr-16">
+                    {activeNotesCompanyName || ownershipInstitutionNotes[0]?.company_name ? (
+                      <h3 className="text-[18px] font-semibold tracking-[0.01em] text-slate-800 sm:text-[20px]">
+                        {activeNotesCompanyName || ownershipInstitutionNotes[0]?.company_name}
+                      </h3>
+                    ) : (
+                      <div className="h-7 w-64 animate-pulse rounded-lg bg-slate-200" />
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-600 shadow-sm">
+                        {activeNotesInstitutionName}
+                      </span>
+                      <span className="inline-flex items-center rounded-full border border-primary/15 bg-primary/[0.06] px-3 py-1 text-sm font-semibold text-primary shadow-sm">
+                        {ownershipInstitutionNotes.length} {ownershipInstitutionNotes.length === 1 ? "note" : "notes"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-hidden bg-white">
+                  {isOwnershipNotesLoading ? (
+                    <div className="space-y-4 p-6">
+                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                      <div className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-50" />
+                    </div>
+                  ) : ownershipInstitutionNotes.length > 0 ? (
+                    <div className="flex h-full min-h-0 flex-col">
+                      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                        {ownershipInstitutionNotes.map((item) => (
+                          <div
+                            key={item.id}
+                            className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm last:mb-0"
+                          >
+                            <div>
+                              <div
+                                className="prose max-w-none text-sm leading-7 text-slate-700"
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(decryptNotesText(item.notes)),
+                                }}
+                              />
+                              <div className="mt-4 flex justify-end">
+                                <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+                                  {item.created_by_name
+                                    ? `By ${item.created_by_name} • ${item.formatted_date || item.date_updated || item.date}`
+                                    : item.formatted_date || item.date_updated || item.date}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-6 text-center text-slate-500">
+                      <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                      <div className="text-base font-semibold text-slate-600">No notes found</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        There are no notes available for this institution and company.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Dialog.Description>
+          </Dialog.Panel>
+        </Dialog>
       )}
 
       {addNoteModalVisible && (

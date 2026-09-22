@@ -6,6 +6,7 @@ import { engagementQuestionService } from "@/services/engagementQuestion";
 import { getPageNumbers } from "@/utils/helper";
 import { domainNotesService } from "@/services/domainNotes";
 import { DomainNote, DomainNoteComment } from "@/types/domainNotes";
+import { RootState } from "./store";
 
 const name = "domainNotes";
 
@@ -97,9 +98,11 @@ export const fetchInstitutionHierarchyNotes = createAsyncThunk<
 
 export const fetchCompanyHierarchyNotes = createAsyncThunk<
   any[],
-  void
->(`${name}/fetchCompanyHierarchyNotes`, async () => {
-  const response = await domainNotesService.getCompanyHierarchyNotes();
+  void,
+  { state: RootState }
+>(`${name}/fetchCompanyHierarchyNotes`, async (_, { getState }) => {
+  const { companyGlobalSearchName } = getState().authentiction;
+  const response = await domainNotesService.getCompanyHierarchyNotes(companyGlobalSearchName);
   return response.results;
 });
 
@@ -136,6 +139,20 @@ export const addDomainNoteComment = createAsyncThunk<
     response = await domainNotesService.addNoteComment(id, data);
   }
   return { results: response.results, isEdit: !!id };
+});
+
+export const updateDomainNoteComment = createAsyncThunk<
+  { results: DomainNoteComment },
+  { id: number; data: Partial<DomainNoteComment> }
+>(`${name}/updateDomainNoteComment`, async ({ id, data }) => {
+  return await domainNotesService.updateNoteComment(id, data);
+});
+
+export const deleteDomainNoteComment = createAsyncThunk<
+  { results: unknown },
+  { id: number }
+>(`${name}/deleteDomainNoteComment`, async ({ id }) => {
+  return await domainNotesService.deleteNoteComment(id);
 });
 
 export const shareDomainNote = createAsyncThunk<
