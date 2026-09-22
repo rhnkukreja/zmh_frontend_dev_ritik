@@ -56,19 +56,25 @@ const MeetingYearSelector = ({ source = "VDS" }: MeetingYearSelectorProps) => {
                 ? result.vds_data
                 : [];
 
-        const meetingOptions = Array.from(
-          entries.reduce((byYear: Map<string, MeetingOption>, item: any) => {
-            const year = String(item?.year || "");
-            const date = String(item?.meeting_date || "");
-            if (!year || !date) return byYear;
+        // Keep every distinct (year, meeting_date) pair — a company can hold
+        // more than one meeting in the same year (e.g. a special meeting
+        // plus the annual meeting), so deduping down to one entry per year
+        // was silently dropping real meetings (only the latest date per
+        // year survived).
+        const seen = new Set<string>();
+        const meetingOptions = entries.reduce((acc: MeetingOption[], item: any) => {
+          const year = String(item?.year || "");
+          const date = String(item?.meeting_date || "");
+          if (!year || !date) return acc;
 
-            const existing = byYear.get(year);
-            if (!existing || date > existing.date) {
-              byYear.set(year, { year, date });
-            }
-            return byYear;
-          }, new Map<string, MeetingOption>()).values()
-        ).sort((a: MeetingOption, b: MeetingOption) => Number(b.year) - Number(a.year)) as MeetingOption[];
+          const key = `${year}|${date}`;
+          if (seen.has(key)) return acc;
+          seen.add(key);
+
+          acc.push({ year, date });
+          return acc;
+        }, [] as MeetingOption[])
+          .sort((a: MeetingOption, b: MeetingOption) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
         if (!isMounted) return;
         setOptions(meetingOptions);
@@ -100,6 +106,13 @@ const MeetingYearSelector = ({ source = "VDS" }: MeetingYearSelectorProps) => {
     };
   }, [companyGlobalSearchId, searchParams, setSearchParams, source]);
 
+  // Resolve the value to actually show synchronously (falling back to the
+  // most recent meeting) so the dropdown never flashes an empty
+  // "Select year" placeholder while data or the URL sync is still catching up.
+  const effectiveOption =
+    options.find((option) => option.date === selectedDate) || options[0];
+  const effectiveDate = effectiveOption?.date || "";
+
   if (!companyGlobalSearchId || options.length === 0) return null;
 
   return (
@@ -117,7 +130,7 @@ const MeetingYearSelector = ({ source = "VDS" }: MeetingYearSelectorProps) => {
         </div>
         <div className="relative min-w-[220px]">
           <select
-            value={selectedDate}
+            value={effectiveDate}
             aria-label="Select meeting year"
             onChange={(event) => {
               const date = event.target.value;
@@ -133,13 +146,13 @@ const MeetingYearSelector = ({ source = "VDS" }: MeetingYearSelectorProps) => {
             }}
             className="h-10 w-full appearance-none border-0 bg-transparent px-3 pr-9 text-sm font-medium text-slate-700 outline-none focus:ring-0"
           >
-            {!selectedDate && (
+            {!effectiveDate && (
               <option value="" disabled>
                 Select year
               </option>
             )}
             {options.map((option) => (
-              <option key={option.year} value={option.date}>
+              <option key={`${option.year}-${option.date}`} value={option.date}>
                 {`${option.year} · ${formatMeetingDate(option.date)}`}
               </option>
             ))}
