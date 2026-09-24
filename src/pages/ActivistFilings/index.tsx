@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppSelector } from "@/stores/hooks";
 import { dashboardService } from "@/services/dashboard";
@@ -6,6 +6,7 @@ import StandardizedTable from "@/components/StandardizedTable";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
+import { Dialog } from "@/components/Base/Headless";
 import Popover from "@/components/Base/Headless/Popover";
 import { FormCheck } from "@/components/Base/Form";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
@@ -29,6 +30,81 @@ const ACTIVIST_FILINGS_TAB = "activist-filings";
 
 type FilingTab = typeof ACTIVIST_FILINGS_TAB | typeof COMPANY_FILINGS_TAB;
 
+type FilingAttachment = {
+  type?: string;
+  description?: string;
+  url?: string;
+}
+// ─── Document Type ──────────────────────────────────────────────────────────
+// Filled in by a separate FastAPI call after the table has rendered; the table
+// never waits for it. Links still pending are asked about once more after
+// DOCUMENT_TYPE_RETRY_MS.
+const DOCUMENT_TYPE_RETRY_MS = 5000;
+
+const DOCUMENT_TYPES = ["Press Release", "Shareholder Letter", "Presentation"] as const;
+type DocumentType = (typeof DOCUMENT_TYPES)[number];
+
+// The endpoint's contract, exactly:
+//   { types: { [link]: "Press Release" | "Shareholder Letter" | "Presentation" | null },
+//     pending: string[] }
+type DocumentTypesResponse = {
+  types: Record<string, DocumentType | null>;
+  pending: string[];
+};
+
+// Coloured, so a classified document reads differently from the grey
+// Filing-Type fallback below.
+const DOCUMENT_TYPE_BADGE_CLASS: Record<DocumentType, string> = {
+  "Press Release": "bg-violet-100 text-violet-700",
+  "Shareholder Letter": "bg-amber-100 text-amber-800",
+  Presentation: "bg-sky-100 text-sky-700",
+};
+
+// What a row shows when its document type is null (or the call failed): an
+// honest label from its Filing Type instead of a blank. Keys are the form type
+// uppercased with all whitespace removed and a leading "SCHEDULE" shortened to
+// "SC", so "SC 13D", "Schedule 13D/A" and "SCHEDULE 13D/A" all match.
+// Anything not listed is "Other Soliciting Material".
+const FILING_TYPE_FALLBACK_LABELS: Record<string, string> = {
+  "SC13D": "Ownership Report",
+  "SC13D/A": "Ownership Report",
+  "DEF14A": "Proxy Statement",
+  "PRE14A": "Proxy Statement",
+  "DEFC14A": "Proxy Statement",
+  "PREC14A": "Proxy Statement",
+  "PRRN14A": "Proxy Statement",
+  "DEFN14A": "Proxy Statement",
+  "DEF14C": "Information Statement",
+  "PRE14C": "Information Statement",
+  "DFAN14A": "Other Soliciting Material",
+  "DEFA14A": "Other Soliciting Material",
+};
+const FILING_TYPE_FALLBACK_DEFAULT = "Other Soliciting Material";
+
+const getFilingTypeFallbackLabel = (filingType: unknown): string => {
+  const key = toTrimmedString(filingType).toUpperCase().replace(/\s+/g, "").replace(/^SCHEDULE/, "SC");
+  return FILING_TYPE_FALLBACK_LABELS[key] || FILING_TYPE_FALLBACK_DEFAULT;
+};
+
+const isDocumentType = (value: unknown): value is DocumentType =>
+  typeof value === "string" && (DOCUMENT_TYPES as readonly string[]).includes(value);
+
+// Reads that one shape and nothing else. Anything off-contract returns null,
+// so the caller shows the Filing-Type label and warns -- a contract break
+// should surface, not be papered over by reading some other shape.
+const parseDocumentTypesResponse = (
+  data: unknown
+): { types: Record<string, DocumentType | null>; pending: Set<string> } | null => {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const { types, pending } = data as Partial<DocumentTypesResponse>;
+
+  if (!types || typeof types !== "object" || Array.isArray(types)) return null;
+  if (!Object.values(types).every((value) => value === null || isDocumentType(value))) return null;
+  if (!Array.isArray(pending) || !pending.every((link) => typeof link === "string")) return null;
+
+  return { types, pending: new Set(pending) };
+};
+
 function ActivistFilings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const source = searchParams.get("source") || "";
@@ -44,6 +120,10 @@ function ActivistFilings() {
   const [selectedFilingTypes, setSelectedFilingTypes] = useState<string[]>([]);
   const [draftYears, setDraftYears] = useState<string[]>([]);
   const [draftFilingTypes, setDraftFilingTypes] = useState<string[]>([]);
+  const [attachmentsModalOpen, setAttachmentsModalOpen] = useState(false);
+  const [selectedFilingAttachments, setSelectedFilingAttachments] = useState<FilingAttachment[]>([]);
+  const [selectedFilingLabel, setSelectedFilingLabel] = useState("");
+  const [selectedFilingDate, setSelectedFilingDate] = useState("");
 
   const fetchFilings = useCallback(async () => {
     if (!companyGlobalSearchId) {
@@ -76,12 +156,117 @@ function ActivistFilings() {
     setDraftFilingTypes([]);
   }, [companyGlobalSearchId]);
 
+  // Document types by filing link, and the links still waiting on an answer
+  // (their cells show a skeleton). A link in neither shows its Filing-Type label.
+  const [documentTypes, setDocumentTypes] = useState<Record<string, string | null>>({});
+  const [documentTypeLoadingLinks, setDocumentTypeLoadingLinks] = useState<Set<string>>(new Set());
+  // Bumped whenever a run is superseded; a response or retry belonging to an
+  // older run checks it and does nothing.
+  const documentTypeRunRef = useRef(0);
+
+  // A company change supersedes any run in flight straight away -- not only
+  // once the new company's filings arrive -- so a late answer for the previous
+  // company is ignored.
+  useEffect(() => {
+    documentTypeRunRef.current += 1;
+    setDocumentTypes({});
+    setDocumentTypeLoadingLinks(new Set());
+  }, [companyGlobalSearchId]);
+
+  // Runs once per loaded set of filings -- after the Django load, never
+  // before or instead of it.
+  useEffect(() => {
+    const runId = ++documentTypeRunRef.current;
+    const isCurrentRun = () => documentTypeRunRef.current === runId;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    // Only the Activism Related Filings rows -- the only table with this
+    // column -- one entry per distinct link.
+    const items: Array<{ link: string; filing_type: string }> = [];
+    const seenLinks = new Set<string>();
+    filings.forEach((filing) => {
+      const link = toTrimmedString(filing?.["Filing Link"]);
+      const filingType = toTrimmedString(filing?.["Filing Type"]);
+      if (!link || seenLinks.has(link) || DEFAULT_EXCLUDED_FILING_TYPES.includes(filingType)) return;
+      seenLinks.add(link);
+      items.push({ link, filing_type: filingType });
+    });
+
+    setDocumentTypes({});
+    setDocumentTypeLoadingLinks(new Set(seenLinks));
+    if (items.length === 0) return;
+
+    // Every cell in the batch falls back to its Filing-Type label.
+    const showNoTypes = (batch: typeof items) => {
+      setDocumentTypes((prev) => {
+        const next = { ...prev };
+        batch.forEach(({ link }) => {
+          next[link] = null;
+        });
+        return next;
+      });
+      setDocumentTypeLoadingLinks(new Set());
+    };
+
+    const requestDocumentTypes = async (batch: typeof items, isRetry: boolean) => {
+      try {
+        const response = await dashboardService.getActivistFilingDocumentTypes(batch);
+        if (!isCurrentRun()) return;
+
+        const parsed = parseDocumentTypesResponse(response);
+        if (!parsed) {
+          console.warn("Document types response does not match the expected { types, pending } shape:", response);
+          showNoTypes(batch);
+          return;
+        }
+        const { types, pending } = parsed;
+        // One retry only: a link still pending after it shows its Filing-Type label.
+        const retryBatch = isRetry ? [] : batch.filter((item) => pending.has(item.link));
+        const retryLinks = new Set(retryBatch.map((item) => item.link));
+
+        setDocumentTypes((prev) => {
+          const next = { ...prev };
+          batch.forEach(({ link }) => {
+            if (!retryLinks.has(link)) next[link] = types[link] ?? null;
+          });
+          return next;
+        });
+        setDocumentTypeLoadingLinks(retryLinks);
+
+        if (retryBatch.length > 0) {
+          retryTimer = setTimeout(() => {
+            if (isCurrentRun()) requestDocumentTypes(retryBatch, true);
+          }, DOCUMENT_TYPE_RETRY_MS);
+        }
+      } catch (error) {
+        // Silent by design: the cells fall back to the Filing-Type label, no toast.
+        console.error("Failed to load filing document types:", error);
+        if (!isCurrentRun()) return;
+        showNoTypes(batch);
+      }
+    };
+
+    requestDocumentTypes(items, false);
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      documentTypeRunRef.current += 1;
+    };
+  }, [filings]);
+
   useEffect(() => {
     const nextTab: FilingTab = searchParams.get("tab") === COMPANY_FILINGS_TAB ? COMPANY_FILINGS_TAB : ACTIVIST_FILINGS_TAB;
     setActiveTab(nextTab);
   }, [searchParams]);
 
   const hasCompany = Boolean(companyGlobalSearchId);
+
+  // Document Type belongs to the Activism Related Filings table only; Company
+  // Filings keeps its four columns and widths exactly as before.
+  const showDocumentTypeColumn = activeTab === ACTIVIST_FILINGS_TAB;
+  const columnWidths = showDocumentTypeColumn
+    ? { filingType: "18%", filingDate: "15%", entity: "31%", filingLink: "18%", documentType: "18%" }
+    : { filingType: "26%", filingDate: "26%", entity: "28%", filingLink: "20%", documentType: "0%" };
   const filingsData = useMemo(() => filings || [], [filings]);
 
   const isCompanyFilingType = useCallback(
@@ -171,6 +356,21 @@ function ActivistFilings() {
       setSelectedFilingTypes((prev) => prev.filter((item) => item !== value));
       setDraftFilingTypes((prev) => prev.filter((item) => item !== value));
     }
+  }, []);
+
+  const openAttachmentsModal = useCallback((filing: any) => {
+    const attachments = Array.isArray(filing?.Attachments)
+      ? filing.Attachments.filter((attachment: FilingAttachment) => attachment?.url)
+      : [];
+
+    if (attachments.length === 0) {
+      return;
+    }
+
+    setSelectedFilingAttachments(attachments);
+    setSelectedFilingLabel(toTrimmedString(filing?.["Filing Type"]) || "Filing Attachments");
+    setSelectedFilingDate(toTrimmedString(filing?.["Filing Date"]));
+    setAttachmentsModalOpen(true);
   }, []);
 
   const switchTab = useCallback(
@@ -385,12 +585,15 @@ function ActivistFilings() {
                   </div>
                 )}
 
-                <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={4} maxHeight="68vh" className="table-fixed">
+                <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={showDocumentTypeColumn ? 5 : 4} maxHeight="68vh" className="table-fixed">
                   <StandardizedTable.Header>
-                    <StandardizedTable.Cell isHeader width="26%">Filing Type</StandardizedTable.Cell>
-                    <StandardizedTable.Cell isHeader width="26%">Filing Date</StandardizedTable.Cell>
-                    <StandardizedTable.Cell isHeader width="28%">Filing Entity/Person</StandardizedTable.Cell>
-                    <StandardizedTable.Cell isHeader width="20%">Filing Link</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width={columnWidths.filingType}>Filing Type</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width={columnWidths.filingDate}>Filing Date</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width={columnWidths.entity}>Filing Entity/Person</StandardizedTable.Cell>
+                    <StandardizedTable.Cell isHeader width={columnWidths.filingLink}>Filing Link</StandardizedTable.Cell>
+                    {showDocumentTypeColumn && (
+                      <StandardizedTable.Cell isHeader width={columnWidths.documentType}>Document Type</StandardizedTable.Cell>
+                    )}
                   </StandardizedTable.Header>
                   <Table.Tbody>
                     {filteredFilings.length > 0 ? (
@@ -408,26 +611,77 @@ function ActivistFilings() {
                             <span className="text-sm font-medium text-slate-700">{filing?.["Entity"] || "-"}</span>
                           </StandardizedTable.Cell>
                           <StandardizedTable.Cell>
-                            <div className="flex items-center justify-start gap-3">
+                            <div className="flex w-full items-center justify-start whitespace-nowrap">
                               {filing?.["Filing Link"] ? (
-                                <Button
-                                  variant="outline-primary"
-                                  className="shrink-0 whitespace-nowrap"
-                                  onClick={() => window.open(filing["Filing Link"], "_blank", "noopener,noreferrer")}
-                                >
-                                  <Lucide icon="ExternalLink" className="w-4 h-4 mr-2" />
-                                  Open Filing
-                                </Button>
+                                <div className="grid grid-cols-[auto_2.25rem] items-center gap-2">
+                                  <Button
+                                    variant="outline-primary"
+                                    className="h-9 shrink-0 whitespace-nowrap rounded-lg px-3.5"
+                                    onClick={() => window.open(filing["Filing Link"], "_blank", "noopener,noreferrer")}
+                                  >
+                                    <Lucide icon="ExternalLink" className="mr-2 h-4 w-4" />
+                                    Open Filing
+                                  </Button>
+                                  {Array.isArray(filing?.Attachments) && filing.Attachments.some((attachment: FilingAttachment) => attachment?.url) ? (
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                      onClick={() => openAttachmentsModal(filing)}
+                                      aria-label="View attachments"
+                                      title="View attachments"
+                                    >
+                                      <Lucide icon="Paperclip" className="h-4 w-4" />
+                                    </button>
+                                  ) : (
+                                    <span aria-hidden="true" className="inline-flex h-9 w-9" />
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-sm text-slate-400">-</span>
                               )}
                             </div>
                           </StandardizedTable.Cell>
+                          {showDocumentTypeColumn && (
+                            <StandardizedTable.Cell>
+                              {(() => {
+                                const link = toTrimmedString(filing?.["Filing Link"]);
+                                if (link && documentTypeLoadingLinks.has(link)) {
+                                  return (
+                                    <div
+                                      className="h-5 w-24 max-w-full rounded-full bg-slate-200 animate-pulse"
+                                      aria-label="Loading document type"
+                                    />
+                                  );
+                                }
+                                // documentTypes holds only contract values, but
+                                // re-check so the badge colour lookup is safe.
+                                const documentType = link ? documentTypes[link] : null;
+                                if (isDocumentType(documentType)) {
+                                  return (
+                                    <span
+                                      className={`inline-flex max-w-full truncate rounded-full px-2.5 py-0.5 text-xs font-medium ${DOCUMENT_TYPE_BADGE_CLASS[documentType]}`}
+                                      title={documentType}
+                                    >
+                                      {documentType}
+                                    </span>
+                                  );
+                                }
+                                // Null, a failed call, or no link: never a
+                                // blank -- a muted label from the Filing Type.
+                                const fallbackLabel = getFilingTypeFallbackLabel(filing?.["Filing Type"]);
+                                return (
+                                  <span className="block truncate text-xs text-slate-400" title={fallbackLabel}>
+                                    {fallbackLabel}
+                                  </span>
+                                );
+                              })()}
+                            </StandardizedTable.Cell>
+                          )}
                         </StandardizedTable.Row>
                       ))
                     ) : (
                       <Table.Tr>
-                        <Table.Td colSpan={4} className="text-center py-12 text-slate-500">
+                        <Table.Td colSpan={showDocumentTypeColumn ? 5 : 4} className="text-center py-12 text-slate-500">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Lucide icon="FileSearch" className="w-10 h-10 opacity-40" />
                             <span className="text-sm font-medium text-slate-600">
@@ -446,6 +700,82 @@ function ActivistFilings() {
           )}
         </div>
       </div>
+
+      <Dialog
+        size="lg"
+        open={attachmentsModalOpen}
+        onClose={() => {
+          setAttachmentsModalOpen(false);
+          setSelectedFilingAttachments([]);
+          setSelectedFilingLabel("");
+          setSelectedFilingDate("");
+        }}
+      >
+        <Dialog.Panel className="overflow-hidden p-0 text-left">
+          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,rgba(171,18,61,0.08),rgba(255,255,255,0.98))] px-6 py-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+                  Filing Attachments
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-900">{selectedFilingLabel}</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedFilingDate || "-"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAttachmentsModalOpen(false);
+                  setSelectedFilingAttachments([]);
+                  setSelectedFilingLabel("");
+                  setSelectedFilingDate("");
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-primary/30 hover:text-primary"
+              >
+                <Lucide icon="X" className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-[65vh] overflow-y-auto bg-slate-50/70 px-6 py-6">
+            <div className="space-y-4">
+              {selectedFilingAttachments.map((attachment, index) => (
+                <div
+                  key={`${attachment.url || attachment.type || "attachment"}-${index}`}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <Lucide icon="FileText" className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold uppercase tracking-wide text-primary/80">
+                            {attachment.type || "Attachment"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      className="shrink-0 whitespace-nowrap"
+                      onClick={() => window.open(attachment.url, "_blank", "noopener,noreferrer")}
+                    >
+                      <Lucide icon="ExternalLink" className="mr-2 h-4 w-4" />
+                      Open Document
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Dialog.Panel>
+      </Dialog>
     </div>
   );
 }

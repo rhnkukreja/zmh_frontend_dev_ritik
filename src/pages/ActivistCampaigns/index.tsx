@@ -5,12 +5,15 @@ import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
 import Lucide, { AppIconName } from "@/components/Base/Lucide";
 import Popover from "@/components/Base/Headless/Popover";
+import Tippy from "@/components/Base/Tippy";
 import { FormCheck } from "@/components/Base/Form";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import FilterChips from "@/components/FilterChips";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import useCompanySearch from "@/hooks/useCompanySearch";
 
 const THEME_MAROON = "#8b1828";
 const PAGE_SIZE = 50;
@@ -24,6 +27,17 @@ type FilingItem = {
   accession_number?: string;
   form_type?: string;
   company_name?: string;
+  // The company this filing was resolved to in our own database, or null when
+  // the backend couldn't match it. Only a match WITH a non-empty symbol can be
+  // linked: the Overview page is addressed by ticker, so a match without one
+  // has nothing to navigate to. Absent on any deployment predating the match,
+  // which reads the same as null -- plain text, exactly as before.
+  company_match?: {
+    id: number;
+    name: string;
+    symbol: string | null;
+    matched_on: "cik" | "ticker" | "name";
+  } | null;
   subject_cik?: string;
   ticker?: string;
   filer?: string;
@@ -61,6 +75,76 @@ type FilingItem = {
 };
 
 const toTrimmedString = (value: unknown) => String(value ?? "").trim();
+
+// ─── Table density ──────────────────────────────────────────────────────────
+// The client's complaint was clutter and sideways scrolling, so the table went
+// from 16 columns to 10 and got tighter. Padding and font size carry `!`
+// because StandardizedTable.Cell hardcodes both -- py-2 px-3 in its class list
+// and an inline font-size of 14px that a plain utility class can't override.
+const HEADER_CELL_CLASS = "!px-2 !py-1.5 !text-[11px] uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis";
+const BODY_CELL_CLASS = "!px-2 !py-1.5 !text-xs align-top";
+// Company and Filer hold free text of any length (one filer name runs to a
+// full sentence). The cell clips, and its content may shrink below the text's
+// own width, so a long name can never widen the column.
+const NAME_CELL_CLASS = `${BODY_CELL_CLASS} overflow-hidden`;
+// Secondary line under a primary value (ticker, "Updated ...", a held label).
+const SUB_VALUE_CLASS = "block truncate text-[11px] text-slate-400";
+
+// `table-fixed` has to reach the <table> itself: StandardizedTable puts its
+// className on the scroll wrapper, where table-layout does nothing -- which is
+// how a long filer name used to stretch its column across the screen.
+const TABLE_WRAPPER_CLASS = "[&>table]:table-fixed";
+
+// Column widths, summing to 100% with and without Notes. Company and Filer are
+// kept narrow enough that Remarks (alert icon or held label, plus the preview
+// and edit buttons) fits at 1440px without horizontal scroll.
+const COLUMN_WIDTHS = {
+  withoutNotes: { select: "3%", company: "17%", filer: "13%", formType: "11%", proxyStatus: "10%", inFlow: "7%", status: "9%", notes: "0%", filed: "10%", remarks: "20%" },
+  withNotes: { select: "3%", company: "15%", filer: "12%", formType: "11%", proxyStatus: "10%", inFlow: "7%", status: "9%", notes: "9%", filed: "10%", remarks: "14%" },
+};
+
+// One line, cut with an ellipsis; the full text in a Tippy rather than a
+// native title. `clickable` also opens it on click/tap -- touch screens have
+// no hover -- and is off for links, where a click must just follow the link.
+const TruncatedName: React.FC<{
+  text: string;
+  className: string;
+  clickable?: boolean;
+  children: React.ReactElement | string;
+  href?: string;
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+}> = ({ text, className, clickable = true, children, href, onClick }) => {
+  const classes = `block min-w-0 truncate ${className}`;
+  const options = {
+    theme: "light",
+    trigger: clickable ? "mouseenter click" : "mouseenter",
+    touch: clickable,
+  };
+  // Keyed on the text: Base/Tippy only initialises on mount, so a changed
+  // name must remount rather than leave a stale tooltip behind.
+  return href ? (
+    <Tippy key={text} as="a" href={href} onClick={onClick} content={text} className={classes} options={options}>
+      {children}
+    </Tippy>
+  ) : (
+    <Tippy key={text} as="span" content={text} className={classes} options={options}>
+      {children}
+    </Tippy>
+  );
+};
+
+// A row's Company Name is a link ONLY when the backend matched it to a company
+// in our database AND that match carries a symbol -- the Company Overview page
+// is addressed by ticker, so a match without one has nowhere to go. Everything
+// else (no match, null/blank symbol, an older response with no company_match at
+// all) renders as the plain text it always did.
+const getLinkableCompanyMatch = (filing: FilingItem) => {
+  const match = filing.company_match;
+  if (!match) return null;
+  const symbol = toTrimmedString(match.symbol);
+  if (!symbol) return null;
+  return { id: match.id, name: match.name, symbol };
+};
 
 // Server-side filter, unlike the Status/Ticker/Filer/Category panels: these
 // `value`s are the backend's own `alert_state` param, which takes exactly one
@@ -157,6 +241,93 @@ const getHeldChip = (filing: FilingItem): { label: string; icon: AppIconName } =
   if (newswireLabel) return { label: newswireLabel, icon: "MinusCircle" };
   if (isGateSuppressed(filing)) return { label: "Not a campaign", icon: "MinusCircle" };
   return { label: "Held by filter", icon: "PauseCircle" };
+};
+
+// ─── Remarks ────────────────────────────────────────────────────────────────
+// One icon per row, replacing the Alert Sent column, the Send Alert checkbox
+// and the held chip. Every state is a real control: title + aria-label on all
+// of them, and a button for the one that acts.
+//
+// The states are exactly the ones the data can express. "Sending" is this
+// row's send being in flight (single or inside a bulk run); "needs attention"
+// is either the backend's own sent-but-not-recorded warning or a failure from
+// the bulk run in this session. There is no retry state in the API -- see the
+// handoff note.
+const RemarksIndicator: React.FC<{
+  filing: FilingItem;
+  isSending: boolean;
+  failureMessage?: string;
+  onSend: () => void;
+}> = ({ filing, isSending, failureMessage, onSend }) => {
+  if (isSending) {
+    return (
+      <span
+        className="inline-flex items-center text-slate-500"
+        title="Sending this alert…"
+        aria-label="Sending this alert"
+      >
+        <Lucide icon="Loader" className="w-4 h-4 shrink-0 animate-spin" />
+      </span>
+    );
+  }
+
+  if (filing.alert_sent_at) {
+    const sentAt = `Alert sent ${formatDateTime(filing.alert_sent_at)}`;
+    return (
+      <span className="inline-flex items-center text-emerald-600" title={sentAt} aria-label={sentAt}>
+        <Lucide icon="CheckCircle2" className="w-4 h-4 shrink-0" />
+      </span>
+    );
+  }
+
+  // Sent, but the write recording when failed -- the email did go out, so this
+  // is deliberately not the "not sent yet" state.
+  if (filing.alertSendWarning) {
+    const warning = `Sent, not recorded: ${filing.alertSendWarning}`;
+    return (
+      <span className="inline-flex items-center text-amber-600" title={warning} aria-label={warning}>
+        <Lucide icon="AlertTriangle" className="w-4 h-4 shrink-0" />
+      </span>
+    );
+  }
+
+  if (failureMessage) {
+    const failed = `Alert failed: ${failureMessage}`;
+    return (
+      <span className="inline-flex items-center text-red-600" title={failed} aria-label={failed}>
+        <Lucide icon="AlertTriangle" className="w-4 h-4 shrink-0" />
+      </span>
+    );
+  }
+
+  if (isFilingHeld(filing)) {
+    // getHeldChip is untouched: same rule-id mapping, same labels, same icons.
+    // The backend's reason sentence stays the tooltip, verbatim.
+    const chip = getHeldChip(filing);
+    const reason = toTrimmedString(filing.alert_suppressed_reason);
+    return (
+      <span
+        className="inline-flex items-center gap-1 min-w-0 text-slate-600"
+        title={reason || chip.label}
+        aria-label={reason ? `${chip.label}: ${reason}` : chip.label}
+      >
+        <Lucide icon={chip.icon} className="w-4 h-4 shrink-0 text-slate-500" />
+        <span className="truncate text-xs text-slate-700">{chip.label}</span>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onSend}
+      title="Send an alert for this filing"
+      aria-label="Send an alert for this filing"
+      className="inline-flex items-center rounded p-0.5 text-slate-400 hover:text-primary"
+    >
+      <Lucide icon="Mail" className="w-4 h-4 shrink-0" />
+    </button>
+  );
 };
 
 // ─── Source: SEC filing vs newswire press release ──────────────────────────
@@ -665,6 +836,41 @@ const PressReleasePreview: React.FC<{ filing: FilingItem }> = ({ filing }) => {
 };
 
 function ActivistCampaigns() {
+  // Same hook the global search box uses, so a company opened from this table
+  // lands in exactly the state a search for it would produce.
+  const navigate = useNavigate();
+  const { companySearchAndUpdate } = useCompanySearch();
+
+  // Plain left click only: ctrl/cmd/shift/alt-click (and middle click, which
+  // never reaches onClick) are left to the browser so the real href opens a new
+  // tab or window. stopPropagation on every click so the anchor can't also
+  // reach any row-level handler -- selection or a row preview.
+  const handleCompanyLinkClick = async (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    company: { id: number; name: string; symbol: string }
+  ) => {
+    event.stopPropagation();
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+      return;
+    }
+    event.preventDefault();
+
+    try {
+      // Sets the selected company in the store (and syncs ?ticker= on THIS
+      // page). Awaited: it's what makes the Overview render this company, so
+      // navigating before it resolves would show the previous one.
+      await companySearchAndUpdate(company);
+      // Same address as the href, so the URL after a left click matches what
+      // the link advertises -- companySearchAndUpdate's own sync writes the
+      // ticker onto the current path, not the Overview one.
+      navigate(`/?ticker=${encodeURIComponent(company.symbol)}`);
+    } catch (error) {
+      // The axios interceptor already toasts; staying put is deliberate --
+      // without the store update the Overview would render a different company.
+      console.error("Failed to open company overview from Activist Campaigns:", error);
+    }
+  };
+
   const [loading, setLoading] = useState(false);
   const [filings, setFilings] = useState<FilingItem[]>([]);
   const [totalFilings, setTotalFilings] = useState(0);
@@ -725,9 +931,13 @@ function ActivistCampaigns() {
   const [bulkStopRequested, setBulkStopRequested] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ index: number; total: number; current: FilingItem } | null>(null);
   const [bulkResults, setBulkResults] = useState<
-    Array<{ filing: FilingItem; status: "sent" | "warning" | "failed"; message?: string }> | null
+    Array<{ filing: FilingItem; status: "sent" | "warning" | "failed" | "skipped"; message?: string }> | null
   >(null);
   const bulkStopRequestedRef = useRef(false);
+  // Skip selected filings that already had an alert sent. On by default -- a
+  // duplicate email is the mistake to prevent, so re-sending has to be a
+  // deliberate un-tick. Reset to on every time the dialog opens.
+  const [skipAlreadySent, setSkipAlreadySent] = useState(true);
 
   const [editingFiling, setEditingFiling] = useState<FilingItem | null>(null);
   const [editStatus, setEditStatus] = useState("ongoing");
@@ -735,6 +945,9 @@ function ActivistCampaigns() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const dropzoneRef = useRef<DropzoneElement>(null);
+  // The upload UI now lives in a modal instead of a card above the table.
+  // Nothing about the upload itself changed -- same validation, same call.
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
@@ -856,7 +1069,11 @@ function ActivistCampaigns() {
     return () => {
       dz.off("addedfile", handleAddedFile);
     };
-  }, []);
+    // Re-runs whenever the drop zone is mounted or remounted: it now lives in a
+    // modal (so it doesn't exist at page mount at all), and it is also swapped
+    // out for the selected-file view whenever a file is chosen. Each remount is
+    // a NEW dropzone instance, and the handler has to be attached to that one.
+  }, [uploadModalOpen, uploadFile]);
 
   // NOTE: Status/Ticker/Filer/Filing Category filters below are client-side,
   // applied only to the currently-loaded page of filings -- the documented
@@ -904,6 +1121,16 @@ function ActivistCampaigns() {
       return true;
     });
   }, [filings, selectedStatuses, selectedTickers, selectedFilers, selectedFilingCategories]);
+
+  // Notes is empty on every campaign today, so its column only renders once a
+  // loaded row actually has one -- it comes back on its own when an analyst
+  // writes a note. Checked against `filings`, not `filteredFilings`, so a
+  // client-side filter doesn't make the column flicker in and out.
+  const showNotesColumn = useMemo(
+    () => filings.some((filing) => toTrimmedString(filing.notes) !== ""),
+    [filings]
+  );
+  const columnWidths = showNotesColumn ? COLUMN_WIDTHS.withNotes : COLUMN_WIDTHS.withoutNotes;
 
   const activeFiltersCount =
     selectedStatuses.length +
@@ -1205,11 +1432,37 @@ function ActivistCampaigns() {
   // Always derived from the live `filings` array (not a snapshot), so the
   // selected-chips bar and the bulk confirm dialog show current alert_sent_at
   // state, including updates made mid-bulk-run as each send returns.
+  // Rows whose send failed during the last bulk run in THIS session -- the only
+  // failure state the app knows about, since the filings response carries no
+  // failure field of its own. Cleared whenever a new run starts (setBulkResults
+  // (null)), exactly like the results panel it comes from.
+  const bulkFailureById = useMemo(() => {
+    const failures = new Map<string | number, string>();
+    (bulkResults || []).forEach((result) => {
+      if (result.status === "failed") {
+        failures.set(result.filing.id, result.message || "The alert could not be sent.");
+      }
+    });
+    return failures;
+  }, [bulkResults]);
+
   const selectedFilings = filings.filter((f) => selectedFilingIds.has(f.id));
-  const alreadySentSelected = selectedFilings.filter((f) => f.alert_sent_at || f.alertSendWarning);
+  // "Already sent" is the same test the dialog's red warning uses: a recorded
+  // alert_sent_at, or a send this session that went out but wasn't recorded.
+  const isAlreadySent = (f: FilingItem) => !!(f.alert_sent_at || f.alertSendWarning);
+  const alreadySentSelected = selectedFilings.filter(isAlreadySent);
+  // Only meaningful when something selected was already sent; otherwise the
+  // checkbox isn't shown and everything selected is sent, as before.
+  const isSkippingAlreadySent = skipAlreadySent && alreadySentSelected.length > 0;
+  // The single source for what a run will send -- the dialog's counts and the
+  // send loop both read it, so what's shown is what's sent.
+  const getBulkSendTargets = () =>
+    isSkippingAlreadySent ? selectedFilings.filter((f) => !isAlreadySent(f)) : selectedFilings.slice();
+  const bulkSendCount = getBulkSendTargets().length;
 
   const openBulkConfirm = () => {
     if (selectedFilings.length === 0) return;
+    setSkipAlreadySent(true);
     setBulkResults(null);
     setBulkProgress(null);
     bulkStopRequestedRef.current = false;
@@ -1232,7 +1485,12 @@ function ActivistCampaigns() {
   };
 
   const runBulkSend = async () => {
-    const targets = selectedFilings.slice();
+    // Snapshotted before the first send: rows turn "already sent" as the run
+    // progresses, and that must not change what this run sends or skips.
+    const targets = getBulkSendTargets();
+    const skipped = isSkippingAlreadySent ? selectedFilings.filter(isAlreadySent) : [];
+    // Everything selected was already sent (the button is disabled then too):
+    // no request fires.
     if (targets.length === 0) return;
 
     setBulkSending(true);
@@ -1240,7 +1498,7 @@ function ActivistCampaigns() {
     bulkStopRequestedRef.current = false;
     setBulkStopRequested(false);
 
-    const results: Array<{ filing: FilingItem; status: "sent" | "warning" | "failed"; message?: string }> = [];
+    const results: Array<{ filing: FilingItem; status: "sent" | "warning" | "failed" | "skipped"; message?: string }> = [];
 
     for (let i = 0; i < targets.length; i++) {
       // Only checked between iterations -- a request already in flight is
@@ -1294,11 +1552,12 @@ function ActivistCampaigns() {
 
     setBulkProgress(null);
     setBulkSending(false);
-    setBulkResults(results);
+    setBulkResults([...results, ...skipped.map((filing) => ({ filing, status: "skipped" as const }))]);
     // These filings have now been acted on (sent, warned, or recorded as
     // failed in the summary below) -- clearing selection avoids the bar
-    // reappearing with a stale, already-handled batch.
-    setSelectedFilingIds(new Set());
+    // reappearing with a stale, already-handled batch. Skipped filings were
+    // not acted on, so they stay selected.
+    setSelectedFilingIds(new Set(skipped.map((f) => f.id)));
   };
 
   const openPreview = async (filing: FilingItem) => {
@@ -1382,74 +1641,20 @@ function ActivistCampaigns() {
     <div className="grid grid-cols-12 gap-y-10 gap-x-6">
       <div className="col-span-12">
         <div className="mt-3.5 relative">
-          <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200">
+          {/* Upload moved off the page and behind this button: the drop zone
+              was the largest thing on a screen whose job is the table, for an
+              action taken rarely. The modal below holds the same UI verbatim. */}
+          <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">Activist Campaigns</h2>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4">
-            <h3 className="text-sm font-bold text-slate-800 mb-3">Upload Campaigns (Excel)</h3>
-            <div className="flex items-start gap-4 flex-wrap">
-              <div className="w-full max-w-md">
-                {uploadFile ? (
-                  <div className="flex items-center w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 transition sm:px-5 shadow-sm">
-                    <Lucide icon="FileSpreadsheet" className="w-8 h-8 shrink-0 stroke-[1.7] stroke-slate-400/70" />
-                    <div className="flex flex-col w-full ml-3 gap-y-1 overflow-hidden">
-                      <p className="block font-medium truncate text-sm text-slate-700">{uploadFile.name}</p>
-                    </div>
-                    <Lucide
-                      onClick={() => setUploadFile(null)}
-                      icon="Trash2"
-                      className="w-5 h-5 shrink-0 cursor-pointer stroke-[1.7] stroke-slate-400/70"
-                    />
-                  </div>
-                ) : (
-                  <Dropzone
-                    ref={dropzoneRef}
-                    options={{
-                      url: "/",
-                      autoProcessQueue: false,
-                      clickable: true,
-                      thumbnailWidth: 100,
-                      maxFilesize: 5000,
-                      maxFiles: 1,
-                      acceptedFiles: ".xlsx",
-                    }}
-                    className="dropzone w-full flex flex-col justify-center items-center h-[110px]"
-                  >
-                    <div className="text-sm font-semibold text-gray-800 mb-1">Drop file here or click to upload.</div>
-                    <div className="text-xs text-slate-500">
-                      Only <span className="font-medium">.xlsx</span> files are allowed.
-                    </div>
-                  </Dropzone>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleUpload}
-                disabled={!uploadFile || isUploading}
-                style={{
-                  padding: "10px 18px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "none", color: "#fff",
-                  background: THEME_MAROON,
-                  opacity: !uploadFile || isUploading ? 0.5 : 1,
-                  cursor: !uploadFile || isUploading ? "not-allowed" : "pointer",
-                  height: "fit-content",
-                }}
-              >
-                {isUploading ? "Uploading…" : "Upload"}
-              </button>
-            </div>
-
-            {uploadErrors.length > 0 && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-xs font-semibold text-red-700 mb-1.5">Some rows could not be processed:</p>
-                <ul className="text-xs text-red-700 list-disc pl-4 space-y-0.5">
-                  {uploadErrors.map((err, i) => (
-                    <li key={i}>{err}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <Button
+              type="button"
+              variant="outline-secondary"
+              onClick={() => setUploadModalOpen(true)}
+              className="shrink-0"
+            >
+              <Lucide icon="Upload" className="stroke-[1.3] w-4 h-4 mr-2" />
+              Upload Excel
+            </Button>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
@@ -1670,9 +1875,9 @@ function ActivistCampaigns() {
               </div>
             )}
 
-            <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={16} maxHeight="68vh" className="table-fixed">
+            <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={showNotesColumn ? 10 : 9} maxHeight="68vh" className={TABLE_WRAPPER_CLASS}>
               <StandardizedTable.Header>
-                <StandardizedTable.Cell isHeader width="4%">
+                <StandardizedTable.Cell isHeader width={columnWidths.select} className={HEADER_CELL_CLASS}>
                   <input
                     type="checkbox"
                     checked={allVisibleSelected}
@@ -1683,34 +1888,29 @@ function ActivistCampaigns() {
                     style={{ accentColor: THEME_MAROON }}
                   />
                 </StandardizedTable.Cell>
-                {/* Two CIK columns now, so each says whose it is: this one is
-                    subject_cik (the company the filing is about), the one after
-                    Filer is filer_cik (who filed it). Label change only -- both
-                    read the same fields they always did, and nothing downstream
-                    depends on these strings. */}
-                <StandardizedTable.Cell isHeader width="8%">Company Name</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="5%">Subject CIK</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="5%">Ticker</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Filer</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="5%">Filer CIK</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="6%">In Activism Flow</StandardizedTable.Cell>
-                {/* The CAMPAIGN's state. Proxy Status below is a separate axis
-                    derived from form_type; neither feeds the other. */}
-                <StandardizedTable.Cell isHeader width="6%">Status</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Notes</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="6%">Filing Type</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Proxy Status</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="6%">First Filed</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="5%">Last Updated</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Alert Sent</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="7%">Send Alert</StandardizedTable.Cell>
-                <StandardizedTable.Cell isHeader width="6%"> </StandardizedTable.Cell>
+                {/* Both CIK columns are gone: they're reference numbers nobody
+                    reads across a row, so each sits in brackets on a muted line
+                    under the name it belongs to (subject_cik under Company,
+                    filer_cik under Filer). */}
+                <StandardizedTable.Cell isHeader width={columnWidths.company} className={HEADER_CELL_CLASS}>Company</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width={columnWidths.filer} className={HEADER_CELL_CLASS}>Filer</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width={columnWidths.formType} className={HEADER_CELL_CLASS}>Filing Type</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width={columnWidths.proxyStatus} className={HEADER_CELL_CLASS}>Proxy Status</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width={columnWidths.inFlow} className={HEADER_CELL_CLASS}>In Flow</StandardizedTable.Cell>
+                {/* The CAMPAIGN's state. Proxy Status is a separate axis derived
+                    from form_type; neither feeds the other. */}
+                <StandardizedTable.Cell isHeader width={columnWidths.status} className={HEADER_CELL_CLASS}>Status</StandardizedTable.Cell>
+                {showNotesColumn && (
+                  <StandardizedTable.Cell isHeader width={columnWidths.notes} className={HEADER_CELL_CLASS}>Notes</StandardizedTable.Cell>
+                )}
+                <StandardizedTable.Cell isHeader width={columnWidths.filed} className={HEADER_CELL_CLASS}>Filed</StandardizedTable.Cell>
+                <StandardizedTable.Cell isHeader width={columnWidths.remarks} className={HEADER_CELL_CLASS}>Remarks</StandardizedTable.Cell>
               </StandardizedTable.Header>
               <Table.Tbody>
                 {filteredFilings.length > 0 ? (
                   filteredFilings.map((filing, index) => (
                     <StandardizedTable.Row key={filing.id ?? index} index={index}>
-                      <StandardizedTable.Cell>
+                      <StandardizedTable.Cell className={BODY_CELL_CLASS}>
                         <input
                           type="checkbox"
                           checked={selectedFilingIds.has(filing.id)}
@@ -1721,56 +1921,59 @@ function ActivistCampaigns() {
                           style={{ accentColor: THEME_MAROON }}
                         />
                       </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span className="text-sm font-medium text-slate-700">{filing.company_name || "-"}</span>
+                      <StandardizedTable.Cell className={NAME_CELL_CLASS}>
+                        {(() => {
+                          const linkTarget = getLinkableCompanyMatch(filing);
+                          // The row's own company name either way -- the link
+                          // never relabels the row with the matched name.
+                          const label = toTrimmedString(filing.company_name) || "-";
+                          // "<TICKER> (<CIK>)"; either half alone when the other
+                          // is missing (press releases have no CIK), nothing when
+                          // neither is there.
+                          const ticker = toTrimmedString(filing.ticker);
+                          const subjectCik = toTrimmedString(filing.subject_cik);
+                          const subLine = [ticker, subjectCik ? `(${subjectCik})` : ""].filter(Boolean).join(" ");
+
+                          return (
+                            <>
+                              {linkTarget ? (
+                                <TruncatedName
+                                  text={label}
+                                  href={`/?ticker=${encodeURIComponent(linkTarget.symbol)}`}
+                                  onClick={(event) => handleCompanyLinkClick(event, linkTarget)}
+                                  clickable={false}
+                                  className="text-[13px] font-medium text-primary hover:underline"
+                                >
+                                  {label}
+                                </TruncatedName>
+                              ) : (
+                                <TruncatedName text={label} className="text-[13px] font-medium text-slate-700">
+                                  {label}
+                                </TruncatedName>
+                              )}
+                              {subLine && <span className={`${SUB_VALUE_CLASS} min-w-0 tabular-nums`}>{subLine}</span>}
+                            </>
+                          );
+                        })()}
                       </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {/* Press releases have no CIK -- blank for them, like
-                            Filer CIK below, rather than a dash that reads like
-                            a value we failed to load. SEC rows keep their "-". */}
-                        <span className="text-sm text-slate-600">
-                          {filing.subject_cik || (isPressRelease(filing) ? "" : "-")}
+                      <StandardizedTable.Cell className={NAME_CELL_CLASS}>
+                        {(() => {
+                          const filer = toTrimmedString(filing.filer) || "-";
+                          const filerCik = toTrimmedString(filing.filer_cik);
+                          return (
+                            <>
+                              <TruncatedName text={filer} className="font-semibold text-slate-700">
+                                {filer}
+                              </TruncatedName>
+                              {filerCik && <span className={`${SUB_VALUE_CLASS} min-w-0 tabular-nums`}>({filerCik})</span>}
+                            </>
+                          );
+                        })()}
+                      </StandardizedTable.Cell>
+                      <StandardizedTable.Cell className={BODY_CELL_CLASS}>
+                        <span className="block truncate text-slate-600" title={toTrimmedString(filing.form_type) || undefined}>
+                          {filing.form_type || "-"}
                         </span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{filing.ticker || "-"}</span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{filing.filer || "-"}</span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {/* Blank, not the "-" its neighbours use: plenty of
-                            routine filings have no separate filer, and a dash
-                            in a column of numbers reads like a value. */}
-                        <span className="text-sm text-slate-600">{filing.filer_cik || ""}</span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                            filing.in_activism_flow ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                          }`}
-                        >
-                          {filing.in_activism_flow ? "Yes" : "No"}
-                        </span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {filing.status ? (
-                          <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                              toTrimmedString(filing.status).toLowerCase() === "closed"
-                                ? "bg-slate-200 text-slate-600"
-                                : "bg-primary/10 text-primary"
-                            }`}
-                          >
-                            {filing.status}
-                          </span>
-                        ) : null}
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600 line-clamp-2">{filing.notes || ""}</span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{filing.form_type || "-"}</span>
                         {/* Source badge, under the form type rather than in a
                             column of its own. Only rendered once the backend
                             reports a source, so until then this cell is exactly
@@ -1789,113 +1992,89 @@ function ActivistCampaigns() {
                           </div>
                         )}
                       </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
+                      <StandardizedTable.Cell className={BODY_CELL_CLASS}>
                         {/* Blank for every form the mapping doesn't cover (all
-                            13Ds), same treatment as Filer CIK. */}
-                        <span className="text-sm text-slate-600">{getProxyStatus(filing.form_type)}</span>
+                            13Ds) -- a dash there would read like a value. */}
+                        <span className="block truncate text-slate-600" title={getProxyStatus(filing.form_type) || undefined}>
+                          {getProxyStatus(filing.form_type)}
+                        </span>
                       </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <span className="text-sm text-slate-600">{formatDateOnly(filing.filed_at) || "-"}</span>
+                      <StandardizedTable.Cell className={BODY_CELL_CLASS}>
+                        <span
+                          className={`inline-flex rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+                            filing.in_activism_flow ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          {filing.in_activism_flow ? "Yes" : "No"}
+                        </span>
                       </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {/* No field for a filing-level "last updated" timestamp
-                            in the documented filings response -- left blank
-                            rather than guessing a field name. Flagged in the
-                            handoff; needs a decision (drop the column, or the
-                            backend adds the field). */}
-                        <span className="text-sm text-slate-600"></span>
-                      </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {filing.alert_sent_at ? (
-                          <span className="text-sm text-slate-600">{formatDateTime(filing.alert_sent_at)}</span>
-                        ) : filing.alertSendWarning ? (
-                          <div className="flex items-start gap-1.5 text-xs text-amber-700">
-                            <Lucide icon="AlertTriangle" className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>
-                              <span className="font-semibold">Sent, not recorded:</span> {filing.alertSendWarning}
-                            </span>
-                          </div>
+                      <StandardizedTable.Cell className={BODY_CELL_CLASS}>
+                        {filing.status ? (
+                          <span
+                            className={`inline-flex max-w-full truncate rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+                              toTrimmedString(filing.status).toLowerCase() === "closed"
+                                ? "bg-slate-200 text-slate-600"
+                                : "bg-primary/10 text-primary"
+                            }`}
+                            title={toTrimmedString(filing.status)}
+                          >
+                            {filing.status}
+                          </span>
                         ) : null}
                       </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        {/* The send control is untouched and stays enabled on a
-                            held row -- reviewing what was held and overriding it
-                            is the point of the hold. The chip sits beside it
-                            rather than in the Alert Sent column, which keeps
-                            that column exactly as it was. */}
-                        <div className="flex flex-col items-start gap-1.5">
-                          <input
-                            type="checkbox"
-                            checked={!!(filing.alert_sent_at || filing.alertSendWarning)}
-                            readOnly
-                            disabled={sendingAlertId === filing.id}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              openAlertConfirm(filing);
-                            }}
-                            title={
-                              filing.alert_sent_at
-                                ? `Alert already sent ${formatDateTime(filing.alert_sent_at)} — click to send again`
-                                : filing.alertSendWarning
-                                ? `Alert already sent (not recorded: ${filing.alertSendWarning}) — click to send again`
-                                : "Send an alert for this filing"
-                            }
-                            className="w-4 h-4 cursor-pointer"
-                            style={{ accentColor: THEME_MAROON }}
-                          />
-                          {isFilingHeld(filing) && (
-                            // Several labels off one condition: isFilingHeld
-                            // decides WHETHER a chip shows (unchanged), the rule
-                            // id decides WHICH (getHeldChip). All stay neutral
-                            // slate -- none is a failure, and colouring one of
-                            // them would read as severity that isn't there. They
-                            // differ by label and icon only.
-                            //
-                            // The tooltip is untouched: the backend's own
-                            // sentence, verbatim, on both kinds; no title at all
-                            // when it didn't send one.
-                            //
-                            // No whitespace-nowrap -- these labels are longer
-                            // than the "Held" they replace, and this column is
-                            // narrow, so they wrap inside the cell rather than
-                            // spilling over the one beside it.
-                            <span
-                              title={toTrimmedString(filing.alert_suppressed_reason) || undefined}
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600"
-                            >
-                              <Lucide icon={getHeldChip(filing).icon} className="w-3 h-3 shrink-0" />
-                              {getHeldChip(filing).label}
-                            </span>
-                          )}
-                        </div>
+                      {showNotesColumn && (
+                        <StandardizedTable.Cell className={BODY_CELL_CLASS}>
+                          <span className="block truncate text-slate-600" title={toTrimmedString(filing.notes) || undefined}>
+                            {filing.notes || ""}
+                          </span>
+                        </StandardizedTable.Cell>
+                      )}
+                      <StandardizedTable.Cell className={`${BODY_CELL_CLASS} tabular-nums`}>
+                        <span className="block truncate text-slate-600">{formatDateOnly(filing.filed_at) || "-"}</span>
                       </StandardizedTable.Cell>
-                      <StandardizedTable.Cell>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => openPreview(filing)}
-                            title={isPressRelease(filing) ? "Preview press release" : "Preview filing"}
-                            style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, padding: 4 }}
-                          >
-                            <Lucide icon="Eye" className="w-4 h-4" />
-                          </button>
-                          {filing.campaign_id != null && (
+                      <StandardizedTable.Cell className={BODY_CELL_CLASS}>
+                        {/* One icon for the alert state, and the row's actions at
+                            the right edge. The send path is unchanged: the same
+                            openAlertConfirm the checkbox called, so the same
+                            confirm dialog and the same API call. */}
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="min-w-0">
+                            <RemarksIndicator
+                              filing={filing}
+                              isSending={sendingAlertId === filing.id || bulkProgress?.current?.id === filing.id}
+                              failureMessage={bulkFailureById.get(filing.id)}
+                              onSend={() => openAlertConfirm(filing)}
+                            />
+                          </div>
+                          <div className="flex shrink-0 items-center">
                             <button
                               type="button"
-                              onClick={() => openEditModal(filing)}
-                              title="Edit status / notes"
-                              style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, padding: 4 }}
+                              onClick={() => openPreview(filing)}
+                              title={isPressRelease(filing) ? "Preview press release" : "Preview filing"}
+                              aria-label={isPressRelease(filing) ? "Preview press release" : "Preview filing"}
+                              style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, padding: 2 }}
                             >
-                              <Lucide icon="Pencil" className="w-4 h-4" />
+                              <Lucide icon="Eye" className="w-4 h-4" />
                             </button>
-                          )}
+                            {filing.campaign_id != null && (
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(filing)}
+                                title="Edit status / notes"
+                                aria-label="Edit status and notes"
+                                style={{ background: "transparent", border: "none", cursor: "pointer", color: THEME_MAROON, padding: 2 }}
+                              >
+                                <Lucide icon="Pencil" className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </StandardizedTable.Cell>
                     </StandardizedTable.Row>
                   ))
                 ) : (
                   <Table.Tr>
-                    <Table.Td colSpan={16} className="text-center py-12 text-slate-500">
+                    <Table.Td colSpan={showNotesColumn ? 10 : 9} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Lucide icon="FileSearch" className="w-10 h-10 opacity-40" />
                         <span className="text-sm font-medium text-slate-600">No filings found</span>
@@ -1905,6 +2084,32 @@ function ActivistCampaigns() {
                 )}
               </Table.Tbody>
             </StandardizedTable>
+
+            {/* Legend for the Remarks column -- one line, muted, so the icons
+                don't need a column of prose beside them. */}
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+              <span className="inline-flex items-center gap-1">
+                <Lucide icon="CheckCircle2" className="w-3.5 h-3.5 text-emerald-600" />
+                Alert sent
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Lucide icon="PauseCircle" className="w-3.5 h-3.5 text-slate-500" />
+                Held — not sent
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Lucide icon="Loader" className="w-3.5 h-3.5 text-slate-500" />
+                Sending
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Lucide icon="AlertTriangle" className="w-3.5 h-3.5 text-amber-600" />
+                Needs attention
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Lucide icon="Mail" className="w-3.5 h-3.5 text-slate-400" />
+                Send alert
+              </span>
+              <span className="text-slate-400">hover an icon for the reason</span>
+            </div>
 
             {totalPages > 1 && (
               <div className="flex justify-end mt-4">
@@ -1920,6 +2125,106 @@ function ActivistCampaigns() {
           </div>
         </div>
       </div>
+
+      {/* Upload, moved off the page. The drop zone, the selected-file view, the
+          Upload button and the row-error list are the same markup that was in
+          the card above the table -- only their container changed. */}
+      {uploadModalOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isUploading) setUploadModalOpen(false);
+          }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "white", padding: 24, borderRadius: 12, width: "100%", maxWidth: 520, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}
+          >
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="text-base font-bold text-slate-800">Upload Campaigns (Excel)</h2>
+              <button
+                type="button"
+                onClick={() => setUploadModalOpen(false)}
+                disabled={isUploading}
+                title="Close"
+                aria-label="Close"
+                className="text-slate-400 hover:text-slate-600 disabled:opacity-50"
+              >
+                <Lucide icon="X" className="w-4 h-4" />
+              </button>
+            </div>
+
+            {uploadFile ? (
+              <div className="flex items-center w-full relative px-3 py-2.5 rounded-[0.6rem] border border-slate-200/80 hover:bg-slate-50 transition sm:px-5 shadow-sm">
+                <Lucide icon="FileSpreadsheet" className="w-8 h-8 shrink-0 stroke-[1.7] stroke-slate-400/70" />
+                <div className="flex flex-col w-full ml-3 gap-y-1 overflow-hidden">
+                  <p className="block font-medium truncate text-sm text-slate-700">{uploadFile.name}</p>
+                </div>
+                <Lucide
+                  onClick={() => setUploadFile(null)}
+                  icon="Trash2"
+                  className="w-5 h-5 shrink-0 cursor-pointer stroke-[1.7] stroke-slate-400/70"
+                />
+              </div>
+            ) : (
+              <Dropzone
+                ref={dropzoneRef}
+                options={{
+                  url: "/",
+                  autoProcessQueue: false,
+                  clickable: true,
+                  thumbnailWidth: 100,
+                  maxFilesize: 5000,
+                  maxFiles: 1,
+                  acceptedFiles: ".xlsx",
+                }}
+                className="dropzone w-full flex flex-col justify-center items-center h-[110px]"
+              >
+                <div className="text-sm font-semibold text-gray-800 mb-1">Drop file here or click to upload.</div>
+                <div className="text-xs text-slate-500">
+                  Only <span className="font-medium">.xlsx</span> files are allowed.
+                </div>
+              </Dropzone>
+            )}
+
+            {uploadErrors.length > 0 && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md max-h-48 overflow-y-auto">
+                <p className="text-xs font-semibold text-red-700 mb-1.5">Some rows could not be processed:</p>
+                <ul className="text-xs text-red-700 list-disc pl-4 space-y-0.5">
+                  {uploadErrors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => setUploadModalOpen(false)}
+                disabled={isUploading}
+              >
+                Close
+              </Button>
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={!uploadFile || isUploading}
+                style={{
+                  padding: "10px 18px", fontSize: 13, fontWeight: 600, borderRadius: 6, border: "none", color: "#fff",
+                  background: THEME_MAROON,
+                  opacity: !uploadFile || isUploading ? 0.5 : 1,
+                  cursor: !uploadFile || isUploading ? "not-allowed" : "pointer",
+                  height: "fit-content",
+                }}
+              >
+                {isUploading ? "Uploading…" : "Upload"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingFiling && (
         <div
@@ -2358,7 +2663,12 @@ function ActivistCampaigns() {
               <h2 style={{ margin: "0 0 16px", color: "#111827", fontSize: 17, fontWeight: 600 }}>
                 {bulkResults
                   ? "Send Complete"
-                  : `Send ${selectedFilings.length} Alert${selectedFilings.length === 1 ? "" : "s"}?`}
+                  : (() => {
+                      // Mid-run, rows turn "already sent" one by one; the run's
+                      // own total keeps the title from counting down.
+                      const count = bulkSending && bulkProgress ? bulkProgress.total : bulkSendCount;
+                      return `Send ${count} Alert${count === 1 ? "" : "s"}?`;
+                    })()}
               </h2>
             </div>
 
@@ -2374,8 +2684,17 @@ function ActivistCampaigns() {
                   {alreadySentSelected.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "10px 14px", marginBottom: 16, background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 6 }}>
                       <span style={{ fontSize: 13, color: "#b91c1c", lineHeight: 1.5 }}>
-                        <strong>{alreadySentSelected.length}</strong> of these already had an alert sent. Sending
-                        again is allowed but will email them a second time:
+                        {isSkippingAlreadySent ? (
+                          <>
+                            <strong>{alreadySentSelected.length}</strong> of these already had an alert sent. They will
+                            be skipped, not emailed a second time:
+                          </>
+                        ) : (
+                          <>
+                            <strong>{alreadySentSelected.length}</strong> of these already had an alert sent. Sending
+                            again is allowed but will email them a second time:
+                          </>
+                        )}
                       </span>
                       <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: "#b91c1c" }}>
                         {alreadySentSelected.map((f) => (
@@ -2387,37 +2706,70 @@ function ActivistCampaigns() {
                           </li>
                         ))}
                       </ul>
+                      <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginTop: 4, fontSize: 13, color: "#7f1d1d", fontWeight: 600, cursor: "pointer" }}>
+                        <input
+                          type="checkbox"
+                          checked={skipAlreadySent}
+                          onChange={(e) => setSkipAlreadySent(e.target.checked)}
+                          className="w-4 h-4 cursor-pointer"
+                          style={{ accentColor: THEME_MAROON, marginTop: 2, flexShrink: 0 }}
+                        />
+                        <span>
+                          Skip the {alreadySentSelected.length} already sent — send only the{" "}
+                          {selectedFilings.length - alreadySentSelected.length} new one
+                          {selectedFilings.length - alreadySentSelected.length === 1 ? "" : "s"}
+                        </span>
+                      </label>
                     </div>
                   )}
 
-                  <div
-                    style={{
-                      display: "flex", gap: 10, padding: "10px 14px", marginBottom: 16, borderRadius: 6,
-                      background: selectedFilings.length >= LARGE_SELECTION_COUNT_THRESHOLD ? "#fef3c7" : "#f3f4f6",
-                      border: selectedFilings.length >= LARGE_SELECTION_COUNT_THRESHOLD ? "1px solid #fcd34d" : "1px solid #e5e7eb",
-                    }}
-                  >
-                    <span style={{ fontSize: 13, color: selectedFilings.length >= LARGE_SELECTION_COUNT_THRESHOLD ? "#92400e" : "#4b5563", lineHeight: 1.5 }}>
-                      Sends go out one at a time (never in parallel) at roughly {SECONDS_PER_SEND} seconds each —{" "}
-                      <strong>{formatEstimatedDuration(selectedFilings.length)}</strong> total. Keep this tab open
-                      until it finishes; you can stop between sends at any point.
-                    </span>
-                  </div>
+                  {bulkSendCount === 0 ? (
+                    <div style={{ padding: "10px 14px", marginBottom: 16, borderRadius: 6, background: "#f3f4f6", border: "1px solid #e5e7eb" }}>
+                      <span style={{ fontSize: 13, color: "#374151", lineHeight: 1.5, fontWeight: 600 }}>
+                        Nothing to send — all {selectedFilings.length} already had an alert
+                      </span>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: "flex", gap: 10, padding: "10px 14px", marginBottom: 16, borderRadius: 6,
+                        background: bulkSendCount >= LARGE_SELECTION_COUNT_THRESHOLD ? "#fef3c7" : "#f3f4f6",
+                        border: bulkSendCount >= LARGE_SELECTION_COUNT_THRESHOLD ? "1px solid #fcd34d" : "1px solid #e5e7eb",
+                      }}
+                    >
+                      <span style={{ fontSize: 13, color: bulkSendCount >= LARGE_SELECTION_COUNT_THRESHOLD ? "#92400e" : "#4b5563", lineHeight: 1.5 }}>
+                        {/* The run lives in this page, so closing it stops the
+                            remaining sends -- the "keep open" line must stay. */}
+                        This takes <strong>{formatEstimatedDuration(bulkSendCount)}</strong>. Please keep this window
+                        open until all alerts are sent.
+                      </span>
+                    </div>
+                  )}
 
                   <div style={{ marginBottom: 16 }}>
                     <h3 style={{ fontSize: 12.5, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.02em", margin: "0 0 8px" }}>
                       Filings to send
                     </h3>
                     <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, maxHeight: 220, overflowY: "auto" }}>
-                      {selectedFilings.map((f, i) => (
-                        <div
-                          key={f.id}
-                          style={{ padding: "8px 14px", fontSize: 13, color: "#111827", borderTop: i === 0 ? "none" : "1px solid #f3f4f6" }}
-                        >
-                          <strong>{f.company_name || "-"}</strong>
-                          <span style={{ color: "#6b7280" }}> — {f.filer || "-"} — {f.form_type || "-"}</span>
-                        </div>
-                      ))}
+                      {selectedFilings.map((f, i) => {
+                        // Skipped rows stay in the list, struck through, so the
+                        // selection reads the same with the box ticked or not.
+                        const skippedRow = isSkippingAlreadySent && isAlreadySent(f);
+                        return (
+                          <div
+                            key={f.id}
+                            style={{ padding: "8px 14px", fontSize: 13, color: skippedRow ? "#9ca3af" : "#111827", borderTop: i === 0 ? "none" : "1px solid #f3f4f6" }}
+                          >
+                            <span style={{ textDecoration: skippedRow ? "line-through" : "none" }}>
+                              <strong>{f.company_name || "-"}</strong>
+                              <span style={{ color: skippedRow ? "#9ca3af" : "#6b7280" }}> — {f.filer || "-"} — {f.form_type || "-"}</span>
+                            </span>
+                            {skippedRow && (
+                              <span style={{ marginLeft: 8, fontSize: 11.5, fontStyle: "italic", color: "#6b7280" }}>skipped — already sent</span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </>
@@ -2465,6 +2817,16 @@ function ActivistCampaigns() {
                       </div>
                       <div style={{ fontSize: 11.5, color: "#b91c1c" }}>Failed</div>
                     </div>
+                    {/* Only when the run skipped something, so a run without
+                        skips summarises exactly as before. */}
+                    {bulkResults.some((r) => r.status === "skipped") && (
+                      <div style={{ flex: 1, padding: "10px 14px", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 6, textAlign: "center" }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: "#4b5563" }}>
+                          {bulkResults.filter((r) => r.status === "skipped").length}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "#4b5563" }}>Skipped</div>
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, maxHeight: 260, overflowY: "auto" }}>
@@ -2475,12 +2837,15 @@ function ActivistCampaigns() {
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <Lucide
-                            icon={r.status === "failed" ? "XCircle" : "CheckCircle2"}
+                            icon={r.status === "failed" ? "XCircle" : r.status === "skipped" ? "MinusCircle" : "CheckCircle2"}
                             className="w-3.5 h-3.5"
-                            style={{ color: r.status === "failed" ? "#dc2626" : "#16a34a", flexShrink: 0 }}
+                            style={{ color: r.status === "failed" ? "#dc2626" : r.status === "skipped" ? "#6b7280" : "#16a34a", flexShrink: 0 }}
                           />
                           <strong style={{ color: "#111827" }}>{r.filing.company_name || "-"}</strong>
                         </div>
+                        {r.status === "skipped" && (
+                          <span style={{ fontSize: 12, color: "#6b7280", marginLeft: 22 }}>skipped (already sent)</span>
+                        )}
                         {r.status === "warning" && (
                           <span style={{ fontSize: 12, color: "#b45309", marginLeft: 22 }}>Sent, not recorded: {r.message}</span>
                         )}
@@ -2507,9 +2872,13 @@ function ActivistCampaigns() {
                   <button
                     type="button"
                     onClick={runBulkSend}
-                    style={{ padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, cursor: "pointer", fontWeight: 600 }}
+                    disabled={bulkSendCount === 0}
+                    style={{
+                      padding: "8px 16px", background: THEME_MAROON, color: "white", border: "none", borderRadius: 6, fontWeight: 600,
+                      cursor: bulkSendCount === 0 ? "not-allowed" : "pointer", opacity: bulkSendCount === 0 ? 0.5 : 1,
+                    }}
                   >
-                    Confirm and Send {selectedFilings.length} Alert{selectedFilings.length === 1 ? "" : "s"}
+                    Confirm and Send {bulkSendCount} Alert{bulkSendCount === 1 ? "" : "s"}
                   </button>
                 </>
               )}

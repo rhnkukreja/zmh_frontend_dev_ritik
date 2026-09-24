@@ -3,6 +3,7 @@ import axios from "axios";
 import { AI_CHATBOT_API_BASE } from "@/pages/AIChatbot/api";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
+import CaseStudyText from "@/components/CaseStudyText";
 import { caseStudiesService } from "@/services/caseStudies";
 
 interface ExtractedCaseStudy {
@@ -14,9 +15,27 @@ interface ExtractedCaseStudy {
     company_sector: string;
     year: number;
     market: string;
-    proponent: string;
     resolution: string;
     engagement_details: string;
+    // Newer extraction only -- an older job result has none of these (it has
+    // a `proponent` instead, which is deliberately never displayed or sent).
+    // Missing is treated exactly like null: not rendered, approved as null.
+    case_study_type?: "Management" | "Shareholder" | "Proxy Contest" | "Engagement";
+    vote?:
+      | "For"
+      | "Against"
+      | "Abstain"
+      | "Split"
+      | "Withhold"
+      | "No Vote"
+      | "Proxy Contest (For Management)"
+      | "Proxy Contest (For Dissidents)"
+      | null;
+    voting_details?: string | null;
+    voting_rationale?: string | null;
+    // "ai_written" means the rationale was composed by the model rather than
+    // quoted from the document -- flagged on the card so it's checked first.
+    rationale_source?: "quoted" | "ai_written" | null;
   };
   resolved_company: { id: number; name: string; symbol: string; matched_on: string } | null;
   source_link: string;
@@ -25,6 +44,10 @@ interface ExtractedCaseStudy {
   // job result, or a field-name mismatch) is treated as "no warning", not as
   // flagged; only an explicit `false` shows the warning.
   engagement_details_verbatim?: boolean;
+  // Same contract as engagement_details_verbatim, for the voting fields. null
+  // (no voting text to check) and undefined (older job) both mean no warning.
+  voting_details_verbatim?: boolean | null;
+  voting_rationale_verbatim?: boolean | null;
 }
 
 interface DocumentInfo {
@@ -88,71 +111,19 @@ const POLL_INTERVAL_MS = 6000;
 // being validated — full history can be enabled once this is trusted.
 const GENERATION_YEARS = [2025, 2026];
 
-// ─── Prose formatting ───────────────────────────────────────────────────────
-// The same component renders two differently-shaped bodies, and both have to
-// come out right:
-//
-//   legacy rows   paragraphs separated by a blank line, few or no single
-//                 newlines within a paragraph
-//   PDF-extracted a newline at the end of every VISUAL line, because that's
-//                 what text extraction preserves
-//
-// Splitting on every "\n" (what this did before) happens to work for the first
-// and breaks the second badly: one sentence becomes three margined paragraphs.
-// So a blank line is a paragraph break, and a lone newline is a soft wrap to be
-// rejoined -- the same rule sec_13d_monitor.py's preview formatter applies to
-// SEC filing text.
-
-// A line that begins a list item is a genuine break, not a wrap, and must not
-// be folded into the sentence above it: a bullet, or a number/letter marker
-// ("1.", "1)", "(1)", "a.").
-//
-// The letter form is restricted to lowercase on purpose. Uppercase would match
-// the initial in a personal name ("J. Smith...") landing at the start of a
-// wrapped line, which is plausible in this material and would split a sentence
-// for no reason.
-const LIST_ITEM_START = /^(?:[•\-–—*]|\(?\d+[.)]|\(?[a-z][.)])\s+/;
-
-// Blank-line-separated paragraphs. Within each, wrapped lines are rejoined with
-// a single space, while list items keep their own line (the retained "\n" is
-// rendered by whitespace-pre-line on the <p>). Empty paragraphs are dropped,
-// same as before.
-const toParagraphs = (text: string): string[] =>
-  text
-    .split(/\n\s*\n/)
-    .map((block) =>
-      block
-        .split("\n")
-        .reduce<string[]>((lines, rawLine) => {
-          const line = rawLine.trim();
-          if (!line) return lines;
-          if (lines.length === 0 || LIST_ITEM_START.test(line)) {
-            lines.push(line);
-          } else {
-            lines[lines.length - 1] += ` ${line}`;
-          }
-          return lines;
-        }, [])
-        .join("\n")
-        // Collapses the runs of spaces that joining can produce (a line ending
-        // in a space, then joined to the next). Deliberately not \s, so the
-        // list-item newlines above survive.
-        .replace(/[ \t]+/g, " ")
-        .trim()
-    )
-    .filter((block) => block.length > 0);
+// Prose formatting (paragraphs, soft wraps, headings) lives in the shared
+// CaseStudyText component, so this preview and the saved page render alike.
 
 // ─── Approve payload ────────────────────────────────────────────────────────
 // Mirrors AddEditCaseStudies.tsx's onSubmit transformedData shape exactly:
 // same field names, same null-vs-empty conventions (company/caspio_company_name
 // mutual exclusivity, primary_source_link as a filtered array).
 //
-// The 7 fields the create form's react-hook-form `rules` mark required have no
-// counterpart in the extraction (that's a client-side UX rule, not a Postgres
-// constraint — confirmed against the live table, all nullable with no
-// default). Six go null; the analyst fills them in via the existing edit form
-// after approving, same as most of the 4,326 existing rows. The seventh,
-// primary_source, is NOT one of those six -- it's set to the source
+// The create form's react-hook-form `rules` are a client-side UX rule, not a
+// Postgres constraint — confirmed against the live table, all nullable with no
+// default. Required fields the extraction has no counterpart for go null; the
+// analyst fills them in via the existing edit form after approving, same as
+// most of the 4,326 existing rows. primary_source is set to the source
 // document's own name, which we do have.
 // The extractor emits the literal string "N/A" (see the render guards below,
 // e.g. `e.company_ticker !== "N/A"`) rather than omitting the field, so a
@@ -187,12 +158,16 @@ const buildApprovedCaseStudyPayload = (item: FlatCaseStudy) => {
     caspio_company_sector: normalizeExtractedValue(e.company_sector),
     // Separate column from caspio_company_sector, same source value.
     industry: normalizeExtractedValue(e.company_sector),
+    // From the newer extraction; an older job result has none of these, so
+    // they go null exactly as before. proposal_type is the column the saved
+    // page shows as "Case Study Type".
+    proposal_type: normalizeExtractedValue(e.case_study_type),
+    vote: normalizeExtractedValue(e.vote),
+    voting_details: normalizeExtractedValue(e.voting_details),
+    voting_rationale: normalizeExtractedValue(e.voting_rationale),
     // Nullable in Postgres with no default; the create form's `required`
     // rules are react-hook-form UX only, not a schema constraint. The
     // analyst fills these in via the edit form after approving.
-    proposal_type: null,
-    voting_details: null,
-    voting_rationale: null,
     page_reference: null,
     esg_category: null,
     // Deliberately null, not the blank-form's "Equity" UI default -- we never
@@ -496,6 +471,16 @@ const getDocumentName = (url: string) => {
   }
 };
 
+// Review-only: shown when the backend reports a text field is NOT an exact copy
+// of the source document (an explicit `false` only -- see the *_verbatim
+// fields on ExtractedCaseStudy). Never saved.
+const NonVerbatimWarning: React.FC = () => (
+  <p className="mb-3 flex items-start gap-1.5 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+    <Lucide icon="AlertTriangle" className="w-3.5 h-3.5 mt-px shrink-0" />
+    Not an exact copy of the source document — check it against the source before approving.
+  </p>
+);
+
 const CaseStudyDetailCard: React.FC<{
   item: FlatCaseStudy;
   status: "idle" | "saving" | "saved" | "error";
@@ -504,6 +489,17 @@ const CaseStudyDetailCard: React.FC<{
 }> = ({ item, status, errorMessage, onApprove }) => {
   const { document, cs } = item;
   const e = cs.extracted;
+  // Normalized the same way as the approve payload, so the card shows exactly
+  // what would be saved -- null/"N/A"/blank (or absent, on an older job
+  // result) is simply not rendered.
+  const caseStudyType = normalizeExtractedValue(e.case_study_type);
+  const vote = normalizeExtractedValue(e.vote);
+  const votingRationale = normalizeExtractedValue(e.voting_rationale);
+  const votingDetails = normalizeExtractedValue(e.voting_details);
+  // The document's institution is the real one (the approve payload uses its
+  // id); the extractor's value is often the literal "N/A", which is truthy.
+  const institution =
+    normalizeExtractedValue(document.institution_name) ?? normalizeExtractedValue(e.institution);
   return (
     <div className="p-6 bg-white border rounded-lg space-y-4">
       <div className="pb-3 border-b border-slate-200 flex items-start justify-between gap-4">
@@ -534,10 +530,12 @@ const CaseStudyDetailCard: React.FC<{
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <h3 className="font-semibold mb-2 text-sm">Institution</h3>
-          <p>{e.institution || document.institution_name}</p>
-        </div>
+        {institution && (
+          <div>
+            <h3 className="font-semibold mb-2 text-sm">Institution</h3>
+            <p>{institution}</p>
+          </div>
+        )}
         {e.theme && (
           <div>
             <h3 className="font-semibold mb-2 text-sm">Theme</h3>
@@ -575,11 +573,13 @@ const CaseStudyDetailCard: React.FC<{
         )}
       </div>
 
+      {/* Same labels and order as the saved page (DetailCaseStudies.tsx):
+          Case Study Type / Resolution / Vote, then the long-text sections. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {e.proponent && (
+        {caseStudyType && (
           <div>
-            <h3 className="font-semibold mb-2 text-sm">Proponent</h3>
-            <p>{e.proponent}</p>
+            <h3 className="font-semibold mb-2 text-sm">Case Study Type</h3>
+            <p>{caseStudyType}</p>
           </div>
         )}
         {e.resolution && (
@@ -588,18 +588,45 @@ const CaseStudyDetailCard: React.FC<{
             <p>{e.resolution}</p>
           </div>
         )}
+        {vote && (
+          <div>
+            <h3 className="font-semibold mb-2 text-sm">Vote</h3>
+            <p className="text-destructive">{vote}</p>
+          </div>
+        )}
       </div>
 
       {e.engagement_details && (
         <div>
           <h3 className="font-semibold mb-2 text-sm">Engagement/Voting Details</h3>
-          {/* whitespace-pre-line so the newlines toParagraphs deliberately kept
-              -- list-item breaks, nothing else -- render as line breaks. */}
-          {toParagraphs(e.engagement_details).map((paragraph, idx) => (
-            <p key={idx} className="mb-3 text-justify whitespace-pre-line">
-              {paragraph}
-            </p>
-          ))}
+          {cs.engagement_details_verbatim === false && <NonVerbatimWarning />}
+          <CaseStudyText text={e.engagement_details} />
+        </div>
+      )}
+
+      {votingRationale && (
+        <div>
+          <h3 className="font-semibold mb-2 text-sm flex flex-wrap items-center gap-2">
+            Rationale
+            {e.rationale_source === "ai_written" && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-xs font-medium">
+                <Lucide icon="Sparkles" className="w-3.5 h-3.5" />
+                AI-written — check before approving
+              </span>
+            )}
+          </h3>
+          {/* Only ever true for a "quoted" rationale: an ai_written one is not
+              checked against the source, so its flag is null, not false. */}
+          {cs.voting_rationale_verbatim === false && <NonVerbatimWarning />}
+          <CaseStudyText text={votingRationale} />
+        </div>
+      )}
+
+      {votingDetails && (
+        <div>
+          <h3 className="font-semibold mb-2 text-sm">Details</h3>
+          {cs.voting_details_verbatim === false && <NonVerbatimWarning />}
+          <CaseStudyText text={votingDetails} />
         </div>
       )}
 

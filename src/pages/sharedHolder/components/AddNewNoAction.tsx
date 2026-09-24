@@ -3,10 +3,10 @@ import { ClassicEditor } from "@/components/Base/Ckeditor";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
-import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { useAppDispatch } from "@/stores/hooks";
 import Litepicker from "@/components/Base/Litepicker";
 import { AppDispatch } from "@/stores/store";
-import { bytesToMB, createDynamicURL, formatedDate, getDateWithoutTime } from "@/utils/helper";
+import { bytesToMB, formatedDate, getDateWithoutTime } from "@/utils/helper";
 import TomSelect from "@/components/Base/TomSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -16,11 +16,9 @@ import {
   useForm,
 } from "react-hook-form";
 import { toast } from "react-toastify";
-import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 import {
   addEditNewNoAction,
-  fetchShareHolderProposal,
   getSingleShareHolderData,
 } from "@/stores/shareholderProposalSlice";
 import { AddNoActionType, ShareHolderDropdown } from "@/types/shareHolder";
@@ -34,12 +32,19 @@ interface AddNoActionProps {
   addNewNoActionModalVisible: boolean;
   setAddNewNoActionModalVisible: (visible: boolean) => void;
   selectedShareholderNoAction: AddNoActionType | null;
+  onSaved?: (payload: {
+    tabKey: "no-action";
+    action: "add" | "edit";
+    record: any;
+    previousRecord?: AddNoActionType | null;
+  }) => void;
 }
 
 const AddNewNoAction: React.FC<AddNoActionProps> = ({
   addNewNoActionModalVisible,
   setAddNewNoActionModalVisible,
   selectedShareholderNoAction,
+  onSaved,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
   
@@ -47,9 +52,6 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   const searchParams = new URLSearchParams(location.search);
   const url = searchParams.get('url')
   
-  const { loading, page, filters} = useAppSelector(
-    (state) => state.sharedHolderNoAction
-  );
    const [dropdownLoader, setDropdownLoader] =
       useState(false);
        const [institutionsOptions, setInstitutionsOptions] =
@@ -146,9 +148,6 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
       year: [],
     });
 
-  const { user, companyGlobalSearchName } = useAppSelector(
-    (state) => state.authentiction
-  );
 
   const getAllCaseStudyDropdowns = async () => {
     try {
@@ -165,6 +164,7 @@ const AddNewNoAction: React.FC<AddNoActionProps> = ({
   useEffect(() => {
     getAllCaseStudyDropdowns();
   }, []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 const formatDate = (dateString: string | undefined): string | undefined => {
   if (!dateString) return undefined;
   const date = new Date(dateString);
@@ -187,6 +187,7 @@ const formatDate = (dateString: string | undefined): string | undefined => {
     };
 
     try {
+      setIsSubmitting(true);
       let response;
       if (selectedShareholderNoAction) {
         response = await dispatch(
@@ -208,24 +209,21 @@ const formatDate = (dateString: string | undefined): string | undefined => {
             : "New Shareholder No Action Added"
         );
         setAddNewNoActionModalVisible(false);
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(
-              `${baseURL}/shareholder_proposal/no_action/`,
-              // { global_search: companyGlobalSearchName },
-              filters,
-              undefined,
-              page
-            )
-          )
-        );
+        onSaved?.({
+          tabKey: "no-action",
+          action: selectedShareholderNoAction ? "edit" : "add",
+          record: response.results,
+          previousRecord: selectedShareholderNoAction,
+        });
 
-           if (selectedShareholderNoAction?.id && url) {
-                  dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/no_action', id: Number(selectedShareholderNoAction?.id) }));
-                }
+        if (selectedShareholderNoAction?.id && url) {
+          dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/no_action', id: Number(selectedShareholderNoAction?.id) }));
+        }
       }
     } catch (error) {
       console.error("Error submitting form:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -928,19 +926,22 @@ const formatDate = (dateString: string | undefined): string | undefined => {
               onClick={() => {
                 setAddNewNoActionModalVisible(false);
               }}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className="w-20">
-              {loading && (
+            <Button variant="primary" type="submit" className="min-w-[96px]" disabled={isSubmitting}>
+              {isSubmitting && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${
-                    loading ? "animate-spin" : ""
-                  }`}
+                  className="w-4 h-4 mr-1.5 stroke-[1.3] animate-spin"
                 />
               )}
-              Save
+              {isSubmitting
+                ? selectedShareholderNoAction
+                  ? "Updating..."
+                  : "Saving..."
+                : "Save"}
             </Button>
           </Dialog.Footer>
         </form>

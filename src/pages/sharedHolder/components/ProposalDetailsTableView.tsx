@@ -1,6 +1,5 @@
 import Lucide from "@/components/Base/Lucide";
 import Button from "@/components/Base/Button";
-import { Dialog } from "@/components/Base/Headless";
 import Tippy from "@/components/Base/Tippy";
 import StandardizedTable from "@/components/StandardizedTable";
 import Table from "@/components/Base/Table";
@@ -11,13 +10,6 @@ import { ChevronLeft, Grid3X3, MegaphoneOff } from "lucide-react";
 import clsx from "clsx";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "@/stores/hooks";
-import { useState } from "react";
-import AddNewShareholder from "./AddNewShareholder";
-import { shareHolderProposalService } from "@/services/shareholderProposal";
-import { toast } from "react-toastify";
-import { useAppDispatch } from "@/stores/hooks";
-import { AppDispatch } from "@/stores/store";
-import { setPage, setTabs } from "@/stores/shareholderProposalSlice";
 
 
 type ProposalDetailsTableViewProps = {
@@ -30,8 +22,9 @@ type ProposalDetailsTableViewProps = {
     handleDownload: () => void;
     onVisibleDetail: (proposal: any) => void;
     onEditProposalClickHandler: (proposal: any, actionType: "edit" | "duplicate") => void;
-    setProposalToDelete: (proposal: any) => void;
-    setIsDeleteModalOpen: (value: boolean) => void;
+    onEditNoActionClickHandler: (proposal: any) => void;
+    onEditWithdrawnClickHandler: (proposal: any) => void;
+    onDeleteProposalRequest: (proposal: any, tabKey: "proposal" | "no-action" | "withdrawn") => void;
     tableOnlyView?: boolean;
     page?: number;
     totalPages?: number;
@@ -51,8 +44,9 @@ function ProposalDetailsTableView({
     handleDownload,
     onVisibleDetail,
     onEditProposalClickHandler,
-    setProposalToDelete,
-    setIsDeleteModalOpen,
+    onEditNoActionClickHandler,
+    onEditWithdrawnClickHandler,
+    onDeleteProposalRequest,
     tableOnlyView = false,
     setTableOnlyView,
     page,
@@ -70,7 +64,6 @@ function ProposalDetailsTableView({
     const pageParam = searchParams.get("page");
 
     const { tab: reduxTab } = useAppSelector((state) => state.sharedHolderNoAction);
-    const { agmSummaryDetails } = useAppSelector((state) => state.dashboard);
     const selectedTab = reduxTab
         ? reduxTab
         : url?.includes("withdrawn")
@@ -80,14 +73,6 @@ function ProposalDetailsTableView({
                 : url?.includes("no_action")
                     ? "no-action"
                     : "proposal";
-    const dispatch: AppDispatch = useAppDispatch();
-    const [isAddNewShareholderModalVisible, setIsAddNewShareholderModalVisible] = useState(false);
-    const [selectedShareholderProposal, setSelectedShareholderProposal] = useState<any | null>(null);
-    const [actionType, setActionType] = useState<"edit" | "duplicate">("edit");
-    const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [proposalToDelete, setProposalPendingDelete] = useState<any | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-
     const handleOpenInNewTab = () => {
         if (setTableOnlyView) {
             setTableOnlyView(true);
@@ -101,80 +86,7 @@ function ProposalDetailsTableView({
     };
 
 const getLiveSupportPercentage = (proposal: any) => {
-        const originalVal = proposal?.outcome_percentage;
-        const placeholderText = "Meeting not held or results not available";
-
-        const isPlaceholder =
-          !originalVal ||
-          originalVal.trim() === "" ||
-          originalVal.trim() === placeholderText;
-
-        if (!isPlaceholder) {
-          return originalVal;
-        }
-
-        let sameCompany = false;
-        let sameYear = true;
-        try {
-          const compObj = agmSummaryDetails?.company?.[0] || null;
-          const agmCompanyName = compObj ? Object.keys(compObj)[0] : null;
-          const currentCompany = companyGlobalSearchName || "";
-          if (agmCompanyName && currentCompany) {
-            const a = agmCompanyName.toLowerCase();
-            const b = currentCompany.toLowerCase();
-            sameCompany = a.includes(b) || b.includes(a);
-          }
-          const agmYear = String(agmSummaryDetails?.Year ?? "");
-          const rowYear = String(proposal?.proxy_season || proposal?.year || "");
-          if (agmYear && rowYear && agmYear !== rowYear) {
-            sameYear = false;
-          }
-        } catch {}
-
-        if (!sameCompany || !sameYear) {
-          return placeholderText;
-        }
-
-        if (
-          agmSummaryDetails?.proposals?.length > 0 &&
-          agmSummaryDetails?.proposals_headers?.length > 0
-        ) {
-          const headers = agmSummaryDetails.proposals_headers;
-          const nameKey = headers[0]?.field;
-          const pctKey = headers[headers.length - 1]?.field;
-
-          if (nameKey && pctKey) {
-            const tokenize = (str: string) =>
-              (str || "")
-                .toLowerCase()
-                .replace(/[^a-z0-9\s]/g, "")
-                .split(/\s+/)
-                .filter((w) => w.length > 3);
-
-            const targetTokens = tokenize(proposal?.proposal_name || "");
-
-            if (targetTokens.length > 0) {
-              let bestMatchVal: any = null;
-              let maxScore = 0;
-
-              agmSummaryDetails.proposals.forEach((p: any) => {
-                const meetingTokens = tokenize(String(p[nameKey] || ""));
-                const score = targetTokens.filter((t) => meetingTokens.includes(t)).length;
-
-                if (score > maxScore) {
-                  maxScore = score;
-                  bestMatchVal = p[pctKey];
-                }
-              });
-
-              if (maxScore >= 2 && bestMatchVal) {
-                return bestMatchVal;
-              }
-            }
-          }
-        }
-
-        return placeholderText;
+        return proposal?.outcome_percentage ?? "";
       };
     
     return (
@@ -346,7 +258,7 @@ const getLiveSupportPercentage = (proposal: any) => {
                                         <div className="flex gap-3 justify-center">
                                             {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                                 <Tippy content="Duplicate" options={{ theme: "light" }}>
-                                                    <Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("duplicate"); setIsAddNewShareholderModalVisible(true); }} icon="Copy" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
+                                                    <Lucide onClick={() => onEditProposalClickHandler(proposal, "duplicate")} icon="Copy" className="w-4 h-4 mr-1.5 stroke-[1.3]" />
                                                 </Tippy>
                                             )}
 
@@ -362,10 +274,10 @@ const getLiveSupportPercentage = (proposal: any) => {
                                         <StandardizedTable.Cell className="text-center">
                                             <div className="flex gap-3 justify-center">
                                                 <Tippy content="Edit" options={{ theme: "light" }}>
-                                                    <Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("edit"); setIsAddNewShareholderModalVisible(true); }} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" />
+                                                    <Lucide onClick={() => onEditProposalClickHandler(proposal, "edit")} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" />
                                                 </Tippy>
                                                 <Tippy content="Delete" options={{ theme: "light" }}>
-                                                    <Lucide onClick={() => { setProposalPendingDelete(proposal); setDeleteModalOpen(true); }} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" />
+                                                    <Lucide onClick={() => onDeleteProposalRequest(proposal, "proposal")} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" />
                                                 </Tippy>
                                             </div>
                                         </StandardizedTable.Cell>
@@ -397,8 +309,8 @@ const getLiveSupportPercentage = (proposal: any) => {
                                     {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                         <StandardizedTable.Cell className="text-center">
                                             <div className="flex gap-3 justify-center">
-                                                <Tippy content="Edit" options={{ theme: "light" }}><Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("edit"); setIsAddNewShareholderModalVisible(true); }} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" /></Tippy>
-                                                <Tippy content="Delete" options={{ theme: "light" }}><Lucide onClick={() => { setProposalPendingDelete(proposal); setDeleteModalOpen(true); }} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" /></Tippy>
+                                                <Tippy content="Edit" options={{ theme: "light" }}><Lucide onClick={() => onEditNoActionClickHandler(proposal)} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" /></Tippy>
+                                                <Tippy content="Delete" options={{ theme: "light" }}><Lucide onClick={() => onDeleteProposalRequest(proposal, "no-action")} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" /></Tippy>
                                             </div>
                                         </StandardizedTable.Cell>
                                     )}
@@ -427,8 +339,8 @@ const getLiveSupportPercentage = (proposal: any) => {
                                 {(user?.user_type === "Analyst" || user?.user_type === "Admin") && (
                                     <StandardizedTable.Cell className="text-center">
                                         <div className="flex gap-3 justify-center">
-                                            <Tippy content="Edit" options={{ theme: "light" }}><Lucide onClick={() => { setSelectedShareholderProposal(proposal); setActionType("edit"); setIsAddNewShareholderModalVisible(true); }} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" /></Tippy>
-                                            <Tippy content="Delete" options={{ theme: "light" }}><Lucide onClick={() => { setProposalPendingDelete(proposal); setDeleteModalOpen(true); }} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" /></Tippy>
+                                            <Tippy content="Edit" options={{ theme: "light" }}><Lucide onClick={() => onEditWithdrawnClickHandler(proposal)} icon="PenLine" className="w-4 h-4 stroke-[1.3] text-primary cursor-pointer" /></Tippy>
+                                            <Tippy content="Delete" options={{ theme: "light" }}><Lucide onClick={() => onDeleteProposalRequest(proposal, "withdrawn")} icon="Trash2" className="w-4 h-4 stroke-[1.3] text-danger cursor-pointer" /></Tippy>
                                         </div>
                                     </StandardizedTable.Cell>
                                 )}
@@ -454,15 +366,6 @@ const getLiveSupportPercentage = (proposal: any) => {
                 )}
             </StandardizedTable>
 
-            {isAddNewShareholderModalVisible && (
-                <AddNewShareholder
-                    addNewShareholderModalVisible={isAddNewShareholderModalVisible}
-                    setAddNewShareholderModalVisible={setIsAddNewShareholderModalVisible}
-                    selectedShareholderProposal={selectedShareholderProposal}
-                    type={actionType}
-                />
-            )}
-
             {tableOnlyView && (
                 <div className="mt-4 flex justify-center">
                     <CPagination
@@ -475,65 +378,6 @@ const getLiveSupportPercentage = (proposal: any) => {
                 </div>
             )}
 
-            {isDeleteModalOpen && (
-                <Dialog
-                    size="md"
-                    open={isDeleteModalOpen}
-                    onClose={() => {
-                        setDeleteModalOpen(false);
-                    }}
-                >
-                    <Dialog.Panel className="p-0 text-center">
-                        <div className="p-5 text-center">
-                            <Lucide
-                                icon="XCircle"
-                                className="w-16 h-16 mx-auto mt-3 text-danger"
-                            />
-                            <div className="mt-5 text-3xl">Are you sure?</div>
-                            <div className="mt-2 text-slate-500">
-                                Do you really want to delete this proposal? <br />
-                                This action cannot be undone.
-                            </div>
-                        </div>
-                        <div className="px-5 pb-8 text-center">
-                            <Button
-                                variant="outline-secondary"
-                                type="button"
-                                onClick={() => {
-                                    setDeleteModalOpen(false);
-                                }}
-                                className="w-24 mr-1"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="danger"
-                                type="button"
-                                className="w-24"
-                                onClick={async () => {
-                                    if (!proposalToDelete) return;
-
-                                    try {
-                                        setIsDeleting(true);
-                                        await shareHolderProposalService.deleteShareHolderProposal(proposalToDelete.id);
-                                        toast.success("Proposal deleted successfully");
-                                        setDeleteModalOpen(false);
-                                        setProposalPendingDelete(null);
-                                        window.location.reload();
-                                    } catch (error) {
-                                        // keep the modal open so the user can retry or cancel
-                                    } finally {
-                                        setIsDeleting(false);
-                                    }
-                                }}
-                                disabled={isDeleting}
-                            >
-                                {isDeleting ? "Deleting..." : "Delete"}
-                            </Button>
-                        </div>
-                    </Dialog.Panel>
-                </Dialog>
-            )}
         </div>
     );
 }

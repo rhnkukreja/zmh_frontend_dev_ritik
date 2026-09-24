@@ -551,9 +551,12 @@ function Main() {
     new URLSearchParams(location.search).get("source") === "company";
   const shouldHideCompanyGlobalSearch =
     (location.pathname === "/" && activeSection === "governance-profile") ||
-    (["/case-studies", "/engagement-detail", "/shareholder-proposal"].includes(
-      location.pathname
-    ) &&
+    ([
+      "/case-studies",
+      "/engagement-detail",
+      "/shareholder-proposal",
+      "/activist-filings",
+    ].includes(location.pathname) &&
       isCompanySpecificView);
   const shouldHideHeaderTitle = shouldHideCompanyGlobalSearch;
   const shouldHideHeader =

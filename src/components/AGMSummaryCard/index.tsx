@@ -392,6 +392,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [animateChart, setAnimateChart] = useState<boolean>(false);
   const [is8kLoading, setIs8kLoading] = useState<boolean>(false);
+  const [eightKLinksByYear, setEightKLinksByYear] = useState<Record<string, string[]> | null>(null);
   const [isNpxLoading, setIsNpxLoading] = useState<boolean>(false);
   const [expandedYearModal, setExpandedYearModal] = useState<{
     visible: boolean;
@@ -410,67 +411,60 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
     return match[1].padStart(10, "0");
   };
 
-  const handle8kLink = async () => {
-    const yearToCheck = activeMeetingYear?.toString();
+  useEffect(() => {
     const cik = extractCikFromSecFilingUrl(finhub?.sec_filing);
-
-    if (!yearToCheck || !cik) return;
-
-    // Open the window synchronously (inside the user-gesture context) to avoid
-    // popup blockers. We'll navigate it to the real URL once the fetch resolves.
-    // NOTE: do NOT use noopener/noreferrer here — those flags make window.open
-    // return null in most browsers, preventing us from setting location.href.
-    const newTab = window.open("", "_blank");
-    if (newTab) {
-      newTab.document.write(`<!DOCTYPE html><html><head><title>Loading 8-K…</title>
-        <style>
-          *{margin:0;padding:0;box-sizing:border-box;}
-          body{display:flex;align-items:center;justify-content:center;height:100vh;
-               font-family:system-ui,sans-serif;background:#f8fafc;}
-          .wrap{text-align:center;}
-          .spinner{width:44px;height:44px;border:4px solid #e2e8f0;
-                   border-top-color:#9F1239;border-radius:50%;
-                   animation:spin .8s linear infinite;margin:0 auto 16px;}
-          @keyframes spin{to{transform:rotate(360deg)}}
-          p{color:#64748b;font-size:14px;}
-        </style></head>
-        <body><div class="wrap"><div class="spinner"></div><p>Loading 8-K filing…</p></div></body></html>`);
-      newTab.document.close();
-    }
-
-    try {
-      setIs8kLoading(true);
-      const res = await fetch(
-        `https://temp-8k-fetch-cd130a407e9b.herokuapp.com/api/get_proxy_voting_data_v2/?cik=${cik}`
-      );
-
-      if (!res.ok) {
-        newTab?.close();
-        return;
-      }
-
-      const data = await res.json();
-      const key = `url_${yearToCheck}`;
-      const url = Array.isArray(data?.all_meeting_data)
-        ? data.all_meeting_data
-          .map((x: any) => x?.[key])
-          .find((u: any) => typeof u === "string" && u.trim() !== "")
-        : null;
-
-      if (!url) {
-        newTab?.close();
-        return;
-      }
-
-      if (newTab) {
-        newTab.location.href = url;
-      }
-    } catch (e) {
-      console.error("Failed to fetch 8-K link:", e);
-      newTab?.close();
-    } finally {
+    if (!cik) {
+      setEightKLinksByYear(null);
       setIs8kLoading(false);
+      return;
     }
+
+    let cancelled = false;
+    setEightKLinksByYear(null);
+    setIs8kLoading(true);
+
+    fetch(
+      `https://dashboard-holders-api-4e81a2861a3c.herokuapp.com/api/get_proxy_voting_data_v2/?cik=${encodeURIComponent(cik)}`
+    )
+      .then((response) => {
+        if (!response.ok) throw new Error(`8-K links request failed: ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+
+        const linksByYear = (Array.isArray(data?.all_meeting_data) ? data.all_meeting_data : [])
+          .reduce((result: Record<string, string[]>, item: any) => {
+            Object.entries(item || {}).forEach(([key, value]) => {
+              const urls = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+              result[key] = urls.filter((url: any) => typeof url === "string" && url.trim() !== "");
+            });
+            return result;
+          }, {});
+
+        setEightKLinksByYear(linksByYear);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("Failed to fetch 8-K links:", error);
+          setEightKLinksByYear({});
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIs8kLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [finhub?.sec_filing]);
+
+  const active8kLinks = activeMeetingYear
+    ? eightKLinksByYear?.[`url_${activeMeetingYear}`] || []
+    : [];
+
+  const handle8kLink = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   // Analytics API call — scoped by company_id (+ meeting_date when a
@@ -834,30 +828,23 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                 <div className="flex items-center gap-2 shrink-0 xs:mt-4 md:mt-0">
                   {!isMeetingModal && (
                     <>
-                      {shareholderMeetingView === "separate" && (
+                      {shareholderMeetingView === "separate" && is8kLoading && (
                         <button
-                          disabled={
-                            is8kLoading ||
-                            !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                            !activeMeetingYear
-                          }
-                          onClick={handle8kLink}
-                          className={clsx([
-                            "p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid",
-                            is8kLoading ||
-                              !extractCikFromSecFilingUrl(finhub?.sec_filing) ||
-                              !activeMeetingYear
-                              ? "opacity-60 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-red-800 hover:border-white hover:text-white",
-                          ])}
+                          disabled
+                          className="p-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid opacity-60 cursor-not-allowed"
                         >
-                          {is8kLoading ? (
-                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
-                          ) : (
-                            "8-K"
-                          )}
+                          <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
                         </button>
                       )}
+                      {shareholderMeetingView === "separate" && !is8kLoading && active8kLinks.map((url: string, index: number) => (
+                        <button
+                          key={url}
+                          onClick={() => handle8kLink(url)}
+                          className="px-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
+                        >
+                          {active8kLinks.length > 1 ? `8-K ${index + 1}` : "8-K"}
+                        </button>
+                      ))}
                       {analyticsData && shareholderMeetingView === "all" && (
                         <Tippy content="View Analytics Chart" options={{ theme: "light" }}>
                           <button

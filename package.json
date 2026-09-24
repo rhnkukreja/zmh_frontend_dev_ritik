@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:prod": "vite --mode production",
+    "dev": "VITE_ENVIRONMENT=development VITE_API_BASE_URL=https://api-dev.zmhadvisors.com vite",
+    "dev:prod": "VITE_ENVIRONMENT=production VITE_API_BASE_URL=https://api.zmhadvisors.com vite --mode production",
     "prebuild": "node scripts/fix-tom-select.cjs",
     "build": "tsc && vite build",
     "preview": "vite preview",

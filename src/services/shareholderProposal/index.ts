@@ -203,8 +203,17 @@ class ShareHolderProposalService {
     };
   }
 
-  public async deleteShareHolderProposal(id: string): Promise<any> {
-    const response = await axiosInstance.delete(`/shareholder_proposal/def14a/${id}/`);
+  public async deleteShareHolderProposal(
+    id: string,
+    tabKey: "proposal" | "no-action" | "withdrawn" = "proposal"
+  ): Promise<any> {
+    const endpointMap = {
+      proposal: `/shareholder_proposal/def14a/${id}/`,
+      "no-action": `/shareholder_proposal/no_action/${id}/`,
+      withdrawn: `/shareholder_proposal/withdrawn/${id}/`,
+    };
+
+    const response = await axiosInstance.delete(endpointMap[tabKey]);
     return response.data;
   }
 
