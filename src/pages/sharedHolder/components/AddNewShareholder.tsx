@@ -3,9 +3,9 @@ import { ClassicEditor } from "@/components/Base/Ckeditor";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
-import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { useAppDispatch } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
-import { bytesToMB, createDynamicURL } from "@/utils/helper";
+import { bytesToMB } from "@/utils/helper";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Controller,
@@ -14,11 +14,9 @@ import {
   useForm,
 } from "react-hook-form";
 import { toast } from "react-toastify";
-import { baseURL } from "@/constant";
 import Error from "@/components/Error";
 import {
   addEditNewShareHolder,
-  fetchShareHolderProposal,
   getSingleShareHolderData,
 } from "@/stores/shareholderProposalSlice";
 import { AddShareholderType, ShareHolderDropdown } from "@/types/shareHolder";
@@ -35,6 +33,12 @@ interface AddNewShareholderProps {
   setAddNewShareholderModalVisible: (visible: boolean) => void;
   selectedShareholderProposal: AddShareholderType | null;
   type: "edit" | "duplicate";
+  onSaved?: (payload: {
+    tabKey: "proposal";
+    action: "add" | "edit";
+    record: any;
+    previousRecord?: AddShareholderType | null;
+  }) => void;
 }
 
 const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
@@ -42,11 +46,9 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   setAddNewShareholderModalVisible,
   selectedShareholderProposal,
   type,
+  onSaved,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading, page, filters } = useAppSelector(
-    (state) => state.sharedHolderNoAction
-  );
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -100,6 +102,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
 
   const [isPredicting, setIsPredicting] = useState(false);
   const [predictError, setPredictError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const pendingSubCategoryRef = useRef<string | null>(null);
   const lastPredictedTextRef = useRef<string | null>(null);
 
@@ -159,9 +162,6 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
   const categoryValue = watch("category");
   const proposalTextValue = watch("proposal_text");
 
-  const { companyGlobalSearchName } = useAppSelector(
-    (state) => state.authentiction
-  );
 
   const [apiDropdownOptions, setApiDropdownOptions] =
     useState<ShareHolderDropdown>({
@@ -297,6 +297,7 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       approved: data?.approved ? true : false,
     };
     try {
+      setIsSubmitting(true);
       let response;
       if (selectedShareholderProposal) {
         response = await dispatch(
@@ -318,17 +319,13 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
             : "New Shareholder Proposal Added"
         );
         setAddNewShareholderModalVisible(false);
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(
-              `${baseURL}/shareholder_proposal/def14a/`,
-              // { global_search: companyGlobalSearchName },
-              filters,
-              undefined,
-              page
-            )
-          )
-        );
+        onSaved?.({
+          tabKey: "proposal",
+          action:
+            selectedShareholderProposal && type !== "duplicate" ? "edit" : "add",
+          record: response.results,
+          previousRecord: selectedShareholderProposal,
+        });
 
         if (selectedShareholderProposal?.id && url) {
           dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/def14a', id: Number(selectedShareholderProposal?.id) }));
@@ -336,6 +333,8 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
       }
     } catch (error) {
       console.error("Error submitting form:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1327,18 +1326,22 @@ const AddNewShareholder: React.FC<AddNewShareholderProps> = ({
               onClick={() => {
                 setAddNewShareholderModalVisible(false);
               }}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className="w-20">
-              {loading && (
+            <Button variant="primary" type="submit" className="min-w-[96px]" disabled={isSubmitting}>
+              {isSubmitting && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
-                    }`}
+                  className="w-4 h-4 mr-1.5 stroke-[1.3] animate-spin"
                 />
               )}
-              Save
+              {isSubmitting
+                ? selectedShareholderProposal && type !== "duplicate"
+                  ? "Updating..."
+                  : "Saving..."
+                : "Save"}
             </Button>
           </Dialog.Footer>
         </form>

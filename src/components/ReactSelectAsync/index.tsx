@@ -16,6 +16,36 @@ interface OptionType {
   company?: any;
 }
 
+const normalizeCompanyResults = (response: any): any[] => {
+  const payload = response?.results ?? response;
+
+  if (Array.isArray(payload)) {
+    return payload.flatMap((item) => (Array.isArray(item) ? item : [item]));
+  }
+
+  if (Array.isArray(payload?.company)) {
+    return payload.company.flatMap((item: any) => (Array.isArray(item) ? item : [item]));
+  }
+
+  if (Array.isArray(payload?.companies)) {
+    return payload.companies.flatMap((item: any) => (Array.isArray(item) ? item : [item]));
+  }
+
+  if (Array.isArray(payload?.company_name)) {
+    return payload.company_name.flatMap((item: any) => (Array.isArray(item) ? item : [item]));
+  }
+
+  if (typeof payload?.company === "string") {
+    return [payload.company];
+  }
+
+  if (typeof payload?.company_name === "string") {
+    return [payload.company_name];
+  }
+
+  return [];
+};
+
 interface CompanySelectProps {
   value: any;
   onChange: (selectedOption: OptionType | OptionType[] | null) => void;
@@ -86,22 +116,45 @@ const fetchOptions = async (
         ? [selectAllOption, ...institutionOptions]
         : institutionOptions;
     } else {
+      const companyResults = normalizeCompanyResults(response)
+        .map((company: any) => {
+          if (typeof company === "string") {
+            return {
+              value: company,
+              label: company,
+              symbol: undefined,
+              company,
+            };
+          }
+
+          return {
+            value:
+              company?.id ??
+              company?.name ??
+              company?.company_name ??
+              company?.company ??
+              company?.company_v1 ??
+              company,
+            label:
+              company?.name ??
+              company?.company_name ??
+              company?.company ??
+              company?.company_v1 ??
+              company?.label ??
+              company,
+            symbol: company?.symbol || company?.ticker,
+            company,
+          };
+        })
+        .filter((company: OptionType) => Boolean(company.label));
+
       if (isHideCurrentCompany && currentCompany) {
-        return response.results
-          .filter((company: any) => company.name !== currentCompany)
-          .map((company: any) => ({
-            value: company?.id ?? company,
-            label: company?.name ?? company,
-            symbol: company?.symbol || company?.ticker, // Add symbol/ticker field
-            company: company // Add complete company object
-          }));
+        return companyResults.filter(
+          (company: OptionType) => company.label !== currentCompany
+        );
       }
-      return response.results.map((company: any) => ({
-        value: company?.id ?? company,
-        label: company?.name ?? company,
-        symbol: company?.symbol || company?.ticker, // Add symbol/ticker field
-        company: company // Add complete company object
-      }));
+
+      return companyResults;
     }
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -237,6 +290,15 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     const safeValue = newValue || "";
 
     if (actionMeta?.action && actionMeta.action !== "input-change") {
+      if (
+        actionMeta.action === "set-value" ||
+        actionMeta.action === "menu-close" ||
+        actionMeta.action === "input-blur"
+      ) {
+        setInputValue("");
+        return "";
+      }
+
       return inputValue;
     }
 
@@ -367,6 +429,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     <AsyncSelect
       styles={customStyles}
       isMulti={isMulti}
+      cacheOptions
       loadOptions={loadOptions}
       defaultOptions={resolvedDefaultOptions}
       placeholder={

@@ -20,6 +20,7 @@ import {
   downloadFileFromAPI,
   downloadXlsxFile,
   generateFilterChips,
+  getPageNumbers,
 } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import Tippy from "@/components/Base/Tippy";
@@ -36,7 +37,6 @@ import MultiSearchBar from "@/components/MultiSearch";
 import Table from "@/components/Base/Table";
 import { Controller, useForm } from "react-hook-form";
 import {
-  fetchShareHolderProposal,
   setAllFilters,
   setFilter,
   resetFilter,
@@ -86,6 +86,74 @@ import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl } from "react-icons/fa";
 import { MdOutlineClear } from "react-icons/md";
 
+type ShareholderTabKey = "proposal" | "no-action" | "withdrawn";
+type ShareholderTabResponse = Awaited<
+  ReturnType<typeof shareHolderProposalService.getShareHolderProposal>
+>;
+
+type ShareholderMutationAction = "add" | "edit" | "delete";
+
+type ShareholderMutationPayload = {
+  tabKey: ShareholderTabKey;
+  action: ShareholderMutationAction;
+  record: any;
+  previousRecord?: any | null;
+};
+
+type ShareholderPageSnapshot = {
+  searchTerms: string[];
+  tabResponses: Record<ShareholderTabKey, ShareholderTabResponse | null>;
+  proposalAnalyticsResponse: ShareholderTabResponse | null;
+  proposalCount: number;
+  withdrawnCount: number;
+  noActionCount: number;
+  isViewAnalysis: boolean;
+  activeTab: "shareholders" | "proponents";
+  tempTab: "" | "proposal" | "no-action" | "withdrawn";
+  tableOnlyView: boolean;
+  isFilterCollapse: boolean;
+};
+
+let shareholderPageSnapshot: ShareholderPageSnapshot | null = null;
+
+const shareholderProposalRequestCache = new Map<
+  string,
+  Promise<ShareholderTabResponse>
+>();
+const shareholderDropdownRequestCache = new Map<
+  string,
+  Promise<{ result: any }>
+>();
+
+const getCachedShareholderProposal = (url: string) => {
+  const cachedRequest = shareholderProposalRequestCache.get(url);
+  if (cachedRequest) {
+    return cachedRequest;
+  }
+
+  const request = shareHolderProposalService
+    .getShareHolderProposal(url)
+    .finally(() => shareholderProposalRequestCache.delete(url));
+
+  shareholderProposalRequestCache.set(url, request);
+  return request;
+};
+
+const getCachedShareholderDropdownValues = (paramFilter?: any) => {
+  const cacheKey = JSON.stringify(paramFilter ?? {});
+  const cachedRequest = shareholderDropdownRequestCache.get(cacheKey);
+  if (cachedRequest) {
+    return cachedRequest;
+  }
+
+  const request = shareHolderProposalService
+    .getShareHolderDropdownValues(paramFilter)
+    .finally(() => shareholderDropdownRequestCache.delete(cacheKey));
+
+  shareholderDropdownRequestCache.set(cacheKey, request);
+  return request;
+};
+
 function ShareHolderProposal() {
   const dispatch: AppDispatch = useAppDispatch();
   const { user, companyGlobalSearchName, isCompanySelected, finhub, companyGlobalSearchTicker } = useAppSelector(
@@ -96,29 +164,22 @@ function ShareHolderProposal() {
   const source = searchParams.get("source") || "";
   const isCompanySource = source === "company";
   const { isBackToShareholderPage } = location.state || {};
+  const shouldRestoreCachedView = Boolean(
+    isBackToShareholderPage && shareholderPageSnapshot
+  );
 
   useEffect(() => {
+    setRouteReady(false);
+
     const searchParams = new URLSearchParams(location.search);
     const viewParam = searchParams.get("view");
     const gsParam = searchParams.get("global_search");
     const urlParam = searchParams.get("url");
     const pageParam = searchParams.get("page");
+    const sourceParam = searchParams.get("source");
+    const isSharedContext = sourceParam !== "company";
 
-    if (viewParam === "table-only") {
-      setTableOnlyView(true);
-    }
-
-    if (gsParam) {
-      try {
-        const decoded = decodeURIComponent(gsParam);
-        const parsed = JSON.parse(decoded);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          dispatch(setFilter({ key: "global_search", value: parsed }));
-        }
-      } catch {
-        dispatch(setFilter({ key: "global_search", value: [gsParam] }));
-      }
-    }
+    setTableOnlyView(viewParam === "table-only");
 
     if (urlParam) {
       if (urlParam.includes("no_action")) {
@@ -131,64 +192,139 @@ function ShareHolderProposal() {
         dispatch(setTabs("proposal"));
         setTempTab("proposal");
       }
+    } else {
+      dispatch(setTabs("proposal"));
+      setTempTab("proposal");
     }
 
-    if (pageParam) {
-      const parsedPage = parseInt(pageParam, 10);
-      if (!isNaN(parsedPage) && parsedPage > 0) {
-        dispatch(setPage(parsedPage));
+    if (shouldRestoreCachedView && shareholderPageSnapshot) {
+      if (sourceParam === "company") {
+        dispatch(selectUnSelectAllCompany(false));
+      } else if (isSharedContext) {
+        dispatch(selectUnSelectAllCompany(true));
       }
+
+      setSearchTerms([...shareholderPageSnapshot.searchTerms]);
+      setTabResponses(shareholderPageSnapshot.tabResponses);
+      setProposalAnalyticsResponse(
+        shareholderPageSnapshot.proposalAnalyticsResponse
+      );
+      setProposalCount(shareholderPageSnapshot.proposalCount);
+      setWithdrawnCount(shareholderPageSnapshot.withdrawnCount);
+      setNoActionCount(shareholderPageSnapshot.noActionCount);
+      setIsViewAnalysis(shareholderPageSnapshot.isViewAnalysis);
+      setActiveTab(shareholderPageSnapshot.activeTab);
+      setIsFilterCollapse(shareholderPageSnapshot.isFilterCollapse);
+      setTableOnlyView(
+        viewParam === "table-only"
+          ? true
+          : shareholderPageSnapshot.tableOnlyView
+      );
+      setRouteReady(true);
+      return;
     }
 
-    const sourceParam = searchParams.get("source");
     if (sourceParam === "company") {
       dispatch(selectUnSelectAllCompany(false));
-      if (urlParam?.includes("no_action")) {
-        dispatch(setTabs("no-action"));
-        setTempTab("no-action");
-      } else if (urlParam?.includes("withdrawn")) {
-        dispatch(setTabs("withdrawn"));
-        setTempTab("withdrawn");
-      } else {
-        dispatch(setTabs("proposal"));
-        setTempTab("proposal");
+
+      if (gsParam) {
+        try {
+          const decoded = decodeURIComponent(gsParam);
+          const parsed = JSON.parse(decoded);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            dispatch(setFilter({ key: "global_search", value: parsed }));
+          }
+        } catch {
+          dispatch(setFilter({ key: "global_search", value: [gsParam] }));
+        }
       }
-    } else if (sourceParam === "shared") {
+
+      if (pageParam) {
+        const parsedPage = parseInt(pageParam, 10);
+        if (!isNaN(parsedPage) && parsedPage > 0) {
+          dispatch(setPage(parsedPage));
+        }
+      }
+    } else if (isSharedContext) {
       dispatch(selectUnSelectAllCompany(true));
+      dispatch(resetFilter());
+      dispatch(resetPage());
+      setSearchTerms([]);
+      resetFormValues();
     }
-  }, [dispatch, location.search]);
+
+    setRouteReady(true);
+  }, [dispatch, location.search, shouldRestoreCachedView]);
 
   const {
-    loading,
-    shareHolderProposal,
     page,
-    totalPages,
     tab,
     filters,
     isAllCompanySelected,
-    topCategories,
-    topSubcategories,
-    yearlySummary,
-    proposalCounts,
-    topProponents,
-    pieChartOutcome,
   } = useAppSelector((state) => state.sharedHolderNoAction);
 
-  const [searchTerms, setSearchTerms] = useState<string[]>([
-    ...filters?.proponent_name,
-  ]);
-  const [proposalsAnalytics, setProposalsAnalytics] = useState<any>(null);
-  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const emptyTabResponse = {
+    count: 0,
+    results: [],
+    proposalCount: 0,
+    withdrawnCount: 0,
+    noActionCount: 0,
+    proposalCounts: { total_proposals: 0 },
+    topSubcategories: {},
+    topCategories: [],
+    yearlySummary: [],
+    topProponents: [],
+    pieChartOutcome: {},
+    total_proposals: 0,
+  } satisfies Partial<ShareholderTabResponse>;
+
+  const [searchTerms, setSearchTerms] = useState<string[]>(() =>
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? [...shareholderPageSnapshot.searchTerms]
+      : [...filters?.proponent_name]
+  );
+  const [routeReady, setRouteReady] = useState(false);
+  const [tabResponses, setTabResponses] = useState<Record<ShareholderTabKey, ShareholderTabResponse | null>>(
+    () =>
+      shouldRestoreCachedView && shareholderPageSnapshot
+        ? shareholderPageSnapshot.tabResponses
+        : {
+            proposal: null,
+            "no-action": null,
+            withdrawn: null,
+          }
+  );
+  const [proposalAnalyticsResponse, setProposalAnalyticsResponse] =
+    useState<ShareholderTabResponse | null>(
+      shouldRestoreCachedView && shareholderPageSnapshot
+        ? shareholderPageSnapshot.proposalAnalyticsResponse
+        : null
+    );
+  const [loading, setLoading] = useState(false);
   const [loadingDownload, setLoadingDownload] = useState(false);
-  const [isViewAnalysis, setIsViewAnalysis] = useState(true);
+  const [isViewAnalysis, setIsViewAnalysis] = useState(
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.isViewAnalysis
+      : true
+  );
   const [activeTab, setActiveTab] = useState<"shareholders" | "proponents">(
-    "shareholders"
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.activeTab
+      : "shareholders"
   );
   const [tempTab, setTempTab] = useState<
     "" | "proposal" | "no-action" | "withdrawn"
-  >("proposal");
+  >(
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.tempTab
+      : "proposal"
+  );
 
-  const [tableOnlyView, setTableOnlyView] = useState<boolean>(false);
+  const [tableOnlyView, setTableOnlyView] = useState<boolean>(
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.tableOnlyView
+      : false
+  );
 
   const month = [
     {
@@ -240,7 +376,11 @@ function ShareHolderProposal() {
       month: "December",
     },
   ];
-  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(false);
+  const [isFilterCollapse, setIsFilterCollapse] = useState<boolean>(
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.isFilterCollapse
+      : false
+  );
   const [filtersLength, setFiltersLength] = useState<number>(0);
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
@@ -270,9 +410,99 @@ function ShareHolderProposal() {
 
   const [actionType, setActionType] = useState<"edit" | "duplicate">("edit");
 
-  const [proposalCount, setProposalCount] = useState<number>(0);
-  const [withdrawnCount, setWithdrawnCount] = useState<number>(0);
-  const [noActionCount, setNoActionCount] = useState<number>(0);
+  const [proposalCount, setProposalCount] = useState<number>(
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.proposalCount
+      : 0
+  );
+  const [withdrawnCount, setWithdrawnCount] = useState<number>(
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.withdrawnCount
+      : 0
+  );
+  const [noActionCount, setNoActionCount] = useState<number>(
+    shouldRestoreCachedView && shareholderPageSnapshot
+      ? shareholderPageSnapshot.noActionCount
+      : 0
+  );
+
+  const shareholderTabs = [
+    {
+      key: "proposal" as const,
+      label: "All Proposals",
+      count: proposalCount,
+      icon: FaListUl,
+    },
+    {
+      key: "no-action" as const,
+      label: "No Action Letters",
+      count: noActionCount,
+      icon: FaHandshake,
+    },
+    {
+      key: "withdrawn" as const,
+      label: "Withdrawn (Proponent Disclosure)",
+      count: withdrawnCount,
+      icon: FaTimes,
+    },
+  ];
+
+  const handleShareholderTabChange = (
+    nextTab: "proposal" | "no-action" | "withdrawn"
+  ) => {
+    dispatch(setTabs(nextTab));
+    dispatch(resetPage());
+    setTempTab(nextTab);
+
+    if (nextTab === "proposal") {
+      clearNoActionFilter();
+      return;
+    }
+
+    if (nextTab === "no-action") {
+      return;
+    }
+
+    clearNoActionFilter();
+    setIsViewAnalysis(true);
+  };
+
+  const stickyTabsTop = isCompanySource ? "7.75rem" : "4rem";
+
+  const currentTabKey = (tab || "proposal") as ShareholderTabKey;
+  const currentTabResponse = tabResponses[currentTabKey];
+  const currentProposalTableResponse = tabResponses.proposal;
+  const activeAnalyticsResponse =
+    currentTabKey === "proposal"
+      ? proposalAnalyticsResponse
+      : currentTabResponse;
+  const currentShareHolderProposal =
+    currentTabKey === "proposal"
+      ? currentProposalTableResponse?.results ?? []
+      : currentTabResponse?.results ?? [];
+  const currentTotalPages = Math.max(
+    1,
+    getPageNumbers(
+      currentTabKey === "proposal"
+        ? currentProposalTableResponse?.count ?? 0
+        : currentTabResponse?.count ?? 0
+    )
+  );
+  const currentTopCategories = activeAnalyticsResponse?.topCategories ?? [];
+  const currentTopSubcategories = activeAnalyticsResponse?.topSubcategories ?? {};
+  const currentYearlySummary = activeAnalyticsResponse?.yearlySummary ?? [];
+  const currentTopProponents = activeAnalyticsResponse?.topProponents ?? [];
+  const currentPieChartOutcome = activeAnalyticsResponse?.pieChartOutcome ?? {};
+  const normalizeProposalCounts = (value: any) =>
+    value && typeof value === "object" && "total_proposals" in value
+      ? value
+      : { total_proposals: Number(value?.total_proposals ?? value ?? 0) };
+  const currentProposalCounts = normalizeProposalCounts(
+    activeAnalyticsResponse?.proposalCounts ?? emptyTabResponse.proposalCounts
+  );
+  const currentProposalAnalyticsCounts = normalizeProposalCounts(
+    activeAnalyticsResponse?.total_proposals
+  );
 
   const [selectedShareholderDetail, setselectedShareholderDetail] = useState<
     any | null
@@ -296,6 +526,7 @@ function ShareHolderProposal() {
     formState: { errors },
     setValue,
     watch,
+    getValues,
   } = useForm<any>({
     defaultValues: {
       category: filters.category,
@@ -317,10 +548,12 @@ function ShareHolderProposal() {
       index: filters?.index ?? undefined,
       anti_category: filters?.anti_category || [],
       global_search:
-        filters?.global_search?.map((item: string) => ({
-          value: item,
-          label: item,
-        })) || [],
+        isCompanySource
+          ? filters?.global_search?.map((item: string) => ({
+              value: item,
+              label: item,
+            })) || []
+          : [],
     },
   });
 
@@ -349,25 +582,30 @@ function ShareHolderProposal() {
 
   // Helper function to check if analytics data is available
   const isAnalyticsDataAvailable = () => {
-    if (tab === "proposal") {
-      // For proposal tab, check if there's actual meaningful data
-      const hasProposalCount = proposalsAnalytics?.total_proposals?.total_proposals && proposalsAnalytics.total_proposals.total_proposals > 0;
-      const hasCategories = proposalsAnalytics?.topCategories && Array.isArray(proposalsAnalytics.topCategories) && proposalsAnalytics.topCategories.length > 0;
-      const hasSubcategories = proposalsAnalytics?.topSubcategories && typeof proposalsAnalytics.topSubcategories === 'object' && Object.keys(proposalsAnalytics.topSubcategories).length > 0;
-      const hasYearlySummary = proposalsAnalytics?.yearlySummary && Array.isArray(proposalsAnalytics.yearlySummary) && proposalsAnalytics.yearlySummary.length > 0;
-      const hasProponents = proposalsAnalytics?.topProponents && Array.isArray(proposalsAnalytics.topProponents) && proposalsAnalytics.topProponents.length > 0;
+    const activeCounts =
+      tab === "proposal"
+        ? currentProposalAnalyticsCounts?.total_proposals
+        : currentProposalCounts?.total_proposals;
 
-      return hasProposalCount || hasCategories || hasSubcategories || hasYearlySummary || hasProponents;
-    } else {
-      // For no-action/withdrawn tabs, check regular data
-      const hasProposalCount = proposalCounts?.total_proposals && proposalCounts.total_proposals > 0;
-      const hasCategories = topCategories && Array.isArray(topCategories) && topCategories.length > 0;
-      const hasSubcategories = topSubcategories && typeof topSubcategories === 'object' && Object.keys(topSubcategories).length > 0;
-      const hasYearlySummary = yearlySummary && Array.isArray(yearlySummary) && yearlySummary.length > 0;
-      const hasProponents = topProponents && Array.isArray(topProponents) && topProponents.length > 0;
+    const hasProposalCount = Boolean(activeCounts && activeCounts > 0);
+    const hasCategories =
+      Array.isArray(currentTopCategories) && currentTopCategories.length > 0;
+    const hasSubcategories =
+      currentTopSubcategories &&
+      typeof currentTopSubcategories === "object" &&
+      Object.keys(currentTopSubcategories).length > 0;
+    const hasYearlySummary =
+      Array.isArray(currentYearlySummary) && currentYearlySummary.length > 0;
+    const hasProponents =
+      Array.isArray(currentTopProponents) && currentTopProponents.length > 0;
 
-      return hasProposalCount || hasCategories || hasSubcategories || hasYearlySummary || hasProponents;
-    }
+    return (
+      hasProposalCount ||
+      hasCategories ||
+      hasSubcategories ||
+      hasYearlySummary ||
+      hasProponents
+    );
   };
 
   const handleCollapseFilter = (event: React.MouseEvent) => {
@@ -394,13 +632,193 @@ function ShareHolderProposal() {
     setAddNewNoActionModalVisible(true);
   };
 
+  const getRecordYearValue = useCallback(
+    (record: any, tabKey: ShareholderTabKey) => {
+      const yearValue =
+        tabKey === "withdrawn"
+          ? record?.year
+          : record?.proxy_season ?? record?.year;
+
+      return yearValue !== undefined && yearValue !== null
+        ? String(yearValue)
+        : "";
+    },
+    []
+  );
+
+  const matchesShareholderFilters = useCallback(
+    (record: any, tabKey: ShareholderTabKey) => {
+      const normalizedCompany = String(
+        record?.company_name || record?.website_company_name || ""
+      )
+        .trim()
+        .toLowerCase();
+
+      if (
+        isAllCompanySelected &&
+        filters.global_search?.length > 0 &&
+        !filters.global_search.some(
+          (company) => normalizedCompany === String(company).trim().toLowerCase()
+        )
+      ) {
+        return false;
+      }
+
+      const recordYear = getRecordYearValue(record, tabKey);
+      if (
+        filters.year?.length > 0 &&
+        !filters.year.map(String).includes(recordYear)
+      ) {
+        return false;
+      }
+
+      if (
+        filters.category?.length > 0 &&
+        !filters.category.includes(String(record?.category || "").trim())
+      ) {
+        return false;
+      }
+
+      if (
+        filters.sub_category?.length > 0 &&
+        !filters.sub_category.includes(String(record?.sub_category || "").trim())
+      ) {
+        return false;
+      }
+
+      if (
+        filters.status?.length > 0 &&
+        !filters.status.includes(String(record?.status || "").trim())
+      ) {
+        return false;
+      }
+
+      const proponentValue = String(
+        record?.proponent_name ||
+          record?.proponent ||
+          record?.institution ||
+          record?.shareholder ||
+          ""
+      ).toLowerCase();
+
+      if (
+        filters.proponent_name?.length > 0 &&
+        !filters.proponent_name.some((term) =>
+          proponentValue.includes(String(term).toLowerCase())
+        )
+      ) {
+        return false;
+      }
+
+      return true;
+    },
+    [filters, getRecordYearValue, isAllCompanySelected]
+  );
+
+  const adjustTabCount = useCallback(
+    (tabKey: ShareholderTabKey, delta: number) => {
+      if (delta === 0) {
+        return;
+      }
+
+      if (tabKey === "proposal") {
+        setProposalCount((value) => Math.max(0, value + delta));
+        return;
+      }
+
+      if (tabKey === "no-action") {
+        setNoActionCount((value) => Math.max(0, value + delta));
+        return;
+      }
+
+      setWithdrawnCount((value) => Math.max(0, value + delta));
+    },
+    []
+  );
+
+  const applyLocalMutation = useCallback(
+    ({ tabKey, action, record, previousRecord }: ShareholderMutationPayload) => {
+      const previousId = previousRecord?.id ?? record?.id;
+      const matchesFilters = matchesShareholderFilters(record, tabKey);
+      const canInsertOnCurrentPage =
+        action === "add" && currentTabKey === tabKey && page === 1 && matchesFilters;
+
+      setTabResponses((previousResponses) => {
+        const currentResponse = previousResponses[tabKey];
+        if (!currentResponse) {
+          return previousResponses;
+        }
+
+        let nextResults = Array.isArray(currentResponse.results)
+          ? [...currentResponse.results]
+          : [];
+        const existingIndex = nextResults.findIndex(
+          (item: any) => item?.id === previousId
+        );
+
+        if (action === "edit") {
+          if (existingIndex !== -1) {
+            nextResults[existingIndex] = {
+              ...nextResults[existingIndex],
+              ...record,
+            };
+          }
+        }
+
+        if (action === "delete" && existingIndex !== -1) {
+          nextResults = nextResults.filter((item: any) => item?.id !== previousId);
+        }
+
+        if (action === "add" && canInsertOnCurrentPage) {
+          nextResults = [record, ...nextResults].slice(
+            0,
+            Math.max(nextResults.length, 1)
+          );
+        }
+
+        return {
+          ...previousResponses,
+          [tabKey]: {
+            ...currentResponse,
+            count:
+              action === "add" && matchesFilters
+                ? currentResponse.count + 1
+                : action === "delete" && existingIndex !== -1
+                  ? Math.max(0, currentResponse.count - 1)
+                  : currentResponse.count,
+            results: nextResults,
+          },
+        };
+      });
+
+      if (action === "add" && matchesFilters) {
+        adjustTabCount(tabKey, 1);
+      }
+
+      if (action === "delete") {
+        adjustTabCount(tabKey, -1);
+      }
+    },
+    [adjustTabCount, currentTabKey, matchesShareholderFilters, page]
+  );
+
+  const handleDeleteRequest = useCallback(
+    (proposal: any, tabKey: ShareholderTabKey) => {
+      setProposalToDelete({ record: proposal, tabKey });
+      setIsDeleteModalOpen(true);
+    },
+    []
+  );
+
   useEffect(() => {
-    dispatch(
-      setFilter({
-        key: "global_search",
-        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
-      })
-    );
+    if (routeReady && isCompanySource && !isAllCompanySelected) {
+      dispatch(
+        setFilter({
+          key: "global_search",
+          value: [companyGlobalSearchName],
+        })
+      );
+    }
 
     dispatch(
       modifyRoute({
@@ -408,39 +826,24 @@ function ShareHolderProposal() {
         type: true,
       })
     );
-  }, [companyGlobalSearchName, isAllCompanySelected]);
+  }, [companyGlobalSearchName, isAllCompanySelected, isCompanySource, routeReady]);
 
-  const tabUrls: { [key: string]: string } = {
-    proposal: `${baseURL}/shareholder_proposal/def14a/`,
-    "no-action": `${baseURL}/shareholder_proposal/no_action/`,
-    withdrawn: `${baseURL}/shareholder_proposal/withdrawn/`,
-  };
+  const tabUrls = useMemo<Record<ShareholderTabKey, string>>(
+    () => ({
+      proposal: `${baseURL}/shareholder_proposal/def14a/`,
+      "no-action": `${baseURL}/shareholder_proposal/no_action/`,
+      withdrawn: `${baseURL}/shareholder_proposal/withdrawn/`,
+    }),
+    []
+  );
+
+  const appendQueryParam = useCallback(
+    (url: string, key: string, value: string) =>
+      url.includes("?") ? `${url}&${key}=${value}` : `${url}?${key}=${value}`,
+    []
+  );
 
   useEffect(() => {
-    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
-      return;
-    }
-    const updatedFilters = tab === "withdrawn"
-      ? {
-        ...filters,
-        ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season, proxy_season: [] })
-      }
-      : {
-        ...filters,
-        ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
-      };
-
-    // Create a copy of filters and ensure index is not transformed to index_name
-    const shareholderFilters = { ...updatedFilters };
-    if (shareholderFilters.index_name && !shareholderFilters.index) {
-      shareholderFilters.index = shareholderFilters.index_name;
-      delete shareholderFilters.index_name;
-    }
-
-    const dynamicURL = createDynamicURL(tabUrls[tab], shareholderFilters, undefined, page);
-    dispatch(fetchShareHolderProposal(dynamicURL));
-
-
     if (tab === "no-action") {
       var { institution_name, global_search, ...restFilters } = filters;
     } else {
@@ -469,7 +872,7 @@ function ShareHolderProposal() {
           : { ...chipFilters, global_search: filters.global_search }
       )
     );
-  }, [page, tab, filters]);
+  }, [tab, filters, isAllCompanySelected]);
 
   useEffect(() => {
     if (isCompanySelected) {
@@ -478,143 +881,150 @@ function ShareHolderProposal() {
       setIsViewAnalysis(true);
     }
   }, [isCompanySelected]);
-  useEffect(() => {
-    const fetchData = async () => {
-      // For company view, need global_search; for all companies view, it's optional
+
+  const fetchAllTabsData = useCallback(
+    async (showLoader = true) => {
+      if (!routeReady) {
+        return;
+      }
+
       if (!isAllCompanySelected && filters?.global_search.length === 0) {
+        setTabResponses({
+          proposal: null,
+          "no-action": null,
+          withdrawn: null,
+        });
+        setProposalAnalyticsResponse(null);
+        setProposalCount(0);
+        setNoActionCount(0);
+        setWithdrawnCount(0);
         return;
       }
 
       try {
-        setLoadingAnalytics(true);
+        if (showLoader) {
+          setLoading(true);
+        }
 
-        const updatedFilters = {
+        const pnaUpdated = {
           ...filters,
           ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] }),
         };
-
-        // Create a copy of filters and ensure index is not transformed to index_name
-        const shareholderFilters = { ...updatedFilters };
-        if (shareholderFilters.index_name && !shareholderFilters.index) {
-          shareholderFilters.index = shareholderFilters.index_name;
-          delete shareholderFilters.index_name;
+        const pnaFilters = { ...pnaUpdated };
+        if (pnaFilters.index_name && !pnaFilters.index) {
+          pnaFilters.index = pnaFilters.index_name;
+          delete pnaFilters.index_name;
         }
 
-        const dynamicURL =
-          createDynamicURL(tabUrls[tab], shareholderFilters, undefined, page) +
-          (isViewAnalysis && tab === "proposal" ? "&analytics_data=true" : "");
-
-        const response = await shareHolderProposalService.getShareHolderProposal(dynamicURL);
-
-        if (response) {
-          setProposalsAnalytics(response);
+        const wUpdated = {
+          ...filters,
+          proxy_season: [],
+          year: filters.year?.length > 0
+            ? filters.year
+            : (filters.proxy_season?.length > 0 ? filters.proxy_season : []),
+        };
+        const wFilters = { ...wUpdated };
+        if (wFilters.index_name && !wFilters.index) {
+          wFilters.index = wFilters.index_name;
+          delete wFilters.index_name;
         }
+
+        const proposalTableUrl = createDynamicURL(
+          tabUrls.proposal,
+          pnaFilters,
+          undefined,
+          page
+        );
+        const proposalAnalyticsUrl = appendQueryParam(
+          proposalTableUrl,
+          "analytics_data",
+          "true"
+        );
+        const noActionUrl = createDynamicURL(
+          tabUrls["no-action"],
+          pnaFilters,
+          undefined,
+          page
+        );
+        const withdrawnUrl = createDynamicURL(
+          tabUrls.withdrawn,
+          wFilters,
+          undefined,
+          page
+        );
+
+        const [proposalTableResponse, proposalAnalyticsData, noActionResponse, withdrawnResponse] = await Promise.all([
+          getCachedShareholderProposal(proposalTableUrl),
+          getCachedShareholderProposal(proposalAnalyticsUrl),
+          getCachedShareholderProposal(noActionUrl),
+          getCachedShareholderProposal(withdrawnUrl),
+        ]);
+
+        setTabResponses({
+          proposal: proposalTableResponse,
+          "no-action": noActionResponse,
+          withdrawn: withdrawnResponse,
+        });
+        setProposalAnalyticsResponse(proposalAnalyticsData);
+        setProposalCount(proposalTableResponse?.count ?? 0);
+        setNoActionCount(noActionResponse?.count ?? 0);
+        setWithdrawnCount(withdrawnResponse?.count ?? 0);
       } catch (error) {
-        console.error("Error fetching shareholder proposals:", error);
-        setProposalsAnalytics(null);
+        console.error("Error preloading shareholder proposal tabs:", error);
+
+        if (showLoader) {
+          setTabResponses({
+            proposal: null,
+            "no-action": null,
+            withdrawn: null,
+          });
+          setProposalAnalyticsResponse(null);
+        }
       } finally {
-        setLoadingAnalytics(false);
+        if (showLoader) {
+          setLoading(false);
+        }
       }
-    };
-
-    if (isViewAnalysis) {
-      fetchData();
-    }
-  }, [page, tab, filters, isViewAnalysis, isAllCompanySelected]);
-
+    },
+    [appendQueryParam, filters, isAllCompanySelected, page, routeReady, tabUrls]
+  );
 
   useEffect(() => {
-    if (isAllCompanySelected === false && filters?.global_search.length === 0) {
-      return;
-    }
-    getAllShareholderAPI();
-  }, [filters]);
+    void fetchAllTabsData(!shouldRestoreCachedView);
+  }, [fetchAllTabsData, shouldRestoreCachedView]);
 
-  const getAllShareholderAPI = async () => {
-    try {
-      // proposal + no-action APIs require proxy_season param
-      const pnaUpdated = {
-        ...filters,
-        ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] }),
-      };
-      const pnaFilters = { ...pnaUpdated };
-      if (pnaFilters.index_name && !pnaFilters.index) {
-        pnaFilters.index = pnaFilters.index_name;
-        delete pnaFilters.index_name;
-      }
+  useEffect(() => {
+    shareholderPageSnapshot = {
+      searchTerms,
+      tabResponses,
+      proposalAnalyticsResponse,
+      proposalCount,
+      withdrawnCount,
+      noActionCount,
+      isViewAnalysis,
+      activeTab,
+      tempTab,
+      tableOnlyView,
+      isFilterCollapse,
+    };
+  }, [
+    activeTab,
+    isFilterCollapse,
+    isViewAnalysis,
+    noActionCount,
+    proposalAnalyticsResponse,
+    proposalCount,
+    searchTerms,
+    tabResponses,
+    tableOnlyView,
+    tempTab,
+    withdrawnCount,
+  ]);
 
-      // withdrawn API always uses year param (never proxy_season)
-      const wUpdated = {
-        ...filters,
-        proxy_season: [],
-        year: filters.year?.length > 0
-          ? filters.year
-          : (filters.proxy_season?.length > 0 ? filters.proxy_season : []),
-      };
-      const wFilters = { ...wUpdated };
-      if (wFilters.index_name && !wFilters.index) {
-        wFilters.index = wFilters.index_name;
-        delete wFilters.index_name;
-      }
-
-      const proposalResponse =
-        await shareHolderProposalService.getAllShareholderAPI(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/def14a/`,
-            pnaFilters,
-            undefined,
-            page
-          )
-        );
-      if (proposalResponse?.result) {
-        setProposalCount(proposalResponse?.result?.count);
-      }
-
-      const noActionResponse =
-        await shareHolderProposalService.getAllShareholderAPI(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/no_action/`,
-            pnaFilters,
-            undefined,
-            page
-          )
-        );
-      if (noActionResponse?.result) {
-        setNoActionCount(noActionResponse?.result?.count);
-      }
-
-      const withdrawnResponse =
-        await shareHolderProposalService.getAllShareholderAPI(
-          createDynamicURL(
-            `${baseURL}/shareholder_proposal/withdrawn/`,
-            wFilters,
-            undefined,
-            page
-          )
-        );
-      if (withdrawnResponse?.result) {
-        setWithdrawnCount(withdrawnResponse?.result?.count ?? 0);
-      }
-
-      // if (!isBackToShareholderPage) {
-      //   if (proposalResponse?.result?.count > 0 &&  filters?.proponent_name?.length >= 0) {
-      //     dispatch(setTabs("proposal"));
-
-      //   } else if (noActionResponse?.result?.count > 0) {
-      //     dispatch(setTabs("no-action"));
-      //   } else if (withdrawnResponse?.result?.count > 0) {
-      //     dispatch(setTabs("withdrawn"));
-      //   }
-      // }
-    } catch (error) {
-      return error;
-    }
-  };
   const getAllShareholderDropdowns = async () => {
     try {
       setGetDropdownLoader(true);
-      const res =
-        await shareHolderProposalService.getShareHolderDropdownValues();
+      const res = await getCachedShareholderDropdownValues();
       if (res.result) {
         setApiDropdownOptions({ ...res.result });
       }
@@ -639,12 +1049,13 @@ function ShareHolderProposal() {
   }, [tab]);
 
   useEffect(() => {
-    getAllShareholderDropdowns();
-    getSubCategoryDropdown();
-  }, []);
+    if (routeReady && !isCompanySource) {
+      getAllShareholderDropdowns();
+    }
+  }, [isCompanySource, routeReady]);
 
   const handleNextPage = () => {
-    if (page < totalPages) {
+    if (page < currentTotalPages) {
       dispatch(setPage(page + 1));
     }
   };
@@ -659,7 +1070,33 @@ function ShareHolderProposal() {
     dispatch(setPage(newPage));
   };
 
+  const hasSelectedFilters = () => {
+    const formValues = getValues();
+    const normalizedFormFilters = {
+      ...formValues,
+      proponent_name: searchTerms,
+      global_search: isAllCompanySelected
+        ? Array.isArray(formValues?.global_search)
+          ? formValues.global_search.map((item: any) => item?.label ?? item?.value ?? item)
+          : []
+        : [],
+    };
+    const normalizedAppliedFilters = {
+      ...filters,
+      global_search: isAllCompanySelected ? filters?.global_search : [],
+    };
+
+    return (
+      countValidFilters(normalizedFormFilters as any) > 0 ||
+      countValidFilters(normalizedAppliedFilters as any) > 0
+    );
+  };
+
   const onFilterClear = () => {
+    if (!hasSelectedFilters()) {
+      return;
+    }
+
     reset();
     resetFormValues();
     dispatch(resetFilter());
@@ -671,6 +1108,10 @@ function ShareHolderProposal() {
     }
   };
   const handleClearAllFilter = () => {
+    if (!hasSelectedFilters()) {
+      return;
+    }
+
     setSearchTerms([]);
     reset();
     resetFormValues();
@@ -687,20 +1128,35 @@ function ShareHolderProposal() {
     dispatch(setFilter({ key: "proponent_name", value: searchTerms }));
   };
 
+  const handleSavedRecord = useCallback(
+    ({ tabKey, action, record, previousRecord }: ShareholderMutationPayload) => {
+      applyLocalMutation({ tabKey, action, record, previousRecord });
+      void fetchAllTabsData(false);
+    },
+    [applyLocalMutation, fetchAllTabsData]
+  );
+
   const handleDelete = async () => {
-    if (!proposalToDelete) return;
+    if (!proposalToDelete?.record?.id || !proposalToDelete?.tabKey) return;
 
     try {
       setIsDeleting(true);
-      await shareHolderProposalService.deleteShareHolderProposal(proposalToDelete.id);
+      await shareHolderProposalService.deleteShareHolderProposal(
+        String(proposalToDelete.record.id),
+        proposalToDelete.tabKey
+      );
 
+      applyLocalMutation({
+        tabKey: proposalToDelete.tabKey,
+        action: "delete",
+        record: proposalToDelete.record,
+      });
       toast.success("Proposal deleted successfully");
       setIsDeleteModalOpen(false);
       setProposalToDelete(null);
-
+      void fetchAllTabsData(false);
     } catch (error: any) {
-      // console.error("Delete error:", error);
-      // toast.error(error?.response?.data?.message || "Failed to delete proposal");
+      toast.error(error?.response?.data?.message || "Failed to delete proposal");
     } finally {
       setIsDeleting(false);
     }
@@ -723,19 +1179,25 @@ function ShareHolderProposal() {
   ]);
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
+    const nextFilters = {
+      ...shareHolderFilters,
+      proxy_season: [],
+      proponent_name: searchTerms,
+      global_search: isAllCompanySelected
+        ? Array.isArray(shareHolderFilters?.global_search)
+          ? shareHolderFilters?.global_search.map((item: any) => item.label)
+          : []
+        : [companyGlobalSearchName],
+    };
 
-    dispatch(
-      setAllFilters({
-        ...shareHolderFilters,
-        proxy_season: [],
-        proponent_name: searchTerms,
-        global_search: isAllCompanySelected
-          ? Array.isArray(shareHolderFilters?.global_search)
-            ? shareHolderFilters?.global_search.map((item: any) => item.label)
-            : []
-          : [companyGlobalSearchName],
-      })
-    );
+    const { global_search, ...userSelectedFilters } = nextFilters as any;
+
+    if (countValidFilters(userSelectedFilters) === 0) {
+      setIsFilterCollapse(!isFilterCollapse);
+      return;
+    }
+
+    dispatch(setAllFilters(nextFilters));
     setIsFilterCollapse(!isFilterCollapse);
 
     dispatch(resetPage());
@@ -1056,26 +1518,57 @@ function ShareHolderProposal() {
 
   if (tableOnlyView) {
     return (
-      <ProposalDetailsTableView
-        loading={loading}
-        loadingDownload={loadingDownload}
-        shareHolderProposal={shareHolderProposal}
-        isAllCompanySelected={isAllCompanySelected}
-        user={user}
-        companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
-        handleDownload={handleDownload}
-        onVisibleDetail={onVisibleDetail}
-        onEditProposalClickHandler={onEditProposalClickHandler}
-        setProposalToDelete={setProposalToDelete}
-        setIsDeleteModalOpen={setIsDeleteModalOpen}
-        setTableOnlyView={setTableOnlyView}
-        tableOnlyView
-        page={page}
-        totalPages={totalPages}
-        handleNextPage={handleNextPage}
-        handlePreviousPage={handlePreviousPage}
-        handlePageChange={handlePageChange}
-      />
+      <>
+        <ProposalDetailsTableView
+          loading={loading}
+          loadingDownload={loadingDownload}
+          shareHolderProposal={currentShareHolderProposal}
+          isAllCompanySelected={isAllCompanySelected}
+          user={user}
+          companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
+          handleDownload={handleDownload}
+          onVisibleDetail={onVisibleDetail}
+          onEditProposalClickHandler={onEditProposalClickHandler}
+          onEditNoActionClickHandler={onEditNoActionClickHandler}
+          onEditWithdrawnClickHandler={onEditWithdrawnClickHandler}
+          onDeleteProposalRequest={handleDeleteRequest}
+          setTableOnlyView={setTableOnlyView}
+          tableOnlyView
+          page={page}
+          totalPages={currentTotalPages}
+          handleNextPage={handleNextPage}
+          handlePreviousPage={handlePreviousPage}
+          handlePageChange={handlePageChange}
+        />
+
+        {addNewShareholderModalVisible && (
+          <AddNewShareholder
+            addNewShareholderModalVisible={addNewShareholderModalVisible}
+            setAddNewShareholderModalVisible={setAddNewShareholderModalVisible}
+            selectedShareholderProposal={selectedShareholderProposal}
+            type={actionType}
+            onSaved={handleSavedRecord}
+          />
+        )}
+
+        {addNewNoActionModalVisible && (
+          <AddNewNoAction
+            addNewNoActionModalVisible={addNewNoActionModalVisible}
+            setAddNewNoActionModalVisible={setAddNewNoActionModalVisible}
+            selectedShareholderNoAction={selectedShareholderNoAction}
+            onSaved={handleSavedRecord}
+          />
+        )}
+
+        {addNewWithdrawnModalVisible && (
+          <AddNewWithdrawn
+            addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
+            setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
+            selectedShareholderWithdrawn={selectedShareholderWithdrawn}
+            onSaved={handleSavedRecord}
+          />
+        )}
+      </>
     );
   }
 
@@ -1644,8 +2137,8 @@ function ShareHolderProposal() {
                               onChange={field.onChange}
                               isMulti
                               className="mt-1"
-                              isHideCurrentCompany={true}
                               currentCompany={finhub?.name || companyGlobalSearchName}
+                              showDefaultOptions={false}
                             />
                           )}
                         />
@@ -2279,84 +2772,82 @@ function ShareHolderProposal() {
                 </form>
               )}
 
-              <div className="overflow-auto xl:overflow-visible">
+              <div className="overflow-visible">
                 <Tab.Group
                   selectedIndex={getSelectedTabIndex()}
                   defaultIndex={defaultTabIndex}
                 >
-                  <Tab.List variant="link-tabs">
-                    <Tab>
-                      <Tab.Button
-                        className="w-full py-2"
-                        as="button"
-                        onClick={() => {
-                          dispatch(setTabs("proposal"));
-                          dispatch(resetPage());
-                          clearNoActionFilter();
-                          setTempTab("proposal");
-                        }}
+                  <div
+                    className="sticky z-20 -mx-5 mb-5 bg-slate-50 px-5 pb-4 pt-2"
+                    style={{ top: stickyTabsTop }}
+                  >
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
+                      <Tab.List
+                        variant="boxed-tabs"
+                        className="!grid !grid-cols-1 gap-1.5 !border-0 !bg-transparent !p-0 md:!grid-cols-3"
                       >
-                        <div className="flex items-center justify-center ">
-                          All Proposals
-                          <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
-                          font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center"
-                          >
-                            {proposalCount}
-                          </span>
-                        </div>
-                      </Tab.Button>
-                    </Tab>
+                        {shareholderTabs.map((item) => {
+                          const Icon = item.icon;
 
-                    <Tab>
-                      <Tab.Button
-                        className="w-full py-2"
-                        as="button"
-                        onClick={() => {
-                          dispatch(setTabs("no-action"));
-                          dispatch(resetPage());
-                          setTempTab("no-action");
-                        }}
-                      >
-                        <div className="flex items-center justify-center ">
-                          No Action Letter
-                          <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
-                          font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center"
-                          >
-                            {noActionCount}
-                          </span>
-                        </div>
-                      </Tab.Button>
-                    </Tab>
+                          return (
+                            <Tab key={item.key}>
+                              {({ selected }) => (
+                                <Tab.Button
+                                  className={clsx(
+                                    "group w-full rounded-xl border px-3 py-2 text-left transition-all duration-200",
+                                    selected
+                                      ? "border-primary bg-[linear-gradient(135deg,rgba(171,18,61,0.12),rgba(255,255,255,0.98))] text-slate-900 shadow-sm ring-1 ring-primary/10"
+                                      : "border-slate-200/80 bg-white text-slate-700 hover:border-primary/30 hover:bg-slate-50"
+                                  )}
+                                  as="button"
+                                  onClick={() => handleShareholderTabChange(item.key)}
+                                >
+                                  <div className="flex flex-col gap-0.3">
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className={clsx(
+                                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+                                          selected
+                                            ? "bg-primary text-white shadow-sm"
+                                            : "bg-slate-100 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary"
+                                        )}
+                                      >
+                                        <Icon className="h-3.5 w-3.5" />
+                                      </div>
 
-                    <Tab>
-                      <Tab.Button
-                        className="w-full py-2"
-                        as="button"
-                        onClick={() => {
-                          dispatch(setTabs("withdrawn"));
-                          dispatch(resetPage());
-                          clearNoActionFilter();
-                          setIsViewAnalysis(true);
-                          setTempTab("withdrawn");
-                        }}
-                      >
-                        <div className="flex items-center justify-center ">
-                          Withdrawn (Proponent Disclosure)
-                          <span
-                            className="bg-[#ab123d] rounded-lg h-7 w-10 p-3
-                          font-semibold text-white text-[11px] ml-2
-                           flex items-center justify-center"
-                          >
-                            {withdrawnCount}
-                          </span>
-                        </div>
-                      </Tab.Button>
-                    </Tab>
-                  </Tab.List>
+                                      <div className="min-w-0 flex-1 overflow-hidden">
+                                        <p
+                                          className={clsx(
+                                            "whitespace-nowrap text-[14px] font-semibold leading-none",
+                                            selected ? "text-primary" : "text-slate-800"
+                                          )}
+                                        >
+                                          {item.label}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                      <span
+                                        className={clsx(
+                                          "inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                          selected
+                                            ? "bg-primary text-white"
+                                            : "bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary"
+                                        )}
+                                      >
+                                        {Number(item.count ?? 0).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </Tab.Button>
+                              )}
+                            </Tab>
+                          );
+                        })}
+                      </Tab.List>
+                    </div>
+                  </div>
 
                   <Tab.Panels className="mt-5">
                     <Tab.Panel className="leading-relaxed">
@@ -2403,7 +2894,7 @@ function ShareHolderProposal() {
 
                           {/* Content */}
                           <div>
-                            {loadingAnalytics ? (
+                            {loading ? (
                               <div className="p-5 mt-3.5 space-y-8">
                                 {activeTab === "shareholders" ? (
                                   <>
@@ -2450,22 +2941,22 @@ function ShareHolderProposal() {
                               </div>
                             ) : activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
-                                proposalCounts={proposalsAnalytics?.total_proposals}
-                                topSubcategories={proposalsAnalytics?.topSubcategories}
-                                topCategories={proposalsAnalytics?.topCategories}
-                                yearlySummary={proposalsAnalytics?.yearlySummary}
+                                proposalCounts={currentProposalAnalyticsCounts}
+                                topSubcategories={currentTopSubcategories}
+                                topCategories={currentTopCategories}
+                                yearlySummary={currentYearlySummary}
                                 tab={tab}
                                 isAllCompanySelected={isAllCompanySelected}
-                                loading={loadingAnalytics}
+                                loading={loading}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
-                                topProponents={proposalsAnalytics?.topProponents}
+                                topProponents={currentTopProponents}
                                 handleSearch={handleSearch}
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
-                                loading={loadingAnalytics}
-                                pieChartOutcome={proposalsAnalytics?.pieChartOutcome}
+                                loading={loading}
+                                pieChartOutcome={currentPieChartOutcome}
                                 filters={filters}
                               />
                             )}
@@ -2475,18 +2966,19 @@ function ShareHolderProposal() {
                       <ProposalDetailsTableView
                         loading={loading}
                         loadingDownload={loadingDownload}
-                        shareHolderProposal={shareHolderProposal}
+                        shareHolderProposal={currentShareHolderProposal}
                         isAllCompanySelected={isAllCompanySelected}
                         user={user}
                         companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
                         handleDownload={handleDownload}
                         onVisibleDetail={onVisibleDetail}
                         onEditProposalClickHandler={onEditProposalClickHandler}
-                        setProposalToDelete={setProposalToDelete}
-                        setIsDeleteModalOpen={setIsDeleteModalOpen}
+                        onEditNoActionClickHandler={onEditNoActionClickHandler}
+                        onEditWithdrawnClickHandler={onEditWithdrawnClickHandler}
+                        onDeleteProposalRequest={handleDeleteRequest}
                         setTableOnlyView={setTableOnlyView}
                         page={page}
-                        totalPages={totalPages}
+                        totalPages={currentTotalPages}
                         handleNextPage={handleNextPage}
                         handlePreviousPage={handlePreviousPage}
                         handlePageChange={handlePageChange}
@@ -2568,23 +3060,23 @@ function ShareHolderProposal() {
                               </div>
                             ) : activeTab === "shareholders" ? (
                               <ShareHolderProposalAnalyticsComponent
-                                proposalCounts={proposalCounts}
-                                topSubcategories={topSubcategories}
-                                topCategories={topCategories}
-                                yearlySummary={yearlySummary}
+                                proposalCounts={currentProposalCounts}
+                                topSubcategories={currentTopSubcategories}
+                                topCategories={currentTopCategories}
+                                yearlySummary={currentYearlySummary}
                                 tab={tab}
-                                pieChartOutcome={pieChartOutcome}
+                                pieChartOutcome={currentPieChartOutcome}
                                   isAllCompanySelected={isAllCompanySelected}
                                 loading={loading}
                               />
                             ) : (
                               <ProponentsAnalyticsComponent
-                                topProponents={topProponents}
+                                topProponents={currentTopProponents}
                                 handleSearch={handleSearch}
                                 setSearchTerms={setSearchTerms}
                                 tab={tab}
                                 loading={loading}
-                                pieChartOutcome={pieChartOutcome}
+                                pieChartOutcome={currentPieChartOutcome}
                                 filters={filters}
                               />
                             )}
@@ -2594,18 +3086,19 @@ function ShareHolderProposal() {
                       <ProposalDetailsTableView
                         loading={loading}
                         loadingDownload={loadingDownload}
-                        shareHolderProposal={shareHolderProposal}
+                        shareHolderProposal={currentShareHolderProposal}
                         isAllCompanySelected={isAllCompanySelected}
                         user={user}
                         companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
                         handleDownload={handleDownload}
                         onVisibleDetail={onVisibleDetail}
                         onEditProposalClickHandler={onEditProposalClickHandler}
-                        setProposalToDelete={setProposalToDelete}
-                        setIsDeleteModalOpen={setIsDeleteModalOpen}
+                        onEditNoActionClickHandler={onEditNoActionClickHandler}
+                        onEditWithdrawnClickHandler={onEditWithdrawnClickHandler}
+                        onDeleteProposalRequest={handleDeleteRequest}
                         setTableOnlyView={setTableOnlyView}
                         page={page}
-                        totalPages={totalPages}
+                        totalPages={currentTotalPages}
                         handleNextPage={handleNextPage}
                         handlePreviousPage={handlePreviousPage}
                         handlePageChange={handlePageChange}
@@ -2636,15 +3129,16 @@ function ShareHolderProposal() {
                       <ProposalDetailsTableView
                         loading={loading}
                         loadingDownload={loadingDownload}
-                        shareHolderProposal={shareHolderProposal}
+                        shareHolderProposal={currentShareHolderProposal}
                         isAllCompanySelected={isAllCompanySelected}
                         user={user}
                         companyGlobalSearchName={companyGlobalSearchName || filters?.global_search?.[0]}
                         handleDownload={handleDownload}
                         onVisibleDetail={onVisibleDetail}
                         onEditProposalClickHandler={onEditProposalClickHandler}
-                        setProposalToDelete={setProposalToDelete}
-                        setIsDeleteModalOpen={setIsDeleteModalOpen}
+                        onEditNoActionClickHandler={onEditNoActionClickHandler}
+                        onEditWithdrawnClickHandler={onEditWithdrawnClickHandler}
+                        onDeleteProposalRequest={handleDeleteRequest}
                         setTableOnlyView={setTableOnlyView}
                       />
                     </Tab.Panel>
@@ -2654,7 +3148,7 @@ function ShareHolderProposal() {
               <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row">
                 <CPagination
                   page={page}
-                  totalPages={totalPages}
+                  totalPages={currentTotalPages}
                   handleNextPage={handleNextPage}
                   handlePageChange={handlePageChange}
                   handlePreviousPage={handlePreviousPage}
@@ -2683,6 +3177,7 @@ function ShareHolderProposal() {
               }
               selectedShareholderProposal={selectedShareholderProposal}
               type={actionType}
+              onSaved={handleSavedRecord}
             />
           )}
 
@@ -2691,6 +3186,7 @@ function ShareHolderProposal() {
               addNewNoActionModalVisible={addNewNoActionModalVisible}
               setAddNewNoActionModalVisible={setAddNewNoActionModalVisible}
               selectedShareholderNoAction={selectedShareholderNoAction}
+              onSaved={handleSavedRecord}
             />
           )}
 
@@ -2699,6 +3195,7 @@ function ShareHolderProposal() {
               addNewWithdrawnModalVisible={addNewWithdrawnModalVisible}
               setAddNewWithdrawnModalVisible={setAddNewWithdrawnModalVisible}
               selectedShareholderWithdrawn={selectedShareholderWithdrawn}
+              onSaved={handleSavedRecord}
             />
           )}
 
@@ -2718,6 +3215,7 @@ function ShareHolderProposal() {
               open={isDeleteModalOpen}
               onClose={() => {
                 setIsDeleteModalOpen(false);
+                setProposalToDelete(null);
               }}
             >
               <Dialog.Panel className="p-0 text-center">
@@ -2728,7 +3226,7 @@ function ShareHolderProposal() {
                   />
                   <div className="mt-5 text-3xl">Are you sure?</div>
                   <div className="mt-2 text-slate-500">
-                    Do you really want to delete this proposal? <br />
+                    Do you really want to delete this record? <br />
                     This action cannot be undone.
                   </div>
                 </div>
@@ -2738,18 +3236,26 @@ function ShareHolderProposal() {
                     type="button"
                     onClick={() => {
                       setIsDeleteModalOpen(false);
+                      setProposalToDelete(null);
                     }}
                     className="w-24 mr-1"
+                    disabled={isDeleting}
                   >
                     Cancel
                   </Button>
                   <Button
                     variant="danger"
                     type="button"
-                    className="w-24"
+                    className="min-w-[110px]"
                     onClick={handleDelete}
                     disabled={isDeleting}
                   >
+                    {isDeleting && (
+                      <Lucide
+                        icon="Loader"
+                        className="w-4 h-4 mr-1.5 stroke-[1.3] animate-spin"
+                      />
+                    )}
                     {isDeleting ? "Deleting..." : "Delete"}
                   </Button>
                 </div>
