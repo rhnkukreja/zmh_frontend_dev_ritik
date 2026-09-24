@@ -3,6 +3,7 @@ import Lucide from "@/components/Base/Lucide";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import Table from "@/components/Base/Table";
 import TableWrapper from "@/components/TableWrapper";
+import CaseStudyText from "@/components/CaseStudyText";
 import Tippy from "@/components/Base/Tippy";
 import { fetchCaseStudies } from "@/stores/caseStudySlice";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -125,7 +126,7 @@ const CaseProxyModal: React.FC<CaseProxyModalProps> = ({
               {detailedCaseStudy?.engagement_details && (
                 <div>
                   <h3 className="font-semibold mb-2">Engagement/Voting Details</h3>
-                  <p>{detailedCaseStudy?.engagement_details}</p>
+                  <CaseStudyText text={detailedCaseStudy?.engagement_details} />
                 </div>
               )}
             </div>

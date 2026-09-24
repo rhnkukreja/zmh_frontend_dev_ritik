@@ -2,6 +2,7 @@ import React from "react";
 import { Dialog } from "@/components/Base/Headless";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
+import CaseStudyText from "@/components/CaseStudyText";
 import { FaTimes, FaLayerGroup, FaBuilding, FaHandshake, FaCheckCircle } from "react-icons/fa";
 import clsx from "clsx";
 
@@ -58,18 +59,32 @@ const CaseStudyDetailModal: React.FC<CaseStudyDetailModalProps> = ({
                             <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
                                 <FaBuilding size={12} /> Background & Details
                             </h4>
-                            <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                                {selectedCaseStudy?.engagement_details || 'No details available.'}
-                            </p>
+                            {selectedCaseStudy?.engagement_details ? (
+                                <CaseStudyText
+                                    text={selectedCaseStudy.engagement_details}
+                                    className="text-slate-600 leading-relaxed"
+                                />
+                            ) : (
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                                    No details available.
+                                </p>
+                            )}
                         </div>
 
                         <div>
                             <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 pb-2 border-b">
                                 <FaHandshake size={12} /> Engagement/Voting Summary
                             </h4>
-                            <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                                {selectedCaseStudy?.voting_details || 'No voting details available.'}
-                            </p>
+                            {selectedCaseStudy?.voting_details ? (
+                                <CaseStudyText
+                                    text={selectedCaseStudy.voting_details}
+                                    className="text-slate-600 leading-relaxed"
+                                />
+                            ) : (
+                                <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                                    No voting details available.
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -87,9 +102,16 @@ const CaseStudyDetailModal: React.FC<CaseStudyDetailModalProps> = ({
                                         Vote: {selectedCaseStudy?.vote || 'Pending'}
                                     </span>
                                 </div>
-                                <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-lg border border-slate-100 italic">
-                                    {selectedCaseStudy?.voting_rationale || 'No rationale provided.'}
-                                </p>
+                                {selectedCaseStudy?.voting_rationale ? (
+                                    <CaseStudyText
+                                        text={selectedCaseStudy.voting_rationale}
+                                        className="text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-100 italic"
+                                    />
+                                ) : (
+                                    <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-4 rounded-lg border border-slate-100 italic">
+                                        No rationale provided.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
