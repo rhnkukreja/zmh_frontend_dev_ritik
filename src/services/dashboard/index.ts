@@ -1,3 +1,4 @@
+import axios from "axios";
 import { CompanyData } from "@/types/company";
 import { axiosInstance } from "../index";
 import { CompanyDashboard } from "@/stores/dashboardSlice";
@@ -248,6 +249,30 @@ class DashboardService {
   public async getActivistFilings(companyId: number | string): Promise<any> {
     const url = `${baseURL}/api/activist_filed/?company_id=${companyId}`;
     return await this.fetchWithCache<any>(url);
+  }
+
+  // Classifies each filing's document ("Press Release", "Shareholder Letter",
+  // "Presentation", or null). Links still being classified come back as
+  // pending. A background enhancement to a table that has already rendered, so
+  // it deliberately bypasses axiosInstance: that instance's interceptor raises
+  // an error toast on every failure, and a failure here must stay silent. The
+  // auth header is the same one axiosInstance attaches.
+  public async getActivistFilingDocumentTypes(
+    filings: Array<{ link: string; filing_type: string }>
+  ): Promise<any> {
+    const token = localStorage.getItem("token");
+    const response = await axios.post(
+      `/api/activist-filings/document-types`,
+      { filings },
+      {
+        baseURL: activistCampaignsApiBaseURL,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `JWT ${token}` } : {}),
+        },
+      }
+    );
+    return response.data;
   }
 
   public async getActivistCampaigns(): Promise<any> {

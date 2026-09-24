@@ -182,6 +182,89 @@ function Main() {
   const { dashboardDataList, tempSearch, graphQLBoardData, graphQLBoardDataLoading, agmSummaryDetails } =
     useAppSelector((state) => state.dashboard);
   const searchTicker = searchParams.get("ticker");
+
+  // ── ?ticker= decides which company is selected ────────────────────────────
+  // Until now this param was read and ignored, so /?ticker=XYZ showed whatever
+  // company happened to be in the persisted store -- a bookmark, a pasted link
+  // or a link opened in a new tab all showed the wrong company while the URL
+  // claimed otherwise.
+  //
+  // Only the SELECTION changes here; nothing about what this page renders.
+  // Everything downstream already keys off companyGlobalSearchTicker/Id, so
+  // selecting the company is enough.
+  //
+  // Resolved through the same service the global search box uses (its thunk
+  // calls dashboardService.fetchCompanyByName). Called directly rather than
+  // dispatched, so the box's own dropdown state -- companyDataList,
+  // searchCompletion -- isn't rewritten by a URL load.
+  //
+  // Holds the last ticker we started a lookup for, so a param that doesn't
+  // resolve is attempted once rather than on every render. A ref, not state:
+  // it must not itself cause a render.
+  const attemptedTickerRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const requestedTicker = (searchTicker || "").trim();
+    // No param: the normal load path, untouched.
+    if (!requestedTicker) return;
+
+    const requested = requestedTicker.toLowerCase();
+
+    // Already the selected company. This is also the loop guard:
+    // companySearchAndUpdate writes ?ticker= back into the URL itself, which
+    // re-runs this effect with a param that now matches the store.
+    if ((companyGlobalSearchTicker || "").trim().toLowerCase() === requested) return;
+
+    // One attempt per ticker -- a param that resolves to nothing (or fails)
+    // must not re-request on every render.
+    if ((attemptedTickerRef.current || "").toLowerCase() === requested) return;
+    attemptedTickerRef.current = requestedTicker;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { results } = await dashboardService.fetchCompanyByName(requestedTicker);
+        if (cancelled) return;
+
+        // Exact symbol match only, never results[0]: this endpoint searches
+        // broadly, and taking the first hit would silently select a different
+        // company than the URL names.
+        const matches = (Array.isArray(results) ? results : []).filter(
+          (company: CompanyData) => (company?.symbol || "").trim().toLowerCase() === requested
+        );
+
+        // More than one exact match is ambiguous (CMG is both Chipotle and
+        // Computer Modelling Group): change nothing rather than pick one, since
+        // any pick may open the wrong company.
+        if (matches.length > 1) return;
+        const match = matches[0];
+
+        // No match: leave the selected company exactly as it was, and leave the
+        // param alone -- it may be a ticker this user's data simply doesn't
+        // cover, and clearing it would rewrite a URL they pasted.
+        if (!match?.id) return;
+
+        await companySearchAndUpdate({
+          id: match.id,
+          name: match.name,
+          symbol: match.symbol,
+          board_name: match.board_name,
+        });
+      } catch (error) {
+        // Deliberately silent as far as this page is concerned: a failed
+        // lookup on page load leaves the previous company selected rather than
+        // interrupting the user. (The shared axios interceptor may still raise
+        // its own toast -- see the handoff note.)
+        console.error("Failed to resolve ?ticker= to a company:", error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchTicker, companyGlobalSearchTicker]);
+
   const agmYearlyData = agmSummaryDetails?.meeting_details_yearly_data;
   const agmAvailableYears = (
     Array.isArray(agmSummaryDetails?.total_year)
