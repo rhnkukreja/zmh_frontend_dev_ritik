@@ -275,6 +275,44 @@ class DashboardService {
     return response.data;
   }
 
+  // Builds one proxy-contest draft per company from the selected filings, for
+  // the analyst to review in the Proxy Contest modal before anything is saved.
+  // Nothing is written by this call.
+  public async createActivistProxyContestDraft(
+    filingIds: Array<number | string>
+  ): Promise<any> {
+    const response = await axiosInstance.post(
+      `/api/activist-filings/proxy-contest-draft`,
+      { filing_ids: filingIds },
+      { baseURL: activistCampaignsApiBaseURL }
+    );
+    return response.data;
+  }
+
+  // One filing document's PDF bytes, to be attached to the modal's upload
+  // field. Deliberately bypasses axiosInstance for the same reason
+  // getActivistFilingDocumentTypes does: one document failing must stay silent
+  // (the modal shows "upload manually" on that row instead of an error toast),
+  // and that instance's error handler cannot read a blob error body anyway.
+  // The auth header is the same one axiosInstance attaches.
+  public async getActivistFilingDocumentPdf(
+    filingId: number | string,
+    documentKey: string
+  ): Promise<Blob> {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      `/api/activist-filings/${encodeURIComponent(String(filingId))}/documents/${encodeURIComponent(documentKey)}/pdf`,
+      {
+        baseURL: activistCampaignsApiBaseURL,
+        responseType: "blob",
+        headers: {
+          ...(token ? { Authorization: `JWT ${token}` } : {}),
+        },
+      }
+    );
+    return response.data as Blob;
+  }
+
   public async getActivistCampaigns(): Promise<any> {
     const response = await axiosInstance.get(`/api/activist-campaigns`, {
       baseURL: activistCampaignsApiBaseURL,
