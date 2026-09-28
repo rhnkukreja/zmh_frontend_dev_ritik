@@ -7,7 +7,6 @@ import Lucide from "@/components/Base/Lucide";
 import TradingViewWidget from "@/components/TradingViewWidget";
 import { axiosInstance } from "@/services";
 import { dashboardService } from "@/services/dashboard";
-import LoadingIcon from "@/components/Base/LoadingIcon";
 import { FormInput, FormSelect } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import ReactSelectAsync from "@/components/ReactSelectAsync";
@@ -420,59 +419,73 @@ const CountryInfoHeader = () => {
 
             <div className="overflow-auto max-h-[calc(90vh-400px)] relative">
               {loading ? (
-                <div className="h-52 p-5 mt-3.5 box bg-white flex items-center justify-center">
-                  <LoadingIcon
-                    color="#800000"
-                    icon="three-dots"
-                    className="w-16 h-16"
-                  />
+                <div className="space-y-4">
+                  <div className="animate-pulse rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-4">
+                      <div className="h-4 w-44 rounded bg-gray-200" />
+                      <div className="h-4 w-28 rounded bg-gray-200" />
+                    </div>
+                    <div className="overflow-hidden rounded-md border border-gray-200">
+                      <div className="grid grid-cols-[2fr,1fr,1fr,1fr] bg-gray-50 px-4 py-3">
+                        <div className="h-4 w-24 rounded bg-gray-200" />
+                        <div className="h-4 w-16 rounded bg-gray-200 justify-self-center" />
+                        <div className="h-4 w-16 rounded bg-gray-200 justify-self-center" />
+                        <div className="h-4 w-16 rounded bg-gray-200 justify-self-center" />
+                      </div>
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="grid grid-cols-[2fr,1fr,1fr,1fr] items-center border-t border-gray-200 px-4 py-3"
+                        >
+                          <div className="h-4 w-40 rounded bg-gray-200" />
+                          <div className="h-4 w-12 rounded bg-gray-200 justify-self-center" />
+                          <div className="h-4 w-12 rounded bg-gray-200 justify-self-center" />
+                          <div className="h-4 w-12 rounded bg-gray-200 justify-self-center" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="h-3 w-64 rounded bg-gray-200" />
+                  </div>
                 </div>
-              ) : sharePrice && Object.keys(sharePrice).length > 0 ? (
-                <div className="w-full">
-                  <table className="w-full border border-gray-300 text-sm">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-300">
-                        <th className="px-4 py-3 text-left font-semibold">Name</th>
-                        <th className="px-3 py-3 text-center font-semibold">1-year</th>
-                        <th className="px-3 py-3 text-center font-semibold">3-year</th>
-                        <th className="px-3 py-3 text-center font-semibold">5-year</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        // Filter and separate companies from composite indices
-                        const entries = Object.entries(sharePrice).filter(([ticker, data]: [string, any]) => {
-                          return ticker !== "data_as_of" && !data?.error;
-                        });
+              ) : (() => {
+                const entries = Object.entries(sharePrice || {}).filter(([ticker, data]: [string, any]) => {
+                  return ticker !== "data_as_of" && ticker !== "execution_time" && !data?.error;
+                });
 
-                        // Separate individual companies from composite indices/benchmarks
-                        const companies = entries.filter(([ticker]) => {
-                          // Common composite index patterns - these will always be shown at bottom
-                          const compositePatterns = [
-                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i,
-                            /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
-                            /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
-                          ];
-                          return !compositePatterns.some(pattern => pattern.test(ticker));
-                        });
+                const companies = entries.filter(([ticker]) => {
+                  const compositePatterns = [
+                    /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i,
+                    /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
+                    /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
+                  ];
+                  return !compositePatterns.some(pattern => pattern.test(ticker));
+                });
 
-                        const composites = entries.filter(([ticker]) => {
-                          // Common composite index patterns - always show these at bottom
-                          const compositePatterns = [
-                            /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i,
-                            /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
-                            /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
-                          ];
-                          return compositePatterns.some(pattern => pattern.test(ticker));
-                        });
+                const composites = entries.filter(([ticker]) => {
+                  const compositePatterns = [
+                    /^S&P/i, /^SPX/i, /^DJI/i, /^NASDAQ/i, /^IXIC/i,
+                    /^VTI/i, /^SPY/i, /^QQQ/i, /^IWM/i, /^COMP/i,
+                    /INDEX$/i, /COMPOSITE/i, /AVERAGE/i
+                  ];
+                  return compositePatterns.some(pattern => pattern.test(ticker));
+                });
 
-                        // Sort companies alphabetically, always show composites at bottom
-                        const sortedCompanies = companies.sort(([tickerA], [tickerB]) =>
-                          tickerA.localeCompare(tickerB)
-                        );
+                const sortedCompanies = companies.sort(([tickerA], [tickerB]) => tickerA.localeCompare(tickerB));
+                const tableRows = [...sortedCompanies, ...composites];
 
-                        // Always combine companies with composites - composites should never be hidden
-                        return [...sortedCompanies, ...composites].map(([ticker, data]: [string, any]) => (
+                return tableRows.length > 0 ? (
+                  <div className="w-full">
+                    <table className="w-full border border-gray-300 text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-300">
+                          <th className="px-4 py-3 text-left font-semibold">Name</th>
+                          <th className="px-3 py-3 text-center font-semibold">1-year</th>
+                          <th className="px-3 py-3 text-center font-semibold">3-year</th>
+                          <th className="px-3 py-3 text-center font-semibold">5-year</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tableRows.map(([ticker, data]: [string, any]) => (
                           <tr key={ticker} className="hover:bg-gray-50">
                             <td className="border border-gray-300 px-4 py-3 font-semibold">{ticker}</td>
                             <td className="border border-gray-300 px-2 py-3 text-center">
@@ -491,22 +504,22 @@ const CountryInfoHeader = () => {
                                 : 'N/A'}
                             </td>
                           </tr>
-                        ));
-                      })()}
-                    </tbody>
-                  </table>
+                        ))}
+                      </tbody>
+                    </table>
 
-                  <div className="mt-4">
-                    <p className="text-xs text-gray-500 italic">
-                      <strong>
-                        Source: Marketstack. Data as of {sharePrice?.data_as_of || "N/A"}
-                      </strong>
-                    </p>
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-500 italic">
+                        <strong>
+                          Source: Marketstack. Data as of {sharePrice?.data_as_of || "N/A"}
+                        </strong>
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <p className="text-center text-gray-500 py-10">No data available</p>
-              )}
+                ) : (
+                  <p className="text-center text-gray-500 py-10">No data available</p>
+                );
+              })()}
             </div>
           </Dialog.Panel>
         </div>
