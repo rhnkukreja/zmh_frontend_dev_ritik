@@ -19,12 +19,14 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { MdOutlineClear } from "react-icons/md";
 import { toast } from "react-toastify";
-import { FaSearch, FaTimes, FaUniversity, FaCalendarAlt, FaCheckCircle, FaTags, FaLayerGroup, FaListUl } from "react-icons/fa";
+import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaTags, FaLayerGroup, FaListUl } from "react-icons/fa";
 import CPagination from "@/components/Pagination";
 import clsx from "clsx";
 
 interface FilterState {
   investor_company?: string[];
+  company_name?: string[];
+  company_ids?: Array<string | number>;
   fund_name?: string[];
   proposal?: string[];
   vote?: string[];
@@ -74,6 +76,8 @@ const formatNumberWithCommas = (value: any) => {
 };
 
 const DEFAULT_INVESTOR = "BlackRock, Inc.";
+const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
+const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
 const NPX_INSTITUTION_GLOBAL_SEARCH_NAME = "Apple Inc.";
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
 const NPX_RELOAD_SESSION_KEY = "npxVotingReloadHandled";
@@ -155,7 +159,12 @@ const NpxInstitutionView = () => {
   const [prevYearSelection, setPrevYearSelection] = useState<string[]>([]);
   const [prevDateRangeSelection, setPrevDateRangeSelection] = useState("");
   const [showInstitutionFirstMessage, setShowInstitutionFirstMessage] = useState(false);
+  const [companySelection, setCompanySelection] = useState<{ company_name: string[]; company_ids: Array<string | number> }>({
+    company_name: filters.company_name || [],
+    company_ids: filters.company_ids || [],
+  });
   const hasBootstrappedInstitutionRef = useRef(false);
+  const skipNextDropdownEffectRef = useRef(false);
   const hasSelectedInstitution = Boolean(filters.investor_company && filters.investor_company.length > 0 && filters.investor_company[0]);
 
   useEffect(() => {
@@ -186,7 +195,7 @@ const NpxInstitutionView = () => {
   }, [selectedInstitution, selectedYearKey]);
 
   const hasStatsData = Boolean(npxProposalVotingStats);
-  const isStatsLoading = npxProposalVotingStatsLoading && !hasStatsData;
+  const isStatsLoading = dropdownLoading || (npxProposalVotingStatsLoading && !hasStatsData);
 
   const availableDateRange = useMemo(() => {
     const range = dropdowns?.available_date_range;
@@ -286,10 +295,11 @@ const NpxInstitutionView = () => {
     setOpenGroups(nextOpenGroups);
   };
 
-  const loadDropdowns = async (selectedInstitution?: string[]) => {
+  const loadDropdowns = async (selectedInstitution?: string[], filterOverride?: FilterState) => {
+    const activeFilters = filterOverride ?? filters;
     const resolvedInstitution = selectedInstitution && selectedInstitution.length > 0
       ? selectedInstitution
-      : (filters.investor_company && filters.investor_company.length > 0 ? filters.investor_company : []);
+      : (activeFilters.investor_company && activeFilters.investor_company.length > 0 ? activeFilters.investor_company : []);
 
     if (!resolvedInstitution.length) {
       setDropdowns({});
@@ -302,8 +312,9 @@ const NpxInstitutionView = () => {
     setDropdownLoading(true);
     try {
       const params: any = { investor_company: resolvedInstitution };
-      if (filters.year && filters.year.length > 0) params.year = filters.year;
-      const normalizedDateRange = typeof filters.date_range === "string" ? filters.date_range : "";
+      if (activeFilters.company_ids && activeFilters.company_ids.length > 0) params.company_ids = activeFilters.company_ids;
+      if (activeFilters.year && activeFilters.year.length > 0) params.year = activeFilters.year;
+      const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
       if (normalizedDateRange.trim()) params.date_range = normalizedDateRange;
       if (meetingDate) params.meeting_date = meetingDate;
       const response = await dashboardService.getDynamicNPXDropdownValues(params);
@@ -312,7 +323,8 @@ const NpxInstitutionView = () => {
 
         const availableYears = sortYearsDesc(response.result.year || []);
         const fallbackYear = availableYears[0] || searchParams.get("year") || new Date().getFullYear().toString();
-        if ((!filters.year || filters.year.length === 0) && fallbackYear) {
+        const hasDateRange = Boolean(normalizedDateRange.trim());
+        if (!hasDateRange && (!activeFilters.year || activeFilters.year.length === 0) && fallbackYear) {
           setFilters((prev) => ({
             ...prev,
             year: [fallbackYear],
@@ -424,23 +436,32 @@ const NpxInstitutionView = () => {
     bootstrapDefaultInstitution();
   }, [filters.year, hasSelectedInstitution, meetingDate, searchParams]);
 
-  const loadStats = (page = 1) => {
-    if (!hasSelectedInstitution) {
+  const loadStats = (
+    page = 1,
+    companyOverride?: { company_name: string[]; company_ids: Array<string | number> },
+    filterOverride?: FilterState
+  ) => {
+    const activeFilters = filterOverride ?? filters;
+    const hasInstitutionSelection = Boolean(activeFilters.investor_company && activeFilters.investor_company.length > 0 && activeFilters.investor_company[0]);
+    if (!hasInstitutionSelection) {
       return;
     }
 
-    const investor = filters.investor_company?.[0] || DEFAULT_INVESTOR;
-    const normalizedDateRange = typeof filters.date_range === "string" ? filters.date_range : "";
+    const investor = activeFilters.investor_company?.[0] || DEFAULT_INVESTOR;
+    const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
     const hasDateRange = Boolean(normalizedDateRange.trim());
-    const resolvedYear = !hasDateRange && filters.year && filters.year.length > 0
-      ? filters.year
+    const resolvedYear = !hasDateRange && activeFilters.year && activeFilters.year.length > 0
+      ? activeFilters.year
       : [sortYearsDesc(dropdowns.year || [])[0] || searchParams.get("year") || new Date().getFullYear().toString()];
+    const { company_name: _companyNames, ...restFilters } = activeFilters;
+    const selectedCompanyIds = companyOverride?.company_ids ?? activeFilters.company_ids ?? [];
     const payload: any = {
       view: "by_institution",
       page,
       page_size: pageSize,
       investor_company: [investor],
-      ...filters,
+      ...restFilters,
+      ...(selectedCompanyIds.length > 0 ? { company_ids: selectedCompanyIds } : {}),
       ...(hasDateRange ? { date_range: normalizedDateRange } : { year: resolvedYear }),
     };
     if (meetingDate) payload.meeting_date = meetingDate;
@@ -464,9 +485,14 @@ const NpxInstitutionView = () => {
       return;
     }
 
-    loadDropdowns(filters.investor_company);
+    if (skipNextDropdownEffectRef.current) {
+      skipNextDropdownEffectRef.current = false;
+      return;
+    }
+
+    loadDropdowns(filters.investor_company, filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, filters.investor_company, meetingDate, hasSelectedInstitution]);
+  }, [filters.year, filters.date_range, filters.investor_company, filters.company_name, filters.company_ids, meetingDate, hasSelectedInstitution]);
 
   useEffect(() => {
     if (!hasSelectedInstitution) {
@@ -503,28 +529,48 @@ const NpxInstitutionView = () => {
     });
   };
 
-  const handleRemoveChip = (key: keyof FilterState, value: string) => {
-    setFilters((prev) => {
-      const next: FilterState = { ...prev };
+  const handleRemoveChip = async (key: keyof FilterState, value: string) => {
+    const next: FilterState = { ...filters };
+    let nextCompanySelection = {
+      company_name: filters.company_name || [],
+      company_ids: filters.company_ids || [],
+    };
 
-      if (key === "date_range") {
-        const currentYear = String(new Date().getFullYear());
-        next.date_range = "";
-        const fallbackYear =
-          prevYearSelection.length > 0
-            ? prevYearSelection
-            : (next.year && next.year.length > 0)
-              ? next.year
-              : [sortYearsDesc(dropdowns.year || [])[0] || currentYear];
+    if (key === "date_range") {
+      const currentYear = String(new Date().getFullYear());
+      next.date_range = "";
+      const fallbackYear =
+        prevYearSelection.length > 0
+          ? prevYearSelection
+          : (next.year && next.year.length > 0)
+            ? next.year
+            : [sortYearsDesc(dropdowns.year || [])[0] || currentYear];
 
-        next.year = fallbackYear;
-        setPrevDateRangeSelection("");
-      } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword") {
-        next[key] = (prev[key] as string[] | undefined)?.filter((v) => v !== value) || [];
-      }
+      next.year = fallbackYear;
+      setPrevDateRangeSelection("");
+    } else if (key === "company_name") {
+      const companyNames = next.company_name || [];
+      const removeIndex = companyNames.findIndex((name) => name === value);
+      const updatedCompanyNames = companyNames.filter((name) => name !== value);
+      const updatedCompanyIds = Array.isArray(next.company_ids)
+        ? next.company_ids.filter((_, index) => index !== removeIndex)
+        : [];
+      next.company_name = updatedCompanyNames;
+      next.company_ids = updatedCompanyIds;
+      nextCompanySelection = {
+        company_name: updatedCompanyNames,
+        company_ids: updatedCompanyIds,
+      };
+      setCompanySelection(nextCompanySelection);
+    } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword") {
+      next[key] = (next[key] as string[] | undefined)?.filter((v) => v !== value) || [];
+    }
 
-      return next;
-    });
+    setFilters(next);
+    setActivePage(1);
+    skipNextDropdownEffectRef.current = true;
+    await loadDropdowns(next.investor_company, next);
+    loadStats(1, nextCompanySelection, next);
   };
 
   const handleInstitutionChange = async (selected: any) => {
@@ -539,20 +585,59 @@ const NpxInstitutionView = () => {
     setApiFundNameDropdown({ fund_name: [] });
   };
 
-  const handleApply = () => {
+  const handleCompanyChange = (selected: any) => {
+    const selectedOptions = Array.isArray(selected)
+      ? selected
+      : selected
+        ? [selected]
+        : [];
+
+    const companyNames = selectedOptions
+      .map((option: any) => String(option?.label || option?.company?.name || option?.value || ""))
+      .filter(Boolean);
+
+    const companyIds = selectedOptions
+      .map((option: any) => {
+        const rawValue = option?.value ?? option?.company?.id;
+        const numericValue = Number(rawValue);
+        return Number.isNaN(numericValue) ? rawValue : numericValue;
+      })
+      .filter((value: any) => value !== null && value !== undefined && value !== "");
+
+    setCompanySelection({
+      company_name: companyNames,
+      company_ids: companyIds,
+    });
+  };
+
+  const handleApply = async () => {
     if (!hasSelectedInstitution) {
       setShowInstitutionFirstMessage(true);
       return;
     }
 
+    const appliedCompanySelection = {
+      company_name: companySelection.company_name,
+      company_ids: companySelection.company_ids,
+    };
+    const nextFilters: FilterState = {
+      ...filters,
+      company_name: appliedCompanySelection.company_name,
+      company_ids: appliedCompanySelection.company_ids,
+    };
+
     setShowInstitutionFirstMessage(false);
+    setFilters(nextFilters);
     setActivePage(1);
-    loadStats(1);
+    skipNextDropdownEffectRef.current = true;
+    await loadDropdowns(filters.investor_company, nextFilters);
+    loadStats(1, appliedCompanySelection, nextFilters);
   };
 
   const handleClear = () => {
     const fallbackYear = sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString();
-    setFilters({ investor_company: [], year: [fallbackYear], fund_name: [], date_range: "" });
+    setFilters({ investor_company: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "" });
+    setCompanySelection({ company_name: [], company_ids: [] });
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
     setPrevYearSelection([]);
@@ -564,11 +649,13 @@ const NpxInstitutionView = () => {
 
   const handleDownload = () => {
     if (!hasSelectedInstitution) return;
+    const { company_name: _companyNames, ...restFilters } = filters;
     const params: any = {
       view: "by_institution",
       download: true,
       investor_company: filters.investor_company,
-      ...filters,
+      ...restFilters,
+      ...(filters.company_ids && filters.company_ids.length > 0 ? { company_ids: filters.company_ids } : {}),
     };
     if (filters.date_range && filters.date_range.trim()) {
       delete params.year;
@@ -643,9 +730,19 @@ const NpxInstitutionView = () => {
     [filters.investor_company]
   );
 
+  const selectedCompanyValues = useMemo(
+    () =>
+      (companySelection.company_name || []).map((name, index) => ({
+        label: name,
+        value: companySelection.company_ids?.[index] ?? name,
+      })),
+    [companySelection.company_name, companySelection.company_ids]
+  );
+
   const filterChips = useMemo(() => {
     const chips: Array<{ label: string; value: string; key: keyof FilterState | null }> = [
       ...(filters.investor_company || []).map((value) => ({ label: "Institution", value, key: "investor_company" as keyof FilterState })),
+      ...(filters.company_name || []).map((value) => ({ label: "Company", value, key: "company_name" as keyof FilterState })),
       ...(filters.fund_name || []).map((value) => ({ label: "Fund", value, key: "fund_name" as keyof FilterState })),
       ...(filters.date_range ? [{ label: "Date Range", value: filters.date_range, key: "date_range" as keyof FilterState }] : []),
       ...(filters.date_range ? [] : (filters.year || []).map((value) => ({ label: "Year", value, key: "year" as keyof FilterState }))),
@@ -1087,6 +1184,20 @@ const NpxInstitutionView = () => {
                   selectedOption={filters.vote_category || []}
                   onChange={(opts) => handleFilterChange("vote_category", opts.map((o) => o.value))}
                   placeholder="Select Category(s)"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                  <FaBuilding className="text-gray-400" /> Company
+                </label>
+                <CompanySelect
+                  key={selectedCompanyValues.map((option) => String(option.value)).join("|") || "company-select-empty"}
+                  isMulti={true}
+                  value={selectedCompanyValues}
+                  onChange={handleCompanyChange}
+                  placeholder="Select Company(s)"
+                  currentFilters={COMPANY_SEARCH_FILTERS}
+                  isClearable={true}
                 />
               </div>
               <div>

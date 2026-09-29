@@ -194,7 +194,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
         (inputValue: string, callback: (options: OptionType[]) => void) => {
           const trimmedValue = inputValue.trim();
 
-          if (trimmedValue.length < 2) {
+          if (trimmedValue.length < 1) {
             callback([]);
             return;
           }
