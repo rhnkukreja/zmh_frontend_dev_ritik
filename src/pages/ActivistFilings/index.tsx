@@ -38,12 +38,44 @@ const DOCUMENT_TYPE_RETRY_MS = 5000;
 const DOCUMENT_TYPES = ["Press Release", "Shareholder Letter", "Presentation"] as const;
 type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
+// Schedule 13D/13D-A rows are classified by their ATTACHMENTS, not the cover
+// form (the Filing Type column already says it is an ownership report). Each
+// attachment's type is one of the three above, "Other" (read, and none of the
+// three), or "Not read" (its note says why). For "Other", `category` carries
+// the SEC monitor's own category -- "Joint Filing Agreement", "Schedule of
+// Transactions in Securities", ... -- and that is what the badge prints.
+const ATTACHMENT_OTHER = "Other";
+const ATTACHMENT_NOT_READ = "Not read";
+type AttachmentType = DocumentType | typeof ATTACHMENT_OTHER | typeof ATTACHMENT_NOT_READ;
+type Attachment = { name: string; type: AttachmentType; category: string | null; note: string | null };
+
+// Badge text for the monitor's longer category names (the column is 18% wide);
+// the tooltip always shows the full name. A DISPLAY CONVENIENCE, NOT A FILTER:
+// a category missing from this map prints its own raw name, so a category the
+// backend adds tomorrow shows up as itself -- never hidden, never "Other".
+const ATTACHMENT_CATEGORY_SHORT_LABELS: Record<string, string> = {
+  "Joint Filing Agreement": "Joint Filing",
+  "Confidentiality Agreement": "Confidentiality",
+  "Cooperation or Standstill Agreement": "Standstill",
+  "Voting or Support Agreement": "Voting Agreement",
+  Warrant: "Warrant",
+  "Purchase or Sale Agreement": "Purchase Agreement",
+  "Financing or Loan Agreement": "Financing",
+  "Power of Attorney": "Power of Attorney",
+  "Director Nomination Notice": "Nomination Notice",
+  "Schedule of Transactions in Securities": "Transactions",
+  "Signature Page": "Signature Page",
+  "Reporting Persons and Directors": "Reporting Persons",
+};
+
 // The endpoint's contract, exactly:
 //   { types: { [link]: "Press Release" | "Shareholder Letter" | "Presentation" | null },
-//     pending: string[] }
+//     pending: string[],
+//     attachments: { [13D link]: Attachment[] } }   -- [] = the filing has no attachment
 type DocumentTypesResponse = {
   types: Record<string, DocumentType | null>;
   pending: string[];
+  attachments: Record<string, Attachment[]>;
 };
 
 // Coloured, so a classified document reads differently from the grey
@@ -53,15 +85,32 @@ const DOCUMENT_TYPE_BADGE_CLASS: Record<DocumentType, string> = {
   "Shareholder Letter": "bg-amber-100 text-amber-800",
   Presentation: "bg-sky-100 text-sky-700",
 };
+// "Other" is a solid grey fill: read, and boilerplate. "Not read" is a dashed
+// outline: we could not check. The two must never look alike.
+const OTHER_BADGE_CLASS = "bg-slate-100 text-slate-600";
+const NOT_READ_BADGE_CLASS = "border border-dashed border-slate-300 bg-white text-slate-500";
+
+// Why a 13D row shows "Not read" when its whole lookup did not produce an answer.
+const NOT_READ_REASON_FAILED = "The attachment lookup failed. Reload the page to try again.";
+const NOT_READ_REASON_TIMED_OUT = "SEC did not answer in time. Reload the page to try again.";
+const NOT_READ_REASON_UNRECOGNISED = "This filing link could not be checked for attachments.";
+const NOT_READ_REASON_NO_LINK = "This filing has no link to check.";
+
+// "SC 13D", "Schedule 13D/A", "SCHEDULE 13D/A" -> "SC13D" / "SC13D/A".
+const filingTypeKey = (filingType: unknown): string =>
+  toTrimmedString(filingType).toUpperCase().replace(/\s+/g, "").replace(/^SCHEDULE/, "SC");
+
+const isAttachmentFilingType = (filingType: unknown): boolean => {
+  const key = filingTypeKey(filingType);
+  return key === "SC13D" || key === "SC13D/A";
+};
 
 // What a row shows when its document type is null (or the call failed): an
-// honest label from its Filing Type instead of a blank. Keys are the form type
-// uppercased with all whitespace removed and a leading "SCHEDULE" shortened to
-// "SC", so "SC 13D", "Schedule 13D/A" and "SCHEDULE 13D/A" all match.
-// Anything not listed is "Other Soliciting Material".
+// honest label from its Filing Type instead of a blank. Keys are filingTypeKey.
+// Anything not listed is "Other Soliciting Material". Schedule 13D/13D-A are
+// deliberately absent: they never fall back (Waheed rejected "Ownership
+// Report") -- their cell comes from their attachments, see renderAttachments.
 const FILING_TYPE_FALLBACK_LABELS: Record<string, string> = {
-  "SC13D": "Ownership Report",
-  "SC13D/A": "Ownership Report",
   "DEF14A": "Proxy Statement",
   "PRE14A": "Proxy Statement",
   "DEFC14A": "Proxy Statement",
@@ -75,28 +124,118 @@ const FILING_TYPE_FALLBACK_LABELS: Record<string, string> = {
 };
 const FILING_TYPE_FALLBACK_DEFAULT = "Other Soliciting Material";
 
-const getFilingTypeFallbackLabel = (filingType: unknown): string => {
-  const key = toTrimmedString(filingType).toUpperCase().replace(/\s+/g, "").replace(/^SCHEDULE/, "SC");
-  return FILING_TYPE_FALLBACK_LABELS[key] || FILING_TYPE_FALLBACK_DEFAULT;
-};
+const getFilingTypeFallbackLabel = (filingType: unknown): string =>
+  FILING_TYPE_FALLBACK_LABELS[filingTypeKey(filingType)] || FILING_TYPE_FALLBACK_DEFAULT;
 
 const isDocumentType = (value: unknown): value is DocumentType =>
   typeof value === "string" && (DOCUMENT_TYPES as readonly string[]).includes(value);
 
+const isOptionalString = (value: unknown) => value === null || value === undefined || typeof value === "string";
+
+const isAttachment = (value: unknown): value is Attachment => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const { name, type, category, note } = value as Partial<Attachment>;
+  return (
+    typeof name === "string" &&
+    (isDocumentType(type) || type === ATTACHMENT_OTHER || type === ATTACHMENT_NOT_READ) &&
+    isOptionalString(category) &&
+    isOptionalString(note)
+  );
+};
+
 // Reads that one shape and nothing else. Anything off-contract returns null,
-// so the caller shows the Filing-Type label and warns -- a contract break
-// should surface, not be papered over by reading some other shape.
+// so the caller shows the Filing-Type label (and "Not read" for 13D rows) and
+// warns -- a contract break should surface, not be papered over by reading
+// some other shape.
 const parseDocumentTypesResponse = (
   data: unknown
-): { types: Record<string, DocumentType | null>; pending: Set<string> } | null => {
+): {
+  types: Record<string, DocumentType | null>;
+  pending: Set<string>;
+  attachments: Record<string, Attachment[]>;
+} | null => {
   if (!data || typeof data !== "object" || Array.isArray(data)) return null;
-  const { types, pending } = data as Partial<DocumentTypesResponse>;
+  const { types, pending, attachments = {} } = data as Partial<DocumentTypesResponse>;
 
   if (!types || typeof types !== "object" || Array.isArray(types)) return null;
   if (!Object.values(types).every((value) => value === null || isDocumentType(value))) return null;
   if (!Array.isArray(pending) || !pending.every((link) => typeof link === "string")) return null;
+  if (!attachments || typeof attachments !== "object" || Array.isArray(attachments)) return null;
+  if (!Object.values(attachments).every((list) => Array.isArray(list) && list.every(isAttachment))) return null;
 
-  return { types, pending: new Set(pending) };
+  return { types, pending: new Set(pending), attachments };
+};
+
+// One attachment as the tooltip names it: "ex99-1.htm - Joint Filing Agreement".
+const describeAttachment = (attachment: Attachment): string => {
+  if (attachment.type === ATTACHMENT_NOT_READ) {
+    return `${attachment.name} - Not read${attachment.note ? ` (${attachment.note})` : ""}`;
+  }
+  const kind = isDocumentType(attachment.type) ? attachment.type : attachment.category || ATTACHMENT_OTHER;
+  return `${attachment.name} - ${kind}${attachment.note ? ` (${attachment.note})` : ""}`;
+};
+
+type AttachmentBadge = { key: string; label: string; className: string };
+
+// One attachment's badge. The style comes from the attachment's TYPE, never
+// from its label text, so a category whose name happened to be "Not read" or
+// "Presentation" could not borrow another state's look:
+//   the three types   -> their coloured badge;
+//   "Not read"        -> dashed outline (we could not check);
+//   anything else     -> grey fill with the category's (short) name, or
+//                        "Other" only when the categoriser placed it nowhere.
+const attachmentBadge = (attachment: Attachment): AttachmentBadge => {
+  if (isDocumentType(attachment.type)) {
+    return { key: `type:${attachment.type}`, label: attachment.type, className: DOCUMENT_TYPE_BADGE_CLASS[attachment.type] };
+  }
+  if (attachment.type === ATTACHMENT_NOT_READ) {
+    return { key: "not-read", label: ATTACHMENT_NOT_READ, className: NOT_READ_BADGE_CLASS };
+  }
+  const category = toTrimmedString(attachment.category);
+  const label = category && category !== ATTACHMENT_OTHER ? ATTACHMENT_CATEGORY_SHORT_LABELS[category] || category : ATTACHMENT_OTHER;
+  return { key: `category:${label}`, label, className: OTHER_BADGE_CLASS };
+};
+
+// A badge per DISTINCT badge, in the order the attachments appear in the filing.
+const attachmentBadges = (attachments: Attachment[]): AttachmentBadge[] => {
+  const badges: AttachmentBadge[] = [];
+  attachments.forEach((attachment) => {
+    const badge = attachmentBadge(attachment);
+    if (!badges.some((existing) => existing.key === badge.key)) badges.push(badge);
+  });
+  return badges;
+};
+
+const BADGE_BASE_CLASS = "inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium";
+
+const NotReadBadge = ({ reason }: { reason: string }) => (
+  <span className={`${BADGE_BASE_CLASS} ${NOT_READ_BADGE_CLASS}`} title={`Not read: ${reason}`}>
+    {ATTACHMENT_NOT_READ}
+  </span>
+);
+
+// A 13D row's cell once its attachments are known. An empty list is a BLANK
+// cell -- Waheed: no attachment, leave the Document Type blank. Blank means
+// exactly that and nothing else: loading and failures never reach here.
+// Several distinct types wrap onto more lines rather than clip (the column is
+// 18% wide), and the attachment count is shown whenever it exceeds the number
+// of badges, so two decks and a release never read as one of each.
+const renderAttachments = (attachments: Attachment[]) => {
+  const badges = attachmentBadges(attachments);
+  if (badges.length === 0) return null;
+  const tooltip = attachments.map(describeAttachment).join("; ");
+  return (
+    <div className="flex flex-wrap items-center gap-1" title={tooltip}>
+      {badges.map((badge) => (
+        <span key={badge.key} className={`${BADGE_BASE_CLASS} ${badge.className}`}>
+          {badge.label}
+        </span>
+      ))}
+      {attachments.length > badges.length && (
+        <span className="text-xs text-slate-500">{attachments.length} files</span>
+      )}
+    </div>
+  );
 };
 
 function ActivistFilings() {
@@ -150,6 +289,12 @@ function ActivistFilings() {
   // (their cells show a skeleton). A link in neither shows its Filing-Type label.
   const [documentTypes, setDocumentTypes] = useState<Record<string, string | null>>({});
   const [documentTypeLoadingLinks, setDocumentTypeLoadingLinks] = useState<Set<string>>(new Set());
+  // Schedule 13D rows: the attachments of each link whose answer is KNOWN ([]
+  // = no attachment), and, for a link with no answer, why ("Not read"). A 13D
+  // link not loading, not in attachmentsByLink and not here has no answer yet
+  // and also renders "Not read" -- never blank.
+  const [attachmentsByLink, setAttachmentsByLink] = useState<Record<string, Attachment[]>>({});
+  const [attachmentFailures, setAttachmentFailures] = useState<Record<string, string>>({});
   // Bumped whenever a run is superseded; a response or retry belonging to an
   // older run checks it and does nothing.
   const documentTypeRunRef = useRef(0);
@@ -161,6 +306,8 @@ function ActivistFilings() {
     documentTypeRunRef.current += 1;
     setDocumentTypes({});
     setDocumentTypeLoadingLinks(new Set());
+    setAttachmentsByLink({});
+    setAttachmentFailures({});
   }, [companyGlobalSearchId]);
 
   // Runs once per loaded set of filings -- after the Django load, never
@@ -184,9 +331,27 @@ function ActivistFilings() {
 
     setDocumentTypes({});
     setDocumentTypeLoadingLinks(new Set(seenLinks));
+    setAttachmentsByLink({});
+    setAttachmentFailures({});
     if (items.length === 0) return;
 
-    // Every cell in the batch falls back to its Filing-Type label.
+    // Records why each 13D link in `links` has no answer -- shown as "Not read".
+    const markAttachmentsNotRead = (links: string[], reason: string) => {
+      if (links.length === 0) return;
+      setAttachmentFailures((prev) => {
+        const next = { ...prev };
+        links.forEach((link) => {
+          next[link] = reason;
+        });
+        return next;
+      });
+    };
+    const attachmentLinksIn = (batch: typeof items) =>
+      batch.filter((item) => isAttachmentFilingType(item.filing_type)).map((item) => item.link);
+
+    // Every cell in the batch falls back to its Filing-Type label -- except a
+    // 13D row, which shows "Not read": it has no fallback, and blank would
+    // claim "no attachment".
     const showNoTypes = (batch: typeof items) => {
       setDocumentTypes((prev) => {
         const next = { ...prev };
@@ -195,6 +360,7 @@ function ActivistFilings() {
         });
         return next;
       });
+      markAttachmentsNotRead(attachmentLinksIn(batch), NOT_READ_REASON_FAILED);
       setDocumentTypeLoadingLinks(new Set());
     };
 
@@ -209,8 +375,9 @@ function ActivistFilings() {
           showNoTypes(batch);
           return;
         }
-        const { types, pending } = parsed;
-        // One retry only: a link still pending after it shows its Filing-Type label.
+        const { types, pending, attachments } = parsed;
+        // One retry only: a link still pending after it shows its Filing-Type
+        // label, or "Not read" for a 13D row.
         const retryBatch = isRetry ? [] : batch.filter((item) => pending.has(item.link));
         const retryLinks = new Set(retryBatch.map((item) => item.link));
 
@@ -221,6 +388,20 @@ function ActivistFilings() {
           });
           return next;
         });
+        setAttachmentsByLink((prev) => {
+          const next = { ...prev };
+          Object.entries(attachments).forEach(([link, list]) => {
+            next[link] = list;
+          });
+          return next;
+        });
+        // 13D links with no answer and no retry coming: still pending (SEC did
+        // not answer in time) or never listed (a link the backend cannot check).
+        const unanswered = attachmentLinksIn(batch).filter(
+          (link) => !retryLinks.has(link) && !Array.isArray(attachments[link])
+        );
+        markAttachmentsNotRead(unanswered.filter((link) => pending.has(link)), NOT_READ_REASON_TIMED_OUT);
+        markAttachmentsNotRead(unanswered.filter((link) => !pending.has(link)), NOT_READ_REASON_UNRECOGNISED);
         setDocumentTypeLoadingLinks(retryLinks);
 
         if (retryBatch.length > 0) {
@@ -612,6 +793,15 @@ function ActivistFilings() {
                                       aria-label="Loading document type"
                                     />
                                   );
+                                }
+                                // Schedule 13D: its attachments. Blank ONLY for a
+                                // known empty list; anything without an answer is
+                                // "Not read" with its reason.
+                                if (isAttachmentFilingType(filing?.["Filing Type"])) {
+                                  if (!link) return <NotReadBadge reason={NOT_READ_REASON_NO_LINK} />;
+                                  const attachments = attachmentsByLink[link];
+                                  if (Array.isArray(attachments)) return renderAttachments(attachments);
+                                  return <NotReadBadge reason={attachmentFailures[link] || NOT_READ_REASON_FAILED} />;
                                 }
                                 // documentTypes holds only contract values, but
                                 // re-check so the badge colour lookup is safe.
