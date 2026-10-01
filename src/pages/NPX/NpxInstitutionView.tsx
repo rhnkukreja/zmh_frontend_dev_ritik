@@ -838,14 +838,6 @@ const NpxInstitutionView = () => {
         label: "No. of Abstain votes",
         value: `${formatNumberWithCommas(selectedYearStats?.abstain_votes)} (${formatValue(selectedYearStats?.abstain_percentage)}%)`,
       },
-      {
-        label: "Alignment with management (Votes Cast/Management Recommendation)",
-        value: formatNumberWithCommas(selectedYearStats?.aligned_with_mgmt),
-      },
-      {
-        label: "Alignment percentage",
-        value: `${formatValue(selectedYearStats?.alignment_percentage)}%`,
-      },
     ];
 
     const dateRange = selectedYearStats?.date_range
@@ -922,7 +914,10 @@ const NpxInstitutionView = () => {
                       <thead>
                         <tr className="bg-primary text-white text-xs md:text-sm">
                           <th className="px-4 py-2 text-left font-semibold w-[30%] break-words whitespace-normal leading-tight">Proposal</th>
-                          <th className="px-2 py-2 text-left font-semibold w-[10%] break-words whitespace-normal leading-tight">Mgmt Rec</th>
+                          <th className="px-2 py-2 text-left font-semibold w-[12%] whitespace-normal leading-tight">
+                            <span className="block leading-tight">For/Against</span>
+                            <span className="block whitespace-nowrap leading-tight">Management</span>
+                          </th>
                           <th className="px-2 py-2 text-left font-semibold w-[12%] break-words whitespace-normal leading-tight">Vote Cast</th>
                           <th className="px-2 py-2 text-left font-semibold w-[14%] break-words whitespace-normal leading-tight">Institution Name</th>
                           <th className="px-2 py-2 text-left font-semibold w-[16%] break-words whitespace-normal leading-tight">Fund Name</th>

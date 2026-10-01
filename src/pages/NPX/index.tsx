@@ -1795,7 +1795,16 @@ const index = () => {
                             {convertToTitleCase(noAction?.vote_category)}
                           </Table.Td>
                           <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                            {convertToTitleCase(noAction?.vote_split)}
+                            <span
+                              className={clsx(
+                                String(noAction?.vote_split || "").toLowerCase().includes("against") ||
+                                String(noAction?.vote_split || "").toLowerCase().includes("withhold")
+                                  ? "text-[#dc2626] font-semibold"
+                                  : "text-gray-700"
+                              )}
+                            >
+                              {convertToTitleCase(noAction?.vote_split)}
+                            </span>
                           </Table.Td>
                           <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
                             {noAction?.fund_name}
