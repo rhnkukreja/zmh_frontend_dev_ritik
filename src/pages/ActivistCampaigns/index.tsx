@@ -14,6 +14,9 @@ import CPagination from "@/components/Pagination";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import useCompanySearch from "@/hooks/useCompanySearch";
+import { useAppSelector } from "@/stores/hooks";
+import { RootState } from "@/stores/store";
+import AddToProxyContestFlow from "./AddToProxyContestFlow";
 
 const THEME_MAROON = "#8b1828";
 const PAGE_SIZE = 50;
@@ -841,6 +844,15 @@ function ActivistCampaigns() {
   const navigate = useNavigate();
   const { companySearchAndUpdate } = useCompanySearch();
 
+  // Case-insensitive on purpose -- user_type isn't guaranteed title-cased by the
+  // API (the same normalisation ProxyContestAI uses). Saving a proxy contest
+  // goes through a Django endpoint that permits writes to Admin only and
+  // returns 403 to everyone else, so anyone who cannot write never sees the
+  // button rather than meeting a 403 after filling the modal in.
+  const { user } = useAppSelector((state: RootState) => state.authentiction);
+  const userType = (user?.user_type || "").trim().toLowerCase();
+  const isAdminOrAnalyst = userType === "admin" || userType === "analyst";
+
   // Plain left click only: ctrl/cmd/shift/alt-click (and middle click, which
   // never reaches onClick) are left to the browser so the real href opens a new
   // tab or window. stopPropagation on every click so the anchor can't also
@@ -938,6 +950,11 @@ function ActivistCampaigns() {
   // duplicate email is the mistake to prevent, so re-sending has to be a
   // deliberate un-tick. Reset to on every time the dialog opens.
   const [skipAlreadySent, setSkipAlreadySent] = useState(true);
+
+  // "Add to Proxy Contest" -- opens the existing Proxy Contest modal with the
+  // selected filings' documents already filled in. Purely local state: the flow
+  // itself drafts, fetches and saves, and this page only says when to start.
+  const [proxyContestFlowOpen, setProxyContestFlowOpen] = useState(false);
 
   const [editingFiling, setEditingFiling] = useState<FilingItem | null>(null);
   const [editStatus, setEditStatus] = useState("ongoing");
@@ -1851,6 +1868,17 @@ function ActivistCampaigns() {
                 >
                   Send Alerts
                 </Button>
+                {isAdminOrAnalyst && (
+                  <Button
+                    type="button"
+                    variant="outline-primary"
+                    onClick={() => setProxyContestFlowOpen(true)}
+                    disabled={bulkSending}
+                    className="shrink-0"
+                  >
+                    Add to Proxy Contest
+                  </Button>
+                )}
               </div>
             )}
 
@@ -2909,6 +2937,16 @@ function ActivistCampaigns() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mounted only while running, so its draft call fires on open and its
+          state starts clean every time. The selection is left untouched. */}
+      {isAdminOrAnalyst && proxyContestFlowOpen && (
+        <AddToProxyContestFlow
+          open
+          filings={selectedFilings}
+          onClose={() => setProxyContestFlowOpen(false)}
+        />
       )}
     </div>
   );
