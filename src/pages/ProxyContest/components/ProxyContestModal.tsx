@@ -19,12 +19,35 @@ interface ProxyContextModalProps {
   open: boolean;
   mode?: "add" | "edit";
   initialData?: ProxyContextInitialData | null;
+  // Documents to APPEND as new rows, in either mode -- unlike initialData,
+  // which only ever describes documents already saved in Django. Used by the
+  // Activist Campaigns "Add to Proxy Contest" flow, which arrives with the PDFs
+  // already fetched and attached.
+  prefilledDocuments?: ProxyContestPrefilledDocument[];
   onClose: () => void;
   onSuccess?: () => void;
 }
 
+// One document the analyst is about to add, already carrying its file. The
+// keyword is what the source classified it as ("Press Release", "Shareholder
+// Letter", "Presentation") and is matched against the Django keyword list on
+// open; needsKeywordCheck marks the ones the analyst has to confirm.
+export interface ProxyContestPrefilledDocument {
+  keyword: string;
+  documentDate: string;
+  isCompanyActivist: "Company" | "Activist";
+  activistName: string;
+  documentFile: File | null;
+  sourceLabel: string;
+  needsKeywordCheck: boolean;
+  possiblyAlreadyAdded: boolean;
+}
+
 interface ProxyContextInitialData {
   company?: CompanyOption;
+  // The campaign's single year. Every row added in this modal inherits it, in
+  // both modes -- never years[0] and never the current year.
+  year?: string;
   documents?: Array<{
     id?: number;
     year: string;
@@ -60,7 +83,47 @@ interface ExtraDocumentUI {
   isCompanyActivist: "company" | "activist";
   documentFile: File | null;
   existingDocumentUrl?: string;
+  // Prefilled-row annotations -- all absent on a row the analyst added by hand.
+  sourceLabel?: string;
+  needsKeywordCheck?: boolean;
+  possiblyAlreadyAdded?: boolean;
+  // A prefilled row whose PDF could not be fetched. It is shown so the analyst
+  // can attach the file by hand, and is skipped (not blocked) on save.
+  skipIfEmpty?: boolean;
 }
+
+// Per-row save outcome, so a retry after a mid-save failure never uploads a row
+// that already reached Django a second time.
+type RowSaveState = { status: "saved" | "failed"; message?: string };
+
+const PRIMARY_ROW_KEY = "primary";
+const rowKeyFor = (entryId: number) => (entryId === 0 ? PRIMARY_ROW_KEY : `extra-${entryId}`);
+
+// Matches a prefilled document's type against Django's own keyword list, which
+// is the only set the Keyword dropdown can hold. `matched: false` means the
+// analyst has to pick the keyword by hand.
+const resolveKeyword = (
+  raw: string,
+  keywords: string[]
+): { keyword: string; matched: boolean } => {
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+  const target = normalize(raw || "");
+  if (!target) return { keyword: keywords[0] || "", matched: false };
+
+  const exact = keywords.find((option) => normalize(option) === target);
+  if (exact) return { keyword: exact, matched: true };
+
+  // "Press Release" against a list entry like "Press Release / Statement".
+  const partial = keywords.find(
+    (option) => normalize(option).includes(target) || target.includes(normalize(option))
+  );
+  if (partial) return { keyword: partial, matched: true };
+
+  // No counterpart: keep the dropdown on a valid option when there is one, and
+  // flag the row. With no list at all (the dropdown fetch failed), the source's
+  // own value is still what gets sent.
+  return { keyword: keywords[0] || raw, matched: false };
+};
 
 interface DocumentFieldsSectionProps {
   years: string[];
@@ -78,6 +141,13 @@ interface DocumentFieldsSectionProps {
   onDocumentFileChange: (file: File | null) => void;
   onRemove?: () => void;
   title?: string;
+  // Prefilled-row annotations and the row's save outcome. All optional, so a
+  // hand-added row renders exactly as it did before.
+  sourceLabel?: string;
+  needsKeywordCheck?: boolean;
+  possiblyAlreadyAdded?: boolean;
+  skipIfEmpty?: boolean;
+  saveState?: RowSaveState;
 }
 
 const DocumentFieldsSection = ({
@@ -96,6 +166,11 @@ const DocumentFieldsSection = ({
   onDocumentFileChange,
   onRemove,
   title,
+  sourceLabel,
+  needsKeywordCheck,
+  possiblyAlreadyAdded,
+  skipIfEmpty,
+  saveState,
 }: DocumentFieldsSectionProps) => {
   const radioGroupName = `company-or-activist-${(title || "document")
     .replace(/\s+/g, "-")
@@ -104,13 +179,23 @@ const DocumentFieldsSection = ({
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [rawDate, setRawDate] = useState("");
 
+  // Keyed to documentDate, not to mount: a row whose date arrives after mount
+  // (a prefilled document) or is changed from outside would otherwise keep
+  // showing the date it was first given, and the "Will be saved as" line below
+  // would go stale.
   useEffect(() => {
     if (documentDate) {
       const monthMap: Record<string, string> = {
         Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
         Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
       };
-      const parts = documentDate.trim().split(" ");
+      const trimmed = documentDate.trim();
+      // Already ISO (yyyy-mm-dd) -- what the date input itself wants.
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        setRawDate(trimmed);
+        return;
+      }
+      const parts = trimmed.split(" ");
       if (parts.length === 3) {
         const day = parts[0].padStart(2, "0");
         const month = monthMap[parts[1]] || "";
@@ -120,12 +205,57 @@ const DocumentFieldsSection = ({
     } else {
       setRawDate("");
     }
-  }, []);
+  }, [documentDate]);
 
   return (
-    <div className="rounded-lg border border-slate-300 bg-white p-3.5">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-700">{title || "Document"}</p>
+    <div
+      className={`rounded-lg border p-3.5 ${
+        needsKeywordCheck ? "border-amber-300 bg-amber-50/40" : "border-slate-300 bg-white"
+      }`}
+    >
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-700">
+            {title || "Document"}
+            {sourceLabel && (
+              <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
+                {sourceLabel}
+              </span>
+            )}
+            {/* The campaign's year, shown because every row inherits it rather
+                than carrying a year selector of its own. */}
+            {year && (
+              <span className="ml-2 text-xs font-normal text-slate-500">Year {year}</span>
+            )}
+          </p>
+          {saveState?.status === "saved" && (
+            <p className="mt-1 mb-0 flex items-center gap-1 text-xs font-medium text-emerald-700">
+              <Lucide icon="Check" className="h-3.5 w-3.5" />
+              Saved — will not be uploaded again
+            </p>
+          )}
+          {saveState?.status === "failed" && (
+            <p className="mt-1 mb-0 flex items-center gap-1 text-xs font-medium text-rose-700">
+              <Lucide icon="AlertCircle" className="h-3.5 w-3.5" />
+              Not saved{saveState.message ? ` — ${saveState.message}` : ""}
+            </p>
+          )}
+          {needsKeywordCheck && (
+            <p className="mt-1 mb-0 text-xs text-amber-700">
+              Please confirm the document type below before saving.
+            </p>
+          )}
+          {possiblyAlreadyAdded && (
+            <p className="mt-1 mb-0 text-xs text-slate-500">
+              A document with this type and date is already on this campaign. Adding it again is allowed.
+            </p>
+          )}
+          {skipIfEmpty && !documentFile && (
+            <p className="mt-1 mb-0 text-xs text-amber-700">
+              The PDF could not be fetched — upload it manually, or leave this row and it will be skipped.
+            </p>
+          )}
+        </div>
         {onRemove && (
           <button
             type="button"
@@ -315,7 +445,14 @@ const DocumentFieldsSection = ({
   );
 };
 
-const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, onSuccess }: ProxyContextModalProps) => {
+const ProxyContestModal = ({
+  open,
+  mode = "add",
+  initialData = null,
+  prefilledDocuments,
+  onClose,
+  onSuccess,
+}: ProxyContextModalProps) => {
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -335,6 +472,20 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
   const [primaryDocId, setPrimaryDocId] = useState<number | undefined>();
   const [extraDocuments, setExtraDocuments] = useState<ExtraDocumentUI[]>([]);
   const extraDocumentIdRef = useRef(1);
+  // The prefilled annotations for the primary row (Document 1). The extra rows
+  // carry their own on ExtraDocumentUI; this row's fields are separate state.
+  const [primaryMeta, setPrimaryMeta] = useState<{
+    sourceLabel?: string;
+    needsKeywordCheck?: boolean;
+    possiblyAlreadyAdded?: boolean;
+    skipIfEmpty?: boolean;
+  }>({});
+
+  // Which rows already reached Django in an earlier Save attempt on this open
+  // modal, and which failed. A failed save used to leave every row still
+  // holding its File, so pressing Save again uploaded the successful ones a
+  // second time; rows marked "saved" here are skipped on every later attempt.
+  const [rowSaveStates, setRowSaveStates] = useState<Record<string, RowSaveState>>({});
 
   const [iss, setIss] = useState({
     id: undefined as number | undefined,
@@ -366,11 +517,22 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
         isCompanyActivist,
         documentFile,
         existingDocumentUrl,
+        skipIfEmpty: primaryMeta.skipIfEmpty,
       },
       ...extraDocuments,
     ],
-    [year, keyword, documentDate, isCompanyActivist, documentFile, existingDocumentUrl, extraDocuments, primaryDocId]
+    [year, keyword, documentDate, isCompanyActivist, documentFile, existingDocumentUrl, extraDocuments, primaryDocId, primaryMeta.skipIfEmpty]
   );
+
+  // A prefilled row that arrived with no PDF, and still has none. It cannot be
+  // saved, and it must not hold back the rows that can be -- so it is skipped
+  // rather than counted as invalid.
+  const isSkippedRow = (entry: { documentFile: File | null; existingDocumentUrl?: string; docId?: number; skipIfEmpty?: boolean }) =>
+    Boolean(entry.skipIfEmpty) && !entry.documentFile && !entry.existingDocumentUrl && !entry.docId;
+
+  // A row already written to Django on an earlier attempt: complete by
+  // definition, and skipped on save.
+  const isSavedRow = (entryId: number) => rowSaveStates[rowKeyFor(entryId)]?.status === "saved";
 
   const canSubmit = useMemo(() => {
     if (!selectedCompany?.id) return false;
@@ -387,6 +549,10 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
     // - EXISTING documents need: year, keyword, AND (existingUrl OR file)
     //   (documentName can be empty if already exists in DB)
     const hasValidDocuments = allDocumentEntries.every((entry) => {
+      // Already written, or a prefilled row with no PDF to write: neither one
+      // can block the rows that still have to be saved.
+      if (isSavedRow(entry.id) || isSkippedRow(entry)) return true;
+
       const isExistingDoc = Boolean(entry.existingDocumentUrl || entry.docId);
 
       if (isExistingDoc) {
@@ -409,10 +575,18 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
     });
 
     return hasValidDocuments;
-  }, [selectedCompany, allDocumentEntries, documentDate, existingDocumentUrl, extraDocuments, mode]);
+  }, [selectedCompany, allDocumentEntries, documentDate, existingDocumentUrl, extraDocuments, mode, rowSaveStates]);
+
+  // Init runs once per opening. Without this, any re-render that hands the
+  // modal a new initialData/prefilledDocuments object would run it again --
+  // appending the prefilled rows a second time and discarding whatever the
+  // analyst had already typed.
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
     const init = async () => {
       try {
@@ -422,6 +596,12 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
         const fetchedKeywords = data.keywords || [];
         setYears(fetchedYears);
         setKeywords(fetchedKeywords);
+
+        // The campaign year every row in this modal inherits, and whether the
+        // primary row (Document 1) is still empty and can take the first
+        // prefilled document instead of leaving an unfilled required row.
+        let campaignYear = "";
+        let primaryRowFree = true;
 
         if (mode === "edit" && initialData) {
           if (initialData.company?.id && initialData.company?.name) {
@@ -439,7 +619,10 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
           let effectiveYear = "";
           if (docs.length > 0) {
             const firstDoc = docs[0];
-            effectiveYear = firstDoc.year || fetchedYears[0] || "";
+            primaryRowFree = false;
+            // initialData.year is the campaign's own year when the caller knows
+            // it; the first document's year is the long-standing fallback.
+            effectiveYear = initialData.year || firstDoc.year || fetchedYears[0] || "";
             setYear(effectiveYear);
             setKeyword(firstDoc.keyword || fetchedKeywords[0] || "");
             setActivistName(firstDoc.activistName || "");
@@ -463,7 +646,7 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             extraDocumentIdRef.current = restDocs.length + 1;
           } else {
             // No documents exist - initialize with dropdown defaults for adding new ones
-            effectiveYear = fetchedYears[0] || "";
+            effectiveYear = initialData.year || fetchedYears[0] || "";
             setYear(effectiveYear);
             setKeyword(fetchedKeywords[0] || "");
             setActivistName("");
@@ -513,9 +696,83 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
               setExclusionLoading(false);
             });
           }
+          campaignYear = effectiveYear;
         } else {
-          setYear((prev) => prev || fetchedYears[0] || "");
+          // ADD mode. initialData is honoured only for the company and the
+          // campaign year -- it never carries saved documents here.
+          if (initialData?.company?.id && initialData?.company?.name) {
+            setSelectedCompany(initialData.company);
+            setCompanySelectValue({
+              value: initialData.company.id,
+              label: initialData.company.name,
+            });
+          }
+          campaignYear = initialData?.year || fetchedYears[0] || "";
+          setYear((prev) => initialData?.year || prev || fetchedYears[0] || "");
           setKeyword((prev) => prev || fetchedKeywords[0] || "");
+        }
+
+        // ── Prefilled documents ────────────────────────────────────────────
+        // Appended as NEW rows in both modes. The first one takes the primary
+        // row when that row is still empty, so a fresh Add never opens with an
+        // unfilled required Document 1 sitting above the prefilled rows.
+        const prefills = (prefilledDocuments || []).filter(Boolean);
+        if (prefills.length > 0) {
+          const firstActivistName = prefills.find((p) => p.activistName?.trim())?.activistName?.trim();
+          if (firstActivistName) setActivistName((prev) => prev || firstActivistName);
+
+          const toRow = (prefill: ProxyContestPrefilledDocument) => {
+            const resolved = resolveKeyword(prefill.keyword, fetchedKeywords);
+            return {
+              // Every prefilled row inherits the campaign's single year.
+              year: campaignYear,
+              keyword: resolved.keyword,
+              documentDate: prefill.documentDate || "",
+              isCompanyActivist:
+                (prefill.isCompanyActivist || "").toLowerCase() === "activist"
+                  ? ("activist" as const)
+                  : ("company" as const),
+              documentFile: prefill.documentFile || null,
+              existingDocumentUrl: "",
+              sourceLabel: prefill.sourceLabel || "",
+              // Either the source could not classify it, or its keyword has no
+              // counterpart in the Django list -- both need a human to confirm.
+              needsKeywordCheck: Boolean(prefill.needsKeywordCheck) || !resolved.matched,
+              possiblyAlreadyAdded: Boolean(prefill.possiblyAlreadyAdded),
+              skipIfEmpty: !prefill.documentFile,
+            };
+          };
+
+          const rows = prefills.map(toRow);
+          let extras = rows;
+
+          if (primaryRowFree) {
+            const [first, ...rest] = rows;
+            setKeyword(first.keyword);
+            setDocumentDate(first.documentDate);
+            setIsCompanyActivist(first.isCompanyActivist);
+            setDocumentFile(first.documentFile);
+            setExistingDocumentUrl("");
+            setPrimaryDocId(undefined);
+            setPrimaryMeta({
+              sourceLabel: first.sourceLabel,
+              needsKeywordCheck: first.needsKeywordCheck,
+              possiblyAlreadyAdded: first.possiblyAlreadyAdded,
+              skipIfEmpty: first.skipIfEmpty,
+            });
+            extras = rest;
+          }
+
+          if (extras.length > 0) {
+            setExtraDocuments((prev) => {
+              const appended = extras.map((row, index) => ({
+                ...row,
+                id: extraDocumentIdRef.current + index,
+              }));
+              extraDocumentIdRef.current += extras.length;
+              return [...prev, ...appended];
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching proxy context dropdowns:", error);
@@ -545,15 +802,33 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
       setGl({ id: undefined, management: false, activist: false, split: false });
       setExcluded(false);
       setExclusionId(undefined);
+      setPrimaryMeta({});
+      setRowSaveStates({});
+      hasInitializedRef.current = false;
     }
   }, [open]);
+
+  // Every row in this modal belongs to the campaign's single year. Rows not yet
+  // saved in Django follow the Year select; rows that already exist there keep
+  // the year they were stored under until the analyst re-uploads them.
+  useEffect(() => {
+    if (!year) return;
+    setExtraDocuments((prev) =>
+      prev.some((doc) => !doc.docId && doc.year !== year)
+        ? prev.map((doc) => (doc.docId ? doc : { ...doc, year }))
+        : prev
+    );
+  }, [year]);
 
   const handleAddMoreDocuments = () => {
     setExtraDocuments((prev) => [
       ...prev,
       {
         id: extraDocumentIdRef.current++,
-        year: years[0] || "",
+        // The campaign's year, not years[0] -- that is the newest year in the
+        // dropdown (normally the current one), which would file this document
+        // under the wrong campaign year.
+        year: year || years[0] || "",
         keyword: keywords[0] || "",
         documentDate: "",
         isCompanyActivist: "company",
@@ -594,6 +869,10 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
     if (!isAdvisoryOnlyEdit) {
       // Validate documents if not advisory-only
       const hasInvalidDocument = allDocumentEntries.some((entry) => {
+        // Same two exemptions the Submit button uses: a row already written on
+        // an earlier attempt, and a prefilled row with no PDF to write.
+        if (isSavedRow(entry.id) || isSkippedRow(entry)) return false;
+
         const isExistingDoc = Boolean(entry.existingDocumentUrl || entry.docId);
 
         if (isExistingDoc) {
@@ -626,8 +905,22 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
 
       // Process documents: POST for new, PUT for existing updates, skip if unchanged
       // Skip document processing for advisory-only updates
+      //
+      // Every row is attempted even after one fails, and each outcome is
+      // recorded per row. A row recorded as saved is never uploaded again, so
+      // pressing Save after a partial failure retries only what did not land.
+      const failedRows: string[] = [];
       if (!isAdvisoryOnlyEdit) {
-        for (const entry of allDocumentEntries) {
+        for (let position = 0; position < allDocumentEntries.length; position++) {
+          const entry = allDocumentEntries[position];
+          const rowKey = rowKeyFor(entry.id);
+          // Matches the heading on the card, which counts by position rather
+          // than by row id -- removing a row renumbers what the analyst sees.
+          const rowLabel = `Document ${position + 1}`;
+
+          // Already written to Django on an earlier attempt in this modal.
+          if (rowSaveStates[rowKey]?.status === "saved") continue;
+
           // Only process if file changed or document doesn't exist yet
           if (!entry.documentFile && !entry.docId) {
             // New document without file - skip (validation already caught this)
@@ -645,16 +938,33 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
             pressReleaseFormData.append("is_company_activist", entry.isCompanyActivist);
             pressReleaseFormData.append("document", entry.documentFile as File);
 
-            if (entry.docId) {
-              // Update existing document
-              await proxyContextService.updatePressReleasePresentation(entry.docId, pressReleaseFormData);
-            } else {
-              // Create new document
-              await proxyContextService.createPressReleasePresentation(pressReleaseFormData);
+            try {
+              if (entry.docId) {
+                // Update existing document
+                await proxyContextService.updatePressReleasePresentation(entry.docId, pressReleaseFormData);
+              } else {
+                // Create new document
+                await proxyContextService.createPressReleasePresentation(pressReleaseFormData);
+              }
+              setRowSaveStates((prev) => ({ ...prev, [rowKey]: { status: "saved" } }));
+            } catch (documentError) {
+              const message =
+                documentError instanceof Error ? documentError.message : "Upload failed.";
+              failedRows.push(rowLabel);
+              setRowSaveStates((prev) => ({ ...prev, [rowKey]: { status: "failed", message } }));
             }
           }
           // If no new file and docId exists, keep the existing document unchanged
         }
+      }
+
+      // One or more documents did not reach Django. The modal stays open with
+      // each row labelled saved or not saved, and no success is reported.
+      if (failedRows.length > 0) {
+        toast.error(
+          `${failedRows.join(", ")} could not be saved. The rest were saved — press Submit to retry just these.`
+        );
+        return;
       }
 
       // Process advisory recommendations: PUT for existing, POST for new
@@ -668,6 +978,12 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
         split: iss.split,
       };
 
+      // A recommendation is only created when the analyst actually ticked one of
+      // its boxes. Creating it regardless wrote a row with all three false --
+      // indistinguishable from "ISS recommended nothing" -- for every document
+      // saved through this modal. An existing row is still updated either way,
+      // so clearing all three boxes on it remains possible.
+      const issTicked = iss.management || iss.activist || iss.split;
       if (iss.id) {
         // Update existing ISS recommendation
         await proxyContextService.updateProxyAdvisoryRecommendation(iss.id, {
@@ -675,8 +991,7 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
           activist: iss.activist,
           split: iss.split,
         });
-      } else if (!isAdvisoryOnlyEdit) {
-        // Only create new if not in advisory-only mode
+      } else if (issTicked) {
         await proxyContextService.createProxyAdvisoryRecommendation(issPayload);
       }
 
@@ -690,6 +1005,7 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
         split: gl.split,
       };
 
+      const glTicked = gl.management || gl.activist || gl.split;
       if (gl.id) {
         // Update existing GL recommendation
         await proxyContextService.updateProxyAdvisoryRecommendation(gl.id, {
@@ -697,8 +1013,7 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
           activist: gl.activist,
           split: gl.split,
         });
-      } else if (!isAdvisoryOnlyEdit) {
-        // Only create new if not in advisory-only mode
+      } else if (glTicked) {
         await proxyContextService.createProxyAdvisoryRecommendation(glPayload);
       }
 
@@ -852,13 +1167,24 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                       documentFile={documentFile}
                       existingDocumentUrl={existingDocumentUrl}
                       onYearChange={setYear}
-                      onKeywordChange={setKeyword}
+                      onKeywordChange={(value) => {
+                        setKeyword(value);
+                        // Confirmed by hand -- the row no longer needs checking.
+                        setPrimaryMeta((prev) =>
+                          prev.needsKeywordCheck ? { ...prev, needsKeywordCheck: false } : prev
+                        );
+                      }}
                       onDocumentDateChange={setDocumentDate}
                       onIsCompanyActivistChange={setIsCompanyActivist}
                       onDocumentFileChange={(file) => {
                         setDocumentFile(file);
                         if (file) setExistingDocumentUrl("");
                       }}
+                      sourceLabel={primaryMeta.sourceLabel}
+                      needsKeywordCheck={primaryMeta.needsKeywordCheck}
+                      possiblyAlreadyAdded={primaryMeta.possiblyAlreadyAdded}
+                      skipIfEmpty={primaryMeta.skipIfEmpty}
+                      saveState={rowSaveStates[PRIMARY_ROW_KEY]}
                     />
 
                     {extraDocuments.map((doc, index) => (
@@ -877,7 +1203,7 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                           handleExtraDocumentChange(doc.id, { year: value })
                         }
                         onKeywordChange={(value) =>
-                          handleExtraDocumentChange(doc.id, { keyword: value })
+                          handleExtraDocumentChange(doc.id, { keyword: value, needsKeywordCheck: false })
                         }
                         onDocumentDateChange={(value) =>
                           handleExtraDocumentChange(doc.id, { documentDate: value })
@@ -892,6 +1218,11 @@ const ProxyContestModal = ({ open, mode = "add", initialData = null, onClose, on
                           })
                         }
                         onRemove={() => handleRemoveExtraDocument(doc.id)}
+                        sourceLabel={doc.sourceLabel}
+                        needsKeywordCheck={doc.needsKeywordCheck}
+                        possiblyAlreadyAdded={doc.possiblyAlreadyAdded}
+                        skipIfEmpty={doc.skipIfEmpty}
+                        saveState={rowSaveStates[rowKeyFor(doc.id)]}
                       />
                     ))}
 

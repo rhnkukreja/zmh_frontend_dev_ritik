@@ -60,6 +60,22 @@ class ProxyContextService {
 		return { results };
 	}
 
+	// The documents already saved against a company-year. Django requires an
+	// authenticated user on every method including GET, so this has to go
+	// through axiosInstance (which attaches the JWT) rather than the FastAPI
+	// side. Used to tell an existing campaign from a new one, and to spot
+	// documents that look like ones already added.
+	public async getPressReleasePresentations(params: {
+		company_id: number;
+		year: number;
+	}): Promise<any> {
+		const response = await axiosInstance.get(
+			"/proxy_contest/press_release_presentation/",
+			{ params }
+		);
+		return response.data;
+	}
+
 	public async createPressReleasePresentation(data: FormData): Promise<any> {
 		const response = await axiosInstance.post(
 			"/proxy_contest/press_release_presentation/",
