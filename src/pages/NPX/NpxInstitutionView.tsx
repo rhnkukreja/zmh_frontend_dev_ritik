@@ -792,6 +792,7 @@ const NpxInstitutionView = () => {
         selectedYearStats.for_votes !== undefined ||
         selectedYearStats.split_votes !== undefined ||
         selectedYearStats.against_votes !== undefined ||
+        selectedYearStats.withhold_votes !== undefined ||
         selectedYearStats.abstain_votes !== undefined ||
         selectedYearStats.aligned_with_mgmt !== undefined ||
         selectedYearStats.alignment_percentage !== undefined
@@ -831,8 +832,12 @@ const NpxInstitutionView = () => {
         value: `${formatNumberWithCommas(selectedYearStats?.split_votes)} (${formatValue(selectedYearStats?.split_percentage)}%)`,
       },
       {
-        label: "No. of AGAINST/WITHHOLD votes",
+        label: "No. of AGAINST votes",
         value: `${formatNumberWithCommas(selectedYearStats?.against_votes)} (${formatValue(selectedYearStats?.against_percentage)}%)`,
+      },
+      {
+        label: "No. of WITHHOLD votes",
+        value: `${formatNumberWithCommas(selectedYearStats?.withhold_votes)} (${formatValue(selectedYearStats?.withhold_percentage)}%)`,
       },
       {
         label: "No. of Abstain votes",
@@ -912,25 +917,26 @@ const NpxInstitutionView = () => {
                   <div className="mt-2 mb-4 bg-gray-50">
                     <table className="w-full table-fixed">
                       <thead>
-                        <tr className="bg-primary text-white text-xs md:text-sm">
-                          <th className="px-4 py-2 text-left font-semibold w-[30%] break-words whitespace-normal leading-tight">Proposal</th>
-                          <th className="px-2 py-2 text-left font-semibold w-[12%] whitespace-normal leading-tight">
-                            <span className="block leading-tight">For/Against</span>
-                            <span className="block whitespace-nowrap leading-tight">Management</span>
-                          </th>
-                          <th className="px-2 py-2 text-left font-semibold w-[12%] break-words whitespace-normal leading-tight">Vote Cast</th>
-                          <th className="px-2 py-2 text-left font-semibold w-[14%] break-words whitespace-normal leading-tight">Institution Name</th>
-                          <th className="px-2 py-2 text-left font-semibold w-[16%] break-words whitespace-normal leading-tight">Fund Name</th>
-                          <th className="px-2 py-2 text-left font-semibold w-[14%] break-words whitespace-normal leading-tight">Vote Category</th>
-                          <th className="px-2 py-2 text-left font-semibold w-[8%] break-words whitespace-normal leading-tight">Shares Voted</th>
+                        <tr className="bg-primary text-white text-sm">
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[30%] border-b border-r border-white/30">Proposal</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[18%] border-b border-r border-white/30">Category</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[20%] border-b border-r border-white/30">Fund</th>
+                          <th colSpan={3} className="px-4 py-2 text-center text-sm font-semibold border-b border-white/30">Details of Vote</th>
+                        </tr>
+                        <tr className="bg-primary text-white text-sm">
+                          <th className="px-4 py-2 text-left font-semibold w-[12%] border-r border-white/30">Shares Voted</th>
+                          <th className="px-4 py-2 text-left font-semibold w-[8%] border-r border-white/30">Vote</th>
+                          <th className="px-4 py-2 text-left font-semibold w-[12%]">For/Against Management</th>
                         </tr>
                       </thead>
                       <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
                         {proposals.map((proposal: any, proposalIndex: number) => (
                           <tr key={`${company?.company_id}-${proposalIndex}`} className="hover:bg-primary/10">
-                            <td className="px-4 py-2 align-top break-words whitespace-normal leading-tight w-[30%]">{formatValue(proposal.proposal)}</td>
-                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[10%]">{formatValue(proposal.mgt_rec)}</td>
-                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[12%]">
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.proposal)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.vote_category)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.fund_name)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.shares_voted)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">
                               <span
                                 className={clsx(
                                   (String(proposal.vote).includes("Against") || String(proposal.vote).includes("Withhold")) &&
@@ -948,10 +954,7 @@ const NpxInstitutionView = () => {
                                 )}
                               </span>
                             </td>
-                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[14%]">{formatValue(proposal.institution_name)}</td>
-                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[16%]">{formatValue(proposal.fund_name)}</td>
-                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[14%]">{formatValue(proposal.vote_category)}</td>
-                            <td className="px-2 py-2 align-top break-words whitespace-normal leading-tight w-[8%]">{formatValue(proposal.shares_voted)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.mgt_rec)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1072,7 +1075,7 @@ const NpxInstitutionView = () => {
             </div>
 
             <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
-              <div className="relative">
+              <div className="relative order-1">
                 {showInstitutionFirstMessage ? (
                   <div className="absolute -top-8 left-0 z-10 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-2.5 py-1 inline-flex items-center gap-1.5 shadow-sm whitespace-nowrap">
                     <Lucide icon="Info" className="w-4 h-4" />
@@ -1093,7 +1096,7 @@ const NpxInstitutionView = () => {
                   showDefaultOptions={false}
                 />
               </div>
-              <div>
+              <div className="order-3">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaCalendarAlt className="text-gray-400" /> Year
                 </label>
@@ -1105,7 +1108,7 @@ const NpxInstitutionView = () => {
                   placeholder="Select Year"
                 />
               </div>
-              <div>
+              <div className="order-4">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaCalendarAlt className="text-gray-400" /> Date Range
                 </label>
@@ -1144,7 +1147,7 @@ const NpxInstitutionView = () => {
                 </div>
               </div>
               {showFundName ? (
-                <div>
+                <div className="order-2">
                   <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                     <FaLayerGroup className="text-gray-400" /> Fund
                   </label>
@@ -1157,7 +1160,7 @@ const NpxInstitutionView = () => {
                   />
                 </div>
               ) : null}
-              <div>
+              <div className="order-7">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaCheckCircle className="text-gray-400" /> Vote
                 </label>
@@ -1169,7 +1172,7 @@ const NpxInstitutionView = () => {
                   placeholder="Select Vote(s)"
                 />
               </div>
-              <div>
+              <div className="order-6">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaListUl className="text-gray-400" /> Vote Category
                 </label>
@@ -1181,7 +1184,7 @@ const NpxInstitutionView = () => {
                   placeholder="Select Category(s)"
                 />
               </div>
-              <div>
+              <div className="order-5">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaBuilding className="text-gray-400" /> Company
                 </label>
@@ -1195,7 +1198,7 @@ const NpxInstitutionView = () => {
                   isClearable={true}
                 />
               </div>
-              <div>
+              <div className="order-8">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaTags className="text-gray-400" /> Keywords (Beta)
                   <Tippy content="Keyword search applies on proposal text" options={{ theme: "light" }}>
