@@ -77,6 +77,7 @@ export interface InvestersProfile {
   investor_type?: string;
   contact?: string | null;
   email?: string | null;
+  contact_email?: string | null;
 }
 
 export type AddNewInvesterType = {

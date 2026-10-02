@@ -1,4 +1,5 @@
 import React from "react";
+import clsx from "clsx";
 import { Control, Controller } from "react-hook-form";
 import FormCheck from "@/components/Base/Form/FormCheck";
 import Error from "@/components/Error";
@@ -25,11 +26,16 @@ const CategoryField: React.FC<CategoryFieldProps> = ({ control, rules }) => {
           <>
             <select
               {...field}
-              className="w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-800 text-gray-400 dark:text-white text-sm"
+              className={clsx(
+                "w-full rounded-md border border-gray-300 bg-white p-2 text-sm dark:bg-gray-800",
+                field.value ? "text-gray-900 dark:text-white" : "text-gray-400 dark:text-gray-400"
+              )}
             >
-              <option value="">Select Category</option>
+              <option value="" style={{ color: "#9CA3AF" }}>
+                Select Category
+              </option>
               {categories.map((cat) => (
-                <option key={cat} value={cat}>
+                <option key={cat} value={cat} style={{ color: "#111827" }}>
                   {cat}
                 </option>
               ))}

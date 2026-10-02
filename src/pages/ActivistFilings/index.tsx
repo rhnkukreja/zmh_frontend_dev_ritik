@@ -6,6 +6,7 @@ import StandardizedTable from "@/components/StandardizedTable";
 import Table from "@/components/Base/Table";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
+import { Dialog } from "@/components/Base/Headless";
 import Popover from "@/components/Base/Headless/Popover";
 import { FormCheck } from "@/components/Base/Form";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
@@ -28,6 +29,19 @@ const COMPANY_FILINGS_TAB = "company-filings";
 const ACTIVIST_FILINGS_TAB = "activist-filings";
 
 type FilingTab = typeof ACTIVIST_FILINGS_TAB | typeof COMPANY_FILINGS_TAB;
+
+// ─── Filing files (the Paperclip modal) ─────────────────────────────────────
+// One downloadable file hanging off a filing, as the Django filings payload
+// sends it in `filing.Attachments`. Named "file", not "attachment", because
+// this file also has a Document Type feature that CLASSIFIES attachments: the
+// two meanings sat on the same word and were impossible to tell apart.
+//   filingFiles*  -> downloadable files, listed in the modal (this feature)
+//   attachment*   -> classification data, shown as badges (Document Type)
+type FilingFile = {
+  type?: string;
+  description?: string;
+  url?: string;
+};
 
 // ─── Document Type ──────────────────────────────────────────────────────────
 // Filled in by a separate FastAPI call after the table has rendered; the table
@@ -253,6 +267,12 @@ function ActivistFilings() {
   const [selectedFilingTypes, setSelectedFilingTypes] = useState<string[]>([]);
   const [draftYears, setDraftYears] = useState<string[]>([]);
   const [draftFilingTypes, setDraftFilingTypes] = useState<string[]>([]);
+  // The Paperclip modal: the filing's downloadable files, and the header it
+  // shows. Nothing here feeds the Document Type column.
+  const [filingFilesModalOpen, setFilingFilesModalOpen] = useState(false);
+  const [selectedFilingFiles, setSelectedFilingFiles] = useState<FilingFile[]>([]);
+  const [selectedFilingLabel, setSelectedFilingLabel] = useState("");
+  const [selectedFilingDate, setSelectedFilingDate] = useState("");
 
   const fetchFilings = useCallback(async () => {
     if (!companyGlobalSearchId) {
@@ -529,6 +549,23 @@ function ActivistFilings() {
     }
   }, []);
 
+  const openFilingFilesModal = useCallback((filing: any) => {
+    // filing.Attachments is the Django payload's own field name and stays as
+    // it is; everything this feature holds locally is a "file".
+    const files = Array.isArray(filing?.Attachments)
+      ? filing.Attachments.filter((file: FilingFile) => file?.url)
+      : [];
+
+    if (files.length === 0) {
+      return;
+    }
+
+    setSelectedFilingFiles(files);
+    setSelectedFilingLabel(toTrimmedString(filing?.["Filing Type"]) || "Filing Attachments");
+    setSelectedFilingDate(toTrimmedString(filing?.["Filing Date"]));
+    setFilingFilesModalOpen(true);
+  }, []);
+
   const switchTab = useCallback(
     (tab: FilingTab) => {
       setActiveTab(tab);
@@ -767,16 +804,34 @@ function ActivistFilings() {
                             <span className="text-sm font-medium text-slate-700">{filing?.["Entity"] || "-"}</span>
                           </StandardizedTable.Cell>
                           <StandardizedTable.Cell>
-                            <div className="flex items-center justify-start gap-3">
+                            <div className="flex w-full items-center justify-start whitespace-nowrap">
                               {filing?.["Filing Link"] ? (
-                                <Button
-                                  variant="outline-primary"
-                                  className="shrink-0 whitespace-nowrap"
-                                  onClick={() => window.open(filing["Filing Link"], "_blank", "noopener,noreferrer")}
-                                >
-                                  <Lucide icon="ExternalLink" className="w-4 h-4 mr-2" />
-                                  Open Filing
-                                </Button>
+                                <div className="grid grid-cols-[auto_2.25rem] items-center gap-2">
+                                  <Button
+                                    variant="outline-primary"
+                                    className="h-9 shrink-0 whitespace-nowrap rounded-lg px-3.5"
+                                    onClick={() => window.open(filing["Filing Link"], "_blank", "noopener,noreferrer")}
+                                  >
+                                    <Lucide icon="ExternalLink" className="mr-2 h-4 w-4" />
+                                    Open Filing
+                                  </Button>
+                                  {/* Only when the filing actually carries
+                                      downloadable files. Unrelated to the
+                                      Document Type column to its right. */}
+                                  {Array.isArray(filing?.Attachments) && filing.Attachments.some((file: FilingFile) => file?.url) ? (
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                                      onClick={() => openFilingFilesModal(filing)}
+                                      aria-label="View attachments"
+                                      title="View attachments"
+                                    >
+                                      <Lucide icon="Paperclip" className="h-4 w-4" />
+                                    </button>
+                                  ) : (
+                                    <span aria-hidden="true" className="inline-flex h-9 w-9" />
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-sm text-slate-400">-</span>
                               )}
@@ -850,6 +905,82 @@ function ActivistFilings() {
           )}
         </div>
       </div>
+
+      <Dialog
+        size="lg"
+        open={filingFilesModalOpen}
+        onClose={() => {
+          setFilingFilesModalOpen(false);
+          setSelectedFilingFiles([]);
+          setSelectedFilingLabel("");
+          setSelectedFilingDate("");
+        }}
+      >
+        <Dialog.Panel className="overflow-hidden p-0 text-left">
+          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,rgba(171,18,61,0.08),rgba(255,255,255,0.98))] px-6 py-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+                  Filing Attachments
+                </p>
+                <h3 className="mt-2 text-xl font-semibold text-slate-900">{selectedFilingLabel}</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedFilingDate || "-"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFilingFilesModalOpen(false);
+                  setSelectedFilingFiles([]);
+                  setSelectedFilingLabel("");
+                  setSelectedFilingDate("");
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-primary/30 hover:text-primary"
+              >
+                <Lucide icon="X" className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-[65vh] overflow-y-auto bg-slate-50/70 px-6 py-6">
+            <div className="space-y-4">
+              {selectedFilingFiles.map((file, index) => (
+                <div
+                  key={`${file.url || file.type || "attachment"}-${index}`}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                >
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <Lucide icon="FileText" className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold uppercase tracking-wide text-primary/80">
+                            {file.type || "Attachment"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline-primary"
+                      className="shrink-0 whitespace-nowrap"
+                      onClick={() => window.open(file.url, "_blank", "noopener,noreferrer")}
+                    >
+                      <Lucide icon="ExternalLink" className="mr-2 h-4 w-4" />
+                      Open Document
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Dialog.Panel>
+      </Dialog>
     </div>
   );
 }

@@ -20,10 +20,22 @@ interface CompensationProposalsState {
 }
 
 const DEFAULT_INVESTORS = [
-  "BlackRock, Inc.",
-  "The Vanguard Group",
+  "BlackRock Active Investment Stewardship (BAIS)",
+  "BlackRock Investment Stewardship (BIS)",
+  "Vanguard Capital Management",
   "State Street Investment Management",
+  "Vanguard Portfolio Management",
 ];
+
+const INSTITUTION_NAME_MAP: Record<string, string> = {
+  "BlackRock (BAIS)": "BlackRock Active Investment Stewardship (BAIS)",
+  "BlackRock (BIS)": "BlackRock Investment Stewardship (BIS)",
+};
+
+const normalizeInvestorNames = (values: any) => {
+  if (!Array.isArray(values)) return values;
+  return values.map((value) => INSTITUTION_NAME_MAP[value] ?? value);
+};
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -85,10 +97,20 @@ const compensationProposalsSlice = createSlice({
   initialState,
   reducers: {
     setFilter(state, action: PayloadAction<{ key: string; value: any }>) {
-      (state.filters as any)[action.payload.key] = action.payload.value;
+      const nextValue =
+        action.payload.key === "investor_company"
+          ? normalizeInvestorNames(action.payload.value)
+          : action.payload.value;
+      (state.filters as any)[action.payload.key] = nextValue;
     },
     setFilters(state, action: PayloadAction<Partial<typeof initialState.filters>>) {
-      state.filters = { ...state.filters, ...action.payload };
+      state.filters = {
+        ...state.filters,
+        ...action.payload,
+        investor_company: normalizeInvestorNames(
+          action.payload.investor_company ?? state.filters.investor_company ?? DEFAULT_INVESTORS
+        ),
+      };
     },
     resetFilters(state) {
       state.filters = initialState.filters;

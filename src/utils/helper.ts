@@ -492,102 +492,136 @@ function generateFilterChips(filters: Record<string, any>) {
     sector: "Sector",
     region: "Region",
     anti_category: "Proposal Screen",
+    nl_exist: "NL Exist",
+    approved: "Approved",
+    no_shareholder_proposal: "No Shareholder Proposal",
+    is_correct: "Is Correct",
+    company_status: "Company Status",
+    ready_for_review: "Ready For Review",
+    check_status: "Check Status",
+    head_support: "Shareholder Meeting Held",
+  };
+
+  const hasDisplayableFilterValue = (value: any) =>
+    Array.isArray(value)
+      ? value.length > 0
+      : value !== undefined && value !== null && value !== "" && value !== " ";
+
+  const getFilterChipLabelValue = (value: any) => {
+    if (typeof value === "boolean") {
+      return value ? "True" : "False";
+    }
+
+    return typeof value === "object" && value?.label ? value.label : value;
   };
 
   // Define the order of filters as they appear in the UI
   const filterOrder = [
-    'institution_name',    // First row
-    'institution_name_raw',
-    'fund_name',
-    'vote_category',
-    'proposal',            // Second row
-    'vote',
-    'keyword',
-    'analyticsYear', 'year',
-    'index_name', 'index',
-    'date_range',
-    'country',             
-    'meeting_type',
-    'proposal_type',
-    'proponent_type',
-    'vote_type',
-    // Additional filters that might not be in the main form
-    'global_search',
-    'company_name', 'company_names',
-    'category',
-    'anti_category',
-    'proposal_keyword'
+    "institution_name",
+    "institution_name_raw",
+    "fund_name",
+    "vote_category",
+    "proposal",
+    "vote",
+    "keyword",
+    "analyticsYear",
+    "year",
+    "index_name",
+    "index",
+    "date_range",
+    "country",
+    "meeting_type",
+    "proposal_type",
+    "proponent_type",
+    "vote_type",
+    "global_search",
+    "company_name",
+    "company_names",
+    "category",
+    "anti_category",
+    "proposal_keyword",
+    "sector",
+    "nl_exist",
+    "approved",
+    "no_shareholder_proposal",
+    "is_correct",
+    "company_status",
+    "ready_for_review",
+    "check_status",
+    "head_support",
   ];
 
-  // Create chips for each filter in the defined order
   const sortedChips: any[] = [];
-  
-  filterOrder.forEach(filterKey => {
-    if (filters[filterKey] && filters[filterKey].length !== 0 && filters[filterKey] !== "") {
-      const value = filters[filterKey];
-      
-      // Special handling for proposal_keyword - create separate chips for each keyword
-      if (filterKey === 'proposal_keyword' && Array.isArray(value) && value.length > 0) {
-        value.forEach((keyword) => {
-          const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
-          sortedChips.push({
-            key: filterKey,
-            label: `${mapping[filterKey] || filterKey}: ${keywordValue}`,
-            value: keyword,
-          });
-        });
-      } else if (Array.isArray(value)) {
-        value.forEach((v) => {
-          sortedChips.push({
-            key: filterKey,
-            label: `${mapping[filterKey] || filterKey}: ${typeof v === 'object' && v.label ? v.label : v}`,
-            value: v,
-          });
-        });
-      } else {
+
+  filterOrder.forEach((filterKey) => {
+    const value = filters[filterKey];
+
+    if (!hasDisplayableFilterValue(value)) {
+      return;
+    }
+
+    if (filterKey === "proposal_keyword" && Array.isArray(value)) {
+      value.forEach((keyword) => {
         sortedChips.push({
           key: filterKey,
-          label: `${mapping[filterKey] || filterKey}: ${typeof value === 'object' && value.label ? value.label : value}`,
-          value,
+          label: `${mapping[filterKey] || filterKey}: ${getFilterChipLabelValue(keyword)}`,
+          value: keyword,
         });
-      }
+      });
+      return;
     }
+
+    if (Array.isArray(value)) {
+      value.forEach((v) => {
+        sortedChips.push({
+          key: filterKey,
+          label: `${mapping[filterKey] || filterKey}: ${getFilterChipLabelValue(v)}`,
+          value: v,
+        });
+      });
+      return;
+    }
+
+    sortedChips.push({
+      key: filterKey,
+      label: `${mapping[filterKey] || filterKey}: ${getFilterChipLabelValue(value)}`,
+      value,
+    });
   });
 
-  // Add any remaining filters that weren't in the predefined order
   Object.entries(filters)
-    .filter(([key, value]) => 
-      !filterOrder.includes(key) && 
-      value && 
-      value.length !== 0 && 
-      value !== ""
+    .filter(
+      ([key, value]) =>
+        !filterOrder.includes(key) && hasDisplayableFilterValue(value)
     )
     .forEach(([key, value]) => {
-      // Special handling for proposal_keyword - create separate chips for each keyword
-      if (key === 'proposal_keyword' && Array.isArray(value) && value.length > 0) {
+      if (key === "proposal_keyword" && Array.isArray(value)) {
         value.forEach((keyword) => {
-          const keywordValue = typeof keyword === 'object' && keyword.label ? keyword.label : keyword;
           sortedChips.push({
             key,
-            label: `${mapping[key] || key}: ${keywordValue}`,
+            label: `${mapping[key] || key}: ${getFilterChipLabelValue(keyword)}`,
             value: keyword,
           });
         });
-      } else if (Array.isArray(value)) {
+        return;
+      }
+
+      if (Array.isArray(value)) {
         value.forEach((v) => {
           sortedChips.push({
             key,
-            label: `${mapping[key] || key}: ${typeof v === 'object' && v.label ? v.label : v}`,
+            label: `${mapping[key] || key}: ${getFilterChipLabelValue(v)}`,
             value: v,
           });
         });
-      } else {
-        sortedChips.push({
-          key,
-          label: `${mapping[key] || key}: ${typeof value === 'object' && value.label ? value.label : value}`,
-          value,
-        });
+        return;
       }
+
+      sortedChips.push({
+        key,
+        label: `${mapping[key] || key}: ${getFilterChipLabelValue(value)}`,
+        value,
+      });
     });
 
   return sortedChips;

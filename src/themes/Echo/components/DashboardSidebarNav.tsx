@@ -55,7 +55,7 @@ interface SectionDef {
   // active section (the dashboard has no matching tab for it).
   preserveActiveSection?: boolean;
   // Optional count badge key pulled from modulesData.
-  countKey?: "case_studies" | "engagement_details" | "shareholder_proposal" | "activist_filings";
+  countKey?: "case_studies" | "engagement_details" | "shareholder_proposal" | "activist_filings" | "meeting_notes";
   // Hide the item entirely when the count is zero.
   hideWhenEmpty?: boolean;
   // When true, the entire section is only visible to Admin users.
@@ -172,6 +172,8 @@ const BASE_SECTIONS: SectionDef[] = [
     subItems: [],
     route: "/notes",
     preserveActiveSection: true,
+    countKey: "meeting_notes",
+    hideWhenEmpty: true,
   },
   {
     key: "company-activist-filings",
@@ -217,7 +219,6 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Institution Insights",
     route: "/npx-proposal-voting-stats",
     subItems: [],
-    adminOnly: true,
     beta: true,
   },
   {
@@ -227,6 +228,15 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Institution Insights",
     route: "/executive-compensation",
     subItems: [],
+  },
+  {
+    key: "institution-notes",
+    label: "Notes",
+    icon: FileText,
+    group: "Institution Insights",
+    route: "/institution-notes",
+    subItems: [],
+    preserveActiveSection: true,
   },
 ];
 
@@ -277,6 +287,9 @@ const DashboardSidebarNav = ({
     if (s.key === "compensation") {
       const userType = user?.user_type;
       return userType === "Admin" || userType === "Analyst";
+    }
+    if (s.key === "governance-profile") {
+      return Boolean(modulesData?.governance_profile);
     }
     // Hide count-driven tabs when there is no data for the selected company,
     // except for sections that should stay visible but disabled.
@@ -408,7 +421,7 @@ const DashboardSidebarNav = ({
             >
               <span className="relative">
                 <Icon className="side-menu__link__icon w-[18px] h-[18px]" />
-                {hasCountValue && section.countKey !== "activist_filings" && (countValue! > 0 || section.hideWhenEmpty) && (
+                {hasCountValue && !["activist_filings", "meeting_notes"].includes(section.countKey || "") && (countValue! > 0 || section.hideWhenEmpty) && (
                   <span
                     className={clsx([
                       "absolute rounded-full min-w-[16px] h-4 px-1 text-[9px] font-semibold text-white -top-1.5 left-2.5 flex items-center justify-center",

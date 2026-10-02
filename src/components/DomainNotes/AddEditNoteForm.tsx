@@ -5,7 +5,7 @@ import React, {
   useState,
   useEffect,
 } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import { useAppSelector } from "@/stores/hooks";
@@ -16,6 +16,7 @@ import { DomainNote } from "@/types/domainNotes";
 import DateField from "./CreateDate";
 import CategoryField from "./CreateCategory";
 import FormInput from "../Base/Form/FormInput";
+import { FormSwitch } from "@/components/Base/Form";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchDomainNotesDropDownValuesByCompany,
@@ -40,6 +41,21 @@ interface SelectedNoteData {
   investor_name: string;
   company_name?: string;
 }
+
+const getCompanyId = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => Number(note?.company || note?.company_id || fallback?.company_id || 0);
+
+const getInstitutionId = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => Number(note?.institution || note?.institution_id || fallback?.institution_id || 0);
+
+const getInstitutionDisplayName = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => note?.institution_name || note?.investor_name || fallback?.institution_name || "";
 
 const NoteForm: React.FC<NoteFormProps> = ({
   initialData,
@@ -66,12 +82,25 @@ const NoteForm: React.FC<NoteFormProps> = ({
   const [showInsDropdown, setInsShowDropdown] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const today = new Date().toISOString().split("T")[0];
-  
-  // Format date to YYYY-MM-DD format
-  const formatDate = (dateString: string) => {
+
+  const formatDate = (dateString?: string) => {
     if (!dateString) return today;
-    const date = new Date(dateString);
-    return date.toISOString().split("T")[0];
+
+    const normalizedDate = String(dateString).trim();
+    const datePartMatch = normalizedDate.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (datePartMatch) {
+      return datePartMatch[1];
+    }
+
+    const parsedDate = new Date(normalizedDate);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return today;
+    }
+
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(parsedDate.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
   const isLoading = useSelector(
     (state: { domainNotes: { loadingCompanyDropdown: boolean } }) =>
@@ -108,27 +137,31 @@ const NoteForm: React.FC<NoteFormProps> = ({
     return () => clearTimeout(debounce);
   }, [institutionsSearchTerm, dispatch]);
 
-  // Initialize selectedData when editing a note
   useEffect(() => {
-    if (mode === "edit" && initialData && noteModule) {
-      console.log("Initializing edit form with:", initialData);
-      setSelectedData({
-        company:
-          isCorporateUser && corporateCompanyId
-            ? corporateCompanyId
-            : initialData.company || 0,
-        institution: initialData.institution || 0,
-        investor_name: initialData.investor_name || "",
-      });
-      setSearchTerm(initialData.company_name || "");
-      setInstitutionsSearchTerm(initialData.investor_name || "");
-    }
+    if (mode !== "edit" || !initialData) return;
+
+    setSelectedData({
+      company:
+        isCorporateUser && corporateCompanyId
+          ? corporateCompanyId
+          : getCompanyId(initialData, data),
+      institution: getInstitutionId(initialData, data),
+      investor_name: getInstitutionDisplayName(initialData, data),
+      company_name: initialData.company_name || data?.company_name || "",
+    });
+    setSearchTerm(initialData.company_name || data?.company_name || "");
+    setInstitutionsSearchTerm(
+      initialData.institution_name || initialData.investor_name || data?.institution_name || ""
+    );
   }, [
     mode,
     initialData,
-    noteModule,
     isCorporateUser,
     corporateCompanyId,
+    data?.company_id,
+    data?.company_name,
+    data?.institution_id,
+    data?.institution_name,
     setSelectedData,
   ]);
 
@@ -148,34 +181,54 @@ const NoteForm: React.FC<NoteFormProps> = ({
     setSelectedData,
   ]);
 
+  const getFormValues = (): Partial<DomainNote> =>
+    mode === "add"
+      ? {
+          attendees: "",
+          notes: "",
+          date: today,
+          category: "",
+          company:
+            isCorporateUser && corporateCompanyId
+              ? corporateCompanyId
+              : data?.company_id || 0,
+          institution: data?.institution_id || null,
+          investor_name: data?.institution_name || "",
+          company_name: data?.company_name || "",
+          shared: Boolean(initialData?.shared),
+        }
+      : {
+          attendees: initialData?.attendees || "",
+          notes: initialData?.notes || "",
+          date: formatDate(initialData?.date),
+          category: initialData?.category || "",
+          company:
+            isCorporateUser && corporateCompanyId
+              ? corporateCompanyId
+              : getCompanyId(initialData, data),
+          institution: getInstitutionId(initialData, data) || null,
+          investor_name: getInstitutionDisplayName(initialData, data),
+          company_name: initialData?.company_name || data?.company_name || "",
+          shared: Boolean(initialData?.shared),
+        };
+
   const { control, handleSubmit, reset } = useForm<DomainNote>({
-    defaultValues:
-      mode === "add"
-        ? {
-            attendees: "",
-            notes: "",
-            date: today,
-            category: "Shareholder Engagement",
-            company:
-              isCorporateUser && corporateCompanyId
-                ? corporateCompanyId
-                : data?.company_id || 0,
-            institution: data?.institution_id || null,
-            investor_name: data?.institution_name || "",
-          }
-        : {
-            attendees: initialData?.attendees || "",
-            notes: initialData?.notes || "",
-            date: formatDate(initialData?.date) || today,
-            category: initialData?.category || "",
-            company:
-              isCorporateUser && corporateCompanyId
-                ? corporateCompanyId
-                : data?.company_id || 0,
-            institution: data?.institution_id || null,
-            investor_name: data?.institution_name || "",
-          },
+    defaultValues: getFormValues(),
   });
+
+  useEffect(() => {
+    reset(getFormValues());
+  }, [
+    mode,
+    initialData,
+    data?.company_id,
+    data?.company_name,
+    data?.institution_id,
+    data?.institution_name,
+    isCorporateUser,
+    corporateCompanyId,
+    reset,
+  ]);
   const fieldsToRender =
     mode === "add" ? ["attendees", "notes", "date", "category"] : fieldsToEdit;
   const handleSelect = (id: number, name: string, from: string) => {
@@ -190,13 +243,13 @@ const NoteForm: React.FC<NoteFormProps> = ({
     } else {
       setSearchTerm(name);
       setShowDropdown(false);
-      setSelectedData({ ...selectedData, company: id });
+      setSelectedData({ ...selectedData, company: id, company_name: name });
     }
   };
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const dropdown = document.querySelector('.dropdown')
-      if ((dropdown || showInsDropdown) && !dropdown.contains(event.target as Node)) {
+      const dropdown = document.querySelector(".dropdown");
+      if (dropdown && !dropdown.contains(event.target as Node)) {
         setShowDropdown(false);
         setInsShowDropdown(false);
       }
@@ -207,14 +260,15 @@ const NoteForm: React.FC<NoteFormProps> = ({
     };
   }, [setShowDropdown]);
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="flex flex-wrap gap-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap gap-4">
         {!isCorporateUser && (
           <div className="w-full md:w-[47%]">
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Company
           </label>
-          {noteModule ? (
+          {noteModule || mode === "edit" ? (
             <>
               <FormInput
                 ref={inputRef}
@@ -272,7 +326,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Institution
           </label>
-          {noteModule ? (
+          {noteModule || mode === "edit" ? (
             <>
               <FormInput
                 ref={inputRef}
@@ -329,38 +383,72 @@ const NoteForm: React.FC<NoteFormProps> = ({
             />
           )}
         </div>
+        </div>
       </div>
-      <div className="flex flex-wrap gap-4">
-        {fieldsToRender.includes("category") && (
-          <div className="w-full md:w-[47%]">
-            <CategoryField
-              control={control}
-              rules={{ required: "Category is required" }}
-            />
-          </div>
-        )}
-        {fieldsToRender.includes("date") && (
-          <div className="w-full md:w-[47%]">
-            <DateField
-              control={control}
-              rules={{ required: "Date is required" }}
-            />
-          </div>
-        )}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap gap-4">
+          {fieldsToRender.includes("category") && (
+            <div className="w-full md:w-[47%]">
+              <CategoryField
+                control={control}
+                rules={{ required: "Category is required" }}
+              />
+            </div>
+          )}
+          {fieldsToRender.includes("date") && (
+            <div className="w-full md:w-[47%]">
+              <DateField
+                control={control}
+                rules={{ required: "Date is required" }}
+              />
+            </div>
+          )}
+        </div>
       </div>
       {fieldsToRender.includes("attendees") && (
-        <NameField
-          control={control}
-        />
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <NameField
+            control={control}
+          />
+        </div>
       )}
 
       {fieldsToRender.includes("notes") && (
-        <NoteField
-          control={control}
-          rules={{ required: "Note Detail is required" }}
-        />
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <NoteField
+            control={control}
+            rules={{ required: "Note Detail is required" }}
+          />
+        </div>
       )}
-      <div className="w-full flex justify-end">
+
+      {/* <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        <Controller
+          name="shared"
+          control={control}
+          render={({ field }) => (
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold text-slate-800">Share</div>
+                <div className="mt-1 text-xs leading-5 text-slate-500">
+                  Turn this on to share this note with everyone.
+                </div>
+              </div>
+              <FormSwitch>
+                <FormSwitch.Input
+                  id="domain-note-shared"
+                  type="checkbox"
+                  checked={Boolean(field.value)}
+                  onChange={(event) => field.onChange(event.target.checked)}
+                />
+                <FormSwitch.Label htmlFor="domain-note-shared" />
+              </FormSwitch>
+            </div>
+          )}
+        />
+      </div> */}
+
+      <div className="w-full flex justify-end border-t border-slate-200 pt-4">
         <Button
           type="button"
           variant="outline-secondary"

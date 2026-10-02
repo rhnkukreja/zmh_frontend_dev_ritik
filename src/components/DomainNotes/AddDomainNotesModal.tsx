@@ -27,6 +27,21 @@ interface SelectedNoteData {
   company_name?: string;
 }
 
+const getCompanyId = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => Number(note?.company || note?.company_id || fallback?.company_id || 0);
+
+const getInstitutionId = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => Number(note?.institution || note?.institution_id || fallback?.institution_id || 0);
+
+const getInstitutionDisplayName = (
+  note?: Partial<DomainNote>,
+  fallback?: Partial<CompanyDashboard>
+) => note?.institution_name || note?.investor_name || fallback?.institution_name || "";
+
 const AddDomainNoteModal = ({
   addNoteModalVisible,
   setAddNoteModalVisible,
@@ -47,30 +62,34 @@ const AddDomainNoteModal = ({
     company:
       isCorporateUser && corporateCompanyId
         ? corporateCompanyId
-        : selectedNote?.company || 0,
-    institution: selectedNote?.institution || 0,
-    investor_name: selectedNote?.investor_name || "",
+        : getCompanyId(selectedNote, data),
+    institution: getInstitutionId(selectedNote, data),
+    investor_name: getInstitutionDisplayName(selectedNote, data),
+    company_name: selectedNote?.company_name || data?.company_name || "",
   });
 
-  // Update selectedData when selectedNote changes (for edit mode)
   useEffect(() => {
     if (selectedNote && mode === "edit") {
-      console.log("Setting selectedData for edit mode:", {
-        selectedNote,
-        company: selectedNote.company_name,
-        institution: selectedNote.institution,
-        investor_name: selectedNote.investor_name
-      });
       setSelectedData({
         company:
           isCorporateUser && corporateCompanyId
             ? corporateCompanyId
-            : selectedNote.company || 0,
-        institution: selectedNote.institution || 0,
-        investor_name: selectedNote.investor_name || "",
+            : getCompanyId(selectedNote, data),
+        institution: getInstitutionId(selectedNote, data),
+        investor_name: getInstitutionDisplayName(selectedNote, data),
+        company_name: selectedNote.company_name || data?.company_name || "",
       });
     }
-  }, [selectedNote, mode, isCorporateUser, corporateCompanyId]);
+  }, [
+    selectedNote,
+    mode,
+    isCorporateUser,
+    corporateCompanyId,
+    data?.company_id,
+    data?.company_name,
+    data?.institution_id,
+    data?.institution_name,
+  ]);
 
   useEffect(() => {
     if (isCorporateUser && corporateCompanyId) {
@@ -81,39 +100,42 @@ const AddDomainNoteModal = ({
       }));
     }
   }, [isCorporateUser, corporateCompanyId, user?.company_name]);
-  const handleNoteSubmit = async (data: DomainNote) => {
+  const handleNoteSubmit = async (formData: DomainNote) => {
     function removeTrailingSpaces(htmlContent: string): string {
       const trailingTagsRegex = /^(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+|(<[^>]+>(\s|&nbsp;|<br\s*\/?>)*<\/[^>]+>|\s|&nbsp;|<br\s*\/?>)+$/gi;
       return htmlContent.replace(trailingTagsRegex, '');
     }
     try {
       const trimmedData = {
-        ...data,
-        notes: removeTrailingSpaces(data.notes), 
+        ...formData,
+        notes: removeTrailingSpaces(formData.notes),
+        shared: Boolean(formData.shared),
       };
       if (selectedNote?.id && mode == "edit") {
-        // For edit mode, only send the fields that are actually being edited
         const editCompany = isCorporateUser && corporateCompanyId
           ? corporateCompanyId
-          : selectedData.company || selectedNote?.company || data?.company || 0;
+          : selectedData.company || getCompanyId(selectedNote, data);
+        const editInstitution =
+          selectedData.institution || getInstitutionId(selectedNote, data);
 
-        const editData: any = {
-            attendees: trimmedData.attendees,
-            notes: trimmedData.notes,
-            date: trimmedData.date,
-            category: trimmedData.category,
-          };
-        // Testing: omit `company` from payload when user is NOT corporate
-        if (isCorporateUser) {
-          editData.company = editCompany;
-        }
-        console.log("Edit payload:", editData);
+        const editData: Partial<DomainNote> = {
+          attendees: trimmedData.attendees,
+          notes: trimmedData.notes,
+          date: trimmedData.date,
+          category: trimmedData.category,
+          shared: trimmedData.shared,
+          company: editCompany,
+          institution: editInstitution,
+          investor_name:
+            selectedData.investor_name || selectedNote?.institution_name || selectedNote?.investor_name || "",
+        };
+
         await dispatch(addDomainNote({ id: selectedNote.id, data: editData }));
       } else {
         if (noteModule) {
           const fallbackCompany = isCorporateUser && corporateCompanyId
             ? corporateCompanyId
-            : selectedData.company || selectedNote?.company || data?.company || 0;
+            : selectedData.company || selectedNote?.company || data?.company_id || 0;
 
           const payload: any = {
             ...trimmedData,
@@ -153,20 +175,25 @@ const AddDomainNoteModal = ({
       open={addNoteModalVisible}
       onClose={() => setAddNoteModalVisible(false)}
     >
-      
-      <Dialog.Panel>
-        <Dialog.Title className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
-            {mode === "edit" ? "Edit note" : "New note"}
-          </h2>
-          <button
-            onClick={() => setAddNoteModalVisible(false)}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-white transition"
-          >
-            <Lucide icon="X" className="w-5 h-5" />
-          </button>
+      <Dialog.Panel className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+        <button
+          type="button"
+          onClick={() => setAddNoteModalVisible(false)}
+          className="absolute right-6 top-3 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-100 hover:text-slate-700"
+          aria-label="Close note modal"
+        >
+          <Lucide icon="X" className="h-5 w-5" />
+        </button>
+        <Dialog.Title>
+          <div className="px-6 py-3 pr-20">
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-slate-800">
+                {mode === "edit" ? "Edit Note" : "New Note"}
+              </h2>
+            </div>
+          </div>
         </Dialog.Title>
-        <Dialog.Description>
+        <Dialog.Description className="bg-slate-50 px-6 py-6">
           <NoteForm
             mode={mode}
             initialData={selectedNote || {}}

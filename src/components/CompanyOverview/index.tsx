@@ -20,6 +20,7 @@ import { fetchCompanyOverview } from "@/stores/dashboardSlice";
 import { dashboardService } from "@/services/dashboard";
 import { baseURL } from "@/constant";
 import pdfMake from "pdfmake/build/pdfmake";
+import summaryPdfLogo from "@/assets/images/logo/Vantage ZMH-01.png";
 import CompensationTab from './CompensationTab';
 import { useCacheInvalidation } from "@/hooks/useCacheInvalidation";
 import { selectDashboardNav } from "@/stores/dashboardNavSlice";
@@ -630,7 +631,7 @@ function RationaleList({ items, summary }: { items?: Rationale[]; summary?: stri
     <>
       <Separator className="my-4" />
       <div className="text-[15px] font-semibold text-slate-500 mb-3">
-        Voting Rationale Disclosures <span>(Against or Withhold votes for top 20 investors only)</span>
+        Voting Rationale Disclosures <span>(Against or Withhold votes only)</span>
       </div>
       {summary && (
         <p className="mb-3 text-[15px] text-slate-700">{summary}</p>
@@ -1199,26 +1200,6 @@ export default function CompanyOverview() {
   }, [companyGlobalSearchId]);
 
   useEffect(() => {
-    if (!companyGlobalSearchId || availableYears.length === 0) return;
-
-    const prefetchKey = `${companyGlobalSearchId}:${availableYears.join(",")}`;
-    if (prefetchedOverviewYearsRef.current === prefetchKey) {
-      return;
-    }
-    prefetchedOverviewYearsRef.current = prefetchKey;
-
-    void Promise.all(
-      availableYears.map((year) =>
-        dashboardService.getCompanyOverview(
-          `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${year}`
-        ).catch((error) => {
-          console.error(`Failed to prefetch company overview for year ${year}:`, error);
-        })
-      )
-    );
-  }, [companyGlobalSearchId, availableYears]);
-
-  useEffect(() => {
     if (!companyGlobalSearchId || !selectedYear) return;
     if (isCompanyYearsLoadingRef.current) return;
     if (availableYears.length > 0 && !availableYears.includes(selectedYear)) return;
@@ -1245,6 +1226,37 @@ export default function CompanyOverview() {
     // }
   }, [dispatch, companyGlobalSearchId, selectedYear, canViewRestrictedTabs, availableYears]);
 
+  useEffect(() => {
+    if (!companyGlobalSearchId || !selectedYear || availableYears.length === 0) return;
+
+    const remainingYears = availableYears.filter((year) => year !== selectedYear);
+    if (remainingYears.length === 0) {
+      return;
+    }
+
+    const prefetchKey = `${companyGlobalSearchId}:${selectedYear}:${remainingYears.join(",")}`;
+    if (prefetchedOverviewYearsRef.current === prefetchKey) {
+      return;
+    }
+    prefetchedOverviewYearsRef.current = prefetchKey;
+
+    const timeoutId = window.setTimeout(() => {
+      void Promise.all(
+        remainingYears.map((year) =>
+          dashboardService.getCompanyOverview(
+            `${baseURL}/company_report/key_findings/?company_id=${companyGlobalSearchId}&year=${year}`
+          ).catch((error) => {
+            console.error(`Failed to prefetch company overview for year ${year}:`, error);
+          })
+        )
+      );
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [companyGlobalSearchId, availableYears, selectedYear]);
+
   // Transform API data to UI format
   const apiReport = useMemo(() => {
     return transformApiDataToReport(companyOverviewData);
@@ -1253,20 +1265,37 @@ export default function CompanyOverview() {
   // Use API data if available, otherwise use sample
   const reports: CompanyReport[] = apiReport ? [apiReport] : [];
 
+  const getPdfAssetDataUrl = async (assetUrl: string) => {
+    const response = await fetch(assetUrl);
+    const blob = await response.blob();
 
-  const generatePDF = (report: CompanyReport) => {
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () =>
+        resolve(typeof reader.result === "string" ? reader.result : "");
+      reader.onerror = () => reject(new Error("Failed to load PDF asset"));
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const generatePDF = async (report: CompanyReport) => {
     const primaryColor = "#b91c1c";
     const gray50 = "#f9fafb";
     const gray200 = "#e5e7eb";
+    const gray400 = "#d1d5db";
     const gray600 = "#4b5563";
     const gray700 = "#374151";
     const gray900 = "#111827";
+    const footerTextColor = "#c5b9b1";
 
     const content: any[] = [];
     setLoading(true);
 
-    // Title
-    content.push({
+    try {
+      const logoDataUrl = await getPdfAssetDataUrl(summaryPdfLogo);
+
+      // Title
+      content.push({
       text: `${report.company} (${report.ticker})`,
       style: "title",
       margin: [0, 0, 0, 5]
@@ -1616,30 +1645,68 @@ export default function CompanyOverview() {
 
     const docDefinition: any = {
       pageSize: "A4",
-      pageMargins: [40, 60, 40, 60],
-      header: (currentPage: number, pageCount: number) => ({
-        text: `${report.company} (${report.ticker}) - Key Governance & Investor Summary`,
-        alignment: "center",
-        fontSize: 9,
-        color: gray600,
-        margin: [40, 20, 40, 0]
-      }),
-      footer: (currentPage: number, pageCount: number) => ({
-        columns: [
+      pageMargins: [40, 78, 40, 72],
+      images: {
+        summaryLogo: logoDataUrl,
+      },
+      header: (currentPage: number, pageCount: number, pageSize: { width: number }) => ({
+        margin: [40, 18, 40, 0],
+        stack: [
           {
-            text: `As of ${report.asOf}`,
-            alignment: "left",
-            fontSize: 8,
-            color: gray600
+            columns: [
+              {
+                text: `${report.company} (${report.ticker}) - Key Governance & Investor Summary`,
+                fontSize: 9,
+                color: gray600,
+                margin: [0, 16, 0, 0],
+              },
+              {
+                image: "summaryLogo",
+                fit: [78, 36],
+                alignment: "right",
+              },
+            ],
           },
           {
-            text: `Page ${currentPage} of ${pageCount}`,
-            alignment: "right",
-            fontSize: 8,
-            color: gray600
-          }
+            canvas: [
+              {
+                type: "line",
+                x1: 0,
+                y1: 10,
+                x2: pageSize.width - 80,
+                y2: 10,
+                lineWidth: 0.75,
+                lineColor: gray200,
+              },
+            ],
+          },
         ],
-        margin: [40, 0, 40, 20]
+      }),
+      footer: (currentPage: number, pageCount: number, pageSize: { width: number }) => ({
+        margin: [40, 0, 40, 18],
+        stack: [
+          {
+            canvas: [
+              {
+                type: "line",
+                x1: 0,
+                y1: 0,
+                x2: pageSize.width - 80,
+                y2: 0,
+                lineWidth: 0.75,
+                lineColor: gray400,
+              },
+            ],
+          },
+          {
+            text: "Copyright ZMH. Confidential. Do not distribute without prior written permission of ZMH Advisors",
+            alignment: "center",
+            fontSize: 10,
+            color: footerTextColor,
+            italics: true,
+            margin: [0, 8, 0, 0],
+          },
+        ],
       }),
       content,
       styles: {
@@ -1730,8 +1797,9 @@ export default function CompanyOverview() {
 
     const fileName = `${report.company.replace(/[^a-z0-9]/gi, '_')}_Overview_${new Date().toISOString().split('T')[0]}.pdf`;
     pdfMake.createPdf(docDefinition).download(fileName);
-
-    setLoading(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {

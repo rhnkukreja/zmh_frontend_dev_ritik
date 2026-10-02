@@ -44,10 +44,39 @@ const VOTE_OPTIONS = ["For", "Against/Withhold", "Abstain", "Split Vote", "Other
 const CURRENT_YEAR = new Date().getFullYear();
 
 const DEFAULT_INVESTORS = [
-  "BlackRock, Inc.",
-  "The Vanguard Group",
+  "BlackRock Active Investment Stewardship (BAIS)",
+  "BlackRock Investment Stewardship (BIS)",
+  "Vanguard Capital Management",
   "State Street Investment Management",
+  "Vanguard Portfolio Management",
 ];
+
+const INSTITUTION_NAME_MAP: Record<string, string> = {
+  "BlackRock (BAIS)": "BlackRock Active Investment Stewardship (BAIS)",
+  "BlackRock (BIS)": "BlackRock Investment Stewardship (BIS)",
+};
+
+const normalizeInvestorNames = (values: any) => {
+  if (!Array.isArray(values)) return values;
+  return values.map((value) => INSTITUTION_NAME_MAP[value] ?? value);
+};
+
+const EXEC_COMP_RELOAD_SESSION_KEY = "executiveCompensationReloadHandled";
+const isPageReloadOnce = (sessionKey: string) => {
+  if (typeof window === "undefined") return false;
+  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
+  const isReload = navEntry?.type ? navEntry.type === "reload" : (window.performance as any)?.navigation?.type === 1;
+  try {
+    const handled = sessionStorage.getItem(sessionKey) === "true";
+    if (isReload && !handled) {
+      sessionStorage.setItem(sessionKey, "true");
+      return true;
+    }
+    return false;
+  } catch {
+    return isReload;
+  }
+};
 
 const PIE_COLORS = [
   "#8b1828",
@@ -89,10 +118,28 @@ const ExecutiveCompensation: React.FC = () => {
   );
 
   const [localFilters, setLocalFilters] = useState<any>(() => {
+    if (isPageReloadOnce(EXEC_COMP_RELOAD_SESSION_KEY)) {
+      localStorage.removeItem("executiveCompensationFilters");
+      return {
+        year: [CURRENT_YEAR],
+        index: "S&P 500",
+        vote: [],
+        investor_company: DEFAULT_INVESTORS,
+        category: "Say on Pay",
+        keyword: "",
+        page_size: 25,
+      };
+    }
+
     const saved = typeof window !== "undefined" ? localStorage.getItem("executiveCompensationFilters") : null;
     if (saved) {
       try {
-        return { ...filters, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        return {
+          ...filters,
+          ...parsed,
+          investor_company: normalizeInvestorNames(parsed?.investor_company ?? filters?.investor_company ?? DEFAULT_INVESTORS),
+        };
       } catch {
         // ignore invalid cache
       }
@@ -104,7 +151,10 @@ const ExecutiveCompensation: React.FC = () => {
   const [showMaxInstitutionMessage, setShowMaxInstitutionMessage] = useState(false);
 
   useEffect(() => {
-    setLocalFilters(filters);
+    setLocalFilters((prev: any) => ({
+      ...filters,
+      investor_company: normalizeInvestorNames(prev?.investor_company ?? filters?.investor_company ?? DEFAULT_INVESTORS),
+    }));
   }, [filters]);
 
   // Dispatch cached filters to Redux on mount
@@ -117,6 +167,11 @@ const ExecutiveCompensation: React.FC = () => {
   useEffect(() => {
     localStorage.setItem("executiveCompensationFilters", JSON.stringify(filters));
   }, [filters]);
+
+  // Persist unsaved local filter selections too (for same-session navigation)
+  useEffect(() => {
+    localStorage.setItem("executiveCompensationFilters", JSON.stringify(localFilters));
+  }, [localFilters]);
 
   const fetchData = useCallback(
     (page = 1) => {
@@ -277,6 +332,7 @@ const ExecutiveCompensation: React.FC = () => {
     } else if (key === "keyword") {
       updated.keyword = "";
     }
+    updated.investor_company = normalizeInvestorNames(updated.investor_company ?? []);
     setLocalFilters(updated);
     dispatch(setFilters(updated));
   };

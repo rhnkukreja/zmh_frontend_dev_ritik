@@ -70,6 +70,8 @@ import useCompanySearch from "@/hooks/useCompanySearch";
 import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { dashboardService } from "@/services/dashboard";
+import { domainNotesService } from "@/services/domainNotes";
+import { governanceService } from "@/services/governance";
 import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
 import Drawer from "@/components/Base/Headless/Drawer";
@@ -109,7 +111,7 @@ const getSidebarGroup = (menu: string | FormattedMenu) => {
 
   if (
     [
-      "Custom Reports",
+      "Benchmarking",
       "Podcasts",
       "Newsletter",
       "Email Alert",
@@ -321,7 +323,7 @@ function Main() {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(["Company"]);
   const scrollableRef = createRef<HTMLDivElement>();
   const shouldShowSidebar = subSidebarRoutes.includes(location.pathname);
-  const isNotesPage = location.pathname === "/notes";
+  const isNotesPage = ["/notes", "/institution-notes"].includes(location.pathname);
   const isCompanyReportPage = location.pathname.startsWith("/company-report");
   // Embed mode: renders the routed page without the app chrome (sidebar/topbar)
   // so it can be shown inside an in-page panel/iframe instead of a new tab.
@@ -547,14 +549,35 @@ function Main() {
 
   const isCompanySpecificView =
     new URLSearchParams(location.search).get("source") === "company";
+  const shouldHideCompanyGlobalSearch =
+    (location.pathname === "/" && activeSection === "governance-profile") ||
+    ([
+      "/case-studies",
+      "/engagement-detail",
+      "/shareholder-proposal",
+      "/activist-filings",
+    ].includes(location.pathname) &&
+      isCompanySpecificView);
+  const shouldHideHeaderTitle = shouldHideCompanyGlobalSearch;
   const shouldHideHeader =
-    (noCompanyHeaderRoutes?.some((route: string) =>
+    location.pathname === "/notes" ||
+    ((noCompanyHeaderRoutes?.some((route: string) =>
       location.pathname.includes(route)
     ) &&
       !isCompanySpecificView) ||
-    (location.pathname === "/" &&
-      activeSection === "investor-overview" &&
-      (activeSubSection === "voting_rationale" || !activeSubSection));
+      (location.pathname === "/" &&
+        activeSection === "investor-overview" &&
+        (activeSubSection === "voting_rationale" || !activeSubSection)));
+  const headerTitle =
+    location.pathname === "/" && activeSection === "governance-profile"
+      ? "Governance Profile"
+      : location.pathname === "/case-studies" && isCompanySpecificView
+        ? "Case Studies"
+        : location.pathname === "/engagement-detail" && isCompanySpecificView
+          ? "Engagement Details"
+          : location.pathname === "/shareholder-proposal" && isCompanySpecificView
+            ? "Shareholder Proposals"
+            : pageTitles[location.pathname];
 
   useEffect(() => {
     if (!location.pathname.includes("/case-studies")) {
@@ -675,6 +698,8 @@ function Main() {
     getModulesCount();
     getNotificationList();
     prefetchActivistFilings();
+    prefetchMeetingNotes();
+    prefetchGovernanceProfile();
   }, [companyGlobalSearchName, companyGlobalSearchId]);
 
   useEffect(() => {
@@ -747,6 +772,58 @@ function Main() {
         activist_filings: relevantCount,
       }));
     } catch (error) {
+      return error;
+    }
+  };
+
+  const prefetchMeetingNotes = async () => {
+    if (!companyGlobalSearchName) {
+      setModulesData((prev: any) => ({
+        ...prev,
+        meeting_notes: 0,
+      }));
+      return;
+    }
+
+    try {
+      const response = await domainNotesService.getCompanyHierarchyNotes(companyGlobalSearchName);
+      const results = Array.isArray(response?.results) ? response.results : [];
+
+      setModulesData((prev: any) => ({
+        ...prev,
+        meeting_notes: results.length,
+      }));
+    } catch (error) {
+      setModulesData((prev: any) => ({
+        ...prev,
+        meeting_notes: 0,
+      }));
+      return error;
+    }
+  };
+
+  const prefetchGovernanceProfile = async () => {
+    setModulesData((prev: any) => ({
+      ...prev,
+      governance_profile: false,
+    }));
+
+    if (!companyGlobalSearchId) {
+      return;
+    }
+
+    try {
+      const response = await governanceService.getCorporateGovernance(companyGlobalSearchId);
+
+      setModulesData((prev: any) => ({
+        ...prev,
+        governance_profile: Boolean(response?.profile),
+      }));
+    } catch (error) {
+      setModulesData((prev: any) => ({
+        ...prev,
+        governance_profile: false,
+      }));
       return error;
     }
   };
@@ -1218,6 +1295,7 @@ function Main() {
 
                 {[
                   "/notes",
+                  "/institution-notes",
                   "/proxy-contest-detail",
                   "/voting-data",
                   "/investor-profile",
@@ -1232,18 +1310,19 @@ function Main() {
                     location.pathname
                   ) &&
                     !isCompanySpecificView) ||
+                  shouldHideCompanyGlobalSearch ||
                   (location.pathname === "/" &&
                     activeSection === "investor-overview" &&
                     (activeSubSection === "voting_rationale" ||
                       !activeSubSection)) ? (
-                  !isNotesPage && (
+                  !isNotesPage && !shouldHideHeaderTitle && headerTitle ? (
                     <h1 className="font-semibold text-2xl">
-                      {pageTitles[location.pathname]}{" "}
+                      {headerTitle}{" "}
                       {location.pathname.includes("/notes") &&
                         selectedName &&
                         `- ${selectedName}`}
                     </h1>
-                  )
+                  ) : null
                 ) : (
                   <div
                     className="relative justify-center hidden md:flex md:ml-2"
@@ -1705,10 +1784,14 @@ function Main() {
                 switchAccount={switchAccount}
                 setSwitchAccount={setSwitchAccount}
               />
-              <NotificationAlert
+              {/* NotificationAlert ("What's New") is hidden — nothing in the current
+                  UI opens it, but it was still mounted here and firing a GET to
+                  /whatsnew/ on every dashboard load. Keeping the component and its
+                  state around (unused) in case this feature is revisited later. */}
+              {/* <NotificationAlert
                 notificationModalVisible={notificationModalVisible}
                 setNotificationModalVisible={setNotificationModalVisible}
-              />
+              /> */}
               {/* END: Notification & User Menu */}
             </div>
           </div>
@@ -1739,15 +1822,16 @@ function Main() {
 
       <div
         className={clsx([
-          "transition-[margin,width] duration-500 pt-[54px] pb-8 relative z-10 group mode",
+          "transition-[margin,width] duration-500 pt-[54px] relative z-10 group mode",
+          shouldShowSidebar ? "h-[calc(100vh-54px)] overflow-hidden pb-0" : "pb-8",
           { "xl:ml-[280px]": !compactMenu },
           { "xl:ml-[91px]": compactMenu },
           { "mode--light": !topBarActive },
         ])}
       >
-        <div className={clsx({ "pt-[10px] h-full flex": shouldShowSidebar })}>
-          <div className="px-5 mt-10 w-full">
-            <div className={clsx({ container: !shouldShowSidebar })}>
+        <div className={clsx({ "pt-[10px] h-full flex overflow-hidden": shouldShowSidebar })}>
+          <div className={clsx("w-full px-5", shouldShowSidebar ? "flex h-full min-h-0 flex-col pt-10 overflow-hidden" : "mt-10")}>
+            <div className={clsx(shouldShowSidebar ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "", { container: !shouldShowSidebar })}>
               <div
                 className={clsx(
                   "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",

@@ -2,9 +2,8 @@ import Button from "@/components/Base/Button";
 import { FormCheck, FormInput } from "@/components/Base/Form";
 import { Dialog } from "@/components/Base/Headless";
 import Lucide from "@/components/Base/Lucide";
-import { useAppDispatch, useAppSelector } from "@/stores/hooks";
+import { useAppDispatch } from "@/stores/hooks";
 import { AppDispatch } from "@/stores/store";
-import { createDynamicURL } from "@/utils/helper";
 import TomSelect from "@/components/Base/TomSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -14,9 +13,8 @@ import {
   useForm,
 } from "react-hook-form";
 import { toast } from "react-toastify";
-import { baseURL } from "@/constant";
 import Error from "@/components/Error";
-import { addEditNewWithdrawn, fetchShareHolderProposal, getSingleShareHolderData } from "@/stores/shareholderProposalSlice";
+import { addEditNewWithdrawn, getSingleShareHolderData } from "@/stores/shareholderProposalSlice";
 import { AddWithdrawnType, ShareHolderDropdown } from "@/types/shareHolder";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import TomSelectServer from "@/components/Base/TomSelect/ServerComponent";
@@ -28,16 +26,21 @@ interface AddWithdrawnProps {
   addNewWithdrawnModalVisible: boolean;
   setAddNewWithdrawnModalVisible: (visible: boolean) => void;
   selectedShareholderWithdrawn: AddWithdrawnType | null;
+  onSaved?: (payload: {
+    tabKey: "withdrawn";
+    action: "add" | "edit";
+    record: any;
+    previousRecord?: AddWithdrawnType | null;
+  }) => void;
 }
 
 const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
   addNewWithdrawnModalVisible,
   setAddNewWithdrawnModalVisible,
-  selectedShareholderWithdrawn
+  selectedShareholderWithdrawn,
+  onSaved,
 }) => {
   const dispatch: AppDispatch = useAppDispatch();
-  const { loading, page, filters } = useAppSelector((state) => state.sharedHolderNoAction);
-
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -68,9 +71,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       year: [],
     });
 
-  const { user, companyGlobalSearchName } = useAppSelector(
-    (state) => state.authentiction
-  );
+
   const getAllCaseStudyDropdowns = async () => {
     try {
       const res =
@@ -87,6 +88,8 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
     getAllCaseStudyDropdowns();
   }, []);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const onSubmit = async (data: AddWithdrawnType) => {
     const transformedData = {
       ...data,
@@ -95,6 +98,7 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
     };
 
     try {
+      setIsSubmitting(true);
       let response;
       if (selectedShareholderWithdrawn) {
         response = await dispatch(addEditNewWithdrawn({ id: selectedShareholderWithdrawn?.id!, data: transformedData })).unwrap();
@@ -106,18 +110,12 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       if (response.results?.id) {
         toast.success(selectedShareholderWithdrawn ? 'Shareholder Withdrawn Updated' : "New Shareholder Withdrawn Added");
         setAddNewWithdrawnModalVisible(false);
-
-        dispatch(
-          fetchShareHolderProposal(
-            createDynamicURL(
-              `${baseURL}/shareholder_proposal/withdrawn/`,
-              // { global_search: companyGlobalSearchName },
-              filters,
-              undefined,
-              page
-            )
-          )
-        );
+        onSaved?.({
+          tabKey: "withdrawn",
+          action: selectedShareholderWithdrawn ? "edit" : "add",
+          record: response.results,
+          previousRecord: selectedShareholderWithdrawn,
+        });
 
         if (selectedShareholderWithdrawn?.id && url) {
           dispatch(getSingleShareHolderData({ url: 'shareholder_proposal/withdrawn', id: Number(selectedShareholderWithdrawn?.id) }));
@@ -125,6 +123,8 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
       }
     } catch (error) {
       console.error("Error submitting form:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -403,18 +403,22 @@ const AddNewWithdrawn: React.FC<AddWithdrawnProps> = ({
               onClick={() => {
                 setAddNewWithdrawnModalVisible(false);
               }}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button variant="primary" type="submit" className="w-20">
-              {loading && (
+            <Button variant="primary" type="submit" className="min-w-[96px]" disabled={isSubmitting}>
+              {isSubmitting && (
                 <Lucide
                   icon="Loader"
-                  className={`w-4 h-4 mr-1.5 stroke-[1.3] ${loading ? "animate-spin" : ""
-                    }`}
+                  className="w-4 h-4 mr-1.5 stroke-[1.3] animate-spin"
                 />
               )}
-              Save
+              {isSubmitting
+                ? selectedShareholderWithdrawn
+                  ? "Updating..."
+                  : "Saving..."
+                : "Save"}
             </Button>
           </Dialog.Footer>
         </form>

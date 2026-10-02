@@ -94,6 +94,10 @@ function Main() {
   const isInitialInstitutionSync = useRef(true);
   const { user } = useAppSelector((state) => state.authentiction);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+
   const { handleSubmit, control, reset, setValue, watch } =
     useForm<InvestorProfileFilter>({
       defaultValues: {

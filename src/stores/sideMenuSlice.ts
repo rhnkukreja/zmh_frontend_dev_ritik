@@ -175,7 +175,7 @@ const initialState: any = {
     {
       icon: "BarChart2",
       pathname: "/custom-reports",
-      title: "Custom Reports",
+      title: "Benchmarking",
       subMenu: [
         {
           icon: "Users",
@@ -185,7 +185,7 @@ const initialState: any = {
         {
           icon: "ShieldCheck",
           pathname: "/custom-reports?tab=governance",
-          title: "Governance Screener",
+          title: "Corp. Governance",
           badge: "Beta",
         },
       ],

@@ -406,7 +406,7 @@ const GovernanceProfileTab = () => {
             <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary to-primary/90 flex-shrink-0 rounded-t-2xl">
               <div>
                 <h2 className="text-lg font-bold text-white">{modalCompanyName}</h2>
-                <p className="text-sm text-white/80">Governance Screener</p>
+                <p className="text-sm text-white/80">Corp. Governance</p>
               </div>
               <button
                 onClick={() => setModalCompanyId(null)}

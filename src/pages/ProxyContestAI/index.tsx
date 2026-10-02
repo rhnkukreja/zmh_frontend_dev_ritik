@@ -20,8 +20,10 @@ import { Popover, Dialog } from "@/components/Base/Headless";
 
 type ProxyContestTabKey = "overview" | "detailed" | "activist_profile";
 
-const DEFAULT_INSTITUTION_IDS = [33, 34];
-const DEFAULT_YEARS = ["2025", "2026"];
+// BlackRock (BAIS), BlackRock (BIS), Vanguard Capital Management,
+// State Street Investment Management, Vanguard Portfolio Management
+const DEFAULT_INSTITUTION_IDS = [1345, 1346, 999, 38, 1000];
+const DEFAULT_YEARS = ["2026"];
 
 // ── In-memory data cache with TTL (clears on page refresh) ─────────────────
 const DATA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -755,12 +757,12 @@ function ProxyContestAI() {
       </div>
 
       {/* ── Body: sidebar (sticky) + content ─────────────────────────────── */}
-      <div className="flex gap-6 flex-1 min-h-0 items-start">
+      <div className="flex flex-col xl:flex-row gap-6 flex-1 min-h-0 items-start">
 
         {/* Filters sidebar — sticky, stays in document flow (never overlaps content) */}
         {sidebarOpen && activeTab !== "activist_profile" && (
           <div
-            className="w-64 flex-shrink-0 sticky"
+            className="w-full xl:w-64 flex-shrink-0 xl:sticky"
             style={{
               top: `calc(4rem + ${stickyHeaderH}px + 0.75rem)`,
               height: `calc(100vh - 4rem - ${stickyHeaderH}px - 1.5rem)`,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAppSelector, useAppDispatch } from "@/stores/hooks";
 import { fetchCompanyHierarchyNotes } from "@/stores/domainNotesSlice";
-import LoadingIcon from "@/components/Base/LoadingIcon";
 import Lucide from "@/components/Base/Lucide";
 import clsx from "clsx";
 import { CompanyHierarchyItem } from "@/types/domainNotes";
@@ -15,28 +14,40 @@ interface CompanyHierarchyProps {
 }
 
 const HierarchySkeleton = () => (
-  <div>
-    <div className="p-4 border-b border-gray-200">
-      <div className="h-10 w-full rounded-lg bg-slate-100 animate-pulse" />
+  <div className="flex h-full flex-col bg-white">
+    <div className="border-b border-slate-200 bg-white px-4 py-4">
+      <div className="h-11 w-full animate-pulse rounded-xl bg-slate-100" />
     </div>
-    <div className="p-3 space-y-3">
-      {Array.from({ length: 7 }).map((_, index) => (
-        <div key={index} className="border border-gray-100 rounded-lg overflow-hidden">
+    <div className="flex flex-1 flex-col gap-3 overflow-hidden px-3 py-3">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="overflow-hidden rounded-lg border border-gray-100 bg-white">
           <div className="flex items-center justify-between p-4">
             <div
-              className="h-4 rounded bg-slate-200 animate-pulse"
+              className="h-4 animate-pulse rounded bg-slate-200"
               style={{ width: `${60 + ((index % 3) + 1) * 8}%` }}
             />
-            <div className="h-5 w-5 rounded bg-slate-200 animate-pulse" />
+            <div className="h-5 w-5 animate-pulse rounded bg-slate-200" />
           </div>
           {index === 1 && (
-            <div className="px-4 pb-4 ml-6 border-l border-gray-100 space-y-2">
-              <div className="h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
-              <div className="h-4 w-2/3 rounded bg-slate-100 animate-pulse" />
+            <div className="ml-6 space-y-2 border-l border-gray-100 px-4 pb-4">
+              <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-slate-100" />
             </div>
           )}
         </div>
       ))}
+      <div className="flex min-h-[110px] flex-1 flex-col justify-between rounded-lg border border-gray-100 bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200" />
+          <div className="h-5 w-5 animate-pulse rounded bg-slate-200" />
+        </div>
+        <div className="ml-6 space-y-2 border-l border-gray-100 px-4 py-1">
+          <div className="h-4 w-4/5 animate-pulse rounded bg-slate-100" />
+          <div className="h-4 w-3/5 animate-pulse rounded bg-slate-100" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-slate-100" />
+        </div>
+        <div className="h-4 w-2/5 animate-pulse rounded bg-slate-100" />
+      </div>
     </div>
   </div>
 );
@@ -65,12 +76,11 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
   };
 
   const handleCompanyClick = (companyName: string) => {
-    setSelectedCompany(companyName);
-    setSelectedInstitution("");
     toggleCompany(companyName);
   };
 
-  const handleInstitutionClick = (institutionName: string) => {
+  const handleInstitutionClick = (companyName: string, institutionName: string) => {
+    setSelectedCompany(companyName);
     setSelectedInstitution(institutionName);
   };
 
@@ -107,9 +117,9 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
     dispatch(fetchCompanyHierarchyNotes());
   };
 
-  // Auto-select first company and institution when data loads or when selections are cleared
+  // Keep the selected company/institution pair valid when the hierarchy reloads or search resets.
   useEffect(() => {
-    if (!companyHierarchy?.length) {
+    if (!companyHierarchy?.length || searchTerm.trim().length > 0) {
       return;
     }
 
@@ -117,16 +127,28 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
       companyHierarchy.find((item) => item.main_heading === selectedCompany) || companyHierarchy[0];
     const companyName = currentCompany.main_heading;
     const institutions = Object.keys(currentCompany.sub_heading || {});
+    const nextInstitution =
+      institutions.includes(selectedInstitution) ? selectedInstitution : institutions[0] || "";
 
-    if (!selectedCompany) {
+    if (selectedCompany !== companyName) {
       setSelectedCompany(companyName);
-      setExpandedCompanies([companyName]);
     }
 
-    if (!selectedInstitution && institutions.length > 0) {
-      setSelectedInstitution(institutions[0]);
+    if (nextInstitution !== selectedInstitution) {
+      setSelectedInstitution(nextInstitution);
     }
-  }, [companyHierarchy, selectedCompany, selectedInstitution, setSelectedCompany, setSelectedInstitution]);
+
+    setExpandedCompanies((prev) =>
+      prev.includes(companyName) ? prev : [...prev, companyName]
+    );
+  }, [
+    companyHierarchy,
+    searchTerm,
+    selectedCompany,
+    selectedInstitution,
+    setSelectedCompany,
+    setSelectedInstitution,
+  ]);
 
   if (loadingCompanyHierarchy) {
     return <HierarchySkeleton />;
@@ -134,105 +156,97 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
 
   if (!companyHierarchy || companyHierarchy.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <span className="text-gray-500">No companies found</span>
+      <div className="flex h-full items-center justify-center bg-white px-6">
+        <span className="text-sm font-medium text-slate-500">No companies found</span>
       </div>
     );
   }
 
   return (
-    <div>
-      {/* Search Bar */}
-      <div className="p-4 border-b border-gray-200">
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      <div className="border-b border-slate-200 bg-white px-4 py-4">
         <div className="relative">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search companies..."
-            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm text-slate-700 shadow-sm transition focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
           <Lucide
             icon="Search"
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-slate-400"
           />
           {searchTerm && (
             <button
               onClick={handleClearSearch}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              className="absolute right-3 top-1/2 -translate-y-1/2 transform"
             >
-              <Lucide icon="X" className="w-4 h-4 text-gray-500 hover:text-gray-700" />
+              <Lucide icon="X" className="h-4 w-4 text-slate-400 transition hover:text-slate-600" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Results */}
-      {isSearching ? (
-        <div className="flex justify-center items-center p-8">
-          <LoadingIcon
-            icon="three-dots"
-            className="w-6 h-6 text-primary"
-            color="#800000"
-          />
-        </div>
-      ) : (
-        <>
-          {(searchTerm ? searchResults : companyHierarchy).map((item: CompanyHierarchyItem, index: number) => {
-            const companyName = item.main_heading;
-            const isExpanded = expandedCompanies.includes(companyName);
-            const institutions = Object.keys(item.sub_heading || {});
+      <div className="min-h-0 flex-1 overflow-y-auto bg-white">
+        {isSearching ? (
+          <HierarchySkeleton />
+        ) : (
+          <div className="pb-3">
+            {(searchTerm ? searchResults : companyHierarchy).map((item: CompanyHierarchyItem, index: number) => {
+              const companyName = item.main_heading;
+              const isExpanded = expandedCompanies.includes(companyName);
+              const institutions = Object.keys(item.sub_heading || {});
 
-            return (
-              <div key={index} className="border-b border-gray-200">
-                {/* Company Header */}
-                <div
-                  className={clsx(
-                    "flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors",
-                    selectedCompany === companyName && "bg-red-50 border-l-4 border-primary"
+              return (
+                <div key={index} className="border-b border-slate-100 last:border-b-0">
+                  <div
+                    className={clsx(
+                      "flex cursor-pointer items-center justify-between px-4 py-3.5 transition-colors hover:bg-slate-50",
+                      selectedCompany === companyName && "border-l-4 border-primary bg-rose-50/70 pl-3"
+                    )}
+                    onClick={() => handleCompanyClick(companyName)}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center">
+                      <span className="text-sm font-semibold leading-5 text-slate-800">
+                        {companyName}
+                      </span>
+                    </div>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100/80">
+                      <Lucide
+                        icon={isExpanded ? "ChevronDown" : "ChevronRight"}
+                        className="h-4 w-4 text-slate-500"
+                      />
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="ml-6 border-l border-slate-200 bg-slate-50/50 py-2">
+                      {institutions.map((institutionName, institutionIndex) => {
+                        return (
+                          <div
+                            key={institutionIndex}
+                            className={clsx(
+                              "flex cursor-pointer items-center px-3 py-2 text-sm transition-colors hover:bg-white",
+                              selectedInstitution === institutionName && selectedCompany === companyName
+                                ? "bg-white font-medium text-primary"
+                                : "text-slate-600 hover:text-slate-900"
+                            )}
+                            onClick={() => handleInstitutionClick(companyName, institutionName)}
+                          >
+                            <Lucide icon="CornerDownRight" className="mr-2 h-4 w-4 text-slate-400" />
+                            <span className="flex-1 leading-5">{institutionName}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
-                  onClick={() => handleCompanyClick(companyName)}
-                >
-                  <div className="flex items-center flex-1">
-                    <span className="font-medium text-gray-800">
-                      {companyName}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center w-8 h-8">
-                    <Lucide
-                      icon={isExpanded ? "ChevronDown" : "ChevronRight"}
-                      className="w-5 h-5 text-gray-500"
-                    />
-                  </div>
                 </div>
-
-                {/* Institutions List */}
-                {isExpanded && (
-                  <div className="ml-6 border-l border-gray-200">
-                    {institutions.map((institutionName, institutionIndex) => {
-                      return (
-                        <div
-                          key={institutionIndex}
-                          className={clsx(
-                            "flex items-center px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors",
-                            selectedInstitution === institutionName && selectedCompany === companyName
-                              ? "text-primary font-medium bg-gray-50"
-                              : "text-gray-700 hover:text-gray-900"
-                          )}
-                          onClick={() => handleInstitutionClick(institutionName)}
-                        >
-                          <Lucide icon="CornerDownRight" className="w-4 h-4 mr-2 text-gray-400" />
-                          <span className="flex-1">{institutionName}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

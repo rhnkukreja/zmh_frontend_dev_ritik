@@ -1,163 +1,110 @@
 import React, { useEffect, useState } from "react";
-import SubSidebar from "./components/SubSidebar";
-import NotesList from "./components/NotesList";
-import NoteDetails from "./components/NoteDetails";
-import Header from "./components/Header";
-
+import { useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { useAppSelector } from "@/stores/hooks";
-
+import SubSidebar from "./components/SubSidebar";
+import NoteDetails from "./components/NoteDetails";
+import Lucide from "@/components/Base/Lucide";
+import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
+import { AppDispatch } from "@/stores/store";
 import {
-  clearSelectedNote,
-  deleteFolder,
-  fetchFolders,
-  removeAllNotes,
   setSelectedFolder,
   setSelectedGroup,
   setSelectedNote,
 } from "@/stores/notesSlice";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/stores/store";
-import EmptyState from "./components/EmptyState";
-import Lucide from "@/components/Base/Lucide";
-import AddDomainNoteModal from "@/components/DomainNotes/AddDomainNotesModal";
-import { createDynamicURL } from "@/utils/helper";
-import { baseURL } from "@/constant";
-import { fetchDomainNotes, fetchInstitutionHierarchyNotes, fetchCompanyHierarchyNotes } from "@/stores/domainNotesSlice";
+import {
+  fetchInstitutionHierarchyNotes,
+  fetchCompanyHierarchyNotes,
+} from "@/stores/domainNotesSlice";
+
+const NoteDetailsSkeleton = () => (
+  <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
+    <div className="border-b border-slate-200 px-5 py-4">
+      <div className="h-7 w-2/3 animate-pulse rounded-lg bg-slate-100" />
+    </div>
+    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden px-5 py-5">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={index}
+          className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div className="space-y-3">
+            <div className="h-4 w-11/12 animate-pulse rounded bg-slate-100" />
+            <div className="h-4 w-10/12 animate-pulse rounded bg-slate-100" />
+            <div className="h-4 w-7/12 animate-pulse rounded bg-slate-100" />
+          </div>
+          <div className="mt-5 flex justify-end">
+            <div className="h-3 w-20 animate-pulse rounded bg-slate-100" />
+          </div>
+        </div>
+      ))}
+      <div className="flex min-h-[120px] flex-1 flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="space-y-3">
+          <div className="h-4 w-10/12 animate-pulse rounded bg-slate-100" />
+          <div className="h-4 w-9/12 animate-pulse rounded bg-slate-100" />
+          <div className="h-4 w-8/12 animate-pulse rounded bg-slate-100" />
+        </div>
+        <div className="mt-5 flex justify-end">
+          <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 const Notes: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<
-    "institution" | "other" | "company"
-  >("institution");
-  const { user } = useAppSelector((state) => state.authentiction);
-  const { selectedFolder } = useAppSelector((state) => state.notes);
-  const isCorporateUser = user?.user_role?.toLowerCase() === "corporate";
+  const location = useLocation();
+  const dispatch = useDispatch<AppDispatch>();
+  const activeTab: "institution" | "company" =
+    location.pathname === "/institution-notes" ? "institution" : "company";
+  const sectionLabel = activeTab === "institution" ? "Institution Insights" : "Company";
+  const pageLabel = activeTab === "institution" ? "Notes" : "Meeting Notes";
+
   const [companyName, setCompanyName] = useState<string>("");
   const [institutionName, setInstitutionName] = useState<string>("");
   const [selectedInstitution, setSelectedInstitution] = useState<string>("");
   const [selectedCompany, setSelectedCompany] = useState<string>("");
-  const [addNoteModalVisible, setAddNoteModalVisible] =
-    useState<boolean>(false);
-  const dispatch = useDispatch<AppDispatch>();
-  const { selectedNote, selectedGroup } = useAppSelector(
-    (state) => state.notes
+  const [addNoteModalVisible, setAddNoteModalVisible] = useState<boolean>(false);
+  const { loadingInstitutionHierarchy, loadingCompanyHierarchy } = useAppSelector(
+    (state) => state.domainNotes
   );
-  const handleTabSwitch = (activeTab: "institution" | "other" | "company") => {
-    if (isCorporateUser && activeTab !== "institution") {
-      return;
-    }
 
-    setActiveTab(activeTab);
-    
-    // Clear selections when switching tabs to allow auto-selection
-    if (activeTab === "other") {
-      setCompanyName("");
-      setInstitutionName("");
-      setSelectedInstitution("");
-      setSelectedCompany("");
-      dispatch(setSelectedGroup(null));
-      dispatch(setSelectedNote(null));
-    } else {
-      // For institution/company tabs, clear all selections to trigger auto-selection
-      setSelectedInstitution("");
-      setSelectedCompany("");
-      dispatch(setSelectedFolder(null));
-      dispatch(setSelectedNote(null));
-    }
-
-    // Fetch hierarchy data when switching tabs
-    if (activeTab === "institution") {
-      dispatch(fetchInstitutionHierarchyNotes());
-    } else if (activeTab === "company") {
-      dispatch(fetchCompanyHierarchyNotes());
-    }
-  };
   const fetchData = async () => {
     if (activeTab === "institution") {
-      // Refresh institution hierarchy for institution tab
       await dispatch(fetchInstitutionHierarchyNotes());
-    } else if (activeTab === "company") {
-      // Refresh company hierarchy for company tab
-      await dispatch(fetchCompanyHierarchyNotes());
-    } else if (selectedGroup.institution_id && selectedGroup.company_id) {
-      const dynamicURL = createDynamicURL(
-        `${baseURL}/user/domain_notes/`,
-        {
-          institution_id: JSON.stringify(selectedGroup.institution_id),
-          company_id: JSON.stringify(selectedGroup.company_id),
-        },
-        undefined,
-        1
-      );
-      const response = await dispatch(fetchDomainNotes(dynamicURL));
-
-      dispatch(
-        setSelectedGroup({
-          ...selectedGroup,
-          data: (response?.payload as { results: any }).results,
-        })
-      );
-    }
-  };
-  useEffect(() => {
-    if (isCorporateUser && activeTab !== "institution") {
-      setActiveTab("institution");
       return;
     }
 
-    dispatch(setSelectedGroup(null));
-    // Fetch hierarchy data on mount based on active tab
-    if (activeTab === "institution") {
-      dispatch(fetchInstitutionHierarchyNotes());
-    } else if (activeTab === "company") {
-      dispatch(fetchCompanyHierarchyNotes());
-    }
-  }, [dispatch, activeTab, isCorporateUser]);
+    await dispatch(fetchCompanyHierarchyNotes());
+  };
 
-  const visibleTabs = isCorporateUser
-    ? ["institution" as const]
-    : (["institution", "company", "other"] as const);
+  useEffect(() => {
+    setCompanyName("");
+    setInstitutionName("");
+    setSelectedInstitution("");
+    setSelectedCompany("");
+    dispatch(setSelectedFolder(null));
+    dispatch(setSelectedGroup(null));
+    dispatch(setSelectedNote(null));
+
+    void fetchData();
+  }, [dispatch, activeTab]);
+
+  const hasSelection = Boolean(selectedInstitution && selectedCompany);
+  const isHierarchyLoading =
+    activeTab === "institution" ? loadingInstitutionHierarchy : loadingCompanyHierarchy;
+
   return (
-    <div className="container m-auto h-[calc(100vh-70px)] flex flex-col pt-3 pb-[30px]">
+    <div className="container m-auto flex h-full min-h-0 flex-col overflow-hidden pt-3 pb-3">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4 mb-3">
         <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
-          <span className="text-slate-500">Company</span>
+          <span className="text-slate-500">{sectionLabel}</span>
           <span className="text-slate-400">›</span>
-          <span>Meeting Notes</span>
+          <span>{pageLabel}</span>
         </h1>
       </div>
-      <div className="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:bg-darkmode-800">
-        <div className="w-full flex justify-between px-4 py-6 bg-white dark:bg-darkmode-800">
-          <div className="flex gap-4">
-            {visibleTabs.map((tab) => (
-              <button
-                key={tab}
-                className={`px-5 py-2 rounded-t-lg font-semibold transition-all ${
-                  activeTab === tab
-                    ? "bg-primary text-white shadow"
-                    : "bg-gray-200 text-gray-700 dark:bg-darkmode-600 dark:text-gray-300"
-                }`}
-                onClick={() => handleTabSwitch(tab)}
-              >
-                {tab === "institution"
-                  ? "Institution"
-                  : tab === "company"
-                    ? "Company"
-                    : "Other"}
-              </button>
-            ))}
-          </div>
-          {activeTab === "institution" || activeTab === "company" ? (
-            <button
-              className="flex items-center gap-x-2 px-4 py-2 text-white bg-primary border-primary dark:border-primary rounded "
-              onClick={() => setAddNoteModalVisible(true)}
-            >
-              <Lucide icon="Plus" className="w-4 h-4" />
-              Add Notes
-            </button>
-          ) : null}
-        </div>
-
-        <div className="flex h-full">
+      <div className="mt-3 flex min-h-0 flex-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:bg-darkmode-800">
+        <div className="flex h-full min-h-0 flex-1">
           <SubSidebar
             activeTab={activeTab}
             setCompanyName={setCompanyName}
@@ -170,52 +117,38 @@ const Notes: React.FC = () => {
             setSelectedCompany={setSelectedCompany}
           />
 
-          <div className="flex flex-col ml-5 overflow-hidden w-full">
-            <Header />
-            <div className="flex flex-col lg:flex-row lg:flex-1 h-full pb-2 bg-white dark:bg-darkmode-800 p-4">
-              {activeTab === "institution" && (
-                <>
-                  {selectedInstitution && selectedCompany ? (
-                    <div className="w-full h-full">
-                      <NoteDetails
-                        key={`institution-${selectedInstitution}-${selectedCompany}`}
-                        activeTab={activeTab}
-                        companyName={companyName}
-                        institutionName={institutionName}
-                        selectedInstitution={selectedInstitution}
-                        selectedCompany={selectedCompany}
-                      />
-                    </div>
-                  ) : (
-                    <EmptyState
-                      icon="NotebookPen"
-                      message={!selectedInstitution ? "Select an institution" : "Select a company"}
-                    />
-                  )}
-                </>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-darkmode-800">
+            <div className="flex justify-end border-b border-slate-200 px-6 py-4">
+              <button
+                className="inline-flex items-center gap-x-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
+                onClick={() => setAddNoteModalVisible(true)}
+              >
+                <Lucide icon="Plus" className="h-4 w-4" />
+                Add Notes
+              </button>
+            </div>
+
+            <div className="flex min-h-0 flex-1 overflow-hidden bg-slate-50/40 p-5 dark:bg-darkmode-800">
+              {isHierarchyLoading ? (
+                <div className="h-full min-h-0 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <NoteDetailsSkeleton />
+                </div>
+              ) : hasSelection ? (
+                <div className="h-full min-h-0 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                  <NoteDetails
+                    key={`${activeTab}-${selectedInstitution}-${selectedCompany}`}
+                    activeTab={activeTab}
+                    companyName={companyName}
+                    institutionName={institutionName}
+                    selectedInstitution={selectedInstitution}
+                    selectedCompany={selectedCompany}
+                  />
+                </div>
+              ) : (
+                <div className="h-full min-h-0 w-full rounded-xl border border-slate-200 bg-white shadow-sm" />
               )}
-              {activeTab === "company" && (
-                <>
-                  {selectedCompany && selectedInstitution ? (
-                    <div className="w-full h-full">
-                      <NoteDetails
-                        key={`company-${selectedCompany}-${selectedInstitution}`}
-                        activeTab={activeTab}
-                        companyName={companyName}
-                        institutionName={institutionName}
-                        selectedInstitution={selectedInstitution}
-                        selectedCompany={selectedCompany}
-                      />
-                    </div>
-                  ) : (
-                    <EmptyState
-                      icon="NotebookPen"
-                      message={!selectedCompany ? "Select a company" : "Select an institution"}
-                    />
-                  )}
-                </>
-              )}
-              {activeTab === "other" && (
+
+              {/* {activeTab === "other" && (
                 <>
                   {selectedFolder === null ? (
                     <EmptyState icon="NotebookPen" message="No folder selected" />
@@ -231,7 +164,7 @@ const Notes: React.FC = () => {
                     </>
                   )}
                 </>
-              )}
+              )} */}
 
               {addNoteModalVisible && (
                 <AddDomainNoteModal

@@ -60,8 +60,14 @@ class DashboardService {
       appendArray('index', filters?.index);
       appendArray('institution_name', filters?.institution_name);
 
-      if (Array.isArray(filters?.market) && filters.market.length > 0) {
-        params.append('country', JSON.stringify(filters.market));
+      const countryFilter = Array.isArray(filters?.country) && filters.country.length > 0
+        ? filters.country
+        : Array.isArray(filters?.market) && filters.market.length > 0
+          ? filters.market
+          : null;
+
+      if (countryFilter) {
+        params.append('country', JSON.stringify(countryFilter));
       }
 
       if (filters?.approval_status) {
@@ -103,7 +109,7 @@ class DashboardService {
       } else {
         // Refactored: Use proper URL construction with URLSearchParams for consistency
         const params = new URLSearchParams();
-        if (companyName) {
+        if (companyName && companyName !== "a") {
           params.append('company_name', companyName);
         }
 
@@ -118,7 +124,10 @@ class DashboardService {
         appendCurrentFilters(params, currentFilters);
 
         // Fallback country for initial broad load only
-        if (!(Array.isArray(currentFilters?.market) && currentFilters.market.length > 0)) {
+        if (
+          !(Array.isArray(currentFilters?.country) && currentFilters.country.length > 0) &&
+          !(Array.isArray(currentFilters?.market) && currentFilters.market.length > 0)
+        ) {
           params.append('country', JSON.stringify(['USA', 'Canada']));
         }
 
@@ -421,6 +430,17 @@ class DashboardService {
     return { results };
   }
 
+  public async getNpxProxyDashboardFile(url: string): Promise<{
+    result: Blob;
+  }> {
+    const response = await axiosInstance.get(url, {
+      responseType: "blob",
+    });
+    return {
+      result: response.data,
+    };
+  }
+
   public async fetchNpxProxyDashboard(
     url: string
   ): Promise<{ results: any; count: number }> {
@@ -652,10 +672,15 @@ class DashboardService {
   //   };
   // }
 
-  public async getVotingAnalytics(ticker: string): Promise<{
+  public async getVotingAnalytics(companyId: string | number, meetingDate?: string): Promise<{
     result: any;
   }> {
-    const url = `${baseURL}/voting_report_8k/?ticker=${ticker}`;
+    // By default (no meeting_date) the backend returns the most recent
+    // meeting's data; passing meeting_date scopes it to a specific meeting
+    // (a company can hold more than one meeting in the same year).
+    const url = meetingDate
+      ? `${baseURL}/voting_report_8k/?company_id=${companyId}&meeting_date=${meetingDate}`
+      : `${baseURL}/voting_report_8k/?company_id=${companyId}`;
     const result = await this.fetchWithCache<any>(url);
     return {
       result,
