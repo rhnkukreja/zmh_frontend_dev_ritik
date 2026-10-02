@@ -462,6 +462,50 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
   const active8kLinks = activeMeetingYear
     ? eightKLinksByYear?.[`url_${activeMeetingYear}`] || []
     : [];
+  const meetingTypesByYear = useMemo(() => {
+    const entries = Array.isArray(agmSummaryDetails?.total_meeting_date_years)
+      ? agmSummaryDetails.total_meeting_date_years
+      : [];
+
+    return entries.reduce((result: Record<string, Array<{ date: string; meeting_type: string }>>, item: any) => {
+      const year = item?.year ? String(item.year) : "";
+      const meetingDate = item?.meeting_date ? String(item.meeting_date) : "";
+      const meetingType = item?.meeting_type ? String(item.meeting_type) : "";
+
+      if (!year || !meetingDate || !meetingType) return result;
+
+      if (!result[year]) {
+        result[year] = [];
+      }
+
+      result[year].push({ date: meetingDate, meeting_type: meetingType });
+      result[year].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+      return result;
+    }, {});
+  }, [agmSummaryDetails?.total_meeting_date_years]);
+  const active8kMeetingTypes = activeMeetingYear ? meetingTypesByYear[activeMeetingYear] || [] : [];
+
+  const normalizeMeetingTypeLabel = (meetingType: string) => {
+    const cleaned = String(meetingType || "").replace(/\s*meeting\s*$/i, "").trim();
+    return cleaned || String(meetingType || "").trim();
+  };
+
+  const get8kButtonLabel = (index: number) => {
+    if (active8kMeetingTypes.length <= 1) {
+      return "8-K";
+    }
+
+    const rawMeetingType = active8kMeetingTypes[index]?.meeting_type || active8kMeetingTypes[0]?.meeting_type || "";
+    const meetingTypeLabel = normalizeMeetingTypeLabel(rawMeetingType);
+
+    if (meetingTypeLabel) {
+      return active8kLinks.length > active8kMeetingTypes.length
+        ? `8-K (${meetingTypeLabel}) ${index + 1}`
+        : `8-K (${meetingTypeLabel})`;
+    }
+
+    return active8kLinks.length > 1 ? `8-K ${index + 1}` : "8-K";
+  };
 
   const handle8kLink = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -842,7 +886,7 @@ const index = ({ companyGlobalSearchTicker, companyGlobalSearchName, isMeetingMo
                           onClick={() => handle8kLink(url)}
                           className="px-2 bg-white rounded-md min-w-[40px] h-[40px] flex items-center justify-center border-red-800 border-2 font-semibold text-red-800 border-solid cursor-pointer hover:bg-red-800 hover:border-white hover:text-white"
                         >
-                          {active8kLinks.length > 1 ? `8-K ${index + 1}` : "8-K"}
+                          {get8kButtonLabel(index)}
                         </button>
                       ))}
                       {analyticsData && shareholderMeetingView === "all" && (

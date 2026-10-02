@@ -86,28 +86,7 @@ function Main() {
       : activeTab === 'investor-overview'
         ? 'Institution Insights'
         : 'Company';
-  const showHeaderSeparator = activeTab !== 'shareholder-meeting-results';
-  const headerLabel =
-    activeTab === 'company-overview' ? 'Overview' :
-    activeTab === 'governance-profile' ? 'Governance Profile' :
-    activeTab === 'compensation' ? 'Compensation' :
-    activeTab === 'investor-overview'
-      ? activeSubSection === 'engagement_priorities'
-        ? 'Engagement Priorities'
-        : activeSubSection === 'reporting_expectations'
-          ? 'Reporting Expectations'
-          : 'Overview'
-      : activeTab === 'ownership' ? 'Ownership' :
-      activeTab === 'shareholder-meeting-results' ? 'Shareholder Meeting' :
-      activeTab === 'voting-data'
-        ? activeSubSection === 'voting-rationale'
-          ? 'Voting Rationale'
-          : activeSubSection === 'npx'
-            ? 'N-PX'
-            : activeSubSection === 'npx-analytics'
-              ? 'N-PX Analytics'
-              : 'By Fund Family'
-        : 'Overview';
+  const showHeaderSeparator = true;
 
   // Apply active section from back-navigation state / sessionStorage once on mount.
   useEffect(() => {
@@ -277,7 +256,11 @@ function Main() {
   const agmAvailableMeetingDates = Array.isArray(agmSummaryDetails?.total_meeting_date_years)
     ? agmSummaryDetails.total_meeting_date_years
         .filter((item: any) => item?.year && item?.meeting_date)
-        .map((item: any) => ({ year: String(item.year), date: String(item.meeting_date) }))
+        .map((item: any) => ({
+          year: String(item.year),
+          date: String(item.meeting_date),
+          meeting_type: item?.meeting_type ? String(item.meeting_type) : "",
+        }))
     : [];
   const dashboardSelectedMeetingYear = searchParams.get("year") || agmAvailableYears[0];
   const dashboardMeetingDetails =
@@ -287,6 +270,30 @@ function Main() {
   const _companyNameKey = _companyDetails ? Object.keys(_companyDetails)[0] : undefined;
   const _meetingDetailsStr = _companyNameKey ? _companyDetails[_companyNameKey] : undefined;
   const meetingDateHeader = typeof _meetingDetailsStr === 'string' ? _meetingDetailsStr.split(" - ").pop() : undefined;
+  const shareholderMeetingDate = searchParams.get("meeting_date") || agmAvailableMeetingDates[0]?.date || "";
+  const shareholderMeetingType = agmAvailableMeetingDates.find((item: any) => item.date === shareholderMeetingDate)?.meeting_type;
+  const shareholderMeetingHeader = shareholderMeetingType ? `Shareholder (${shareholderMeetingType})` : "Shareholder Meeting";
+  const headerLabel =
+    activeTab === 'company-overview' ? 'Overview' :
+    activeTab === 'governance-profile' ? 'Governance Profile' :
+    activeTab === 'compensation' ? 'Compensation' :
+    activeTab === 'investor-overview'
+      ? activeSubSection === 'engagement_priorities'
+        ? 'Engagement Priorities'
+        : activeSubSection === 'reporting_expectations'
+          ? 'Reporting Expectations'
+          : 'Overview'
+      : activeTab === 'ownership' ? 'Ownership' :
+      activeTab === 'shareholder-meeting-results' ? shareholderMeetingHeader :
+      activeTab === 'voting-data'
+        ? activeSubSection === 'voting-rationale'
+          ? 'Voting Rationale'
+          : activeSubSection === 'npx'
+            ? 'N-PX'
+            : activeSubSection === 'npx-analytics'
+              ? 'N-PX Analytics'
+              : 'By Fund Family'
+        : 'Overview';
 
   const [autoScrapedData, setAutoScrapedData] = useState<Record<string, any>>({});
   const [autoScrapeQueue, setAutoScrapeQueue] = useState<string[]>([]);
