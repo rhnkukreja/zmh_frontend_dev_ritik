@@ -163,9 +163,15 @@ const NpxInstitutionView = () => {
     company_name: filters.company_name || [],
     company_ids: filters.company_ids || [],
   });
+  const [institutionSelection, setInstitutionSelection] = useState<string[]>(filters.investor_company || []);
   const hasBootstrappedInstitutionRef = useRef(false);
   const skipNextDropdownEffectRef = useRef(false);
   const hasSelectedInstitution = Boolean(filters.investor_company && filters.investor_company.length > 0 && filters.investor_company[0]);
+  const isInstitutionSelectionPending = useMemo(() => {
+    const draft = institutionSelection?.[0] || "";
+    const committed = filters.investor_company?.[0] || "";
+    return draft !== committed;
+  }, [institutionSelection, filters.investor_company]);
 
   useEffect(() => {
     if (isPageReloadOnce(NPX_RELOAD_SESSION_KEY)) return;
@@ -195,7 +201,7 @@ const NpxInstitutionView = () => {
   }, [selectedInstitution, selectedYearKey]);
 
   const hasStatsData = Boolean(npxProposalVotingStats);
-  const isStatsLoading = dropdownLoading || (npxProposalVotingStatsLoading && !hasStatsData);
+  const isStatsLoading = dropdownLoading || npxProposalVotingStatsLoading;
 
   const availableDateRange = useMemo(() => {
     const range = dropdowns?.available_date_range;
@@ -419,6 +425,7 @@ const NpxInstitutionView = () => {
         const defaultInstitution = pickDefaultInstitution(institutions);
 
         if (defaultInstitution) {
+          setInstitutionSelection([defaultInstitution]);
           setFilters((prev) => ({
             ...prev,
             investor_company: [defaultInstitution],
@@ -475,6 +482,10 @@ const NpxInstitutionView = () => {
   };
 
   useEffect(() => {
+    if (isInstitutionSelectionPending) {
+      return;
+    }
+
     if (!hasSelectedInstitution) {
       setDropdowns({});
       setShowFundName(false);
@@ -492,9 +503,12 @@ const NpxInstitutionView = () => {
 
     loadDropdowns(filters.investor_company, filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, filters.investor_company, filters.company_name, filters.company_ids, meetingDate, hasSelectedInstitution]);
+  }, [filters.year, filters.date_range, filters.investor_company, filters.company_name, filters.company_ids, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
 
   useEffect(() => {
+    if (isInstitutionSelectionPending) {
+      return;
+    }
     if (!hasSelectedInstitution) {
       return;
     }
@@ -502,7 +516,7 @@ const NpxInstitutionView = () => {
     loadStats(1);
     setActivePage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, meetingDate, hasSelectedInstitution]);
+  }, [filters.year, filters.date_range, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
     setFilters((prev) => {
@@ -564,6 +578,9 @@ const NpxInstitutionView = () => {
       setCompanySelection(nextCompanySelection);
     } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword") {
       next[key] = (next[key] as string[] | undefined)?.filter((v) => v !== value) || [];
+      if (key === "investor_company") {
+        setInstitutionSelection(next.investor_company || []);
+      }
     }
 
     setFilters(next);
@@ -576,11 +593,7 @@ const NpxInstitutionView = () => {
   const handleInstitutionChange = async (selected: any) => {
     const institutionValue = selected?.label ? String(selected.label) : "";
     setShowInstitutionFirstMessage(false);
-    setFilters((prev) => ({
-      ...prev,
-      investor_company: institutionValue ? [institutionValue] : [],
-      fund_name: [],
-    }));
+    setInstitutionSelection(institutionValue ? [institutionValue] : []);
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
   };
@@ -622,6 +635,7 @@ const NpxInstitutionView = () => {
     };
     const nextFilters: FilterState = {
       ...filters,
+      investor_company: institutionSelection,
       company_name: appliedCompanySelection.company_name,
       company_ids: appliedCompanySelection.company_ids,
     };
@@ -637,6 +651,7 @@ const NpxInstitutionView = () => {
   const handleClear = () => {
     const fallbackYear = sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString();
     setFilters({ investor_company: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "" });
+    setInstitutionSelection([]);
     setCompanySelection({ company_name: [], company_ids: [] });
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
@@ -724,10 +739,10 @@ const NpxInstitutionView = () => {
 
   const selectedInstitutionValue = useMemo(
     () => {
-      const selected = filters.investor_company?.[0];
+      const selected = institutionSelection?.[0];
       return selected ? { value: selected, label: selected } : null;
     },
-    [filters.investor_company]
+    [institutionSelection]
   );
 
   const selectedCompanyValues = useMemo(
