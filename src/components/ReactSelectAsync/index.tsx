@@ -308,8 +308,9 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
 
   const handleFocus = () => {
     setIsFocused(true);
-    // Only clear input if there's no current value or it's an empty array
-    if (!value || (Array.isArray(value) && value.length === 0)) {
+    // Institution searches should always start from a clean query so the first
+    // typed character isn't swallowed by stale controlled input text.
+    if (isInstitution || !value || (Array.isArray(value) && value.length === 0)) {
       setInputValue("");
     }
   };
@@ -323,8 +324,9 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   };
 
   const handleMenuOpen = () => {
-    // Only clear input when menu opens if there's no current value or it's an empty array
-    if (!value || (Array.isArray(value) && value.length === 0)) {
+    // Institution searches should open with an empty text box so typing starts
+    // with the first letter the user presses.
+    if (isInstitution || !value || (Array.isArray(value) && value.length === 0)) {
       setInputValue("");
     }
   };
