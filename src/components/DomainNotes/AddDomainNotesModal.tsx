@@ -57,6 +57,9 @@ const AddDomainNoteModal = ({
   const { user } = useAppSelector((state) => state.authentiction);
   const isCorporateUser =
     !!user?.user_role && user.user_role.toLowerCase() === "corporate";
+  const canShareNote =
+    user?.user_type?.toLowerCase() === "admin" ||
+    (mode === "edit" && selectedNote?.shared === true);
   const corporateCompanyId = Number(user?.user_actual_company || 0);
   const [selectedData, setSelectedData] = useState<SelectedNoteData>({
     company:
@@ -106,10 +109,15 @@ const AddDomainNoteModal = ({
       return htmlContent.replace(trailingTagsRegex, '');
     }
     try {
+      const shouldShare = canShareNote && Boolean(formData.shared);
+      const trimmedKeyNotes = shouldShare && formData.key_notes
+        ? removeTrailingSpaces(formData.key_notes)
+        : null;
       const trimmedData = {
         ...formData,
         notes: removeTrailingSpaces(formData.notes),
-        shared: Boolean(formData.shared),
+        shared: shouldShare,
+        key_notes: shouldShare ? trimmedKeyNotes : null,
       };
       if (selectedNote?.id && mode == "edit") {
         const editCompany = isCorporateUser && corporateCompanyId
@@ -119,8 +127,10 @@ const AddDomainNoteModal = ({
           selectedData.institution || getInstitutionId(selectedNote, data);
 
         const editData: Partial<DomainNote> = {
-          attendees: trimmedData.attendees,
+          attendees_company: trimmedData.attendees_company,
+          attendees_institution: trimmedData.attendees_institution,
           notes: trimmedData.notes,
+          key_notes: trimmedData.key_notes,
           date: trimmedData.date,
           category: trimmedData.category,
           shared: trimmedData.shared,
@@ -171,21 +181,24 @@ const AddDomainNoteModal = ({
 
   return (
     <Dialog
-      size="lg"
+      size="2xl"
       open={addNoteModalVisible}
       onClose={() => setAddNoteModalVisible(false)}
     >
-      <Dialog.Panel className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+      <Dialog.Panel
+        className="relative -translate-y-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+        style={{ width: "min(1100px, calc(100vw - 48px))", maxWidth: "1100px" }}
+      >
         <button
           type="button"
           onClick={() => setAddNoteModalVisible(false)}
-          className="absolute right-6 top-3 z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-100 hover:text-slate-700"
+          className="absolute right-5 top-2 z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-100 hover:text-slate-700"
           aria-label="Close note modal"
         >
           <Lucide icon="X" className="h-5 w-5" />
         </button>
         <Dialog.Title>
-          <div className="px-6 py-3 pr-20">
+          <div className="px-1 py-0 pr-16">
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-slate-800">
                 {mode === "edit" ? "Edit Note" : "New Note"}
@@ -193,7 +206,7 @@ const AddDomainNoteModal = ({
             </div>
           </div>
         </Dialog.Title>
-        <Dialog.Description className="bg-slate-50 px-6 py-6">
+        <Dialog.Description className="bg-slate-50 px-4 py-3 sm:px-5">
           <NoteForm
             mode={mode}
             initialData={selectedNote || {}}

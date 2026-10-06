@@ -5,6 +5,7 @@ import Error from "@/components/Error";
 import Lucide from "@/components/Base/Lucide";
 import Litepicker from "@/components/Base/Litepicker";
 import { DomainNote } from "@/types/domainNotes";
+import dayjs from "dayjs";
 
 interface DateFieldProps {
     control: Control<DomainNote, any>;
@@ -29,13 +30,16 @@ const DateField: React.FC<DateFieldProps> = ({ control, rules }) => {
                             </div>
                             <Litepicker
                                 placeholder="Select Date"
-                                value={field.value || ""}
-                                onChange={(event) => field.onChange(event.target.value)}
+                                value={field.value ? dayjs(field.value).format("MMMM DD, YYYY") : ""}
+                                onChange={(event) => {
+                                    const parsedDate = dayjs(event.target.value);
+                                    field.onChange(parsedDate.isValid() ? parsedDate.format("YYYY-MM-DD") : "");
+                                }}
                                 options={{
                                     autoApply: true,
                                     singleMode: true,
                                     showWeekNumbers: false,
-                                    format: "YYYY-MM-DD",
+                                    format: "MMMM DD, YYYY",
                                     dropdowns: {
                                         minYear: 1990,
                                         maxYear: null,

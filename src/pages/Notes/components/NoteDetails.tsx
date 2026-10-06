@@ -18,6 +18,8 @@ import { DeleteConfirmationModal } from "@/components/DeleteModal";
 import { createDynamicURL, groupByValue } from "@/utils/helper";
 import { baseURL } from "@/constant";
 import {
+  CompanyNotesTab,
+  addDomainNote,
   addDomainNoteComment,
   deleteDomainNote,
   deleteDomainNoteComment,
@@ -29,6 +31,8 @@ import {
   updateDomainNoteComment,
 } from "@/stores/domainNotesSlice";
 import { DomainNote, DomainNoteComment } from "@/types/domainNotes";
+import { decryptNotesText } from "@/utils/notesCrypto";
+import { domainNotesService } from "@/services/domainNotes";
 interface NoteData {
   company_id?: string;
   institution_id?: string;
@@ -43,6 +47,11 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
 }) => {
   const canManageNote = (value: unknown) => value === true || value === 1 || value === "true";
   const canCommentOnNote = (value: unknown) => value === true || value === 1 || value === "true";
+  const prepareNoteForEditing = (note: DomainNote): DomainNote => ({
+    ...note,
+    notes: decryptNotesText(note.notes || ""),
+    key_notes: note.key_notes || null,
+  });
   const formatCommentMeta = (comment: DomainNoteComment) => {
     const author = comment.created_by_name || comment.name || "";
     return author && comment.date ? `${author} • ${comment.date}` : author || comment.date || "";
@@ -61,7 +70,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
   const { selectedNote, selectedGroup } = useAppSelector(
     (state) => state.notes
   );
-  const { institutionHierarchy, companyHierarchy } = useAppSelector(
+  const { institutionHierarchy, companyHierarchy, companyNotesTab } = useAppSelector(
     (state) => state.domainNotes
   );
   const { user } = useAppSelector((state: RootState) => state.authentiction);
@@ -83,7 +92,51 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
     value: string;
   } | null>(null);
   const [commentDeletingId, setCommentDeletingId] = useState<number | null>(null);
-  const [visibleNotes, setVisibleNotes] = useState<DomainNote[]>([]);
+  const [unsharingNoteId, setUnsharingNoteId] = useState<number | null>(null);
+  const [openingEditAction, setOpeningEditAction] = useState<{
+    noteId: number;
+    action: "edit" | "share";
+  } | null>(null);
+
+  const handleEditDomainNote = async (
+    note: DomainNote,
+    enableSharing = false
+  ) => {
+    if (openingEditAction) return;
+
+    setOpeningEditAction({
+      noteId: note.id,
+      action: enableSharing ? "share" : "edit",
+    });
+    let editableNote = prepareNoteForEditing(note);
+
+    try {
+      const response = await domainNotesService.getNote(note.id);
+      if (response?.results) {
+        editableNote = prepareNoteForEditing(response.results);
+      }
+    } catch (error) {
+      console.error("Unable to load the complete note for editing:", error);
+    }
+
+    if (enableSharing) {
+      editableNote = {
+        ...editableNote,
+        shared: true,
+        key_notes: editableNote.key_notes || "",
+      };
+    }
+
+    setData({
+      company_id: editableNote.company || editableNote.company_id,
+      institution_id: editableNote.institution || editableNote.institution_id,
+      institution_name: editableNote.institution_name || editableNote.investor_name,
+      company_name: editableNote.company_name,
+    });
+    setNoteDetails(editableNote);
+    setIsEditing(true);
+    setOpeningEditAction(null);
+  };
 
     // Get notes for selected institution and company
   const currentNotes = useMemo(() => {
@@ -100,6 +153,9 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
     }
     return selectedGroup?.data || [];
   }, [activeTab, selectedInstitution, selectedCompany, institutionHierarchy, companyHierarchy, selectedGroup]);
+  const [visibleNotes, setVisibleNotes] = useState<DomainNote[]>(
+    currentNotes as DomainNote[]
+  );
 
   useEffect(() => {
     setVisibleNotes(currentNotes as DomainNote[]);
@@ -208,13 +264,38 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
     }
   }, [currentNotes, activeTab, dispatch, selectedInstitution, selectedCompany]);
 
+  const refreshCompanyNotesTabs = async () => {
+    await Promise.all(
+      (["Private", "Shared", "Other"] as CompanyNotesTab[]).map((tabName) =>
+        dispatch(fetchCompanyHierarchyNotes(tabName))
+      )
+    );
+  };
+
+  const handleUnshareNote = async (noteId: number) => {
+    if (unsharingNoteId) return;
+
+    setUnsharingNoteId(noteId);
+    try {
+      await dispatch(
+        addDomainNote({ id: noteId, data: { shared: false, key_notes: null } })
+      ).unwrap();
+      toast.success("Note unshared successfully");
+      await refreshCompanyNotesTabs();
+    } catch (error) {
+      toast.error("An error occurred while unsharing the note");
+    } finally {
+      setUnsharingNoteId(null);
+    }
+  };
+
   const fetchData = async () => {
     if (activeTab === "institution") {
       // Refresh institution hierarchy for institution tab
       await dispatch(fetchInstitutionHierarchyNotes());
     } else if (activeTab === "company") {
       // Refresh company hierarchy for company tab
-      await dispatch(fetchCompanyHierarchyNotes());
+      await refreshCompanyNotesTabs();
     } else if (data?.institution_id && data?.company_id) {
       // Existing logic for other tabs
       const dynamicURL = createDynamicURL(
@@ -255,7 +336,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
       if (activeTab === "institution") {
         dispatch(fetchInstitutionHierarchyNotes());
       } else if (activeTab === "company") {
-        dispatch(fetchCompanyHierarchyNotes());
+        void refreshCompanyNotesTabs();
       } else {
         const dynamicURL = createDynamicURL(
           `${baseURL}/user/domain_notes/`,
@@ -423,7 +504,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
     if (activeTab === "institution") {
       return selectedCompany ? `${selectedInstitution} - ${selectedCompany}` : selectedInstitution;
     } else if (activeTab === "company") {
-      return selectedInstitution ? `${selectedCompany} - ${selectedInstitution}` : selectedCompany;
+      return selectedInstitution || selectedCompany;
     } else if (activeTab === "other") {
       return selectedNote ? selectedNote?.name : undefined;
     } else {
@@ -589,6 +670,60 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
                                     </Button>
                                   </Tippy>
                                 )}
+                                {activeTab === "company" &&
+                                  companyNotesTab === "Private" &&
+                                  canManageNote(item.update_delete_check) && (
+                                    <Tippy
+                                      content="Share Note"
+                                      options={{ theme: "light" }}
+                                    >
+                                      <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        className="h-9 w-9 p-0"
+                                        disabled={Boolean(openingEditAction)}
+                                        onClick={() => void handleEditDomainNote(item, true)}
+                                      >
+                                        <Lucide
+                                          icon={
+                                            openingEditAction?.noteId === item.id &&
+                                            openingEditAction.action === "share"
+                                              ? "Loader"
+                                              : "Share2"
+                                          }
+                                          className={`h-4 w-4 ${
+                                            openingEditAction?.noteId === item.id &&
+                                            openingEditAction.action === "share"
+                                              ? "animate-spin"
+                                              : ""
+                                          }`}
+                                        />
+                                      </Button>
+                                    </Tippy>
+                                  )}
+                                {activeTab === "company" &&
+                                  companyNotesTab === "Shared" &&
+                                  canManageNote(item.update_delete_check) && (
+                                    <Tippy
+                                      content="Unshare Note"
+                                      options={{ theme: "light" }}
+                                    >
+                                      <Button
+                                        variant="outline-primary"
+                                        size="sm"
+                                        className="h-9 w-9 p-0"
+                                        disabled={unsharingNoteId === item.id}
+                                        onClick={() => void handleUnshareNote(item.id)}
+                                      >
+                                        <Lucide
+                                          icon={unsharingNoteId === item.id ? "Loader" : "Lock"}
+                                          className={`h-4 w-4 ${
+                                            unsharingNoteId === item.id ? "animate-spin" : ""
+                                          }`}
+                                        />
+                                      </Button>
+                                    </Tippy>
+                                  )}
                                 {canManageNote(item.update_delete_check) && (
                                   <>
                                     <Tippy
@@ -599,18 +734,23 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
                                         variant="outline-primary"
                                         size="sm"
                                         className="h-9 w-9 p-0"
-                                        onClick={() => {
-                                          setIsEditing(true);
-                                          setData({
-                                            company_id: item?.company || item?.company_id,
-                                            institution_id: item?.institution || item?.institution_id,
-                                            institution_name: item?.institution_name || item?.investor_name,
-                                            company_name: item?.company_name,
-                                          });
-                                          setNoteDetails(item);
-                                        }}
+                                        disabled={Boolean(openingEditAction)}
+                                        onClick={() => void handleEditDomainNote(item)}
                                       >
-                                        <Lucide icon="Pen" className="h-4 w-4" />
+                                        <Lucide
+                                          icon={
+                                            openingEditAction?.noteId === item.id &&
+                                            openingEditAction.action === "edit"
+                                              ? "Loader"
+                                              : "Pen"
+                                          }
+                                          className={`h-4 w-4 ${
+                                            openingEditAction?.noteId === item.id &&
+                                            openingEditAction.action === "edit"
+                                              ? "animate-spin"
+                                              : ""
+                                          }`}
+                                        />
                                       </Button>
                                     </Tippy>
                                     <Tippy

@@ -86,6 +86,23 @@ type OwnershipYearData = {
   analytics?: Record<string, string>;
 };
 
+type OwnershipComparisonYear = {
+  matched: boolean;
+  voted_against_directors: any;
+  voted_against_say_on_pay: any;
+  voted_against_directors_message?: string | null;
+  voted_against_say_on_pay_message?: string | null;
+};
+
+type OwnershipComparisonRow = {
+  institution_id?: number;
+  institution_name?: string;
+  percent_ownership?: string | number;
+  proxy_advisor_influence?: string;
+  is_doc?: boolean | number | string;
+  [year: string]: OwnershipComparisonYear | string | number | boolean | undefined;
+};
+
 type OwnershipView = "all" | "separate";
 
 const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }: InvestorCardProps) => {
@@ -465,6 +482,12 @@ const getNormalizedScrapedInfo = (name: string) => {
     selectedYear?.toString() !== ""
       ? selectedYear?.toString()
       : latestYearData?.year?.toString();
+  const availableYears = getAvailableYears();
+  const investorHeadingCount =
+    ownershipView === "all" ||
+    (availableYears.length > 0 && activeYear === availableYears[0])
+      ? 50
+      : 20;
 
   const selectedYearData =
     allYearData.find((yearData) => yearData?.year?.toString() === activeYear) ||
@@ -505,69 +528,22 @@ const getNormalizedScrapedInfo = (name: string) => {
     });
   };
 
-  const getHoldingLookupKey = (holding?: Partial<CompanyDashboard> | null) => {
-    if (!holding) return "";
-    if (holding.institution_id) return `institution:${holding.institution_id}`;
+  const comparisonRows: OwnershipComparisonRow[] = useMemo(() => {
+    const rows = (dashboardDataList as any)?.year_comparison_data;
+    return Array.isArray(rows) ? rows : [];
+  }, [dashboardDataList]);
 
-    const normalizedName = (holding.institution_name || holding.filer_name || "")
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
+  const comparisonYears = useMemo(() => {
+    const years = new Set<string>();
 
-    if (normalizedName) return `name:${normalizedName}`;
-    if (holding.filer_id) return `filer:${holding.filer_id}`;
-    return "";
-  };
-
-  const mergedAllYearRows = useMemo(() => {
-    const latestHoldings = Array.isArray(latestYearData?.holdings_data)
-      ? latestYearData.holdings_data
-      : [];
-
-    if (!latestHoldings.length) {
-      return [];
-    }
-
-    const holdingsByYear = new Map<string, Map<string, CompanyDashboard>>();
-
-    allYearData.forEach((yearData) => {
-      const perYearMap = new Map<string, CompanyDashboard>();
-      const holdings = Array.isArray(yearData?.holdings_data) ? yearData.holdings_data : [];
-
-      holdings.forEach((holding) => {
-        const key = getHoldingLookupKey(holding);
-        if (key && !perYearMap.has(key)) {
-          perYearMap.set(key, holding);
-        }
+    comparisonRows.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        if (/^\d{4}$/.test(key)) years.add(key);
       });
-
-      if (yearData?.year) {
-        holdingsByYear.set(yearData.year.toString(), perYearMap);
-      }
     });
 
-    return latestHoldings.map((holding, index) => {
-      const key = getHoldingLookupKey(holding);
-      const yearlyVotes = allYearData.reduce<Record<string, CompanyDashboard | undefined>>(
-        (accumulator, yearData) => {
-          const yearKey = yearData?.year?.toString();
-          if (!yearKey) {
-            return accumulator;
-          }
-
-          accumulator[yearKey] = key ? holdingsByYear.get(yearKey)?.get(key) : undefined;
-          return accumulator;
-        },
-        {}
-      );
-
-      return {
-        index: index + 1,
-        holding,
-        yearlyVotes,
-      };
-    });
-  }, [allYearData, latestYearData]);
+    return Array.from(years).sort((a, b) => Number(b) - Number(a));
+  }, [comparisonRows]);
 
   // Dynamic year context for column header tooltips (no hardcoded 2024/2025).
   // The latest "expected" meeting year is the current calendar year; if it is
@@ -676,15 +652,19 @@ const getNormalizedScrapedInfo = (name: string) => {
           <div className="p-5 mt-3.5 box">
             <div className="w-full">
               <div className="flex justify-between items-center xs:flex-col sm:flex-row py-3">
-                <div className="flex items-center">
-                  <h1 className="text-xl font-bold">
-                    Top {dashboardDataList?.length || 20} Investors{" "}
-                    {displayYearData?.total_percent_ownership && (
-                      <span className="text-lg font-bold">
-                        ({displayYearData.total_percent_ownership} of shares outstanding)
-                      </span>
-                    )}
-                  </h1>
+                <div className="flex min-h-7 items-center">
+                  {investorCardLoading ? (
+                    <div className="h-6 w-72 max-w-[70vw] animate-pulse rounded-md bg-slate-200 dark:bg-slate-700" />
+                  ) : (
+                    <h1 className="text-xl font-bold">
+                      Top {investorHeadingCount} Investors{" "}
+                      {displayYearData?.total_percent_ownership && (
+                        <span className="text-lg font-bold">
+                          ({displayYearData.total_percent_ownership} of shares outstanding)
+                        </span>
+                      )}
+                    </h1>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <img alt="flag-icon" src={flagIcon} />
@@ -804,19 +784,19 @@ const getNormalizedScrapedInfo = (name: string) => {
                                   )}
                                   </span>
                                 </Table.Td>
-                                {allYearData.map((yearData) => (
+                                {comparisonYears.map((year) => (
                                   <Table.Td
-                                    key={`year-header-${yearData?.year}`}
+                                    key={`year-header-${year}`}
                                     colSpan={2}
                                     className="cell relative z-10 px-1 text-[13px] py-2 font-semibold h-[40px] bg-header border-[#0000000D] border-b-0 text-[#000000B2] text-center before:absolute before:bottom-[-2px] before:left-0 before:right-0 before:h-[4px] before:bg-[#f1f5f9] before:content-[''] after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-300 after:content-['']"
                                   >
-                                    {yearData?.year}
+                                    {year}
                                   </Table.Td>
                                 ))}
                               </Table.Tr>
                               <Table.Tr className="row bg-header">
-                                {allYearData.map((yearData) => (
-                                  <Fragment key={`year-subheader-${yearData?.year}`}>
+                                {comparisonYears.map((year) => (
+                                  <Fragment key={`year-subheader-${year}`}>
                                     <Table.Td className="cell relative z-10 w-[72px] px-1 text-[13px] py-2 font-semibold h-[50px] bg-header border-[#0000000D] text-[#000000B2] text-center whitespace-normal leading-tight before:absolute before:left-0 before:right-0 before:top-[-2px] before:h-[4px] before:bg-[#f1f5f9] before:content-[''] after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-300 after:content-['']">
                                       Voted Against Directors
                                     </Table.Td>
@@ -831,7 +811,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                               {investorCardLoading &&
                                 Array.from({ length: 10 }).map((_, rowIdx) => (
                                   <Table.Tr key={`all-years-skeleton-${rowIdx}`} className="row [&_td]:last:border-b-0">
-                                    {Array.from({ length: 4 + allYearData.length * 2 }).map((_, colIdx) => (
+                                    {Array.from({ length: 4 + comparisonYears.length * 2 }).map((_, colIdx) => (
                                       <Table.Td key={colIdx} className="cell py-2 h-[50px] border-dashed dark:bg-darkmode-600">
                                         <div
                                           className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
@@ -842,30 +822,35 @@ const getNormalizedScrapedInfo = (name: string) => {
                                   </Table.Tr>
                                 ))}
 
-                              {!investorCardLoading && mergedAllYearRows.length === 0 && (
+                              {!investorCardLoading && comparisonRows.length === 0 && (
                                 <Table.Tr className="row">
-                                  <Table.Td colSpan={4 + allYearData.length * 2} className="py-10 text-center font-semibold text-slate-500">
+                                  <Table.Td colSpan={4 + comparisonYears.length * 2} className="py-10 text-center font-semibold text-slate-500">
                                     No Ownership data found for this company.
                                   </Table.Td>
                                 </Table.Tr>
                               )}
 
                               {!investorCardLoading &&
-                                mergedAllYearRows.length > 0 &&
-                                mergedAllYearRows.map(({ holding, index, yearlyVotes }) => {
-                                  const scrapedInfo = getNormalizedScrapedInfo(holding?.institution_name);
+                                comparisonRows.length > 0 &&
+                                comparisonRows.map((holding, index) => {
+                                  const scrapedInfo = getNormalizedScrapedInfo(holding?.institution_name || "");
                                   const rawProxy = holding?.proxy_advisor_influence || scrapedInfo?.proxy_influence;
-                                  const dynInstId = holding?.institution_id || scrapedInfo?.institution_id || scrapedInfo?.id || holding?.investor_profile_id;
+                                  const dynInstId = holding?.institution_id || scrapedInfo?.institution_id || scrapedInfo?.id;
+                                  const hasDocument =
+                                    holding?.is_doc === true ||
+                                    holding?.is_doc === 1 ||
+                                    (typeof holding?.is_doc === "string" && holding.is_doc.toLowerCase() === "true");
                                   const isInternallyCovered = typeof rawProxy === "string" && rawProxy.toLowerCase().includes("internal");
-                                  const isCoveredInDB = Boolean(dynInstId || holding?.is_doc === true || isInternallyCovered);
+                                  const isCoveredInDB = Boolean(dynInstId || hasDocument || isInternallyCovered);
+                                  const isInvestorProfileLinked = hasDocument && Boolean(dynInstId);
 
                                   return (
                                     <Table.Tr
-                                      key={`${holding?.filer_id ?? holding?.institution_name ?? "row"}-${index}`}
+                                      key={`${holding?.institution_id ?? holding?.institution_name ?? "row"}-${index}`}
                                       className="row [&_td]:last:border-b-0"
                                     >
                                       <Table.Td className="cell px-2 py-2 h-[50px] border-dashed dark:bg-darkmode-600 align-middle text-[13px]">
-                                        <div className="flex items-center font-semibold justify-center">{index}</div>
+                                        <div className="flex items-center font-semibold justify-center">{index + 1}</div>
                                       </Table.Td>
                                       <Table.Td className="relative w-full px-3 py-2 border-dashed dark:bg-darkmode-600 align-middle">
                                         <div className="flex min-w-0 items-start gap-2">
@@ -881,20 +866,17 @@ const getNormalizedScrapedInfo = (name: string) => {
                                           )}
                                           <h1
                                             onClick={() => {
-                                              if (holding?.is_doc === true && dynInstId) {
+                                              if (isInvestorProfileLinked) {
                                                 window.open(`/investor-company-details/${dynInstId}`, "_blank");
                                               }
                                             }}
                                             className={clsx([
                                               "block min-w-0 max-w-[165px] break-words whitespace-normal capitalize font-semibold leading-tight text-[13px]",
-                                              holding?.is_doc === true && dynInstId ? "cursor-pointer underline" : "",
+                                              isInvestorProfileLinked ? "cursor-pointer underline" : "",
                                             ])}
                                           >
                                             {holding?.institution_name}
                                           </h1>
-                                          {holding?.flag_13d === true && (
-                                            <img className="ml-1 mt-0.5 w-3 shrink-0" alt="flag-icon" src={flagIcon} />
-                                          )}
                                         </div>
                                       </Table.Td>
                                       <Table.Td className="cell px-2 py-2 border-dashed dark:bg-darkmode-600 text-left align-middle text-[13px]">
@@ -911,24 +893,33 @@ const getNormalizedScrapedInfo = (name: string) => {
                                           )}
                                         </div>
                                       </Table.Td>
-                                      {allYearData.map((yearData) => {
-                                        const yearKey = yearData?.year?.toString() || "";
-                                        const yearHolding = yearlyVotes[yearKey];
+                                      {comparisonYears.map((year) => {
+                                        const yearData = holding[year] as OwnershipComparisonYear | undefined;
+                                        const isMatched = yearData?.matched === true;
+                                        const unavailableCellClass = !isMatched ? "bg-slate-100 dark:bg-darkmode-700" : "dark:bg-darkmode-600";
 
                                         return (
-                                          <Fragment key={`${holding?.filer_id ?? holding?.institution_name ?? "row"}-${yearKey}`}>
-                                            <Table.Td className="cell relative px-1 py-2 border-dashed dark:bg-darkmode-600 text-center align-middle after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-200 after:content-['']">
-                                              {renderVotingStatus(
-                                                yearHolding?.voted_against_directors,
-                                                yearHolding?.voted_against_directors_message,
-                                                "No Data"
+                                          <Fragment key={`${holding?.institution_id ?? holding?.institution_name ?? "row"}-${year}`}>
+                                            <Table.Td className={`cell relative px-1 py-2 border-dashed text-center align-middle after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-200 after:content-[''] ${unavailableCellClass}`}>
+                                              {isMatched ? (
+                                                renderVotingStatus(
+                                                  yearData?.voted_against_directors,
+                                                  yearData?.voted_against_directors_message || undefined,
+                                                  "No Data"
+                                                )
+                                              ) : (
+                                                <span className="text-slate-400">-</span>
                                               )}
                                             </Table.Td>
-                                            <Table.Td className="cell px-1 py-2 border-dashed dark:bg-darkmode-600 text-center align-middle">
-                                              {renderVotingStatus(
-                                                yearHolding?.voted_against_say_on_pay,
-                                                yearHolding?.voted_against_say_on_pay_message,
-                                                yearKey ? `Say on Pay not on ballot at ${yearKey} shareholder meeting` : "No Data"
+                                            <Table.Td className={`cell px-1 py-2 border-dashed text-center align-middle ${unavailableCellClass}`}>
+                                              {isMatched ? (
+                                                renderVotingStatus(
+                                                  yearData?.voted_against_say_on_pay,
+                                                  yearData?.voted_against_say_on_pay_message || undefined,
+                                                  `Say on Pay not on ballot at ${year} shareholder meeting`
+                                                )
+                                              ) : (
+                                                <span className="text-slate-400">-</span>
                                               )}
                                             </Table.Td>
                                           </Fragment>
@@ -1855,7 +1846,7 @@ const isActivelyScraping =
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-semibold">{companyGlobalSearchName}</h2>
-                <p className="text-sm text-slate-600 mt-1">Top 20 Investors: Proxy Influence Analysis</p>
+                <p className="text-sm text-slate-600 mt-1">Top {investorHeadingCount} Investors: Proxy Influence Analysis</p>
               </div>
               <div
                 onClick={() => setChartModalVisible(false)}

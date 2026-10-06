@@ -172,8 +172,6 @@ const BASE_SECTIONS: SectionDef[] = [
     subItems: [],
     route: "/notes",
     preserveActiveSection: true,
-    countKey: "meeting_notes",
-    hideWhenEmpty: true,
   },
   {
     key: "company-activist-filings",

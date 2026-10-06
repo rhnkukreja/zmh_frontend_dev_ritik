@@ -10,6 +10,8 @@ import { RootState } from "./store";
 
 const name = "domainNotes";
 
+export type CompanyNotesTab = "Private" | "Shared" | "Other";
+
 interface DomainNotesFilters {
   institution_name: string[];
   category: string[];
@@ -36,6 +38,9 @@ interface DomainNotesState {
   institutionHierarchy: any[];
   loadingInstitutionHierarchy: boolean;
   companyHierarchy: any[];
+  companyHierarchyByTab: Record<CompanyNotesTab, any[]>;
+  companyHierarchyLoadingByTab: Record<CompanyNotesTab, boolean>;
+  companyNotesTab: CompanyNotesTab;
   loadingCompanyHierarchy: boolean;
 }
 
@@ -63,6 +68,9 @@ const initialState: DomainNotesState = {
   institutionHierarchy: [],
   loadingInstitutionHierarchy: false,
   companyHierarchy: [],
+  companyHierarchyByTab: { Private: [], Shared: [], Other: [] },
+  companyHierarchyLoadingByTab: { Private: false, Shared: false, Other: false },
+  companyNotesTab: "Private",
   loadingCompanyHierarchy: false,
 };
 
@@ -97,13 +105,18 @@ export const fetchInstitutionHierarchyNotes = createAsyncThunk<
 });
 
 export const fetchCompanyHierarchyNotes = createAsyncThunk<
-  any[],
-  void,
+  { tabName: CompanyNotesTab; results: any[] },
+  CompanyNotesTab | void,
   { state: RootState }
->(`${name}/fetchCompanyHierarchyNotes`, async (_, { getState }) => {
-  const { companyGlobalSearchName } = getState().authentiction;
-  const response = await domainNotesService.getCompanyHierarchyNotes(companyGlobalSearchName);
-  return response.results;
+>(`${name}/fetchCompanyHierarchyNotes`, async (requestedTab, { getState }) => {
+  const state = getState();
+  const { companyGlobalSearchName } = state.authentiction;
+  const tabName = requestedTab || state.domainNotes.companyNotesTab;
+  const response = await domainNotesService.getCompanyHierarchyNotes(
+    companyGlobalSearchName,
+    tabName
+  );
+  return { tabName, results: response.results };
 });
 
 export const addDomainNote = createAsyncThunk<
@@ -201,6 +214,18 @@ const domainNotesSlice = createSlice({
       state.filters = initialState.filters;
       state.page = 1;
     },
+    setCompanyNotesTab(state, action: PayloadAction<CompanyNotesTab>) {
+      state.companyNotesTab = action.payload;
+      state.companyHierarchy = state.companyHierarchyByTab[action.payload] || [];
+      state.loadingCompanyHierarchy = state.companyHierarchyLoadingByTab[action.payload];
+    },
+    resetCompanyNotesTabs(state) {
+      state.companyNotesTab = "Private";
+      state.companyHierarchy = [];
+      state.companyHierarchyByTab = { Private: [], Shared: [], Other: [] };
+      state.companyHierarchyLoadingByTab = { Private: false, Shared: false, Other: false };
+      state.loadingCompanyHierarchy = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -257,17 +282,31 @@ const domainNotesSlice = createSlice({
         state.loadingInstitutionHierarchy = false;
         state.error = action.error.message || "Failed to fetch institution hierarchy";
       })
-      .addCase(fetchCompanyHierarchyNotes.pending, (state) => {
-        state.loadingCompanyHierarchy = true;
+      .addCase(fetchCompanyHierarchyNotes.pending, (state, action) => {
+        const tabName = action.meta.arg || state.companyNotesTab;
+        state.companyHierarchyLoadingByTab[tabName] = true;
+        if (state.companyNotesTab === tabName) {
+          state.loadingCompanyHierarchy = true;
+        }
         state.error = null;
       })
       .addCase(fetchCompanyHierarchyNotes.fulfilled, (state, action) => {
-        state.loadingCompanyHierarchy = false;
-        state.companyHierarchy = action.payload;
+        state.companyHierarchyLoadingByTab[action.payload.tabName] = false;
+        state.companyHierarchyByTab[action.payload.tabName] = action.payload.results;
+        if (state.companyNotesTab === action.payload.tabName) {
+          state.loadingCompanyHierarchy = false;
+          state.companyHierarchy = action.payload.results;
+        }
       })
       .addCase(fetchCompanyHierarchyNotes.rejected, (state, action) => {
-        state.loadingCompanyHierarchy = false;
-        state.error = action.error.message || "Failed to fetch company hierarchy";
+        const tabName = action.meta.arg || state.companyNotesTab;
+        state.companyHierarchyLoadingByTab[tabName] = false;
+        if (state.companyNotesTab === tabName) {
+          state.loadingCompanyHierarchy = false;
+        }
+        if (action.error.name !== "AbortError") {
+          state.error = action.error.message || "Failed to fetch company hierarchy";
+        }
       });
   },
 });
@@ -280,4 +319,6 @@ export const {
   resetFilter,
   setAllFilters,
   resetEngagementQuestions,
+  setCompanyNotesTab,
+  resetCompanyNotesTabs,
 } = domainNotesSlice.actions;
