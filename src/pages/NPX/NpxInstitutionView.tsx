@@ -15,6 +15,7 @@ import { baseURL } from "@/constant";
 import CompanySelect from "@/components/ReactSelectAsync";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
+import VoteCategoryTaxonomySelect from "@/components/NPX/VoteCategoryTaxonomySelect";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { MdOutlineClear } from "react-icons/md";
@@ -164,8 +165,10 @@ const NpxInstitutionView = () => {
     company_ids: filters.company_ids || [],
   });
   const [institutionSelection, setInstitutionSelection] = useState<string[]>(filters.investor_company || []);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const hasBootstrappedInstitutionRef = useRef(false);
   const skipNextDropdownEffectRef = useRef(false);
+  const statsLoadStartedRef = useRef(false);
   const hasSelectedInstitution = Boolean(filters.investor_company && filters.investor_company.length > 0 && filters.investor_company[0]);
   const isInstitutionSelectionPending = useMemo(() => {
     const draft = institutionSelection?.[0] || "";
@@ -201,7 +204,7 @@ const NpxInstitutionView = () => {
   }, [selectedInstitution, selectedYearKey]);
 
   const hasStatsData = Boolean(npxProposalVotingStats);
-  const isStatsLoading = dropdownLoading || npxProposalVotingStatsLoading;
+  const isStatsLoading = dropdownLoading || summaryLoading || npxProposalVotingStatsLoading;
 
   const availableDateRange = useMemo(() => {
     const range = dropdowns?.available_date_range;
@@ -472,6 +475,8 @@ const NpxInstitutionView = () => {
       ...(hasDateRange ? { date_range: normalizedDateRange } : { year: resolvedYear }),
     };
     if (meetingDate) payload.meeting_date = meetingDate;
+    statsLoadStartedRef.current = true;
+    setSummaryLoading(true);
     dispatch(
       fetchNpxProposalVotingStats({
         view: "by_institution",
@@ -517,6 +522,13 @@ const NpxInstitutionView = () => {
     setActivePage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.year, filters.date_range, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
+
+  useEffect(() => {
+    if (statsLoadStartedRef.current && !npxProposalVotingStatsLoading) {
+      setSummaryLoading(false);
+      statsLoadStartedRef.current = false;
+    }
+  }, [npxProposalVotingStatsLoading]);
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
     setFilters((prev) => {
@@ -728,10 +740,6 @@ const NpxInstitutionView = () => {
     [apiFundNameDropdown.fund_name, dropdowns.fund_name]
   );
   const voteOptions = useMemo(() => toOptions(uniqueStrings(dropdowns.vote || [])), [dropdowns.vote]);
-  const voteCategoryOptions = useMemo(
-    () => toOptions(uniqueStrings(dropdowns.vote_category || [])),
-    [dropdowns.vote_category]
-  );
   const keywordOptions = useMemo(
     () => toOptions(uniqueStrings(dropdowns.synonyms || dropdowns.keyword || [])),
     [dropdowns.synonyms, dropdowns.keyword]
@@ -1191,12 +1199,12 @@ const NpxInstitutionView = () => {
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaListUl className="text-gray-400" /> Vote Category
                 </label>
-                <MultiSelectDropdown
-                  data={voteCategoryOptions}
+                <VoteCategoryTaxonomySelect
+                  taxonomy={dropdowns?.vote_category_taxonomy || []}
+                  selectedValues={filters.vote_category || []}
                   loading={dropdownLoading}
-                  selectedOption={filters.vote_category || []}
-                  onChange={(opts) => handleFilterChange("vote_category", opts.map((o) => o.value))}
                   placeholder="Select Category(s)"
+                  onChange={(values) => handleFilterChange("vote_category", values)}
                 />
               </div>
               <div className="order-5">
