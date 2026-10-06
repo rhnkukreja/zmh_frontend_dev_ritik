@@ -194,8 +194,13 @@ const CountryInfoHeader = () => {
   }
 
   return (
-    <div ref={headerRef} className="bg-gradient-to-r from-white via-gray-50 to-white shadow-sm rounded-xl p-3 mb-3 border border-gray-200">
-      <div className="flex flex-col md:flex-row md:flex-wrap md:items-center justify-start gap-2">
+    <div
+      ref={headerRef}
+      className={`rounded-xl border border-gray-200 bg-gradient-to-r from-white via-gray-50 to-white shadow-sm ${
+        location.pathname === "/notes" ? "mb-2 px-6 py-2 md:h-[58px]" : "mb-3 p-3"
+      }`}
+    >
+      <div className={`flex flex-col justify-start gap-2 md:flex-row md:flex-wrap md:items-center ${location.pathname === "/notes" ? "h-full" : ""}`}>
         {/* Company Header */}
         <div className="flex items-center md:flex-1">
           <span className="font-bold text-sm md:text-base text-gray-900 leading-tight break-words company-name-wrapper">

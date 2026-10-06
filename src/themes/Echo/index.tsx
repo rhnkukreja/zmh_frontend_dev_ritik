@@ -70,7 +70,6 @@ import useCompanySearch from "@/hooks/useCompanySearch";
 import GlobalCreateNoteModal from "./components/GlobalCreateNoteModal";
 import { shareHolderProposalService } from "@/services/shareholderProposal";
 import { dashboardService } from "@/services/dashboard";
-import { domainNotesService } from "@/services/domainNotes";
 import { governanceService } from "@/services/governance";
 import GetWhatsNew from "@/components/WhatsNew";
 import { Disclosure } from "@/components/Base/Headless";
@@ -560,10 +559,10 @@ function Main() {
       isCompanySpecificView);
   const shouldHideHeaderTitle = shouldHideCompanyGlobalSearch;
   const shouldHideHeader =
-    location.pathname === "/notes" ||
     ((noCompanyHeaderRoutes?.some((route: string) =>
       location.pathname.includes(route)
     ) &&
+      location.pathname !== "/notes" &&
       !isCompanySpecificView) ||
       (location.pathname === "/" &&
         activeSection === "investor-overview" &&
@@ -698,7 +697,6 @@ function Main() {
     getModulesCount();
     getNotificationList();
     prefetchActivistFilings();
-    prefetchMeetingNotes();
     prefetchGovernanceProfile();
   }, [companyGlobalSearchName, companyGlobalSearchId]);
 
@@ -772,32 +770,6 @@ function Main() {
         activist_filings: relevantCount,
       }));
     } catch (error) {
-      return error;
-    }
-  };
-
-  const prefetchMeetingNotes = async () => {
-    if (!companyGlobalSearchName) {
-      setModulesData((prev: any) => ({
-        ...prev,
-        meeting_notes: 0,
-      }));
-      return;
-    }
-
-    try {
-      const response = await domainNotesService.getCompanyHierarchyNotes(companyGlobalSearchName);
-      const results = Array.isArray(response?.results) ? response.results : [];
-
-      setModulesData((prev: any) => ({
-        ...prev,
-        meeting_notes: results.length,
-      }));
-    } catch (error) {
-      setModulesData((prev: any) => ({
-        ...prev,
-        meeting_notes: 0,
-      }));
       return error;
     }
   };
@@ -1294,7 +1266,6 @@ function Main() {
               <>
 
                 {[
-                  "/notes",
                   "/institution-notes",
                   "/proxy-contest-detail",
                   "/voting-data",
@@ -1830,14 +1801,25 @@ function Main() {
         ])}
       >
         <div className={clsx({ "pt-[10px] h-full flex overflow-hidden": shouldShowSidebar })}>
-          <div className={clsx("w-full px-5", shouldShowSidebar ? "flex h-full min-h-0 flex-col pt-10 overflow-hidden" : "mt-10")}>
+          <div
+            className={clsx(
+              "w-full px-5",
+              shouldShowSidebar
+                ? `flex h-full min-h-0 flex-col overflow-hidden ${isNotesPage ? "pt-4" : "pt-10"}`
+                : "mt-10"
+            )}
+          >
             <div className={clsx(shouldShowSidebar ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "", { container: !shouldShowSidebar })}>
               <div
                 className={clsx(
-                  "sticky header-card transition-[margin,width,opacity] duration-1000 ease-in-out",
-                  { "opacity-0 pointer-events-none -mt-5": shouldHideHeader }
+                  "header-card transition-[margin,width,opacity] duration-1000 ease-in-out",
+                  location.pathname === "/notes"
+                    ? "relative container mx-auto w-full shrink-0"
+                    : "sticky",
+                  location.pathname === "/institution-notes" && "hidden",
+                  { "opacity-0 pointer-events-none -mt-5": shouldHideHeader && location.pathname !== "/institution-notes" }
                 )}
-                style={{ top: "4rem" }}
+                style={{ top: location.pathname === "/notes" ? "auto" : "4rem" }}
               >
                 {/* Place the banner here */}
                 {/* <VotingDataBanner /> */}

@@ -1,6 +1,7 @@
 export interface DomainNote {
   id: number;
-  attendees: string;
+  attendees_company?: string;
+  attendees_institution?: string;
   author: string;
   category: string;
   company: number;
@@ -18,6 +19,7 @@ export interface DomainNote {
   institution_name: string;
   investor_name: string;
   notes: string;
+  key_notes?: string | null;
   shared?: boolean;
   starred: boolean;
   comments: DomainNoteComment[];

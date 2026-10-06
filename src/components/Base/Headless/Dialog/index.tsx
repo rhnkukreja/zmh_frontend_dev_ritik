@@ -71,6 +71,7 @@ Dialog.Panel = ({
 }: ExtractProps<typeof HeadlessDialog.Panel> & {
   size?: Size;
   className?: string;
+  style?: React.CSSProperties;
 }) => {
   const dialog = useContext(dialogContext);
   return (
@@ -104,6 +105,7 @@ Dialog.Panel = ({
             dialog.size == "sm" && "sm:w-[300px]",
             dialog.size == "lg" && "sm:w-[600px]",
             dialog.size == "xl" && "sm:w-[600px] lg:w-[900px]",
+            dialog.size == "2xl" && "sm:w-[700px] lg:w-[1050px]",
             dialog.zoom && "scale-105",
             className,
           ])}
