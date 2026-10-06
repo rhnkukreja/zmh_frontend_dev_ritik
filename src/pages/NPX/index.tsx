@@ -39,6 +39,7 @@ import clsx from "clsx";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
+import VoteCategoryTaxonomySelect from "@/components/NPX/VoteCategoryTaxonomySelect";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
@@ -803,9 +804,16 @@ const index = () => {
           : [];
         const nextResult = { ...res.result } as any;
         if (currentCats.length > 0) {
+          // Selected values can be either a parent_value or an exact child path
+          // from vote_category_taxonomy, so validate against both the taxonomy
+          // and the flat quick list rather than just the flat list.
+          const taxonomy = Array.isArray(nextResult.vote_category_taxonomy) ? nextResult.vote_category_taxonomy : [];
           const allowed = new Set(nextResult.vote_category || []);
+          taxonomy.forEach((item: any) => {
+            if (item?.parent_value) allowed.add(item.parent_value);
+            (item?.child_paths || []).forEach((path: string) => allowed.add(path));
+          });
           const filtered = currentCats.filter((c: string) => allowed.has(c));
-          nextResult.vote_category = Array.from(allowed);
           // Update the form to the filtered list so UI doesn't show mismatched tokens
           setValue('vote_category', filtered as any);
         }
@@ -1527,49 +1535,18 @@ const index = () => {
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
-                      <TomSelect
-                        value={Array.isArray(field.value) ? field.value : (field.value ? [field.value] : [])}
-                        onChange={(value) => {
-                          // Handle both direct value and event objects from TomSelect
-                          let selectedValues;
-
-                          if (value && typeof value === 'object' && 'target' in value) {
-                            // It's an event object with target.value
-                            selectedValues = value.target.value;
-                          } else {
-                            // It's a direct value
-                            selectedValues = value;
-                          }
-
-                          const normalized = Array.isArray(selectedValues)
-                            ? selectedValues
-                            : (selectedValues ? [selectedValues] : []);
+                      <VoteCategoryTaxonomySelect
+                        taxonomy={apiDependentDropdownOptions?.vote_category_taxonomy || []}
+                        selectedValues={Array.isArray(field.value) ? field.value : (field.value ? [field.value] : [])}
+                        loading={getDynamicDropdownLoader}
+                        placeholder="Select Vote Category"
+                        onChange={(normalized) => {
                           field.onChange(normalized);
                           handleDropdownChange('vote_category', normalized);
                           // Fetching is handled by the consolidated effect that watches
                           // dropdownValues.vote_category, avoiding duplicate/racing calls.
                         }}
-                        options={{
-                          placeholder: "Select Vote Category",
-                          // Do not allow creating arbitrary values; must pick from API
-                          create: false,
-                          persist: false
-                        }}
-                        className="w-full"
-                        multiple
-                      >
-                        {getDynamicDropdownLoader ? (
-                          <option disabled>Loading...</option>
-                        ) : (
-                          [...(apiDependentDropdownOptions?.vote_category || [])]
-                            .sort((a: string, b: string) => a.localeCompare(b))
-                            .map((vote_category: any) => (
-                              <option key={vote_category} value={vote_category}>
-                                {convertToTitleCase(vote_category)}
-                              </option>
-                            ))
-                        )}
-                      </TomSelect>
+                      />
                     )}
                   />
                 </div>
