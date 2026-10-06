@@ -39,6 +39,7 @@ import clsx from "clsx";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
+import VoteCategoryTaxonomySelect from "@/components/NPX/VoteCategoryTaxonomySelect";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
@@ -803,9 +804,16 @@ const index = () => {
           : [];
         const nextResult = { ...res.result } as any;
         if (currentCats.length > 0) {
+          // Selected values can be either a parent_value or an exact child path
+          // from vote_category_taxonomy, so validate against both the taxonomy
+          // and the flat quick list rather than just the flat list.
+          const taxonomy = Array.isArray(nextResult.vote_category_taxonomy) ? nextResult.vote_category_taxonomy : [];
           const allowed = new Set(nextResult.vote_category || []);
+          taxonomy.forEach((item: any) => {
+            if (item?.parent_value) allowed.add(item.parent_value);
+            (item?.child_paths || []).forEach((path: string) => allowed.add(path));
+          });
           const filtered = currentCats.filter((c: string) => allowed.has(c));
-          nextResult.vote_category = Array.from(allowed);
           // Update the form to the filtered list so UI doesn't show mismatched tokens
           setValue('vote_category', filtered as any);
         }
@@ -1527,49 +1535,18 @@ const index = () => {
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
-                      <TomSelect
-                        value={Array.isArray(field.value) ? field.value : (field.value ? [field.value] : [])}
-                        onChange={(value) => {
-                          // Handle both direct value and event objects from TomSelect
-                          let selectedValues;
-
-                          if (value && typeof value === 'object' && 'target' in value) {
-                            // It's an event object with target.value
-                            selectedValues = value.target.value;
-                          } else {
-                            // It's a direct value
-                            selectedValues = value;
-                          }
-
-                          const normalized = Array.isArray(selectedValues)
-                            ? selectedValues
-                            : (selectedValues ? [selectedValues] : []);
+                      <VoteCategoryTaxonomySelect
+                        taxonomy={apiDependentDropdownOptions?.vote_category_taxonomy || []}
+                        selectedValues={Array.isArray(field.value) ? field.value : (field.value ? [field.value] : [])}
+                        loading={getDynamicDropdownLoader}
+                        placeholder="Select Vote Category"
+                        onChange={(normalized) => {
                           field.onChange(normalized);
                           handleDropdownChange('vote_category', normalized);
                           // Fetching is handled by the consolidated effect that watches
                           // dropdownValues.vote_category, avoiding duplicate/racing calls.
                         }}
-                        options={{
-                          placeholder: "Select Vote Category",
-                          // Do not allow creating arbitrary values; must pick from API
-                          create: false,
-                          persist: false
-                        }}
-                        className="w-full"
-                        multiple
-                      >
-                        {getDynamicDropdownLoader ? (
-                          <option disabled>Loading...</option>
-                        ) : (
-                          [...(apiDependentDropdownOptions?.vote_category || [])]
-                            .sort((a: string, b: string) => a.localeCompare(b))
-                            .map((vote_category: any) => (
-                              <option key={vote_category} value={vote_category}>
-                                {convertToTitleCase(vote_category)}
-                              </option>
-                            ))
-                        )}
-                      </TomSelect>
+                      />
                     )}
                   />
                 </div>
@@ -1739,20 +1716,25 @@ const index = () => {
           // Show loading skeleton while data is being fetched
           <TableWrapper isLoading={true}>
             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-              <Table>
+              <Table className="table-fixed">
                 <Table.Thead>
                   <Table.Tr className="bg-primary text-white text-sm">
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "25%" }}>Proposal</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Category</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Vote</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Fund Name</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Shares Voted</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "20%" }}>Proposal</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Category</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Institution</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Fund</Table.Td>
+                    <Table.Td colSpan={3} className="text-center text-sm border-b border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                  </Table.Tr>
+                  <Table.Tr className="bg-primary text-white text-sm">
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>Shares Voted</Table.Td>
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Vote</Table.Td>
+                    <Table.Td className="text-left px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {Array.from({ length: 8 }).map((_, i) => (
                     <Table.Tr key={i} className="animate-pulse">
-                      {Array.from({ length: 5 }).map((_, j) => (
+                      {Array.from({ length: 7 }).map((_, j) => (
                         <Table.Td key={j}><Skeleton height={24} /></Table.Td>
                       ))}
                     </Table.Tr>
@@ -1765,14 +1747,19 @@ const index = () => {
           // Show data table when we have data
           <TableWrapper isLoading={false}>
             <div className="overflow-x-auto max-h-[60vh] overflow-y-scroll">
-              <Table>
+              <Table className="table-fixed">
                 <Table.Thead>
                   <Table.Tr className="bg-primary text-white text-sm">
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "25%" }}>Proposal</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Category</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Vote</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Fund Name</Table.Td>
-                    <Table.Td className="border-b dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "15%" }}>Shares Voted</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "20%" }}>Proposal</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Category</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Institution</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Fund</Table.Td>
+                    <Table.Td colSpan={3} className="text-center text-sm border-b border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                  </Table.Tr>
+                  <Table.Tr className="bg-primary text-white text-sm">
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>Shares Voted</Table.Td>
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Vote</Table.Td>
+                    <Table.Td className="text-left px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -1788,29 +1775,41 @@ const index = () => {
                             toggle ? "bg-white" : "bg-gray-50"
                           )}
                         >
-                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
                             {noAction?.proposal}
                           </Table.Td>
-                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
                             {convertToTitleCase(noAction?.vote_category)}
                           </Table.Td>
-                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.institution_name ?? noAction?.institution ?? noAction?.institute_name ?? noAction?.institution_name_raw}
+                          </Table.Td>
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.fund_name}
+                          </Table.Td>
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.shares_voted_split}
+                          </Table.Td>
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
                             <span
                               className={clsx(
+                                "block text-left",
                                 String(noAction?.vote_split || "").toLowerCase().includes("against") ||
                                 String(noAction?.vote_split || "").toLowerCase().includes("withhold")
-                                  ? "text-[#dc2626] font-semibold"
+                                  ? "text-red-700 font-semibold"
                                   : "text-gray-700"
                               )}
                             >
                               {convertToTitleCase(noAction?.vote_split)}
                             </span>
                           </Table.Td>
-                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                            {noAction?.fund_name}
-                          </Table.Td>
-                          <Table.Td className="px-5 border-b dark:border-darkmode-300 py-2 border-dashed">
-                            {noAction?.shares_voted_split}
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {convertToTitleCase(
+                              noAction?.mgt_rec ??
+                              noAction?.for_or_against_management ??
+                              noAction?.management_recommendation ??
+                              noAction?.for_against_management
+                            )}
                           </Table.Td>
                         </Table.Tr>
                       );
