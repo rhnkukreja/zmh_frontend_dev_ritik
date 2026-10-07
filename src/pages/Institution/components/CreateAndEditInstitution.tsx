@@ -12,6 +12,8 @@ import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
 import FormCheck from "@/components/Base/Form/FormCheck";
 import FormInput from "@/components/Base/Form/FormInput";
+import FormTextarea from "@/components/Base/Form/FormTextarea";
+import clsx from "clsx";
 import Dropzone, { DropzoneElement } from "@/components/Base/Dropzone";
 import Lucide from "@/components/Base/Lucide";
 import { toast } from "react-toastify";
@@ -23,6 +25,8 @@ import Error from "@/components/Error";
 import { generateWhaleWisdomId, scrapeSelectedWhaleWisdom } from "../../AIChatbot/api";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import { WhaleWisdomFilerPickerModal, WhaleWisdomFiler } from "@/components/WhaleWisdomFilerPickerModal";
+
+const INSTITUTION_CONTACT_EMAIL_MAX_LENGTH = 250;
 
 interface InstitutionFormData {
   institution: string;
@@ -94,6 +98,10 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   });
 
   const watchedInvestorType = watch("investor_type");
+  const contactEmailValue = watch("contact_email") || "";
+  const contactEmailLength = contactEmailValue.length;
+  const isContactEmailOverLimit =
+    contactEmailLength > INSTITUTION_CONTACT_EMAIL_MAX_LENGTH;
 
   useEffect(() => {
     if (selectedInstitution?.id) {
@@ -220,6 +228,13 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
   };
 
   const onSubmit = async (data: InstitutionFormData) => {
+    if (data.contact_email && data.contact_email.length > INSTITUTION_CONTACT_EMAIL_MAX_LENGTH) {
+      toast.error(
+        `Contact email cannot exceed ${INSTITUTION_CONTACT_EMAIL_MAX_LENGTH} characters.`
+      );
+      return;
+    }
+
     const transformedData = {
       ...data,
       uploaded_time: data.uploaded_time
@@ -465,20 +480,39 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
               </div>
 
               <div className="w-full">
-                <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-2">
-                  Contact Email
-                </FormCheck.Label>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <FormCheck.Label className="block text-left font-semibold text-gray-800 mb-0">
+                    Contact Email
+                  </FormCheck.Label>
+                  <span
+                    className={clsx(
+                      "text-xs font-medium",
+                      isContactEmailOverLimit ? "text-danger" : "text-slate-400"
+                    )}
+                  >
+                    {contactEmailLength}/{INSTITUTION_CONTACT_EMAIL_MAX_LENGTH}
+                  </span>
+                </div>
                 <Controller
                   name="contact_email"
                   control={control}
                   render={({ field }) => (
-                    <FormInput
-                      placeholder="Enter Contact Email"
-                      type="email"
+                    <FormTextarea
+                      placeholder="Enter contact email"
+                      rows={4}
+                      aria-invalid={isContactEmailOverLimit}
+                      aria-describedby="institution-contact-email-limit"
+                      className="min-h-28 resize-y"
                       {...field}
+                      value={field.value || ""}
                     />
                   )}
                 />
+                {isContactEmailOverLimit && (
+                  <p id="institution-contact-email-limit" className="mt-2 text-xs font-medium text-danger">
+                    Contact email cannot exceed {INSTITUTION_CONTACT_EMAIL_MAX_LENGTH} characters.
+                  </p>
+                )}
               </div>
 
               <div className="w-full">
@@ -629,7 +663,7 @@ export const AddEditInstitution: React.FC<AddEditInstitutionProps> = ({
               >
                 Cancel
               </Button>
-              <Button variant="primary" type="submit">
+              <Button variant="primary" type="submit" disabled={loading || isContactEmailOverLimit}>
                 {loading && (
                   <Lucide
                     icon="Loader"

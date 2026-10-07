@@ -125,6 +125,10 @@ class DomainNotesService {
   ): Promise<{
     results: any[];
   }> {
+    if (tabName === "Other") {
+      return { results: [] };
+    }
+
     const encodedCompanyName = companyName
       ? `&company_name=${encodeURIComponent(JSON.stringify([companyName]))}`
       : "";
