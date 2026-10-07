@@ -87,7 +87,7 @@ const Notes: React.FC = () => {
     }
 
     await Promise.all(
-      (["Private", "Shared", "Other"] as CompanyNotesTab[]).map((tabName) =>
+      (["Private", "Shared"] as CompanyNotesTab[]).map((tabName) =>
         dispatch(fetchCompanyHierarchyNotes(tabName))
       )
     );
@@ -108,7 +108,7 @@ const Notes: React.FC = () => {
     }
 
     dispatch(resetCompanyNotesTabs());
-    const requests = (["Private", "Shared", "Other"] as CompanyNotesTab[]).map(
+    const requests = (["Private", "Shared"] as CompanyNotesTab[]).map(
       (tabName) => dispatch(fetchCompanyHierarchyNotes(tabName))
     );
 
@@ -159,7 +159,7 @@ const Notes: React.FC = () => {
       {activeTab === "company" && (
         <div className="mb-2 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            {(["Private", "Shared", "Other"] as CompanyNotesTab[]).map((tabName) => {
+            {(["Private", "Shared"] as CompanyNotesTab[]).map((tabName) => {
               const isActive = companyNotesTab === tabName;
 
               return (

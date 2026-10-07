@@ -266,7 +266,7 @@ const NoteDetails: React.FC<NotesFieldProps> = ({
 
   const refreshCompanyNotesTabs = async () => {
     await Promise.all(
-      (["Private", "Shared", "Other"] as CompanyNotesTab[]).map((tabName) =>
+      (["Private", "Shared"] as CompanyNotesTab[]).map((tabName) =>
         dispatch(fetchCompanyHierarchyNotes(tabName))
       )
     );

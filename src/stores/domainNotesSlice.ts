@@ -10,7 +10,7 @@ import { RootState } from "./store";
 
 const name = "domainNotes";
 
-export type CompanyNotesTab = "Private" | "Shared" | "Other";
+export type CompanyNotesTab = "Private" | "Shared";
 
 interface DomainNotesFilters {
   institution_name: string[];
@@ -68,8 +68,8 @@ const initialState: DomainNotesState = {
   institutionHierarchy: [],
   loadingInstitutionHierarchy: false,
   companyHierarchy: [],
-  companyHierarchyByTab: { Private: [], Shared: [], Other: [] },
-  companyHierarchyLoadingByTab: { Private: false, Shared: false, Other: false },
+  companyHierarchyByTab: { Private: [], Shared: [] },
+  companyHierarchyLoadingByTab: { Private: false, Shared: false },
   companyNotesTab: "Private",
   loadingCompanyHierarchy: false,
 };
@@ -222,8 +222,8 @@ const domainNotesSlice = createSlice({
     resetCompanyNotesTabs(state) {
       state.companyNotesTab = "Private";
       state.companyHierarchy = [];
-      state.companyHierarchyByTab = { Private: [], Shared: [], Other: [] };
-      state.companyHierarchyLoadingByTab = { Private: false, Shared: false, Other: false };
+      state.companyHierarchyByTab = { Private: [], Shared: [] };
+      state.companyHierarchyLoadingByTab = { Private: false, Shared: false };
       state.loadingCompanyHierarchy = false;
     },
   },

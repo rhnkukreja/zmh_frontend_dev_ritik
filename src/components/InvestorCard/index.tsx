@@ -97,10 +97,11 @@ type OwnershipComparisonYear = {
 type OwnershipComparisonRow = {
   institution_id?: number;
   institution_name?: string;
-  percent_ownership?: string | number;
-  proxy_advisor_influence?: string;
+  percent_ownership?: string | number | null;
+  proxy_advisor_influence?: string | null;
   is_doc?: boolean | number | string;
-  [year: string]: OwnershipComparisonYear | string | number | boolean | undefined;
+  child_institutions?: OwnershipComparisonRow[];
+  [year: string]: OwnershipComparisonYear | string | number | boolean | OwnershipComparisonRow[] | null | undefined;
 };
 
 type OwnershipView = "all" | "separate";
@@ -533,6 +534,23 @@ const getNormalizedScrapedInfo = (name: string) => {
     return Array.isArray(rows) ? rows : [];
   }, [dashboardDataList]);
 
+  useEffect(() => {
+    const rowsWithChildren = comparisonRows.reduce<string[]>((acc, holding, index) => {
+      if (Array.isArray(holding?.child_institutions) && holding.child_institutions.length > 0) {
+        acc.push(`${holding.institution_id ?? holding.institution_name ?? "row"}-${index}`);
+      }
+      return acc;
+    }, []);
+
+    if (rowsWithChildren.length > 0) {
+      setExpandedHoldingRows((prev) => {
+        const next = new Set(prev);
+        rowsWithChildren.forEach((key) => next.add(key));
+        return next;
+      });
+    }
+  }, [comparisonRows]);
+
   const comparisonYears = useMemo(() => {
     const years = new Set<string>();
 
@@ -843,17 +861,31 @@ const getNormalizedScrapedInfo = (name: string) => {
                                   const isInternallyCovered = typeof rawProxy === "string" && rawProxy.toLowerCase().includes("internal");
                                   const isCoveredInDB = Boolean(dynInstId || hasDocument || isInternallyCovered);
                                   const isInvestorProfileLinked = hasDocument && Boolean(dynInstId);
+                                  const rowKey = `${holding?.institution_id ?? holding?.institution_name ?? "row"}-${index}`;
+                                  const childInstitutions = Array.isArray(holding?.child_institutions) ? holding.child_institutions : [];
+                                  const hasChildren = childInstitutions.length > 0;
+                                  const isRowExpanded = expandedHoldingRows.has(rowKey);
 
                                   return (
-                                    <Table.Tr
-                                      key={`${holding?.institution_id ?? holding?.institution_name ?? "row"}-${index}`}
-                                      className="row [&_td]:last:border-b-0"
-                                    >
+                                    <Fragment key={rowKey}>
+                                      <Table.Tr className="row [&_td]:last:border-b-0">
                                       <Table.Td className="cell px-2 py-2 h-[50px] border-dashed dark:bg-darkmode-600 align-middle text-[13px]">
                                         <div className="flex items-center font-semibold justify-center">{index + 1}</div>
                                       </Table.Td>
                                       <Table.Td className="relative w-full px-3 py-2 border-dashed dark:bg-darkmode-600 align-middle">
                                         <div className="flex min-w-0 items-start gap-2">
+                                          {hasChildren && (
+                                            <button
+                                              type="button"
+                                              onClick={() => toggleHoldingRow(rowKey)}
+                                              className="absolute -left-2 top-1/2 flex h-5 w-5 shrink-0 -translate-y-1/2 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+                                            >
+                                              <Lucide
+                                                icon={isRowExpanded ? "ChevronUp" : "ChevronDown"}
+                                                className="h-4 w-4"
+                                              />
+                                            </button>
+                                          )}
                                           {!isCoveredInDB && (
                                             <sup
                                               className="cursor-pointer text-base absolute left-0.5 top-1/2 -translate-y-1/2 text-red-500"
@@ -896,7 +928,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                                       {comparisonYears.map((year) => {
                                         const yearData = holding[year] as OwnershipComparisonYear | undefined;
                                         const isMatched = yearData?.matched === true;
-                                        const unavailableCellClass = !isMatched ? "bg-slate-100 dark:bg-darkmode-700" : "dark:bg-darkmode-600";
+                                        const unavailableCellClass = !isMatched ? "bg-gray-50 dark:bg-darkmode-700" : "dark:bg-darkmode-600";
 
                                         return (
                                           <Fragment key={`${holding?.institution_id ?? holding?.institution_name ?? "row"}-${year}`}>
@@ -908,7 +940,7 @@ const getNormalizedScrapedInfo = (name: string) => {
                                                   "No Data"
                                                 )
                                               ) : (
-                                                <span className="text-slate-400">-</span>
+                                                <span className="text-gray-300">—</span>
                                               )}
                                             </Table.Td>
                                             <Table.Td className={`cell px-1 py-2 border-dashed text-center align-middle ${unavailableCellClass}`}>
@@ -919,13 +951,90 @@ const getNormalizedScrapedInfo = (name: string) => {
                                                   `Say on Pay not on ballot at ${year} shareholder meeting`
                                                 )
                                               ) : (
-                                                <span className="text-slate-400">-</span>
+                                                <span className="text-gray-300">—</span>
                                               )}
                                             </Table.Td>
                                           </Fragment>
                                         );
                                       })}
-                                    </Table.Tr>
+                                      </Table.Tr>
+                                      {isRowExpanded &&
+                                        childInstitutions.map((child, childIndex) => {
+                                          const childHasDocument =
+                                            child?.is_doc === true ||
+                                            child?.is_doc === 1 ||
+                                            (typeof child?.is_doc === "string" && child.is_doc.toLowerCase() === "true");
+                                          const childIsInvestorProfileLinked = childHasDocument && Boolean(child?.institution_id);
+
+                                          return (
+                                            <Table.Tr
+                                              key={`${rowKey}-child-${child?.institution_id ?? child?.institution_name ?? childIndex}`}
+                                              className="row [&_td]:last:border-b-0"
+                                            >
+                                              <Table.Td className="cell px-2 py-2 h-[50px] border-dashed dark:bg-darkmode-600 align-middle text-[13px]">
+                                                <div className="flex items-center justify-center text-[12px] font-semibold text-slate-500">
+                                                  {index + 1}.{childIndex + 1}
+                                                </div>
+                                              </Table.Td>
+                                              <Table.Td className="relative w-full px-3 py-2 border-dashed dark:bg-darkmode-600 align-middle">
+                                                <div className="pl-7">
+                                                  <h1
+                                                    onClick={() => {
+                                                      if (childIsInvestorProfileLinked) {
+                                                        window.open(`/investor-company-details/${child.institution_id}`, "_blank");
+                                                      }
+                                                    }}
+                                                    className={clsx([
+                                                      "block min-w-0 max-w-[165px] break-words whitespace-normal capitalize font-semibold leading-tight text-[13px] text-slate-700",
+                                                      childIsInvestorProfileLinked ? "cursor-pointer underline" : "",
+                                                    ])}
+                                                  >
+                                                    {child?.institution_name}
+                                                  </h1>
+                                                </div>
+                                              </Table.Td>
+                                              <Table.Td className="cell px-2 py-2 border-dashed bg-gray-50 dark:bg-darkmode-600 text-left align-middle text-[13px]">
+                                                <div className="flex items-center justify-center whitespace-nowrap text-gray-300">—</div>
+                                              </Table.Td>
+                                              <Table.Td className="cell px-2 py-2 border-dashed bg-gray-50 dark:bg-darkmode-600 text-left align-middle text-[13px]">
+                                                <div className="whitespace-normal break-words text-left leading-tight text-gray-300">—</div>
+                                              </Table.Td>
+                                              {comparisonYears.map((year) => {
+                                                const yearData = child[year] as OwnershipComparisonYear | undefined;
+                                                const isMatched = yearData?.matched === true;
+                                                const unavailableCellClass = !isMatched ? "bg-gray-50 dark:bg-darkmode-700" : "dark:bg-darkmode-600";
+
+                                                return (
+                                                  <Fragment key={`${child?.institution_id ?? child?.institution_name ?? childIndex}-${year}`}>
+                                                    <Table.Td className={`cell relative px-1 py-2 border-dashed text-center align-middle after:absolute after:top-0 after:bottom-0 after:left-0 after:w-px after:bg-slate-200 after:content-[''] ${unavailableCellClass}`}>
+                                                      {isMatched ? (
+                                                        renderVotingStatus(
+                                                          yearData?.voted_against_directors,
+                                                          yearData?.voted_against_directors_message || undefined,
+                                                          "No Data"
+                                                        )
+                                                      ) : (
+                                                        <span className="text-gray-300">—</span>
+                                                      )}
+                                                    </Table.Td>
+                                                    <Table.Td className={`cell px-1 py-2 border-dashed text-center align-middle ${unavailableCellClass}`}>
+                                                      {isMatched ? (
+                                                        renderVotingStatus(
+                                                          yearData?.voted_against_say_on_pay,
+                                                          yearData?.voted_against_say_on_pay_message || undefined,
+                                                          `Say on Pay not on ballot at ${year} shareholder meeting`
+                                                        )
+                                                      ) : (
+                                                        <span className="text-gray-300">—</span>
+                                                      )}
+                                                    </Table.Td>
+                                                  </Fragment>
+                                                );
+                                              })}
+                                            </Table.Tr>
+                                          );
+                                        })}
+                                    </Fragment>
                                   );
                                 })}
                             </Table.Tbody>
@@ -1394,7 +1503,17 @@ const isActivelyScraping =
                                         </Table.Td>
                                         <Table.Td className="relative w-full min-w-[320px] px-4 py-2 pr-28">
                                           <div className="pl-7">
-                                            <h1 className="block max-w-[260px] break-words whitespace-normal capitalize font-semibold leading-tight text-slate-700">
+                                            <h1
+                                              onClick={() => {
+                                                if (child?.is_doc === true && child?.institution_id) {
+                                                  window.open(`/investor-company-details/${child.institution_id}`, "_blank");
+                                                }
+                                              }}
+                                              className={clsx([
+                                                "block max-w-[260px] break-words whitespace-normal capitalize font-semibold leading-tight text-slate-700",
+                                                child?.is_doc === true && child?.institution_id ? "cursor-pointer underline" : "",
+                                              ])}
+                                            >
                                               {child?.institution_name}
                                             </h1>
                                           </div>

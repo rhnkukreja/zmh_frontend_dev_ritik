@@ -40,11 +40,14 @@ import { InvestersProfile, KeyContact } from "@/types/investerProfiles";
 import clsx from "clsx";
 import { FormSwitch } from "@/components/Base/Form";
 import FormInput from "@/components/Base/Form/FormInput";
+import FormTextarea from "@/components/Base/Form/FormTextarea";
 import { Controller, useForm } from "react-hook-form";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { ChevronLeft } from "lucide-react";
 import { setPage } from "@/stores/investersProfileSlice";
 import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
+
+const TEAM_CONTACT_DETAILS_MAX_LENGTH = 250;
 
 // --- START OF FORMATTING HELPER FUNCTIONS ---
 const renderTextWithLinksHtml = (text: string) => {
@@ -185,13 +188,18 @@ function Main() {
   const investorProfileCompanyName = investorProfileCompanyNotes[0]?.company_name || "";
   const investorProfileNotesTabsEnabled = false;
   const hasTeamContactDetails = Boolean(singleInvesterProfile?.contact_email);
+  const teamContactDetails = singleInvesterProfile?.contact_email?.trim() || "";
   const hasKeyContacts = Boolean(singleInvesterProfile?.key_contacts?.length);
   const shouldShowContactsSidebar =
     params?.type === "investor" &&
     (isAdminOrAnalyst || (isClientUser ? hasKeyContacts : hasTeamContactDetails || hasKeyContacts));
-  const isEmailContact = singleInvesterProfile?.contact_email
-    ? /\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
-    : true;
+  const contactDetailLines = teamContactDetails.split("\n");
+  const firstContactLine = contactDetailLines[0]?.trim() || "";
+  const remainingContactText = contactDetailLines.slice(1).join("\n").trim();
+  const isEmailContact = /^\S+@\S+\.\S+$/.test(firstContactLine);
+  const isContactUrl = /^https?:\/\/\S+$/i.test(firstContactLine);
+  const isContactEmailOverLimit =
+    contactEmailDraft.length > TEAM_CONTACT_DETAILS_MAX_LENGTH;
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -571,6 +579,11 @@ function Main() {
       return;
     }
 
+    if (contactEmailDraft.length > TEAM_CONTACT_DETAILS_MAX_LENGTH) {
+      toast.error(`Team contact details cannot exceed ${TEAM_CONTACT_DETAILS_MAX_LENGTH} characters.`);
+      return;
+    }
+
     try {
       setIsSavingContactEmail(true);
       await investersProfileService.patchInvestersProfile(profileId, params?.type!, {
@@ -883,23 +896,46 @@ function Main() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <h4 className="text-left text-[18px] font-semibold text-black">
-                            {hasTeamContactDetails && !isEmailContact
+                            {hasTeamContactDetails && isContactUrl
                               ? "Link to Contact Form"
                               : "Team Contact Details"}
                           </h4>
-                          {singleInvesterProfile?.contact_email ? (
-                            <a
-                              href={
-                                isEmailContact
-                                  ? `mailto:${singleInvesterProfile.contact_email}`
-                                  : singleInvesterProfile.contact_email
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-2 block break-words text-blue-500 hover:underline"
-                            >
-                              {singleInvesterProfile.contact_email}
-                            </a>
+                          {teamContactDetails ? (
+                            isEmailContact ? (
+                              <div className="mt-2">
+                                <a
+                                  href={`mailto:${firstContactLine}`}
+                                  className="block break-words text-blue-500 hover:underline"
+                                >
+                                  {firstContactLine}
+                                </a>
+                                {remainingContactText && (
+                                  <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
+                                    {remainingContactText}
+                                  </p>
+                                )}
+                              </div>
+                            ) : isContactUrl ? (
+                              <div className="mt-2">
+                                <a
+                                  href={firstContactLine}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block break-words text-blue-500 hover:underline"
+                                >
+                                  {firstContactLine}
+                                </a>
+                                {remainingContactText && (
+                                  <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
+                                    {remainingContactText}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
+                                {teamContactDetails}
+                              </p>
+                            )
                           ) : (
                             <p className="mt-2 text-sm leading-6 text-slate-500">
                               No team contact details have been added yet.
@@ -1482,16 +1518,37 @@ function Main() {
             </Dialog.Title>
             <Dialog.Description className="bg-slate-50 px-6 py-6">
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Contact Email
-                </label>
-                <FormInput
-                  type="text"
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label
+                    htmlFor="team-contact-details"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Team Contact Details
+                  </label>
+                  <span
+                    className={clsx(
+                      "text-xs font-medium",
+                      isContactEmailOverLimit ? "text-danger" : "text-slate-400"
+                    )}
+                  >
+                    {contactEmailDraft.length}/{TEAM_CONTACT_DETAILS_MAX_LENGTH}
+                  </span>
+                </div>
+                <FormTextarea
+                  id="team-contact-details"
                   value={contactEmailDraft}
                   onChange={(e) => setContactEmailDraft(e.target.value)}
-                  placeholder="Enter team contact email"
-                  className="h-11"
+                  placeholder="Enter team contact details"
+                  rows={4}
+                  aria-invalid={isContactEmailOverLimit}
+                  aria-describedby="team-contact-details-limit"
+                  className="min-h-28 resize-y"
                 />
+                {isContactEmailOverLimit && (
+                  <p id="team-contact-details-limit" className="mt-2 text-xs font-medium text-danger">
+                    Team contact details cannot exceed {TEAM_CONTACT_DETAILS_MAX_LENGTH} characters.
+                  </p>
+                )}
               </div>
             </Dialog.Description>
             <Dialog.Footer className="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
@@ -1508,7 +1565,7 @@ function Main() {
                 type="button"
                 variant="primary"
                 onClick={handleSaveContactEmail}
-                disabled={isSavingContactEmail}
+                disabled={isSavingContactEmail || isContactEmailOverLimit}
                 className="min-w-24 bg-theme-2 border-bg-theme-2"
               >
                 {isSavingContactEmail
