@@ -17,6 +17,7 @@ import useCompanySearch from "@/hooks/useCompanySearch";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import AddToProxyContestFlow from "./AddToProxyContestFlow";
+import SuppressionFiltersPanel from "./SuppressionFiltersPanel";
 
 const THEME_MAROON = "#8b1828";
 const PAGE_SIZE = 50;
@@ -956,6 +957,11 @@ function ActivistCampaigns() {
   // itself drafts, fetches and saves, and this page only says when to start.
   const [proxyContestFlowOpen, setProxyContestFlowOpen] = useState(false);
 
+  // Suppression filters panel. Admins and analysts can add, switch on and
+  // switch off filters; the backend has no auth of its own on these routes, so
+  // this gate is the only one.
+  const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
+
   const [editingFiling, setEditingFiling] = useState<FilingItem | null>(null);
   const [editStatus, setEditStatus] = useState("ongoing");
   const [editNotes, setEditNotes] = useState("");
@@ -1663,15 +1669,28 @@ function ActivistCampaigns() {
               action taken rarely. The modal below holds the same UI verbatim. */}
           <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-200 flex items-center justify-between gap-4">
             <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">Activist Campaigns</h2>
-            <Button
-              type="button"
-              variant="outline-secondary"
-              onClick={() => setUploadModalOpen(true)}
-              className="shrink-0"
-            >
-              <Lucide icon="Upload" className="stroke-[1.3] w-4 h-4 mr-2" />
-              Upload Excel
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              {isAdminOrAnalyst && (
+                <Button
+                  type="button"
+                  variant="outline-secondary"
+                  onClick={() => setFiltersPanelOpen(true)}
+                  className="shrink-0"
+                >
+                  <Lucide icon="Filter" className="stroke-[1.3] w-4 h-4 mr-2" />
+                  Suppression Filters
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => setUploadModalOpen(true)}
+                className="shrink-0"
+              >
+                <Lucide icon="Upload" className="stroke-[1.3] w-4 h-4 mr-2" />
+                Upload Excel
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
@@ -2947,6 +2966,12 @@ function ActivistCampaigns() {
           filings={selectedFilings}
           onClose={() => setProxyContestFlowOpen(false)}
         />
+      )}
+
+      {/* Mounted only while open, so the form and any preview start clean on
+          every open and the rule list is re-read. */}
+      {isAdminOrAnalyst && filtersPanelOpen && (
+        <SuppressionFiltersPanel onClose={() => setFiltersPanelOpen(false)} />
       )}
     </div>
   );
