@@ -227,10 +227,10 @@ const CountryInfoHeader = () => {
 
         {/* Industry */}
         {finhub?.finnhub_industry && (
-          <div className="flex items-center bg-white px-2.5 py-1.5 rounded-lg shadow-sm border border-gray-200 max-w-[220px]">
-            <div className="flex flex-row items-center gap-2 min-w-0">
+          <div className="flex items-center bg-white px-2.5 py-1.5 rounded-lg shadow-sm border border-gray-200 shrink-0">
+            <div className="flex flex-row items-center gap-2">
               <p className="text-gray-600 font-medium text-xs whitespace-nowrap">Industry:</p>
-              <p className="text-gray-800 text-xs font-medium truncate">{finhub?.finnhub_industry}</p>
+              <p className="text-gray-800 text-xs font-medium whitespace-nowrap">{finhub?.finnhub_industry}</p>
             </div>
           </div>
         )}

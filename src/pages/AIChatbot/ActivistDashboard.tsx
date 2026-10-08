@@ -2472,9 +2472,10 @@ const ActivistIntelligenceDashboard = ({
   // Without a slot (standalone use) they fall back to the profile card header.
   const editControls = showEditButton ? (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      {/* Admin only -- deliberately isAdmin, not showEditButton (which is
-          isAdminOrAnalyst and would also show this to analysts). */}
-      {isAdmin && (
+      {/* Admins and analysts both: analysts review the captured filings and
+          manage the suppression filters on that page, so both roles need the
+          way in. */}
+      {isAdminOrAnalyst && (
         <button
           onClick={() => navigate("/activist-campaigns")}
           style={{
