@@ -3,7 +3,7 @@ import Lucide from "@/components/Base/Lucide";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { Fragment, useEffect, useMemo, useState, useRef } from "react";
 import DOMPurify from "dompurify";
 import { decryptNotesText } from "@/utils/notesCrypto";
 
@@ -48,6 +48,32 @@ import { setPage } from "@/stores/investersProfileSlice";
 import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
 
 const TEAM_CONTACT_DETAILS_MAX_LENGTH = 250;
+const CONTACT_LINK_PATTERN = /(https?:\/\/[^\s]+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
+
+const renderContactText = (text: string) =>
+  text.split("\n").map((line, lineIndex) => (
+    <Fragment key={`${line}-${lineIndex}`}>
+      {line.split(CONTACT_LINK_PATTERN).map((part, partIndex) => {
+        const isUrl = /^https?:\/\//i.test(part);
+        const isEmail = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(part);
+
+        if (!isUrl && !isEmail) return part;
+
+        return (
+          <a
+            key={`${part}-${partIndex}`}
+            href={isEmail ? `mailto:${part}` : part}
+            target={isUrl ? "_blank" : undefined}
+            rel={isUrl ? "noopener noreferrer" : undefined}
+            className="text-blue-500 hover:underline"
+          >
+            {part}
+          </a>
+        );
+      })}
+      {lineIndex < text.split("\n").length - 1 && <br />}
+    </Fragment>
+  ));
 
 // --- START OF FORMATTING HELPER FUNCTIONS ---
 const renderTextWithLinksHtml = (text: string) => {
@@ -911,7 +937,7 @@ function Main() {
                                 </a>
                                 {remainingContactText && (
                                   <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
-                                    {remainingContactText}
+                                    {renderContactText(remainingContactText)}
                                   </p>
                                 )}
                               </div>
@@ -927,13 +953,13 @@ function Main() {
                                 </a>
                                 {remainingContactText && (
                                   <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
-                                    {remainingContactText}
+                                    {renderContactText(remainingContactText)}
                                   </p>
                                 )}
                               </div>
                             ) : (
                               <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
-                                {teamContactDetails}
+                                {renderContactText(teamContactDetails)}
                               </p>
                             )
                           ) : (
