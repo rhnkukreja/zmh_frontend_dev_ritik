@@ -112,7 +112,10 @@ const fetchOptions = async (
         label: selectAllLabel || 'Select All',
       };
 
-      return includeSelectAllOption
+      // Only offer the "Select All" shortcut alongside actual matches — showing it
+      // when a search returns zero institutions is misleading (there's nothing to
+      // select all of, and it looks like a match for a name that doesn't exist).
+      return includeSelectAllOption && institutionOptions.length > 0
         ? [selectAllOption, ...institutionOptions]
         : institutionOptions;
     } else {
