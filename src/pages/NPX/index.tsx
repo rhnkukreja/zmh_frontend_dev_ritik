@@ -643,6 +643,11 @@ const index = () => {
     // Reset values on company or year change
     setMeetingDate('');
     setAllInstitutions([]);
+    // Clear the previous company's cached meeting dates too — otherwise the
+    // meeting-date-resolving effect below can match the OLD company's
+    // meeting_date for the new company whenever both happen to share the
+    // same selected year, before the new company's own dates have loaded.
+    setNpxMeetings([]);
 
     // Reset dropdown values to prevent unnecessary API calls
     setDropdownValues({
@@ -929,8 +934,12 @@ const index = () => {
       // If not found, clear and let API determine default
       fetchAllInstitutions(savedInstitutionRef.current, '');
     }
+  // npxMeetings is included so this re-evaluates once the NEW company's own
+  // meeting dates actually finish loading (it's fetched separately, keyed on
+  // companyGlobalSearchId) — otherwise this could run once with stale/cleared
+  // data and never get a chance to correct the resolved meeting_date.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyGlobalSearchName, year]);
+  }, [companyGlobalSearchName, year, npxMeetings]);
 
   // SINGLE source of truth for dependent-dropdown fetching.
   // Consolidates fund/category/institution-cleared triggers into one deterministic effect
@@ -950,10 +959,12 @@ const index = () => {
         ? dropdownValues.vote_category
         : (dropdownValues?.vote_category ? [dropdownValues.vote_category] : []);
       const hasCategory = cats.length > 0;
-      const hasFund = Array.isArray(dropdownValues?.fund_name) && dropdownValues.fund_name.length > 0;
 
-      if (hasCategory || hasFund) {
-        getDependentDropdown(hasCategory ? cats : undefined, null);
+      // Fund selection should never trigger this dropdown-options refresh — same
+      // as when a specific institution is selected (handled above). Only a
+      // Category change should re-fetch dependent dropdown options here.
+      if (hasCategory) {
+        getDependentDropdown(cats, null);
       }
       return;
     }
@@ -962,13 +973,12 @@ const index = () => {
       ? dropdownValues.vote_category
       : (dropdownValues?.vote_category ? [dropdownValues.vote_category] : []);
     const hasCategory = cats.length > 0;
-    const hasFund = Array.isArray(dropdownValues?.fund_name) && dropdownValues.fund_name.length > 0;
 
-    if (hasCategory || hasFund) {
+    if (hasCategory) {
       // Explicitly pass fresh values (post-commit) to guarantee correct params every time
-      getDependentDropdown(hasCategory ? cats : undefined, null);
+      getDependentDropdown(cats, null);
     }
-  }, [dropdownValues.institution_name, dropdownValues.fund_name, dropdownValues.vote_category, allInstitutions.length]);
+  }, [dropdownValues.institution_name, dropdownValues.vote_category, allInstitutions.length]);
 
   // Fetches /npx/detail for an explicit target page using the latest applied filters.
   // Called directly by the pagination handlers below for EVERY page change (including
@@ -1009,9 +1019,14 @@ const index = () => {
     if (isCompanySelected) {
       reset();
       setShowFundName(false);
-      // Immediately refetch institutions and auto-select the first for the active meeting date
-      const md = meetingDateFromURL || meetingDate || '';
-      fetchAllInstitutions(savedInstitutionRef.current, md);
+      setMeetingDate('');
+      // Don't call fetchAllInstitutions here — the [companyGlobalSearchName, year]
+      // effects below already own fetching institutions for the newly selected
+      // company (with the correct meeting_date and the saved-filter restore).
+      // Calling it again from here raced that effect: whichever call resolved
+      // last would win, and if this one won it had no saved-filter context yet,
+      // which is what caused selected filters to disappear and fall back to the
+      // first institution on company change.
       dispatch(setIsCompanySelected(false));
     }
   }, [isCompanySelected]);
