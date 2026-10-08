@@ -25,6 +25,12 @@ const extractFilingYear = (value: unknown) => {
 const toTrimmedString = (value: unknown) => String(value || "").trim();
 
 const DEFAULT_EXCLUDED_FILING_TYPES = ["DEF 14A", "DEFA14A", "PRE 14A"];
+// Company Filings rows never sent for classification. Their documents are the
+// full proxy statement (1.6-1.9 MB each), and "Proxy Statement" -- their
+// Filing-Type fallback label -- is already the right answer. DEFA14A, the
+// third Company Filings type, IS sent: the backend returns its type and its
+// attachments.
+const NEVER_CLASSIFIED_FILING_TYPES = ["DEF 14A", "PRE 14A"];
 const COMPANY_FILINGS_TAB = "company-filings";
 const ACTIVIST_FILINGS_TAB = "activist-filings";
 
@@ -117,6 +123,18 @@ const filingTypeKey = (filingType: unknown): string =>
 const isAttachmentFilingType = (filingType: unknown): boolean => {
   const key = filingTypeKey(filingType);
   return key === "SC13D" || key === "SC13D/A";
+};
+
+// Soliciting-material forms whose attachments are EXTRA information. Unlike a
+// 13D, the row already has an answer of its own -- its document type, or its
+// muted Filing-Type label -- so the attachments are appended after it rather
+// than replacing it, and a lookup with no answer adds nothing (no "Not read":
+// that would hide a label the row already had). Deliberately separate from
+// isAttachmentFilingType, which also decides which links get a "Not read"
+// reason in the lookup flow.
+const isSupplementalAttachmentFilingType = (filingType: unknown): boolean => {
+  const key = filingTypeKey(filingType);
+  return key === "DFAN14A" || key === "DEFA14A";
 };
 
 // What a row shows when its document type is null (or the call failed): an
@@ -252,6 +270,147 @@ const renderAttachments = (attachments: Attachment[]) => {
   );
 };
 
+// ─── DFAN14A / DEFA14A attachments: summary in the cell, detail in the modal ─
+// The cell only summarises; the paperclip modal is where each exhibit is
+// named, categorised and, when it couldn't be read, explained. Schedule 13D
+// rows keep renderAttachments above, untouched.
+
+// "Not read" is a state -- we could not open the file -- not a category, so it
+// never shares the category badges' look: dashed outline, an icon, and wording
+// that says what happened.
+const NOT_READ_STATE_CLASS = "inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-slate-400 bg-white px-2 py-0.5 text-xs text-slate-500";
+
+const NotReadState = ({ label }: { label: string }) => (
+  <span className={NOT_READ_STATE_CLASS}>
+    <Lucide icon="EyeOff" className="h-3 w-3 shrink-0" />
+    {label}
+  </span>
+);
+
+// Each distinct category once, with a count only where several files share it.
+// Exhibits carrying the row's own document type are left out: a Press Release
+// filing with a Press Release exhibit says "Press Release" once.
+const summarizeAttachments = (attachments: Attachment[], ownType: DocumentType | null) => {
+  const categories: Array<{ badge: AttachmentBadge; count: number }> = [];
+  let notRead = 0;
+  attachments.forEach((attachment) => {
+    if (attachment.type === ATTACHMENT_NOT_READ) {
+      notRead += 1;
+      return;
+    }
+    if (ownType && attachment.type === ownType) return;
+    const badge = attachmentBadge(attachment);
+    const existing = categories.find((entry) => entry.badge.key === badge.key);
+    if (existing) existing.count += 1;
+    else categories.push({ badge, count: 1 });
+  });
+  return { categories, notRead };
+};
+
+// How many category badges the cell prints before "+ N more". Two fit the 18%
+// column on one line; the rest are named in the tooltip and the modal.
+const SUMMARY_CATEGORY_CAP = 2;
+
+const AttachmentSummary = ({
+  attachments,
+  ownType,
+  onOpenDetails,
+}: {
+  attachments: Attachment[];
+  ownType: DocumentType | null;
+  onOpenDetails: (() => void) | null;
+}) => {
+  const { categories, notRead } = summarizeAttachments(attachments, ownType);
+  if (categories.length === 0 && notRead === 0) return null;
+  const shown = categories.slice(0, SUMMARY_CATEGORY_CAP);
+  const hiddenCount = categories.slice(SUMMARY_CATEGORY_CAP).reduce((sum, entry) => sum + entry.count, 0);
+  // The tooltip stays, as a convenience; the modal is the full answer.
+  const tooltip = attachments.map(describeAttachment).join("; ");
+
+  const content = (
+    <>
+      {shown.map(({ badge, count }) => (
+        <span key={badge.key} className={`${BADGE_BASE_CLASS} ${badge.className}`}>
+          {badge.label}
+          {count > 1 ? ` ×${count}` : ""}
+        </span>
+      ))}
+      {hiddenCount > 0 && <span className="text-xs text-slate-500">+ {hiddenCount} more</span>}
+      {notRead > 0 && <NotReadState label={`${notRead} not read`} />}
+    </>
+  );
+
+  // Clickable only when the paperclip has something to open, and then it
+  // opens the same modal. No icon of its own: the paperclip button in the
+  // Filing Link column is the visible way in.
+  return onOpenDetails ? (
+    <button
+      type="button"
+      onClick={onOpenDetails}
+      title={`${tooltip}\n\nClick for attachment details`}
+      aria-label="Open attachment details"
+      className="group flex max-w-full flex-wrap items-center gap-1 rounded-md text-left hover:bg-primary/5"
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="flex max-w-full flex-wrap items-center gap-1" title={tooltip}>
+      {content}
+    </div>
+  );
+};
+
+// The file name at the end of a URL, lower-cased: ".../000149315226041997/ex1.htm"
+// -> "ex1.htm". The classifier names exhibits the same way.
+const fileNameFromUrl = (url: unknown): string => {
+  const path = toTrimmedString(url).split(/[?#]/)[0];
+  const last = path.slice(path.lastIndexOf("/") + 1);
+  try {
+    return decodeURIComponent(last).toLowerCase();
+  } catch {
+    return last.toLowerCase();
+  }
+};
+
+// Pairs each downloadable file with its classification by file name (the
+// URL's last segment, else the file's description). A file with no match is
+// shown exactly as before; a classification with no file is listed on its own.
+const matchFilesToAttachments = (files: FilingFile[], attachments: Attachment[]) => {
+  const used = new Set<Attachment>();
+  const paired = files.map((file) => {
+    const candidates = [fileNameFromUrl(file.url), toTrimmedString(file.description).toLowerCase()].filter(Boolean);
+    const match = attachments.find(
+      (attachment) => !used.has(attachment) && candidates.includes(toTrimmedString(attachment.name).toLowerCase())
+    );
+    if (match) used.add(match);
+    return { file, attachment: match || null };
+  });
+  return { paired, unmatched: attachments.filter((attachment) => !used.has(attachment)) };
+};
+
+// One exhibit's classification in the modal: its category badge (the table's
+// colours), or the not-read state with its note in full underneath. A
+// classified exhibit's note (how the classifier decided, e.g. "named from its
+// layout") is not shown: the category is the answer.
+const AttachmentClassification = ({ attachment }: { attachment: Attachment }) => {
+  const note = toTrimmedString(attachment.note);
+  const isNotRead = attachment.type === ATTACHMENT_NOT_READ;
+  const badge = isNotRead ? null : attachmentBadge(attachment);
+  // The category's full name here, not the table's short label.
+  const fullCategory = toTrimmedString(attachment.category);
+  const label = badge && !isDocumentType(attachment.type) && fullCategory ? fullCategory : badge?.label;
+  return (
+    <div className="mt-2">
+      {isNotRead ? (
+        <NotReadState label="Could not be read" />
+      ) : (
+        <span className={`${BADGE_BASE_CLASS} ${badge!.className}`}>{label}</span>
+      )}
+      {isNotRead && note && <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{note}</p>}
+    </div>
+  );
+};
+
 function ActivistFilings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const source = searchParams.get("source") || "";
@@ -273,6 +432,9 @@ function ActivistFilings() {
   const [selectedFilingFiles, setSelectedFilingFiles] = useState<FilingFile[]>([]);
   const [selectedFilingLabel, setSelectedFilingLabel] = useState("");
   const [selectedFilingDate, setSelectedFilingDate] = useState("");
+  // The classifications of the open filing's exhibits, when it has them
+  // (DFAN14A / DEFA14A). null = show the files exactly as before.
+  const [selectedFilingAttachments, setSelectedFilingAttachments] = useState<Attachment[] | null>(null);
 
   const fetchFilings = useCallback(async () => {
     if (!companyGlobalSearchId) {
@@ -337,14 +499,15 @@ function ActivistFilings() {
     const isCurrentRun = () => documentTypeRunRef.current === runId;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-    // Only the Activism Related Filings rows -- the only table with this
-    // column -- one entry per distinct link.
+    // Rows from both tabs -- both now show this column -- one entry per
+    // distinct link, except the proxy statements (see
+    // NEVER_CLASSIFIED_FILING_TYPES), which are never sent.
     const items: Array<{ link: string; filing_type: string }> = [];
     const seenLinks = new Set<string>();
     filings.forEach((filing) => {
       const link = toTrimmedString(filing?.["Filing Link"]);
       const filingType = toTrimmedString(filing?.["Filing Type"]);
-      if (!link || seenLinks.has(link) || DEFAULT_EXCLUDED_FILING_TYPES.includes(filingType)) return;
+      if (!link || seenLinks.has(link) || NEVER_CLASSIFIED_FILING_TYPES.includes(filingType)) return;
       seenLinks.add(link);
       items.push({ link, filing_type: filingType });
     });
@@ -452,12 +615,9 @@ function ActivistFilings() {
 
   const hasCompany = Boolean(companyGlobalSearchId);
 
-  // Document Type belongs to the Activism Related Filings table only; Company
-  // Filings keeps its four columns and widths exactly as before.
-  const showDocumentTypeColumn = activeTab === ACTIVIST_FILINGS_TAB;
-  const columnWidths = showDocumentTypeColumn
-    ? { filingType: "18%", filingDate: "15%", entity: "31%", filingLink: "18%", documentType: "18%" }
-    : { filingType: "26%", filingDate: "26%", entity: "28%", filingLink: "20%", documentType: "0%" };
+  // Both tabs show Document Type, with one split, so switching tabs never
+  // moves a column. Filing Link keeps room for Open Filing plus the paperclip.
+  const columnWidths = { filingType: "18%", filingDate: "15%", entity: "31%", filingLink: "18%", documentType: "18%" };
   const filingsData = useMemo(() => filings || [], [filings]);
 
   const isCompanyFilingType = useCallback(
@@ -549,7 +709,7 @@ function ActivistFilings() {
     }
   }, []);
 
-  const openFilingFilesModal = useCallback((filing: any) => {
+  const openFilingFilesModal = useCallback((filing: any, attachments?: Attachment[]) => {
     // filing.Attachments is the Django payload's own field name and stays as
     // it is; everything this feature holds locally is a "file".
     const files = Array.isArray(filing?.Attachments)
@@ -563,8 +723,36 @@ function ActivistFilings() {
     setSelectedFilingFiles(files);
     setSelectedFilingLabel(toTrimmedString(filing?.["Filing Type"]) || "Filing Attachments");
     setSelectedFilingDate(toTrimmedString(filing?.["Filing Date"]));
+    setSelectedFilingAttachments(attachments && attachments.length > 0 ? attachments : null);
     setFilingFilesModalOpen(true);
   }, []);
+
+  const closeFilingFilesModal = useCallback(() => {
+    setFilingFilesModalOpen(false);
+    setSelectedFilingFiles([]);
+    setSelectedFilingLabel("");
+    setSelectedFilingDate("");
+    setSelectedFilingAttachments(null);
+  }, []);
+
+  // Classification for the open modal: which file is which, and any
+  // classified exhibit that has no downloadable file.
+  const modalClassification = useMemo(
+    () => (selectedFilingAttachments ? matchFilesToAttachments(selectedFilingFiles, selectedFilingAttachments) : null),
+    [selectedFilingFiles, selectedFilingAttachments]
+  );
+
+  // The classifications a row's paperclip passes to the modal: DFAN14A /
+  // DEFA14A only. Schedule 13D rows open the modal exactly as before.
+  const supplementalAttachmentsFor = (filing: any): Attachment[] | undefined => {
+    const link = toTrimmedString(filing?.["Filing Link"]);
+    if (!link || !isSupplementalAttachmentFilingType(filing?.["Filing Type"])) return undefined;
+    const list = attachmentsByLink[link];
+    return Array.isArray(list) ? list : undefined;
+  };
+
+  const hasFilingFiles = (filing: any) =>
+    Array.isArray(filing?.Attachments) && filing.Attachments.some((file: FilingFile) => file?.url);
 
   const switchTab = useCallback(
     (tab: FilingTab) => {
@@ -778,15 +966,13 @@ function ActivistFilings() {
                   </div>
                 )}
 
-                <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={showDocumentTypeColumn ? 5 : 4} maxHeight="68vh" className="table-fixed">
+                <StandardizedTable isLoading={loading} skeletonRows={6} skeletonCols={5} maxHeight="68vh" className="table-fixed">
                   <StandardizedTable.Header>
                     <StandardizedTable.Cell isHeader width={columnWidths.filingType}>Filing Type</StandardizedTable.Cell>
                     <StandardizedTable.Cell isHeader width={columnWidths.filingDate}>Filing Date</StandardizedTable.Cell>
                     <StandardizedTable.Cell isHeader width={columnWidths.entity}>Filing Entity/Person</StandardizedTable.Cell>
                     <StandardizedTable.Cell isHeader width={columnWidths.filingLink}>Filing Link</StandardizedTable.Cell>
-                    {showDocumentTypeColumn && (
-                      <StandardizedTable.Cell isHeader width={columnWidths.documentType}>Document Type</StandardizedTable.Cell>
-                    )}
+                    <StandardizedTable.Cell isHeader width={columnWidths.documentType}>Document Type</StandardizedTable.Cell>
                   </StandardizedTable.Header>
                   <Table.Tbody>
                     {filteredFilings.length > 0 ? (
@@ -822,7 +1008,7 @@ function ActivistFilings() {
                                     <button
                                       type="button"
                                       className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-                                      onClick={() => openFilingFilesModal(filing)}
+                                      onClick={() => openFilingFilesModal(filing, supplementalAttachmentsFor(filing))}
                                       aria-label="View attachments"
                                       title="View attachments"
                                     >
@@ -837,7 +1023,6 @@ function ActivistFilings() {
                               )}
                             </div>
                           </StandardizedTable.Cell>
-                          {showDocumentTypeColumn && (
                             <StandardizedTable.Cell>
                               {(() => {
                                 const link = toTrimmedString(filing?.["Filing Link"]);
@@ -861,32 +1046,51 @@ function ActivistFilings() {
                                 // documentTypes holds only contract values, but
                                 // re-check so the badge colour lookup is safe.
                                 const documentType = link ? documentTypes[link] : null;
-                                if (isDocumentType(documentType)) {
-                                  return (
-                                    <span
-                                      className={`inline-flex max-w-full truncate rounded-full px-2.5 py-0.5 text-xs font-medium ${DOCUMENT_TYPE_BADGE_CLASS[documentType]}`}
-                                      title={documentType}
-                                    >
-                                      {documentType}
-                                    </span>
-                                  );
-                                }
                                 // Null, a failed call, or no link: never a
                                 // blank -- a muted label from the Filing Type.
                                 const fallbackLabel = getFilingTypeFallbackLabel(filing?.["Filing Type"]);
-                                return (
+                                const ownLabel = isDocumentType(documentType) ? (
+                                  <span
+                                    className={`inline-flex max-w-full truncate rounded-full px-2.5 py-0.5 text-xs font-medium ${DOCUMENT_TYPE_BADGE_CLASS[documentType]}`}
+                                    title={documentType}
+                                  >
+                                    {documentType}
+                                  </span>
+                                ) : (
                                   <span className="block truncate text-xs text-slate-400" title={fallbackLabel}>
                                     {fallbackLabel}
                                   </span>
                                 );
+                                // DFAN14A / DEFA14A: the row's own label stays,
+                                // and its attachments follow -- only when the
+                                // list is known AND non-empty. Empty (no
+                                // attachment), still pending, or failed: the
+                                // label alone, exactly as before.
+                                const extraAttachments =
+                                  link && isSupplementalAttachmentFilingType(filing?.["Filing Type"]) ? attachmentsByLink[link] : undefined;
+                                if (!Array.isArray(extraAttachments) || extraAttachments.length === 0) return ownLabel;
+                                const ownType = isDocumentType(documentType) ? documentType : null;
+                                // Every exhibit repeated the row's own type:
+                                // nothing to add, so the label alone.
+                                const { categories, notRead } = summarizeAttachments(extraAttachments, ownType);
+                                if (categories.length === 0 && notRead === 0) return ownLabel;
+                                return (
+                                  <div className="flex max-w-full min-w-0 flex-col items-start gap-1">
+                                    {ownLabel}
+                                    <AttachmentSummary
+                                      attachments={extraAttachments}
+                                      ownType={ownType}
+                                      onOpenDetails={hasFilingFiles(filing) ? () => openFilingFilesModal(filing, extraAttachments) : null}
+                                    />
+                                  </div>
+                                );
                               })()}
                             </StandardizedTable.Cell>
-                          )}
                         </StandardizedTable.Row>
                       ))
                     ) : (
                       <Table.Tr>
-                        <Table.Td colSpan={showDocumentTypeColumn ? 5 : 4} className="text-center py-12 text-slate-500">
+                        <Table.Td colSpan={5} className="text-center py-12 text-slate-500">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <Lucide icon="FileSearch" className="w-10 h-10 opacity-40" />
                             <span className="text-sm font-medium text-slate-600">
@@ -909,34 +1113,29 @@ function ActivistFilings() {
       <Dialog
         size="lg"
         open={filingFilesModalOpen}
-        onClose={() => {
-          setFilingFilesModalOpen(false);
-          setSelectedFilingFiles([]);
-          setSelectedFilingLabel("");
-          setSelectedFilingDate("");
-        }}
+        onClose={closeFilingFilesModal}
       >
         <Dialog.Panel className="overflow-hidden p-0 text-left">
           <div className="border-b border-slate-200 bg-[linear-gradient(135deg,rgba(171,18,61,0.08),rgba(255,255,255,0.98))] px-6 py-5">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-                  Filing Attachments
+                  {modalClassification ? "What's attached" : "Filing Attachments"}
                 </p>
                 <h3 className="mt-2 text-xl font-semibold text-slate-900">{selectedFilingLabel}</h3>
                 <p className="mt-1 text-sm text-slate-500">
                   {selectedFilingDate || "-"}
                 </p>
+                {modalClassification && (
+                  <p className="mt-2 text-sm text-slate-600">
+                    Each attachment with its category, and why any of them couldn't be read. Open a document to see it in full.
+                  </p>
+                )}
               </div>
 
               <button
                 type="button"
-                onClick={() => {
-                  setFilingFilesModalOpen(false);
-                  setSelectedFilingFiles([]);
-                  setSelectedFilingLabel("");
-                  setSelectedFilingDate("");
-                }}
+                onClick={closeFilingFilesModal}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-primary/30 hover:text-primary"
               >
                 <Lucide icon="X" className="h-5 w-5" />
@@ -946,14 +1145,16 @@ function ActivistFilings() {
 
           <div className="max-h-[65vh] overflow-y-auto bg-slate-50/70 px-6 py-6">
             <div className="space-y-4">
-              {selectedFilingFiles.map((file, index) => (
+              {selectedFilingFiles.map((file, index) => {
+                const attachment = modalClassification?.paired[index]?.attachment || null;
+                return (
                 <div
                   key={`${file.url || file.type || "attachment"}-${index}`}
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className={`flex flex-col gap-4 sm:flex-row ${attachment ? "sm:items-start" : "sm:items-center"} sm:justify-between`}>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-3">
+                      <div className={`flex ${attachment ? "items-start" : "items-center"} gap-3`}>
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                           <Lucide icon="FileText" className="h-5 w-5" />
                         </div>
@@ -961,6 +1162,13 @@ function ActivistFilings() {
                           <p className="text-sm font-semibold uppercase tracking-wide text-primary/80">
                             {file.type || "Attachment"}
                           </p>
+                          {/* No matching classification: the file exactly as before. */}
+                          {attachment && (
+                            <>
+                              <p className="text-xs text-slate-400">{attachment.name}</p>
+                              <AttachmentClassification attachment={attachment} />
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -976,7 +1184,25 @@ function ActivistFilings() {
                     </Button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
+
+              {/* Classified exhibits with no downloadable file in this
+                  filing's list: still named, so the modal accounts for every
+                  badge the cell summarised. */}
+              {modalClassification && modalClassification.unmatched.length > 0 && (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5">
+                  <p className="text-sm font-semibold text-slate-700">Also attached, no download link here</p>
+                  <ul className="mt-2 space-y-3">
+                    {modalClassification.unmatched.map((attachment, index) => (
+                      <li key={`${attachment.name}-${index}`}>
+                        <p className="text-xs text-slate-400">{attachment.name}</p>
+                        <AttachmentClassification attachment={attachment} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </Dialog.Panel>
