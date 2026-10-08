@@ -50,7 +50,6 @@ import Litepicker from "@/components/Base/Litepicker";
 import React from "react";
 
 const NPX_DETAILS_CACHE_KEY = "npxDetailsFilters";
-const NPX_DETAILS_RELOAD_SESSION_KEY = "npxDetailsReloadHandled";
 const SELECT_ALL_INSTITUTION_LABELS = ["Select All", "All Institutions"];
 
 const isSelectAllInstitution = (value?: string) =>
@@ -61,22 +60,6 @@ const isSelectAllInstitution = (value?: string) =>
 const normalizeInstitutionForApi = (value?: string | string[] | null) => {
   const institutionValue = Array.isArray(value) ? value[0] : value;
   return institutionValue && !isSelectAllInstitution(institutionValue) ? [institutionValue] : undefined;
-};
-
-const isPageReloadOnce = (sessionKey: string) => {
-  if (typeof window === "undefined") return false;
-  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
-  const isReload = navEntry?.type ? navEntry.type === "reload" : (window.performance as any)?.navigation?.type === 1;
-  try {
-    const handled = sessionStorage.getItem(sessionKey) === "true";
-    if (isReload && !handled) {
-      sessionStorage.setItem(sessionKey, "true");
-      return true;
-    }
-    return false;
-  } catch {
-    return isReload;
-  }
 };
 
 const readCachedNpxDetailsFilters = (): any | null => {
@@ -135,26 +118,26 @@ const index = () => {
   });
   const [meetingDate, setMeetingDate] = useState('');
   const [npxMeetings, setNpxMeetings] = useState<any[]>([]); // cache of NPX meetings {year, meeting_date}
+  // Tracks which companyGlobalSearchId npxMeetings actually belongs to, so a
+  // stale/previous company's meeting dates can never be matched against the
+  // newly selected company just because they happen to share the same year.
+  const npxMeetingsCompanyIdRef = useRef<string | number | null>(null);
   const isFirstLoad = useRef(true);
   const savedInstitutionRef = useRef<string>('');
   const fetchRequestId = useRef(0); // incremented on every call; guards against stale responses
   const allApplyFilterRef = useRef<any>({}); // always-fresh mirror of allApplyFilter state
   const savedFiltersRef = useRef<any>({ fund_name: [], proposal: [], vote: [], vote_category: [], keyword: [] });
 
-  // Filter/data persistence: compute reload state once, and read any cached filters
-  // on the very first render (before any effect runs). On a hard refresh, the cache
-  // is cleared so the module falls back to its normal default-institution bootstrap.
-  const isReloadRef = useRef<boolean | null>(null);
+  // Filter/data persistence: read any cached filters on the very first render
+  // (before any effect runs). Filters stay cached across page reloads and
+  // in-app navigation — they're only cleared on logout (which clears all of
+  // localStorage), so a new session/user always starts from the default
+  // single-institution bootstrap instead of a previous user's filters.
   const cachedFiltersRef = useRef<any>(null);
   const cacheInitRef = useRef(false);
   if (!cacheInitRef.current) {
     cacheInitRef.current = true;
-    isReloadRef.current = isPageReloadOnce(NPX_DETAILS_RELOAD_SESSION_KEY);
-    if (isReloadRef.current) {
-      try { localStorage.removeItem(NPX_DETAILS_CACHE_KEY); } catch { /* no-op */ }
-    } else {
-      cachedFiltersRef.current = readCachedNpxDetailsFilters();
-    }
+    cachedFiltersRef.current = readCachedNpxDetailsFilters();
   }
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
@@ -436,7 +419,11 @@ const index = () => {
             ...(restoredProposal.length > 0 && { proposal: restoredProposal }),
             ...(restoredVote.length > 0 && { vote: restoredVote }),
             ...(restoredKeyword.length > 0 && { keyword: restoredKeyword }),
-            ...(res.result?.meeting_date && { meeting_date: formatMeetingDate(res.result.meeting_date) }),
+            // Prefer the already-verified currentMeetingDate over this generic
+            // dropdown-values call's own meeting_date — that field reflects this
+            // endpoint's own (not always reliable) default for the company/year,
+            // which can disagree with the confirmed npxMeetings-derived date.
+            ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }),
           };
           const chipsObj = {
             institution_name: [firstInstitution],
@@ -458,9 +445,12 @@ const index = () => {
             setShowFundName(false);
             setApiFundNameDropdown({ fund_name: [] });
           } else {
-            await getFundNameDependentDropdown(firstInstitution, res.result?.meeting_date ? formatMeetingDate(res.result.meeting_date) : undefined);
+            await getFundNameDependentDropdown(firstInstitution, currentMeetingDate ? formatMeetingDate(currentMeetingDate) : undefined);
           }
-          if (res.result?.meeting_date) setMeetingDate(res.result.meeting_date);
+          // Don't unconditionally overwrite meetingDate with this endpoint's own
+          // (potentially wrong) value — only use it if we don't already have a
+          // verified date for this company.
+          if (!currentMeetingDate && res.result?.meeting_date) setMeetingDate(res.result.meeting_date);
         }
       } catch (e) {
         if (requestId !== fetchRequestId.current) return;
@@ -498,9 +488,14 @@ const index = () => {
         setAllInstitutions(['__cache_restored__']);
       }
 
-      const cachedInstitution = Array.isArray(cache?.filterObj?.institution_name)
-        ? cache.filterObj.institution_name[0]
-        : undefined;
+      // Prefer the explicitly-saved institutionLabel (correctly captures "All
+      // Institutions" too), falling back to the old filterObj-derived shape for
+      // any cache entries saved before this field existed.
+      const cachedInstitution = cache?.institutionLabel
+        ? cache.institutionLabel
+        : (Array.isArray(cache?.filterObj?.institution_name)
+          ? cache.filterObj.institution_name[0]
+          : undefined);
       const cachedFundNames = Array.isArray(cache?.filterObj?.fund_name) ? cache.filterObj.fund_name : [];
       const cachedCategory = cache?.filterObj?.vote_category
         ? (Array.isArray(cache.filterObj.vote_category) ? cache.filterObj.vote_category : [cache.filterObj.vote_category])
@@ -608,7 +603,14 @@ const index = () => {
   });
 
   // Persist applied filters (and, implicitly, the data view they produce) so they survive
-  // in-app navigation away from and back to this module. Cleared on a hard page refresh.
+  // in-app navigation away from and back to this module. Cleared on logout.
+  //
+  // institutionLabel is stored separately from filterObj.institution_name: when
+  // "All Institutions" is selected, filterObj (the API-payload shape) intentionally
+  // OMITS institution_name, so on its own filterObj can't tell "All Institutions was
+  // selected" apart from "no institution was ever selected". institutionLabel always
+  // holds the literal selection (including the "All Institutions" sentinel) so the
+  // Institution chip can be restored correctly either way.
   useEffect(() => {
     if (!companyGlobalSearchName) return;
     if (!allApplyFilter || Object.keys(allApplyFilter).length === 0) return;
@@ -620,12 +622,13 @@ const index = () => {
           year,
           meetingDate,
           filterObj: allApplyFilter,
+          institutionLabel: dropdownValues?.institution_name || '',
         })
       );
     } catch {
       /* no-op */
     }
-  }, [allApplyFilter, companyGlobalSearchName, year, meetingDate]);
+  }, [allApplyFilter, companyGlobalSearchName, year, meetingDate, dropdownValues.institution_name]);
 
   useEffect(() => {
     // If year isn't set yet (awaiting meeting years API), don't proceed
@@ -648,6 +651,7 @@ const index = () => {
     // meeting_date for the new company whenever both happen to share the
     // same selected year, before the new company's own dates have loaded.
     setNpxMeetings([]);
+    npxMeetingsCompanyIdRef.current = null;
 
     // Reset dropdown values to prevent unnecessary API calls
     setDropdownValues({
@@ -711,6 +715,7 @@ const index = () => {
         const { result } = await dashboardService.getVdsNpxMeetingDates(companyGlobalSearchId);
         const npxKey = result?.NPX_Data || result?.npx_data || [];
         setNpxMeetings(Array.isArray(npxKey) ? npxKey : []);
+        npxMeetingsCompanyIdRef.current = companyGlobalSearchId;
         const years = Array.from(new Set(
           (Array.isArray(npxKey) ? npxKey : []).map((x: any) => String(x?.year)).filter(Boolean)
         )).sort((a: string, b: string) => Number(b) - Number(a));
@@ -724,7 +729,15 @@ const index = () => {
               return params;
             });
           }
-          const match = (Array.isArray(npxKey) ? npxKey : []).find((x: any) => String(x?.year) === String(defaultYear));
+          // A company can have more than one meeting in the same year (e.g. a
+          // special meeting plus the annual meeting). Picking the first match
+          // via .find() is order-dependent on whatever the API happens to
+          // return, which could non-deterministically resolve to the wrong
+          // one. Always pick the most recent meeting_date for that year.
+          const matchesForYear = (Array.isArray(npxKey) ? npxKey : [])
+            .filter((x: any) => String(x?.year) === String(defaultYear) && x?.meeting_date)
+            .sort((a: any, b: any) => (a.meeting_date < b.meeting_date ? 1 : a.meeting_date > b.meeting_date ? -1 : 0));
+          const match = matchesForYear[0];
           if (match?.meeting_date) setMeetingDate(match.meeting_date);
         }
       } catch (e) {
@@ -900,8 +913,21 @@ const index = () => {
   // When company or selected year changes, ensure meeting_date is set consistently and fetch institutions for that date
   useEffect(() => {
     if (!companyGlobalSearchName || !year) return;
-    // Find the meeting date for the selected year from cached meetings
-    const match = (Array.isArray(npxMeetings) ? npxMeetings : []).find((x: any) => String(x?.year) === String(year));
+    // Only trust npxMeetings for date matching once it's confirmed to belong to
+    // the CURRENT company — otherwise a previous company's meeting dates could
+    // get matched against this company just because they share the same year
+    // (npxMeetings loads separately, keyed on companyGlobalSearchId, and may
+    // not have refreshed yet). If it's stale/unconfirmed, fall back to '' and
+    // let the backend determine the default meeting_date instead of guessing.
+    const npxMeetingsFreshForCompany = npxMeetingsCompanyIdRef.current === companyGlobalSearchId;
+    // A company can have more than one meeting in the same year (e.g. a special
+    // meeting plus the annual meeting) — always pick the most recent one for
+    // that year rather than whichever happens to come first in the API response.
+    const match = npxMeetingsFreshForCompany
+      ? (Array.isArray(npxMeetings) ? npxMeetings : [])
+          .filter((x: any) => String(x?.year) === String(year) && x?.meeting_date)
+          .sort((a: any, b: any) => (a.meeting_date < b.meeting_date ? 1 : a.meeting_date > b.meeting_date ? -1 : 0))[0]
+      : undefined;
     const dateForYear = match?.meeting_date ? formatMeetingDate(match.meeting_date) : '';
 
     if (dateForYear) {
@@ -914,8 +940,8 @@ const index = () => {
       });
     }
 
-    // If we have a cached filter snapshot for this exact company/year (and this isn't a
-    // hard refresh), restore filters + data from it instead of auto-selecting a default.
+    // If we have a cached filter snapshot for this exact company/year, restore
+    // filters + data from it instead of auto-selecting a default.
     const cache = cachedFiltersRef.current;
     const cacheMatches =
       cache &&
@@ -934,12 +960,13 @@ const index = () => {
       // If not found, clear and let API determine default
       fetchAllInstitutions(savedInstitutionRef.current, '');
     }
-  // npxMeetings is included so this re-evaluates once the NEW company's own
-  // meeting dates actually finish loading (it's fetched separately, keyed on
-  // companyGlobalSearchId) — otherwise this could run once with stale/cleared
-  // data and never get a chance to correct the resolved meeting_date.
+  // Deliberately NOT depending on npxMeetings — this must run exactly once per
+  // company/year change (it consumes cachedFiltersRef.current, which would be
+  // wrongly discarded by a second run before it ever applies). The
+  // npxMeetingsCompanyIdRef freshness check above is what keeps the resolved
+  // date correct without needing this effect to re-fire when npxMeetings loads.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyGlobalSearchName, year, npxMeetings]);
+  }, [companyGlobalSearchName, year]);
 
   // SINGLE source of truth for dependent-dropdown fetching.
   // Consolidates fund/category/institution-cleared triggers into one deterministic effect

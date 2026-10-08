@@ -81,28 +81,34 @@ const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
 const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
 const NPX_INSTITUTION_GLOBAL_SEARCH_NAME = "Apple Inc.";
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
-const NPX_RELOAD_SESSION_KEY = "npxVotingReloadHandled";
+// Institution/Company are staged selections — they only commit into `filters`
+// (and the cache above) once the user clicks Apply, so every click doesn't
+// fire an API call. But that means an in-progress (not-yet-applied) pick was
+// never persisted, so navigating away and back before clicking Apply showed
+// the dropdown reverting to blank/default. This separate key persists the
+// staged selection itself, independent of whether it's been applied yet.
+const NPX_DRAFT_SELECTION_CACHE_KEY = "npxProposalVotingDraftSelection";
 
-const isPageReloadOnce = (sessionKey: string) => {
-  if (typeof window === "undefined") return false;
-  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
-  const isReload = navEntry?.type ? navEntry.type === "reload" : (window.performance as any)?.navigation?.type === 1;
-  try {
-    const handled = sessionStorage.getItem(sessionKey) === "true";
-    if (isReload && !handled) {
-      sessionStorage.setItem(sessionKey, "true");
-      return true;
-    }
-    return false;
-  } catch {
-    return isReload;
-  }
+type DraftSelection = {
+  investor_company: string[];
+  company_name: string[];
+  company_ids: Array<string | number>;
 };
 
 const readCachedFilters = (): FilterState | null => {
   if (typeof window === "undefined") return null;
   try {
     const saved = localStorage.getItem(NPX_FILTER_CACHE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
+const readCachedDraftSelection = (): DraftSelection | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem(NPX_DRAFT_SELECTION_CACHE_KEY);
     return saved ? JSON.parse(saved) : null;
   } catch {
     return null;
@@ -119,18 +125,11 @@ const NpxInstitutionView = () => {
     (state) => state.dashboard
   );
 
+  // Filters stay cached (localStorage) across page reloads and in-app navigation —
+  // they're only cleared on logout, so a new session/user always starts from the
+  // default single-institution bootstrap instead of a previous user's filters.
   const [filters, setFilters] = useState<FilterState>({
     ...(() => {
-      if (isPageReloadOnce(NPX_RELOAD_SESSION_KEY)) {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(NPX_FILTER_CACHE_KEY);
-        }
-        return {
-          investor_company: [],
-          year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
-        };
-      }
-
       const cachedFilters = readCachedFilters();
       if (cachedFilters) {
         return {
@@ -160,11 +159,23 @@ const NpxInstitutionView = () => {
   const [prevYearSelection, setPrevYearSelection] = useState<string[]>([]);
   const [prevDateRangeSelection, setPrevDateRangeSelection] = useState("");
   const [showInstitutionFirstMessage, setShowInstitutionFirstMessage] = useState(false);
+  // Seed the staged selections from the draft cache first (an in-progress
+  // pick that was never Applied), falling back to the already-applied filters.
+  const draftSelectionRef = useRef<DraftSelection | null>(null);
+  if (draftSelectionRef.current === null) {
+    draftSelectionRef.current = readCachedDraftSelection() || {
+      investor_company: [],
+      company_name: [],
+      company_ids: [],
+    };
+  }
   const [companySelection, setCompanySelection] = useState<{ company_name: string[]; company_ids: Array<string | number> }>({
-    company_name: filters.company_name || [],
-    company_ids: filters.company_ids || [],
+    company_name: draftSelectionRef.current.company_name?.length ? draftSelectionRef.current.company_name : (filters.company_name || []),
+    company_ids: draftSelectionRef.current.company_ids?.length ? draftSelectionRef.current.company_ids : (filters.company_ids || []),
   });
-  const [institutionSelection, setInstitutionSelection] = useState<string[]>(filters.investor_company || []);
+  const [institutionSelection, setInstitutionSelection] = useState<string[]>(
+    draftSelectionRef.current.investor_company?.length ? draftSelectionRef.current.investor_company : (filters.investor_company || [])
+  );
   const [summaryLoading, setSummaryLoading] = useState(true);
   const hasBootstrappedInstitutionRef = useRef(false);
   const skipNextDropdownEffectRef = useRef(false);
@@ -177,10 +188,26 @@ const NpxInstitutionView = () => {
   }, [institutionSelection, filters.investor_company]);
 
   useEffect(() => {
-    if (isPageReloadOnce(NPX_RELOAD_SESSION_KEY)) return;
     if (!hasBootstrappedInstitutionRef.current && !hasSelectedInstitution) return;
     localStorage.setItem(NPX_FILTER_CACHE_KEY, JSON.stringify(filters));
   }, [filters]);
+
+  // Persist the staged (not-necessarily-applied) selection too, so it survives
+  // navigating away before clicking Apply instead of silently reverting.
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        NPX_DRAFT_SELECTION_CACHE_KEY,
+        JSON.stringify({
+          investor_company: institutionSelection,
+          company_name: companySelection.company_name,
+          company_ids: companySelection.company_ids,
+        })
+      );
+    } catch {
+      /* no-op */
+    }
+  }, [institutionSelection, companySelection]);
 
   const viewData = useMemo(() => npxProposalVotingStats || {}, [npxProposalVotingStats]);
   const byInstitution = useMemo(() => viewData.by_institution || [], [viewData]);
@@ -371,7 +398,9 @@ const NpxInstitutionView = () => {
   };
 
   useEffect(() => {
-    if (hasSelectedInstitution || hasBootstrappedInstitutionRef.current) {
+    // Also skip if there's already a staged (not-yet-applied) institution pick
+    // restored from the draft cache — don't clobber it with the default.
+    if (hasSelectedInstitution || hasBootstrappedInstitutionRef.current || institutionSelection.length > 0) {
       return;
     }
 
@@ -672,6 +701,7 @@ const NpxInstitutionView = () => {
     setShowInstitutionFirstMessage(false);
     setActivePage(1);
     localStorage.removeItem(NPX_FILTER_CACHE_KEY);
+    localStorage.removeItem(NPX_DRAFT_SELECTION_CACHE_KEY);
   };
 
   const handleDownload = () => {
