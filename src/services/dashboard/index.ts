@@ -387,6 +387,59 @@ class DashboardService {
     return response.data;
   }
 
+  // ─── Suppression rules ────────────────────────────────────────────────────
+  // Deliberately bypass axiosInstance, like getActivistFilingDocumentPdf: its
+  // error handler toasts a message built from the body's top-level strings
+  // (which for {"detail": {...}} is "An unknown error occurred") and rejects
+  // with a bare Error, dropping the status, detail.code and extras such as
+  // expected_preview_token. The filters panel branches on every one of those,
+  // so these reject with the raw AxiosError and the caller reads
+  // error.response itself. The auth header is the same one axiosInstance
+  // attaches.
+  private suppressionRulesRequest(method: "get" | "post", path: string, data?: unknown): Promise<any> {
+    const token = localStorage.getItem("token");
+    return axios
+      .request({
+        method,
+        url: `/api/activist-campaigns/suppression-rules${path}`,
+        data,
+        baseURL: activistCampaignsApiBaseURL,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `JWT ${token}` } : {}),
+        },
+      })
+      .then((response) => response.data);
+  }
+
+  // { rules: page-created rules with history, code_rules: built-in, read-only }
+  public listSuppressionRules(): Promise<any> {
+    return this.suppressionRulesRequest("get", "");
+  }
+
+  // Replays the rule over stored filings. Takes a few seconds; issues the
+  // preview_token that createSuppressionRule must send back.
+  public previewSuppressionRule(body: Record<string, unknown>): Promise<any> {
+    return this.suppressionRulesRequest("post", "/preview", body);
+  }
+
+  public createSuppressionRule(body: Record<string, unknown>): Promise<any> {
+    return this.suppressionRulesRequest("post", "", body);
+  }
+
+  // There is no delete endpoint, by design: a rule is only ever switched off.
+  public setSuppressionRuleEnabled(
+    ruleId: string,
+    enabled: boolean,
+    body: { updated_by?: string; note?: string }
+  ): Promise<any> {
+    return this.suppressionRulesRequest(
+      "post",
+      `/${encodeURIComponent(ruleId)}/${enabled ? "enable" : "disable"}`,
+      body
+    );
+  }
+
   public async fetchCaseStudiesTopProxyContext(url: string): Promise<{
     count: number;
     results: any[];
