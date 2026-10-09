@@ -12,7 +12,7 @@ import { useChat } from "./ChatContext.tsx";
 // summary state and the summary modal are all still here, and flipping this to
 // true brings the button back unchanged. The button's JSX stays in place behind
 // this flag, which is also what keeps those functions referenced.
-const SHOW_GENERATE_SUMMARY = false;
+const SHOW_GENERATE_SUMMARY = true;
 
 const getInvestorDisplayName = (name: string): string => {
     const words = name.split(/\s+/);
@@ -56,6 +56,25 @@ type GuidelineResult = {
     quarter: string | null;
     relevance_score: number | null;
     file_url?: string;
+};
+
+// One row of the policy table. `status` is the machine value, `status_label` the wording
+// the client reads — the backend owns both so the two can never disagree.
+type PolicyRow = {
+    investor: string;
+    policy: string;
+    status: "STATES_POSITION" | "AREA_NO_POSITION" | "OFF_SUBJECT" | "NO_DOCUMENT";
+    status_label: string;
+};
+
+// The matrix view: policy points down, investors across. `stances` is index-aligned to
+// `columns` rather than keyed by name, because investor names are not unique on this page
+// (three Vanguard entities can be selected at once).
+type PolicyMatrix = {
+    columns: string[];
+    points: { point: string; stances: string[] }[];
+    excluded: { investor: string; status: PolicyRow["status"]; status_label: string }[];
+    error: string | null;
 };
 
 type SummaryAnswer = {
@@ -115,6 +134,13 @@ export default function VotingGuidelinesPage() {
     const [summaryRequest, setSummaryRequest] = useState<SummaryRequest | null>(null);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryText, setSummaryText] = useState("");
+    const [summaryPolicies, setSummaryPolicies] = useState<PolicyRow[] | null>(null);
+    // The matrix is fetched only when the analyst switches to it, and kept afterwards, so
+    // flipping back and forth costs one model call rather than one per flip.
+    const [summaryMatrix, setSummaryMatrix] = useState<PolicyMatrix | null>(null);
+    const [summaryView, setSummaryView] = useState<"table" | "matrix">("table");
+    const [matrixLoading, setMatrixLoading] = useState(false);
+    const [matrixError, setMatrixError] = useState<string | null>(null);
     const [summaryError, setSummaryError] = useState<string | null>(null);
 
     const [isInvestorDropdownOpen, setIsInvestorDropdownOpen] = useState(false);
@@ -279,12 +305,19 @@ export default function VotingGuidelinesPage() {
         setSummaryLoading(true);
         setSummaryError(null);
         setSummaryText("");
+        setSummaryPolicies(null);
+        setSummaryMatrix(null);
+        setSummaryView("table");
+        setMatrixError(null);
 
         try {
             const response = await fetch(`${AI_CHATBOT_API_BASE}/api/voting-guidelines-summary`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(request),
+                // format: "table" — the client asked for a table of policies instead of the
+                // prose sections. The backend skips the comparison call entirely for this,
+                // so nothing is generated that the modal does not show.
+                body: JSON.stringify({ ...request, format: "table" }),
             });
 
             const payload = await response.json().catch(() => null);
@@ -296,6 +329,15 @@ export default function VotingGuidelinesPage() {
                 throw new Error(payload?.detail || payload?.message || `Summary failed (${response.status}).`);
             }
 
+            const rows: PolicyRow[] = Array.isArray(payload?.policies) ? payload.policies : [];
+            if (rows.length > 0) {
+                setSummaryPolicies(rows);
+                return;
+            }
+
+            // Falls back to the prose summary if a deployment serves the old shape, so the
+            // button keeps working across a backend/frontend deploy gap rather than
+            // reporting an empty summary.
             const text: string = payload?.summary ?? payload?.comparison ?? "";
             if (!text.trim()) throw new Error("The summary came back empty.");
 
@@ -317,9 +359,48 @@ export default function VotingGuidelinesPage() {
         runSummary(request);
     };
 
+    // Fetches the matrix the first time it is asked for, then reuses it.
+    const showMatrix = async (request: SummaryRequest) => {
+        setSummaryView("matrix");
+        if (summaryMatrix || matrixLoading) return;
+
+        setMatrixLoading(true);
+        setMatrixError(null);
+        try {
+            const response = await fetch(`${AI_CHATBOT_API_BASE}/api/voting-guidelines-summary`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...request, format: "matrix" }),
+            });
+            const payload = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(payload?.detail || payload?.message || `Matrix failed (${response.status}).`);
+            }
+            const matrix: PolicyMatrix | null = payload?.matrix ?? null;
+            if (!matrix || !Array.isArray(matrix.points) || matrix.points.length === 0) {
+                // Says which it is: a model failure and "these answers share nothing
+                // comparable" need different responses from the analyst.
+                throw new Error(
+                    matrix?.error
+                        ? `The matrix could not be built: ${matrix.error}`
+                        : "No comparable policy points were found across these answers.",
+                );
+            }
+            setSummaryMatrix(matrix);
+        } catch (error) {
+            setMatrixError(error instanceof Error ? error.message : "Failed to build the matrix.");
+        } finally {
+            setMatrixLoading(false);
+        }
+    };
+
     const closeSummary = () => {
         setSummaryRequest(null);
         setSummaryText("");
+        setSummaryPolicies(null);
+        setSummaryMatrix(null);
+        setSummaryView("table");
+        setMatrixError(null);
         setSummaryError(null);
     };
 
@@ -446,7 +527,162 @@ export default function VotingGuidelinesPage() {
                                 </div>
                             )}
 
-                            {!summaryLoading && !summaryError && summaryText && (
+                            {/* Two views of the same answers. "By investor" is the default
+                                because it is what the client asked for; "By policy point"
+                                is fetched only if it is opened. */}
+                            {!summaryLoading && !summaryError && summaryPolicies && (
+                                <div className="flex items-center gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
+                                    {([
+                                        { key: "table", label: "By investor" },
+                                        { key: "matrix", label: "By policy point" },
+                                    ] as const).map(view => (
+                                        <button
+                                            key={view.key}
+                                            onClick={() => view.key === "matrix"
+                                                ? summaryRequest && showMatrix(summaryRequest)
+                                                : setSummaryView("table")}
+                                            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                                                summaryView === view.key
+                                                    ? "bg-white text-[#931638] shadow-sm"
+                                                    : "text-gray-500 hover:text-gray-700"
+                                            }`}
+                                        >
+                                            {view.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {summaryView === "matrix" && matrixLoading && (
+                                <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                                    <div className="h-7 w-7 animate-spin rounded-full border-b-2 border-[#931638]"></div>
+                                    <p className="text-sm text-gray-500 font-medium animate-pulse">
+                                        Finding the policy points they have in common...
+                                    </p>
+                                </div>
+                            )}
+
+                            {summaryView === "matrix" && !matrixLoading && matrixError && (
+                                <div className="flex flex-col items-start gap-3 p-4 bg-amber-50 rounded-lg border-2 border-amber-200">
+                                    <p className="text-xs text-amber-900 whitespace-pre-wrap">{matrixError}</p>
+                                    <button
+                                        onClick={() => setSummaryView("table")}
+                                        className="text-xs font-semibold text-[#931638] underline"
+                                    >
+                                        Back to the table by investor
+                                    </button>
+                                </div>
+                            )}
+
+                            {summaryView === "matrix" && !matrixLoading && !matrixError && summaryMatrix && (
+                                <div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full border-collapse text-sm">
+                                            <thead>
+                                                <tr className="bg-[#931638] text-white text-left">
+                                                    <th className="px-4 py-2.5 font-semibold sticky left-0 bg-[#931638] min-w-[220px]">
+                                                        Policy point
+                                                    </th>
+                                                    {summaryMatrix.columns.map((name, i) => (
+                                                        <th key={`${name}-${i}`} className="px-3 py-2.5 font-semibold text-center min-w-[120px]">
+                                                            {name}
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {summaryMatrix.points.map((row, i) => (
+                                                    <tr
+                                                        key={`${row.point}-${i}`}
+                                                        className={`border-b border-gray-200 ${i % 2 ? "bg-gray-50" : "bg-white"}`}
+                                                    >
+                                                        <td className={`px-4 py-3 font-medium text-gray-800 sticky left-0 ${i % 2 ? "bg-gray-50" : "bg-white"}`}>
+                                                            {row.point}
+                                                        </td>
+                                                        {row.stances.map((stance, j) => (
+                                                            <td
+                                                                key={j}
+                                                                className={`px-3 py-3 text-center text-xs ${
+                                                                    stance === "—"
+                                                                        ? "text-gray-300"
+                                                                        : "text-gray-700 font-medium"
+                                                                }`}
+                                                            >
+                                                                {stance}
+                                                            </td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Nobody selected is dropped just because they cannot be
+                                        a column — the reason is stated here. */}
+                                    {summaryMatrix.excluded.length > 0 && (
+                                        <div className="mt-4 pt-3 border-t border-gray-200">
+                                            <p className="text-xs font-semibold text-gray-500 mb-1.5">
+                                                Not in the matrix
+                                            </p>
+                                            <ul className="space-y-1">
+                                                {summaryMatrix.excluded.map((item, i) => (
+                                                    <li key={`${item.investor}-${i}`} className="text-xs text-gray-600">
+                                                        <span className="font-semibold text-[#931638]">{item.investor}</span>
+                                                        {" — "}{item.status_label.toLowerCase()}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* The table of policies the client asked for: one row per
+                                investor, in the same order as the answers table behind the
+                                modal, so the two read together. */}
+                            {summaryView === "table" && !summaryLoading && !summaryError && summaryPolicies && (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse text-sm">
+                                        <thead>
+                                            <tr className="bg-[#931638] text-white text-left">
+                                                <th className="px-4 py-2.5 font-semibold w-[22%]">Investor</th>
+                                                <th className="px-4 py-2.5 font-semibold">Policy</th>
+                                                <th className="px-4 py-2.5 font-semibold w-[20%]">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {summaryPolicies.map((row, i) => (
+                                                <tr
+                                                    key={`${row.investor}-${i}`}
+                                                    className={`border-b border-gray-200 align-top ${i % 2 ? "bg-gray-50" : "bg-white"}`}
+                                                >
+                                                    <td className="px-4 py-3 font-semibold text-[#931638]">
+                                                        {row.investor}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-gray-700 leading-relaxed">
+                                                        {row.policy}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {/* Only the exceptions are called out. A badge on every
+                                                            row would make the normal case look like a warning. */}
+                                                        {row.status === "STATES_POSITION" ? (
+                                                            <span className="text-xs text-gray-400">—</span>
+                                                        ) : (
+                                                            <span className="inline-block text-xs text-gray-600 bg-gray-100 border border-gray-200 rounded px-2 py-1">
+                                                                {row.status_label}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {/* Prose fallback, only reached if the backend serves the older
+                                shape — e.g. frontend deployed ahead of backend. */}
+                            {!summaryLoading && !summaryError && !summaryPolicies && summaryText && (
                                 <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none">
                                     <ReactMarkdown>{summaryText}</ReactMarkdown>
                                 </div>
