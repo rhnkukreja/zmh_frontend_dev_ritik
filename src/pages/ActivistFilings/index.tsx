@@ -742,13 +742,24 @@ function ActivistFilings() {
     [selectedFilingFiles, selectedFilingAttachments]
   );
 
-  // The classifications a row's paperclip passes to the modal: DFAN14A /
-  // DEFA14A only. Schedule 13D rows open the modal exactly as before.
-  const supplementalAttachmentsFor = (filing: any): Attachment[] | undefined => {
+  // The classifications a row's paperclip passes to the modal, for EVERY filing type we
+  // hold them for -- Schedule 13D and 13D/A as well as DFAN14A and DEFA14A.
+  //
+  // This used to be DFAN14A/DEFA14A only, which left a 13D's paperclip showing a bare list
+  // of exhibit numbers while the SAME classifications were already on screen in that row's
+  // Document Type cell. The backend has always returned both families together
+  // (EXHIBIT_FILING_TYPES = SCHEDULE_13D_FILING_TYPES | CLASSIFIED_FILING_TYPES), so no
+  // filing type is special here: what decides the modal is whether we have an answer.
+  //
+  // An EMPTY list is not an answer. It means "we looked and this filing has no attachment",
+  // and passing it would switch the modal to the classified layout and then show nothing
+  // under it, because there would be no pairs and no unmatched entries to render. Those
+  // rows keep the plain list, exactly as before.
+  const attachmentClassificationsFor = (filing: any): Attachment[] | undefined => {
     const link = toTrimmedString(filing?.["Filing Link"]);
-    if (!link || !isSupplementalAttachmentFilingType(filing?.["Filing Type"])) return undefined;
+    if (!link) return undefined;
     const list = attachmentsByLink[link];
-    return Array.isArray(list) ? list : undefined;
+    return Array.isArray(list) && list.length > 0 ? list : undefined;
   };
 
   const hasFilingFiles = (filing: any) =>
@@ -1008,7 +1019,7 @@ function ActivistFilings() {
                                     <button
                                       type="button"
                                       className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-                                      onClick={() => openFilingFilesModal(filing, supplementalAttachmentsFor(filing))}
+                                      onClick={() => openFilingFilesModal(filing, attachmentClassificationsFor(filing))}
                                       aria-label="View attachments"
                                       title="View attachments"
                                     >
