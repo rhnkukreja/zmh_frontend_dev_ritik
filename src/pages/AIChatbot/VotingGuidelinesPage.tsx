@@ -314,10 +314,12 @@ export default function VotingGuidelinesPage() {
             const response = await fetch(`${AI_CHATBOT_API_BASE}/api/voting-guidelines-summary`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                // format: "table" — the client asked for a table of policies instead of the
-                // prose sections. The backend skips the comparison call entirely for this,
-                // so nothing is generated that the modal does not show.
-                body: JSON.stringify({ ...request, format: "table" }),
+                // format: "summary" — the client asked for a table on 2026-10-09, then on
+                // 2026-10-12 chose the prose comparison again, so Generate serves the prose.
+                // The table and matrix still exist on both sides; the view toggle below
+                // renders only when a table comes back, so asking for prose hides it without
+                // leaving a dead button. Switching back is this one word.
+                body: JSON.stringify({ ...request, format: "summary" }),
             });
 
             const payload = await response.json().catch(() => null);
@@ -527,9 +529,10 @@ export default function VotingGuidelinesPage() {
                                 </div>
                             )}
 
-                            {/* Two views of the same answers. "By investor" is the default
-                                because it is what the client asked for; "By policy point"
-                                is fetched only if it is opened. */}
+                            {/* Two table views of the same answers. Gated on summaryPolicies,
+                                so while Generate asks for prose this toggle does not render
+                                at all — no dead buttons. It returns the moment a caller asks
+                                for format: "table" again. */}
                             {!summaryLoading && !summaryError && summaryPolicies && (
                                 <div className="flex items-center gap-1 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
                                     {([
@@ -680,8 +683,9 @@ export default function VotingGuidelinesPage() {
                                 </div>
                             )}
 
-                            {/* Prose fallback, only reached if the backend serves the older
-                                shape — e.g. frontend deployed ahead of backend. */}
+                            {/* The Comparison Summary itself — the prose sections the client
+                                chose on 2026-10-12. Also still covers the case where a table
+                                was asked for and the backend served the older shape. */}
                             {!summaryLoading && !summaryError && !summaryPolicies && summaryText && (
                                 <div className="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none">
                                     <ReactMarkdown>{summaryText}</ReactMarkdown>
