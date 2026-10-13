@@ -757,6 +757,27 @@ class DashboardService {
     const result = await this.fetchWithCache<any>(url);
     return { result };
   }
+
+  public async getDirectorAgainstWithholdVotes(params: {
+    institutionId: number | string;
+    companyId: number | string;
+    year?: number | string;
+    meetingDate?: string;
+  }): Promise<{ result: any }> {
+    const query = new URLSearchParams();
+    query.append("institution_id", String(params.institutionId));
+    query.append("company_id", String(params.companyId));
+    if (params.meetingDate) {
+      query.append("meeting_date", params.meetingDate);
+    } else if (params.year) {
+      query.append("year", String(params.year));
+    }
+
+    const response = await axiosInstance.get(
+      `/api/director-against-withhold-votes/?${query.toString()}`
+    );
+    return { result: response.data };
+  }
 }
 
 
