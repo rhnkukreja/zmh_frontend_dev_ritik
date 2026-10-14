@@ -172,6 +172,8 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const directorVotesHasShares = directorVotesResults.some(
     (row) => row?.shares_voted !== null && row?.shares_voted !== undefined && row?.shares_voted !== ""
   );
+  const directorVotesHasNpxSource = directorVotesResults.some((row) => row?.source === "NPX");
+  const directorVotesHasVdsSource = directorVotesResults.some((row) => row?.source === "VDS");
 
   const handleViewDirectorAgainstVotes = async (
     institutionId: number | string | undefined,
@@ -2192,20 +2194,33 @@ const isActivelyScraping =
                 <table className="w-full text-left text-sm text-slate-700">
                   <thead className="bg-slate-100 text-slate-800 border-b">
                     <tr>
+                      {directorVotesHasVdsSource && <th className="p-3 font-semibold">Proposal No.</th>}
                       <th className="p-3 font-semibold">Proposal</th>
                       {directorVotesHasFund && <th className="p-3 font-semibold">Fund</th>}
                       <th className="p-3 font-semibold">Vote</th>
                       {directorVotesHasShares && <th className="p-3 font-semibold">Shares Voted</th>}
                       <th className="p-3 font-semibold">Meeting Date</th>
+                      {directorVotesHasNpxSource && <th className="p-3 font-semibold">Source</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {directorVotesData.results.map((row: any, index: number) => {
                       const columnCount =
-                        3 + (directorVotesHasFund ? 1 : 0) + (directorVotesHasShares ? 1 : 0);
+                        3 +
+                        (directorVotesHasVdsSource ? 1 : 0) +
+                        (directorVotesHasFund ? 1 : 0) +
+                        (directorVotesHasShares ? 1 : 0) +
+                        (directorVotesHasNpxSource ? 1 : 0);
+                      const isVds = row?.source === "VDS";
+                      const isNpx = row?.source === "NPX";
                       return (
                         <Fragment key={index}>
                           <tr className="border-b last:border-b-0 hover:bg-slate-50">
+                            {directorVotesHasVdsSource && (
+                              <td className="p-3 align-top whitespace-nowrap">
+                                {isVds ? (row?.proposal_no || "-") : "-"}
+                              </td>
+                            )}
                             <td className="p-3 align-top whitespace-normal break-words max-w-[320px]">
                               {row?.proposal || "-"}
                             </td>
@@ -2225,6 +2240,20 @@ const isActivelyScraping =
                             <td className="p-3 align-top whitespace-nowrap">
                               {row?.meeting_date || "-"}
                             </td>
+                            {directorVotesHasNpxSource && (
+                              <td className="p-3 align-top whitespace-nowrap">
+                                {isNpx && row?.NPX_Link ? (
+                                  <a
+                                    href={row.NPX_Link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary underline hover:opacity-80"
+                                  >
+                                    View Source
+                                  </a>
+                                ) : null}
+                              </td>
+                            )}
                           </tr>
                           {row?.rationale && (
                             <tr className="bg-red-50/60 border-b">
