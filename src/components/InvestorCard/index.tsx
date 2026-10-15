@@ -166,9 +166,17 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const directorVotesResults: any[] = Array.isArray(directorVotesData?.results)
     ? directorVotesData.results
     : [];
-  const directorVotesHasFund = directorVotesResults.some(
-    (row) => row?.fund_name !== null && row?.fund_name !== undefined && row?.fund_name !== ""
-  );
+  const getDirectorVoteFundName = (row: any): string => {
+    if (row?.source === "VDS") return "";
+    if (row?.fund_name !== null && row?.fund_name !== undefined && row?.fund_name !== "") {
+      return row.fund_name;
+    }
+    if (Array.isArray(row?.fund_names) && row.fund_names.length > 0) {
+      return row.fund_names.join(", ");
+    }
+    return "";
+  };
+  const directorVotesHasFund = directorVotesResults.some((row) => getDirectorVoteFundName(row) !== "");
   const directorVotesHasShares = directorVotesResults.some(
     (row) => row?.shares_voted !== null && row?.shares_voted !== undefined && row?.shares_voted !== ""
   );
@@ -2226,11 +2234,29 @@ const isActivelyScraping =
                             </td>
                             {directorVotesHasFund && (
                               <td className="p-3 align-top whitespace-normal break-words">
-                                {row?.fund_name || "-"}
+                                {getDirectorVoteFundName(row) || "-"}
                               </td>
                             )}
                             <td className="p-3 align-top text-red-700 font-semibold whitespace-nowrap">
-                              {row?.vote || "-"}
+                              <div className="flex items-center gap-1.5">
+                                <span>{row?.vote || "-"}</span>
+                                {row?.vote === "Split Vote" && row?.split_vote_counts && (
+                                  <Tippy
+                                    content={
+                                      typeof row.split_vote_counts === "object"
+                                        ? Object.entries(row.split_vote_counts)
+                                            .map(([key, value]) => `<b>${key}:</b> ${String(value)}`)
+                                            .join("<br/>")
+                                        : String(row.split_vote_counts)
+                                    }
+                                    options={{ theme: "light", allowHTML: true }}
+                                  >
+                                    <span className="inline-flex items-center justify-center">
+                                      <Lucide icon="Info" className="w-4 h-4 text-slate-500 cursor-pointer" />
+                                    </span>
+                                  </Tippy>
+                                )}
+                              </div>
                             </td>
                             {directorVotesHasShares && (
                               <td className="p-3 align-top whitespace-nowrap">
