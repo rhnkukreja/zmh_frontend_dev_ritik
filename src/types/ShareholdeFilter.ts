@@ -7,5 +7,6 @@ export interface ShareHolderFilter {
   global_search?: string[];
   year: string[];
   keyword: string[];
+  date_range?: string;
   [key: string]: any;
 }

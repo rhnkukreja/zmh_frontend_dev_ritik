@@ -9,6 +9,14 @@ export type ShareHolderDropdown = {
   vote_outcome?: string[];
   index?: string[];
   sector?: string[];
+  anti_category?: string[];
+  synonyms?: string[];
+  available_date_range?: {
+    start_meeting?: string;
+    end_meeting?: string;
+    source?: string;
+  };
+  date_range_source?: string;
 
 };
 

@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import dayjs from "dayjs";
+import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchCompensationProposals, setFilters } from "@/stores/compensationProposalsSlice";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -22,7 +24,9 @@ import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import Table from "@/components/Base/Table";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import Tippy from "@/components/Base/Tippy";
+import Litepicker from "@/components/Base/Litepicker";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import CPagination from "@/components/Pagination";
 import Skeleton from "react-loading-skeleton";
@@ -53,6 +57,10 @@ const DEFAULT_INVESTORS = [
   "State Street Investment Management",
   "Vanguard Portfolio Management",
 ];
+
+// Institution IDs matching DEFAULT_INVESTORS, sent by default to the
+// compensation proposals dropdown endpoint.
+const DEFAULT_INSTITUTION_IDS = [1345, 1346, 38, 999, 1000];
 
 const INSTITUTION_NAME_MAP: Record<string, string> = {
   "BlackRock (BAIS)": "BlackRock Active Investment Stewardship (BAIS)",
@@ -129,7 +137,8 @@ const ExecutiveCompensation: React.FC = () => {
         vote: [],
         investor_company: DEFAULT_INVESTORS,
         category: "Say on Pay",
-        keyword: "",
+        keyword: [],
+        date_range: "",
         page_size: 25,
       };
     }
@@ -138,10 +147,16 @@ const ExecutiveCompensation: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        const cachedKeyword = parsed?.keyword ?? filters?.keyword;
         return {
           ...filters,
           ...parsed,
           investor_company: normalizeInvestorNames(parsed?.investor_company ?? filters?.investor_company ?? DEFAULT_INVESTORS),
+          // Older cached sessions stored keyword as a single string; normalize
+          // to the array shape the tag-based keyword input now expects.
+          keyword: Array.isArray(cachedKeyword)
+            ? cachedKeyword
+            : (cachedKeyword ? [cachedKeyword] : []),
         };
       } catch {
         // ignore invalid cache
@@ -152,6 +167,120 @@ const ExecutiveCompensation: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showMaxInstitutionMessage, setShowMaxInstitutionMessage] = useState(false);
+  const [dropdowns, setDropdowns] = useState<any>({});
+  const [dropdownLoading, setDropdownLoading] = useState(false);
+  const [prevYearSelection, setPrevYearSelection] = useState<(string | number)[]>([]);
+  const [prevDateRangeSelection, setPrevDateRangeSelection] = useState("");
+
+  const institutionNameToId = useMemo(() => {
+    const map: Record<string, number> = {};
+    (dropdowns?.institution_options || []).forEach((opt: any) => {
+      if (opt?.institution && opt?.id !== undefined) map[opt.institution] = opt.id;
+    });
+    return map;
+  }, [dropdowns?.institution_options]);
+
+  const resolveInstitutionIds = useCallback(
+    (names?: string[]): (string | number)[] => {
+      if (!names || names.length === 0) return DEFAULT_INSTITUTION_IDS;
+      const ids = names.map((name) => institutionNameToId[name]).filter((id) => id !== undefined);
+      return ids.length > 0 ? ids : DEFAULT_INSTITUTION_IDS;
+    },
+    [institutionNameToId]
+  );
+
+  const loadDropdowns = useCallback(
+    async (names?: string[], context?: { year?: (string | number)[]; index?: string; date_range?: string }) => {
+      setDropdownLoading(true);
+      try {
+        const hasDateRange = Boolean(context?.date_range && context.date_range.trim());
+        const response = await compensationProposalsService.getCompensationDropdown({
+          institution_id: resolveInstitutionIds(names),
+          ...(hasDateRange
+            ? { date_range: context?.date_range }
+            : context?.year?.length
+              ? { year: context.year }
+              : {}),
+          ...(context?.index ? { index: context.index } : {}),
+        });
+        setDropdowns(response || {});
+      } catch (err) {
+        console.error("[ExecutiveCompensation] loadDropdowns error:", err);
+      } finally {
+        setDropdownLoading(false);
+      }
+    },
+    [resolveInstitutionIds]
+  );
+
+  // Dropdown options also only refresh from the committed `filters`, in sync
+  // with `fetchData`, so switching institutions/year/index in the (not yet
+  // applied) filter panel doesn't trigger a request until Apply is clicked.
+  useEffect(() => {
+    loadDropdowns(filters.investor_company, {
+      year: filters.year,
+      index: filters.index,
+      date_range: filters.date_range,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.investor_company, filters.year, filters.index, filters.date_range]);
+
+  const availableDateRange = useMemo(() => {
+    const range = dropdowns?.available_date_range;
+    if (!range?.start_meeting || !range?.end_meeting) return null;
+
+    const startDate = dayjs(range.start_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+    const endDate = dayjs(range.end_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+
+    if (!startDate.isValid() || !endDate.isValid()) return null;
+
+    return {
+      startDate: startDate.format("YYYY-MM-DD"),
+      endDate: endDate.format("YYYY-MM-DD"),
+    };
+  }, [dropdowns?.available_date_range]);
+
+  const datePickerBounds = useMemo(() => {
+    const fallbackStart = availableDateRange?.startDate || "2022-01-01";
+    const fallbackEnd = availableDateRange?.endDate || new Date().toISOString().split("T")[0];
+
+    return {
+      minYear: Number(fallbackStart.slice(0, 4)),
+      maxYear: Number(fallbackEnd.slice(0, 4)),
+      startDate: fallbackStart,
+      endDate: fallbackEnd,
+    };
+  }, [availableDateRange]);
+
+  // Navigate the calendar to the latest/selected year exactly when it opens,
+  // without affecting the currently selected/displayed date range value.
+  const handleDateRangePickerShow = (picker: any) => {
+    const targetYear = datePickerBounds.endDate.slice(0, 4);
+    if (!targetYear) return;
+    try {
+      picker.gotoDate(new Date(`${targetYear}-01-01`), 0);
+      picker.gotoDate(new Date(`${targetYear}-02-01`), 1);
+    } catch (err) {
+      console.error("[ExecutiveCompensation] Failed to navigate date picker:", err);
+    }
+  };
+
+  const handleYearChange = (values: number[]) => {
+    setPrevYearSelection(values);
+    setPrevDateRangeSelection("");
+    setLocalFilters((prev: any) => ({ ...prev, year: values, date_range: "" }));
+  };
+
+  const handleDateRangeChange = (value: string) => {
+    const hasValue = Boolean(value && value.trim());
+    setLocalFilters((prev: any) => ({
+      ...prev,
+      date_range: value,
+      year: hasValue ? [] : (prevYearSelection.length > 0 ? prevYearSelection : [CURRENT_YEAR]),
+    }));
+    setPrevDateRangeSelection(hasValue ? value : "");
+    if (hasValue) setPrevYearSelection([]);
+  };
 
   useEffect(() => {
     setLocalFilters((prev: any) => ({
@@ -176,19 +305,27 @@ const ExecutiveCompensation: React.FC = () => {
     localStorage.setItem("executiveCompensationFilters", JSON.stringify(localFilters));
   }, [localFilters]);
 
+  // Stats only refetch from the committed (applied) `filters`, never from the
+  // in-progress `localFilters` draft — so editing the filter panel doesn't
+  // hit the API or change the page until the user clicks Apply.
   const fetchData = useCallback(
     (page = 1) => {
       const payload: any = {
         page,
-        page_size: localFilters.page_size || 25,
+        page_size: filters.page_size || 25,
       };
-      if (localFilters.year?.length) payload.year = localFilters.year;
-      if (localFilters.index) payload.index = localFilters.index;
-      if (localFilters.vote?.length) payload.vote = localFilters.vote;
-      if (localFilters.investor_company?.length) {
-        payload.investor_company = localFilters.investor_company;
+      const hasDateRange = Boolean(filters.date_range && filters.date_range.trim());
+      if (hasDateRange) {
+        payload.date_range = filters.date_range;
+      } else if (filters.year?.length) {
+        payload.year = filters.year;
       }
-      if (localFilters.keyword?.trim()) payload.keyword = localFilters.keyword.trim();
+      if (filters.index) payload.index = filters.index;
+      if (filters.vote?.length) payload.vote = filters.vote;
+      if (filters.investor_company?.length) {
+        payload.institution_id = resolveInstitutionIds(filters.investor_company);
+      }
+      if (filters.keyword?.length) payload.keyword = filters.keyword;
       dispatch(
         fetchCompensationProposals({
           filters: payload,
@@ -196,12 +333,13 @@ const ExecutiveCompensation: React.FC = () => {
         })
       );
     },
-    [dispatch, localFilters]
+    [dispatch, filters, resolveInstitutionIds]
   );
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
 
   const byInstitution = data?.by_institution || [];
   const byCompany = data?.by_company || [];
@@ -230,11 +368,14 @@ const ExecutiveCompensation: React.FC = () => {
       vote: [],
       investor_company: DEFAULT_INVESTORS,
       category: "Say on Pay",
-      keyword: "",
+      keyword: [],
+      date_range: "",
       page_size: 25,
     };
     setLocalFilters(defaults);
     dispatch(setFilters(defaults));
+    setPrevYearSelection([]);
+    setPrevDateRangeSelection("");
   };
 
   const handleExport = async () => {
@@ -244,13 +385,18 @@ const ExecutiveCompensation: React.FC = () => {
       // signed export_url that matches the exact current filter set.
       const payload: any = {
         page: currentPage,
-        page_size: localFilters.page_size || 25,
+        page_size: filters.page_size || 25,
       };
-      if (localFilters.year?.length) payload.year = localFilters.year;
-      if (localFilters.index) payload.index = localFilters.index;
-      if (localFilters.vote?.length) payload.vote = localFilters.vote;
-      if (localFilters.investor_company?.length) {
-        payload.investor_company = localFilters.investor_company;
+      const hasDateRange = Boolean(filters.date_range && filters.date_range.trim());
+      if (hasDateRange) {
+        payload.date_range = filters.date_range;
+      } else if (filters.year?.length) {
+        payload.year = filters.year;
+      }
+      if (filters.index) payload.index = filters.index;
+      if (filters.vote?.length) payload.vote = filters.vote;
+      if (filters.investor_company?.length) {
+        payload.institution_id = resolveInstitutionIds(filters.investor_company);
       }
       const statsData = await compensationProposalsService.getCompensationStats(payload);
       const freshExportUrl = statsData?.export_url || exportUrl;
@@ -280,25 +426,23 @@ const ExecutiveCompensation: React.FC = () => {
     }
   };
 
-  const dropdownOptions = data?.dropdown_options || {};
-
-  const yearSource: (string | number)[] = dropdownOptions.years?.length ? dropdownOptions.years : YEARS;
+  const yearSource: (string | number)[] = dropdowns?.year?.length ? dropdowns.year : YEARS;
   const yearOptions = yearSource.map((y) => ({
     value: String(y),
     label: String(y),
   }));
 
-  const voteSource: string[] = dropdownOptions.votes?.length ? dropdownOptions.votes : VOTE_OPTIONS;
+  const voteSource: string[] = dropdowns?.vote?.length ? dropdowns.vote : VOTE_OPTIONS;
   const voteOptions = voteSource.map((v) => ({
     value: v,
     label: v,
   }));
 
-  const indexSource: string[] = dropdownOptions.index?.length ? dropdownOptions.index : INDEX_OPTIONS.map((i) => i.value);
+  const indexSource: string[] = dropdowns?.index?.length ? dropdowns.index : INDEX_OPTIONS.map((i) => i.value);
   const indexOptions = indexSource.map((idx) => ({ value: idx, label: idx }));
 
-  const institutionSource: string[] = dropdownOptions.institutions?.length
-    ? dropdownOptions.institutions.map((inst: any) => inst.institution)
+  const institutionSource: string[] = dropdowns?.institution?.length
+    ? dropdowns.institution
     : DEFAULT_INVESTORS;
   const investorOptions = [
     ...new Map(
@@ -307,9 +451,13 @@ const ExecutiveCompensation: React.FC = () => {
   ];
 
   const appliedChips: { key: string; value: string; label: string }[] = [];
-  (filters.year || []).forEach((y: any) => {
-    appliedChips.push({ key: "year", value: String(y), label: `Year: ${y}` });
-  });
+  if (filters.date_range) {
+    appliedChips.push({ key: "date_range", value: filters.date_range, label: `Date Range: ${filters.date_range}` });
+  } else {
+    (filters.year || []).forEach((y: any) => {
+      appliedChips.push({ key: "year", value: String(y), label: `Year: ${y}` });
+    });
+  }
   (filters.investor_company || []).forEach((name: string) => {
     appliedChips.push({ key: "investor_company", value: name, label: `Institution: ${name}` });
   });
@@ -322,18 +470,20 @@ const ExecutiveCompensation: React.FC = () => {
   if (filters.category) {
     appliedChips.push({ key: "category", value: filters.category, label: `Category: ${filters.category}` });
   }
-  if (filters.keyword?.trim()) {
-    appliedChips.push({ key: "keyword", value: filters.keyword.trim(), label: `Keyword: ${filters.keyword.trim()}` });
-  }
+  (filters.keyword || []).forEach((kw: string) => {
+    appliedChips.push({ key: "keyword", value: kw, label: `Keyword: ${kw}` });
+  });
 
   const handleRemoveChip = (key: string, value: string) => {
     let updated: any = { ...filters };
-    if (key === "investor_company" || key === "year" || key === "vote") {
+    if (key === "investor_company" || key === "year" || key === "vote" || key === "keyword") {
       updated[key] = (updated[key] || []).filter((v: any) => String(v) !== String(value));
     } else if (key === "index" || key === "category") {
       updated[key] = "";
-    } else if (key === "keyword") {
-      updated.keyword = "";
+    } else if (key === "date_range") {
+      updated.date_range = "";
+      updated.year = prevYearSelection.length > 0 ? prevYearSelection : [CURRENT_YEAR];
+      setPrevDateRangeSelection("");
     }
     updated.investor_company = normalizeInvestorNames(updated.investor_company ?? []);
     setLocalFilters(updated);
@@ -405,15 +555,29 @@ const ExecutiveCompensation: React.FC = () => {
       );
     }
 
+    // The compact (table-fixed, evenly-spaced) layout looks best when each
+    // institution only has a single year/period column. Once any institution
+    // has multiple columns (multi-year or a date range split into several
+    // periods), fixed equal-width columns get too narrow and the values
+    // overlap — so switch to an auto-sized, horizontally scrollable table.
+    const maxColumnsPerInstitution = Math.max(
+      1,
+      ...institutionsWithYears.map((inst: any) => inst.yearsSorted.length || 1)
+    );
+    const isWideLayout = maxColumnsPerInstitution > 1;
+
     return (
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8 overflow-hidden">
         <div className="overflow-x-auto">
-          <Table className="min-w-full table-fixed">
+          <Table className={isWideLayout ? "w-max min-w-full" : "min-w-full table-fixed"}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th
                   rowSpan={2}
-                  className="text-left text-sm font-semibold text-white bg-primary py-3 px-4 align-middle w-64"
+                  className={clsx(
+                    "text-left text-sm font-semibold text-white bg-primary py-3 px-4 align-middle",
+                    isWideLayout ? "min-w-[160px] sticky left-0 z-10" : "w-64"
+                  )}
                 >
                   Summary
                 </Table.Th>
@@ -432,7 +596,10 @@ const ExecutiveCompensation: React.FC = () => {
                   inst.yearsSorted.map((year: string) => (
                     <Table.Th
                       key={`${inst.institution_name}-${year}`}
-                      className="text-center text-xs font-medium text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight"
+                      className={clsx(
+                        "text-center text-xs font-medium text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight",
+                        isWideLayout ? "whitespace-nowrap min-w-[130px]" : ""
+                      )}
                     >
                       {formatDateRange(inst.years[year]?.date_range)}
                     </Table.Th>
@@ -443,14 +610,22 @@ const ExecutiveCompensation: React.FC = () => {
             <Table.Tbody>
               {summaryMetricRows.map((metric) => (
                 <Table.Tr key={metric.key} className="border-t border-slate-100 hover:bg-slate-50">
-                  <Table.Td className="py-3 px-4 text-sm font-medium text-slate-700 break-words">
+                  <Table.Td
+                    className={clsx(
+                      "py-3 px-4 text-sm font-medium text-slate-700 break-words",
+                      isWideLayout && "min-w-[160px] sticky left-0 z-10 bg-white"
+                    )}
+                  >
                     {metric.label}
                   </Table.Td>
                   {institutionsWithYears.flatMap((inst: any) =>
                     inst.yearsSorted.map((year: string) => (
                       <Table.Td
                         key={`${inst.institution_name}-${year}-${metric.key}`}
-                        className="py-3 px-2 text-sm text-slate-700 text-center whitespace-nowrap"
+                        className={clsx(
+                          "py-3 px-2 text-sm text-slate-700 text-center whitespace-nowrap",
+                          isWideLayout && "min-w-[130px]"
+                        )}
                       >
                         {metric.render(inst.years[year])}
                       </Table.Td>
@@ -913,21 +1088,6 @@ const ExecutiveCompensation: React.FC = () => {
           <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
             <div>
               <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                <FaCalendarAlt className="text-gray-400" /> Year
-              </label>
-              <MultiSelectDropdown
-                data={yearOptions}
-                placeholder="Select Years"
-                selectedOption={(localFilters.year || []).map((y: any) => String(y))}
-                onChange={(selected: any) => {
-                  const values = selected.map((s: any) => Number(s.value));
-                  setLocalFilters({ ...localFilters, year: values });
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                 <FaUniversity className="text-gray-400" /> Institution
               </label>
               <MultiSelectDropdown
@@ -937,6 +1097,7 @@ const ExecutiveCompensation: React.FC = () => {
                     (localFilters.investor_company || []).length >= 5 &&
                     !(localFilters.investor_company || []).includes(opt.value),
                 }))}
+                loading={dropdownLoading}
                 placeholder="Select Institutions"
                 selectedOption={localFilters.investor_company || []}
                 onChange={(selected: any) => {
@@ -959,6 +1120,58 @@ const ExecutiveCompensation: React.FC = () => {
                   <span>Maximum institutions are selected</span>
                 </div>
               )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                <FaCalendarAlt className="text-gray-400" /> Year
+              </label>
+              <MultiSelectDropdown
+                data={yearOptions}
+                loading={dropdownLoading}
+                placeholder="Select Years"
+                selectedOption={(localFilters.date_range ? [] : (localFilters.year || [])).map((y: any) => String(y))}
+                onChange={(selected: any) => {
+                  const values = selected.map((s: any) => Number(s.value));
+                  handleYearChange(values);
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                <FaCalendarAlt className="text-gray-400" /> Date Range
+              </label>
+              <div className="relative">
+                <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                  <Lucide icon="Calendar" className="w-4 h-4" />
+                </div>
+                <Litepicker
+                  value={localFilters.date_range || ""}
+                  onChange={(e) => handleDateRangeChange(e.target.value || "")}
+                  onShow={handleDateRangePickerShow}
+                  placeholder="Select Date Range"
+                  options={{
+                    autoApply: false,
+                    singleMode: false,
+                    numberOfColumns: 2,
+                    numberOfMonths: 2,
+                    showWeekNumbers: true,
+                    splitView: true,
+                    dropdowns: {
+                      minYear: datePickerBounds.minYear,
+                      maxYear: datePickerBounds.maxYear,
+                      months: true,
+                      years: true,
+                    },
+                    minDate: availableDateRange?.startDate,
+                    maxDate: availableDateRange?.endDate,
+                    startDate: datePickerBounds.startDate,
+                    endDate: datePickerBounds.endDate,
+                  }}
+                  className="pl-12"
+                />
+              </div>
             </div>
 
             <div>
@@ -1010,15 +1223,17 @@ const ExecutiveCompensation: React.FC = () => {
 
             <div>
               <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
-                <FaTags className="text-gray-400" /> Keyword
+                <FaTags className="text-gray-400" /> Keywords (Beta)
+                <Tippy content="Keyword search applies on proposal text and rationale" options={{ theme: "light" }}>
+                  <span>
+                    <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
+                  </span>
+                </Tippy>
               </label>
-              <input
-                type="text"
-                value={localFilters.keyword || ""}
-                placeholder="Search companies, proposals, votes..."
-                onChange={(e) => setLocalFilters({ ...localFilters, keyword: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-primary focus:ring-primary focus:outline-none"
-                style={{ minHeight: "42px" }}
+              <CreatableInputSelect
+                placeholder="Type and press Enter to add keywords"
+                value={localFilters.keyword || []}
+                onChange={(vals) => setLocalFilters({ ...localFilters, keyword: vals })}
               />
             </div>
           </div>
@@ -1031,7 +1246,7 @@ const ExecutiveCompensation: React.FC = () => {
         </div>
       )}
 
-      {loading && !data ? (
+      {loading || dropdownLoading ? (
         <div className="space-y-6">
           {/* Summary table skeleton */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
