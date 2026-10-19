@@ -16,12 +16,14 @@ import {
   Legend,
   LabelList,
 } from "recharts";
-import { Download } from "lucide-react";
-import { FaUniversity, FaCalendarAlt, FaLayerGroup, FaHandshake, FaTimes } from "react-icons/fa";
+import { FaUniversity, FaCalendarAlt, FaLayerGroup, FaHandshake, FaTimes, FaSearch, FaTags } from "react-icons/fa";
+import { MdOutlineClear } from "react-icons/md";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
 import Table from "@/components/Base/Table";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import Tippy from "@/components/Base/Tippy";
+import LoadingIcon from "@/components/Base/LoadingIcon";
 import CPagination from "@/components/Pagination";
 import Skeleton from "react-loading-skeleton";
 import { axiosInstance } from "@/services";
@@ -29,6 +31,7 @@ import { baseURL } from "@/constant";
 import { compensationProposalsService } from "@/services/compensationProposals";
 import { createDynamicURL } from "@/utils/helper";
 import CompanyVotingCards from "./components/CompanyVotingCards";
+import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 
 const INDEX_OPTIONS = [
   { value: "S&P 100", label: "S&P 100" },
@@ -389,24 +392,28 @@ const ExecutiveCompensation: React.FC = () => {
   const renderSummaryTable = () => {
     if (!institutionsWithYears || institutionsWithYears.length === 0) {
       return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
-          <Lucide icon="FileText" className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 font-medium">
-            No compensation proposal voting data found for the selected filters.
-          </p>
+        <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8">
+          <div className="bg-primary text-white px-6 py-3 rounded-t-2xl">
+            <h3 className="text-base font-semibold">Summary</h3>
+          </div>
+          <div className="flex flex-col items-center justify-center px-6 py-10 text-center text-slate-500">
+            <FaTimes className="text-3xl text-slate-300 mb-3" />
+            <p className="font-medium text-slate-600">No summary data available</p>
+            <p className="text-sm mt-1">Try changing the institution, year, index, or category.</p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8 overflow-hidden">
         <div className="overflow-x-auto">
           <Table className="min-w-full table-fixed">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th
                   rowSpan={2}
-                  className="text-left text-sm font-semibold text-white bg-[#8b1828] py-3 px-4 align-middle w-64"
+                  className="text-left text-sm font-semibold text-white bg-primary py-3 px-4 align-middle w-64"
                 >
                   Summary
                 </Table.Th>
@@ -414,7 +421,7 @@ const ExecutiveCompensation: React.FC = () => {
                   <Table.Th
                     key={inst.institution_name}
                     colSpan={inst.yearsSorted.length || 1}
-                    className="text-center text-sm font-semibold text-white bg-[#8b1828] py-3 px-2 border-l border-white/20 break-words leading-snug"
+                    className="text-center text-sm font-semibold text-white bg-primary py-3 px-2 border-l border-white/20 break-words leading-snug"
                   >
                     {inst.institution_name}
                   </Table.Th>
@@ -425,7 +432,7 @@ const ExecutiveCompensation: React.FC = () => {
                   inst.yearsSorted.map((year: string) => (
                     <Table.Th
                       key={`${inst.institution_name}-${year}`}
-                      className="text-center text-xs font-medium text-white bg-[#8b1828]/90 py-2 px-2 border-l border-white/10 leading-tight"
+                      className="text-center text-xs font-medium text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight"
                     >
                       {formatDateRange(inst.years[year]?.date_range)}
                     </Table.Th>
@@ -489,18 +496,60 @@ const ExecutiveCompensation: React.FC = () => {
     });
     const pivoted = Array.from(pivotMap.values());
 
+    // Wrap long institution names onto multiple lines instead of letting
+    // them overlap each other when there isn't enough horizontal room.
+    const wrapLabel = (label: string, maxCharsPerLine = 16) => {
+      const words = String(label || "").split(" ");
+      const lines: string[] = [];
+      let current = "";
+      words.forEach((word) => {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length > maxCharsPerLine && current) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = candidate;
+        }
+      });
+      if (current) lines.push(current);
+      return lines.slice(0, 3);
+    };
+
+    const renderXAxisTick = (props: any) => {
+      const { x, y, payload } = props;
+      const lines = wrapLabel(payload?.value);
+      return (
+        <g transform={`translate(${x},${y})`}>
+          {lines.map((line, idx) => (
+            <text
+              key={idx}
+              x={0}
+              y={idx * 12}
+              dy={12}
+              textAnchor="middle"
+              fill="#334155"
+              fontSize={11}
+              fontWeight={500}
+            >
+              {line}
+            </text>
+          ))}
+        </g>
+      );
+    };
+
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <h3 className="text-base font-bold text-gray-900 mb-4">{title}</h3>
-        <div className="h-80">
+        <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={pivoted} margin={{ top: 24, right: 20, left: 0, bottom: 40 }} barGap={6}>
+            <BarChart data={pivoted} margin={{ top: 24, right: 20, left: 0, bottom: 60 }} barGap={6}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
               <XAxis
                 dataKey={xKey}
-                tick={{ fill: "#334155", fontSize: 12, fontWeight: 500 }}
+                tick={renderXAxisTick}
                 interval={0}
-                height={40}
+                height={70}
               />
               <YAxis tick={{ fill: "#64748b", fontSize: 12 }} />
               <Legend wrapperStyle={{ paddingTop: 12 }} />
@@ -525,7 +574,11 @@ const ExecutiveCompensation: React.FC = () => {
     if (!dataset || dataset.length === 0) {
       return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          {title && <h3 className="text-base font-bold text-gray-900 mb-4 text-center">{title}</h3>}
+          {title && (
+            <h3 className="text-base font-bold text-gray-900 mb-2 text-center break-words leading-snug min-h-[2.75rem] flex items-center justify-center">
+              {title}
+            </h3>
+          )}
           <div className="h-56 flex flex-col items-center justify-center text-slate-500">
             <Lucide icon="PieChart" className="w-10 h-10 text-slate-300 mb-2" />
             <p className="text-sm">No data available</p>
@@ -546,7 +599,11 @@ const ExecutiveCompensation: React.FC = () => {
 
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
-        {title && <h3 className="text-base font-bold text-gray-900 mb-2 text-center truncate">{title}</h3>}
+        {title && (
+          <h3 className="text-base font-bold text-gray-900 mb-2 text-center break-words leading-snug min-h-[2.75rem] flex items-center justify-center">
+            {title}
+          </h3>
+        )}
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -556,28 +613,43 @@ const ExecutiveCompensation: React.FC = () => {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
+                outerRadius={68}
                 labelLine={false}
-                label={({ value, cx, cy, midAngle, innerRadius, outerRadius: outR }: any) => {
+                label={({ value, name, cx, cy, midAngle, outerRadius: outR }: any) => {
                   const RADIAN = Math.PI / 180;
-                  const radius = innerRadius + (outR - innerRadius) * 0.65;
-                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                  const pct = total ? Math.round((value / total) * 100) : 0;
-                  if (pct < 5) return null;
+                  const sliceColor = VOTE_COLOR_MAP[name] || PIE_COLORS[0];
+
+                  // Every slice gets a leader line out to an outside label,
+                  // so small slices stay readable and large ones stay
+                  // visually consistent with the rest of the chart.
+                  const startRadius = outR;
+                  const bendRadius = outR + 12;
+                  const sx = cx + startRadius * Math.cos(-midAngle * RADIAN);
+                  const sy = cy + startRadius * Math.sin(-midAngle * RADIAN);
+                  const mx = cx + bendRadius * Math.cos(-midAngle * RADIAN);
+                  const my = cy + bendRadius * Math.sin(-midAngle * RADIAN);
+                  const isRight = Math.cos(-midAngle * RADIAN) >= 0;
+                  const ex = mx + (isRight ? 14 : -14);
+
                   return (
-                    <text
-                      x={x}
-                      y={y}
-                      fill="#ffffff"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fontSize={14}
-                      fontWeight={700}
-                      style={{ textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
-                    >
-                      {formatNumber(value)}
-                    </text>
+                    <g>
+                      <path
+                        d={`M${sx},${sy}L${mx},${my}L${ex},${my}`}
+                        stroke={sliceColor}
+                        fill="none"
+                      />
+                      <text
+                        x={ex + (isRight ? 4 : -4)}
+                        y={my}
+                        fill="#0f172a"
+                        textAnchor={isRight ? "start" : "end"}
+                        dominantBaseline="central"
+                        fontSize={12}
+                        fontWeight={700}
+                      >
+                        {formatNumber(value)}
+                      </text>
+                    </g>
                   );
                 }}
               >
@@ -747,83 +819,100 @@ const ExecutiveCompensation: React.FC = () => {
           animation: blink-beta 1.2s ease-in-out infinite;
         }
       `}</style>
-      <div className="p-4 sm:p-6 space-y-4">
-        {/* Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
-              <span className="text-slate-500">Institution Insights</span>
-              <span className="text-slate-400">›</span>
-              <span className="relative inline-flex items-center pr-7">
-                Exec. Comp. Voting Data
-                <span className="blink-beta absolute -top-2 -right-1 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-extrabold bg-orange-500 text-white leading-none shadow-sm">
-                  BETA
-                </span>
-              </span>
-            </h1>
+      {/* Page header card */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4 mb-3 flex items-center justify-between">
+        <h1 className="text-lg font-bold flex items-center gap-2 text-gray-900">
+          <span className="text-slate-500">Institution Insights</span>
+          <span className="text-slate-400">›</span>
+          <span>Exec. Comp. Voting Data</span>
+          <span className="px-2 py-1 text-xs font-bold bg-red-800 text-white rounded-full">BETA</span>
+        </h1>
+      </div>
+
+      <div className="p-5 mt-1 box">
+        <div className="flex flex-col p-5 sm:flex-row gap-y-2">
+          <div className="flex justify-between items-center gap-4 xs:flex-col md:flex-row" />
+          <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-2">
+                <Tippy content="Download Excel" options={{ theme: "light" }}>
+                  <button
+                    type="button"
+                    className={`box p-[5px] transition-opacity duration-200 ${isExporting || loading || !exportUrl ? "cursor-wait opacity-80" : "cursor-pointer"}`}
+                    onClick={isExporting || loading || !exportUrl ? undefined : handleExport}
+                    disabled={isExporting || loading || !exportUrl}
+                    aria-label="Download Excel"
+                  >
+                    {isExporting ? (
+                      <LoadingIcon icon="tail-spin" color="#800000" className="w-6 h-6" />
+                    ) : (
+                      <img alt="download-icon" src={downloadIcon} className="w-6 h-6 transition-transform duration-200" />
+                    )}
+                  </button>
+                </Tippy>
+                <Button
+                  variant="outline-secondary"
+                  className="w-full sm:w-auto"
+                  onClick={() => setIsFilterOpen((prev) => !prev)}
+                >
+                  <Lucide icon="ArrowDownWideNarrow" className="stroke-[1.3] w-4 h-4 mr-2" />
+                  Filter
+                  <div className="flex items-center justify-center h-5 px-1.5 ml-2 text-xs font-medium border rounded-full bg-slate-100">
+                    {appliedChips.length}
+                  </div>
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
-      {/* Action bar: filter chips + export + filter toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2 items-center">
-          {appliedChips.map((chip, idx) => (
-            <span
-              key={`${chip.key}-${chip.value}-${idx}`}
-              className="inline-flex items-center gap-1.5 bg-[#8b1828]/10 text-[#8b1828] font-medium px-2.5 py-1 rounded-full text-sm leading-none"
-            >
-              {chip.label}
-              <button
-                type="button"
-                className="text-[#8b1828] hover:text-red-600 transition-colors flex items-center justify-center"
-                onClick={() => handleRemoveChip(chip.key, chip.value)}
+        {appliedChips.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {appliedChips.map((chip, idx) => (
+              <span
+                key={`${chip.key}-${chip.value}-${idx}`}
+                className="flex items-center bg-primary/10 text-primary font-medium px-3 py-1 rounded-full shadow-sm transition-all hover:bg-primary/20"
               >
-                <FaTimes className="text-xs" />
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button
-            variant="primary"
-            onClick={handleExport}
-            disabled={isExporting || loading || !exportUrl}
-            className="flex items-center gap-2 bg-[#8b1828] border-[#8b1828] hover:bg-[#8b1828]/90"
-          >
-            <Download className="w-4 h-4" />
-            {isExporting ? "Downloading..." : "Download Now"}
-          </Button>
-          <Button
-            variant="outline-secondary"
-            onClick={() => setIsFilterOpen((prev) => !prev)}
-            className="flex items-center gap-2"
-          >
-            <Lucide icon="ArrowDownWideNarrow" className="w-4 h-4" />
-            Filter
-            <span className="flex items-center justify-center h-5 px-1.5 text-xs font-medium border rounded-full bg-slate-100">
-              {appliedChips.length}
-            </span>
-          </Button>
-        </div>
-      </div>
+                {chip.label}
+                <button
+                  type="button"
+                  className="ml-2 text-primary hover:text-red-600 transition-colors"
+                  onClick={() => handleRemoveChip(chip.key, chip.value)}
+                >
+                  <FaTimes className="text-xs" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
       {/* Filters */}
       {isFilterOpen && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-base font-semibold text-slate-700">Filters</h2>
+            <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
             <div className="flex items-center gap-2">
-              <Button variant="outline-secondary" onClick={handleResetFilters} className="px-5">
-                Reset
+              <Button
+                variant="outline-secondary"
+                onClick={handleResetFilters}
+                className="w-full sm:w-auto flex items-center gap-2"
+                type="button"
+              >
+                <MdOutlineClear /> Clear All
               </Button>
-              <Button variant="primary" onClick={handleApplyFilters} className="px-5">
-                Apply
+              <Button
+                variant="primary"
+                onClick={handleApplyFilters}
+                className="w-full sm:w-auto flex items-center gap-2"
+                type="button"
+              >
+                <FaSearch className="text-lg" /> Apply
               </Button>
             </div>
           </div>
-          <div className="grid gap-6 md:grid-cols-3 grid-cols-1">
+          <div className="grid gap-6 md:grid-cols-4 grid-cols-1">
             <div>
-              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                 <FaCalendarAlt className="text-gray-400" /> Year
               </label>
               <MultiSelectDropdown
@@ -838,7 +927,7 @@ const ExecutiveCompensation: React.FC = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                 <FaUniversity className="text-gray-400" /> Institution
               </label>
               <MultiSelectDropdown
@@ -873,13 +962,13 @@ const ExecutiveCompensation: React.FC = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                 <FaLayerGroup className="text-gray-400" /> Index
               </label>
               <select
                 value={localFilters.index || "S&P 500"}
                 onChange={(e) => setLocalFilters({ ...localFilters, index: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#8b1828] focus:ring-[#8b1828]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-primary focus:ring-primary"
                 style={{ minHeight: "42px" }}
               >
                 {indexOptions.map((opt) => (
@@ -891,13 +980,13 @@ const ExecutiveCompensation: React.FC = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                 <FaLayerGroup className="text-gray-400" /> Category
               </label>
               <select
                 value={localFilters.category || "Say on Pay"}
                 onChange={(e) => setLocalFilters({ ...localFilters, category: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#8b1828] focus:ring-[#8b1828]"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-primary focus:ring-primary"
                 style={{ minHeight: "42px" }}
               >
                 <option value="Say on Pay">Say on Pay</option>
@@ -905,7 +994,7 @@ const ExecutiveCompensation: React.FC = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                 <FaHandshake className="text-gray-400" /> Vote
               </label>
               <MultiSelectDropdown
@@ -920,15 +1009,15 @@ const ExecutiveCompensation: React.FC = () => {
             </div>
 
             <div>
-              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1 text-sm">
-                <Lucide icon="Search" className="w-4 h-4 text-gray-400" /> Keyword
+              <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                <FaTags className="text-gray-400" /> Keyword
               </label>
               <input
                 type="text"
                 value={localFilters.keyword || ""}
                 placeholder="Search companies, proposals, votes..."
                 onChange={(e) => setLocalFilters({ ...localFilters, keyword: e.target.value })}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-[#8b1828] focus:ring-[#8b1828] focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-primary focus:ring-primary focus:outline-none"
                 style={{ minHeight: "42px" }}
               />
             </div>
