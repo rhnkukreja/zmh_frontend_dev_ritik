@@ -272,6 +272,11 @@ const groupCategoryNotifications = (items: NotificationItem[] = []) => {
 function Main() {
   const dispatch = useAppDispatch();
   const { user, finhub } = useAppSelector((state) => state.authentiction);
+  const userFullName =
+    user?.full_name?.trim() ||
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim() ||
+    user?.user_name ||
+    "";
   const { selectedGroup } = useAppSelector((state) => state.notes);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const selectedName =
@@ -1679,7 +1684,7 @@ function Main() {
                     </h4>
                   </Menu.Button>
 
-                  <Menu.Items className="w-auto mt-1">
+                  <Menu.Items className="w-72 mt-2 p-0 overflow-hidden rounded-xl border-slate-200/80 shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18)]">
                     {/* <Menu.Item
                       onClick={() => {
                         setSwitchAccount(true);
@@ -1705,14 +1710,41 @@ function Main() {
                       <Lucide icon="Inbox" className="w-4 h-4 mr-2" />
                       Email Settings
                     </Menu.Item> */}
+                    <div className="relative bg-gradient-to-br from-[#800000] via-[#9b1b30] to-[#b3263f] px-4 pt-4 pb-4 text-white">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg font-semibold ring-2 ring-white/40">
+                          {(user?.first_name?.[0] || user?.user_name?.[0] || "").toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <Tippy content={userFullName} options={{ theme: "light" }}>
+                            <p className="truncate text-[15px] font-semibold leading-tight">
+                              {userFullName}
+                            </p>
+                          </Tippy>
+                          {user?.user_type && user.user_type.toLowerCase() !== "client" && (
+                            <span className="mt-1 inline-flex items-center rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider">
+                              {user.user_type}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                     {user?.email && (
-                      <>
-                        <Menu.Item>
-                          <Mail strokeWidth={1} className="w-4 h-4 mr-2" />
-                          <h2 className="text-[14px]">{user?.email}</h2>
-                        </Menu.Item>
-                        <Menu.Divider />
-                      </>
+                      <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                          <Mail strokeWidth={1.75} className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                            Signed in as
+                          </p>
+                          <Tippy content={user.email} options={{ theme: "light" }}>
+                            <p className="truncate text-[13px] font-medium text-slate-700">
+                              {user.email}
+                            </p>
+                          </Tippy>
+                        </div>
+                      </div>
                     )}
                     {/* <Menu.Item
                       onClick={() => {
@@ -1722,24 +1754,31 @@ function Main() {
                       <Lucide icon="Lock" className="w-4 h-4 mr-2" />
                       Reset Password
                     </Menu.Item> */}
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          className={`${active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                            } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                          onClick={() => {
-                            sessionStorage.removeItem('redirectPath');
-                            sessionStorage.removeItem('dashboardActiveSection');
-                            navigate("/login");
-                            dispatch(logout());
-                            persistor.purge();
-                          }}
-                        >
-                          <Lucide icon="Power" className="w-4 h-4 mr-2" />
-                          Logout
-                        </button>
-                      )}
-                    </Menu.Item>
+                    <div className="p-2">
+                      <Menu.Item className="p-0 hover:bg-transparent">
+                        {({ active }) => (
+                          <button
+                            type="button"
+                            className={`group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium transition-colors ${active ? "bg-red-50 text-[#800000]" : "text-slate-700"
+                              }`}
+                            onClick={() => {
+                              sessionStorage.removeItem('redirectPath');
+                              sessionStorage.removeItem('dashboardActiveSection');
+                              navigate("/login");
+                              dispatch(logout());
+                              persistor.purge();
+                            }}
+                          >
+                            <span className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${active ? "bg-[#800000] text-white" : "bg-red-50 text-[#800000]"
+                              }`}>
+                              <Lucide icon="LogOut" className="h-4 w-4" />
+                            </span>
+                            <span className="flex-1 text-left">Sign Out</span>
+                            <Lucide icon="ChevronRight" className={`h-4 w-4 transition-transform ${active ? "translate-x-0.5 text-[#800000]" : "text-slate-300"}`} />
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </div>
                   </Menu.Items>
                 </Menu>
               </div>

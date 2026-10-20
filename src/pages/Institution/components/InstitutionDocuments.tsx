@@ -28,6 +28,19 @@ import { getCreatorEmail } from "@/utils/currentUser";
 // analyst as a failed document.
 const STATUS_CHECK_FAILED = "__status_check_failed__";
 
+// Formats as "October 20, 2026". Date-only values ("2026-10-20") are parsed as
+// local dates so they don't shift a day in US time zones.
+const formatCreatedDate = (value?: string | null) => {
+  if (!value) return "-";
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(value);
+  return isNaN(date.getTime())
+    ? "-"
+    : date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+};
+
 type ProfileSection = "summary" | "engagement_priorities" | "reporting_expectation" | "esg_integration" | "voting_guidelines";
 // Split link_sources into add_sources and remove_sources
 type ProfileMode = "create" | "update" | "voting" | "preview" | "add_sources" | "remove_sources" | null;
@@ -865,7 +878,7 @@ const InstitutionDocuments = () => {
                   <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[120px]">Type</Table.Td>
                   <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[60px]">Year</Table.Td>
                   <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[100px]">Created By</Table.Td>
-                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[90px]">Created</Table.Td>
+                  <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[120px]">Created</Table.Td>
                   {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs text-center w-[50px]">{c.label}</Table.Td>)}
                   <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[80px]">Priority</Table.Td>
                   <Table.Td className="py-2 font-semibold h-[50px] bg-header border-header text-[#000000B2] text-xs w-[90px]">Actions</Table.Td>
@@ -889,7 +902,7 @@ const InstitutionDocuments = () => {
                       <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.document_type || "-"}</Table.Td>
                       <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.year || "-"}</Table.Td>
                       <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs truncate">{doc.created_by_name || "-"}</Table.Td>
-                      <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{doc.date_created ? new Date(doc.date_created).toLocaleDateString() : "-"}</Table.Td>
+                      <Table.Td className="py-1.5 bg-white border-slate-200/80 text-xs">{formatCreatedDate(doc.date_created)}</Table.Td>
                       {SECTION_COLS.map(c => <Table.Td key={c.key} className="py-2 bg-white border-slate-200/80 text-center">
                         <div className={`flex justify-center ${isRedCheckbox(doc, c.key) ? "rounded ring-2 ring-red-500 ring-offset-1" : isGreenCheckbox(doc, c.key) ? "rounded ring-2 ring-green-500 ring-offset-1" : ""}`}>
                           <FormCheck className="flex justify-center">
