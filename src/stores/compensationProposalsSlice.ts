@@ -14,7 +14,8 @@ interface CompensationProposalsState {
     vote?: string[];
     investor_company?: string[];
     category?: string;
-    keyword?: string;
+    keyword?: string[];
+    date_range?: string;
     page_size?: number;
   };
 }
@@ -50,7 +51,8 @@ const initialState: CompensationProposalsState = {
     vote: [],
     investor_company: DEFAULT_INVESTORS,
     category: "Say on Pay",
-    keyword: "",
+    keyword: [],
+    date_range: "",
     page_size: 25,
   },
 };

@@ -1070,7 +1070,7 @@ const NpxInstitutionView = () => {
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
             <div className="flex items-center gap-2">
               <div className="flex gap-2">
-                <Tippy content="Download Excel">
+                <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <button
                     type="button"
                     className={`box p-[5px] transition-opacity duration-200 ${downloadLoading ? "cursor-wait opacity-80" : "cursor-pointer"}`}

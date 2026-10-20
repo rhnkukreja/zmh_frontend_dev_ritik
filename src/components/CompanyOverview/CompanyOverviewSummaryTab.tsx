@@ -20,6 +20,7 @@ import type { CompanyReport, ESGInvestor, Rationale } from "./index";
 type BasicProps = {
   className?: string;
   children?: React.ReactNode;
+  id?: string;
 };
 
 type SummaryTabProps = {
@@ -35,8 +36,8 @@ type SummaryTabProps = {
 
 const cx = (...classes: Array<string | undefined | false>) => classes.filter(Boolean).join(" ");
 
-const Card = ({ className, children }: BasicProps) => (
-  <div className={cx("rounded-xl border border-slate-200 bg-white", className)}>{children}</div>
+const Card = ({ className, children, id }: BasicProps) => (
+  <div id={id} className={cx("rounded-xl border border-slate-200 bg-white", className)}>{children}</div>
 );
 
 const CardHeader = ({ className, children }: BasicProps) => (
@@ -790,11 +791,13 @@ function CollapsibleCard({
   iconKey,
   children,
   defaultOpen = true,
+  id,
 }: {
   title: string;
   iconKey: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  id?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const icon =
@@ -806,7 +809,7 @@ function CollapsibleCard({
     <ShieldCheck className="h-4 w-4 text-primary" />;
 
   return (
-    <Card className="rounded-2xl shadow-sm">
+    <Card id={id} className="rounded-2xl shadow-sm scroll-mt-24">
       <CardHeader className="pb-3">
         <SectionHeader
           title={title}
@@ -906,6 +909,89 @@ function ESGInvestorBlock({ inv }: { inv: ESGInvestor }) {
           {inv.name} doesn't disclose the engagement details.
         </div>
       )}
+    </div>
+  );
+}
+
+function SectionQuickNav({ report }: { report: CompanyReport }) {
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const items = React.useMemo(() => {
+    const list: { id: string; label: string; icon: React.ReactNode }[] = [];
+    const iconCls = "h-3.5 w-3.5";
+    if (report.shareholderEngagement)
+      list.push({ id: "section-shareholder-engagement", label: "Shareholder Engagement", icon: <MessageSquareQuote className={iconCls} /> });
+    if (report.sop)
+      list.push({ id: "section-sop", label: "Say-on-Pay", icon: <Vote className={iconCls} /> });
+    if (report.auditor)
+      list.push({ id: "section-auditor", label: "Auditor Ratification", icon: <FileCheck2 className={iconCls} /> });
+    if (report.shareholderProposals)
+      list.push({ id: "section-sp", label: "Shareholder Proposals", icon: <FileText className={iconCls} /> });
+    if (report.esg)
+      list.push({ id: "section-esg", label: "Engagement Details", icon: <BarChart2 className={iconCls} /> });
+    return list;
+  }, [report]);
+
+  const updateScrollShadows = React.useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  React.useEffect(() => {
+    updateScrollShadows();
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateScrollShadows, { passive: true });
+    window.addEventListener("resize", updateScrollShadows);
+    return () => {
+      el.removeEventListener("scroll", updateScrollShadows);
+      window.removeEventListener("resize", updateScrollShadows);
+    };
+  }, [items, updateScrollShadows]);
+
+  if (items.length < 2) return null;
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  return (
+    <div className="sticky top-[10.75rem] z-30">
+      <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur">
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 text-[12px] font-bold uppercase tracking-wide text-slate-500">
+            Jump to
+          </span>
+          <div className="relative min-w-0 flex-1">
+            {canScrollLeft && (
+              <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-6 bg-gradient-to-r from-white/95 to-transparent" />
+            )}
+            <div
+              ref={scrollerRef}
+              className="flex items-center gap-1.5 overflow-x-auto scroll-smooth whitespace-nowrap py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => scrollToSection(item.id)}
+                  className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-[13px] font-medium text-slate-600 transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  <span className="text-primary">{item.icon}</span>
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {canScrollRight && (
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-6 bg-gradient-to-l from-white/95 to-transparent" />
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1113,6 +1199,8 @@ export default function CompanyOverviewSummaryTab({
           </div>
         </header>
 
+        {!isLoading && report ? <SectionQuickNav report={report} /> : null}
+
         {isLoading ? (
           <SummaryLoadingSkeleton />
         ) : !report ? (
@@ -1138,14 +1226,14 @@ export default function CompanyOverviewSummaryTab({
 
               <CardContent className="space-y-4">
                 {report.sharePriceTakeaway && (
-                  <div className="rounded-xl border bg-white p-3">
+                  <div id="section-share-price" className="rounded-xl border bg-white p-3 scroll-mt-24">
                     <SectionHeader title="Share Price Takeaway" icon={<BarChart3 className="h-4 w-4 text-primary" />} />
                     <p className="mt-3 text-[15px] text-slate-700">{report.sharePriceTakeaway}</p>
                   </div>
                 )}
 
                 {report.proxy ? (
-                  <div className="rounded-xl border bg-white p-3">
+                  <div id="section-proxy-advisor" className="rounded-xl border bg-white p-3 scroll-mt-24">
                     <SectionHeader title="Proxy Advisor Influence" icon={<ShieldCheck className="h-4 w-4 text-primary" />} />
                     <p className="mt-3 text-[15px] text-slate-700">{report.proxy.summary}</p>
                     <div className="mt-3 space-y-2">
@@ -1169,7 +1257,9 @@ export default function CompanyOverviewSummaryTab({
                 ) : null}
 
                 {report.shareholderEngagement ? (
-                  <ShareholderEngagementSection engagement={report.shareholderEngagement} />
+                  <div id="section-shareholder-engagement" className="scroll-mt-24">
+                    <ShareholderEngagementSection engagement={report.shareholderEngagement} />
+                  </div>
                 ) : null}
               </CardContent>
             </Card>
@@ -1183,7 +1273,7 @@ export default function CompanyOverviewSummaryTab({
                 </div>
               )}
               {report.board ? (
-                <CollapsibleCard title="Board of Directors" iconKey="board">
+                <CollapsibleCard id="section-board" title="Board of Directors" iconKey="board">
                   <BulletList items={report.board.headlineBullets} />
                   {report.board.lowestSupport?.length ? (
                     <>
@@ -1206,7 +1296,7 @@ export default function CompanyOverviewSummaryTab({
               ) : null}
 
               {report.sop ? (
-  <CollapsibleCard title="Executive Compensation (Say-on-Pay)" iconKey="sop">
+  <CollapsibleCard id="section-sop" title="Executive Compensation (Say-on-Pay)" iconKey="sop">
     {/* Pass report.company to allow the hotfix to trigger safely */}
     <BulletList items={transformSayOnPayBullets(report.sop.headlineBullets, report.company)} />
     <RationaleList items={report.sop.rationales} summary={report.sop.rationaleSummary} />
@@ -1214,14 +1304,14 @@ export default function CompanyOverviewSummaryTab({
 ) : null}
 
               {report.auditor ? (
-                <CollapsibleCard title="Auditor Ratification" iconKey="auditor">
+                <CollapsibleCard id="section-auditor" title="Auditor Ratification" iconKey="auditor">
                   <BulletList items={report.auditor.headlineBullets} />
                   <RationaleList items={report.auditor.rationales} />
                 </CollapsibleCard>
               ) : null}
 
               {report.shareholderProposals ? (
-  <CollapsibleCard title="Shareholder Proposals" iconKey="sp">
+  <CollapsibleCard id="section-sp" title="Shareholder Proposals" iconKey="sp">
     
     {/* 1. Check if the paginated 'results' format is coming from the API */}
     {(report.shareholderProposals as any).results?.length ? (
@@ -1262,7 +1352,7 @@ export default function CompanyOverviewSummaryTab({
 ) : null}
 
               {report.esg ? (
-                <CollapsibleCard title="Engagement Details (as disclosed by investors)" iconKey="esg">
+                <CollapsibleCard id="section-esg" title="Engagement Details (as disclosed by investors)" iconKey="esg">
                   {report.esg.themeSummary ? <p className="text-[15px] text-slate-700">{report.esg.themeSummary}</p> : null}
                   <div className="mt-4 grid gap-3">
                     {report.esg.investors.map((investor, index) => (

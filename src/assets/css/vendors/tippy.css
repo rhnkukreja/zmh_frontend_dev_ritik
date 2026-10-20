@@ -16,6 +16,9 @@
 .tippy-box[data-theme~="small"] {
     font-size: theme("fontSize.xs");
 }
+.tippy-box[data-theme~="light"] .tippy-content {
+    font-weight: 600;
+}
 .tippy-popper {
     &[x-placement="left"],
     &[x-placement="right"],

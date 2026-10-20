@@ -65,8 +65,9 @@ import FormCheck from "@/components/Base/Form/FormCheck";
 
 import { toast } from "react-toastify";
 import { scrapeQuickWhaleWisdom } from "@/pages/AIChatbot/api";
-import { MegaphoneOff, ChevronLeft, ChevronDown } from "lucide-react";
+import { MegaphoneOff, ChevronLeft, ChevronDown, Search } from "lucide-react";
 import { domainNotesService } from "@/services/domainNotes";
+import { dashboardService } from "@/services/dashboard";
 import { DomainNote } from "@/types/domainNotes";
 import { decryptNotesText } from "@/utils/notesCrypto";
 
@@ -138,6 +139,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
     companyGlobalSearchId,
     companyGlobalSearchName,
     companyGlobalSearchTicker,
+    companyGlobalSearchId,
   } = useAppSelector(
     (state: RootState) => state.authentiction
   );
@@ -159,6 +161,55 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   const [hasLoadingStarted, setHasLoadingStarted] = useState<boolean>(false);
   const [hasNotifiedLoaded, setHasNotifiedLoaded] = useState<boolean>(false);
   const [expandedHoldingRows, setExpandedHoldingRows] = useState<Set<string>>(new Set());
+  const [directorVotesModalVisible, setDirectorVotesModalVisible] = useState<boolean>(false);
+  const [directorVotesLoading, setDirectorVotesLoading] = useState<boolean>(false);
+  const [directorVotesData, setDirectorVotesData] = useState<any>(null);
+
+  const directorVotesResults: any[] = Array.isArray(directorVotesData?.results)
+    ? directorVotesData.results
+    : [];
+  const getDirectorVoteFundName = (row: any): string => {
+    if (row?.source === "VDS") return "";
+    if (row?.fund_name !== null && row?.fund_name !== undefined && row?.fund_name !== "") {
+      return row.fund_name;
+    }
+    if (Array.isArray(row?.fund_names) && row.fund_names.length > 0) {
+      return row.fund_names.join(", ");
+    }
+    return "";
+  };
+  const directorVotesHasFund = directorVotesResults.some((row) => getDirectorVoteFundName(row) !== "");
+  const directorVotesHasShares = directorVotesResults.some(
+    (row) => row?.shares_voted !== null && row?.shares_voted !== undefined && row?.shares_voted !== ""
+  );
+  const directorVotesHasNpxSource = directorVotesResults.some((row) => row?.source === "NPX");
+  const directorVotesHasVdsSource = directorVotesResults.some((row) => row?.source === "VDS");
+
+  const handleViewDirectorAgainstVotes = async (
+    institutionId: number | string | undefined,
+    year: number | string | undefined
+  ) => {
+    if (!institutionId || !companyGlobalSearchId) return;
+
+    setDirectorVotesModalVisible(true);
+    setDirectorVotesLoading(true);
+    setDirectorVotesData(null);
+
+    try {
+      const { result } = await dashboardService.getDirectorAgainstWithholdVotes({
+        institutionId,
+        companyId: companyGlobalSearchId,
+        year,
+      });
+      setDirectorVotesData(result);
+    } catch (error) {
+      console.error("Director against/withhold votes fetch error:", error);
+      toast.error("Unable to load voting details for this institution.");
+      setDirectorVotesData(null);
+    } finally {
+      setDirectorVotesLoading(false);
+    }
+  };
 
   const toggleHoldingRow = (rowKey: string) => {
     setExpandedHoldingRows((prev) => {
@@ -604,7 +655,7 @@ const getNormalizedScrapedInfo = (name: string) => {
     }));
   };
 
-  const renderVotingStatus = (value: any, message?: string, fallbackMessage?: string) => {
+  const renderVotingStatus = (value: any, message?: string, fallbackMessage?: string, onClick?: () => void) => {
     const truthy = new Set(["true", "yes", "y", "1", "t"]);
     const falsy = new Set(["false", "no", "n", "0", "f"]);
     const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -615,11 +666,30 @@ const getNormalizedScrapedInfo = (name: string) => {
       (Array.isArray(value) && value.length > 0) ||
       (typeof value === "number" && value > 0)
     ) {
+      const tick = onClick ? (
+        <div
+          className="relative bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white cursor-pointer ring-2 ring-offset-1 ring-red-200 transition-transform hover:scale-110 hover:ring-red-300"
+          onClick={onClick}
+        >
+          &#10004;
+          <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-3 h-3 rounded-full bg-white shadow ring-1 ring-red-200">
+            <Search className="w-2 h-2 text-[#FF2A2A]" strokeWidth={3} />
+          </span>
+        </div>
+      ) : (
+        <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
+          &#10004;
+        </div>
+      );
       return (
         <div className="flex w-full items-center justify-center">
-          <div className="bg-[#FF2A2A] font-semibold flex items-center justify-center rounded-full w-5 h-5 text-[10px] text-white">
-            &#10004;
-          </div>
+          {onClick ? (
+            <Tippy content="Click to view related voting details" options={{ theme: "light" }}>
+              {tick}
+            </Tippy>
+          ) : (
+            tick
+          )}
         </div>
       );
     }
@@ -952,7 +1022,8 @@ const getNormalizedScrapedInfo = (name: string) => {
                                                 renderVotingStatus(
                                                   yearData?.voted_against_directors,
                                                   yearData?.voted_against_directors_message || undefined,
-                                                  "No Data"
+                                                  "No Data",
+                                                  () => handleViewDirectorAgainstVotes(holding?.institution_id, year)
                                                 )
                                               ) : (
                                                 <span className="text-gray-300">—</span>
@@ -1026,7 +1097,8 @@ const getNormalizedScrapedInfo = (name: string) => {
                                                         renderVotingStatus(
                                                           yearData?.voted_against_directors,
                                                           yearData?.voted_against_directors_message || undefined,
-                                                          "No Data"
+                                                          "No Data",
+                                                          () => handleViewDirectorAgainstVotes(child?.institution_id, year)
                                                         )
                                                       ) : (
                                                         <span className="text-gray-300">—</span>
@@ -1478,7 +1550,8 @@ const isActivelyScraping =
                                             renderVotingStatus(
                                               dashboard?.voted_against_directors,
                                               dashboard?.voted_against_directors_message,
-                                              "Not disclosed in NPX"
+                                              "Not disclosed in NPX",
+                                              () => handleViewDirectorAgainstVotes(dashboard?.institution_id, activeYear)
                                             )
                                           )}
                                         </Table.Td>
@@ -1620,7 +1693,8 @@ const isActivelyScraping =
                                           {renderVotingStatus(
                                             child?.voted_against_directors,
                                             child?.voted_against_directors_message,
-                                            "Not disclosed in NPX"
+                                            "Not disclosed in NPX",
+                                            () => handleViewDirectorAgainstVotes(child?.institution_id, activeYear)
                                           )}
                                         </Table.Td>
                                         <Table.Td className={`cell py-2 border-dashed dark:bg-darkmode-600 text-left ${isColumnGrayedOut ? 'bg-gray-50' : ''}`}>
@@ -2103,6 +2177,146 @@ const isActivelyScraping =
             <Button type="button" variant="outline-secondary" onClick={() => setShowFilerModal(false)}>Cancel</Button>
             <Button type="button" variant="primary" onClick={confirmFilerSelection} disabled={!selectedFilerLink}>Scrape Selected Profile</Button>
           </Dialog.Footer>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* DIRECTOR AGAINST/WITHHOLD VOTES MODAL */}
+      <Dialog
+        size="xl"
+        open={directorVotesModalVisible}
+        onClose={() => setDirectorVotesModalVisible(false)}
+      >
+        <Dialog.Panel className="p-0 bg-slate-50/50 overflow-hidden">
+          <Dialog.Title className="p-6 bg-white border-b border-slate-200 relative m-0">
+            <div className="pr-10">
+              <h2 className="text-xl font-semibold text-slate-700">
+                {directorVotesData?.institution_name || "Voting Details"}
+              </h2>
+              <div className="text-base font-medium text-slate-600 mt-1">
+                {directorVotesData?.company_name || companyGlobalSearchName}
+                {directorVotesData?.count !== undefined
+                  ? ` • ${directorVotesData.count} record${directorVotesData.count === 1 ? "" : "s"}`
+                  : ""}
+              </div>
+            </div>
+            <div
+              onClick={() => setDirectorVotesModalVisible(false)}
+              className="absolute top-6 right-6 cursor-pointer hover:bg-slate-100 p-2 rounded-full transition-colors"
+            >
+              <Lucide icon="X" className="w-6 h-6 text-slate-400" />
+            </div>
+          </Dialog.Title>
+
+          <Dialog.Description className="p-6 bg-slate-50 m-0 max-h-[75vh] overflow-y-auto">
+            {directorVotesLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <LoadingIcon color="#800000" icon="three-dots" className="w-12 h-12" />
+              </div>
+            ) : Array.isArray(directorVotesData?.results) && directorVotesData.results.length > 0 ? (
+              <div className="overflow-x-auto border rounded-md bg-white">
+                <table className="w-full text-left text-sm text-slate-700">
+                  <thead className="bg-slate-100 text-slate-800 border-b">
+                    <tr>
+                      {directorVotesHasVdsSource && <th className="p-3 font-semibold">Proposal No.</th>}
+                      <th className="p-3 font-semibold">Proposal</th>
+                      {directorVotesHasFund && <th className="p-3 font-semibold">Fund</th>}
+                      <th className="p-3 font-semibold">Vote</th>
+                      {directorVotesHasShares && <th className="p-3 font-semibold">Shares Voted</th>}
+                      <th className="p-3 font-semibold">Meeting Date</th>
+                      {directorVotesHasNpxSource && <th className="p-3 font-semibold">Source</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {directorVotesData.results.map((row: any, index: number) => {
+                      const columnCount =
+                        3 +
+                        (directorVotesHasVdsSource ? 1 : 0) +
+                        (directorVotesHasFund ? 1 : 0) +
+                        (directorVotesHasShares ? 1 : 0) +
+                        (directorVotesHasNpxSource ? 1 : 0);
+                      const isVds = row?.source === "VDS";
+                      const isNpx = row?.source === "NPX";
+                      return (
+                        <Fragment key={index}>
+                          <tr className="border-b last:border-b-0 hover:bg-slate-50">
+                            {directorVotesHasVdsSource && (
+                              <td className="p-3 align-top whitespace-nowrap">
+                                {isVds ? (row?.proposal_no || "-") : "-"}
+                              </td>
+                            )}
+                            <td className="p-3 align-top whitespace-normal break-words max-w-[320px]">
+                              {row?.proposal || "-"}
+                            </td>
+                            {directorVotesHasFund && (
+                              <td className="p-3 align-top whitespace-normal break-words">
+                                {getDirectorVoteFundName(row) || "-"}
+                              </td>
+                            )}
+                            <td className="p-3 align-top text-red-700 font-semibold whitespace-nowrap">
+                              <div className="flex items-center gap-1.5">
+                                <span>{row?.vote || "-"}</span>
+                                {row?.vote === "Split Vote" && row?.split_vote_counts && (
+                                  <Tippy
+                                    content={
+                                      typeof row.split_vote_counts === "object"
+                                        ? Object.entries(row.split_vote_counts)
+                                            .map(([key, value]) => `<b>${key}:</b> ${String(value)}`)
+                                            .join("<br/>")
+                                        : String(row.split_vote_counts)
+                                    }
+                                    options={{ theme: "light", allowHTML: true }}
+                                  >
+                                    <span className="inline-flex items-center justify-center">
+                                      <Lucide icon="Info" className="w-4 h-4 text-slate-500 cursor-pointer" />
+                                    </span>
+                                  </Tippy>
+                                )}
+                              </div>
+                            </td>
+                            {directorVotesHasShares && (
+                              <td className="p-3 align-top whitespace-nowrap">
+                                {row?.shares_voted || "-"}
+                              </td>
+                            )}
+                            <td className="p-3 align-top whitespace-nowrap">
+                              {row?.meeting_date || "-"}
+                            </td>
+                            {directorVotesHasNpxSource && (
+                              <td className="p-3 align-top whitespace-nowrap">
+                                {isNpx && row?.NPX_Link ? (
+                                  <a
+                                    href={row.NPX_Link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary underline hover:opacity-80"
+                                  >
+                                    View Source
+                                  </a>
+                                ) : null}
+                              </td>
+                            )}
+                          </tr>
+                          {row?.rationale && (
+                            <tr className="bg-red-50/60 border-b">
+                              <td colSpan={columnCount} className="p-3 text-xs text-slate-600 italic">
+                                <span className="font-semibold not-italic text-slate-700">Voting Rationale: </span>
+                                {row.rationale}
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+                <Lucide icon="FileText" className="mb-4 h-14 w-14 text-slate-300" />
+                <div className="text-base font-semibold text-slate-600">No voting details found</div>
+              </div>
+            )}
+          </Dialog.Description>
         </Dialog.Panel>
       </Dialog>
     </>

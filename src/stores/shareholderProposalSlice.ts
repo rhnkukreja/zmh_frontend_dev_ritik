@@ -19,6 +19,7 @@ type SharedHolderFiltersType = {
   sector: string[];
   keyword: string;
   status: string[];
+  date_range?: string;
 
   global_search: string[];
 };
@@ -96,6 +97,7 @@ const initialState: SharedHolderPrposal = {
     sector: [],
     keyword: "",
     status: [],
+    date_range: "",
 
     global_search: [],
   },
