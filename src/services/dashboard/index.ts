@@ -106,6 +106,16 @@ class DashboardService {
         } else {
           url = `/${exactUrl}${companyName}`;
         }
+      } else if (currentFilters?.strictFilters) {
+        const params = new URLSearchParams();
+        params.append('company_name', companyName ?? "");
+        params.append('all', 'true');
+        (['index', 'country'] as const).forEach((key) => {
+          if (Array.isArray(currentFilters?.[key]) && currentFilters[key].length > 0) {
+            params.append(key, JSON.stringify(currentFilters[key]));
+          }
+        });
+        url = `/company/?${params.toString()}`;
       } else {
         // Refactored: Use proper URL construction with URLSearchParams for consistency
         const params = new URLSearchParams();

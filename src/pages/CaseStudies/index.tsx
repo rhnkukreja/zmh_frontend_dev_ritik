@@ -3,7 +3,7 @@ import { Popover, Dialog } from "@/components/Base/Headless";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -68,6 +68,14 @@ interface CaseStudyFilter {
   [key: string]: any;
   index?: string | string[];
 }
+// The API expects index codes ("100", "500", "3000"), while the dropdown shows "S&P 100".
+const toIndexCodes = (index: any): string[] => {
+  const values = Array.isArray(index) ? index : typeof index === "string" && index.trim() ? [index] : [];
+  return values
+    .map((value) => String(value).match(/\d+/)?.[0] ?? String(value).trim())
+    .filter(Boolean);
+};
+
 function CaseStudies() {
   const dispatch: AppDispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -126,6 +134,9 @@ function CaseStudies() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
+  const [filterValidationMessage, setFilterValidationMessage] = useState("");
+  const previousIsAllCompanySelectedRef = useRef(isAllCompanySelected);
+  const hasNoResults = !loading && (!caseStudies || caseStudies.length === 0);
 
 
   const {
@@ -156,6 +167,34 @@ function CaseStudies() {
       index: filters?.index || []
     },
   });
+
+  useEffect(() => {
+    const subscription = watch(() => setFilterValidationMessage(""));
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
+  const watchedIndex = watch("index");
+  const watchedMarket = watch("market");
+  const companySearchFilters = useMemo(
+    () => ({
+      strictFilters: true,
+      index: toIndexCodes(watchedIndex),
+      country: Array.isArray(watchedMarket) ? watchedMarket : [],
+    }),
+    [JSON.stringify(watchedIndex ?? []), JSON.stringify(watchedMarket ?? [])]
+  );
+
+  const getCaseStudiesApiFilters = () => {
+    // For "View For All Companies", keep global_search only when companies are selected
+    const hasSelectedCompanies =
+      Array.isArray(filters?.global_search) && filters.global_search.length > 0;
+    const indexCodes = toIndexCodes(filters?.index);
+    return {
+      ...filters,
+      ...(isAllCompanySelected && !hasSelectedCompanies && { global_search: undefined }),
+      index: indexCodes.length > 0 ? indexCodes : undefined,
+    };
+  };
 
   const resetFormValues = () => {
     setValue("themes", []);
@@ -213,15 +252,9 @@ function CaseStudies() {
   useEffect(() => {
     const state: any = location.state;
     if (state?.refresh) {
-      const hasSelectedCompanies =
-        Array.isArray(filters?.global_search) && filters.global_search.length > 0;
-      const apiFilters =
-        isAllCompanySelected && !hasSelectedCompanies
-          ? { ...filters, global_search: undefined }
-          : filters;
       const dynamicURL = createDynamicURL(
         `${baseURL}/case_studies/`,
-        apiFilters,
+        getCaseStudiesApiFilters(),
         undefined,
         page
       );
@@ -270,6 +303,15 @@ function CaseStudies() {
   }, [searchParams, dispatch]);
 
   useEffect(() => {
+    const modeChanged = previousIsAllCompanySelectedRef.current !== isAllCompanySelected;
+    previousIsAllCompanySelectedRef.current = isAllCompanySelected;
+
+    // In "All Companies" mode the Select Companies filter owns global_search;
+    // only reset it when switching modes.
+    if (isAllCompanySelected && !modeChanged) {
+      return;
+    }
+
     const nextGlobalSearch = isAllCompanySelected ? [] : [companyGlobalSearchName];
     const currentGlobalSearch = filters?.global_search ?? [];
 
@@ -299,17 +341,9 @@ function CaseStudies() {
       return;
     }
 
-    // For "View For All Companies", keep global_search only when companies are selected
-    const hasSelectedCompanies =
-      Array.isArray(filters?.global_search) && filters.global_search.length > 0;
-    const apiFilters =
-      isAllCompanySelected && !hasSelectedCompanies
-        ? { ...filters, global_search: undefined }
-        : filters;
-
     const dynamicURL = createDynamicURL(
       `${baseURL}/case_studies/`,
-      apiFilters,
+      getCaseStudiesApiFilters(),
       undefined,
       page
     );
@@ -354,11 +388,15 @@ function CaseStudies() {
   };
 
   const onFilterClear = () => {
+    setFilterValidationMessage("");
     resetFormValues();
     dispatch(resetFilters());
     dispatch(resetPage());
     dispatch(
-      setFilters({ key: "global_search", value: [companyGlobalSearchName] })
+      setFilters({
+        key: "global_search",
+        value: isAllCompanySelected ? [] : [companyGlobalSearchName],
+      })
     );
   };
 
@@ -368,7 +406,10 @@ function CaseStudies() {
     // dispatch(resetFilters());
     dispatch(resetPage());
     dispatch(
-      setFilters({ key: "global_search", value: [companyGlobalSearchName] })
+      setFilters({
+        key: "global_search",
+        value: isAllCompanySelected ? filters?.global_search ?? [] : [companyGlobalSearchName],
+      })
     );
     dispatch(setInstitution(""));
   };
@@ -393,19 +434,33 @@ function CaseStudies() {
       delete filtersToApply.index;
     }
 
+    const selectedCompanies = isAllCompanySelected && Array.isArray(caseStudyFilters?.global_search)
+      ? caseStudyFilters.global_search
+          .map((item: any) => item?.label ?? item?.value ?? item)
+          .filter(Boolean)
+      : [];
+
+    const hasValue = (value: any) =>
+      Array.isArray(value) ? value.length > 0 : typeof value === "string" ? value.trim() !== "" : Boolean(value);
+    const hasAnyFilter =
+      selectedCompanies.length > 0 ||
+      ["year", "index", "market", "sector", "themes", "keyword", "approval_status", "caspio_company_name"]
+        .some((key) => hasValue(filtersToApply[key]));
+
+    if (!hasAnyFilter) {
+      setFilterValidationMessage("Please select at least one filter.");
+      return;
+    }
+
+    setFilterValidationMessage("");
     dispatch(
       setAllFilters({
         ...filtersToApply,
         institution_name: searchTerms,
-        global_search: isAllCompanySelected
-          ? Array.isArray(caseStudyFilters?.global_search) &&
-            caseStudyFilters?.global_search.length > 0
-            ? caseStudyFilters?.global_search.map((item: any) => item.label)
-            : []
-          : [companyGlobalSearchName],
+        global_search: isAllCompanySelected ? selectedCompanies : [companyGlobalSearchName],
       })
     );
-    setIsFilterCollapse(!isFilterCollapse);
+    setIsFilterCollapse(false);
     dispatch(resetPage());
   };
 
@@ -504,7 +559,7 @@ function CaseStudies() {
       // Refresh data
       const dynamicURL = createDynamicURL(
         `${baseURL}/case_studies/`,
-        filters,
+        getCaseStudiesApiFilters(),
         undefined,
         page
       );
@@ -556,7 +611,12 @@ function CaseStudies() {
       updatedFilters[removeKey] = updatedFilters[removeKey].filter(
         (item) => item !== removeValue
       );
-      setValue(removeKey, updatedFilters[removeKey]);
+      setValue(
+        removeKey,
+        removeKey === "global_search"
+          ? updatedFilters[removeKey].map((item: string) => ({ value: item, label: item }))
+          : updatedFilters[removeKey]
+      );
     } else if (updatedFilters[removeKey] === removeValue) {
       if (removeKey === "index") {
         // Remove index completely if empty or blank
@@ -580,18 +640,10 @@ function CaseStudies() {
     return field.onChange(event);
   }
   const handleDownload = async () => {
-    // For "View For All Companies", keep global_search only when companies are selected
-    const hasSelectedCompanies =
-      Array.isArray(filters?.global_search) && filters.global_search.length > 0;
-    const apiFilters =
-      isAllCompanySelected && !hasSelectedCompanies
-        ? { ...filters, global_search: undefined }
-        : filters;
-
     downloadFileFromAPI({
       url: createDynamicURL(
         `${baseURL}/case_studies/`,
-        apiFilters,
+        getCaseStudiesApiFilters(),
         undefined,
         page
       ),
@@ -818,7 +870,14 @@ function CaseStudies() {
                     <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                       {/* Filter Content */}
                       <div className="flex justify-between items-center">
-                        <h3 className="font-semibold text-slate-700" style={{ fontSize: '14px' }}>Filters</h3>
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-semibold text-slate-700" style={{ fontSize: '14px' }}>Filters</h3>
+                          {filterValidationMessage && (
+                            <p className="text-sm font-medium text-danger" role="alert">
+                              {filterValidationMessage}
+                            </p>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline-secondary"
@@ -833,7 +892,7 @@ function CaseStudies() {
 
                           <Button
                             variant="primary"
-                            onClick={handleSubmit(onSubmit)}
+                            type="submit"
                             className="w-full sm:w-auto flex items-center gap-2"
                           >
                             <FaSearch className="text-lg" /> Apply
@@ -936,18 +995,8 @@ function CaseStudies() {
                                         field.onChange(value);
                                       }}
                                       isMulti={true}
-                                      currentFilters={{
-                                        year: watch("year") || [],
-                                        market: watch("market") || [],
-                                        sector: watch("sector") || [],
-                                        themes: watch("themes") || [],
-                                        proposal_type: watch("proposal_type") || [],
-                                        vote: watch("vote") || [],
-                                        approval_status: watch("approval_status") || "",
-                                        caspio_company_name: watch("caspio_company_name") || "",
-                                        index: watch("index") || [],
-                                        // institution_name: searchTerms || [],
-                                      }}
+                                      showDefaultOptions={false}
+                                      currentFilters={companySearchFilters}
                                     />
                                   )}
                                 />
@@ -1321,22 +1370,29 @@ function CaseStudies() {
 
 
 
-                {count > 0 && (
-                  <h2 className="flex items-end font-semibold justify-end my-2 md:ml-auto mx-5 mb-1" style={{ fontSize: '14px' }}>
-                    Count: {count.toLocaleString()}
+                {(loading || count > 0) && (
+                  <h2 className="flex items-center font-semibold justify-end gap-1 my-2 md:ml-auto mx-5 mb-1" style={{ fontSize: '14px' }}>
+                    Count:{" "}
+                    {loading ? (
+                      <span
+                        className="inline-block h-4 w-10 animate-pulse rounded bg-slate-200"
+                        aria-label="Loading count"
+                      />
+                    ) : (
+                      count.toLocaleString()
+                    )}
                   </h2>
                 )}
 
 
                 {/* No Data State */}
-                {!loading && caseStudies?.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-20">
-                    <Lucide
-                      icon="FileSearch"
-                      className="w-16 h-16 text-slate-200 mb-4"
-                    />
-                    <div className="text-xl font-bold text-slate-700">No Case Studies Found</div>
-                    <div className="text-slate-500 mt-2">
+                {hasNoResults && (
+                  <div className="mx-5 my-6 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-16 text-center">
+                    <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 ring-8 ring-primary/5">
+                      <Lucide icon="FileSearch" className="h-8 w-8 text-primary" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-800">No Case Studies Found</h3>
+                    <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-500">
                       {/* Selecting an institution that has no case studies is
                           now a normal, expected outcome rather than a sign
                           something went wrong -- the search covers every
@@ -1351,10 +1407,22 @@ function CaseStudies() {
                           {(user?.user_type === "Analyst" || user?.user_type === "Admin") &&
                             " Use Generate Case Studies above to create them."}
                         </>
+                      ) : filtersLength > 0 ? (
+                        "No results match the selected filters. Try removing some filters or broadening your search."
                       ) : (
-                        "Try adjusting your filters or keyword search"
+                        "There are no case studies available yet."
                       )}
-                    </div>
+                    </p>
+                    {filtersLength > 0 && !isCompanySource && (
+                      <Button
+                        variant="outline-primary"
+                        type="button"
+                        onClick={onFilterClear}
+                        className="mt-6 flex items-center gap-2 px-5"
+                      >
+                        <MdOutlineClear className="text-base" /> Clear Filters
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -1470,6 +1538,7 @@ function CaseStudies() {
                   </Dialog.Panel>
                 </Dialog>
 
+                {!hasNoResults && (
                 <div className=" px-5">
                   <StandardizedTable isLoading={loading} maxHeight="400px">
                     <StandardizedTable.Header>
@@ -1599,35 +1668,23 @@ function CaseStudies() {
                           );
                         })}
                     </Table.Tbody>
-                    {caseStudies?.length === 0 && (
-                      <Table.Tbody>
-                        <Table.Tr>
-                          <Table.Td colSpan={isAllCompanySelected ? 7 : 6} className="text-center py-12">
-                            <div className="flex flex-col items-center justify-center">
-                              <Lucide
-                                icon="FileSearch"
-                                className="w-12 h-12 text-gray-300 mb-2"
-                              />
-                              <div className="text-lg font-medium">No data found</div>
-                              <div className="text-sm text-gray-500 mt-1">
-                                Try adjusting your filters or search criteria
-                              </div>
-                            </div>
-                          </Table.Td>
-                        </Table.Tr>
-                      </Table.Tbody>
-                    )}
                   </StandardizedTable>
                 </div>
+                )}
 
-                <div className="flex flex-col-reverse flex-wrap items-center p-5 flex-reverse gap-y-2 sm:flex-row border-t mt-4">
-                  <CPagination
-                    page={page}
-                    totalPages={totalPages}
-                    handleNextPage={handleNextPage}
-                    handlePageChange={handlePageChange}
-                    handlePreviousPage={handlePreviousPage}
-                  />
+                <div className={clsx(
+                  "flex flex-col-reverse flex-wrap items-center gap-y-2 sm:flex-row",
+                  hasNoResults ? "hidden" : "p-5 border-t mt-4"
+                )}>
+                  {!hasNoResults && (
+                    <CPagination
+                      page={page}
+                      totalPages={totalPages}
+                      handleNextPage={handleNextPage}
+                      handlePageChange={handlePageChange}
+                      handlePreviousPage={handlePreviousPage}
+                    />
+                  )}
 
                   {addNewCaseStudyModalVisible && (
                     <AddNewCaseStudies

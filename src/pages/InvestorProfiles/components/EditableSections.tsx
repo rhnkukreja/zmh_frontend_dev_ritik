@@ -5,7 +5,6 @@ import { ClassicEditor } from "@/components/Base/Ckeditor";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { updateInvestersProfile } from "@/stores/investersProfileSlice";
 import { InvestersProfile } from "@/types/investerProfiles";
-import LoadingWrapper from "@/components/LoadingWrapper";
 
 
 
@@ -101,7 +100,21 @@ useEffect(() => {
   return (
     <div className="box border-none ">
       {fetchloading && loading === false ? (
-        <LoadingWrapper height={300} />
+        <div className="animate-pulse overflow-hidden rounded-md bg-white">
+          <div className="flex items-center justify-between border-b-2 border-gray-100 px-4 py-4">
+            <div className="h-5 w-32 rounded bg-slate-200" />
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-16 rounded-md bg-slate-200" />
+              <div className="h-8 w-24 rounded-md bg-slate-200" />
+            </div>
+          </div>
+          <div className="space-y-3 px-4 py-5">
+            <div className="h-3.5 w-full rounded bg-slate-200" />
+            <div className="h-3.5 w-[94%] rounded bg-slate-200" />
+            <div className="h-3.5 w-[88%] rounded bg-slate-200" />
+            <div className="h-3.5 w-[72%] rounded bg-slate-200" />
+          </div>
+        </div>
       ) : (
         <>
          <div

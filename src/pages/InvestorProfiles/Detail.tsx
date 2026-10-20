@@ -22,8 +22,6 @@ import { investersProfileService } from "@/services/investersProfile";
 import { institutionStatsService } from "@/services/institutionStats";
 import { domainNotesService } from "@/services/domainNotes";
 
-import LoadingWrapper from "@/components/LoadingWrapper";
-
 import EditableSection from "./components/EditableSections";
 import dayjs from "dayjs";
 import Tippy from "@/components/Base/Tippy";
@@ -921,12 +919,20 @@ function Main() {
                     <div className="mb-4 flex flex-col rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-left text-[18px] font-semibold text-black">
-                            {hasTeamContactDetails && isContactUrl
-                              ? "Link to Contact Form"
-                              : "Team Contact Details"}
-                          </h4>
-                          {teamContactDetails ? (
+                          {loading ? (
+                            <div className="animate-pulse space-y-3">
+                              <div className="h-5 w-44 rounded bg-slate-200" />
+                              <div className="h-3.5 w-[90%] rounded bg-slate-200" />
+                              <div className="h-3.5 w-[70%] rounded bg-slate-200" />
+                            </div>
+                          ) : (
+                            <>
+                              <h4 className="text-left text-[18px] font-semibold text-black">
+                                {hasTeamContactDetails && isContactUrl
+                                  ? "Link to Contact Form"
+                                  : "Team Contact Details"}
+                              </h4>
+                              {teamContactDetails ? (
                             isEmailContact ? (
                               <div className="mt-2">
                                 <a
@@ -963,9 +969,11 @@ function Main() {
                               </p>
                             )
                           ) : (
-                            <p className="mt-2 text-sm leading-6 text-slate-500">
-                              No team contact details have been added yet.
-                            </p>
+                                <p className="mt-2 text-sm leading-6 text-slate-500">
+                                  No team contact details have been added yet.
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
 
@@ -1085,8 +1093,18 @@ function Main() {
                     </div>
                     <div className="pb-4">
                       {loading ? (
-                        <div className="mt-[-20px]">
-                          <LoadingWrapper height={200} />
+                        <div className="animate-pulse">
+                          {Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="flex items-center border-b border-gray-200 px-4 py-3 last:border-b-0">
+                              <div className="h-12 w-12 shrink-0 rounded-full bg-slate-200" />
+                              <div className="ml-3.5 min-w-0 flex-1 space-y-2">
+                                <div className="h-3.5 w-32 rounded bg-slate-200" />
+                                <div className="h-3 w-[85%] rounded bg-slate-200" />
+                                <div className="h-3 w-[65%] rounded bg-slate-200" />
+                              </div>
+                              <div className="ml-3 h-8 w-20 shrink-0 rounded-md bg-slate-200" />
+                            </div>
+                          ))}
                         </div>
                       ) : singleInvesterProfile?.key_contacts?.length ? (
                         <>

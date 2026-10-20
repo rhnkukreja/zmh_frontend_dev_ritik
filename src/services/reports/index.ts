@@ -78,6 +78,14 @@ class ReportsService {
     );
     return response.data as Blob;
   }
+
+  public async downloadCompanyReportSheet(companyId: number, sheet: string): Promise<Blob> {
+    const response = await axiosInstance.get(
+      `/company_report/?company_id=${companyId}&download=true&sheets=${encodeURIComponent(sheet)}`,
+      { responseType: "blob" }
+    );
+    return response.data as Blob;
+  }
 }
 
 // ── In-memory cache for GovernanceProfileService (clears on page refresh) ────
