@@ -40,7 +40,8 @@ import {
 import { Fragment, useEffect, useMemo, useReducer, useState } from "react";
 import DOMPurify from "dompurify";
 
-import { createDynamicURL, downloadCSV } from "@/utils/helper";
+import { createDynamicURL, downloadFileByServer } from "@/utils/helper";
+import { reportsService } from "@/services/reports";
 
 import Tippy from "../Base/Tippy";
 import clsx from "clsx";
@@ -134,6 +135,7 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
   } = useAppSelector((state) => state.dashboard);
 
   const {
+    companyGlobalSearchId,
     companyGlobalSearchName,
     companyGlobalSearchTicker,
   } = useAppSelector(
@@ -421,32 +423,36 @@ const getNormalizedScrapedInfo = (name: string) => {
     }
   }, [onLoaded, investorCardLoading, hasNotifiedLoaded, dashboardDataList]);
 
-  const convertDivTableToCSV = () => {
-    const table = document.querySelector(".table");
-    const rows = table?.querySelectorAll(".row");
-    let csvContent = "";
+  const [isDownloadingOwnership, setIsDownloadingOwnership] = useState(false);
 
-    rows?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell");
-      let rowData: any = [];
+  const handleDownloadOwnership = async () => {
+    if (isDownloadingOwnership) return;
 
-      cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim(); 
-        if (cellText?.includes(",")) {
-          cellText = `"${cellText}"`;
-        }
+    const holdingCompanyId = allYearData
+      .flatMap((yearData) => yearData?.holdings_data ?? [])
+      .find((holding) => holding?.company_id)?.company_id;
+    const companyId = Number(holdingCompanyId || companyGlobalSearchId || 0);
 
-        if (cellText?.includes("✔")) {
-          cellText = `"Yes"`;
-        }
+    if (!companyId) {
+      toast.error("Unable to download ownership data for this company.");
+      return;
+    }
 
-        rowData.push(cellText);
-      });
-
-      csvContent += rowData.join(",") + "\n";
-    });
-
-    downloadCSV(csvContent, `Investor-${ticker}`);
+    setIsDownloadingOwnership(true);
+    try {
+      const blob = await reportsService.downloadCompanyReportSheet(companyId, "ownership");
+      downloadFileByServer(
+        new Blob([blob], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }),
+        `Ownership Year-on-Year Comparison${ticker ? ` (${ticker})` : ""}`
+      );
+    } catch (error) {
+      console.error("Ownership download error:", error);
+      toast.error("Failed to download ownership data.");
+    } finally {
+      setIsDownloadingOwnership(false);
+    }
   };
 
   const handleGenerateReport = () => {
@@ -689,14 +695,23 @@ const getNormalizedScrapedInfo = (name: string) => {
                   <h4 className="font-semibold mr-4">
                     History of Schedule 13D Filing
                   </h4>
-                  <Tippy content="Download Excel" options={{ theme: "light" }}>
-                    <div
-                      className="box p-[5px] cursor-pointer"
-                      onClick={convertDivTableToCSV}
-                    >
-                      <img alt="download-icon" src={downloadIcon} />
-                    </div>
-                  </Tippy>
+                  {ownershipView === "all" && (
+                    <Tippy content="Download Excel" options={{ theme: "light" }}>
+                      <div
+                        className={clsx(
+                          "box p-[5px]",
+                          isDownloadingOwnership ? "cursor-wait opacity-60" : "cursor-pointer"
+                        )}
+                        onClick={handleDownloadOwnership}
+                      >
+                        {isDownloadingOwnership ? (
+                          <LoadingIcon icon="oval" className="w-[22px] h-[22px]" />
+                        ) : (
+                          <img alt="download-icon" src={downloadIcon} />
+                        )}
+                      </div>
+                    </Tippy>
+                  )}
                   {locationPathName === "/" && (
                     <Tippy content="Expand View" options={{ theme: "light" }}>
                       <div

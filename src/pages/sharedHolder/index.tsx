@@ -382,6 +382,7 @@ function ShareHolderProposal() {
       : false
   );
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [filterValidationMessage, setFilterValidationMessage] = useState("");
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
@@ -556,6 +557,16 @@ function ShareHolderProposal() {
           : [],
     },
   });
+
+  useEffect(() => {
+    const subscription = watch(() => {
+      if (filterValidationMessage) {
+        setFilterValidationMessage("");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [filterValidationMessage, watch]);
 
   const resetFormValues: any = () => {
     setValue("category", []);
@@ -898,6 +909,7 @@ function ShareHolderProposal() {
         setProposalCount(0);
         setNoActionCount(0);
         setWithdrawnCount(0);
+        setLoading(false);
         return;
       }
 
@@ -1097,6 +1109,7 @@ function ShareHolderProposal() {
       return;
     }
 
+    setLoading(true);
     reset();
     resetFormValues();
     dispatch(resetFilter());
@@ -1113,6 +1126,7 @@ function ShareHolderProposal() {
     }
 
     setSearchTerms([]);
+    setLoading(true);
     reset();
     resetFormValues();
     dispatch(resetFilter());
@@ -1179,27 +1193,32 @@ function ShareHolderProposal() {
   ]);
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
+    const selectedCompanies = Array.isArray(shareHolderFilters?.global_search)
+      ? shareHolderFilters.global_search
+          .map((item: any) => item?.label ?? item?.value ?? item)
+          .filter((item: any) => typeof item === "string" && item.trim())
+      : [];
     const nextFilters = {
       ...shareHolderFilters,
       proxy_season: [],
       proponent_name: searchTerms,
       global_search: isAllCompanySelected
-        ? Array.isArray(shareHolderFilters?.global_search)
-          ? shareHolderFilters?.global_search.map((item: any) => item.label)
-          : []
+        ? selectedCompanies
         : [companyGlobalSearchName],
     };
+    const filtersToValidate = isAllCompanySelected
+      ? nextFilters
+      : { ...nextFilters, global_search: [] };
 
-    const { global_search, ...userSelectedFilters } = nextFilters as any;
-
-    if (countValidFilters(userSelectedFilters) === 0) {
-      setIsFilterCollapse(!isFilterCollapse);
+    if (countValidFilters(filtersToValidate as any) === 0) {
+      setFilterValidationMessage("Please select at least one filter.");
       return;
     }
 
+    setFilterValidationMessage("");
+    setLoading(true);
     dispatch(setAllFilters(nextFilters));
-    setIsFilterCollapse(!isFilterCollapse);
-
+    setIsFilterCollapse(false);
     dispatch(resetPage());
   };
 
@@ -1455,6 +1474,7 @@ function ShareHolderProposal() {
       }
     }
 
+    setLoading(true);
     setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   };
@@ -1770,7 +1790,14 @@ function ShareHolderProposal() {
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}
                     <div className="mb-6 flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                        {filterValidationMessage && (
+                          <p className="text-sm font-medium text-danger" role="alert">
+                            {filterValidationMessage}
+                          </p>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline-secondary"
@@ -1785,7 +1812,7 @@ function ShareHolderProposal() {
 
                         <Button
                           variant="primary"
-                          onClick={handleSubmit(onSubmit)}
+                          type="submit"
                           className="w-full sm:w-auto flex items-center gap-2"
                         >
                           <FaSearch className="text-lg" /> Apply
@@ -2828,16 +2855,26 @@ function ShareHolderProposal() {
                                     </div>
 
                                     <div className="flex justify-end">
-                                      <span
-                                        className={clsx(
-                                          "inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                                          selected
-                                            ? "bg-primary text-white"
-                                            : "bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary"
-                                        )}
-                                      >
-                                        {Number(item.count ?? 0).toLocaleString()}
-                                      </span>
+                                      {loading ? (
+                                        <span
+                                          className={clsx(
+                                            "inline-flex h-[18px] w-10 animate-pulse rounded-full",
+                                            selected ? "bg-primary/30" : "bg-slate-200"
+                                          )}
+                                          aria-label="Loading count"
+                                        />
+                                      ) : (
+                                        <span
+                                          className={clsx(
+                                            "inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                            selected
+                                              ? "bg-primary text-white"
+                                              : "bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary"
+                                          )}
+                                        >
+                                          {Number(item.count ?? 0).toLocaleString()}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                 </Tab.Button>
