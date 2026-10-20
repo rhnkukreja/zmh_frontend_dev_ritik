@@ -139,7 +139,6 @@ const index = ({ onLoaded, autoScrapedData = {}, pendingInvestors = new Set() }:
     companyGlobalSearchId,
     companyGlobalSearchName,
     companyGlobalSearchTicker,
-    companyGlobalSearchId,
   } = useAppSelector(
     (state: RootState) => state.authentiction
   );
