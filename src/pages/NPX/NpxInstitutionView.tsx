@@ -1114,7 +1114,7 @@ const NpxInstitutionView = () => {
                   className="w-full sm:w-auto flex items-center gap-2"
                   type="button"
                 >
-                  <MdOutlineClear /> Clear All
+                  <MdOutlineClear /> Clear
                 </Button>
                 <Button
                   variant="primary"
