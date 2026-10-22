@@ -2978,53 +2978,49 @@ function ShareHolderProposal() {
                                   as="button"
                                   onClick={() => handleShareholderTabChange(item.key)}
                                 >
-                                  <div className="flex flex-col gap-0.3">
-                                    <div className="flex items-center gap-2">
-                                      <div
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={clsx(
+                                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+                                        selected
+                                          ? "bg-primary text-white shadow-sm"
+                                          : "bg-slate-100 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary"
+                                      )}
+                                    >
+                                      <Icon className="h-3.5 w-3.5" />
+                                    </div>
+
+                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                      <p
                                         className={clsx(
-                                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
-                                          selected
-                                            ? "bg-primary text-white shadow-sm"
-                                            : "bg-slate-100 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary"
+                                          "truncate text-[14px] font-semibold leading-none",
+                                          selected ? "text-primary" : "text-slate-800"
                                         )}
                                       >
-                                        <Icon className="h-3.5 w-3.5" />
-                                      </div>
-
-                                      <div className="min-w-0 flex-1 overflow-hidden">
-                                        <p
-                                          className={clsx(
-                                            "whitespace-nowrap text-[14px] font-semibold leading-none",
-                                            selected ? "text-primary" : "text-slate-800"
-                                          )}
-                                        >
-                                          {item.label}
-                                        </p>
-                                      </div>
+                                        {item.label}
+                                      </p>
                                     </div>
 
-                                    <div className="flex justify-end">
-                                      {loading ? (
-                                        <span
-                                          className={clsx(
-                                            "inline-flex h-[18px] w-10 animate-pulse rounded-full",
-                                            selected ? "bg-primary/30" : "bg-slate-200"
-                                          )}
-                                          aria-label="Loading count"
-                                        />
-                                      ) : (
-                                        <span
-                                          className={clsx(
-                                            "inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                                            selected
-                                              ? "bg-primary text-white"
-                                              : "bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary"
-                                          )}
-                                        >
-                                          {Number(item.count ?? 0).toLocaleString()}
-                                        </span>
-                                      )}
-                                    </div>
+                                    {loading ? (
+                                      <span
+                                        className={clsx(
+                                          "inline-flex h-[18px] w-10 shrink-0 animate-pulse rounded-full",
+                                          selected ? "bg-primary/30" : "bg-slate-200"
+                                        )}
+                                        aria-label="Loading count"
+                                      />
+                                    ) : (
+                                      <span
+                                        className={clsx(
+                                          "inline-flex min-w-[2.25rem] shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                          selected
+                                            ? "bg-primary text-white"
+                                            : "bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary"
+                                        )}
+                                      >
+                                        {Number(item.count ?? 0).toLocaleString()}
+                                      </span>
+                                    )}
                                   </div>
                                 </Tab.Button>
                               )}
