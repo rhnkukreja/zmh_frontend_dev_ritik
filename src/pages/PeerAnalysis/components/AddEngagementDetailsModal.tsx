@@ -246,10 +246,10 @@ const AddEngagementDetailsModal = ({
     setUploadedDocument(null);
     setSelectedInstitution(null);
     if (dropzoneRef.current?.dropzone) {
-      dropzoneRef.current.dropzone.removeAllFiles();
+      dropzoneRef.current.dropzone.removeAllFiles(false);
     }
     if (documentDropzoneRef.current?.dropzone) {
-      documentDropzoneRef.current.dropzone.removeAllFiles();
+      documentDropzoneRef.current.dropzone.removeAllFiles(false);
     }
     setVisible(false);
   };
