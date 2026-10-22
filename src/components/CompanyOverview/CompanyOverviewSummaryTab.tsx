@@ -955,9 +955,22 @@ function SectionQuickNav({ report }: { report: CompanyReport }) {
 
   if (items.length < 2) return null;
 
-  const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+
+const scrollToSection = (id: string) => {
+  const element = document.getElementById(id);
+  if (!element) return;
+
+  const offset = 220;
+
+  const elementPosition =
+    element.getBoundingClientRect().top + window.scrollY;
+
+  window.scrollTo({
+    top: Math.max(0, elementPosition - offset),
+    behavior: "smooth",
+  });
+};
+
 
   return (
     <div className="sticky top-[10.75rem] z-30">
