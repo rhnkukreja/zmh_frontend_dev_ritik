@@ -250,6 +250,13 @@ const index = () => {
       [index]: !prev[index],
     }));
   };
+  const toggleGroup = (groupKey: string) => {
+    setOpenGroups((prevState) => ({
+      ...prevState,
+      [groupKey]: !prevState[groupKey],
+    }));
+  };
+
   const getCompanyGroupKey = (company: any, yearIdx?: number, index?: number) => {
     return [
       company?.company_id ?? "no-id",
@@ -259,13 +266,6 @@ const index = () => {
       yearIdx ?? "no-year",
       index ?? "no-index",
     ].join("|");
-  };
-
-  const toggleGroup = (groupKey: string) => {
-    setOpenGroups((prevState) => ({
-      ...prevState,
-      [groupKey]: !prevState[groupKey],
-    }));
   };
 
   const expandAllGroups = () => {
@@ -286,10 +286,8 @@ const index = () => {
     const allExpanded = allCompanyNames.every(name => openGroups[name]);
 
     if (allExpanded) {
-      // Collapse all
       setOpenGroups({});
     } else {
-      // Expand all
       const newOpenGroups: { [key: string]: boolean } = {};
       allCompanyNames.forEach(name => {
         newOpenGroups[name] = true;
@@ -2836,100 +2834,101 @@ const index = () => {
             <div className="divide-y divide-gray-100">
               {analytics.by_company.map((yearEntry, yearIdx) => (
                 Array.isArray(yearEntry.companies)
-                  ? yearEntry.companies.map((ele, index) => (
-                    <div
-                      key={getCompanyGroupKey(ele, yearIdx, index)}
-                      className="py-2"
-                    >
-                      <div
-                        className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200 font-medium text-base"
-                        onClick={() => toggleGroup(getCompanyGroupKey(ele, yearIdx, index))}
-                      >
-                        <span className="text-gray-800">
-                          {`${ele.meeting_date} - ${ele.company_name}`}
-                          {ele.meeting_type?.trim() && ` (${ele.meeting_type})`}
-                        </span>
+                  ? yearEntry.companies.map((ele, index) => {
+                    const groupKey = getCompanyGroupKey(ele, yearIdx, index);
+                    const isExpanded = Boolean(openGroups[groupKey]);
+                    const proposals = Array.isArray(ele.sample_proposals) ? ele.sample_proposals : [];
 
-                        <button className="text-primary hover:text-primary/80 transition-colors duration-200">
-                          {openGroups[getCompanyGroupKey(ele, yearIdx, index)] ? (
-                            <Lucide
-                              icon="ChevronUp"
-                              className="w-5 h-5"
-                            />
-                          ) : (
-                            <Lucide
-                              icon="ChevronDown"
-                              className="w-5 h-5"
-                            />
-                          )}
-                        </button>
-                      </div>
-                      {openGroups[getCompanyGroupKey(ele, yearIdx, index)] && Array.isArray(ele.sample_proposals) && (
-                        <div className="mt-2 mb-4 bg-gray-50">
-                          <table className="w-full table-fixed">
-                            <thead>
-                              <tr className="bg-primary text-white text-sm">
-                                <th className="px-2 py-2 text-center font-semibold w-[8%] max-w-[60px] whitespace-nowrap">No.</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[44%]">Proposal</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Mgmt Rec</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Vote Cast</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[14%]">Institution Name</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                              {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <React.Fragment key={vds.proposal_id || vdsIdx}>
-                                  <tr
-                                    className="hover:bg-primary/10"
-                                    style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
-                                  >
-                                    <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-[8%] max-w-[60px]">
-                                      {vds?.proposal_num}
-                                    </td>
-                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[44%]">
-                                      {vds?.proposal}
-                                    </td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <span className={clsx([
-                                          (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                          "text-red-700 font-semibold",
-                                        ])}>
-                                          {vds?.vote}
-                                        </span>
-                                        {vds?.vote?.includes("Split") &&
-                                          vds?.split_count &&
-                                          vds.split_count !== "None" && (
-                                            <Tippy content={vds.split_count} options={{ theme: "light" }}>
-                                              <span>
-                                                <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
-                                              </span>
-                                            </Tippy>
-                                          )}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[14%]">{vds?.institution_name}</td>
-                                  </tr>
-                                  {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                    <tr className="bg-gray-50">
-                                      <td></td>
-                                      <td colSpan={4} className="px-4 py-2">
-                                        <div className="text-xs text-gray-600">
-                                          <span className="font-semibold text-gray-700">Voting Rationale: </span>
-                                          {vds?.notes}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )}
-                                </React.Fragment>
-                              ))}
-                            </tbody>
-                          </table>
+                    return (
+                      <div key={groupKey} className="py-2">
+                        <div
+                          className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200 font-medium text-base"
+                          onClick={() => toggleGroup(groupKey)}
+                        >
+                          <span className="text-gray-800">
+                            {`${ele.meeting_date} - ${ele.company_name}`}
+                            {ele.meeting_type?.trim() && ` (${ele.meeting_type})`}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400 font-normal">
+                              {proposals.length} proposal{proposals.length !== 1 ? "s" : ""}
+                            </span>
+                            <button className="text-primary hover:text-primary/80 transition-colors duration-200">
+                              <Lucide icon={isExpanded ? "ChevronUp" : "ChevronDown"} className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))
+                        {isExpanded && proposals.length > 0 && (
+                          <div className="mt-2 mb-4 bg-gray-50 overflow-x-auto">
+                            <Table className="table-fixed w-full">
+                              <Table.Thead>
+                                <Table.Tr className="bg-primary text-white text-sm">
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[60px]">No.</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[40%]">Proposal</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[100px]">Mgmt Rec</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[110px]">Vote Cast</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[30%]">Institution Name</Table.Td>
+                                </Table.Tr>
+                              </Table.Thead>
+                              <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                                {proposals.map((vds, vdsIdx) => (
+                                  <React.Fragment key={vds.proposal_id || vdsIdx}>
+                                    <Table.Tr
+                                      className="hover:bg-primary/10"
+                                      style={getSequentialBorderStyle(vds?.proposal_num, proposals, vdsIdx)}
+                                    >
+                                      <Table.Td className="px-4 py-2 align-top text-sm text-gray-500">
+                                        {vds?.proposal_num || vdsIdx + 1}
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm break-words whitespace-normal leading-tight">
+                                        {vds?.proposal}
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm break-words whitespace-normal leading-tight">
+                                        {convertToTitleCase(vds?.mgt_rec)}
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm">
+                                        <span className="inline-flex items-center gap-1.5">
+                                          <span
+                                            className={clsx(
+                                              (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                                "text-red-700 font-semibold"
+                                            )}
+                                          >
+                                            {vds?.vote}
+                                          </span>
+                                          {vds?.vote?.includes("Split") &&
+                                            vds?.split_count &&
+                                            vds.split_count !== "None" && (
+                                              <Tippy content={vds.split_count} options={{ theme: "light" }}>
+                                                <span>
+                                                  <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
+                                                </span>
+                                              </Tippy>
+                                            )}
+                                        </span>
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm break-words whitespace-normal leading-tight">
+                                        {vds?.institution_name}
+                                      </Table.Td>
+                                    </Table.Tr>
+                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                      <Table.Tr className="bg-slate-50">
+                                        <Table.Td className="px-4 py-2" />
+                                        <Table.Td colSpan={4} className="px-4 py-2 text-sm text-slate-600 italic">
+                                          <span className="font-semibold not-italic text-slate-500">Voting Rationale: </span>
+                                          {vds?.notes}
+                                        </Table.Td>
+                                      </Table.Tr>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </Table.Tbody>
+                            </Table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                   : null
               ))}
             </div>
@@ -3160,15 +3159,15 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
         <table className="w-[100%] mx-auto rounded-xl overflow-hidden">
           <thead>
-            <tr className="bg-primary text-white text-base">
-              <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>Summary</th>
+            <tr className="bg-primary text-white text-sm">
+              <th className="px-4 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>Summary</th>
               {institutions.map((institution) => (
-                <th key={institution.institution_id} colSpan={years.length} className="px-6 py-3 pb-2 text-center font-semibold">
+                <th key={institution.institution_id} colSpan={years.length} className="px-4 py-3 pb-2 text-center font-semibold">
                   {institution.institution_name}
                 </th>
               ))}
             </tr>
-            <tr className="bg-primary text-white text-base">
+            <tr className="bg-primary text-white text-sm">
               {institutions.map((institution) => (
                 years.map((year) => {
                   const yearData = institution.years[year as string];
@@ -3180,10 +3179,10 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
                     : apiDateRange;
 
                   return (
-                    <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 pt-0 text-center font-semibold">
+                    <th key={`${institution.institution_id}-${year}`} className="px-4 py-2 pt-0 text-center font-medium">
                       <div className="flex flex-col">
                         {displayDateRange && (
-                          <div className="text-xs font-semibold mt-1">
+                          <div className="text-xs font-medium mt-1">
                             {filteredDateRange && filteredDateRange.trim() !== ""
                               ? `(${filteredDateRange})`
                               : `(${apiDateRange.start_meeting} - ${apiDateRange.end_meeting})`
@@ -3197,14 +3196,14 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
           </thead>
-          <tbody className="text-gray-700 text-base divide-y divide-gray-100">
+          <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
             <tr>
-              <td className="px-6 py-3 font-medium">No. of unique companies</td>
+              <td className="px-4 py-3 font-medium">No. of unique companies</td>
               {institutions.map((institution) => (
                 years.map((year: string | number) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
                       {yearData && yearData.unique_companies ? yearData.unique_companies.toLocaleString() : '-'}
                     </td>
                   );
@@ -3212,12 +3211,12 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">No of proposals</td>
+              <td className="px-4 py-3 font-medium">No of proposals</td>
               {institutions.map((institution) => (
                 years.map((year: string | number) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
                       {yearData ? yearData.total_proposals.toLocaleString() : '-'}
                     </td>
                   );
@@ -3225,12 +3224,12 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">No. of FOR votes</td>
+              <td className="px-4 py-3 font-medium">No. of FOR votes</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
                       {yearData ? `${yearData.for_votes.toLocaleString()} (${yearData.for_percentage}%)` : '-'}
                     </td>
                   );
@@ -3238,12 +3237,12 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">No. of SPLIT votes</td>
+              <td className="px-4 py-3 font-medium">No. of SPLIT votes</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
                       {yearData ? `${yearData.split_votes.toLocaleString()} (${yearData.split_percentage}%)` : '-'}
                     </td>
                   );
@@ -3251,12 +3250,12 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes</td>
+              <td className="px-4 py-3 font-medium">No. of AGAINST/WITHHOLD votes</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
                       {yearData ? `${yearData.against_votes.toLocaleString()} (${yearData.against_percentage}%)` : '-'}
                     </td>
                   );
@@ -3264,12 +3263,12 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">No. of Abstain votes</td>
+              <td className="px-4 py-3 font-medium">No. of Abstain votes</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}-abstain`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}-abstain`} className="px-4 py-3 text-center">
                       {yearData ? `${(yearData.abstain_votes || 0).toLocaleString()} (${yearData.abstain_percentage || 0}%)` : '-'}
                     </td>
                   );
@@ -3277,12 +3276,12 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">Alignment with management (Votes Cast/Management Recommendation)</td>
+              <td className="px-4 py-3 font-medium">Alignment with management (Votes Cast/Management Recommendation)</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
                       {yearData ? yearData.aligned_with_mgmt : '-'}
                     </td>
                   );
@@ -3290,12 +3289,12 @@ const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filter
               ))}
             </tr>
             <tr>
-              <td className="px-6 py-3 font-medium">Alignment percentage</td>
+              <td className="px-4 py-3 font-medium">Alignment percentage</td>
               {institutions.map((institution) => (
                 years.map((year: any) => {
                   const yearData = institution.years[year];
                   return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
+                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
                       {yearData ? `${yearData.alignment_percentage}%` : '-'}
                     </td>
                   );
