@@ -28,6 +28,7 @@ import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
 import MeetingDateSelector from "@/pages/VdsProxyVoting/MeetingDateSelector";
 import NPXPage from "@/pages/NPX";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
+import DashboardBoardIntel from "@/pages/BoardIntelligence/DashboardBoardIntel";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
@@ -285,6 +286,7 @@ function Main() {
           : 'Overview'
       : activeTab === 'ownership' ? 'Ownership' :
       activeTab === 'shareholder-meeting-results' ? shareholderMeetingHeader :
+      activeTab === 'board-intel' ? 'Board Intel' :
       activeTab === 'voting-data'
         ? activeSubSection === 'voting-rationale'
           ? 'Voting Rationale'
@@ -728,6 +730,12 @@ function Main() {
                 proxyContest2025={modulesCount?.proxy_contest_2025 || false}
                 onLoaded={() => setIsMeetingLoaded(true)}
               />
+            </div>
+          )}
+
+          {activeTab === 'board-intel' && (
+            <div id="board-intel" className="col-span-12 xl:col-span-12">
+              <DashboardBoardIntel ticker={companyGlobalSearchTicker} name={companyGlobalSearchName} />
             </div>
           )}
 

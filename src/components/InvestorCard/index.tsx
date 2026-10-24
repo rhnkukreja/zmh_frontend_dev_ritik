@@ -234,7 +234,9 @@ const getNormalizedScrapedInfo = (name: string) => {
     }
   };
 
-  const handleViewSummary = async (institutionName: string | undefined) => {
+  // filerId is the Ownership row's WhaleWisdom id, passed through so the backend matches
+  // and saves this exact filer rather than guessing one from the name.
+  const handleViewSummary = async (institutionName: string | undefined, filerId?: number | string | null) => {
     if (!institutionName) return;
     
     setActiveInstitutionName(institutionName);
@@ -254,7 +256,7 @@ const getNormalizedScrapedInfo = (name: string) => {
     setSummaryLoading(true);
 
     try {
-      const result = await searchWhaleWisdom(institutionName);
+      const result = await searchWhaleWisdom(institutionName, filerId);
       
       if (result) {
         let strategy = result.investment_strategy || result.whale_wisdom_summary || result.adv_item4_summary;
@@ -274,7 +276,7 @@ const getNormalizedScrapedInfo = (name: string) => {
             
             // Automatically scrape if exactly 1 match! No popup!
             if (genResult.filers.length === 1) {
-              const data = await scrapeQuickWhaleWisdom(institutionName, genResult.filers[0].link);
+              const data = await scrapeQuickWhaleWisdom(institutionName, genResult.filers[0].link, filerId);
               setSummaryData(data);
               setSummaryModalVisible(true);
             } else if (genResult.filers.length > 1) {
@@ -1212,7 +1214,7 @@ const isActivelyScraping =
   className="w-5 h-5"
   onClick={() => {
     if (!summaryLoading) {
-      handleViewSummary(name);
+      handleViewSummary(name, dashboard?.filer_id);
     }
   }}
 >
