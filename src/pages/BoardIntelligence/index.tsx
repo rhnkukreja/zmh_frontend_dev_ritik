@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import {
-  AlertTriangle, CheckCircle2, ExternalLink, FileText, Globe, Loader2, RefreshCw, Search, Users,
+  AlertTriangle, ExternalLink, FileText, Globe, Loader2, RefreshCw, Search, Users,
 } from "lucide-react";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
 import { AI_CHATBOT_API_BASE, getRequestHeaders } from "@/pages/AIChatbot/api";

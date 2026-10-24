@@ -9,7 +9,7 @@ export const Environment = {
 type EnvType = typeof Environment[keyof typeof Environment];
 
 // ⚠️ CHANGE THIS VARIABLE TO SWITCH ENVIRONMENTS // Options: Environment.LOCAL | Environment.PRODUCTION | Environment.NGROK
-const CURRENT_ENV: EnvType = Environment.LOCAL; 
+const CURRENT_ENV: EnvType = Environment.PRODUCTION; 
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
