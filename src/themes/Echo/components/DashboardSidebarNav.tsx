@@ -22,6 +22,7 @@ import {
   Network,
   LineChart,
   Landmark,
+  UserCheck,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -103,6 +104,14 @@ const BASE_SECTIONS: SectionDef[] = [
     icon: CalendarCheck,
     group: "Company",
     subItems: [],
+  },
+  {
+    key: "board-intel",
+    label: "Board Intel",
+    icon: UserCheck,
+    group: "Company",
+    subItems: [],
+    beta: true,
   },
   {
     key: "voting-data",

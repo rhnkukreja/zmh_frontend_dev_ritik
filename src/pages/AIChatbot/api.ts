@@ -9,7 +9,7 @@ export const Environment = {
 type EnvType = typeof Environment[keyof typeof Environment];
 
 // ⚠️ CHANGE THIS VARIABLE TO SWITCH ENVIRONMENTS // Options: Environment.LOCAL | Environment.PRODUCTION | Environment.NGROK
-const CURRENT_ENV: EnvType = Environment.PRODUCTION; 
+const CURRENT_ENV: EnvType = Environment.LOCAL; 
 
 const API_URLS = {
   [Environment.LOCAL]: 'http://127.0.0.1:8000',
@@ -291,8 +291,11 @@ export async function fetchExistingSummaryIds() {
   return res.json();
 }
 
-export async function searchWhaleWisdom(name: string) {
-  const res = await fetch(`${AI_CHATBOT_API_BASE}/search-whalewisdom?name=${encodeURIComponent(name)}`, {
+// filerId is the Ownership row's WhaleWisdom id. When sent, the backend resolves that
+// exact filer instead of guessing one from the (often 30-character, cut-off) name.
+export async function searchWhaleWisdom(name: string, filerId?: number | string | null) {
+  const filerParam = filerId ? `&filer_id=${encodeURIComponent(String(filerId))}` : "";
+  const res = await fetch(`${AI_CHATBOT_API_BASE}/search-whalewisdom?name=${encodeURIComponent(name)}${filerParam}`, {
     method: "GET",
     headers: getRequestHeaders(),
   });
@@ -321,12 +324,12 @@ export const generateWhaleWisdomId = async (institutionName: string, allowIdOrCi
   return res.json();
 };
 
-export async function scrapeQuickWhaleWisdom(name: string, link: string) {
+export async function scrapeQuickWhaleWisdom(name: string, link: string, filerId?: number | string | null) {
   // 🌟 CHANGED: Points to the new onboard endpoint (Engine handles both now)
   const res = await fetch(`${AI_CHATBOT_API_BASE}/investors/onboard`, {
     method: "POST",
     headers: getRequestHeaders(),
-    body: JSON.stringify({ name, link }),
+    body: JSON.stringify(filerId ? { name, link, filer_id: filerId } : { name, link }),
   });
 
   if (!res.ok) {

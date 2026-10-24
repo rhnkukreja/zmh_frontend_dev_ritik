@@ -111,6 +111,7 @@ import AiChatbot from "../pages/AIChatbot/AiChatbot";
 import QAPage from "../pages/AIChatbot/QAPage";
 import ComparePage from "../pages/AIChatbot/ComparePage";
 import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
+import BoardIntelligencePage from "@/pages/BoardIntelligence";
 import { ChatProvider } from "../pages/AIChatbot/ChatContext";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import Newsletter from "@/pages/Newsletter";
@@ -125,6 +126,8 @@ import ActivistIntelligenceDashboard from "../pages/AIChatbot/ActivistDashboard"
 
 const ProtectedLayout = withAuth(Layout);
 const ProtectedAiChatbot = withAuth(() => <ChatProvider><AiChatbot /></ChatProvider>);
+// Its own page with its own shell: not part of the AI Assistant layout or sidebar.
+const ProtectedBoardIntelligence = withAuth(BoardIntelligencePage);
 
 
 function Router() {
@@ -640,6 +643,11 @@ function Router() {
           data: { titleName: "AI Assistant - ZMH Analytics" },
         },
       ],
+    },
+    {
+      path: "/board-intelligence",
+      element: <ProtectedBoardIntelligence />,
+      data: { titleName: "Board Intelligence - ZMH Analytics" },
     },
     {
       path: "/landing-page",

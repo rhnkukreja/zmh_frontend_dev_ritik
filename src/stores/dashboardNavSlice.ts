@@ -10,6 +10,7 @@ export type DashboardSection =
   | "investor-overview"
   | "ownership"
   | "shareholder-meeting-results"
+  | "board-intel"
   | "voting-data"
   | "company-case-studies"
   | "company-engagement-details"
