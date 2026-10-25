@@ -1203,8 +1203,7 @@ export function BoardIntelPanel({ company, autoStart }: { company: CompanyHit; a
               <div className="flex flex-wrap gap-4 mt-1">
                 <SourceLink href={result.proxy.url}>Proxy statement filed {result.proxy.filing_date}</SourceLink>
                 <SourceLink href={result.company.edgar_url}>EDGAR filings</SourceLink>
-                {/* Website comparison switched off for now.
-                {result.website.url && <SourceLink href={result.website.url}>Board page on website</SourceLink>} */}
+                {result.website?.url && <SourceLink href={result.website.url}>Board page on website</SourceLink>}
               </div>
             </div>
             <button disabled={running} onClick={() => generate(result.company.cik)}
@@ -1229,9 +1228,9 @@ export function BoardIntelPanel({ company, autoStart }: { company: CompanyHit; a
               ["matrix", "Skills matrix", FileText],
               ["peers", "Compensation peers", Users],
               ["refresh", "Board refreshment", RefreshCw],
-              // Website comparison is switched off for now (SEC data only, no web search). The
-              // tab, its section and WebsiteSection below are kept; uncomment to bring it back.
-              // ["website", "Website comparison", Globe],
+              // Website comparison: shown only for a result that carries it. The pipeline's own web
+              // step stays off (cost); the saved companies had their board pages read by us.
+              ...(result.website?.members?.length ? [["website", "Website comparison", Globe] as const] : []),
               ["filings", `8-K 5.02 since proxy (${result.filings_502.items.length})`, FileText],
               ["appointments", `Appointments, 5 years (${result.appointments.items.length})`, Users],
               ["meeting", "Annual meeting", FileText],
@@ -1253,8 +1252,7 @@ export function BoardIntelPanel({ company, autoStart }: { company: CompanyHit; a
           {tab === "matrix" && <MatrixSection result={result} />}
           {tab === "peers" && <PeersSection peers={result.proxy.peers} proxyUrl={result.proxy.url} />}
           {tab === "refresh" && <RefreshmentSection r={result.refreshment} />}
-          {/* Website comparison switched off for now -- see the tab list above.
-          {tab === "website" && <WebsiteSection result={result} />} */}
+          {tab === "website" && <WebsiteSection result={result} />}
           {tab === "filings" && <FilingsSection result={result} />}
           {tab === "appointments" && <AppointmentsSection result={result} />}
           {tab === "meeting" && (
