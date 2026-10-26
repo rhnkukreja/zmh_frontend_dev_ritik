@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import {
-  AlertTriangle, ExternalLink, FileText, Globe, Loader2, RefreshCw, Search, Users,
+  AlertTriangle, ExternalLink, FileText, Globe, Loader2, MoreHorizontal, RefreshCw, Search, Users,
 } from "lucide-react";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
 import { AI_CHATBOT_API_BASE, getRequestHeaders } from "@/pages/AIChatbot/api";
@@ -298,6 +298,10 @@ const getRunStatus = (cik: string) => getJson<RunStatus>(`${BASE}/runs/${cik}`);
 
 const getResult = (cik: string) => getJson<BoardResult>(`${BASE}/results/${cik}`);
 
+/** The companies that already have Board Intel data saved. */
+const getCompaniesWithResults = () =>
+  getJson<{ results: CompanyHit[] }>(`${BASE}/companies-with-results`).then((r) => r.results);
+
 /** Our stored, sanitised copy of an SEC document (8-K, press release). */
 const documentViewerUrl = (cik: string, accession: string, name: string) =>
   `${BASE}/documents/${cik}/${accession.replace(/\D/g, "")}/${encodeURIComponent(name)}`;
@@ -326,7 +330,7 @@ function DocFrame({ html, title, extraCss = "" }: { html: string; title: string;
       ADD_ATTR: ["target"],
     });
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank">
-      <style>body{margin:0;padding:8px;font-family:Arial,Helvetica,sans-serif;overflow-x:auto}${extraCss}</style>
+      <style>body{margin:0;padding:8px;font-family:Arial,Helvetica,sans-serif;overflow-x:auto}img{max-width:100%;height:auto}${extraCss}</style>
       </head><body>${clean}<div style="clear:both"></div></body></html>`;
   }, [html, extraCss]);
 
@@ -1077,12 +1081,68 @@ function AppointmentsSection({ result }: { result: BoardResult }) {
   );
 }
 
+/** The company's name without EDGAR's filing tags: "WELLS FARGO & COMPANY/MN" -> "WELLS FARGO &
+ *  COMPANY" (the state of incorporation), "/DE/", "/NEW/" likewise. */
+const companyDisplayName = (name: string) => name.replace(/(\s*\/[A-Z]{2,4}\/?)+\s*$/, "").trim();
+
+/** A quiet "⋯" button opening the list of companies that have Board Intel data; picking one
+ *  switches to it. The list is fetched on first open. */
+export function SavedCompaniesMenu({ isCurrent, onPick }: { isCurrent: (c: CompanyHit) => boolean; onPick: (c: CompanyHit) => void }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState<CompanyHit[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || items) return;
+    getCompaniesWithResults().then(setItems).catch(() => setFailed(true));
+  }, [open, items]);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button onClick={() => setOpen(!open)} aria-label="Companies with Board Intel data" title="Companies with Board Intel data"
+              className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-50">
+        <MoreHorizontal size={18} />
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 w-80 max-h-96 overflow-auto bg-white border border-gray-200 rounded-lg shadow-sm z-20">
+          <div className="px-3 py-2 text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100">Companies with Board Intel data</div>
+          {!items && !failed && <div className="px-3 py-3 text-sm text-gray-500 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Loading…</div>}
+          {failed && <div className="px-3 py-3 text-sm text-gray-500">The list could not be loaded.</div>}
+          {items && (
+            <ul>{items.map((c) => (
+              <li key={c.cik}>
+                <button onClick={() => { setOpen(false); if (!isCurrent(c)) onPick(c); }}
+                        className={`w-full text-left px-3 py-2 text-sm flex gap-3 hover:bg-gray-50 ${isCurrent(c) ? "text-gray-400" : "text-gray-700"}`}>
+                  <span className="flex-1">{companyDisplayName(c.name)}</span>
+                  <span className="font-mono text-xs text-gray-400">{c.ticker}</span>
+                </button>
+              </li>
+            ))}</ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── One company's board intelligence ─────────────────────────────────────────────────────
 
 /** Loads a company's saved result. A run (it costs money) starts only when the user presses Generate or
  *  Refresh -- never by opening a company; autoStart stays for a caller that wants it.
  *  Used by the standalone page and by the dashboard's Board Intel tab. */
-export function BoardIntelPanel({ company, autoStart }: { company: CompanyHit; autoStart: boolean }) {
+export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
+  company: CompanyHit; autoStart: boolean;
+  /** shows the "⋯" menu of companies with saved data; called with the one picked */
+  onPickCompany?: (c: CompanyHit) => void;
+}) {
   const [result, setResult] = useState<BoardResult | null>(null);
   const [run, setRun] = useState<RunStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1199,17 +1259,20 @@ export function BoardIntelPanel({ company, autoStart }: { company: CompanyHit; a
         <>
           <div className="flex flex-wrap items-start gap-4 border-b border-gray-200 pb-4">
             <div className="flex-1 min-w-[280px]">
-              <h1 className="text-xl font-semibold">{result.company.name} <span className="text-gray-400 text-base">{result.company.tickers.join(", ")}</span></h1>
+              <h1 className="text-xl font-semibold">{companyDisplayName(result.company.name)}</h1>
               <div className="flex flex-wrap gap-4 mt-1">
                 <SourceLink href={result.proxy.url}>Proxy statement filed {result.proxy.filing_date}</SourceLink>
                 <SourceLink href={result.company.edgar_url}>EDGAR filings</SourceLink>
                 {result.website?.url && <SourceLink href={result.website.url}>Board page on website</SourceLink>}
               </div>
             </div>
-            <button disabled={running} onClick={() => generate(result.company.cik)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white disabled:opacity-50" style={{ background: BRAND }}>
-              <RefreshCw size={14} /> Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <button disabled={running} onClick={() => generate(result.company.cik)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white disabled:opacity-50" style={{ background: BRAND }}>
+                <RefreshCw size={14} /> Refresh
+              </button>
+              {onPickCompany && <SavedCompaniesMenu isCurrent={(c) => c.cik === result.company.cik} onPick={onPickCompany} />}
+            </div>
           </div>
 
           <div>
@@ -1322,7 +1385,7 @@ export default function BoardIntelligencePage() {
       </div>
 
       {/* the standalone page has always started a run for a company with no result */}
-      {company && <BoardIntelPanel company={company} autoStart={false} />}
+      {company && <BoardIntelPanel company={company} autoStart={false} onPickCompany={choose} />}
     </div>
     </div>
   );

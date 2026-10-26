@@ -28,7 +28,7 @@ import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
 import MeetingDateSelector from "@/pages/VdsProxyVoting/MeetingDateSelector";
 import NPXPage from "@/pages/NPX";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
-import DashboardBoardIntel from "@/pages/BoardIntelligence/DashboardBoardIntel";
+import DashboardBoardIntel, { BoardIntelCompanyMenu } from "@/pages/BoardIntelligence/DashboardBoardIntel";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
@@ -664,6 +664,9 @@ function Main() {
                 <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
               )}
             </div>
+            {activeTab === 'board-intel' && companyGlobalSearchTicker && (
+              <BoardIntelCompanyMenu ticker={companyGlobalSearchTicker} />
+            )}
             {activeTab === 'voting-data' && activeVotingSubTab !== 'npx-analytics' && (
               <MeetingYearSelector
                 key={activeVotingSubTab}

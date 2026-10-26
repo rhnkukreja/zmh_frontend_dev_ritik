@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { BoardIntelPanel, CompanyHit, searchCompanies } from "./index";
+import { BoardIntelPanel, CompanyHit, SavedCompaniesMenu, searchCompanies } from "./index";
 
 /** SEC writes share classes with a dash (BRK-B); the dashboard may hold BRK.B or BRK/B. */
 const secTicker = (ticker: string) => (ticker || "").trim().toUpperCase().replace(/[./]/g, "-");
@@ -48,5 +49,18 @@ export default function DashboardBoardIntel({ ticker, name }: { ticker: string; 
       {/* key: a new company starts from a clean panel */}
       {state === "found" && company && <BoardIntelPanel key={company.cik} company={company} autoStart={false} />}
     </div>
+  );
+}
+
+/** The "⋯" menu of companies with Board Intel data, for the dashboard's "Company › Board Intel"
+ *  header box. The dashboard follows ?ticker= (ZMHDashboard): picking a company sets it, and the
+ *  whole dashboard -- this tab included -- switches to that company. */
+export function BoardIntelCompanyMenu({ ticker }: { ticker: string }) {
+  const [, setSearchParams] = useSearchParams();
+  return (
+    <SavedCompaniesMenu
+      isCurrent={(c) => c.ticker === secTicker(ticker)}
+      onPick={(c) => setSearchParams((prev) => { const next = new URLSearchParams(prev); next.set("ticker", c.ticker); return next; })}
+    />
   );
 }
