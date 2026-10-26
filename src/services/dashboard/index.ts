@@ -561,6 +561,17 @@ class DashboardService {
     };
   }
 
+  public async getVdsProxyFundLevel(paramFilter?: any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(
+      createDynamicURL(`/vds_proxy_voting_fund_level/`, paramFilter)
+    );
+    return {
+      result: response.data,
+    };
+  }
+
   public async getModulesCount(paramFilter?: any): Promise<{
     result: any;
   }> {
