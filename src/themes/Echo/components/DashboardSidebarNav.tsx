@@ -85,6 +85,15 @@ const BASE_SECTIONS: SectionDef[] = [
     subItems: [],
   },
   {
+    key: "board-intel",
+    label: "Board Intelligence",
+    icon: UserCheck,
+    group: "Company",
+    subItems: [],
+    beta: true,
+    adminOnly: true,
+  },
+  {
     key: "compensation",
     label: "Compensation",
     icon: Briefcase,
@@ -104,14 +113,6 @@ const BASE_SECTIONS: SectionDef[] = [
     icon: CalendarCheck,
     group: "Company",
     subItems: [],
-  },
-  {
-    key: "board-intel",
-    label: "Board Intelligence",
-    icon: UserCheck,
-    group: "Company",
-    subItems: [],
-    beta: true,
   },
   {
     key: "voting-data",
