@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import {
-  AlertTriangle, ChevronDown, ChevronRight, ExternalLink, FileText, Loader2, RefreshCw, Search, Users,
+  AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Loader2, RefreshCw, Search, Users,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
 import { AI_CHATBOT_API_BASE, getRequestHeaders } from "@/pages/AIChatbot/api";
 import Button from "@/components/Base/Button";
@@ -492,28 +493,11 @@ const labelTone = (label: string) =>
 
 // ─── Sections ─────────────────────────────────────────────────────────────────────────────
 
-/** The three facts a reader looks for first, given their own highlighted boxes. */
-function KeyFact({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-700">{label}</div>
-      <div className="mt-1 text-sm text-gray-900">{children}</div>
-    </div>
-  );
-}
-
-function chips(items?: string[]) {
-  if (!items || !items.length) return <span className="text-gray-400">—</span>;
-  return (
-    <div className="flex flex-wrap gap-1">
-      {items.map((x) => <span key={x} className="rounded bg-white border border-gray-200 px-1.5 py-0.5 text-xs">{x}</span>)}
-    </div>
-  );
-}
-
 const directorAnchor = (name: string) => `director-${name.replace(/[^A-Za-z0-9]+/g, "-")}`;
 
-/** A profile card; its whole header row opens and closes it. */
+/** A profile card; its whole header row opens and closes it. Age, tenure, independence, roles,
+ *  position, committees and other boards are in the Board at a Glance table above, so the card
+ *  shows the biography only. */
 function DirectorCard({ d, open, onToggle }: { d: Director; open: boolean; onToggle: () => void }) {
   const f = d.facts || {};
   const Chevron = open ? ChevronDown : ChevronRight;
@@ -523,20 +507,11 @@ function DirectorCard({ d, open, onToggle }: { d: Director; open: boolean; onTog
               className="w-full flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200 text-left hover:bg-gray-100">
         <Chevron size={16} className="text-gray-700 shrink-0" />
         <span className="font-semibold text-base text-gray-900 mr-2">{d.name}</span>
-        {f.age != null && <Pill>Age {f.age}</Pill>}
-        {f.director_since && <Pill>Director Since {f.director_since}</Pill>}
-        {f.independent === true && <Pill>Independent</Pill>}
-        {f.independent === false && <Pill>Not Independent</Pill>}
-        {(f.board_roles || []).map((r) => <Pill key={r}>{r}</Pill>)}
+        {/* only what the table above does not show */}
         {f.designated_by && <Pill>Designated By {f.designated_by}</Pill>}
       </button>
-      <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-        <KeyFact label="Position">{f.current_position || <span className="text-gray-400">—</span>}</KeyFact>
-        <KeyFact label="Committees">{chips(f.committees)}</KeyFact>
-        <KeyFact label="Other Public Boards">{chips((f.other_public_boards || []).map(formatBoard))}</KeyFact>
-      </div>
       {open && (d.bio_html
-        ? <div className="border-t border-gray-100"><DocFrame html={d.bio_html} title={d.name} /></div>
+        ? <DocFrame html={d.bio_html} title={d.name} />
         : <div className="px-4 py-3 text-sm text-gray-800">The profile HTML could not be cut from the proxy.</div>)}
     </div>
   );
@@ -589,14 +564,17 @@ function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: 
 type ProfileView = "proxy" | "website";
 
 function BoardTab({ result }: { result: BoardResult }) {
-  const directors = result.proxy.directors;
+  // alphabetical by the name as shown, in the table and the profiles alike
+  const directors = useMemo(
+    () => [...result.proxy.directors].sort((a, b) => a.name.localeCompare(b.name)), [result.proxy.directors]);
   const members = result.website?.members || [];
   const hasWebsite = members.length > 0;
   const [view, setView] = useState<ProfileView>("proxy");
-  // Proxy profiles start closed so the board reads in one go from the table; each opens on demand.
-  const [openNames, setOpenNames] = useState<Set<string>>(new Set());
-  // A director on the website only has no other profile on this page: shown open.
-  const [openSite, setOpenSite] = useState<Set<string>>(() => new Set(result.website?.compare?.website_only || []));
+  // Proxy profiles start open; Collapse all closes them.
+  const [openNames, setOpenNames] = useState<Set<string>>(() => new Set(result.proxy.directors.map((d) => d.name)));
+  // Website profiles start open too.
+  const [openSite, setOpenSite] = useState<Set<string>>(
+    () => new Set((result.website?.members || []).filter((m) => m.bio_html).map((m) => m.name)));
 
   const names = view === "proxy" ? directors.map((d) => d.name) : members.filter((m) => m.bio_html).map((m) => m.name);
   const openSet = view === "proxy" ? openNames : openSite;
@@ -662,8 +640,7 @@ function CommitteesSection({ data, proxyUrl }: { data?: BoardCommittees; proxyUr
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <h3 className="text-base font-semibold text-gray-900">Board Committees</h3>
-        {data.source && <Pill>{data.source === "table" ? "Read From the Proxy's Committee Table" : "Read From the Proxy's Committee Lists"}</Pill>}
-        <span className="ml-auto"><SourceLink href={proxyUrl}>Source: proxy statement (SEC)</SourceLink></span>
+        <span className="ml-auto"><SourceLink href={proxyUrl}>Source: Proxy Statement (SEC)</SourceLink></span>
       </div>
 
       <div className="text-sm text-gray-900 space-y-0.5">
@@ -703,8 +680,6 @@ function CommitteesSection({ data, proxyUrl }: { data?: BoardCommittees; proxyUr
         </div>
       )}
 
-      <p className="text-xs text-gray-600">Every name and count is printed in the proxy; chairs are as the proxy marks them.</p>
-
       <div className="flex flex-wrap gap-4">
         {data.html && (
           <button onClick={() => setShowDoc(!showDoc)} className="text-xs text-[#931638] hover:underline">
@@ -740,7 +715,7 @@ function PeersSection({ peers, proxyUrl }: { peers?: PeerGroups; proxyUrl: strin
         <p className="text-sm text-gray-600">
           The peer companies this company uses to set executive pay, as its proxy names them. Every company listed is printed in the proxy.
         </p>
-        <span className="ml-auto"><SourceLink href={proxyUrl}>Source: proxy statement (SEC)</SourceLink></span>
+        <span className="ml-auto"><SourceLink href={proxyUrl}>Source: Proxy Statement (SEC)</SourceLink></span>
       </div>
       {peers.groups.map((g) => (
         <div key={g.name} className="border border-gray-200 rounded-lg overflow-hidden">
@@ -768,11 +743,6 @@ function PeersSection({ peers, proxyUrl }: { peers?: PeerGroups; proxyUrl: strin
           )}
         </div>
       ))}
-      {!!peers.excluded.length && (
-        <p className="text-xs text-gray-600">
-          Not peer lists, so left out: {peers.excluded.map((e) => `${e.name}${e.reason ? ` (${e.reason})` : ""}`).join("; ")}
-        </p>
-      )}
       {peers.html && (
         <div>
           <button onClick={() => setShowDoc(!showDoc)} className="text-xs text-[#931638] hover:underline">
@@ -802,9 +772,9 @@ const fmtDate = (iso: string | null, note?: string | null) => (iso ? usDate(iso)
 const byNewest = (a: RefreshEvent, b: RefreshEvent) =>
   (b.date || b.source.filing_date || "").localeCompare(a.date || a.source.filing_date || "");
 
-/** "Annual meeting 2026": the meeting's year, or the 8-K's filing year when it prints no meeting date. */
+/** "2026": the meeting's year, or the 8-K's filing year when it prints no meeting date. */
 const meetingLabel = (t: Refreshment["timeline"][number]) =>
-  `Annual meeting ${(t.meeting_date_known === false ? t.filing_date : t.meeting_iso).slice(0, 4)}`;
+  (t.meeting_date_known === false ? t.filing_date : t.meeting_iso).slice(0, 4);
 
 /** How the board changed over the period: totals, each annual meeting's slate, every join and departure with its source. */
 function RefreshmentSection({ r }: { r?: Refreshment }) {
@@ -1007,11 +977,23 @@ function ProxySectionView({ section, proxyUrl, fallbackTitle }: { section?: Prox
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-3">
         <h3 className="font-semibold text-base text-gray-900">{titleCase(section.heading || section.title)}</h3>
-        <span className="ml-auto"><SourceLink href={proxyUrl}>Source: proxy statement (SEC)</SourceLink></span>
+        <span className="ml-auto"><SourceLink href={proxyUrl}>Source: Proxy Statement (SEC)</SourceLink></span>
       </div>
       <div className="border border-gray-200 rounded-lg"><DocFrame html={section.html} title={section.title} /></div>
     </div>
   );
+}
+
+/** The extracted matrices as an Excel file: one sheet per matrix, a row per skill, a column per director. */
+function downloadMatrices(result: BoardResult) {
+  const wb = XLSX.utils.book_new();
+  result.proxy.matrices.forEach((m, i) => {
+    const rows = [["Skill", ...m.directors], ...m.rows.map((r) => [r.label_full || r.label, ...m.directors.map((n) => (r.directors.includes(n) ? "✓" : ""))])];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [{ wch: 45 }, ...m.directors.map((n) => ({ wch: Math.max(10, n.length + 2) }))];
+    XLSX.utils.book_append_sheet(wb, ws, result.proxy.matrices.length > 1 ? `Skills Matrix ${i + 1}` : "Skills Matrix");
+  });
+  XLSX.writeFile(wb, `${result.company.tickers[0] || result.company.cik} Skills Matrix.xlsx`);
 }
 
 function MatrixSection({ result }: { result: BoardResult }) {
@@ -1023,7 +1005,12 @@ function MatrixSection({ result }: { result: BoardResult }) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
         <BoxedTabs<"document" | "table"> tabs={[["document", "As in Proxy"], ["table", "Extracted Data"]]} value={view} onChange={setView} />
-        <span className="ml-auto"><SourceLink href={result.proxy.url}>Source: proxy statement (SEC)</SourceLink></span>
+        {view === "table" && (
+          <Button variant="primary" size="sm" className="bg-red-800 hover:bg-red-900 text-white" onClick={() => downloadMatrices(result)}>
+            <Download size={14} className="mr-1.5" /> Download Extracted Data (Excel)
+          </Button>
+        )}
+        <span className="ml-auto"><SourceLink href={result.proxy.url}>Source: Proxy Statement (SEC)</SourceLink></span>
       </div>
       {ms.map((m, i) => view === "document" ? (
         <div key={i} className="border border-gray-200 rounded-lg"><DocFrame html={m.html} title={`Skills matrix ${i + 1}`} /></div>
@@ -1103,15 +1090,6 @@ function WebsiteSection({ result, open, onToggle }: { result: BoardResult; open:
                                open={open.has(m.name)} onToggle={() => onToggle(m.name)} />
           ))}
         </div>
-      )}
-      {!!w.attempts.length && (
-        <details className="text-xs text-gray-600">
-          <summary className="cursor-pointer">Pages tried ({w.attempts.length})</summary>
-          <ul className="mt-2 space-y-1">{w.attempts.map((a) => (
-            <li key={a.url}><a href={a.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{a.url}</a>
-              {a.error ? ` — ${a.error}` : ` — names ${a.proxy_directors_named ?? 0} proxy directors`}</li>
-          ))}</ul>
-        </details>
       )}
     </div>
   );
@@ -1350,11 +1328,11 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
           <div className="flex flex-wrap items-end gap-1 border-b border-gray-200">
             {([
               ["board", `Current Board (${result.proxy.directors.length})`, Users],
-              ["meeting", "Annual Meeting", FileText],
+              ["refresh", "Board Refreshment", RefreshCw],
               ["nominees", "Board Committees", Users],
               ["matrix", "Skills Matrix", FileText],
+              ["meeting", "Annual Meeting", FileText],
               ["peers", "Compensation Peers", Users],
-              ["refresh", "Board Refreshment", RefreshCw],
               // Hidden for now: "Website comparison" (now a sub-tab of Current Board),
               // "8-K 5.02 since proxy" and "Appointments, 5 years".
               // ["website", "Website comparison", Globe],
