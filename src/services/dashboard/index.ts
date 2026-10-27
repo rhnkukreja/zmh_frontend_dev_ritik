@@ -670,6 +670,45 @@ class DashboardService {
     };
   }
 
+  public async getNpxProposalVotingDropdown(params?: any): Promise<{ result: any }> {
+    const url = createDynamicURL(`/api/npx-proposal-voting-stats/dropdown/`, params);
+    const response = await axiosInstance.get(url);
+    const result = response.data;
+    return {
+      result,
+    };
+  }
+
+  // Institution typeahead for the N-PX Voting Data (NpxInstitutionView) page.
+  // Unlike fetchInstitutionByName, this never sends a global_search param —
+  // the new dropdown endpoint doesn't need a dummy company to scope results.
+  public async fetchInstitutionByNameFromProposalVotingStats(
+    institutionValue?: string,
+    year?: string
+  ): Promise<{ results: CompanyData[] }> {
+    if (!institutionValue) {
+      return { results: [] };
+    }
+
+    const params: any = {};
+    const yearParam = year ||
+      (window.location.search.includes('year=') ?
+        new URLSearchParams(window.location.search).get('year') : '2024');
+    params.year = yearParam;
+
+    if (institutionValue !== "a" && institutionValue.trim() !== "") {
+      params.institution_name = institutionValue;
+    }
+
+    const { result } = await this.getNpxProposalVotingDropdown(params);
+
+    return {
+      results: (institutionValue !== "a" && institutionValue.trim() !== "")
+        ? (result?.institution || [])
+        : (result?.all_institution || []),
+    };
+  }
+
   public async getBoardDirectorMembers(ticker: string): Promise<{
     result: BoardDirectorMembers[];
   }> {

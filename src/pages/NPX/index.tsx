@@ -1761,22 +1761,23 @@ const index = () => {
               <Table className="table-fixed">
                 <Table.Thead>
                   <Table.Tr className="bg-primary text-white text-sm">
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "20%" }}>Proposal</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Category</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Institution</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Fund</Table.Td>
-                    <Table.Td colSpan={3} className="text-center text-sm border-b border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "18%" }}>Proposal</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Category</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Institution</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Fund</Table.Td>
+                    <Table.Td colSpan={3} className="text-center text-sm border-b border-r border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Source</Table.Td>
                   </Table.Tr>
                   <Table.Tr className="bg-primary text-white text-sm">
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>Shares Voted</Table.Td>
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Vote</Table.Td>
-                    <Table.Td className="text-left px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {Array.from({ length: 8 }).map((_, i) => (
                     <Table.Tr key={i} className="animate-pulse">
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <Table.Td key={j}><Skeleton height={24} /></Table.Td>
                       ))}
                     </Table.Tr>
@@ -1792,16 +1793,17 @@ const index = () => {
               <Table className="table-fixed">
                 <Table.Thead>
                   <Table.Tr className="bg-primary text-white text-sm">
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "20%" }}>Proposal</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Category</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Institution</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Fund</Table.Td>
-                    <Table.Td colSpan={3} className="text-center text-sm border-b border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "18%" }}>Proposal</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Category</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Institution</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Fund</Table.Td>
+                    <Table.Td colSpan={3} className="text-center text-sm border-b border-r border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Source</Table.Td>
                   </Table.Tr>
                   <Table.Tr className="bg-primary text-white text-sm">
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>Shares Voted</Table.Td>
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Vote</Table.Td>
-                    <Table.Td className="text-left px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -1847,10 +1849,26 @@ const index = () => {
                           </Table.Td>
                           <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
                             {convertToTitleCase(
+                              noAction?.for_or_against_management_split ??
                               noAction?.mgt_rec ??
                               noAction?.for_or_against_management ??
                               noAction?.management_recommendation ??
                               noAction?.for_against_management
+                            )}
+                          </Table.Td>
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.index_link ? (
+                              <a
+                                href={noAction.index_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline inline-flex items-center gap-1"
+                              >
+                                <Lucide icon="ExternalLink" className="w-3.5 h-3.5" />
+                                View
+                              </a>
+                            ) : (
+                              "-"
                             )}
                           </Table.Td>
                         </Table.Tr>

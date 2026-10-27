@@ -79,7 +79,6 @@ const formatNumberWithCommas = (value: any) => {
 const DEFAULT_INVESTOR = "BlackRock, Inc.";
 const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
 const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
-const NPX_INSTITUTION_GLOBAL_SEARCH_NAME = "Apple Inc.";
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
 // Institution/Company are staged selections — they only commit into `filters`
 // (and the cache above) once the user clicks Apply, so every click doesn't
@@ -353,7 +352,7 @@ const NpxInstitutionView = () => {
       const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
       if (normalizedDateRange.trim()) params.date_range = normalizedDateRange;
       if (meetingDate) params.meeting_date = meetingDate;
-      const response = await dashboardService.getDynamicNPXDropdownValues(params);
+      const response = await dashboardService.getNpxProposalVotingDropdown(params);
       if (response?.result) {
         setDropdowns(response.result);
 
@@ -414,13 +413,12 @@ const NpxInstitutionView = () => {
             : [searchParams.get("year") || new Date().getFullYear().toString()];
 
         const params: any = {
-          global_search: NPX_INSTITUTION_GLOBAL_SEARCH_NAME,
           year: fallbackYear,
         };
 
         if (meetingDate) params.meeting_date = meetingDate;
 
-        const response = await dashboardService.getDynamicNPXDropdownValues(params);
+        const response = await dashboardService.getNpxProposalVotingDropdown(params);
         const institutions = Array.isArray(response?.result?.all_institution)
           ? response.result.all_institution.filter(Boolean)
           : [];
@@ -685,7 +683,7 @@ const NpxInstitutionView = () => {
     setFilters(nextFilters);
     setActivePage(1);
     skipNextDropdownEffectRef.current = true;
-    await loadDropdowns(filters.investor_company, nextFilters);
+    await loadDropdowns(nextFilters.investor_company, nextFilters);
     loadStats(1, appliedCompanySelection, nextFilters);
   };
 
@@ -971,15 +969,16 @@ const NpxInstitutionView = () => {
                     <table className="w-full table-fixed">
                       <thead>
                         <tr className="bg-primary text-white text-sm">
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[30%] border-b border-r border-white/30">Proposal</th>
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[18%] border-b border-r border-white/30">Category</th>
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[20%] border-b border-r border-white/30">Fund</th>
-                          <th colSpan={3} className="px-4 py-2 text-center text-sm font-semibold border-b border-white/30">Details of Vote</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[26%] border-b border-r border-white/30">Proposal</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[15%] border-b border-r border-white/30">Category</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[17%] border-b border-r border-white/30">Fund</th>
+                          <th colSpan={3} className="px-4 py-2 text-center text-sm font-semibold border-b border-r border-white/30">Details of Vote</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[10%] border-b border-white/30">Source</th>
                         </tr>
                         <tr className="bg-primary text-white text-sm">
                           <th className="px-4 py-2 text-left font-semibold w-[12%] border-r border-white/30">Shares Voted</th>
                           <th className="px-4 py-2 text-left font-semibold w-[8%] border-r border-white/30">Vote</th>
-                          <th className="px-4 py-2 text-left font-semibold w-[12%]">For/Against Management</th>
+                          <th className="px-4 py-2 text-left font-semibold w-[12%] border-r border-white/30">For/Against Management</th>
                         </tr>
                       </thead>
                       <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -988,26 +987,41 @@ const NpxInstitutionView = () => {
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.proposal)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.vote_category)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.fund_name)}</td>
-                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.shares_voted)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.shares_voted_split)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">
                               <span
                                 className={clsx(
-                                  (String(proposal.vote).includes("Against") || String(proposal.vote).includes("Withhold")) &&
+                                  (String(proposal.vote_split).includes("Against") || String(proposal.vote_split).includes("Withhold")) &&
                                     "text-red-700 font-semibold"
                                 )}
                               >
-                                {String(proposal.vote).includes("Against/Withhold") ? (
+                                {String(proposal.vote_split).includes("Against/Withhold") ? (
                                   <span className="whitespace-normal leading-tight">
                                     <span>Against/</span>
                                     <br />
                                     <span>Withhold</span>
                                   </span>
                                 ) : (
-                                  formatValue(proposal.vote)
+                                  formatValue(proposal.vote_split)
                                 )}
                               </span>
                             </td>
-                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.mgt_rec)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.for_or_against_management_split)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">
+                              {proposal.index_link ? (
+                                <a
+                                  href={proposal.index_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline inline-flex items-center gap-1"
+                                >
+                                  <Lucide icon="ExternalLink" className="w-3.5 h-3.5" />
+                                  View
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1141,7 +1155,7 @@ const NpxInstitutionView = () => {
                 <CompanySelect
                   isInstitution={true}
                   value={selectedInstitutionValue}
-                  companyGlobalSearchName={NPX_INSTITUTION_GLOBAL_SEARCH_NAME}
+                  useProposalVotingStatsDropdown={true}
                   year={filters.year?.[0] || defaultYear}
                   isClearable={true}
                   onChange={(option: any) => handleInstitutionChange(option)}
