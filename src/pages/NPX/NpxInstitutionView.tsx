@@ -79,7 +79,6 @@ const formatNumberWithCommas = (value: any) => {
 const DEFAULT_INVESTOR = "BlackRock, Inc.";
 const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
 const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
-const NPX_INSTITUTION_GLOBAL_SEARCH_NAME = "Apple Inc.";
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
 // Institution/Company are staged selections — they only commit into `filters`
 // (and the cache above) once the user clicks Apply, so every click doesn't
@@ -187,6 +186,27 @@ const NpxInstitutionView = () => {
     return draft !== committed;
   }, [institutionSelection, filters.investor_company]);
 
+  // On a fresh mount, the staged selection (restored from the draft cache) can
+  // disagree with the already-applied institution (restored from the filter
+  // cache) — e.g. the user picked a different institution but navigated away
+  // or refreshed before clicking Apply. `isInstitutionSelectionPending` then
+  // starts out permanently `true`, which blocks the dropdown/stats effects
+  // below forever (nothing else ever changes those two pieces of state back
+  // into agreement), leaving the page stuck on the loading skeleton. Resolve
+  // that once on mount by letting the already-applied institution win, so the
+  // committed view always loads instead of hanging indefinitely on an
+  // unresolved stale draft.
+  const hasReconciledInitialSelectionRef = useRef(false);
+  useEffect(() => {
+    if (hasReconciledInitialSelectionRef.current) return;
+    hasReconciledInitialSelectionRef.current = true;
+
+    if (hasSelectedInstitution && isInstitutionSelectionPending) {
+      setInstitutionSelection(filters.investor_company || []);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!hasBootstrappedInstitutionRef.current && !hasSelectedInstitution) return;
     localStorage.setItem(NPX_FILTER_CACHE_KEY, JSON.stringify(filters));
@@ -216,19 +236,13 @@ const NpxInstitutionView = () => {
   const meetingDate = searchParams.get("meeting_date") || "";
 
   const selectedInstitution = useMemo(() => byInstitution?.[0] || {}, [byInstitution]);
-  const selectedYearKey = useMemo(() => {
-    const yearKeys = selectedInstitution?.years ? sortYearsDesc(Object.keys(selectedInstitution.years)) : [];
-    const selectedYears = sortYearsDesc(filters.year || []);
-    for (const selectedYear of selectedYears) {
-      if (selectedInstitution?.years?.[selectedYear]) return selectedYear;
-    }
-    return yearKeys[0] || selectedYears[0] || "";
-  }, [filters.year, selectedInstitution]);
-
-  const selectedYearStats = useMemo(() => {
-    if (!selectedInstitution?.years) return null;
-    return selectedInstitution.years[selectedYearKey] || null;
-  }, [selectedInstitution, selectedYearKey]);
+  // The API can return stats for multiple selected years at once (e.g. when
+  // Year filter has both 2026 and 2025 applied). Show every year the API
+  // returned, newest first, instead of collapsing down to a single year.
+  const summaryYearKeys = useMemo(
+    () => (selectedInstitution?.years ? sortYearsDesc(Object.keys(selectedInstitution.years)) : []),
+    [selectedInstitution]
+  );
 
   const hasStatsData = Boolean(npxProposalVotingStats);
   const isStatsLoading = dropdownLoading || summaryLoading || npxProposalVotingStatsLoading;
@@ -353,7 +367,7 @@ const NpxInstitutionView = () => {
       const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
       if (normalizedDateRange.trim()) params.date_range = normalizedDateRange;
       if (meetingDate) params.meeting_date = meetingDate;
-      const response = await dashboardService.getDynamicNPXDropdownValues(params);
+      const response = await dashboardService.getNpxProposalVotingDropdown(params);
       if (response?.result) {
         setDropdowns(response.result);
 
@@ -414,13 +428,12 @@ const NpxInstitutionView = () => {
             : [searchParams.get("year") || new Date().getFullYear().toString()];
 
         const params: any = {
-          global_search: NPX_INSTITUTION_GLOBAL_SEARCH_NAME,
           year: fallbackYear,
         };
 
         if (meetingDate) params.meeting_date = meetingDate;
 
-        const response = await dashboardService.getDynamicNPXDropdownValues(params);
+        const response = await dashboardService.getNpxProposalVotingDropdown(params);
         const institutions = Array.isArray(response?.result?.all_institution)
           ? response.result.all_institution.filter(Boolean)
           : [];
@@ -685,7 +698,7 @@ const NpxInstitutionView = () => {
     setFilters(nextFilters);
     setActivePage(1);
     skipNextDropdownEffectRef.current = true;
-    await loadDropdowns(filters.investor_company, nextFilters);
+    await loadDropdowns(nextFilters.investor_company, nextFilters);
     loadStats(1, appliedCompanySelection, nextFilters);
   };
 
@@ -837,20 +850,23 @@ const NpxInstitutionView = () => {
   const renderSummaryCard = () => {
     if (!selectedInstitution) return null;
 
-    const hasSummaryData = Boolean(
-      selectedYearStats &&
-      (
-        selectedYearStats.unique_companies !== undefined ||
-        selectedYearStats.total_proposals !== undefined ||
-        selectedYearStats.for_votes !== undefined ||
-        selectedYearStats.split_votes !== undefined ||
-        selectedYearStats.against_votes !== undefined ||
-        selectedYearStats.withhold_votes !== undefined ||
-        selectedYearStats.abstain_votes !== undefined ||
-        selectedYearStats.aligned_with_mgmt !== undefined ||
-        selectedYearStats.alignment_percentage !== undefined
-      )
-    );
+    const hasSummaryData = summaryYearKeys.some((yearKey) => {
+      const stats = selectedInstitution.years?.[yearKey];
+      return Boolean(
+        stats &&
+        (
+          stats.unique_companies !== undefined ||
+          stats.total_proposals !== undefined ||
+          stats.for_votes !== undefined ||
+          stats.split_votes !== undefined ||
+          stats.against_votes !== undefined ||
+          stats.withhold_votes !== undefined ||
+          stats.abstain_votes !== undefined ||
+          stats.aligned_with_mgmt !== undefined ||
+          stats.alignment_percentage !== undefined
+        )
+      );
+    });
 
     if (!hasSummaryData) {
       return (
@@ -867,40 +883,44 @@ const NpxInstitutionView = () => {
       );
     }
 
-    const summaryRows = [
+    const summaryMetrics: Array<{
+      label: string;
+      getValue: (stats: any) => string;
+    }> = [
       {
         label: "No. of unique companies",
-        value: formatNumberWithCommas(selectedYearStats?.unique_companies),
+        getValue: (stats) => formatNumberWithCommas(stats?.unique_companies),
       },
       {
         label: "No of proposals",
-        value: formatNumberWithCommas(selectedYearStats?.total_proposals),
+        getValue: (stats) => formatNumberWithCommas(stats?.total_proposals),
       },
       {
         label: "No. of FOR votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.for_votes)} (${formatValue(selectedYearStats?.for_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.for_votes)} (${formatValue(stats?.for_percentage)}%)`,
       },
       {
         label: "No. of SPLIT votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.split_votes)} (${formatValue(selectedYearStats?.split_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.split_votes)} (${formatValue(stats?.split_percentage)}%)`,
       },
       {
         label: "No. of AGAINST votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.against_votes)} (${formatValue(selectedYearStats?.against_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.against_votes)} (${formatValue(stats?.against_percentage)}%)`,
       },
       {
         label: "No. of WITHHOLD votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.withhold_votes)} (${formatValue(selectedYearStats?.withhold_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.withhold_votes)} (${formatValue(stats?.withhold_percentage)}%)`,
       },
       {
         label: "No. of Abstain votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.abstain_votes)} (${formatValue(selectedYearStats?.abstain_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.abstain_votes)} (${formatValue(stats?.abstain_percentage)}%)`,
       },
     ];
 
-    const dateRange = selectedYearStats?.date_range
-      ? `(${selectedYearStats.date_range.start_meeting || "-"} - ${selectedYearStats.date_range.end_meeting || "-"})`
-      : "";
+    const getDateRangeLabel = (stats: any) =>
+      stats?.date_range
+        ? `(${stats.date_range.start_meeting || "-"} - ${stats.date_range.end_meeting || "-"})`
+        : "";
 
     return (
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8">
@@ -910,21 +930,34 @@ const NpxInstitutionView = () => {
               <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>
                 Summary
               </th>
-              <th className="px-6 py-3 pb-2 text-center font-semibold rounded-tr-2xl">
+              <th
+                className="px-6 py-3 pb-2 text-center font-semibold rounded-tr-2xl"
+                colSpan={summaryYearKeys.length}
+              >
                 {selectedInstitution.institution_name || "-"}
               </th>
             </tr>
             <tr className="bg-primary text-white text-base">
-              <th className="px-6 py-3 pt-0 text-center font-semibold">
-                {dateRange && <div className="text-xs font-semibold mt-1">{dateRange}</div>}
-              </th>
+              {summaryYearKeys.map((yearKey) => {
+                const dateRange = getDateRangeLabel(selectedInstitution.years?.[yearKey]);
+                return (
+                  <th key={yearKey} className="px-6 py-3 pt-0 text-center font-semibold">
+                    <div>{yearKey}</div>
+                    {dateRange && <div className="text-xs font-normal opacity-80 mt-0.5">{dateRange}</div>}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="text-gray-700 text-base divide-y divide-gray-100">
-            {summaryRows.map((row) => (
-              <tr key={row.label}>
-                <td className="px-6 py-3 font-medium">{row.label}</td>
-                <td className="px-6 py-3 text-center">{row.value}</td>
+            {summaryMetrics.map((metric) => (
+              <tr key={metric.label}>
+                <td className="px-6 py-3 font-medium">{metric.label}</td>
+                {summaryYearKeys.map((yearKey) => (
+                  <td key={yearKey} className="px-6 py-3 text-center">
+                    {metric.getValue(selectedInstitution.years?.[yearKey])}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
@@ -971,15 +1004,16 @@ const NpxInstitutionView = () => {
                     <table className="w-full table-fixed">
                       <thead>
                         <tr className="bg-primary text-white text-sm">
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[30%] border-b border-r border-white/30">Proposal</th>
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[18%] border-b border-r border-white/30">Category</th>
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[20%] border-b border-r border-white/30">Fund</th>
-                          <th colSpan={3} className="px-4 py-2 text-center text-sm font-semibold border-b border-white/30">Details of Vote</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[26%] border-b border-r border-white/30">Proposal</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[15%] border-b border-r border-white/30">Category</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[17%] border-b border-r border-white/30">Fund</th>
+                          <th colSpan={3} className="px-4 py-2 text-center text-sm font-semibold border-b border-r border-white/30">Details of Vote</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[10%] border-b border-white/30">Source</th>
                         </tr>
                         <tr className="bg-primary text-white text-sm">
                           <th className="px-4 py-2 text-left font-semibold w-[12%] border-r border-white/30">Shares Voted</th>
                           <th className="px-4 py-2 text-left font-semibold w-[8%] border-r border-white/30">Vote</th>
-                          <th className="px-4 py-2 text-left font-semibold w-[12%]">For/Against Management</th>
+                          <th className="px-4 py-2 text-left font-semibold w-[12%] border-r border-white/30">For/Against Management</th>
                         </tr>
                       </thead>
                       <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -988,26 +1022,41 @@ const NpxInstitutionView = () => {
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.proposal)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.vote_category)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.fund_name)}</td>
-                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.shares_voted)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.shares_voted_split)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">
                               <span
                                 className={clsx(
-                                  (String(proposal.vote).includes("Against") || String(proposal.vote).includes("Withhold")) &&
+                                  (String(proposal.vote_split).includes("Against") || String(proposal.vote_split).includes("Withhold")) &&
                                     "text-red-700 font-semibold"
                                 )}
                               >
-                                {String(proposal.vote).includes("Against/Withhold") ? (
+                                {String(proposal.vote_split).includes("Against/Withhold") ? (
                                   <span className="whitespace-normal leading-tight">
                                     <span>Against/</span>
                                     <br />
                                     <span>Withhold</span>
                                   </span>
                                 ) : (
-                                  formatValue(proposal.vote)
+                                  formatValue(proposal.vote_split)
                                 )}
                               </span>
                             </td>
-                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.mgt_rec)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.for_or_against_management_split)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">
+                              {proposal.index_link ? (
+                                <a
+                                  href={proposal.index_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline inline-flex items-center gap-1"
+                                >
+                                  <Lucide icon="ExternalLink" className="w-3.5 h-3.5" />
+                                  View
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1141,7 +1190,7 @@ const NpxInstitutionView = () => {
                 <CompanySelect
                   isInstitution={true}
                   value={selectedInstitutionValue}
-                  companyGlobalSearchName={NPX_INSTITUTION_GLOBAL_SEARCH_NAME}
+                  useProposalVotingStatsDropdown={true}
                   year={filters.year?.[0] || defaultYear}
                   isClearable={true}
                   onChange={(option: any) => handleInstitutionChange(option)}

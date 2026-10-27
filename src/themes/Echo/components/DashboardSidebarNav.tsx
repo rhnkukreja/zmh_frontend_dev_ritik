@@ -22,6 +22,7 @@ import {
   Network,
   LineChart,
   Landmark,
+  UserCheck,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
@@ -82,6 +83,15 @@ const BASE_SECTIONS: SectionDef[] = [
     icon: Shield,
     group: "Company",
     subItems: [],
+  },
+  {
+    key: "board-intel",
+    label: "Board Intelligence",
+    icon: UserCheck,
+    group: "Company",
+    subItems: [],
+    beta: true,
+    adminOnly: true,
   },
   {
     key: "compensation",

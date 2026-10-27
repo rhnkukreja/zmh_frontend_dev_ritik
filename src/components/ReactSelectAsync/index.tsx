@@ -66,6 +66,10 @@ interface CompanySelectProps {
   hideDropdownIndicator?: boolean;
   includeSelectAllOption?: boolean;
   selectAllLabel?: string;
+  // When true (institution mode only), institution search hits the
+  // N-PX Proposal Voting Stats dropdown endpoint instead of the legacy
+  // get_npx_dropdown_values endpoint, and never sends global_search.
+  useProposalVotingStatsDropdown?: boolean;
 }
 
 const fetchOptions = async (
@@ -79,7 +83,8 @@ const fetchOptions = async (
   isHideCurrentCompany?: boolean,
   currentCompany?: string,
   currentFilters?: any,
-  year?: string
+  year?: string,
+  useProposalVotingStatsDropdown?: boolean
 ): Promise<OptionType[]> => {
   // Always ensure year parameter is included
   const yearParam = year || 
@@ -89,11 +94,16 @@ const fetchOptions = async (
   
   try {
     const response = isInstitution
-      ? await dashboardService.fetchInstitutionByName(
-          inputValue,
-          companyGlobalSearchName,
-          yearParam // Always pass year parameter
-        )
+      ? useProposalVotingStatsDropdown
+        ? await dashboardService.fetchInstitutionByNameFromProposalVotingStats(
+            inputValue,
+            yearParam
+          )
+        : await dashboardService.fetchInstitutionByName(
+            inputValue,
+            companyGlobalSearchName,
+            yearParam // Always pass year parameter
+          )
       : await dashboardService.fetchCompanyByName(
           inputValue,
           exactUrl,
@@ -185,6 +195,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   hideDropdownIndicator = false,
   includeSelectAllOption = false,
   selectAllLabel,
+  useProposalVotingStatsDropdown = false,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
@@ -219,7 +230,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
             isHideCurrentCompany,
             currentCompany,
             currentFilters,
-            yearParam // Always pass year parameter
+            yearParam, // Always pass year parameter
+            useProposalVotingStatsDropdown
           ).then((options) => {
             callback(options);
           });
@@ -237,6 +249,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       currentCompany,
       currentFilters,
       year,
+      useProposalVotingStatsDropdown,
     ]
   );
 
@@ -271,7 +284,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           isHideCurrentCompany,
           currentCompany,
           currentFilters,
-          yearParam
+          yearParam,
+          useProposalVotingStatsDropdown
         );
         setDefaultOptions(options);
       } catch (error) {
@@ -283,7 +297,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     };
 
     fetchDefaultOptions();
-  }, [companyGlobalSearchName, year, showDefaultOptions, isInstitution, includeSelectAllOption, selectAllLabel, exactUrl, arrayKeyName, isHideCurrentCompany, currentCompany, currentFilters]);
+  }, [companyGlobalSearchName, year, showDefaultOptions, isInstitution, includeSelectAllOption, selectAllLabel, exactUrl, arrayKeyName, isHideCurrentCompany, currentCompany, currentFilters, useProposalVotingStatsDropdown]);
   const onChangeSelect = (newValue: MultiValue<OptionType> | OptionType | null) => {
     onChange(newValue as OptionType | OptionType[] | null);
     // Clear input value after selection

@@ -561,6 +561,17 @@ class DashboardService {
     };
   }
 
+  public async getVdsProxyFundLevel(paramFilter?: any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(
+      createDynamicURL(`/vds_proxy_voting_fund_level/`, paramFilter)
+    );
+    return {
+      result: response.data,
+    };
+  }
+
   public async getModulesCount(paramFilter?: any): Promise<{
     result: any;
   }> {
@@ -656,6 +667,45 @@ class DashboardService {
     const result = response.data;
     return {
       result,
+    };
+  }
+
+  public async getNpxProposalVotingDropdown(params?: any): Promise<{ result: any }> {
+    const url = createDynamicURL(`/api/npx-proposal-voting-stats/dropdown/`, params);
+    const response = await axiosInstance.get(url);
+    const result = response.data;
+    return {
+      result,
+    };
+  }
+
+  // Institution typeahead for the N-PX Voting Data (NpxInstitutionView) page.
+  // Unlike fetchInstitutionByName, this never sends a global_search param —
+  // the new dropdown endpoint doesn't need a dummy company to scope results.
+  public async fetchInstitutionByNameFromProposalVotingStats(
+    institutionValue?: string,
+    year?: string
+  ): Promise<{ results: CompanyData[] }> {
+    if (!institutionValue) {
+      return { results: [] };
+    }
+
+    const params: any = {};
+    const yearParam = year ||
+      (window.location.search.includes('year=') ?
+        new URLSearchParams(window.location.search).get('year') : '2024');
+    params.year = yearParam;
+
+    if (institutionValue !== "a" && institutionValue.trim() !== "") {
+      params.institution_name = institutionValue;
+    }
+
+    const { result } = await this.getNpxProposalVotingDropdown(params);
+
+    return {
+      results: (institutionValue !== "a" && institutionValue.trim() !== "")
+        ? (result?.institution || [])
+        : (result?.all_institution || []),
     };
   }
 
