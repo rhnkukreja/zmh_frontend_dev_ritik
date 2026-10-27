@@ -286,7 +286,7 @@ function Main() {
           : 'Overview'
       : activeTab === 'ownership' ? 'Ownership' :
       activeTab === 'shareholder-meeting-results' ? shareholderMeetingHeader :
-      activeTab === 'board-intel' ? 'Board Intel' :
+      activeTab === 'board-intel' ? 'Board Intelligence' :
       activeTab === 'voting-data'
         ? activeSubSection === 'voting-rationale'
           ? 'Voting Rationale'
@@ -735,7 +735,7 @@ function Main() {
 
           {activeTab === 'board-intel' && (
             <div id="board-intel" className="col-span-12 xl:col-span-12">
-              <DashboardBoardIntel ticker={companyGlobalSearchTicker} name={companyGlobalSearchName} />
+              <DashboardBoardIntel ticker={companyGlobalSearchTicker} name={companyGlobalSearchName} companyId={companyGlobalSearchId} />
             </div>
           )}
 

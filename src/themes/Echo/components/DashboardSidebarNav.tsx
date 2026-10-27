@@ -107,7 +107,7 @@ const BASE_SECTIONS: SectionDef[] = [
   },
   {
     key: "board-intel",
-    label: "Board Intel",
+    label: "Board Intelligence",
     icon: UserCheck,
     group: "Company",
     subItems: [],
