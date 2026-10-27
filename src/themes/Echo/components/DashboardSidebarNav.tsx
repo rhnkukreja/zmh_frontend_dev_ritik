@@ -294,7 +294,8 @@ const DashboardSidebarNav = ({
     // Compensation is restricted to Admins/Analysts
     if (s.key === "compensation") {
       const userType = user?.user_type;
-      return userType === "Admin" || userType === "Analyst";
+      return userType === "Analyst";
+      // return userType === "Admin" || userType === "Analyst";
     }
     if (s.key === "governance-profile") {
       return Boolean(modulesData?.governance_profile);
