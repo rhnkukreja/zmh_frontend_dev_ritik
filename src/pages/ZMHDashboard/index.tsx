@@ -28,7 +28,7 @@ import YearSelector from "@/pages/VdsProxyVoting/YearSelector";
 import MeetingDateSelector from "@/pages/VdsProxyVoting/MeetingDateSelector";
 import NPXPage from "@/pages/NPX";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
-import DashboardBoardIntel, { BoardIntelCompanyMenu } from "@/pages/BoardIntelligence/DashboardBoardIntel";
+import DashboardBoardIntel from "@/pages/BoardIntelligence/DashboardBoardIntel";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
 import { selectDashboardNav, setActiveSection } from "@/stores/dashboardNavSlice";
 import BoardDirectorMembers from "@/components/BoardDirectorMembers";
@@ -286,7 +286,7 @@ function Main() {
           : 'Overview'
       : activeTab === 'ownership' ? 'Ownership' :
       activeTab === 'shareholder-meeting-results' ? shareholderMeetingHeader :
-      activeTab === 'board-intel' ? 'Board Intel' :
+      activeTab === 'board-intel' ? 'Board Intelligence' :
       activeTab === 'voting-data'
         ? activeSubSection === 'voting-rationale'
           ? 'Voting Rationale'
@@ -664,9 +664,6 @@ function Main() {
                 <div className="text-sm font-medium text-slate-600 mt-1">Meeting Date: {meetingDateHeader}</div>
               )}
             </div>
-            {activeTab === 'board-intel' && companyGlobalSearchTicker && (
-              <BoardIntelCompanyMenu ticker={companyGlobalSearchTicker} />
-            )}
             {activeTab === 'voting-data' && activeVotingSubTab !== 'npx-analytics' && (
               <MeetingYearSelector
                 key={activeVotingSubTab}
@@ -738,7 +735,7 @@ function Main() {
 
           {activeTab === 'board-intel' && (
             <div id="board-intel" className="col-span-12 xl:col-span-12">
-              <DashboardBoardIntel ticker={companyGlobalSearchTicker} name={companyGlobalSearchName} />
+              <DashboardBoardIntel ticker={companyGlobalSearchTicker} name={companyGlobalSearchName} companyId={companyGlobalSearchId} />
             </div>
           )}
 

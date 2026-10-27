@@ -1,13 +1,119 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import {
-  AlertTriangle, ExternalLink, FileText, Globe, Loader2, MoreHorizontal, RefreshCw, Search, Users,
+  AlertTriangle, ChevronDown, ChevronRight, ExternalLink, FileText, Loader2, RefreshCw, Search, Users,
 } from "lucide-react";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
 import { AI_CHATBOT_API_BASE, getRequestHeaders } from "@/pages/AIChatbot/api";
+import Button from "@/components/Base/Button";
+import { baseURL } from "@/constant";
+import { dashboardService } from "@/services/dashboard";
+import { useAppSelector } from "@/stores/hooks";
+import { createDynamicURL } from "@/utils/helper";
 
 const BRAND = "#931638";
 const POLL_MS = 4000;
+
+// ─── In-memory caches ─────────────────────────────────────────────────────────────────────
+// A result is 0.3-1 MB, too large for localStorage: kept in memory only, so switching back to a
+// company within the TTL renders at once without a request.
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const resultCache = new Map<string, { result: BoardResult; at: number }>();
+
+const cachedResult = (cik: string) => {
+  const hit = resultCache.get(cik);
+  return hit && Date.now() - hit.at < CACHE_TTL_MS ? hit.result : null;
+};
+const cacheResult = (cik: string, result: BoardResult) => resultCache.set(cik, { result, at: Date.now() });
+
+// ─── Formatting ───────────────────────────────────────────────────────────────────────────
+
+/** One date format everywhere, American style: "2024-04-30" -> "April 30, 2024". A printed date
+ *  ("Wednesday, May 25, 2022") keeps its words and loses only the weekday. */
+const usDate = (s: string | null | undefined) => {
+  if (!s) return "";
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!iso) return s.replace(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s*/i, "");
+  return new Date(Date.UTC(+iso[1], +iso[2] - 1, +iso[3]))
+    .toLocaleDateString("en-US", { timeZone: "UTC", month: "long", day: "numeric", year: "numeric" });
+};
+
+const SMALL_WORDS = new Set(["and", "of", "the", "for", "on", "to"]);
+
+/** "nominees for director" -> "Nominees for Director": each word capitalised except the small words. */
+const titleCase = (s: string) =>
+  s.replace(/[A-Za-z][A-Za-z'’]*/g, (w: string, at: number) =>
+    at > 0 && SMALL_WORDS.has(w.toLowerCase()) ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1));
+
+/** "Duke Energy Corporation (Independent Chair, corporate governance committee chair)" ->
+ *  "... (Independent Chair, Corporate Governance Committee Chair)": the company name stays as
+ *  printed; the role in parentheses is title-cased. */
+const formatBoard = (board: string) => board.replace(/\(([^)]*)\)/g, (_, role: string) => `(${titleCase(role)})`);
+
+// ─── Year-on-year vote support (the dashboard's Django /voting_report_8k/) ────────────────
+
+type YearRow = Record<string, string | number | null | undefined>;
+type YearOnYear = { years: string[]; nominees: YearRow[]; proposals: YearRow[] };
+
+/** The last three years' support per nominee and proposal, from the same request (and request
+ *  cache) the dashboard's AGM card makes. Only on the dashboard: the standalone page has no id. */
+function useYearOnYear(companyId?: number | string) {
+  const totalYears = useAppSelector((s) => s.dashboard.agmSummaryDetails?.total_year);
+  const [data, setData] = useState<{ raw: { total_year?: unknown; nominees: YearRow[]; proposals: YearRow[] } | null; loading: boolean }>(
+    { raw: null, loading: false });
+
+  useEffect(() => {
+    if (!companyId) { setData({ raw: null, loading: false }); return; }
+    let cancelled = false;
+    setData({ raw: null, loading: true });
+    dashboardService
+      .fetchAGMSummaryDashboard(createDynamicURL(`${baseURL}/voting_report_8k/`, {
+        company_id: companyId,
+        include_all_years_data: "true",
+      }))
+      .then((response) => {
+        if (cancelled) return;
+        const y = response?.results?.meeting_details_years_data;
+        setData({
+          raw: y ? { total_year: response.results.total_year, nominees: y.nominees || [], proposals: y.proposals || [] } : null,
+          loading: false,
+        });
+      })
+      .catch(() => { if (!cancelled) setData({ raw: null, loading: false }); });
+    return () => { cancelled = true; };
+  }, [companyId]);
+
+  const yoy = useMemo<YearOnYear | null>(() => {
+    const raw = data.raw;
+    if (!raw || (!raw.nominees.length && !raw.proposals.length)) return null;
+    // this response's own years first: the store's copy can still be the previous company's
+    const listed = Array.isArray(raw.total_year) && raw.total_year.length ? raw.total_year
+      : Array.isArray(totalYears) && totalYears.length ? totalYears
+      : [...raw.nominees, ...raw.proposals].flatMap((r) => Object.keys(r).filter((k) => /^\d{4}$/.test(k)));
+    const years = Array.from(new Set(listed.map(String))).sort((a, b) => Number(b) - Number(a)).slice(0, 3);
+    return years.length ? { years, nominees: raw.nominees, proposals: raw.proposals } : null;
+  }, [data.raw, totalYears]);
+
+  return { yoy, loading: data.loading };
+}
+
+const supportText = (v: YearRow[string]) =>
+  v == null || v === "" ? <span className="text-gray-400">—</span> : String(v);
+
+/** Boxed sub-tabs, as the dashboard's AGM card shows "Latest" / "Year-on-Year Comparison". */
+function BoxedTabs<T extends string>({ tabs, value, onChange }: { tabs: [T, string][]; value: T; onChange: (v: T) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {tabs.map(([key, label]) => (
+        <button key={key} type="button" onClick={() => onChange(key)}
+                className={`whitespace-nowrap rounded-[0.6rem] px-4 py-1.5 text-sm font-medium border ${
+                  value === key ? "bg-red-800 border-red-800 text-white" : "text-primary bg-primary/10 border-primary/10"}`}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 // ─── Backend: /api/board-intel ─────────────────────────────────────────────────────────────
 
@@ -298,10 +404,6 @@ const getRunStatus = (cik: string) => getJson<RunStatus>(`${BASE}/runs/${cik}`);
 
 const getResult = (cik: string) => getJson<BoardResult>(`${BASE}/results/${cik}`);
 
-/** The companies that already have Board Intel data saved. */
-const getCompaniesWithResults = () =>
-  getJson<{ results: CompanyHit[] }>(`${BASE}/companies-with-results`).then((r) => r.results);
-
 /** Our stored, sanitised copy of an SEC document (8-K, press release). */
 const documentViewerUrl = (cik: string, accession: string, name: string) =>
   `${BASE}/documents/${cik}/${accession.replace(/\D/g, "")}/${encodeURIComponent(name)}`;
@@ -369,15 +471,10 @@ function DocFrame({ html, title, extraCss = "" }: { html: string; title: string;
   );
 }
 
-function Pill({ children, tone = "gray" }: { children: React.ReactNode; tone?: "gray" | "green" | "amber" | "red" | "brand" }) {
-  const tones = {
-    gray: "bg-gray-100 text-gray-700",
-    green: "bg-green-50 text-green-700 border border-green-200",
-    amber: "bg-amber-50 text-amber-800 border border-amber-200",
-    red: "bg-red-50 text-red-700 border border-red-200",
-    brand: "bg-[#931638]/10 text-[#931638] border border-[#931638]/20",
-  };
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${tones[tone]}`}>{children}</span>;
+/** One neutral style for every pill: no green / amber / red status colours on this page. `tone`
+ *  is still accepted from callers but no longer changes the colour. */
+function Pill({ children }: { children: React.ReactNode; tone?: "gray" | "green" | "amber" | "red" | "brand" }) {
+  return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">{children}</span>;
 }
 
 function SourceLink({ href, children }: { href?: string | null; children: React.ReactNode }) {
@@ -398,8 +495,8 @@ const labelTone = (label: string) =>
 /** The three facts a reader looks for first, given their own highlighted boxes. */
 function KeyFact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-md border border-[#931638]/20 bg-[#931638]/[0.04] px-3 py-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-[#931638]">{label}</div>
+    <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-700">{label}</div>
       <div className="mt-1 text-sm text-gray-900">{children}</div>
     </div>
   );
@@ -416,48 +513,46 @@ function chips(items?: string[]) {
 
 const directorAnchor = (name: string) => `director-${name.replace(/[^A-Za-z0-9]+/g, "-")}`;
 
-function DirectorCard({ d, proxyUrl, open, onToggle }: { d: Director; proxyUrl: string; open: boolean; onToggle: () => void }) {
+/** A profile card; its whole header row opens and closes it. */
+function DirectorCard({ d, open, onToggle }: { d: Director; open: boolean; onToggle: () => void }) {
   const f = d.facts || {};
+  const Chevron = open ? ChevronDown : ChevronRight;
   return (
     <div id={directorAnchor(d.name)} className="border border-gray-200 rounded-lg overflow-hidden scroll-mt-4">
-      <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-        <h3 className="font-semibold text-base mr-2">{d.name}</h3>
-        {f.age != null && <Pill>Age {f.age}{f.age_source ? "*" : ""}</Pill>}
-        {f.director_since && <Pill>Director since {f.director_since}{f.director_since_source ? "*" : ""}</Pill>}
-        {f.independent === true && <Pill tone="green">Independent</Pill>}
-        {f.independent === false && <Pill tone="amber">Not independent</Pill>}
-        {(f.board_roles || []).map((r) => <Pill key={r} tone="brand">{r}</Pill>)}
-        {f.designated_by && <Pill tone="amber">Designated by {f.designated_by}</Pill>}
-        <button onClick={onToggle} className="ml-auto text-xs text-gray-600 hover:text-black">
-          {open ? "Hide profile" : "Show profile as in proxy"}
-        </button>
-      </div>
+      <button type="button" onClick={onToggle} aria-expanded={open}
+              className="w-full flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200 text-left hover:bg-gray-100">
+        <Chevron size={16} className="text-gray-700 shrink-0" />
+        <span className="font-semibold text-base text-gray-900 mr-2">{d.name}</span>
+        {f.age != null && <Pill>Age {f.age}</Pill>}
+        {f.director_since && <Pill>Director Since {f.director_since}</Pill>}
+        {f.independent === true && <Pill>Independent</Pill>}
+        {f.independent === false && <Pill>Not Independent</Pill>}
+        {(f.board_roles || []).map((r) => <Pill key={r}>{r}</Pill>)}
+        {f.designated_by && <Pill>Designated By {f.designated_by}</Pill>}
+      </button>
       <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3">
         <KeyFact label="Position">{f.current_position || <span className="text-gray-400">—</span>}</KeyFact>
         <KeyFact label="Committees">{chips(f.committees)}</KeyFact>
-        <KeyFact label="Other public boards">{chips(f.other_public_boards)}</KeyFact>
-        <div className="md:col-span-3 text-[11px] text-gray-400">
-          
-        </div>
+        <KeyFact label="Other Public Boards">{chips((f.other_public_boards || []).map(formatBoard))}</KeyFact>
       </div>
       {open && (d.bio_html
         ? <div className="border-t border-gray-100"><DocFrame html={d.bio_html} title={d.name} /></div>
-        : <div className="px-4 py-3 text-sm text-amber-700">The profile HTML could not be cut from the proxy.</div>)}
-      <div className="px-4 py-2 border-t border-gray-100"><SourceLink href={proxyUrl}>Source: proxy statement (SEC)</SourceLink></div>
+        : <div className="px-4 py-3 text-sm text-gray-800">The profile HTML could not be cut from the proxy.</div>)}
     </div>
   );
 }
 
 /** The whole board in one table, readable in one go; a name jumps to that director's profile. */
 function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: (name: string) => void }) {
+  const thisYear = new Date().getFullYear();
   return (
     <div className="border border-gray-200 rounded-lg overflow-x-auto">
-      <table className="text-sm w-full">
-        <thead className="bg-gray-50 text-left text-xs text-gray-600">
+      <table className="text-sm w-full text-gray-900">
+        <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-700">
           <tr>
-            <th className="p-2">Director</th><th className="p-2">Age</th><th className="p-2">Since</th><th className="p-2">Independent</th>
-            <th className="p-2 text-[#931638]">Position</th><th className="p-2 text-[#931638]">Committees</th>
-            <th className="p-2 text-[#931638]">Other public boards</th>
+            <th className="p-2">Director</th><th className="p-2">Age</th><th className="p-2">Since</th><th className="p-2">Tenure</th>
+            <th className="p-2">Independent</th>
+            <th className="p-2">Position</th><th className="p-2">Committees</th><th className="p-2">Other Public Boards</th>
           </tr>
         </thead>
         <tbody>
@@ -466,15 +561,22 @@ function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: 
             return (
               <tr key={d.name} className="border-t border-gray-100 align-top">
                 <td className="p-2">
-                  <button onClick={() => onOpen(d.name)} className="font-medium text-left hover:text-[#931638] hover:underline">{d.name}</button>
-                  {!!(f.board_roles || []).length && <div className="text-xs text-[#931638]">{(f.board_roles || []).join(", ")}</div>}
+                  <button onClick={() => onOpen(d.name)} className="font-medium text-left text-[#931638] hover:underline">{d.name}</button>
+                  {!!(f.board_roles || []).length && <div className="text-xs text-gray-900">{(f.board_roles || []).join(", ")}</div>}
                 </td>
-                <td className="p-2 whitespace-nowrap">{f.age ?? "—"}{f.age != null && f.age_source ? "*" : ""}</td>
-                <td className="p-2 whitespace-nowrap">{f.director_since || "—"}{f.director_since && f.director_since_source ? "*" : ""}</td>
-                <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : "—"}</td>
-                <td className="p-2">{f.current_position || "—"}</td>
-                <td className="p-2">{(f.committees || []).join("; ") || "—"}</td>
-                <td className="p-2">{(f.other_public_boards || []).join("; ") || "—"}</td>
+                <td className="p-2 whitespace-nowrap">{f.age ?? <span className="text-gray-400">—</span>}</td>
+                <td className="p-2 whitespace-nowrap">{f.director_since_year || f.director_since || <span className="text-gray-400">—</span>}</td>
+                <td className="p-2 whitespace-nowrap">
+                  {f.director_since_year ? `${thisYear - f.director_since_year} yr` : <span className="text-gray-400">—</span>}
+                </td>
+                <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : <span className="text-gray-400">—</span>}</td>
+                <td className="p-2">{f.current_position || <span className="text-gray-400">—</span>}</td>
+                <td className="p-2">{(f.committees || []).join("; ") || <span className="text-gray-400">—</span>}</td>
+                <td className="p-2">
+                  {(f.other_public_boards || []).length
+                    ? (f.other_public_boards || []).map((b) => <div key={b}>{formatBoard(b)}</div>)
+                    : <span className="text-gray-400">—</span>}
+                </td>
               </tr>
             );
           })}
@@ -484,116 +586,124 @@ function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: 
   );
 }
 
+type ProfileView = "proxy" | "website";
+
 function BoardTab({ result }: { result: BoardResult }) {
-  // Profiles start closed so the board reads in one go from the table; each opens on demand.
-  const [openNames, setOpenNames] = useState<Set<string>>(new Set());
   const directors = result.proxy.directors;
-  const allOpen = directors.length > 0 && openNames.size === directors.length;
-  const toggle = (name: string) => setOpenNames((s) => {
+  const members = result.website?.members || [];
+  const hasWebsite = members.length > 0;
+  const [view, setView] = useState<ProfileView>("proxy");
+  // Proxy profiles start closed so the board reads in one go from the table; each opens on demand.
+  const [openNames, setOpenNames] = useState<Set<string>>(new Set());
+  // A director on the website only has no other profile on this page: shown open.
+  const [openSite, setOpenSite] = useState<Set<string>>(() => new Set(result.website?.compare?.website_only || []));
+
+  const names = view === "proxy" ? directors.map((d) => d.name) : members.filter((m) => m.bio_html).map((m) => m.name);
+  const openSet = view === "proxy" ? openNames : openSite;
+  const setOpenSet = view === "proxy" ? setOpenNames : setOpenSite;
+  const allOpen = names.length > 0 && names.every((n) => openSet.has(n));
+  const toggleIn = (set: typeof setOpenNames) => (name: string) => set((s) => {
     const n = new Set(s);
     if (n.has(name)) n.delete(name); else n.add(name);
     return n;
   });
   const openAndJump = (name: string) => {
+    setView("proxy");
     setOpenNames((s) => new Set(s).add(name));
     window.setTimeout(() => document.getElementById(directorAnchor(name))?.scrollIntoView({ behavior: "smooth" }), 50);
   };
   return (
     <div className="space-y-4">
       {!!result.proxy.named_without_biography.length && (
-        <p className="text-sm text-amber-700">Named in the proxy without a biography: {result.proxy.named_without_biography.join(", ")}</p>
+        <p className="text-sm text-gray-800">Named in the proxy without a biography: {result.proxy.named_without_biography.join(", ")}</p>
       )}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">The board at a glance</h3>
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">The Board at a Glance</h3>
         <BoardAtAGlance directors={directors} onOpen={openAndJump} />
-        <p className="text-xs text-gray-500 mt-1">* not printed as text in the biography: taken from the proxy's nominee summary table, or read from the profile's own image (some proxies print the age and tenure only in a picture). Click a name to open that profile.</p>
       </div>
-      <div className="flex items-center gap-3 pt-2">
-        <h3 className="text-sm font-semibold text-gray-700">Full profiles as in the proxy</h3>
-        <button onClick={() => setOpenNames(allOpen ? new Set() : new Set(directors.map((d) => d.name)))}
-                className="text-xs text-[#931638] hover:underline">
-          {allOpen ? "Collapse all" : "Expand all"}
-        </button>
+      <div className="flex flex-wrap items-center gap-3 pt-2">
+        <BoxedTabs<ProfileView>
+          tabs={hasWebsite ? [["proxy", "Full Profiles (Proxy)"], ["website", "Website Comparison"]] : [["proxy", "Full Profiles (Proxy)"]]}
+          value={view} onChange={setView} />
+        {!!names.length && (
+          <Button variant="primary" size="sm" className="ml-auto bg-red-800 hover:bg-red-900 text-white"
+                  onClick={() => setOpenSet(allOpen ? new Set() : new Set(names))}>
+            {allOpen ? "Collapse all" : "Expand all"}
+          </Button>
+        )}
       </div>
-      {directors.map((d) => (
-        <DirectorCard key={d.name} d={d} proxyUrl={result.proxy.url} open={openNames.has(d.name)} onToggle={() => toggle(d.name)} />
+      {view === "proxy" && directors.map((d) => (
+        <DirectorCard key={d.name} d={d} open={openNames.has(d.name)} onToggle={() => toggleIn(setOpenNames)(d.name)} />
       ))}
+      {view === "website" && hasWebsite && <WebsiteSection result={result} open={openSite} onToggle={toggleIn(setOpenSite)} />}
     </div>
   );
+}
+
+/** A committee's latest membership: the change the proxy states once its date has passed,
+ *  otherwise today's list (whose members not standing again are retiring). */
+function latestMembership(c: Committee) {
+  const ac = c.after_change;
+  const effectiveAt = ac?.effective ? Date.parse(ac.effective) : NaN;
+  if (ac && !Number.isNaN(effectiveAt) && effectiveAt <= Date.now()) {
+    return { chair: ac.chair ?? c.chair, members: ac.members ?? c.members, effective: ac.effective, changed: true };
+  }
+  return { chair: c.chair, members: c.members, effective: c.effective, changed: false };
 }
 
 /** Board committees: who chairs each, who serves, how often it met -- and the board's leadership. */
 function CommitteesSection({ data, proxyUrl }: { data?: BoardCommittees; proxyUrl: string }) {
   const [showDoc, setShowDoc] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
-  if (!data) return <p className="text-sm text-gray-600">Board committees: not read for this result yet — press Refresh to read them.</p>;
+  if (!data) return <p className="text-sm text-gray-700">Board committees: not read for this result yet.</p>;
   const lead = data.leadership || {};
   const leaving = new Set(data.not_nominees || []);
-  const person = (n: string) => (
-    <span key={n} className={`rounded border px-1.5 py-0.5 text-xs ${leaving.has(n) ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-white border-gray-200"}`}>
-      {n}{leaving.has(n) ? " †" : ""}
-    </span>
-  );
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="text-base font-semibold">Board committees</h3>
-        {data.source && <Pill>{data.source === "table" ? "Read from the proxy's committee table" : "Read from the proxy's committee lists"}</Pill>}
+        <h3 className="text-base font-semibold text-gray-900">Board Committees</h3>
+        {data.source && <Pill>{data.source === "table" ? "Read From the Proxy's Committee Table" : "Read From the Proxy's Committee Lists"}</Pill>}
         <span className="ml-auto"><SourceLink href={proxyUrl}>Source: proxy statement (SEC)</SourceLink></span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <KeyFact label="Chair of the Board">{lead.chair_of_board || <span className="text-gray-400">—</span>}</KeyFact>
-        <KeyFact label="Lead Independent Director">{lead.lead_independent_director || <span className="text-gray-400">None named</span>}</KeyFact>
-        <KeyFact label="CEO">{lead.ceo || <span className="text-gray-400">—</span>}</KeyFact>
+      <div className="text-sm text-gray-900 space-y-0.5">
+        <div><span className="font-semibold">Chair of the Board:</span> {lead.chair_of_board || <span className="text-gray-400">—</span>}</div>
+        <div><span className="font-semibold">Lead Independent Director:</span> {lead.lead_independent_director || "None named"}</div>
+        <div><span className="font-semibold">CEO:</span> {lead.ceo || <span className="text-gray-400">—</span>}</div>
       </div>
 
       {!data.committees.length ? (
-        <p className="text-sm text-gray-600">No committee membership could be read from this proxy.</p>
+        <p className="text-sm text-gray-700">No committee membership could be read from this proxy.</p>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {data.committees.map((c) => (
-            <div key={c.name} className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 bg-gray-50 border-b border-gray-200">
-                <h4 className="font-semibold text-sm">{c.name}</h4>
-                {c.header && c.header !== c.name && <span className="text-xs text-gray-500">({c.header})</span>}
-                <span className="ml-auto flex gap-1">
-                  {c.meetings && <Pill>Met {c.meetings} times last year</Pill>}
-                  <Pill>{c.members.length} members</Pill>
-                </span>
-              </div>
-              <div className="px-4 py-3 space-y-2 text-sm">
-                {c.effective && <div className="text-xs text-amber-700">Membership as the proxy states it from {c.effective}</div>}
-                <div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#931638] mr-2">Chair</span>
-                  {c.chair ? <span className="font-medium">{c.chair}{leaving.has(c.chair) ? " †" : ""}</span> : <span className="text-gray-400">Not marked in the proxy</span>}
-                </div>
-                <div className="flex flex-wrap gap-1">{c.members.filter((m) => m !== c.chair).map(person)}</div>
-                {c.after_change && (
-                  <div className="mt-1 rounded border border-[#931638]/20 bg-[#931638]/[0.04] px-3 py-2 text-xs">
-                    <div className="font-semibold text-[#931638] mb-1">
-                      {c.after_change.effective ? `From ${c.after_change.effective}` : "Later"}, as the proxy states
-                    </div>
-                    {c.after_change.members === null ? (
-                      <div>{c.after_change.chair} becomes chair.</div>
-                    ) : (
-                      <>
-                        <div className="mb-1">Chair: <span className="font-medium">{c.after_change.chair || "not stated"}</span></div>
-                        <div className="flex flex-wrap gap-1">{c.after_change.members.filter((m) => m !== c.after_change?.chair).map(person)}</div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="border border-gray-200 rounded-lg overflow-x-auto">
+          <table className="text-sm w-full text-gray-900">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-700">
+              <tr><th className="p-2">Committee</th><th className="p-2">Chair</th><th className="p-2">Members</th><th className="p-2 whitespace-nowrap">Meetings Last Year</th></tr>
+            </thead>
+            <tbody>
+              {data.committees.map((c) => {
+                const m = latestMembership(c);
+                // retiring applies to today's list only: a change already in effect has replaced it
+                const named = (n: string) => `${n}${!m.changed && leaving.has(n) ? " (retiring)" : ""}`;
+                const others = m.members.filter((n) => n !== m.chair);
+                return (
+                  <tr key={c.name} className="border-t border-gray-100 align-top">
+                    <td className="p-2">
+                      <div className="font-medium">{c.name}</div>
+                      {m.effective && <div className="text-xs text-gray-600">Effective {usDate(m.effective)}</div>}
+                    </td>
+                    <td className="p-2">{m.chair ? named(m.chair) : <span className="text-gray-400">—</span>}</td>
+                    <td className="p-2">{others.length ? others.map((n) => <div key={n}>{named(n)}</div>) : <span className="text-gray-400">—</span>}</td>
+                    <td className="p-2">{c.meetings || <span className="text-gray-400">—</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
-      <div className="text-xs text-gray-500 space-y-1">
-        <p>Every name and count is printed in the proxy; chairs are as the proxy marks them.</p>
-        {!!leaving.size && <p>† Not among this year's nominees (usually retiring at the meeting): {Array.from(leaving).join(", ")}.</p>}
-      </div>
+      <p className="text-xs text-gray-600">Every name and count is printed in the proxy; chairs are as the proxy marks them.</p>
 
       <div className="flex flex-wrap gap-4">
         {data.html && (
@@ -602,14 +712,14 @@ function CommitteesSection({ data, proxyUrl }: { data?: BoardCommittees; proxyUr
           </button>
         )}
         {!!data.disagreements.length && (
-          <button onClick={() => setShowNotes(!showNotes)} className="text-xs text-amber-700 hover:underline">
+          <button onClick={() => setShowNotes(!showNotes)} className="text-xs text-[#931638] hover:underline">
             {showNotes ? "Hide" : "Show"} {data.disagreements.length} biography {data.disagreements.length === 1 ? "note" : "notes"} that differ from the lists
           </button>
         )}
       </div>
       {showDoc && data.html && <div className="border border-gray-200 rounded-lg"><DocFrame html={data.html} title="Committee table" /></div>}
       {showNotes && (
-        <ul className="text-xs text-gray-600 list-disc pl-5 space-y-0.5">
+        <ul className="text-xs text-gray-700 list-disc pl-5 space-y-0.5">
           {data.disagreements.map((d, i) => (
             <li key={i}>{d.director}'s biography names <span className="font-medium">{d.bio_says}</span>; the committee lists place them on {d.committee_list.length ? d.committee_list.join(", ") : "no committee"}.</li>
           ))}
@@ -622,7 +732,7 @@ function CommitteesSection({ data, proxyUrl }: { data?: BoardCommittees; proxyUr
 /** Compensation peer groups: a clean list per group, and the proxy's own section beneath. */
 function PeersSection({ peers, proxyUrl }: { peers?: PeerGroups; proxyUrl: string }) {
   const [showDoc, setShowDoc] = useState(false);
-  if (!peers) return <p className="text-sm text-gray-600">Compensation peers: not read for this result yet — press Refresh to read them.</p>;
+  if (!peers) return <p className="text-sm text-gray-600">Compensation peers: not read for this result yet.</p>;
   if (!peers.found) return <p className="text-sm text-gray-600">No compensation peer group was found in this proxy.</p>;
   return (
     <div className="space-y-5">
@@ -635,31 +745,31 @@ function PeersSection({ peers, proxyUrl }: { peers?: PeerGroups; proxyUrl: strin
       {peers.groups.map((g) => (
         <div key={g.name} className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <h3 className="font-semibold">{g.name}</h3>
+            <h3 className="font-semibold text-gray-900">{titleCase(g.name)}</h3>
             <Pill>{g.companies.length} companies</Pill>
             {g.partial && (
               <Pill tone="amber">The proxy says {g.stated_count} companies; {g.companies.length} are printed as text — the rest may be in an image</Pill>
             )}
           </div>
-          {g.purpose && <p className="px-4 pt-3 text-sm text-gray-600">Used for: {g.purpose}</p>}
+          {g.purpose && <p className="px-4 pt-3 text-sm text-gray-700">Used for: {g.purpose}</p>}
           <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
             {g.companies.map((c) => (
-              <div key={c.name} className="text-sm py-1 border-b border-gray-100">
+              <div key={c.name} className="text-sm text-gray-900 py-1 border-b border-gray-100">
                 {c.name}
-                {c.ticker && <span className="ml-2 text-xs font-mono text-[#931638]">{c.exchange ? `${c.exchange}: ` : ""}{c.ticker}</span>}
+                {c.ticker && <span className="ml-2 text-xs font-mono text-gray-600">{c.exchange ? `${c.exchange}: ` : ""}{c.ticker}</span>}
               </div>
             ))}
           </div>
           {(!!g.added.length || !!g.removed.length) && (
-            <div className="px-4 pb-3 text-xs space-y-1">
-              {!!g.added.length && <div><span className="font-semibold text-green-700">Added this year: </span>{g.added.join("; ")}</div>}
-              {!!g.removed.length && <div><span className="font-semibold text-amber-700">Removed this year: </span>{g.removed.join("; ")}</div>}
+            <div className="px-4 pb-3 text-xs text-gray-900 space-y-1">
+              {!!g.added.length && <div><span className="font-semibold">Added this year: </span>{g.added.join("; ")}</div>}
+              {!!g.removed.length && <div><span className="font-semibold">Removed this year: </span>{g.removed.join("; ")}</div>}
             </div>
           )}
         </div>
       ))}
       {!!peers.excluded.length && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-600">
           Not peer lists, so left out: {peers.excluded.map((e) => `${e.name}${e.reason ? ` (${e.reason})` : ""}`).join("; ")}
         </p>
       )}
@@ -675,65 +785,75 @@ function PeersSection({ peers, proxyUrl }: { peers?: PeerGroups; proxyUrl: strin
   );
 }
 
-function StatCard({ label, value, sub, tone = "gray" }: { label: string; value: React.ReactNode; sub?: string; tone?: "gray" | "green" | "amber" | "brand" }) {
-  const tones = { gray: "text-gray-900", green: "text-green-700", amber: "text-amber-700", brand: "text-[#931638]" };
+function StatCard({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="border border-gray-200 rounded-lg px-4 py-3">
-      <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
-      <div className={`text-2xl font-semibold mt-1 ${tones[tone]}`}>{value}</div>
-      {sub && <div className="text-xs text-gray-500 mt-0.5">{sub}</div>}
+      <div className="text-xs uppercase tracking-wide font-semibold text-gray-700">{label}</div>
+      <div className="text-2xl font-semibold mt-1 text-gray-900">{value}</div>
+      {sub && <div className="text-xs text-gray-600 mt-0.5">{sub}</div>}
     </div>
   );
 }
 
-const fmtDate = (iso: string | null, note?: string | null) => iso || note || "—";
+/** An ISO date as "April 30, 2024"; with no date, the note as the source gives it. */
+const fmtDate = (iso: string | null, note?: string | null) => (iso ? usDate(iso) : note || "—");
+
+/** Newest first; a join or departure without its own date sorts by its source's filing date. */
+const byNewest = (a: RefreshEvent, b: RefreshEvent) =>
+  (b.date || b.source.filing_date || "").localeCompare(a.date || a.source.filing_date || "");
+
+/** "Annual meeting 2026": the meeting's year, or the 8-K's filing year when it prints no meeting date. */
+const meetingLabel = (t: Refreshment["timeline"][number]) =>
+  `Annual meeting ${(t.meeting_date_known === false ? t.filing_date : t.meeting_iso).slice(0, 4)}`;
 
 /** How the board changed over the period: totals, each annual meeting's slate, every join and departure with its source. */
 function RefreshmentSection({ r }: { r?: Refreshment }) {
-  if (!r) return <p className="text-sm text-gray-600">Board refreshment: not read for this result yet — press Refresh to read it.</p>;
-  if (r.note && !r.timeline.length) return <p className="text-sm text-gray-600">{r.note}</p>;
+  if (!r) return <p className="text-sm text-gray-700">Board refreshment: not read for this result yet.</p>;
+  if (r.note && !r.timeline.length) return <p className="text-sm text-gray-700">{r.note}</p>;
   const net = r.net_change ?? 0;
+  // the delta is against the meeting before; shown newest first
+  const oldestFirst = [...r.timeline].sort((a, b) => a.meeting_iso.localeCompare(b.meeting_iso));
+  const rows = oldestFirst.map((t, i) => ({ t, prev: i > 0 ? oldestFirst[i - 1] : null })).reverse();
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-600">
-        Board changes since {r.window_start}, from SEC filings only: 8-K Item 5.02 (appointments and departures) and each annual
+      <p className="text-sm text-gray-700">
+        Board changes since {usDate(r.window_start)}, from SEC filings only: 8-K Item 5.02 (appointments and departures) and each annual
         meeting's 8-K Item 5.07 (the slate of directors elected). A joining or departure no 5.02 announced is found by comparing one
         meeting's slate with the next.
       </p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Directors joined" value={r.joined_count ?? 0} tone="green" />
-        <StatCard label="Directors departed" value={r.departed_count ?? 0} tone="amber" />
-        <StatCard label="Board size" value={`${r.board_size_start ?? "—"} → ${r.board_size_now ?? "—"}`}
-                  sub={r.board_size_start_date ? `at the ${r.board_size_start_date} meeting → now` : undefined} />
-        <StatCard label="Net change" value={`${net > 0 ? "+" : ""}${net}`} tone={net > 0 ? "green" : net < 0 ? "amber" : "gray"} />
+        <StatCard label="Directors Joined" value={r.joined_count ?? 0} />
+        <StatCard label="Directors Departed" value={r.departed_count ?? 0} />
+        <StatCard label="Board Size" value={`${r.board_size_start ?? "—"} → ${r.board_size_now ?? "—"}`}
+                  sub={r.board_size_start_date ? `at the ${usDate(r.board_size_start_date)} meeting → now` : undefined} />
+        <StatCard label="Net Change" value={`${net > 0 ? "+" : ""}${net}`} />
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">Annual board composition</h3>
+        <h3 className="text-sm font-semibold text-gray-800 mb-2">Annual Board Composition</h3>
         <div className="border border-gray-200 rounded-lg overflow-x-auto">
-          <table className="text-sm w-full">
-            <thead className="bg-gray-50 text-left text-xs text-gray-600">
-              <tr><th className="p-2">Annual meeting</th><th className="p-2">Directors elected</th><th className="p-2">New on the slate</th><th className="p-2">No longer on the slate</th><th className="p-2">Source</th></tr>
+          <table className="text-sm w-full text-gray-900">
+            <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-700">
+              <tr><th className="p-2">Annual Meeting</th><th className="p-2">Directors Elected</th><th className="p-2">New on the Slate</th><th className="p-2">No Longer on the Slate</th><th className="p-2">Source</th></tr>
             </thead>
             <tbody>
-              {r.timeline.map((t, i) => (
-                <tr key={i} className="border-t border-gray-100 align-top">
-                  <td className="p-2 whitespace-nowrap">
-                    {t.meeting_date_known === false
-                      ? <span className="text-gray-500" title="The 8-K prints no usable meeting date; it is not replaced by the filing date">date not printed (8-K filed {t.filing_date})</span>
-                      : (t.meeting_date || t.meeting_iso)}
+              {rows.map(({ t, prev }) => (
+                <tr key={t.url || t.meeting_iso} className="border-t border-gray-100 align-top">
+                  <td className="p-2 whitespace-nowrap"
+                      title={t.meeting_date_known === false ? "The 8-K prints no meeting date: the year is the 8-K's filing year" : undefined}>
+                    {meetingLabel(t)}
                   </td>
                   <td className="p-2">
                     <span className="font-semibold">{t.elected_count}</span>
-                    {i > 0 && t.elected_count !== r.timeline[i - 1].elected_count && (
-                      <span className={`ml-2 text-xs ${t.elected_count > r.timeline[i - 1].elected_count ? "text-green-700" : "text-amber-700"}`}>
-                        ({t.elected_count > r.timeline[i - 1].elected_count ? "+" : ""}{t.elected_count - r.timeline[i - 1].elected_count})
+                    {prev && t.elected_count !== prev.elected_count && (
+                      <span className="ml-2 text-xs text-gray-700">
+                        ({t.elected_count > prev.elected_count ? "+" : ""}{t.elected_count - prev.elected_count})
                       </span>
                     )}
                   </td>
-                  <td className="p-2 text-green-800">{i === 0 ? <span className="text-gray-400">start of the period</span> : t.new_on_slate.join("; ") || "—"}</td>
-                  <td className="p-2 text-amber-800">{i === 0 ? "" : t.left_slate.join("; ") || "—"}</td>
-                  <td className="p-2 whitespace-nowrap"><SourceLink href={t.url}>8-K Item 5.07, {t.filing_date}</SourceLink></td>
+                  <td className="p-2">{!prev ? <span className="text-gray-600">start of the period</span> : t.new_on_slate.join("; ") || <span className="text-gray-400">—</span>}</td>
+                  <td className="p-2">{!prev ? "" : t.left_slate.join("; ") || <span className="text-gray-400">—</span>}</td>
+                  <td className="p-2 whitespace-nowrap"><SourceLink href={t.url}>8-K Item 5.07, {usDate(t.filing_date)}</SourceLink></td>
                 </tr>
               ))}
             </tbody>
@@ -742,14 +862,14 @@ function RefreshmentSection({ r }: { r?: Refreshment }) {
       </div>
 
       {(["joined", "departed"] as const).map((kind) => {
-        const list = kind === "joined" ? r.joined : r.departed;
+        const list = [...(kind === "joined" ? r.joined : r.departed)].sort(byNewest);
         return (
           <div key={kind}>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">{kind === "joined" ? `Directors who joined (${list.length})` : `Directors who departed (${list.length})`}</h3>
-            {!list.length ? <p className="text-sm text-gray-500">None in the period.</p> : (
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">{kind === "joined" ? `Directors Who Joined (${list.length})` : `Directors Who Departed (${list.length})`}</h3>
+            {!list.length ? <p className="text-sm text-gray-700">None in the period.</p> : (
               <div className="border border-gray-200 rounded-lg overflow-x-auto">
-                <table className="text-sm w-full">
-                  <thead className="bg-gray-50 text-left text-xs text-gray-600">
+                <table className="text-sm w-full text-gray-900">
+                  <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-700">
                     <tr><th className="p-2">Director</th><th className="p-2">{kind === "joined" ? "Joined" : "Departed"}</th><th className="p-2">How</th><th className="p-2">Source</th></tr>
                   </thead>
                   <tbody>
@@ -757,7 +877,7 @@ function RefreshmentSection({ r }: { r?: Refreshment }) {
                       <tr key={i} className="border-t border-gray-100 align-top">
                         <td className="p-2">
                           <span className="font-medium">{e.name}</span>
-                          {kind === "joined" && e.on_board_now === false && <span className="ml-2 text-xs text-gray-500">(has since left)</span>}
+                          {kind === "joined" && e.on_board_now === false && <span className="ml-2 text-xs text-gray-600">(has since left)</span>}
                         </td>
                         <td className="p-2 whitespace-nowrap">{fmtDate(e.date, e.date_note)}</td>
                         <td className="p-2">{e.how}</td>
@@ -775,49 +895,70 @@ function RefreshmentSection({ r }: { r?: Refreshment }) {
   );
 }
 
-const SUPPORT_TONE: Record<string, string> = {
-  low: "bg-red-50 text-red-700 border border-red-200",
-  watch: "bg-amber-50 text-amber-800 border border-amber-200",
-  ok: "bg-green-50 text-green-700 border border-green-200",
-  info: "bg-gray-100 text-gray-700",
-};
+/** Support at each of the last three annual meetings, per nominee and per proposal. */
+function YearOnYearTable({ yoy }: { yoy: YearOnYear }) {
+  const table = (label: string, key: "nominee" | "proposal", rows: YearRow[]) => !!rows.length && (
+    <div className="border border-gray-200 rounded-lg overflow-x-auto">
+      <table className="text-sm w-full text-gray-900">
+        <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-700">
+          <tr><th className="p-2">{label}</th>{yoy.years.map((y) => <th key={y} className="p-2 w-28">{y}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-t border-gray-100 align-top">
+              <td className="p-2 font-medium">{r[key] ?? ""}</td>
+              {yoy.years.map((y) => <td key={y} className="p-2 whitespace-nowrap">{supportText(r[y])}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+  return (
+    <div className="space-y-3">
+      <h3 className="font-semibold text-base text-gray-900">Year-on-Year Support</h3>
+      {table("Nominee", "nominee", yoy.nominees)}
+      {table("Proposal", "proposal", yoy.proposals)}
+    </div>
+  );
+}
 
 /** The annual meeting's results from 8-K Item 5.07, every count checked against the filing. */
 function VotingResultsSection({ voting, cik }: { voting?: VotingResults; cik: string }) {
   const [showDoc, setShowDoc] = useState(false);
-  if (!voting) return <p className="text-sm text-gray-600">Voting results: not read for this result yet — press Refresh to read them.</p>;
+  if (!voting) return <p className="text-sm text-gray-700">Voting results: not read for this result yet.</p>;
   if (!voting.found) return (
-    <div><h3 className="font-semibold text-base mb-1">Voting results</h3><p className="text-sm text-gray-600">{voting.note}</p></div>
+    <div><h3 className="font-semibold text-base text-gray-900 mb-1">Voting Results</h3><p className="text-sm text-gray-700">{voting.note}</p></div>
   );
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="font-semibold text-base">Voting results{voting.meeting_date ? ` — annual meeting of ${voting.meeting_date}` : ""}</h3>
+        <h3 className="font-semibold text-base text-gray-900">Voting Results{voting.meeting_date ? ` — Annual Meeting of ${usDate(voting.meeting_date)}` : ""}</h3>
         <span className="ml-auto flex gap-4">
-          <SourceLink href={voting.url}>{voting.form} filed {voting.filing_date} (Item 5.07) on SEC</SourceLink>
+          <SourceLink href={voting.url}>{voting.form} filed {usDate(voting.filing_date)} (Item 5.07) on SEC</SourceLink>
           {voting.primary_document && voting.accession &&
             <SourceLink href={documentViewerUrl(cik, voting.accession, voting.primary_document)}>Stored copy</SourceLink>}
         </span>
       </div>
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-gray-600">
         Counts are copied from the 8-K and each row is checked against its place in the filing. Support is calculated here as {voting.support_formula};
-        the 8-K itself prints counts only. Below 80% is marked red, below 90% amber; shareholder proposals are not marked.
+        the 8-K itself prints counts only.
       </p>
-      {voting.note && <p className="text-sm text-amber-700">{voting.note}</p>}
+      {voting.note && <p className="text-sm text-gray-800">{voting.note}</p>}
       {(voting.proposals || []).map((p, i) => (
         <div key={i} className="border border-gray-200 rounded-lg overflow-x-auto">
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-gray-50 border-b border-gray-200">
-            <span className="font-medium text-sm">{p.number ? `${p.number.replace(/[.:)\s]+$/, "")}. ` : ""}{p.title}</span>
+            <span className="font-medium text-sm text-gray-900">{p.number ? `${p.number.replace(/[.:)\s]+$/, "")}. ` : ""}{p.title}</span>
             <Pill>{p.kind.replace(/_/g, " ")}</Pill>
-            {p.outcome && <Pill tone={/not|fail|reject/i.test(p.outcome) ? "amber" : "green"}>{p.outcome}</Pill>}
+            {p.outcome && <Pill>{p.outcome}</Pill>}
           </div>
-          <table className="text-sm w-full">
-            <thead className="text-xs text-gray-500 text-right">
+          <table className="text-sm w-full text-gray-900">
+            <thead className="text-xs font-semibold text-gray-700 text-right">
               <tr>
                 <th className="p-2 text-left">{p.kind === "director_election" ? "Nominee" : ""}</th>
                 <th className="p-2">For</th><th className="p-2">Against</th><th className="p-2">Abstain</th>
                 {p.rows.some((r) => r.withheld) && <th className="p-2">Withheld</th>}
-                <th className="p-2">Broker non-votes</th><th className="p-2">Support</th>
+                <th className="p-2">Broker Non-Votes</th><th className="p-2">Support</th>
               </tr>
             </thead>
             <tbody>
@@ -833,8 +974,8 @@ function VotingResultsSection({ voting, cik }: { voting?: VotingResults; cik: st
                   <td className="p-2 font-mono">{r.broker_non_votes ?? "—"}</td>
                   <td className="p-2">
                     {r.support
-                      ? <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${SUPPORT_TONE[r.support.level]}`} title={r.support.formula}>{r.support.percent.toFixed(2)}%</span>
-                      : "—"}
+                      ? <span title={r.support.formula}>{r.support.percent.toFixed(2)}%</span>
+                      : <span className="text-gray-400">—</span>}
                   </td>
                 </tr>
               ))}
@@ -857,15 +998,15 @@ function VotingResultsSection({ voting, cik }: { voting?: VotingResults; cik: st
 /** One whole section of the proxy, shown as the document shows it. */
 function ProxySectionView({ section, proxyUrl, fallbackTitle }: { section?: ProxySection; proxyUrl: string; fallbackTitle: string }) {
   if (!section) {
-    return <p className="text-sm text-gray-600">{fallbackTitle}: not read for this result yet — press Refresh to read it.</p>;
+    return <p className="text-sm text-gray-700">{fallbackTitle}: not read for this result yet.</p>;
   }
   if (!section.found || !section.html) {
-    return <p className="text-sm text-gray-600">{section.title}: this proxy has no such section, or it could not be located.</p>;
+    return <p className="text-sm text-gray-700">{section.title}: this proxy has no such section, or it could not be located.</p>;
   }
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="font-semibold text-base">{section.heading || section.title}</h3>
+        <h3 className="font-semibold text-base text-gray-900">{titleCase(section.heading || section.title)}</h3>
         <span className="ml-auto"><SourceLink href={proxyUrl}>Source: proxy statement (SEC)</SourceLink></span>
       </div>
       <div className="border border-gray-200 rounded-lg"><DocFrame html={section.html} title={section.title} /></div>
@@ -877,27 +1018,22 @@ function MatrixSection({ result }: { result: BoardResult }) {
   const [view, setView] = useState<"document" | "table">("document");
   const ms = result.proxy.matrices;
   if (!ms.length)
-    return <p className="text-sm text-gray-600">No per-director skills matrix was found in this proxy, as a table or as a picture that could be read and checked. Each director's skills are in their profile.</p>;
+    return <p className="text-sm text-gray-700">No per-director skills matrix was found in this proxy, as a table or as a picture that could be read and checked. Each director's skills are in their profile.</p>;
   return (
     <div className="space-y-6">
-      <div className="flex gap-2">
-        {(["document", "table"] as const).map((v) => (
-          <button key={v} onClick={() => setView(v)}
-                  className={`px-3 py-1.5 rounded text-sm ${view === v ? "bg-[#931638] text-white" : "bg-gray-100 text-gray-700"}`}>
-            {v === "document" ? "As in proxy" : "Extracted data"}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <BoxedTabs<"document" | "table"> tabs={[["document", "As in Proxy"], ["table", "Extracted Data"]]} value={view} onChange={setView} />
         <span className="ml-auto"><SourceLink href={result.proxy.url}>Source: proxy statement (SEC)</SourceLink></span>
       </div>
       {ms.map((m, i) => view === "document" ? (
         <div key={i} className="border border-gray-200 rounded-lg"><DocFrame html={m.html} title={`Skills matrix ${i + 1}`} /></div>
       ) : (
         <div key={i} className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="text-xs w-full">
-            <thead>
+          <table className="text-xs w-full text-gray-900">
+            <thead className="text-gray-700">
               <tr className="bg-gray-50">
-                <th className="text-left p-2 sticky left-0 bg-gray-50">Skill</th>
-                {m.directors.map((n) => <th key={n} className="p-2 font-medium whitespace-nowrap">{n}</th>)}
+                <th className="text-left p-2 sticky left-0 bg-gray-50 font-semibold">Skill</th>
+                {m.directors.map((n) => <th key={n} className="p-2 font-semibold whitespace-nowrap">{n}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -905,7 +1041,7 @@ function MatrixSection({ result }: { result: BoardResult }) {
                 <tr key={r.label_full} className="border-t border-gray-100">
                   <td className="p-2 sticky left-0 bg-white" title={r.label_full}>{r.label}</td>
                   {m.directors.map((n) => (
-                    <td key={n} className="p-2 text-center">{r.directors.includes(n) ? <span style={{ color: BRAND }}>✓</span> : ""}</td>
+                    <td key={n} className="p-2 text-center">{r.directors.includes(n) ? "✓" : ""}</td>
                   ))}
                 </tr>
               ))}
@@ -917,64 +1053,59 @@ function MatrixSection({ result }: { result: BoardResult }) {
   );
 }
 
-function WebsiteMemberCard({ m, siteUrl, websiteOnly }: {
-  m: BoardResult["website"]["members"][number]; siteUrl: string | null; websiteOnly: boolean;
+/** A website profile card; like a proxy profile, its whole header row opens and closes it. */
+function WebsiteMemberCard({ m, websiteOnly, open, onToggle }: {
+  m: BoardResult["website"]["members"][number]; websiteOnly: boolean; open: boolean; onToggle: () => void;
 }) {
-  // A director who is not in the proxy has no other profile on this page: shown open.
-  const [open, setOpen] = useState(websiteOnly);
+  const Chevron = open ? ChevronDown : ChevronRight;
+  const header = (
+    <>
+      {m.bio_html && <Chevron size={16} className="text-gray-700 shrink-0" />}
+      <span className="font-semibold text-gray-900">{m.name}</span>
+      {m.title && <Pill>{m.title}</Pill>}
+      {websiteOnly && <Pill>Website Only — Not in the Proxy</Pill>}
+      {!!m.committees.length && <span className="text-xs text-gray-700">Committees: {m.committees.join("; ")}</span>}
+      {!m.bio_html && <span className="ml-auto text-xs text-gray-600">No profile on this page</span>}
+    </>
+  );
+  const headerClass = "w-full flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200 text-left";
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-        <span className="font-semibold">{m.name}</span>
-        {m.title && <Pill>{m.title}</Pill>}
-        {websiteOnly && <Pill tone="brand">Website only — not in the proxy</Pill>}
-        {!!m.committees.length && <span className="text-xs text-gray-600">Committees: {m.committees.join("; ")}</span>}
-        {m.bio_html
-          ? <button onClick={() => setOpen(!open)} className="ml-auto text-xs text-gray-600 hover:text-black">
-              {open ? "Hide profile" : "Show profile as on website"}
-            </button>
-          : <span className="ml-auto text-xs text-gray-400">No profile on this page</span>}
-      </div>
+      {m.bio_html
+        ? <button type="button" onClick={onToggle} aria-expanded={open} className={`${headerClass} hover:bg-gray-100`}>{header}</button>
+        : <div className={headerClass}>{header}</div>}
+      {/* the section's "Company Board Page" link is the source: not repeated under each profile */}
       {open && m.bio_html && <DocFrame html={m.bio_html} title={m.name} extraCss={WEBSITE_PROFILE_CSS} />}
-      {open && m.bio_html && <div className="px-4 py-2 border-t border-gray-100"><SourceLink href={siteUrl}>Source: company website</SourceLink></div>}
     </div>
   );
 }
 
-function WebsiteSection({ result }: { result: BoardResult }) {
+/** The company website's board compared with the proxy's; shown inside Current Board, whose
+ *  Expand all / Collapse all opens these cards. */
+function WebsiteSection({ result, open, onToggle }: { result: BoardResult; open: Set<string>; onToggle: (name: string) => void }) {
   const w = result.website;
-  const col = (title: string, names: string[], tone: "green" | "amber" | "brand") => (
-    <div className="border border-gray-200 rounded-lg p-3">
-      <div className="flex items-center gap-2 mb-2"><Pill tone={tone}>{names.length}</Pill><span className="text-sm font-medium">{title}</span></div>
-      <ul className="text-sm space-y-1">{names.map((n) => <li key={n}>{n}</li>)}{!names.length && <li className="text-gray-400">None</li>}</ul>
-    </div>
-  );
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        {w.url ? <SourceLink href={w.url}>Company board page</SourceLink> : <span className="text-gray-500">No board page found</span>}
-        {w.url && !!w.members.length && (w.verified ? <Pill tone="green">Read from the page</Pill> : <Pill tone="amber">Not verified against the page</Pill>)}
+        {w.url ? <SourceLink href={w.url}>Company Board Page</SourceLink> : <span className="text-gray-700">No Board Page Found</span>}
+        {w.url && !!w.members.length && (w.verified ? <Pill>Read From the Page</Pill> : <Pill>Not Verified Against the Page</Pill>)}
       </div>
-      {w.note && <p className="text-sm text-amber-700">{w.note}</p>}
-      {!w.members.length && !w.note && <p className="text-sm text-amber-700">No board members could be read from the company's website.</p>}
-      {w.compare && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {col("On both the proxy and the website", w.compare.both, "green")}
-          {col("In the proxy only (left since?)", w.compare.proxy_only, "amber")}
-          {col("On the website only (joined since the proxy?)", w.compare.website_only, "brand")}
-        </div>
-      )}
+      {w.note && <p className="text-sm text-gray-800">{w.note}</p>}
+      {!w.members.length && !w.note && <p className="text-sm text-gray-800">No board members could be read from the company's website.</p>}
+      {/* Hidden for now: the three proxy-vs-website name columns (w.compare). A website-only
+          director is still marked on their profile card. */}
       {!!w.members.length && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">Profiles on the company website</h3>
+          <h3 className="text-sm font-semibold text-gray-800">Profiles on the Company Website</h3>
           {w.members.map((m) => (
-            <WebsiteMemberCard key={m.name} m={m} siteUrl={w.url}
-                               websiteOnly={!!w.compare?.website_only.includes(m.name)} />
+            <WebsiteMemberCard key={m.name} m={m}
+                               websiteOnly={!!w.compare?.website_only.includes(m.name)}
+                               open={open.has(m.name)} onToggle={() => onToggle(m.name)} />
           ))}
         </div>
       )}
       {!!w.attempts.length && (
-        <details className="text-xs text-gray-500">
+        <details className="text-xs text-gray-600">
           <summary className="cursor-pointer">Pages tried ({w.attempts.length})</summary>
           <ul className="mt-2 space-y-1">{w.attempts.map((a) => (
             <li key={a.url}><a href={a.url} target="_blank" rel="noopener noreferrer" className="hover:underline">{a.url}</a>
@@ -1081,67 +1212,17 @@ function AppointmentsSection({ result }: { result: BoardResult }) {
   );
 }
 
-/** The company's name without EDGAR's filing tags: "WELLS FARGO & COMPANY/MN" -> "WELLS FARGO &
- *  COMPANY" (the state of incorporation), "/DE/", "/NEW/" likewise. */
-const companyDisplayName = (name: string) => name.replace(/(\s*\/[A-Z]{2,4}\/?)+\s*$/, "").trim();
-
-/** A quiet "⋯" button opening the list of companies that have Board Intel data; picking one
- *  switches to it. The list is fetched on first open. */
-export function SavedCompaniesMenu({ isCurrent, onPick }: { isCurrent: (c: CompanyHit) => boolean; onPick: (c: CompanyHit) => void }) {
-  const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<CompanyHit[] | null>(null);
-  const [failed, setFailed] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open || items) return;
-    getCompaniesWithResults().then(setItems).catch(() => setFailed(true));
-  }, [open, items]);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button onClick={() => setOpen(!open)} aria-label="Companies with Board Intel data" title="Companies with Board Intel data"
-              className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-50">
-        <MoreHorizontal size={18} />
-      </button>
-      {open && (
-        <div className="absolute right-0 mt-1 w-80 max-h-96 overflow-auto bg-white border border-gray-200 rounded-lg shadow-sm z-20">
-          <div className="px-3 py-2 text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100">Companies with Board Intel data</div>
-          {!items && !failed && <div className="px-3 py-3 text-sm text-gray-500 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Loading…</div>}
-          {failed && <div className="px-3 py-3 text-sm text-gray-500">The list could not be loaded.</div>}
-          {items && (
-            <ul>{items.map((c) => (
-              <li key={c.cik}>
-                <button onClick={() => { setOpen(false); if (!isCurrent(c)) onPick(c); }}
-                        className={`w-full text-left px-3 py-2 text-sm flex gap-3 hover:bg-gray-50 ${isCurrent(c) ? "text-gray-400" : "text-gray-700"}`}>
-                  <span className="flex-1">{companyDisplayName(c.name)}</span>
-                  <span className="font-mono text-xs text-gray-400">{c.ticker}</span>
-                </button>
-              </li>
-            ))}</ul>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── One company's board intelligence ─────────────────────────────────────────────────────
 
-/** Loads a company's saved result. A run (it costs money) starts only when the user presses Generate or
- *  Refresh -- never by opening a company; autoStart stays for a caller that wants it.
- *  Used by the standalone page and by the dashboard's Board Intel tab. */
-export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
+type MeetingView = "voting" | "proposals";
+
+/** Loads a company's saved result. A run (it costs money) starts only when the user presses
+ *  Generate -- never by opening a company; autoStart stays for a caller that wants it.
+ *  Used by the standalone page and by the dashboard's Board Intelligence tab. */
+export function BoardIntelPanel({ company, autoStart, companyId }: {
   company: CompanyHit; autoStart: boolean;
-  /** shows the "⋯" menu of companies with saved data; called with the one picked */
-  onPickCompany?: (c: CompanyHit) => void;
+  /** the dashboard's own company id: adds the year-on-year vote support (absent on the standalone page) */
+  companyId?: number | string;
 }) {
   const [result, setResult] = useState<BoardResult | null>(null);
   const [run, setRun] = useState<RunStatus | null>(null);
@@ -1149,7 +1230,9 @@ export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
   // no saved result and no run going: offer Generate
   const [missing, setMissing] = useState(false);
   const [tab, setTab] = useState<Tab>("board");
+  const [meetingView, setMeetingView] = useState<MeetingView>("voting");
   const [loading, setLoading] = useState(true);
+  const { yoy, loading: yoyLoading } = useYearOnYear(companyId);
   const pollRef = useRef<number | null>(null);
   // The latest company wins: a slower reply for a company shown earlier is ignored.
   const selectionRef = useRef(0);
@@ -1169,6 +1252,7 @@ export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
         if (s.state === "done") {
           stopPolling();
           const r = await getResult(cik);
+          cacheResult(cik, r);
           if (selection === selectionRef.current) setResult(r);
         }
         if (s.state === "failed") { stopPolling(); setError(s.error || "The run failed."); }
@@ -1192,10 +1276,14 @@ export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
   useEffect(() => {
     stopPolling();
     const selection = ++selectionRef.current;
-    setResult(null); setRun(null); setError(null); setMissing(false); setTab("board"); setLoading(true);
+    setRun(null); setError(null); setMissing(false); setTab("board"); setMeetingView("voting");
+    const cached = cachedResult(company.cik);
+    if (cached) { setResult(cached); setLoading(false); return; }
+    setResult(null); setLoading(true);
     (async () => {
       try {
         const r = await getResult(company.cik);
+        cacheResult(company.cik, r);
         if (selection === selectionRef.current) setResult(r);
       } catch (e) {
         if (selection !== selectionRef.current) return;
@@ -1226,7 +1314,7 @@ export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
           <Loader2 size={20} className="animate-spin" style={{ color: BRAND }} />
           <div>
             <div className="text-sm font-medium">Please wait — loading {company.name}…</div>
-            <div className="text-xs text-gray-500">Fetching the saved board data.</div>
+            <div className="text-xs text-gray-600">Fetching the saved board data.</div>
           </div>
         </div>
       )}
@@ -1235,7 +1323,7 @@ export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
         <div className="border border-gray-200 rounded-lg p-6 flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[260px]">
             <div className="text-sm font-medium">No board intelligence has been generated for {company.name} yet.</div>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-gray-600 mt-1">
               Generating reads the latest proxy statement, every 8-K Item 5.02 of the last five years and the annual
               meeting results from SEC. It takes a few minutes.
             </div>
@@ -1250,62 +1338,37 @@ export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
       {running && (
         <div className="border border-gray-200 rounded-lg p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium"><Loader2 size={16} className="animate-spin" style={{ color: BRAND }} />{run?.stage || "Working"}…</div>
-          <p className="text-xs text-gray-500">Reading the proxy, every 8-K Item 5.02 of the last five years, and the company's website takes a few minutes.</p>
-          <ul className="text-xs text-gray-500 space-y-0.5">{(run?.stages || []).map((s, i) => <li key={i}>{s.at}s — {s.stage}</li>)}</ul>
+          <p className="text-xs text-gray-600">Reading the proxy, every 8-K Item 5.02 of the last five years, and the company's website takes a few minutes.</p>
+          <ul className="text-xs text-gray-600 space-y-0.5">{(run?.stages || []).map((s, i) => <li key={i}>{s.at}s — {s.stage}</li>)}</ul>
         </div>
       )}
 
       {result && (
         <>
-          <div className="flex flex-wrap items-start gap-4 border-b border-gray-200 pb-4">
-            <div className="flex-1 min-w-[280px]">
-              <h1 className="text-xl font-semibold">{companyDisplayName(result.company.name)}</h1>
-              <div className="flex flex-wrap gap-4 mt-1">
-                <SourceLink href={result.proxy.url}>Proxy statement filed {result.proxy.filing_date}</SourceLink>
-                <SourceLink href={result.company.edgar_url}>EDGAR filings</SourceLink>
-                {result.website?.url && <SourceLink href={result.website.url}>Board page on website</SourceLink>}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button disabled={running} onClick={() => generate(result.company.cik)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white disabled:opacity-50" style={{ background: BRAND }}>
-                <RefreshCw size={14} /> Refresh
-              </button>
-              {onPickCompany && <SavedCompaniesMenu isCurrent={(c) => c.cik === result.company.cik} onPick={onPickCompany} />}
-            </div>
-          </div>
-
-          <div>
-            <div className="space-y-1 text-sm text-gray-700">
-              {/* one sentence can answer two questions (size and nominees): quoted once */}
-              {Array.from(new Set(Object.values(result.proxy.statements).filter(Boolean) as string[])).map((v) => (
-                <blockquote key={v} className="border-l-2 border-[#931638] pl-3 italic">“{v}”</blockquote>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-1 border-b border-gray-200">
+          {/* No header block: the dashboard's top bar already names the company, and the proxy,
+              EDGAR and board-page links live with the sections that use them. */}
+          <div className="flex flex-wrap items-end gap-1 border-b border-gray-200">
             {([
               ["board", `Current Board (${result.proxy.directors.length})`, Users],
-              ["nominees", "Board committees", Users],
-              ["matrix", "Skills matrix", FileText],
-              ["peers", "Compensation peers", Users],
-              ["refresh", "Board refreshment", RefreshCw],
-              // Website comparison: shown only for a result that carries it. The pipeline's own web
-              // step stays off (cost); the saved companies had their board pages read by us.
-              ...(result.website?.members?.length ? [["website", "Website comparison", Globe] as const] : []),
-              ["filings", `8-K 5.02 since proxy (${result.filings_502.items.length})`, FileText],
-              ["appointments", `Appointments, 5 years (${result.appointments.items.length})`, Users],
-              ["meeting", "Annual meeting", FileText],
+              ["meeting", "Annual Meeting", FileText],
+              ["nominees", "Board Committees", Users],
+              ["matrix", "Skills Matrix", FileText],
+              ["peers", "Compensation Peers", Users],
+              ["refresh", "Board Refreshment", RefreshCw],
+              // Hidden for now: "Website comparison" (now a sub-tab of Current Board),
+              // "8-K 5.02 since proxy" and "Appointments, 5 years".
+              // ["website", "Website comparison", Globe],
+              // ["filings", `8-K 5.02 since proxy (${result.filings_502.items.length})`, FileText],
+              // ["appointments", `Appointments, 5 years (${result.appointments.items.length})`, Users],
             ] as const).map(([key, label, Icon]) => (
               <button key={key} onClick={() => setTab(key as Tab)}
-                      className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 -mb-px ${tab === key ? "border-[#931638] text-[#931638] font-medium" : "border-transparent text-gray-600 hover:text-black"}`}>
+                      className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 -mb-px ${tab === key ? "border-[#931638] text-[#931638] font-medium" : "border-transparent text-gray-700 hover:text-black"}`}>
                 <Icon size={15} />{label}
               </button>
             ))}
           </div>
 
-          {tab === "board" && <BoardTab result={result} />}
+          {tab === "board" && <BoardTab key={result.company.cik} result={result} />}
           {tab === "nominees" && (
             <div className="space-y-8">
               <CommitteesSection data={result.proxy.committees} proxyUrl={result.proxy.url} />
@@ -1315,16 +1378,33 @@ export function BoardIntelPanel({ company, autoStart, onPickCompany }: {
           {tab === "matrix" && <MatrixSection result={result} />}
           {tab === "peers" && <PeersSection peers={result.proxy.peers} proxyUrl={result.proxy.url} />}
           {tab === "refresh" && <RefreshmentSection r={result.refreshment} />}
-          {tab === "website" && <WebsiteSection result={result} />}
+          {/* hidden for now: no tab opens these (see the tab row) */}
           {tab === "filings" && <FilingsSection result={result} />}
           {tab === "appointments" && <AppointmentsSection result={result} />}
           {tab === "meeting" && (
-            <div className="space-y-8">
-              <VotingResultsSection voting={result.voting} cik={result.company.cik} />
-              <ProxySectionView section={result.proxy.sections?.proposals} proxyUrl={result.proxy.url}
-                                fallbackTitle="Shareholder proposals for next year's annual meeting" />
-              <ProxySectionView section={result.proxy.sections?.qa} proxyUrl={result.proxy.url}
-                                fallbackTitle="Questions and answers about the annual meeting and voting" />
+            <div className="space-y-6">
+              <BoxedTabs<MeetingView>
+                tabs={[["voting", "Voting"], ["proposals", "Stockholder Proposals & Director Nominees"]]}
+                value={meetingView} onChange={setMeetingView} />
+              {meetingView === "voting" && (
+                <div className="space-y-8">
+                  {yoyLoading && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700" role="status">
+                      <Loader2 size={16} className="animate-spin" style={{ color: BRAND }} /> Loading year-on-year support…
+                    </div>
+                  )}
+                  {yoy && <YearOnYearTable yoy={yoy} />}
+                  {/* the dashboard's year-on-year data already carries the latest meeting: our own
+                      8-K reading is shown only when it is not there (e.g. the standalone page) */}
+                  {!yoy && !yoyLoading && <VotingResultsSection voting={result.voting} cik={result.company.cik} />}
+                </div>
+              )}
+              {/* only the proxy's section on next year's stockholder proposals and director
+                  nominations; the general meeting Q&A (sections.qa) is not shown */}
+              {meetingView === "proposals" && (
+                <ProxySectionView section={result.proxy.sections?.proposals} proxyUrl={result.proxy.url}
+                                  fallbackTitle="Stockholder proposals and director nominees for next year's annual meeting" />
+              )}
             </div>
           )}
         </>
@@ -1385,7 +1465,7 @@ export default function BoardIntelligencePage() {
       </div>
 
       {/* the standalone page has always started a run for a company with no result */}
-      {company && <BoardIntelPanel company={company} autoStart={false} onPickCompany={choose} />}
+      {company && <BoardIntelPanel company={company} autoStart={false} />}
     </div>
     </div>
   );
