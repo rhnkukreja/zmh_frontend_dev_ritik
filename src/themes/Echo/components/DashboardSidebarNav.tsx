@@ -115,14 +115,6 @@ const BASE_SECTIONS: SectionDef[] = [
     subItems: [],
   },
   {
-    key: "board-intel",
-    label: "Board Intelligence",
-    icon: UserCheck,
-    group: "Company",
-    subItems: [],
-    beta: true,
-  },
-  {
     key: "voting-data",
     label: "Voting Data",
     icon: Vote,
