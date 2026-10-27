@@ -77,6 +77,12 @@ const formatNumberWithCommas = (value: any) => {
 };
 
 const DEFAULT_INVESTOR = "BlackRock, Inc.";
+// Default institution used when there's no cache and the user hasn't picked
+// one yet — matches the default institution used elsewhere (Executive
+// Compensation, Proxy Contest AI). The dropdown endpoint is queried by ID;
+// the name is only used as a UI fallback label if the API doesn't echo one back.
+const DEFAULT_NPX_INSTITUTION_ID = 1345;
+const DEFAULT_NPX_INSTITUTION = "BlackRock Active Investment Stewardship (BAIS)";
 const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
 const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
@@ -402,15 +408,6 @@ const NpxInstitutionView = () => {
     }
   };
 
-  const pickDefaultInstitution = (institutions: string[]) => {
-    const blackRockMatch = institutions.find((institution) => {
-      const normalized = String(institution).toLowerCase();
-      return normalized.includes("blackrock");
-    });
-
-    return blackRockMatch || institutions[0] || "";
-  };
-
   useEffect(() => {
     // Also skip if there's already a staged (not-yet-applied) institution pick
     // restored from the draft cache — don't clobber it with the default.
@@ -427,16 +424,19 @@ const NpxInstitutionView = () => {
             ? filters.year
             : [searchParams.get("year") || new Date().getFullYear().toString()];
 
+        // Always request a specific default institution (BlackRock Active
+        // Investment Stewardship (BAIS), id 1345) by ID rather than an
+        // unscoped call — the dropdown endpoint doesn't reliably return a
+        // browsable institution list without a filter, so there's nothing to
+        // "guess" a default from otherwise.
         const params: any = {
           year: fallbackYear,
+          institution_id: [DEFAULT_NPX_INSTITUTION_ID],
         };
 
         if (meetingDate) params.meeting_date = meetingDate;
 
         const response = await dashboardService.getNpxProposalVotingDropdown(params);
-        const institutions = Array.isArray(response?.result?.all_institution)
-          ? response.result.all_institution.filter(Boolean)
-          : [];
 
         hasBootstrappedInstitutionRef.current = true;
 
@@ -451,13 +451,6 @@ const NpxInstitutionView = () => {
           ? fallbackYear
           : [availableYears[0] || new Date().getFullYear().toString()];
 
-        if ((!filters.year || filters.year.length === 0) && resolvedYear.length > 0) {
-          setFilters((prev) => ({
-            ...prev,
-            year: resolvedYear,
-          }));
-        }
-
         const fundData = Array.isArray(response.result?.fund_name) ? response.result.fund_name : [];
         const isConnectedInstitution = response.result?.is_institution !== false;
 
@@ -467,17 +460,22 @@ const NpxInstitutionView = () => {
         });
         setShowFundName(isConnectedInstitution && fundData.length > 0);
 
-        const defaultInstitution = pickDefaultInstitution(institutions);
+        // The rest of this view (filters, dropdown/stats calls) works off the
+        // institution name, so resolve it from the API response if it echoed
+        // one back; otherwise fall back to the known label for this ID.
+        const resolvedInstitutionName =
+          response.result?.institution_name ||
+          (Array.isArray(response.result?.institution) ? response.result.institution[0] : null) ||
+          DEFAULT_NPX_INSTITUTION;
 
-        if (defaultInstitution) {
-          setInstitutionSelection([defaultInstitution]);
-          setFilters((prev) => ({
-            ...prev,
-            investor_company: [defaultInstitution],
-            fund_name: [],
-          }));
-          setShowInstitutionFirstMessage(false);
-        }
+        setInstitutionSelection([resolvedInstitutionName]);
+        setFilters((prev) => ({
+          ...prev,
+          investor_company: [resolvedInstitutionName],
+          fund_name: [],
+          ...((!prev.year || prev.year.length === 0) && resolvedYear.length > 0 ? { year: resolvedYear } : {}),
+        }));
+        setShowInstitutionFirstMessage(false);
       } catch (err) {
         console.error("[NpxInstitutionView] bootstrapDefaultInstitution error:", err);
       } finally {
