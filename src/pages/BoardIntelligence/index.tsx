@@ -431,7 +431,10 @@ const WEBSITE_PROFILE_CSS =
 
 // A proxy profile starts right under its card's header row: no frame padding or first-block
 // margin above it.
-const PROXY_PROFILE_CSS = "body{padding-top:0}body>:first-child{margin-top:0!important}";
+/* A picture in a table cell keeps the width the proxy prints for it: a sidebar cell is often printed
+ * "width:1%" and held open only by its photo, which max-width:100% lets shrink to a sliver (Delta 2026).
+ * Pictures printed without a width still fit their cell. */
+const PROXY_PROFILE_CSS = "body{padding-top:0}body>:first-child{margin-top:0!important}td img[style*=width]{max-width:none}";
 
 /** Where a document's content really starts and ends, in px as drawn now. A proxy laid out as
  *  printed pages (Oracle, Walmart, United, Target) wraps each profile in a box one page tall, so
