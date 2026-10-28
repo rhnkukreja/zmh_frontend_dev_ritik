@@ -314,7 +314,7 @@ function ShareholderEngagementSection({
                   {issueCard.value?.map((issue, index) => (
                     <span
                       key={`${issue}-${index}`}
-                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[14px] text-slate-700"
+                      className="inline-block whitespace-normal break-words rounded-2xl border border-slate-200 bg-white px-3 py-1 text-[14px] leading-5 text-slate-700"
                     >
                       {capitalizeFirstLetter(issue)}
                     </span>
@@ -917,12 +917,37 @@ function SectionQuickNav({ report }: { report: CompanyReport }) {
   const scrollerRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [stickyTop, setStickyTop] = useState(172);
+
+  React.useEffect(() => {
+    const updateStickyTop = () => {
+      let next = 0;
+      document.querySelectorAll<HTMLElement>(".header-card").forEach((header) => {
+        const headerTop = parseFloat(window.getComputedStyle(header).top);
+        if (Number.isFinite(headerTop)) {
+          next = Math.max(next, headerTop + header.offsetHeight);
+        }
+      });
+      if (next > 0) {
+        setStickyTop((prev) => (Math.abs(prev - next) > 0.5 ? next : prev));
+      }
+    };
+    updateStickyTop();
+    const timer = window.setTimeout(updateStickyTop, 200);
+    window.addEventListener("resize", updateStickyTop);
+    window.addEventListener("headerHeightChange" as any, updateStickyTop);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", updateStickyTop);
+      window.removeEventListener("headerHeightChange" as any, updateStickyTop);
+    };
+  }, []);
 
   const items = React.useMemo(() => {
     const list: { id: string; label: string; icon: React.ReactNode }[] = [];
     const iconCls = "h-3.5 w-3.5";
     if (report.shareholderEngagement)
-      list.push({ id: "section-shareholder-engagement", label: "Shareholder Engagement", icon: <MessageSquareQuote className={iconCls} /> });
+      list.push({ id: "section-shareholder-engagement", label: "Shareholder Outreach (Proxy)", icon: <MessageSquareQuote className={iconCls} /> });
     if (report.sop)
       list.push({ id: "section-sop", label: "Say-on-Pay", icon: <Vote className={iconCls} /> });
     if (report.auditor)
@@ -930,7 +955,7 @@ function SectionQuickNav({ report }: { report: CompanyReport }) {
     if (report.shareholderProposals)
       list.push({ id: "section-sp", label: "Shareholder Proposals", icon: <FileText className={iconCls} /> });
     if (report.esg)
-      list.push({ id: "section-esg", label: "Engagement Details", icon: <BarChart2 className={iconCls} /> });
+      list.push({ id: "section-esg", label: "Engagement Details (Investor)", icon: <BarChart2 className={iconCls} /> });
     return list;
   }, [report]);
 
@@ -960,7 +985,7 @@ const scrollToSection = (id: string) => {
   const element = document.getElementById(id);
   if (!element) return;
 
-  const offset = 220;
+  const offset = stickyTop + 60;
 
   const elementPosition =
     element.getBoundingClientRect().top + window.scrollY;
@@ -973,7 +998,7 @@ const scrollToSection = (id: string) => {
 
 
   return (
-    <div className="sticky top-[10.75rem] z-30">
+    <div className="sticky z-30" style={{ top: stickyTop }}>
       <div className="rounded-2xl border border-slate-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur">
         <div className="flex items-center gap-3">
           <span className="shrink-0 text-[12px] font-bold uppercase tracking-wide text-slate-500">
