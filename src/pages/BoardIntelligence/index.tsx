@@ -583,16 +583,15 @@ function DirectorCard({ d, open, onToggle }: { d: Director; open: boolean; onTog
   );
 }
 
-/** Board at a Glance column widths, the same for every company. */
-const GLANCE_COLS = ["17%", "5%", "5.5%", "6%", "9%", "23%", "19.5%", "15%"];
-
-type ProxyRef = { url: string; filing_date: string };
+/** Board at a Glance column widths, the same for every company: a wide Director column (a name
+ *  on one line), then Position, Committees and Other Public Boards at one equal width. */
+const GLANCE_COLS = ["21%", "5%", "5.5%", "5.5%", "8%", "18.33%", "18.33%", "18.34%"];
 
 /** The "i" next to a director whose row the proxy does not tell in full: hovering (or focusing)
- *  it opens a card with the title, text and source links given. The card is fixed to the window,
+ *  it opens a card with the title and source links given. The card is fixed to the window,
  *  so the table's scroll box does not clip it, and stays open while the pointer is on it. */
-function InfoCard({ label, title, children, links }: {
-  label: string; title: string; children: React.ReactNode; links: { href?: string | null; text: string }[];
+function InfoCard({ label, title, links }: {
+  label: string; title: string; links: { href?: string | null; text: string }[];
 }) {
   const [at, setAt] = useState<{ x: number; y: number } | null>(null);
   const hideTimer = useRef<number>();
@@ -619,8 +618,7 @@ function InfoCard({ label, title, children, links }: {
         <div role="tooltip" style={{ position: "fixed", left: at.x, top: at.y }}
              onMouseEnter={() => window.clearTimeout(hideTimer.current)} onMouseLeave={hide}
              className="z-50 w-80 rounded-lg border border-gray-200 bg-white p-3 text-left text-xs text-gray-800 shadow-lg">
-          <div className="mb-1 text-sm font-semibold text-gray-900">{title}</div>
-          <p className="mb-2 leading-relaxed">{children}</p>
+          <div className="mb-2 text-sm font-semibold text-gray-900">{title}</div>
           <div className="flex flex-col gap-1.5 border-t border-gray-100 pt-2">
             {links.map((l) => <SourceLink key={l.text} href={l.href}>{l.text}</SourceLink>)}
           </div>
@@ -631,30 +629,25 @@ function InfoCard({ label, title, children, links }: {
 }
 
 /** A director who joined after the proxy: the 8-K that appointed them and their website biography. */
-function JoinedAfterProxy({ j, proxy }: { j: NonNullable<Director["joined_after_proxy"]>; proxy: ProxyRef }) {
+function JoinedAfterProxy({ j }: { j: NonNullable<Director["joined_after_proxy"]> }) {
   return (
     <InfoCard label="Not in the proxy: where this director's details come from" title="Not in the Proxy Statement"
               links={[{ href: j.url, text: `${j.form}, filed ${usDate(j.filing_date)}` },
-                      { href: j.website_url, text: "Biography on the Company Website" }]}>
-      Joined the board on {usDate(j.effective_date)}, after the proxy statement was filed on {usDate(proxy.filing_date)}.
-      This row is from the 8-K that announced the appointment; the biography is from the company website.
-    </InfoCard>
+                      { href: j.website_url, text: "Biography on the Company Website" }]} />
   );
 }
 
-/** A proxy director who has since left the board: the reason and date, from the 8-K that said so. */
-function LeftAfterProxy({ l, proxy }: { l: NonNullable<Director["left_after_proxy"]>; proxy: ProxyRef }) {
+/** A proxy director who has since left the board: the 8-K that said so (the reason and date are
+ *  printed under the name). */
+function LeftAfterProxy({ l }: { l: NonNullable<Director["left_after_proxy"]> }) {
   return (
-    <InfoCard label="Left the board after the proxy: the reason" title="Left the Board"
-              links={[{ href: l.url, text: `${l.form}, filed ${usDate(l.filing_date)}` }]}>
-      {l.how || "Left"} on {usDate(l.date)}, after the proxy statement was filed on {usDate(proxy.filing_date)}.
-      The row keeps what the proxy printed.
-    </InfoCard>
+    <InfoCard label="Left the board after the proxy: the 8-K" title="Left the Board"
+              links={[{ href: l.url, text: `${l.form}, filed ${usDate(l.filing_date)}` }]} />
   );
 }
 
 /** The whole board in one table, readable in one go; a name jumps to that director's profile. */
-function BoardAtAGlance({ directors, proxy, onOpen }: { directors: Director[]; proxy: ProxyRef; onOpen: (name: string) => void }) {
+function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: (name: string) => void }) {
   const thisYear = new Date().getFullYear();
   return (
     <div className="border border-gray-200 rounded-lg overflow-x-auto">
@@ -673,10 +666,12 @@ function BoardAtAGlance({ directors, proxy, onOpen }: { directors: Director[]; p
             return (
               <tr key={d.name} className="border-t border-gray-100 align-top">
                 <td className="p-2">
-                  <span className="inline-flex items-center gap-1.5">
-                    <button onClick={() => onOpen(d.name)} className="font-medium text-left text-[#931638] hover:underline">{d.name}</button>
-                    {d.joined_after_proxy && <JoinedAfterProxy j={d.joined_after_proxy} proxy={proxy} />}
-                    {d.left_after_proxy && <LeftAfterProxy l={d.left_after_proxy} proxy={proxy} />}
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    {/* one line: a name longer than the column ends in "…", the whole name on hover */}
+                    <button onClick={() => onOpen(d.name)} title={d.name}
+                            className="font-medium text-left text-[#931638] hover:underline truncate min-w-0">{d.name}</button>
+                    {d.joined_after_proxy && <JoinedAfterProxy j={d.joined_after_proxy} />}
+                    {d.left_after_proxy && <LeftAfterProxy l={d.left_after_proxy} />}
                   </span>
                   {!!(f.board_roles || []).length && <div className="text-xs text-gray-900">{(f.board_roles || []).join(", ")}</div>}
                   {d.left_after_proxy && (
@@ -686,7 +681,10 @@ function BoardAtAGlance({ directors, proxy, onOpen }: { directors: Director[]; p
                 <td className="p-2 whitespace-nowrap">{f.age ?? <span className="text-gray-400">—</span>}</td>
                 <td className="p-2 whitespace-nowrap">{f.director_since_year || f.director_since || <span className="text-gray-400">—</span>}</td>
                 <td className="p-2 whitespace-nowrap">
-                  {f.director_since_year ? `${thisYear - f.director_since_year} yr` : <span className="text-gray-400">—</span>}
+                  {/* joined this year: "New", not "0 yr" */}
+                  {f.director_since_year
+                    ? (thisYear - f.director_since_year < 1 ? "New" : `${thisYear - f.director_since_year} yr`)
+                    : <span className="text-gray-400">—</span>}
                 </td>
                 <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : <span className="text-gray-400">—</span>}</td>
                 <td className="p-2">{f.current_position ? capFirst(f.current_position) : <span className="text-gray-400">—</span>}</td>
@@ -749,7 +747,7 @@ function BoardTab({ result }: { result: BoardResult }) {
       )}
       <div>
         <h3 className="text-sm font-semibold text-gray-800 mb-2">The Board at a Glance</h3>
-        <BoardAtAGlance directors={directors} proxy={result.proxy} onOpen={openAndJump} />
+        <BoardAtAGlance directors={directors} onOpen={openAndJump} />
       </div>
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <BoxedTabs<ProfileView>
