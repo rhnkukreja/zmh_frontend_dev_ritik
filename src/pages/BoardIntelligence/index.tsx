@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import {
-  AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Loader2, RefreshCw, Search, Users,
+  AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Info, Loader2, RefreshCw, Search, Users,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
@@ -50,6 +50,10 @@ const titleCase = (s: string) =>
  *  "... (Independent Chair, Corporate Governance Committee Chair)": the company name stays as
  *  printed; the role in parentheses is title-cased. */
 const formatBoard = (board: string) => board.replace(/\(([^)]*)\)/g, (_, role: string) => `(${titleCase(role)})`);
+
+/** "retired Chief Executive Officer" -> "Retired Chief Executive Officer": a position copied from
+ *  the middle of a proxy sentence starts lower-case. */
+const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // ─── Year-on-year vote support (the dashboard's Django /voting_report_8k/) ────────────────
 
@@ -147,6 +151,10 @@ type Director = {
   bio_text: string;
   facts: DirectorFacts;
   recovered_by_surname?: boolean;
+  /** not in the proxy: joined the board after it was filed, by the 8-K Item 5.02 named here */
+  joined_after_proxy?: { form: string; filing_date: string; effective_date: string; url: string; website_url?: string } | null;
+  /** in the proxy, but has left the board since, as the 8-K named here says */
+  left_after_proxy?: { date: string; how?: string | null; form: string; filing_date: string; url: string } | null;
 };
 
 type Matrix = {
@@ -421,10 +429,55 @@ const WEBSITE_PROFILE_CSS =
   "img{float:left;width:180px;max-width:40%;height:auto;margin:0 20px 12px 0}" +
   "body{font-size:15px;line-height:1.6;color:#222}h1,h2,h3,h4{color:#0b4a8b;margin:0 0 12px}";
 
+// A proxy profile starts right under its card's header row: no frame padding or first-block
+// margin above it.
+const PROXY_PROFILE_CSS = "body{padding-top:0}body>:first-child{margin-top:0!important}";
+
+/** Where a document's content really starts and ends, in px as drawn now. A proxy laid out as
+ *  printed pages (Oracle, Walmart, United, Target) wraps each profile in a box one page tall, so
+ *  the document is a page tall however short the profile, and the profile can sit well down that
+ *  page (Target). These are the top of the first and the bottom of the last text, picture,
+ *  coloured or ruled box instead. A picture or box at least 6in x 8in is the page's own border or
+ *  background (Oracle's, United's), not content, so it does not count; a narrower page-tall
+ *  picture (Walmart's career column) does. */
+function contentBounds(doc: Document) {
+  const view = doc.defaultView;
+  if (!view) return null;
+  let top = Infinity, bottom = 0;
+  const take = (t: number, b: number) => { top = Math.min(top, t); bottom = Math.max(bottom, b); };
+  const range = doc.createRange();
+  const texts = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  while (texts.nextNode()) {
+    if (!texts.currentNode.textContent?.trim()) continue;
+    range.selectNodeContents(texts.currentNode);
+    const r = range.getBoundingClientRect();
+    if (r.height) take(r.top, r.bottom);
+  }
+  doc.body.querySelectorAll("*").forEach((el) => {
+    const r = el.getBoundingClientRect();
+    // nothing drawn, or the page's own border or background (6in x 8in or more)
+    if (!r.width || !r.height || (r.width >= 576 && r.height >= 768)) return;
+    if (el.tagName === "IMG") {
+      take(r.top, r.bottom);
+      return;
+    }
+    const cs = view.getComputedStyle(el);
+    const bg = cs.backgroundColor;
+    const painted = bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent" && bg !== "rgb(255, 255, 255)";
+    const ruled = (side: "Top" | "Bottom") => parseFloat(cs[`border${side}Width`]) > 0 && cs[`border${side}Style`] !== "none"
+      && cs[`border${side}Color`] !== "rgba(0, 0, 0, 0)";
+    // a box drawn round the profile (United's) ends at its bottom border; one ruled across its top
+    // (Wells Fargo's yellow line) starts there
+    if (painted || ruled("Bottom") || ruled("Top")) take(r.top, r.bottom);
+  });
+  return top === Infinity ? null : { top: top + view.scrollY, bottom: bottom + view.scrollY };
+}
+
 // ─── A proxy's own HTML, isolated from the app's Tailwind reset ──────────────────────────
 // Rendered in a sandboxed iframe: no scripts run (no allow-scripts); allow-same-origin only so
-// the height can be measured. Links open in a new tab.
-function DocFrame({ html, title, extraCss = "" }: { html: string; title: string; extraCss?: string }) {
+// the height can be measured. Links open in a new tab. `fit` starts and ends the frame where the
+// content does (contentBounds) rather than at the edges of a page-tall box.
+function DocFrame({ html, title, extraCss = "", fit = false }: { html: string; title: string; extraCss?: string; fit?: boolean }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(200);
   const srcDoc = useMemo(() => {
@@ -433,17 +486,30 @@ function DocFrame({ html, title, extraCss = "" }: { html: string; title: string;
       ADD_ATTR: ["target"],
     });
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank">
-      <style>body{margin:0;padding:8px;font-family:Arial,Helvetica,sans-serif;overflow-x:auto}img{max-width:100%;height:auto}${extraCss}</style>
+      <style>body{margin:0;padding:8px;font-family:Arial,Helvetica,sans-serif;overflow-x:auto}img{max-width:100%;height:auto}${fit ? "html{overflow-y:hidden}" : ""}${extraCss}</style>
       </head><body>${clean}<div style="clear:both"></div></body></html>`;
-  }, [html, extraCss]);
+  }, [html, extraCss, fit]);
 
   useEffect(() => {
     const frame = ref.current;
     if (!frame) return;
     let observer: ResizeObserver | null = null;
     const measure = () => {
-      const body = frame.contentDocument?.body;
-      if (body) setHeight(Math.min(Math.max(body.scrollHeight + 16, 80), 4000));
+      const doc = frame.contentDocument;
+      if (!doc?.body) return;
+      let h = doc.body.scrollHeight;
+      const bounds = fit ? contentBounds(doc) : null;
+      if (bounds) {
+        // the page is moved up past any empty top; bounds are read as drawn, so add back the
+        // shift already applied before working out the new one
+        const applied = Number(doc.body.dataset.shift || 0);
+        const top = bounds.top + applied, bottom = bounds.bottom + applied;
+        const shift = top > 40 ? Math.floor(top - 8) : 0;
+        doc.body.style.transform = shift ? `translateY(-${shift}px)` : "";
+        doc.body.dataset.shift = String(shift);
+        h = Math.min(doc.body.scrollHeight, Math.ceil(bottom)) - shift;
+      }
+      setHeight(Math.min(Math.max(h + 16, 80), 4000));
     };
     const onLoad = () => {
       measure();
@@ -458,7 +524,7 @@ function DocFrame({ html, title, extraCss = "" }: { html: string; title: string;
       frame.removeEventListener("load", onLoad);
       observer?.disconnect();
     };
-  }, [srcDoc]);
+  }, [srcDoc, fit]);
 
   return (
     <iframe
@@ -502,7 +568,7 @@ function DirectorCard({ d, open, onToggle }: { d: Director; open: boolean; onTog
   const f = d.facts || {};
   const Chevron = open ? ChevronDown : ChevronRight;
   return (
-    <div id={directorAnchor(d.name)} className="border border-gray-200 rounded-lg overflow-hidden scroll-mt-4">
+    <div id={directorAnchor(d.name)} className="border border-gray-200 rounded-lg overflow-hidden">
       <button type="button" onClick={onToggle} aria-expanded={open}
               className="w-full flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200 text-left hover:bg-gray-100">
         <Chevron size={16} className="text-gray-700 shrink-0" />
@@ -511,18 +577,89 @@ function DirectorCard({ d, open, onToggle }: { d: Director; open: boolean; onTog
         {f.designated_by && <Pill>Designated By {f.designated_by}</Pill>}
       </button>
       {open && (d.bio_html
-        ? <DocFrame html={d.bio_html} title={d.name} />
+        ? <DocFrame html={d.bio_html} title={d.name} extraCss={PROXY_PROFILE_CSS} fit />
         : <div className="px-4 py-3 text-sm text-gray-800">The profile HTML could not be cut from the proxy.</div>)}
     </div>
   );
 }
 
+/** Board at a Glance column widths, the same for every company. */
+const GLANCE_COLS = ["17%", "5%", "5.5%", "6%", "9%", "23%", "19.5%", "15%"];
+
+type ProxyRef = { url: string; filing_date: string };
+
+/** The "i" next to a director whose row the proxy does not tell in full: hovering (or focusing)
+ *  it opens a card with the title, text and source links given. The card is fixed to the window,
+ *  so the table's scroll box does not clip it, and stays open while the pointer is on it. */
+function InfoCard({ label, title, children, links }: {
+  label: string; title: string; children: React.ReactNode; links: { href?: string | null; text: string }[];
+}) {
+  const [at, setAt] = useState<{ x: number; y: number } | null>(null);
+  const hideTimer = useRef<number>();
+  const show = (e: React.SyntheticEvent<HTMLElement>) => {
+    window.clearTimeout(hideTimer.current);
+    const r = e.currentTarget.getBoundingClientRect();
+    setAt({ x: Math.min(r.left, window.innerWidth - 336), y: r.bottom + 6 });
+  };
+  const hide = () => { hideTimer.current = window.setTimeout(() => setAt(null), 150); };
+  useEffect(() => {
+    if (!at) return;
+    const close = () => setAt(null);
+    window.addEventListener("scroll", close, true);
+    return () => window.removeEventListener("scroll", close, true);
+  }, [at]);
+  return (
+    <>
+      <button type="button" aria-label={label}
+              onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}
+              className="shrink-0 rounded p-0.5 text-gray-500 hover:text-[#931638] hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+        <Info size={15} />
+      </button>
+      {at && (
+        <div role="tooltip" style={{ position: "fixed", left: at.x, top: at.y }}
+             onMouseEnter={() => window.clearTimeout(hideTimer.current)} onMouseLeave={hide}
+             className="z-50 w-80 rounded-lg border border-gray-200 bg-white p-3 text-left text-xs text-gray-800 shadow-lg">
+          <div className="mb-1 text-sm font-semibold text-gray-900">{title}</div>
+          <p className="mb-2 leading-relaxed">{children}</p>
+          <div className="flex flex-col gap-1.5 border-t border-gray-100 pt-2">
+            {links.map((l) => <SourceLink key={l.text} href={l.href}>{l.text}</SourceLink>)}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** A director who joined after the proxy: the 8-K that appointed them and their website biography. */
+function JoinedAfterProxy({ j, proxy }: { j: NonNullable<Director["joined_after_proxy"]>; proxy: ProxyRef }) {
+  return (
+    <InfoCard label="Not in the proxy: where this director's details come from" title="Not in the Proxy Statement"
+              links={[{ href: j.url, text: `${j.form}, filed ${usDate(j.filing_date)}` },
+                      { href: j.website_url, text: "Biography on the Company Website" }]}>
+      Joined the board on {usDate(j.effective_date)}, after the proxy statement was filed on {usDate(proxy.filing_date)}.
+      This row is from the 8-K that announced the appointment; the biography is from the company website.
+    </InfoCard>
+  );
+}
+
+/** A proxy director who has since left the board: the reason and date, from the 8-K that said so. */
+function LeftAfterProxy({ l, proxy }: { l: NonNullable<Director["left_after_proxy"]>; proxy: ProxyRef }) {
+  return (
+    <InfoCard label="Left the board after the proxy: the reason" title="Left the Board"
+              links={[{ href: l.url, text: `${l.form}, filed ${usDate(l.filing_date)}` }]}>
+      {l.how || "Left"} on {usDate(l.date)}, after the proxy statement was filed on {usDate(proxy.filing_date)}.
+      The row keeps what the proxy printed.
+    </InfoCard>
+  );
+}
+
 /** The whole board in one table, readable in one go; a name jumps to that director's profile. */
-function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: (name: string) => void }) {
+function BoardAtAGlance({ directors, proxy, onOpen }: { directors: Director[]; proxy: ProxyRef; onOpen: (name: string) => void }) {
   const thisYear = new Date().getFullYear();
   return (
     <div className="border border-gray-200 rounded-lg overflow-x-auto">
-      <table className="text-sm w-full text-gray-900">
+      <table className="text-sm w-full min-w-[1000px] table-fixed text-gray-900">
+        <colgroup>{GLANCE_COLS.map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
         <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-700">
           <tr>
             <th className="p-2">Director</th><th className="p-2">Age</th><th className="p-2">Since</th><th className="p-2">Tenure</th>
@@ -536,8 +673,15 @@ function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: 
             return (
               <tr key={d.name} className="border-t border-gray-100 align-top">
                 <td className="p-2">
-                  <button onClick={() => onOpen(d.name)} className="font-medium text-left text-[#931638] hover:underline">{d.name}</button>
+                  <span className="inline-flex items-center gap-1.5">
+                    <button onClick={() => onOpen(d.name)} className="font-medium text-left text-[#931638] hover:underline">{d.name}</button>
+                    {d.joined_after_proxy && <JoinedAfterProxy j={d.joined_after_proxy} proxy={proxy} />}
+                    {d.left_after_proxy && <LeftAfterProxy l={d.left_after_proxy} proxy={proxy} />}
+                  </span>
                   {!!(f.board_roles || []).length && <div className="text-xs text-gray-900">{(f.board_roles || []).join(", ")}</div>}
+                  {d.left_after_proxy && (
+                    <div className="text-xs text-gray-600">Left the board · {d.left_after_proxy.how || "Left"} {usDate(d.left_after_proxy.date)}</div>
+                  )}
                 </td>
                 <td className="p-2 whitespace-nowrap">{f.age ?? <span className="text-gray-400">—</span>}</td>
                 <td className="p-2 whitespace-nowrap">{f.director_since_year || f.director_since || <span className="text-gray-400">—</span>}</td>
@@ -545,7 +689,7 @@ function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: 
                   {f.director_since_year ? `${thisYear - f.director_since_year} yr` : <span className="text-gray-400">—</span>}
                 </td>
                 <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : <span className="text-gray-400">—</span>}</td>
-                <td className="p-2">{f.current_position || <span className="text-gray-400">—</span>}</td>
+                <td className="p-2">{f.current_position ? capFirst(f.current_position) : <span className="text-gray-400">—</span>}</td>
                 <td className="p-2">{(f.committees || []).join("; ") || <span className="text-gray-400">—</span>}</td>
                 <td className="p-2">
                   {(f.other_public_boards || []).length
@@ -588,7 +732,15 @@ function BoardTab({ result }: { result: BoardResult }) {
   const openAndJump = (name: string) => {
     setView("proxy");
     setOpenNames((s) => new Set(s).add(name));
-    window.setTimeout(() => document.getElementById(directorAnchor(name))?.scrollIntoView({ behavior: "smooth" }), 50);
+    window.setTimeout(() => {
+      const card = document.getElementById(directorAnchor(name));
+      if (!card) return;
+      // the dashboard's sticky headers (the company bar and the "Company > Board Intelligence" bar,
+      // both .header-card) cover the top of the window: the card stops just below the lower one
+      const covered = Math.max(0, ...Array.from(document.querySelectorAll(".header-card"), (el) => el.getBoundingClientRect().bottom));
+      card.style.scrollMarginTop = `${covered + 12}px`;
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
   return (
     <div className="space-y-4">
@@ -597,7 +749,7 @@ function BoardTab({ result }: { result: BoardResult }) {
       )}
       <div>
         <h3 className="text-sm font-semibold text-gray-800 mb-2">The Board at a Glance</h3>
-        <BoardAtAGlance directors={directors} onOpen={openAndJump} />
+        <BoardAtAGlance directors={directors} proxy={result.proxy} onOpen={openAndJump} />
       </div>
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <BoxedTabs<ProfileView>
@@ -781,7 +933,7 @@ function RefreshmentSection({ r }: { r?: Refreshment }) {
   if (!r) return <p className="text-sm text-gray-700">Board refreshment: not read for this result yet.</p>;
   if (r.note && !r.timeline.length) return <p className="text-sm text-gray-700">{r.note}</p>;
   const net = r.net_change ?? 0;
-  // the delta is against the meeting before; shown newest first
+  // each slate is compared with the meeting before; shown newest first
   const oldestFirst = [...r.timeline].sort((a, b) => a.meeting_iso.localeCompare(b.meeting_iso));
   const rows = oldestFirst.map((t, i) => ({ t, prev: i > 0 ? oldestFirst[i - 1] : null })).reverse();
   return (
@@ -813,15 +965,9 @@ function RefreshmentSection({ r }: { r?: Refreshment }) {
                       title={t.meeting_date_known === false ? "The 8-K prints no meeting date: the year is the 8-K's filing year" : undefined}>
                     {meetingLabel(t)}
                   </td>
-                  <td className="p-2">
-                    <span className="font-semibold">{t.elected_count}</span>
-                    {prev && t.elected_count !== prev.elected_count && (
-                      <span className="ml-2 text-xs text-gray-700">
-                        ({t.elected_count > prev.elected_count ? "+" : ""}{t.elected_count - prev.elected_count})
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-2">{!prev ? <span className="text-gray-600">start of the period</span> : t.new_on_slate.join("; ") || <span className="text-gray-400">—</span>}</td>
+                  <td className="p-2 font-semibold">{t.elected_count}</td>
+                  {/* the first meeting of the period has no meeting before it to compare with */}
+                  <td className="p-2">{!prev ? "" : t.new_on_slate.join("; ") || <span className="text-gray-400">—</span>}</td>
                   <td className="p-2">{!prev ? "" : t.left_slate.join("; ") || <span className="text-gray-400">—</span>}</td>
                   <td className="p-2 whitespace-nowrap"><SourceLink href={t.url}>8-K Item 5.07, {usDate(t.filing_date)}</SourceLink></td>
                 </tr>
@@ -867,11 +1013,14 @@ function RefreshmentSection({ r }: { r?: Refreshment }) {
 
 /** Support at each of the last three annual meetings, per nominee and per proposal. */
 function YearOnYearTable({ yoy }: { yoy: YearOnYear }) {
+  // Nominees and proposals side by side on a wide screen, each half-width with its years right
+  // after the names, so neither table stretches a short name across the page.
   const table = (label: string, key: "nominee" | "proposal", rows: YearRow[]) => !!rows.length && (
     <div className="border border-gray-200 rounded-lg overflow-x-auto">
-      <table className="text-sm w-full text-gray-900">
+      <table className="text-sm w-full table-fixed text-gray-900">
+        <colgroup><col />{yoy.years.map((y) => <col key={y} style={{ width: "6.5rem" }} />)}</colgroup>
         <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-700">
-          <tr><th className="p-2">{label}</th>{yoy.years.map((y) => <th key={y} className="p-2 w-28">{y}</th>)}</tr>
+          <tr><th className="p-2">{label}</th>{yoy.years.map((y) => <th key={y} className="p-2">{y}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
@@ -887,8 +1036,10 @@ function YearOnYearTable({ yoy }: { yoy: YearOnYear }) {
   return (
     <div className="space-y-3">
       <h3 className="font-semibold text-base text-gray-900">Year-on-Year Support</h3>
-      {table("Nominee", "nominee", yoy.nominees)}
-      {table("Proposal", "proposal", yoy.proposals)}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+        {table("Nominee", "nominee", yoy.nominees)}
+        {table("Proposal", "proposal", yoy.proposals)}
+      </div>
     </div>
   );
 }
@@ -984,13 +1135,57 @@ function ProxySectionView({ section, proxyUrl, fallbackTitle }: { section?: Prox
   );
 }
 
-/** The extracted matrices as an Excel file: one sheet per matrix, a row per skill, a column per director. */
+/** "Theodore F. Craver, Jr." -> "Craver": how a matrix header usually prints a director. */
+const surname = (name: string) => name.replace(/,?\s+(Jr|Sr|II|III|IV)\.?$/i, "").trim().split(/\s+/).pop() || name;
+
+/** Whether the proxy prints this matrix with one director per row and the skills across the top
+ *  (Wells Fargo, NVIDIA), read from the matrix's own table: then no row names more than one
+ *  director. A matrix printed as a picture has no names to read and keeps directors across. */
+function directorsDown(m: Matrix) {
+  const doc = new DOMParser().parseFromString(m.html || "", "text/html");
+  const names = m.directors.map((n) => new RegExp(`\\b${surname(n).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i"));
+  let rowsNaming = 0, most = 0;
+  doc.querySelectorAll("tr").forEach((tr) => {
+    if (tr.querySelector("tr")) return; // a row holding a nested table is not one line of the matrix
+    // matched cell by cell: Mastercard's dots are the letter "l" in a symbol font, so the row's
+    // joined text reads "Janowlllll" and the name has no word boundary
+    const cells = Array.from(tr.children, (td) => td.textContent || "");
+    const k = names.filter((re) => cells.some((c) => re.test(c))).length;
+    if (k) rowsNaming++;
+    most = Math.max(most, k);
+  });
+  return most === 1 && rowsNaming >= 2;
+}
+
+/** The matrix as a grid in the proxy's own layout and order: directors down the side when the
+ *  proxy prints them so, skills down the side otherwise. */
+function matrixGrid(m: Matrix) {
+  const skills = m.rows.map((r) => ({ text: r.label, full: r.label_full || r.label }));
+  const people = m.directors.map((n) => ({ text: n, full: n }));
+  return directorsDown(m)
+    ? { corner: "Director", cols: skills,
+        lines: m.directors.map((n, i) => ({ ...people[i], marks: m.rows.map((r) => r.directors.includes(n)) })) }
+    : { corner: "Skill", cols: people,
+        lines: m.rows.map((r, i) => ({ ...skills[i], marks: m.directors.map((n) => r.directors.includes(n)) })) };
+}
+
+/** Some proxies print the matrix at 4-7pt, unreadable on screen: that type is raised to 8pt (11px).
+ *  Larger type keeps its size, and so do the 0-2pt spacers proxies use for thin lines. */
+const readableType = (html: string) =>
+  html.replace(/font-size:\s*([\d.]+)(pt|px)/gi, (all: string, n: string, unit: string) => {
+    const [floor, min] = unit.toLowerCase() === "pt" ? [3, 8] : [4, 11];
+    const size = parseFloat(n);
+    return size >= floor && size < min ? `font-size:${min}${unit}` : all;
+  });
+
+/** The extracted matrices as an Excel file: one sheet per matrix, laid out as on the page. */
 function downloadMatrices(result: BoardResult) {
   const wb = XLSX.utils.book_new();
   result.proxy.matrices.forEach((m, i) => {
-    const rows = [["Skill", ...m.directors], ...m.rows.map((r) => [r.label_full || r.label, ...m.directors.map((n) => (r.directors.includes(n) ? "✓" : ""))])];
+    const g = matrixGrid(m);
+    const rows = [[g.corner, ...g.cols.map((c) => c.full)], ...g.lines.map((l) => [l.full, ...l.marks.map((x) => (x ? "✓" : ""))])];
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws["!cols"] = [{ wch: 45 }, ...m.directors.map((n) => ({ wch: Math.max(10, n.length + 2) }))];
+    ws["!cols"] = [{ wch: g.corner === "Skill" ? 45 : 28 }, ...g.cols.map((c) => ({ wch: Math.min(30, Math.max(10, c.full.length + 2)) }))];
     XLSX.utils.book_append_sheet(wb, ws, result.proxy.matrices.length > 1 ? `Skills Matrix ${i + 1}` : "Skills Matrix");
   });
   XLSX.writeFile(wb, `${result.company.tickers[0] || result.company.cik} Skills Matrix.xlsx`);
@@ -999,6 +1194,7 @@ function downloadMatrices(result: BoardResult) {
 function MatrixSection({ result }: { result: BoardResult }) {
   const [view, setView] = useState<"document" | "table">("document");
   const ms = result.proxy.matrices;
+  const grids = useMemo(() => ms.map(matrixGrid), [ms]);
   if (!ms.length)
     return <p className="text-sm text-gray-700">No per-director skills matrix was found in this proxy, as a table or as a picture that could be read and checked. Each director's skills are in their profile.</p>;
   return (
@@ -1013,23 +1209,24 @@ function MatrixSection({ result }: { result: BoardResult }) {
         <span className="ml-auto"><SourceLink href={result.proxy.url}>Source: Proxy Statement (SEC)</SourceLink></span>
       </div>
       {ms.map((m, i) => view === "document" ? (
-        <div key={i} className="border border-gray-200 rounded-lg"><DocFrame html={m.html} title={`Skills matrix ${i + 1}`} /></div>
+        <div key={i} className="border border-gray-200 rounded-lg"><DocFrame html={readableType(m.html)} title={`Skills matrix ${i + 1}`} /></div>
       ) : (
         <div key={i} className="overflow-x-auto border border-gray-200 rounded-lg">
           <table className="text-xs w-full text-gray-900">
             <thead className="text-gray-700">
               <tr className="bg-gray-50">
-                <th className="text-left p-2 sticky left-0 bg-gray-50 font-semibold">Skill</th>
-                {m.directors.map((n) => <th key={n} className="p-2 font-semibold whitespace-nowrap">{n}</th>)}
+                <th className="text-left p-2 sticky left-0 bg-gray-50 font-semibold align-bottom">{grids[i].corner}</th>
+                {grids[i].cols.map((c, j) => (
+                  <th key={j} title={c.full}
+                      className={`p-2 font-semibold align-bottom ${grids[i].corner === "Skill" ? "whitespace-nowrap" : "min-w-[6rem]"}`}>{c.text}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {m.rows.map((r) => (
-                <tr key={r.label_full} className="border-t border-gray-100">
-                  <td className="p-2 sticky left-0 bg-white" title={r.label_full}>{r.label}</td>
-                  {m.directors.map((n) => (
-                    <td key={n} className="p-2 text-center">{r.directors.includes(n) ? "✓" : ""}</td>
-                  ))}
+              {grids[i].lines.map((l, j) => (
+                <tr key={j} className="border-t border-gray-100">
+                  <td className={`p-2 sticky left-0 bg-white ${grids[i].corner === "Director" ? "whitespace-nowrap font-medium" : ""}`} title={l.full}>{l.text}</td>
+                  {l.marks.map((x, k) => <td key={k} className="p-2 text-center">{x ? "✓" : ""}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -1075,7 +1272,7 @@ function WebsiteSection({ result, open, onToggle }: { result: BoardResult; open:
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3 text-sm">
         {w.url ? <SourceLink href={w.url}>Company Board Page</SourceLink> : <span className="text-gray-700">No Board Page Found</span>}
-        {w.url && !!w.members.length && (w.verified ? <Pill>Read From the Page</Pill> : <Pill>Not Verified Against the Page</Pill>)}
+        {w.url && !!w.members.length && !w.verified && <Pill>Not Verified Against the Page</Pill>}
       </div>
       {w.note && <p className="text-sm text-gray-800">{w.note}</p>}
       {!w.members.length && !w.note && <p className="text-sm text-gray-800">No board members could be read from the company's website.</p>}
