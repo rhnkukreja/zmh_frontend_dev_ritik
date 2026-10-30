@@ -91,7 +91,6 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Company",
     subItems: [],
     beta: true,
-    adminOnly: true,
   },
   {
     key: "compensation",
@@ -291,8 +290,8 @@ const DashboardSidebarNav = ({
       const userType = user?.user_type;
       return userType === "Admin";
     }
-    // Compensation is restricted to Admins/Analysts
-    if (s.key === "compensation") {
+    // Compensation and Board Intelligence are restricted to Admins/Analysts
+    if (s.key === "compensation" || s.key === "board-intel") {
       const userType = user?.user_type;
       return userType === "Analyst";
       // return userType === "Admin" || userType === "Analyst";
