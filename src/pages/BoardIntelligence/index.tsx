@@ -593,8 +593,8 @@ const GLANCE_COLS = ["21%", "5%", "5.5%", "5.5%", "8%", "18.33%", "18.33%", "18.
 /** The "i" next to a director whose row the proxy does not tell in full: hovering (or focusing)
  *  it opens a card with the title and source links given. The card is fixed to the window,
  *  so the table's scroll box does not clip it, and stays open while the pointer is on it. */
-function InfoCard({ label, title, links }: {
-  label: string; title: string; links: { href?: string | null; text: string }[];
+function InfoCard({ label, title, links, note }: {
+  label: string; title: string; links: { href?: string | null; text: string }[]; note?: string;
 }) {
   const [at, setAt] = useState<{ x: number; y: number } | null>(null);
   const hideTimer = useRef<number>();
@@ -622,6 +622,7 @@ function InfoCard({ label, title, links }: {
              onMouseEnter={() => window.clearTimeout(hideTimer.current)} onMouseLeave={hide}
              className="z-50 w-80 rounded-lg border border-gray-200 bg-white p-3 text-left text-xs text-gray-800 shadow-lg">
           <div className="mb-2 text-sm font-semibold text-gray-900">{title}</div>
+          {note && <p className="mb-2 text-gray-700">{note}</p>}
           <div className="flex flex-col gap-1.5 border-t border-gray-100 pt-2">
             {links.map((l) => <SourceLink key={l.text} href={l.href}>{l.text}</SourceLink>)}
           </div>
@@ -649,8 +650,37 @@ function LeftAfterProxy({ l }: { l: NonNullable<Director["left_after_proxy"]> })
   );
 }
 
+/** Surname and first initial: "Lynn V. Radakovich" and "Lynn Radakovich" are one person. */
+const personKey = (name: string) => {
+  const words = name.replace(/,?\s+(Jr|Sr|II|III|IV|M\.D|Ph\.D)\.?$/i, "").replace(/[.,]/g, " ").trim().split(/\s+/);
+  return `${(words[words.length - 1] || "").toLowerCase()}|${(words[0] || "").charAt(0).toLowerCase()}`;
+};
+
+/** A proxy director the company's website does not list: where to check why -- the 8-K about
+ *  them (their departure, else their latest board change), the website's board page, the proxy. */
+function NotOnWebsite({ d, result }: { d: Director; result: BoardResult }) {
+  const key = personKey(d.name);
+  const event = [...(result.refreshment?.departed || []), ...(result.refreshment?.joined || [])]
+    .filter((e) => personKey(e.name) === key && e.source?.url)
+    .sort((a, b) => (b.source.filing_date || "").localeCompare(a.source.filing_date || ""))[0];
+  const eightK = d.left_after_proxy
+    ? { href: d.left_after_proxy.url, text: `${d.left_after_proxy.form}, filed ${usDate(d.left_after_proxy.filing_date)}` }
+    : event ? { href: event.source.url, text: event.source.label } : null;
+  const note = d.left_after_proxy
+    ? `${d.left_after_proxy.how || "Left the board"} ${usDate(d.left_after_proxy.date)}.`
+    : event ? `${event.how}${event.date ? ` ${usDate(event.date)}` : ""}.`
+    : "No 8-K about this director's board seat was found since the proxy.";
+  return (
+    <InfoCard label="Not on the company website: the filings" title="Not on the Company Website" note={note}
+              links={[...(eightK ? [eightK] : []),
+                      { href: result.website?.url, text: "Company Board Page" },
+                      { href: result.proxy.url, text: "Proxy Statement" }]} />
+  );
+}
+
 /** The whole board in one table, readable in one go; a name jumps to that director's profile. */
-function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: (name: string) => void }) {
+function BoardAtAGlance({ directors, onOpen, result }: { directors: Director[]; onOpen: (name: string) => void; result: BoardResult }) {
+  const notOnSite = new Set(result.website?.compare?.proxy_only || []);
   const thisYear = new Date().getFullYear();
   return (
     <div className="border border-gray-200 rounded-lg overflow-x-auto">
@@ -674,7 +704,9 @@ function BoardAtAGlance({ directors, onOpen }: { directors: Director[]; onOpen: 
                     <button onClick={() => onOpen(d.name)} title={d.name}
                             className="font-medium text-left text-[#931638] hover:underline truncate min-w-0">{d.name}</button>
                     {d.joined_after_proxy && <JoinedAfterProxy j={d.joined_after_proxy} />}
-                    {d.left_after_proxy && <LeftAfterProxy l={d.left_after_proxy} />}
+                    {notOnSite.has(d.name)
+                      ? <NotOnWebsite d={d} result={result} />
+                      : d.left_after_proxy && <LeftAfterProxy l={d.left_after_proxy} />}
                   </span>
                   {!!(f.board_roles || []).length && <div className="text-xs text-gray-900">{(f.board_roles || []).join(", ")}</div>}
                   {d.left_after_proxy && (
@@ -750,7 +782,7 @@ function BoardTab({ result }: { result: BoardResult }) {
       )}
       <div>
         <h3 className="text-sm font-semibold text-gray-800 mb-2">The Board at a Glance</h3>
-        <BoardAtAGlance directors={directors} onOpen={openAndJump} />
+        <BoardAtAGlance directors={directors} onOpen={openAndJump} result={result} />
       </div>
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <BoxedTabs<ProfileView>
@@ -1249,7 +1281,7 @@ function WebsiteMemberCard({ m, websiteOnly, open, onToggle }: {
       <span className="font-semibold text-gray-900">{m.name}</span>
       {m.title && <Pill>{m.title}</Pill>}
       {websiteOnly && <Pill>Website Only — Not in the Proxy</Pill>}
-      {!!m.committees.length && <span className="text-xs text-gray-700">Committees: {m.committees.join("; ")}</span>}
+      {!!m.committees?.length && <span className="text-xs text-gray-700">Committees: {m.committees.join("; ")}</span>}
       {!m.bio_html && <span className="ml-auto text-xs text-gray-600">No profile on this page</span>}
     </>
   );
