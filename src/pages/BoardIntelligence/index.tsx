@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import DOMPurify from "dompurify";
 import {
-  AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Info, Loader2, RefreshCw, Search, Users,
+  AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Info, Loader2, RefreshCw, Search, Users, X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
@@ -128,8 +129,13 @@ export type CompanyHit = { cik: string; ticker: string; name: string };
 
 type Check = { check: string; status: "ok" | "warn"; detail: string };
 
+/** One organisation in a director's experience, with the roles held there. */
+type ExperienceEntry = { company: string; period?: string | null; roles: { title: string; period: string | null }[] };
+
 type DirectorFacts = {
   current_position?: string | null;
+  /** latest first; absent on a result read before it existed: the current position is shown instead */
+  experience?: ExperienceEntry[];
   age?: number | null;
   age_source?: string;
   director_since?: string | null;
@@ -587,7 +593,7 @@ function DirectorCard({ d, open, onToggle }: { d: Director; open: boolean; onTog
 }
 
 /** Board at a Glance column widths, the same for every company: a wide Director column (a name
- *  on one line), then Position, Committees and Other Public Boards at one equal width. */
+ *  on one line), then Experience, Committees and Other Public Boards at one equal width. */
 const GLANCE_COLS = ["21%", "5%", "5.5%", "5.5%", "8%", "18.33%", "18.33%", "18.34%"];
 
 /** The "i" next to a director whose row the proxy does not tell in full: hovering (or focusing)
@@ -678,6 +684,131 @@ function NotOnWebsite({ d, result }: { d: Director; result: BoardResult }) {
   );
 }
 
+/** How many entries a Board at a Glance cell shows before its "..." */
+const GLANCE_TOP = 2;
+
+/** A small window over the page, closed by its X, Escape or a click outside. */
+function SmallModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const closeButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    closeButton.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}
+           className="flex max-h-[80vh] w-full max-w-md flex-col rounded-lg bg-white text-gray-900 shadow-xl">
+        <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
+          <h3 className="text-sm font-semibold">{title}</h3>
+          <button ref={closeButton} type="button" aria-label="Close" onClick={onClose}
+                  className="rounded p-0.5 text-gray-500 hover:bg-gray-100 hover:text-[#931638] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="space-y-3 overflow-y-auto px-4 py-3 text-sm">{children}</div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** The "..." under a cell that shows only its top entries; opens the rest in a small window. */
+function MoreButton({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const close = useRef(() => setOpen(false)).current;
+  return (
+    <>
+      <button type="button" aria-label={label} title={label} onClick={() => setOpen(true)}
+              className="mt-1 rounded px-1.5 font-bold leading-4 text-[#931638] hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+        ...
+      </button>
+      {open && <SmallModal title={title} onClose={close}>{children}</SmallModal>}
+    </>
+  );
+}
+
+/** One organisation: its name in bold, the roles held there below it. */
+function ExperienceBlock({ e }: { e: ExperienceEntry }) {
+  return (
+    <div>
+      <div>
+        <span className="font-semibold">{e.company}</span>
+        {e.period && <span className="text-gray-600"> ({e.period})</span>}
+      </div>
+      {e.roles.map((r, i) => (
+        <div key={i}>{capFirst(r.title)}{r.period && <span className="text-gray-600"> ({r.period})</span>}</div>
+      ))}
+    </div>
+  );
+}
+
+/** How many lines of experience a Board at a Glance cell shows, the same for every director (a
+ *  company and each role are a line): the latest company and its two latest roles */
+const EXPERIENCE_LINES = 3;
+
+/** The latest experience, at most EXPERIENCE_LINES lines, a company never shown without a role. Pure. */
+const firstLines = (all: ExperienceEntry[], max: number): ExperienceEntry[] => {
+  const out: ExperienceEntry[] = [];
+  let used = 0;
+  for (const e of all) {
+    const room = max - used - 1;
+    if (room < 1) break;
+    const roles = e.roles.slice(0, room);
+    out.push({ ...e, roles });
+    used += 1 + roles.length;
+    if (roles.length < e.roles.length) break;
+  }
+  return out;
+};
+
+/** The latest experience, a few lines; the rest behind "...". A result read before experience
+ *  existed, or a biography none could be read from, shows the current position. */
+function ExperienceCell({ d }: { d: Director }) {
+  const f = d.facts || {};
+  const all = f.experience || [];
+  if (!all.length) return f.current_position ? <>{capFirst(f.current_position)}</> : <span className="text-gray-400">—</span>;
+  const shown = firstLines(all, EXPERIENCE_LINES);
+  const lines = (es: ExperienceEntry[]) => es.reduce((n, e) => n + 1 + e.roles.length, 0);
+  return (
+    <div className="space-y-1.5">
+      {shown.map((e, i) => <ExperienceBlock key={i} e={e} />)}
+      {lines(shown) < lines(all) && (
+        <MoreButton label={`See all of ${d.name}'s experience`} title={`${d.name}: Experience`}>
+          {all.map((e, i) => <ExperienceBlock key={i} e={e} />)}
+        </MoreButton>
+      )}
+    </div>
+  );
+}
+
+/** Current public boards, then former ones; a group with nothing to show is hidden. Each shows its
+ *  top two; "..." opens both in full. */
+function BoardsCell({ d }: { d: Director }) {
+  const current = d.facts?.other_public_boards || [];
+  const former = d.facts?.former_public_boards || [];
+  if (!current.length && !former.length) return <span className="text-gray-400">—</span>;
+  const group = (label: string, boards: string[]) => !!boards.length && (
+    <div>
+      <div className="text-xs font-semibold text-gray-700">{label}</div>
+      {boards.map((b) => <div key={b}>{formatBoard(b)}</div>)}
+    </div>
+  );
+  return (
+    <div className="space-y-1.5">
+      {group("Current Boards", current.slice(0, GLANCE_TOP))}
+      {group("Former Boards", former.slice(0, GLANCE_TOP))}
+      {(current.length > GLANCE_TOP || former.length > GLANCE_TOP) && (
+        <MoreButton label={`See all of ${d.name}'s public boards`} title={`${d.name}: Public Boards`}>
+          {group("Current Boards", current)}
+          {group("Former Boards", former)}
+        </MoreButton>
+      )}
+    </div>
+  );
+}
+
 /** The whole board in one table, readable in one go; a name jumps to that director's profile. */
 function BoardAtAGlance({ directors, onOpen, result }: { directors: Director[]; onOpen: (name: string) => void; result: BoardResult }) {
   const notOnSite = new Set(result.website?.compare?.proxy_only || []);
@@ -690,7 +821,7 @@ function BoardAtAGlance({ directors, onOpen, result }: { directors: Director[]; 
           <tr>
             <th className="p-2">Director</th><th className="p-2">Age</th><th className="p-2">Since</th><th className="p-2">Tenure</th>
             <th className="p-2">Independent</th>
-            <th className="p-2">Position</th><th className="p-2">Committees</th><th className="p-2">Other Public Boards</th>
+            <th className="p-2">Experience</th><th className="p-2">Committees</th><th className="p-2">Other Public Boards</th>
           </tr>
         </thead>
         <tbody>
@@ -722,13 +853,9 @@ function BoardAtAGlance({ directors, onOpen, result }: { directors: Director[]; 
                     : <span className="text-gray-400">—</span>}
                 </td>
                 <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : <span className="text-gray-400">—</span>}</td>
-                <td className="p-2">{f.current_position ? capFirst(f.current_position) : <span className="text-gray-400">—</span>}</td>
+                <td className="p-2"><ExperienceCell d={d} /></td>
                 <td className="p-2">{(f.committees || []).join("; ") || <span className="text-gray-400">—</span>}</td>
-                <td className="p-2">
-                  {(f.other_public_boards || []).length
-                    ? (f.other_public_boards || []).map((b) => <div key={b}>{formatBoard(b)}</div>)
-                    : <span className="text-gray-400">—</span>}
-                </td>
+                <td className="p-2"><BoardsCell d={d} /></td>
               </tr>
             );
           })}
