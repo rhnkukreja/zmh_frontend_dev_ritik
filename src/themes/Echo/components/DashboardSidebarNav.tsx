@@ -290,11 +290,14 @@ const DashboardSidebarNav = ({
       const userType = user?.user_type;
       return userType === "Admin";
     }
-    // Compensation and Board Intelligence are restricted to Admins/Analysts
-    if (s.key === "compensation" || s.key === "board-intel") {
+    // Compensation is restricted to Analysts
+    if (s.key === "compensation") {
+      return user?.user_type === "Analyst";
+    }
+    // Board Intelligence is restricted to Admins/Analysts
+    if (s.key === "board-intel") {
       const userType = user?.user_type;
-      return userType === "Analyst";
-      // return userType === "Admin" || userType === "Analyst";
+      return userType === "Admin" || userType === "Analyst";
     }
     if (s.key === "governance-profile") {
       return Boolean(modulesData?.governance_profile);
