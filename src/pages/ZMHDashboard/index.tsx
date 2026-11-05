@@ -74,7 +74,6 @@ function Main() {
 
   // Check if user is admin
   const isAdmin = user?.user_type === 'Admin';
-  const isAdminOrAnalyst = isAdmin || user?.user_type === 'Analyst';
 
   // Active section now lives in Redux and is driven by the Koyfin-style sidebar.
   const location = useLocation();
@@ -734,7 +733,7 @@ function Main() {
             </div>
           )}
 
-          {activeTab === 'board-intel' && isAdminOrAnalyst && (
+          {activeTab === 'board-intel' && (
             <div id="board-intel" className="col-span-12 xl:col-span-12">
               <DashboardBoardIntel ticker={companyGlobalSearchTicker} name={companyGlobalSearchName} companyId={companyGlobalSearchId} />
             </div>
