@@ -113,8 +113,12 @@ const fetchOptions = async (
 
     if (isInstitution) {
       const institutionOptions = response.results.map((institution: any) => ({
-        value: institution,
-        label: institution,
+        value: useProposalVotingStatsDropdown
+          ? (institution?.institution_id ?? institution?.institution_name ?? institution)
+          : institution,
+        label: useProposalVotingStatsDropdown
+          ? (institution?.institution_name ?? institution)
+          : institution,
       }));
 
       const selectAllOption: OptionType = {

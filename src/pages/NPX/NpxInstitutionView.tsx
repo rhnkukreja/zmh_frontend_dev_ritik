@@ -26,6 +26,7 @@ import clsx from "clsx";
 
 interface FilterState {
   investor_company?: string[];
+  institution_id?: Array<string | number>;
   company_name?: string[];
   company_ids?: Array<string | number>;
   fund_name?: string[];
@@ -97,6 +98,7 @@ const NPX_DRAFT_SELECTION_CACHE_KEY = "npxProposalVotingDraftSelection";
 
 type DraftSelection = {
   investor_company: string[];
+  institution_id: Array<string | number>;
   company_name: string[];
   company_ids: Array<string | number>;
 };
@@ -175,6 +177,7 @@ const NpxInstitutionView = () => {
   if (draftSelectionRef.current === null) {
     draftSelectionRef.current = readCachedDraftSelection() || {
       investor_company: [],
+      institution_id: [],
       company_name: [],
       company_ids: [],
     };
@@ -186,9 +189,16 @@ const NpxInstitutionView = () => {
   const [institutionSelection, setInstitutionSelection] = useState<string[]>(
     draftSelectionRef.current.investor_company?.length ? draftSelectionRef.current.investor_company : (filters.investor_company || [])
   );
+  // Staged institution ids (selected value is institution_id, not the name)
+  const [institutionIdSelection, setInstitutionIdSelection] = useState<Array<string | number>>(
+    draftSelectionRef.current.institution_id?.length ? draftSelectionRef.current.institution_id : (filters.institution_id || [])
+  );
+  // Maps institution_name -> institution_id from org_institution responses
+  const institutionIdMapRef = useRef<Map<string, string | number>>(new Map());
   const [summaryLoading, setSummaryLoading] = useState(true);
   const hasBootstrappedInstitutionRef = useRef(false);
   const skipNextDropdownEffectRef = useRef(false);
+  const lastStatsSignatureRef = useRef<string>("");
   const statsLoadStartedRef = useRef(false);
   const hasSelectedInstitution = Boolean(filters.investor_company && filters.investor_company.length > 0 && filters.investor_company[0]);
   const isInstitutionSelectionPending = useMemo(() => {
@@ -214,6 +224,7 @@ const NpxInstitutionView = () => {
 
     if (hasSelectedInstitution && isInstitutionSelectionPending) {
       setInstitutionSelection(filters.investor_company || []);
+      setInstitutionIdSelection(filters.institution_id || []);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -231,6 +242,7 @@ const NpxInstitutionView = () => {
         NPX_DRAFT_SELECTION_CACHE_KEY,
         JSON.stringify({
           investor_company: institutionSelection,
+          institution_id: institutionIdSelection,
           company_name: companySelection.company_name,
           company_ids: companySelection.company_ids,
         })
@@ -238,7 +250,7 @@ const NpxInstitutionView = () => {
     } catch {
       /* no-op */
     }
-  }, [institutionSelection, companySelection]);
+  }, [institutionSelection, institutionIdSelection, companySelection]);
 
   const viewData = useMemo(() => npxProposalVotingStats || {}, [npxProposalVotingStats]);
   const byInstitution = useMemo(() => viewData.by_institution || [], [viewData]);
@@ -356,6 +368,33 @@ const NpxInstitutionView = () => {
     setOpenGroups(nextOpenGroups);
   };
 
+  // Merge org_institution [{institution_id, institution_name}] entries into the id map
+  const mergeOrgInstitutions = (list: any[]) => {
+    (list || []).forEach((o: any) => {
+      if (o?.institution_name && o?.institution_id != null) {
+        institutionIdMapRef.current.set(o.institution_name, o.institution_id);
+      }
+    });
+  };
+
+  // Resolve institution ids for the selected names — from explicit ids first,
+  // then the org_institution name->id map.
+  const resolveInstitutionIds = (names: string[] = [], ids?: Array<string | number>) =>
+    (ids && ids.length === names.length && ids.length > 0)
+      ? ids
+      : names
+        .map((n) => institutionIdMapRef.current.get(n))
+        .filter((id): id is string | number => id != null);
+
+  // Always send institution_id — mapped institutions resolve to their id,
+  // unmapped fund-name selections keep the name inside institution_id.
+  const institutionParam = (names: string[] = [], ids?: Array<string | number>) => ({
+    institution_id: names.map((n, i) =>
+      (ids && ids[i] != null) ? ids[i] : (institutionIdMapRef.current.get(n) ?? n)
+    ),
+  });
+
+
   const loadDropdowns = async (selectedInstitution?: string[], filterOverride?: FilterState) => {
     const activeFilters = filterOverride ?? filters;
     const resolvedInstitution = selectedInstitution && selectedInstitution.length > 0
@@ -372,7 +411,7 @@ const NpxInstitutionView = () => {
 
     setDropdownLoading(true);
     try {
-      const params: any = { investor_company: resolvedInstitution };
+      const params: any = { ...institutionParam(resolvedInstitution, activeFilters.institution_id) };
       if (activeFilters.company_ids && activeFilters.company_ids.length > 0) params.company_ids = activeFilters.company_ids;
       if (activeFilters.year && activeFilters.year.length > 0) params.year = activeFilters.year;
       const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
@@ -381,6 +420,17 @@ const NpxInstitutionView = () => {
       if (meetingDate) params.meeting_date = meetingDate;
       const response = await dashboardService.getNpxProposalVotingDropdown(params);
       if (response?.result) {
+        mergeOrgInstitutions(response.result.org_institution);
+        // Backfill institution_id once org_institution resolves the selected
+        // names — cached filters predate ids and the stats calls need them.
+        const selectedNames = activeFilters.investor_company || [];
+        if (selectedNames.length > 0 && !(activeFilters.institution_id || []).length) {
+          const backfilledIds = resolveInstitutionIds(selectedNames);
+          if (backfilledIds.length === selectedNames.length && backfilledIds.length > 0) {
+            setFilters((prev) => ({ ...prev, institution_id: backfilledIds }));
+            setInstitutionIdSelection(backfilledIds);
+          }
+        }
         setDropdowns(response.result);
 
         const availableYears = sortYearsDesc(response.result.year || []);
@@ -451,6 +501,7 @@ const NpxInstitutionView = () => {
           return;
         }
 
+        mergeOrgInstitutions(response.result.org_institution);
         setDropdowns(response.result);
 
         const availableYears = sortYearsDesc(response.result.year || []);
@@ -475,10 +526,17 @@ const NpxInstitutionView = () => {
           (Array.isArray(response.result?.institution) ? response.result.institution[0] : null) ||
           DEFAULT_NPX_INSTITUTION;
 
+        const resolvedInstitutionId =
+          response.result?.institution_id ??
+          institutionIdMapRef.current.get(resolvedInstitutionName) ??
+          DEFAULT_NPX_INSTITUTION_ID;
+
         setInstitutionSelection([resolvedInstitutionName]);
+        setInstitutionIdSelection([resolvedInstitutionId]);
         setFilters((prev) => ({
           ...prev,
           investor_company: [resolvedInstitutionName],
+          institution_id: [resolvedInstitutionId],
           fund_name: [],
           ...((!prev.year || prev.year.length === 0) && resolvedYear.length > 0 ? { year: resolvedYear } : {}),
         }));
@@ -493,15 +551,26 @@ const NpxInstitutionView = () => {
     bootstrapDefaultInstitution();
   }, [filters.year, hasSelectedInstitution, meetingDate, searchParams]);
 
-  const loadStats = (
+  const loadStats = async (
     page = 1,
     companyOverride?: { company_name: string[]; company_ids: Array<string | number> },
     filterOverride?: FilterState
   ) => {
-    const activeFilters = filterOverride ?? filters;
+    let activeFilters = filterOverride ?? filters;
     const hasInstitutionSelection = Boolean(activeFilters.investor_company && activeFilters.investor_company.length > 0 && activeFilters.investor_company[0]);
     if (!hasInstitutionSelection) {
       return;
+    }
+
+    // Backfill institution_id from the org_institution map if the applied
+    // filters only carry names (e.g. older cached filters).
+    if (!(activeFilters.institution_id || []).length) {
+      const resolvedIds = resolveInstitutionIds(activeFilters.investor_company || []);
+      if (resolvedIds.length === (activeFilters.investor_company || []).length && resolvedIds.length > 0) {
+        activeFilters = { ...activeFilters, institution_id: resolvedIds };
+        setFilters((prev) => ({ ...prev, institution_id: resolvedIds }));
+        setInstitutionIdSelection(resolvedIds);
+      }
     }
 
     const investor = activeFilters.investor_company?.[0] || DEFAULT_INVESTOR;
@@ -510,18 +579,27 @@ const NpxInstitutionView = () => {
     const resolvedYear = !hasDateRange && activeFilters.year && activeFilters.year.length > 0
       ? activeFilters.year
       : [sortYearsDesc(dropdowns.year || [])[0] || searchParams.get("year") || new Date().getFullYear().toString()];
-    const { company_name: _companyNames, ...restFilters } = activeFilters;
+    const { company_name: _companyNames, investor_company: _investorCompany, institution_id: _institutionIds, ...restFilters } = activeFilters;
     const selectedCompanyIds = companyOverride?.company_ids ?? activeFilters.company_ids ?? [];
     const payload: any = {
       view: "by_institution",
       page,
       page_size: pageSize,
-      investor_company: [investor],
+      ...institutionParam([investor], activeFilters.institution_id),
       ...restFilters,
       ...(selectedCompanyIds.length > 0 ? { company_ids: selectedCompanyIds } : {}),
       ...(hasDateRange ? { date_range: normalizedDateRange } : { year: resolvedYear }),
     };
     if (meetingDate) payload.meeting_date = meetingDate;
+    lastStatsSignatureRef.current = JSON.stringify([
+      activeFilters.investor_company,
+      activeFilters.institution_id,
+      activeFilters.company_ids,
+      activeFilters.year,
+      activeFilters.date_range,
+      activeFilters.index,
+      meetingDate,
+    ]);
     statsLoadStartedRef.current = true;
     setSummaryLoading(true);
     dispatch(
@@ -565,6 +643,19 @@ const NpxInstitutionView = () => {
       return;
     }
     if ((!filters.year || filters.year.length === 0) && !filters.date_range) return;
+    // Skip if loadStats already ran for this exact filter set (e.g. Apply
+    // calls it manually — avoids a duplicate heavy request when committing
+    // the staged institution flips isInstitutionSelectionPending).
+    const signature = JSON.stringify([
+      filters.investor_company,
+      filters.institution_id,
+      filters.company_ids,
+      filters.year,
+      filters.date_range,
+      filters.index,
+      meetingDate,
+    ]);
+    if (lastStatsSignatureRef.current === signature) return;
     loadStats(1);
     setActivePage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -639,6 +730,8 @@ const NpxInstitutionView = () => {
       next[key] = (next[key] as string[] | undefined)?.filter((v) => v !== value) || [];
       if (key === "investor_company") {
         setInstitutionSelection(next.investor_company || []);
+        next.institution_id = [];
+        setInstitutionIdSelection([]);
       }
     }
 
@@ -651,8 +744,17 @@ const NpxInstitutionView = () => {
 
   const handleInstitutionChange = async (selected: any) => {
     const institutionValue = selected?.label ? String(selected.label) : "";
+    // The option value carries institution_id for mapped institutions; fall
+    // back to the id map for values that are still plain names.
+    const rawId = selected?.value;
+    const resolvedId = institutionValue
+      ? (rawId !== undefined && rawId !== institutionValue
+        ? rawId
+        : institutionIdMapRef.current.get(institutionValue))
+      : undefined;
     setShowInstitutionFirstMessage(false);
     setInstitutionSelection(institutionValue ? [institutionValue] : []);
+    setInstitutionIdSelection(institutionValue && resolvedId !== undefined ? [resolvedId] : []);
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
   };
@@ -695,6 +797,7 @@ const NpxInstitutionView = () => {
     const nextFilters: FilterState = {
       ...filters,
       investor_company: institutionSelection,
+      institution_id: institutionIdSelection,
       company_name: appliedCompanySelection.company_name,
       company_ids: appliedCompanySelection.company_ids,
     };
@@ -709,8 +812,9 @@ const NpxInstitutionView = () => {
 
   const handleClear = () => {
     const fallbackYear = sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString();
-    setFilters({ investor_company: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "", index: [DEFAULT_NPX_INDEX] });
+    setFilters({ investor_company: [], institution_id: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "", index: [DEFAULT_NPX_INDEX] });
     setInstitutionSelection([]);
+    setInstitutionIdSelection([]);
     setCompanySelection({ company_name: [], company_ids: [] });
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
@@ -724,11 +828,11 @@ const NpxInstitutionView = () => {
 
   const handleDownload = () => {
     if (!hasSelectedInstitution) return;
-    const { company_name: _companyNames, ...restFilters } = filters;
+    const { company_name: _companyNames, investor_company: _investorCompany, institution_id: _institutionIds, ...restFilters } = filters;
     const params: any = {
       view: "by_institution",
       download: true,
-      investor_company: filters.investor_company,
+      ...institutionParam(filters.investor_company || [], filters.institution_id),
       ...restFilters,
       ...(filters.company_ids && filters.company_ids.length > 0 ? { company_ids: filters.company_ids } : {}),
     };
@@ -797,9 +901,11 @@ const NpxInstitutionView = () => {
   const selectedInstitutionValue = useMemo(
     () => {
       const selected = institutionSelection?.[0];
-      return selected ? { value: selected, label: selected } : null;
+      if (!selected) return null;
+      const selectedId = institutionIdSelection?.[0] ?? institutionIdMapRef.current.get(selected);
+      return { value: selectedId ?? selected, label: selected };
     },
-    [institutionSelection]
+    [institutionSelection, institutionIdSelection]
   );
 
   const selectedCompanyValues = useMemo(

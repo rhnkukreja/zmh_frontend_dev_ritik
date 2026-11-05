@@ -685,7 +685,7 @@ class DashboardService {
   public async fetchInstitutionByNameFromProposalVotingStats(
     institutionValue?: string,
     year?: string
-  ): Promise<{ results: CompanyData[] }> {
+  ): Promise<{ results: any[] }> {
     if (!institutionValue) {
       return { results: [] };
     }
@@ -702,11 +702,19 @@ class DashboardService {
 
     const { result } = await this.getNpxProposalVotingDropdown(params);
 
-    return {
-      results: (institutionValue !== "a" && institutionValue.trim() !== "")
-        ? (result?.institution || [])
-        : (result?.all_institution || []),
-    };
+    // Prefer org_institution [{institution_id, institution_name}] so the
+    // select can carry ids; fall back to plain name lists when absent.
+    const isSearch = institutionValue !== "a" && institutionValue.trim() !== "";
+    const fallbackNames = (isSearch ? result?.institution : result?.all_institution) || [];
+    const results = Array.isArray(result?.org_institution) && result.org_institution.length > 0
+      ? result.org_institution
+      : fallbackNames.map((entry: any) =>
+        typeof entry === "string"
+          ? { institution_name: entry }
+          : { institution_name: entry?.institution_name ?? entry?.name, institution_id: entry?.institution_id }
+      );
+
+    return { results };
   }
 
   public async getBoardDirectorMembers(ticker: string): Promise<{

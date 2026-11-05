@@ -2979,7 +2979,7 @@ const index = () => {
                                   <React.Fragment key={vds.proposal_id || vdsIdx}>
                                     <Table.Tr
                                       className="hover:bg-primary/10"
-                                      style={getSequentialBorderStyle(vds?.proposal_num, proposals, vdsIdx)}
+                                      style={allAnalyticsFilter?.proposal_type?.length ? {} : getSequentialBorderStyle(vds?.proposal_num, proposals, vdsIdx)}
                                     >
                                       <Table.Td className="px-4 py-2 align-top text-sm text-gray-500">
                                         {vds?.proposal_num || vdsIdx + 1}
@@ -3153,7 +3153,7 @@ const index = () => {
                                 <Table.Tr
                                   key={vds?.id}
                                   className="[&_td]:last:border-b-0"
-                                  style={getSequentialBorderStyle(vds?.proposal_num, institutionData, index)}
+                                  style={allApplyFilter?.proposal_type?.length ? {} : getSequentialBorderStyle(vds?.proposal_num, institutionData, index)}
                                 >
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800" />
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
