@@ -16,6 +16,7 @@ import {
   baseURL,
   proponent_type,
   proposal_type,
+  ma_proposal_type,
   meeting_type,
 } from "@/constant";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -91,6 +92,14 @@ const isPageReloadOnce = (sessionKey: string) => {
 };
 
 const VDS_VIEW_MODE_KEY = "vdsEuropeanIsViewAnalysis";
+
+// M&A proposal type values are shown inside Proposal Category but sent separately via ma_proposal_type
+const isMaProposalType = (value: string) =>
+  ma_proposal_type.some((t) => t.toLowerCase() === value?.toLowerCase());
+const splitMaProposalTypes = (values: string[] = []) => ({
+  maProposalTypes: values.filter(isMaProposalType),
+  proposalTypes: values.filter((v) => !isMaProposalType(v)),
+});
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -602,6 +611,15 @@ const index = () => {
           if (payload.year) {
             payload.year = payload.year;
           }
+          // Split M&A proposal types out of proposal_type — sent separately via ma_proposal_type
+          const { maProposalTypes, proposalTypes } = splitMaProposalTypes([
+            ...new Set([
+              ...(payload.proposal_type || []),
+              ...(payload.ma_proposal_type || []),
+            ]),
+          ]);
+          payload.proposal_type = proposalTypes;
+          payload.ma_proposal_type = maProposalTypes;
           await dispatch(
             fetchVdsEuropeans(
               createDynamicURL(
@@ -1115,9 +1133,12 @@ const index = () => {
         ? allAnalyticsFilter?.proponent_type
         : [],
       proposal_type: allAnalyticsFilter?.proposal_type
-        ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+        ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).proposalTypes.map((item: any) =>
           item.toLowerCase()
         )
+        : [],
+      ma_proposal_type: allAnalyticsFilter?.proposal_type
+        ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).maProposalTypes
         : [],
       index:
         allAnalyticsFilter?.index?.length > 0
@@ -1213,6 +1234,10 @@ const index = () => {
       return;
     }
 
+    const { maProposalTypes, proposalTypes: nonMaProposalTypes } = splitMaProposalTypes(
+      npxFilter?.proposal_type || []
+    );
+
     interface FilterObj {
       company_name: any;
       institution_name: any;
@@ -1223,6 +1248,8 @@ const index = () => {
       date_range?: any;
       year?: any;
       meeting_type?: any;
+      proposal_type?: any;
+      ma_proposal_type?: any;
     }
 
     const filterObj: FilterObj = {
@@ -1235,6 +1262,9 @@ const index = () => {
       country: npxFilter?.country || ["USA"],
       // Include meeting_type if present
       meeting_type: npxFilter?.meeting_type?.length > 0 ? npxFilter?.meeting_type : undefined,
+      // Split M&A proposal types out of proposal_type — sent separately via ma_proposal_type
+      proposal_type: nonMaProposalTypes.length > 0 ? nonMaProposalTypes : undefined,
+      ma_proposal_type: maProposalTypes.length > 0 ? maProposalTypes : undefined,
     };
 
     // Add only the active filter (year OR date_range, not both)
@@ -1258,6 +1288,7 @@ const index = () => {
       index: npxFilter?.index || [],
       meeting_type: npxFilter?.meeting_type || [],
       proposal_type: npxFilter?.proposal_type || [],
+      ma_proposal_type: maProposalTypes,
       proponent_type: npxFilter?.proponent_type || [],
       proposal_keyword: npxFilter?.proposal_keyword || [],
       keyword: npxFilter?.keyword || "",
@@ -1917,9 +1948,12 @@ const index = () => {
             ? allAnalyticsFilter?.proponent_type
             : [],
           proposal_type: allAnalyticsFilter?.proposal_type
-            ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+            ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).proposalTypes.map((item: any) =>
               item.toLowerCase()
             )
+            : [],
+          ma_proposal_type: allAnalyticsFilter?.proposal_type
+            ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).maProposalTypes
             : [],
           index:
             allAnalyticsFilter?.index?.length > 0
@@ -2649,11 +2683,16 @@ const index = () => {
                     control={control}
                     render={({ field }) => (
                       <MultiSelectDropdown
-                        data={proposal_type.map((item: any) => convertToTitleCase(item))}
+                        data={[...proposal_type.map((item: any) => convertToTitleCase(item)), ...ma_proposal_type]}
                         placeholder="Select Proposal Category"
                         loading={false}
                         onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          const selectedValues = selectedOptions.map((option) => {
+                            const maValue = ma_proposal_type.find(
+                              (t) => t.toLowerCase() === option.value?.toLowerCase()
+                            );
+                            return maValue || convertToTitleCase(option.value);
+                          });
                           field.onChange(selectedValues);
                         }}
                         selectedOption={field.value || []}
