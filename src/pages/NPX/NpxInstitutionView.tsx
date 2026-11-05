@@ -83,6 +83,7 @@ const DEFAULT_INVESTOR = "BlackRock, Inc.";
 // the name is only used as a UI fallback label if the API doesn't echo one back.
 const DEFAULT_NPX_INSTITUTION_ID = 1345;
 const DEFAULT_NPX_INSTITUTION = "BlackRock Active Investment Stewardship (BAIS)";
+const DEFAULT_NPX_INDEX = "S&P 500";
 const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
 const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
@@ -139,6 +140,9 @@ const NpxInstitutionView = () => {
       if (cachedFilters) {
         return {
           ...cachedFilters,
+          // Older caches predate the Index filter — default to S&P 500, but
+          // respect an explicitly saved (even empty) selection.
+          index: cachedFilters.index !== undefined ? cachedFilters.index : [DEFAULT_NPX_INDEX],
           year: searchParams.get("year")
             ? [searchParams.get("year") as string]
             : cachedFilters.year || [],
@@ -147,6 +151,7 @@ const NpxInstitutionView = () => {
 
       return {
         investor_company: [],
+        index: [DEFAULT_NPX_INDEX],
         year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
       };
     })(),
@@ -372,6 +377,7 @@ const NpxInstitutionView = () => {
       if (activeFilters.year && activeFilters.year.length > 0) params.year = activeFilters.year;
       const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
       if (normalizedDateRange.trim()) params.date_range = normalizedDateRange;
+      if (activeFilters.index && activeFilters.index.length > 0) params.index = activeFilters.index;
       if (meetingDate) params.meeting_date = meetingDate;
       const response = await dashboardService.getNpxProposalVotingDropdown(params);
       if (response?.result) {
@@ -432,6 +438,7 @@ const NpxInstitutionView = () => {
         const params: any = {
           year: fallbackYear,
           institution_id: [DEFAULT_NPX_INSTITUTION_ID],
+          index: [DEFAULT_NPX_INDEX],
         };
 
         if (meetingDate) params.meeting_date = meetingDate;
@@ -548,7 +555,7 @@ const NpxInstitutionView = () => {
 
     loadDropdowns(filters.investor_company, filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, filters.investor_company, filters.company_name, filters.company_ids, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
+  }, [filters.year, filters.date_range, filters.investor_company, filters.company_name, filters.company_ids, filters.index, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
 
   useEffect(() => {
     if (isInstitutionSelectionPending) {
@@ -561,7 +568,7 @@ const NpxInstitutionView = () => {
     loadStats(1);
     setActivePage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
+  }, [filters.year, filters.date_range, filters.index, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
 
   useEffect(() => {
     if (statsLoadStartedRef.current && !npxProposalVotingStatsLoading) {
@@ -628,7 +635,7 @@ const NpxInstitutionView = () => {
         company_ids: updatedCompanyIds,
       };
       setCompanySelection(nextCompanySelection);
-    } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword") {
+    } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword" || key === "index") {
       next[key] = (next[key] as string[] | undefined)?.filter((v) => v !== value) || [];
       if (key === "investor_company") {
         setInstitutionSelection(next.investor_company || []);
@@ -702,7 +709,7 @@ const NpxInstitutionView = () => {
 
   const handleClear = () => {
     const fallbackYear = sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString();
-    setFilters({ investor_company: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "" });
+    setFilters({ investor_company: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "", index: [DEFAULT_NPX_INDEX] });
     setInstitutionSelection([]);
     setCompanySelection({ company_name: [], company_ids: [] });
     setShowFundName(false);
@@ -781,6 +788,7 @@ const NpxInstitutionView = () => {
     [apiFundNameDropdown.fund_name, dropdowns.fund_name]
   );
   const voteOptions = useMemo(() => toOptions(uniqueStrings(dropdowns.vote || [])), [dropdowns.vote]);
+  const indexOptions = useMemo(() => toOptions(uniqueStrings(dropdowns.index || [])), [dropdowns.index]);
   const keywordOptions = useMemo(
     () => toOptions(uniqueStrings(dropdowns.synonyms || dropdowns.keyword || [])),
     [dropdowns.synonyms, dropdowns.keyword]
@@ -813,6 +821,7 @@ const NpxInstitutionView = () => {
       ...(filters.vote || []).map((value) => ({ label: "Vote", value, key: "vote" as keyof FilterState })),
       ...(filters.vote_category || []).map((value) => ({ label: "Vote Category", value, key: "vote_category" as keyof FilterState })),
       ...(filters.keyword || []).map((value) => ({ label: "Keyword", value, key: "keyword" as keyof FilterState })),
+      ...(filters.index || []).map((value) => ({ label: "Index", value, key: "index" as keyof FilterState })),
       ...(meetingDate ? [{ label: "Meeting Date", value: meetingDate, key: null }] : []),
     ];
     return chips;
@@ -1260,7 +1269,19 @@ const NpxInstitutionView = () => {
                   />
                 </div>
               ) : null}
-              <div className="order-7">
+              <div className="order-5">
+                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                  <FaLayerGroup className="text-gray-400" /> Index
+                </label>
+                <MultiSelectDropdown
+                  data={indexOptions}
+                  loading={dropdownLoading}
+                  selectedOption={filters.index || []}
+                  onChange={(opts) => handleFilterChange("index", opts.map((o) => o.value))}
+                  placeholder="Select Index"
+                />
+              </div>
+              <div className="order-8">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaCheckCircle className="text-gray-400" /> Vote
                 </label>
@@ -1272,7 +1293,7 @@ const NpxInstitutionView = () => {
                   placeholder="Select Vote(s)"
                 />
               </div>
-              <div className="order-6">
+              <div className="order-7">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaListUl className="text-gray-400" /> Vote Category
                 </label>
@@ -1284,7 +1305,7 @@ const NpxInstitutionView = () => {
                   onChange={(values) => handleFilterChange("vote_category", values)}
                 />
               </div>
-              <div className="order-5">
+              <div className="order-6">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaBuilding className="text-gray-400" /> Company
                 </label>
@@ -1298,7 +1319,7 @@ const NpxInstitutionView = () => {
                   isClearable={true}
                 />
               </div>
-              <div className="order-8">
+              <div className="order-9">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaTags className="text-gray-400" /> Keywords (Beta)
                   <Tippy content="Keyword search applies on proposal text" options={{ theme: "light" }}>
