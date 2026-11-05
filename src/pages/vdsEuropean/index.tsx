@@ -8,7 +8,7 @@ import {
   generateFilterChips,
   downloadFileFromAPI,
 } from "@/utils/helper";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -170,7 +170,9 @@ const index = () => {
   const [voteOptions, setVoteOptions] = useState<string[]>([]);
   const [yearOptions, setYearOptions] = useState<number[]>([]);
   const [availableDateRange, setAvailableDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
-  const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
+  const [institutionOptions, setInstitutionOptions] = useState<{ institution_id?: number; institution_name: string }[]>([]);
+  // Maps institution_name -> institution_id from org_institution responses
+  const institutionIdMapRef = useRef<Map<string, number>>(new Map());
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [countryComponentKey, setCountryComponentKey] = useState<number>(0);
@@ -367,6 +369,47 @@ const index = () => {
     });
 
     return allInstitutionNames.length > 0 && allInstitutionNames.every(name => openInstitutionGroups[name]);
+  };
+
+  // Merge org_institution [{institution_id, institution_name}] entries into the id map
+  const mergeOrgInstitutions = (list: any[]) => {
+    (list || []).forEach((o: any) => {
+      if (o?.institution_name && o?.institution_id != null) {
+        institutionIdMapRef.current.set(o.institution_name, o.institution_id);
+      }
+    });
+  };
+
+  // Resolve institution ids aligned with the given institution names
+  const getInstitutionIds = (names: string[] = []) =>
+    names
+      .map((n) => institutionIdMapRef.current.get(n))
+      .filter((id): id is number => id != null);
+
+  // Prefer institution_id over names: send only ids when every name resolves
+  const institutionIdParams = (names: string[] = [], nameKey = "institution_name") => {
+    const ids = getInstitutionIds(names);
+    return ids.length === names.length && ids.length > 0
+      ? { institution_id: ids }
+      : { [nameKey]: names };
+  };
+
+  // Single shared dropdown request so institution ids are resolved before dependent calls
+  const orgInstitutionsPromiseRef = useRef<Promise<any> | null>(null);
+  const ensureInstitutionIdMap = () => {
+    if (!orgInstitutionsPromiseRef.current) {
+      orgInstitutionsPromiseRef.current = getVdsEuropeanDropdownValues()
+        .then((data) => {
+          const orgInstitutions = Array.isArray(data?.org_institution) && data.org_institution.length > 0
+            ? data.org_institution
+            : (data?.institution || []).map((name: string) => ({ institution_name: name }));
+          mergeOrgInstitutions(orgInstitutions);
+          setInstitutionOptions(orgInstitutions);
+          return data;
+        })
+        .catch(() => null);
+    }
+    return orgInstitutionsPromiseRef.current;
   };
 
   const hasAnyValidFilter = (filterObj: Record<string, any>): boolean => {
@@ -606,6 +649,7 @@ const index = () => {
 
         if (shouldRefetch) {
           setIsLoading(true);
+          await ensureInstitutionIdMap();
           // Always include year in payload if present in allApplyFilter
           const payload = { ...allApplyFilter };
           if (payload.year) {
@@ -620,6 +664,12 @@ const index = () => {
           ]);
           payload.proposal_type = proposalTypes;
           payload.ma_proposal_type = maProposalTypes;
+          // Prefer institution_id; send institution_name only when ids can't be resolved
+          const institutionNames = Array.isArray(payload.institution_name)
+            ? payload.institution_name
+            : payload.institution_name ? [payload.institution_name] : [];
+          delete payload.institution_name;
+          Object.assign(payload, institutionIdParams(institutionNames));
           await dispatch(
             fetchVdsEuropeans(
               createDynamicURL(
@@ -633,8 +683,8 @@ const index = () => {
           // Only update chips for regular filters if not in analytics mode
           // Don't overwrite chips if they were just restored from localStorage
           if (!isRestoringFromLocalStorage) {
-            setFiltersLength(countValidFilters(payload));
-            setSelectedChipFilters(generateFilterChips(payload));
+            setFiltersLength(countValidFilters(allApplyFilter));
+            setSelectedChipFilters(generateFilterChips(allApplyFilter));
           }
           dispatch(setTempSearch(companyGlobalSearchName));
           setIsLoading(false);
@@ -688,9 +738,8 @@ const index = () => {
     const fetchDropdownData = async () => {
       try {
         setGetFundNameDropdownLoader(true);
-        const data = await getVdsEuropeanDropdownValues();
-        setInstitutionOptions(data.institution || []);
-        setCountryOptions(data.country || []);
+        const data = await ensureInstitutionIdMap();
+        setCountryOptions(data?.country || []);
         // Don't set vote and year here - they will be fetched with institution dependency
       } catch (error) {
         setInstitutionOptions([]);
@@ -841,13 +890,18 @@ const index = () => {
   }, [watchedDateRange, watchedYear, watchedAnalyticsYear, prevDateRange, prevYear, prevAnalyticsYear, setValue]);
 
   const getDependentDropdown = async () => {
+    await ensureInstitutionIdMap();
     const paramFilter = {
       company_name: Array.isArray(dropdownValues?.company_name)
         ? dropdownValues?.company_name
         : dropdownValues?.company_name
           ? [dropdownValues?.company_name]
           : [],
-      institution_name: dropdownValues?.institution_name,
+      ...institutionIdParams(
+        Array.isArray(dropdownValues?.institution_name)
+          ? dropdownValues?.institution_name
+          : dropdownValues?.institution_name ? [dropdownValues?.institution_name] : []
+      ),
       year:
         dropdownValues?.institution_name && dropdownValues?.company_name
           ? 2024
@@ -870,6 +924,7 @@ const index = () => {
         paramFilter
       );
       if (res.result) {
+        mergeOrgInstitutions(res.result.org_institution);
         setApiDependentDropdownOptions({ ...res.result });
       }
     } catch (error) {
@@ -904,10 +959,12 @@ const index = () => {
 
     try {
       setGetDynamicDropdownLoader(true);
+      await ensureInstitutionIdMap();
       const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues({
-        institution_name: institutionNames
+        ...institutionIdParams(institutionNames)
       });
       if (res.result) {
+        mergeOrgInstitutions(res.result.org_institution);
         setVoteOptions(res.result.vote || []);
         setYearOptions(res.result.year || []);
         setAvailableDateRange(parseAvailableDateRange(res.result.available_date_range));
@@ -940,9 +997,10 @@ const index = () => {
     // Set new timeout for debouncing
     const newTimeout = setTimeout(async () => {
       try {
+        await ensureInstitutionIdMap();
         // Search: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=[SELECTED_INSTITUTION_NAME]&company_name={SEARCH_TEXT}
         const res = await vdsEuropeanService.getCompanySearchDropdownValues({
-          institution_name: institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS,
+          ...institutionIdParams(institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS),
           company_name: searchTerm // Send as string for search
         });
         if (res.result) {
@@ -973,10 +1031,11 @@ const index = () => {
 
     try {
       setGetDynamicDropdownLoader(true);
+      await ensureInstitutionIdMap();
 
       // Selection: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=["BlackRock, Inc."]&company_name=["Apple Inc."]
       const currentFilters = {
-        institution_name: institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS,
+        ...institutionIdParams(institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS),
         company_name: companyNames, // Send as array for selection
       };
 
@@ -1083,6 +1142,7 @@ const index = () => {
             paramFilter
           );
         if (res.result) {
+          mergeOrgInstitutions(res.result.org_institution);
           setApiInstitutionDropdown({ ...res.result });
         }
       } catch (error) {
@@ -1115,11 +1175,13 @@ const index = () => {
   };
 
   const handleAnalyticsDownload = async () => {
+    await ensureInstitutionIdMap();
     // Construct the same analytics parameters as the regular analytics call
-    const analyticsParams: Record<string, string | string[]> = {
-      investor_company: allAnalyticsFilter?.institution_name?.length
-        ? allAnalyticsFilter.institution_name
-        : allAnalyticsFilter.company_name || [],
+    const analyticsParams: Record<string, string | string[] | number[]> = {
+      // Prefer institution_id; send investor_company names only when ids can't be resolved
+      ...(allAnalyticsFilter?.institution_name?.length
+        ? institutionIdParams(allAnalyticsFilter.institution_name, "investor_company")
+        : { investor_company: allAnalyticsFilter.company_name || [] }),
       company_name: allAnalyticsFilter?.company_name?.length > 0
         ? allAnalyticsFilter.company_name
         : [],
@@ -1931,10 +1993,12 @@ const index = () => {
         const meetingTypeParam = searchParams.get('meeting_type');
         const hasQueryParams = institutionParam || companyParam || yearParam || meetingTypeParam;
 
+        await ensureInstitutionIdMap();
         const analyticsParams = {
-          investor_company: allAnalyticsFilter?.institution_name?.length
-            ? allAnalyticsFilter.institution_name
-            : allAnalyticsFilter.company_name || [],
+          // Prefer institution_id; send investor_company names only when ids can't be resolved
+          ...(allAnalyticsFilter?.institution_name?.length
+            ? institutionIdParams(allAnalyticsFilter.institution_name, "investor_company")
+            : { investor_company: allAnalyticsFilter.company_name || [] }),
           company_name: allAnalyticsFilter?.company_name?.length > 0
             ? allAnalyticsFilter.company_name
             : [],
@@ -2005,6 +2069,7 @@ const index = () => {
       setGetDropdownLoader(true);
       const res = await peerAnalysisService.getPeerAnalysisDropdownValues();
       if (res.result) {
+        mergeOrgInstitutions((res.result as any).org_institution);
         setApiDependentDropdownOptions({ ...res.result });
       }
     } catch (error) {
@@ -2376,9 +2441,9 @@ const index = () => {
                       <div>
                         <MultiSelectDropdown
                           data={institutionOptions.map(option => ({
-                            value: option,
-                            label: option,
-                            isDisabled: field.value?.length >= 5 && !field.value.includes(option)
+                            value: option.institution_name,
+                            label: option.institution_name,
+                            isDisabled: field.value?.length >= 5 && !field.value.includes(option.institution_name)
                           }))}
                           placeholder="Select Institutions"
                           loading={getFundNameDropdownLoader}
@@ -2608,7 +2673,7 @@ const index = () => {
                         arrayKeyName="company_name"
                         // Pass current institution filter as context
                         currentFilters={{
-                          institution_name: watch("institution_name") || DEFAULT_ANALYTICS_INSTITUTIONS
+                          ...institutionIdParams(watch("institution_name") || DEFAULT_ANALYTICS_INSTITUTIONS)
                         }}
                         placeholder="Search Companies"
                         isMulti={true}
