@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import DOMPurify from "dompurify";
 import {
-  AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Info, Loader2, RefreshCw, Search, Users, X,
+  AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Info, Loader2, Network, RefreshCw, Search, Users, X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
@@ -12,6 +12,7 @@ import { baseURL } from "@/constant";
 import { dashboardService } from "@/services/dashboard";
 import { useAppSelector } from "@/stores/hooks";
 import { createDynamicURL } from "@/utils/helper";
+import { BoardConnectionsModal, otherBoardsNow, useBoardConnections, type ConnectionsFocus } from "./BoardConnections";
 
 const BRAND = "#931638";
 const POLL_MS = 4000;
@@ -809,11 +810,49 @@ function BoardsCell({ d }: { d: Director }) {
   );
 }
 
-/** The whole board in one table, readable in one go; a name jumps to that director's profile. */
-function BoardAtAGlance({ directors, onOpen, result }: { directors: Director[]; onOpen: (name: string) => void; result: BoardResult }) {
+// ─── Names: one person printed two ways ─────────────────────────────────────────────────────
+
+/** Surname and initials, nicknames and suffixes left out: "J. Scott Kirby" -> kirby, {j, s}. Pure. */
+const nameParts = (name: string) => {
+  // one apostrophe however printed: Xcel's committee lists "Richard O'Brien", its 8-K "O’Brien"
+  const words = name.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’‘`´]/g, "'")
+    .replace(/["“”(].*?["“”)]/g, " ").replace(/,?\s+(Jr|Sr|II|III|IV|M\.D|Ph\.D)\.?$/i, "")
+    .replace(/[.,]/g, " ").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return { surname: words[words.length - 1] || "", initials: new Set(words.slice(0, -1).map((w) => w[0])) };
+};
+
+/** One person printed two ways: the same surname and a shared initial ("J. Scott Kirby" and the
+ *  dashboard's "Scott Kirby"). Pure. */
+const samePerson = (a: string, b: string) => {
+  const x = nameParts(a), y = nameParts(b);
+  return !!x.surname && x.surname === y.surname
+    && (!x.initials.size || !y.initials.size || Array.from(x.initials).some((i) => y.initials.has(i)));
+};
+
+/** The whole board in one table, readable in one go; a name jumps to that director's profile,
+ *  the network icon beside it opens their boards. */
+function BoardAtAGlance({ directors, onOpen, result }: {
+  directors: Director[]; onOpen: (name: string) => void; result: BoardResult;
+}) {
+  const thisCik = String(Number(result.company.cik));
+  // the board connections window: a director in the middle, or the whole board
+  const [panel, setPanel] = useState<{ focus: ConnectionsFocus; name?: string } | null>(null);
+  const closePanel = useRef(() => setPanel(null)).current;
+  const connections = useBoardConnections(thisCik);
+  const openDirector = (name: string) => setPanel({
+    focus: { kind: "person", key: connections.data?.members.find((m) => m.name === name)?.key || "", cik: thisCik }, name });
   const notOnSite = new Set(result.website?.compare?.proxy_only || []);
   const thisYear = new Date().getFullYear();
   return (
+    <div>
+    <div className="mb-2 flex flex-wrap items-center gap-2">
+      <h3 className="text-sm font-semibold text-gray-800">The Board at a Glance</h3>
+      <button type="button" onClick={() => setPanel({ focus: { kind: "board", cik: thisCik } })}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-3 py-1 text-xs font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+        <Network size={12} /> Board connections
+        {connections.data && <span className="text-[#931638]/70">· {new Set(connections.data.shared.flatMap((g) => g.people.map((p) => p.key))).size} of {connections.data.members.length} connected</span>}
+      </button>
+    </div>
     <div className="border border-gray-200 rounded-lg overflow-x-auto">
       <table className="text-sm w-full min-w-[1000px] table-fixed text-gray-900">
         <colgroup>{GLANCE_COLS.map((w, i) => <col key={i} style={{ width: w }} />)}</colgroup>
@@ -843,6 +882,15 @@ function BoardAtAGlance({ directors, onOpen, result }: { directors: Director[]; 
                   {d.left_after_proxy && (
                     <div className="text-xs text-gray-600">Left the board · {d.left_after_proxy.how || "Left"} {usDate(d.left_after_proxy.date)}</div>
                   )}
+                  {/* the boards the director sits on now, and who there they already know */}
+                  <button type="button" onClick={() => openDirector(d.name)} aria-label={`${d.name}: board network`}
+                          className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-2 py-0.5 text-[11px] font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+                    <Network size={11} />
+                    {(otherBoardsNow(connections.data, d.name) || 0) > 0
+                      ? `${otherBoardsNow(connections.data, d.name)} other board${otherBoardsNow(connections.data, d.name)! > 1 ? "s" : ""}`
+                      : "Board network"}
+                    <ChevronRight size={11} className="-mr-0.5 opacity-70" />
+                  </button>
                 </td>
                 <td className="p-2 whitespace-nowrap">{f.age ?? <span className="text-gray-400">—</span>}</td>
                 <td className="p-2 whitespace-nowrap">{f.director_since_year || f.director_since || <span className="text-gray-400">—</span>}</td>
@@ -861,6 +909,11 @@ function BoardAtAGlance({ directors, onOpen, result }: { directors: Director[]; 
           })}
         </tbody>
       </table>
+    </div>
+      {panel && (
+        <BoardConnectionsModal start={panel.focus} startName={panel.name} thisCik={thisCik} onClose={closePanel}
+                               onProfile={panel.name ? () => onOpen(panel.name!) : undefined} />
+      )}
     </div>
   );
 }
@@ -907,10 +960,7 @@ function BoardTab({ result }: { result: BoardResult }) {
       {!!result.proxy.named_without_biography.length && (
         <p className="text-sm text-gray-800">Named in the proxy without a biography: {result.proxy.named_without_biography.join(", ")}</p>
       )}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-800 mb-2">The Board at a Glance</h3>
-        <BoardAtAGlance directors={directors} onOpen={openAndJump} result={result} />
-      </div>
+      <BoardAtAGlance directors={directors} onOpen={openAndJump} result={result} />
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <BoxedTabs<ProfileView>
           tabs={hasWebsite ? [["proxy", "Full Profiles (Proxy)"], ["website", "Website Comparison"]] : [["proxy", "Full Profiles (Proxy)"]]}
@@ -942,12 +992,20 @@ function latestMembership(c: Committee) {
 }
 
 /** Board committees: who chairs each, who serves, how often it met -- and the board's leadership. */
-function CommitteesSection({ data, proxyUrl }: { data?: BoardCommittees; proxyUrl: string }) {
+function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
+  data?: BoardCommittees; proxyUrl: string; proxyDate?: string | null; departed?: RefreshEvent[];
+}) {
   const [showDoc, setShowDoc] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   if (!data) return <p className="text-sm text-gray-700">Board committees: not read for this result yet.</p>;
   const lead = data.leadership || {};
   const leaving = new Set(data.not_nominees || []);
+  // a member who has left the board since the proxy -- the meeting they retired at, or their
+  // resignation, has passed -- is off the list, not "retiring" (measured: Wells Fargo 2026, Clark,
+  // retired at the April 28, 2026 meeting, still shown "(retiring)" months later)
+  const today = new Date().toISOString().slice(0, 10);
+  const left = departed.filter((d) => d.date && d.date <= today && (!proxyDate || d.date >= proxyDate));
+  const hasLeft = (n: string) => left.some((d) => samePerson(d.name, n));
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -971,7 +1029,9 @@ function CommitteesSection({ data, proxyUrl }: { data?: BoardCommittees; proxyUr
             </thead>
             <tbody>
               {data.committees.map((c) => {
-                const m = latestMembership(c);
+                const latest = latestMembership(c);
+                const m = { ...latest, chair: latest.chair && !hasLeft(latest.chair) ? latest.chair : null,
+                            members: latest.members.filter((n) => !hasLeft(n)) };
                 // retiring applies to today's list only: a change already in effect has replaced it
                 const named = (n: string) => `${n}${!m.changed && leaving.has(n) ? " (retiring)" : ""}`;
                 const others = m.members.filter((n) => n !== m.chair);
@@ -1092,7 +1152,7 @@ const meetingLabel = (t: Refreshment["timeline"][number]) =>
 function RefreshmentSection({ r }: { r?: Refreshment }) {
   if (!r) return <p className="text-sm text-gray-700">Board refreshment: not read for this result yet.</p>;
   if (r.note && !r.timeline.length) return <p className="text-sm text-gray-700">{r.note}</p>;
-  const net = r.net_change ?? 0;
+  const net = r.net_change;
   // each slate is compared with the meeting before; shown newest first
   const oldestFirst = [...r.timeline].sort((a, b) => a.meeting_iso.localeCompare(b.meeting_iso));
   const rows = oldestFirst.map((t, i) => ({ t, prev: i > 0 ? oldestFirst[i - 1] : null })).reverse();
@@ -1108,8 +1168,9 @@ function RefreshmentSection({ r }: { r?: Refreshment }) {
         <StatCard label="Directors Departed" value={r.departed_count ?? 0} />
         <StatCard label="Board Size" value={`${r.board_size_start ?? "—"} → ${r.board_size_now ?? "—"}`}
                   sub={r.board_size_start_date ? `at the ${usDate(r.board_size_start_date)} meeting → now` : undefined} />
-        <StatCard label="Net Change" value={`${net > 0 ? "+" : ""}${net}`} />
+        <StatCard label="Net Change" value={net == null ? "—" : `${net > 0 ? "+" : ""}${net}`} />
       </div>
+      {r.note && <p className="text-xs text-gray-600">{r.note}</p>}
 
       <div>
         <h3 className="text-sm font-semibold text-gray-800 mb-2">Annual Board Composition</h3>
@@ -1706,7 +1767,8 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
           {tab === "board" && <BoardTab key={result.company.cik} result={result} />}
           {tab === "nominees" && (
             <div className="space-y-8">
-              <CommitteesSection data={result.proxy.committees} proxyUrl={result.proxy.url} />
+              <CommitteesSection data={result.proxy.committees} proxyUrl={result.proxy.url}
+                                 proxyDate={result.proxy.filing_date} departed={result.refreshment?.departed} />
               <ProxySectionView section={result.proxy.sections?.nominees} proxyUrl={result.proxy.url} fallbackTitle="Director nominees" />
             </div>
           )}
