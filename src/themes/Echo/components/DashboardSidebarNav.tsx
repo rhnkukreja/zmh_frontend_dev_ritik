@@ -294,11 +294,6 @@ const DashboardSidebarNav = ({
     if (s.key === "compensation") {
       return user?.user_type === "Analyst";
     }
-    // Board Intelligence is restricted to Admins/Analysts
-    if (s.key === "board-intel") {
-      const userType = user?.user_type;
-      return userType === "Admin" || userType === "Analyst";
-    }
     if (s.key === "governance-profile") {
       return Boolean(modulesData?.governance_profile);
     }
