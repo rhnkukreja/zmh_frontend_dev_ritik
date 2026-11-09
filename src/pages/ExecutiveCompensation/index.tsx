@@ -569,14 +569,14 @@ const ExecutiveCompensation: React.FC = () => {
     return (
       <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8 overflow-hidden">
         <div className="overflow-x-auto">
-          <Table className={isWideLayout ? "w-max min-w-full" : "min-w-full table-fixed"}>
+          <Table className={isWideLayout ? "table-fixed w-max min-w-full" : "min-w-full table-fixed"}>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th
                   rowSpan={2}
                   className={clsx(
                     "text-left text-sm font-semibold text-white bg-primary py-3 px-4 align-middle",
-                    isWideLayout ? "min-w-[160px] sticky left-0 z-10" : "w-64"
+                    isWideLayout ? "w-[160px] sticky left-0 z-10" : "w-64"
                   )}
                 >
                   Summary
@@ -597,11 +597,16 @@ const ExecutiveCompensation: React.FC = () => {
                     <Table.Th
                       key={`${inst.institution_name}-${year}`}
                       className={clsx(
-                        "text-center text-xs font-medium text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight",
-                        isWideLayout ? "whitespace-nowrap min-w-[130px]" : ""
+                        "text-center text-sm font-semibold text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight",
+                        isWideLayout ? "whitespace-nowrap w-[130px]" : ""
                       )}
                     >
-                      {formatDateRange(inst.years[year]?.date_range)}
+                      <div>{year}</div>
+                      {formatDateRange(inst.years[year]?.date_range) !== "-" && (
+                        <div className="text-[13px] font-normal opacity-80 mt-0.5">
+                          {formatDateRange(inst.years[year]?.date_range)}
+                        </div>
+                      )}
                     </Table.Th>
                   ))
                 )}
@@ -613,7 +618,7 @@ const ExecutiveCompensation: React.FC = () => {
                   <Table.Td
                     className={clsx(
                       "py-3 px-4 text-sm font-medium text-slate-700 break-words",
-                      isWideLayout && "min-w-[160px] sticky left-0 z-10 bg-white"
+                      isWideLayout && "w-[160px] sticky left-0 z-10 bg-white"
                     )}
                   >
                     {metric.label}
@@ -624,7 +629,7 @@ const ExecutiveCompensation: React.FC = () => {
                         key={`${inst.institution_name}-${year}-${metric.key}`}
                         className={clsx(
                           "py-3 px-2 text-sm text-slate-700 text-center whitespace-nowrap",
-                          isWideLayout && "min-w-[130px]"
+                          isWideLayout && "w-[130px]"
                         )}
                       >
                         {metric.render(inst.years[year])}

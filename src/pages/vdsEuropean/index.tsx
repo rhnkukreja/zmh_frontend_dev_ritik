@@ -3248,165 +3248,117 @@ const index = () => {
 };
 
 const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filteredDateRange }) => {
-  // Get all institutions and years
   const institutions = vdsEuropeansAnalytics.by_institution || [];
 
-  // Get all unique years across all institutions
-  const allYears = new Set();
-  institutions.forEach(inst => {
-    Object.keys(inst.years).forEach(year => allYears.add(year));
-  });
-  const years = Array.from(allYears).sort();
+  // Per-institution year columns — an institution that didn't return a year
+  // simply doesn't get that column.
+  const institutionYearKeys = institutions.map((inst: any) =>
+    Object.keys(inst?.years || {}).sort()
+  );
+
+  const getDateRangeLabel = (yearData: any) =>
+    filteredDateRange && filteredDateRange.trim() !== ""
+      ? filteredDateRange
+      : yearData?.date_range
+        ? `${yearData.date_range.start_meeting || "-"} - ${yearData.date_range.end_meeting || "-"}`
+        : "";
+
+  const summaryMetrics: Array<{ label: string; render: (y: any) => any }> = [
+    { label: "No. of unique companies", render: (y) => (y?.unique_companies ? y.unique_companies.toLocaleString() : "-") },
+    { label: "No of proposals", render: (y) => (y ? y.total_proposals.toLocaleString() : "-") },
+    { label: "No. of FOR votes", render: (y) => (y ? `${y.for_votes.toLocaleString()} (${y.for_percentage}%)` : "-") },
+    { label: "No. of SPLIT votes", render: (y) => (y ? `${y.split_votes.toLocaleString()} (${y.split_percentage}%)` : "-") },
+    { label: "No. of AGAINST/WITHHOLD votes", render: (y) => (y ? `${y.against_votes.toLocaleString()} (${y.against_percentage}%)` : "-") },
+    { label: "No. of Abstain votes", render: (y) => (y ? `${(y.abstain_votes || 0).toLocaleString()} (${y.abstain_percentage || 0}%)` : "-") },
+    { label: "Alignment with management (Votes Cast/Management Recommendation)", render: (y) => (y ? y.aligned_with_mgmt : "-") },
+    { label: "Alignment percentage", render: (y) => (y ? `${y.alignment_percentage}%` : "-") },
+  ];
+
+  // Compact fixed-width table only works when every institution has a single
+  // year column; multiple columns switch to an auto-sized scrollable table.
+  const maxColumnsPerInstitution = Math.max(
+    1,
+    ...institutionYearKeys.map((keys) => keys.length || 1)
+  );
+  const isWideLayout = maxColumnsPerInstitution > 1;
 
   return (
     <div className="mb-8">
-      <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-        <table className="w-[100%] mx-auto rounded-xl overflow-hidden">
-          <thead>
-            <tr className="bg-primary text-white text-sm">
-              <th className="px-4 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>Summary</th>
-              {institutions.map((institution) => (
-                <th key={institution.institution_id} colSpan={years.length} className="px-4 py-3 pb-2 text-center font-semibold">
-                  {institution.institution_name}
+      <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          {/* table-fixed in both modes: explicit w-[130px] year cells keep all
+              columns equal — long institution names wrap instead of widening. */}
+          <table className={isWideLayout ? "table-fixed w-max min-w-full" : "min-w-full table-fixed"}>
+            <thead>
+              <tr>
+                <th
+                  rowSpan={2}
+                  className={clsx(
+                    "text-left text-sm font-semibold text-white bg-primary py-3 px-4 align-middle",
+                    isWideLayout ? "w-[160px] sticky left-0 z-10" : "w-64"
+                  )}
+                >
+                  Summary
                 </th>
-              ))}
-            </tr>
-            <tr className="bg-primary text-white text-sm">
-              {institutions.map((institution) => (
-                years.map((year) => {
-                  const yearData = institution.years[year as string];
-                  const apiDateRange = yearData?.date_range;
-
-                  // Use filtered date range if available, otherwise use API date range
-                  const displayDateRange = filteredDateRange && filteredDateRange.trim() !== ""
-                    ? filteredDateRange
-                    : apiDateRange;
-
-                  return (
-                    <th key={`${institution.institution_id}-${year}`} className="px-4 py-2 pt-0 text-center font-medium">
-                      <div className="flex flex-col">
-                        {displayDateRange && (
-                          <div className="text-xs font-medium mt-1">
-                            {filteredDateRange && filteredDateRange.trim() !== ""
-                              ? `(${filteredDateRange})`
-                              : `(${apiDateRange.start_meeting} - ${apiDateRange.end_meeting})`
-                            }
-                          </div>
+                {institutions.map((institution: any, instIdx: number) => (
+                  <th
+                    key={institution.institution_id ?? institution.institution_name ?? instIdx}
+                    colSpan={Math.max(institutionYearKeys[instIdx]?.length || 0, 1)}
+                    className="text-center text-sm font-semibold text-white bg-primary py-3 px-2 border-l border-white/20 break-words leading-snug"
+                  >
+                    {institution.institution_name}
+                  </th>
+                ))}
+              </tr>
+              <tr>
+                {institutions.map((institution: any, instIdx: number) =>
+                  (institutionYearKeys[instIdx] || []).map((year: string) => {
+                    const dateRange = getDateRangeLabel(institution?.years?.[year]);
+                    return (
+                      <th
+                        key={`${institution.institution_id ?? instIdx}-${year}`}
+                        className={clsx(
+                          "text-center text-sm font-semibold text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight",
+                          isWideLayout && "whitespace-nowrap w-[130px]"
                         )}
-                      </div>
-                    </th>
-                  );
-                })
+                      >
+                        <div>{year}</div>
+                        {dateRange && <div className="text-[13px] font-normal opacity-80 mt-0.5">{dateRange}</div>}
+                      </th>
+                    );
+                  })
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {summaryMetrics.map((metric) => (
+                <tr key={metric.label} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td
+                    className={clsx(
+                      "py-3 px-4 text-sm font-medium text-slate-700 break-words",
+                      isWideLayout && "w-[160px] sticky left-0 z-10 bg-white"
+                    )}
+                  >
+                    {metric.label}
+                  </td>
+                  {institutions.map((institution: any, instIdx: number) =>
+                    (institutionYearKeys[instIdx] || []).map((year: string) => (
+                      <td
+                        key={`${institution.institution_id ?? instIdx}-${year}`}
+                        className={clsx(
+                          "py-3 px-2 text-sm text-slate-700 text-center whitespace-nowrap",
+                          isWideLayout && "w-[130px]"
+                        )}
+                      >
+                        {metric.render(institution?.years?.[year])}
+                      </td>
+                    ))
+                  )}
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-            <tr>
-              <td className="px-4 py-3 font-medium">No. of unique companies</td>
-              {institutions.map((institution) => (
-                years.map((year: string | number) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
-                      {yearData && yearData.unique_companies ? yearData.unique_companies.toLocaleString() : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-4 py-3 font-medium">No of proposals</td>
-              {institutions.map((institution) => (
-                years.map((year: string | number) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
-                      {yearData ? yearData.total_proposals.toLocaleString() : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-4 py-3 font-medium">No. of FOR votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
-                      {yearData ? `${yearData.for_votes.toLocaleString()} (${yearData.for_percentage}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-4 py-3 font-medium">No. of SPLIT votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
-                      {yearData ? `${yearData.split_votes.toLocaleString()} (${yearData.split_percentage}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-4 py-3 font-medium">No. of AGAINST/WITHHOLD votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
-                      {yearData ? `${yearData.against_votes.toLocaleString()} (${yearData.against_percentage}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-4 py-3 font-medium">No. of Abstain votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}-abstain`} className="px-4 py-3 text-center">
-                      {yearData ? `${(yearData.abstain_votes || 0).toLocaleString()} (${yearData.abstain_percentage || 0}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-4 py-3 font-medium">Alignment with management (Votes Cast/Management Recommendation)</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
-                      {yearData ? yearData.aligned_with_mgmt : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-4 py-3 font-medium">Alignment percentage</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-4 py-3 text-center">
-                      {yearData ? `${yearData.alignment_percentage}%` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
