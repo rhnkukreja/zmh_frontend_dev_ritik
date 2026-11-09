@@ -63,7 +63,7 @@ export const no_header_company = [
 ];
 export const proponent_type = ["shareholder", "management"];
 export const meeting_type = ["Proxy Contest", "Annual", "Special"];
-export const proposal_type = ["elect directors", "say on pay", "auditor", "shareholder"];
+export const proposal_type = ["elect directors", "say on pay", "auditor", "shareholder proposals"];
 export const ma_proposal_type = ["Issuance of Shares in a Merger", "Approve Merger"];
 export const proposal_keywords = {
   "elect directors": ["elect director", "elect"],

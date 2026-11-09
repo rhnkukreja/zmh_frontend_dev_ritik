@@ -2308,10 +2308,6 @@ const index = () => {
     }
   };
 
-  // Debug: Log analytics state before render
-  console.log('analytics:', analytics);
-  console.log('analyticsLoading:', analyticsLoading);
-
   return (
     <>
       {/* ── Page header card ── */}
@@ -3065,7 +3061,7 @@ const index = () => {
             )}
           </div>
         )}
-        {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && (!analytics.by_institution || Object.keys(analytics.by_institution).length === 0) && (
+        {isViewAnalysis && !analyticsLoading && analyticsDataLoaded && analytics && typeof analytics === 'object' && (!analytics.by_institution || Object.keys(analytics.by_institution).length === 0) && (
           <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
         )}
         {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
