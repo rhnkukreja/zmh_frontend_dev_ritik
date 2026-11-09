@@ -244,11 +244,13 @@ const NpxInstitutionView = () => {
     return draft !== committed;
   }, [institutionSelection, filters.investor_company]);
 
-  // M&A proposal categories turn the Institution dropdown into multi-select.
-  const isMaCategorySelected = useMemo(
-    () => (draftFilters.vote_category || []).some(isMaProposalType),
-    [draftFilters.vote_category]
-  );
+  // M&A proposal categories turn the Institution dropdown into multi-select —
+  // but ONLY when the selection is exclusively M&A. Mixing in any other
+  // category reverts to single-select.
+  const isMaCategorySelected = useMemo(() => {
+    const selected = draftFilters.vote_category || [];
+    return selected.length > 0 && selected.every(isMaProposalType);
+  }, [draftFilters.vote_category]);
   const maCategoryWasSelectedRef = useRef(isMaCategorySelected);
   useEffect(() => {
     const wasSelected = maCategoryWasSelectedRef.current;
