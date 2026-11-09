@@ -46,6 +46,7 @@ import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import InstitutionSplitNotice from "@/components/InstitutionSplitNotice";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import Pill from "@/components/Pill";
@@ -2393,6 +2394,21 @@ const index = () => {
             ))}
           </div>
         )}
+
+        <InstitutionSplitNotice
+          institutionNames={(isViewAnalysis ? allAnalyticsFilter?.institution_name : allApplyFilter?.institution_name) || []}
+          years={
+            isViewAnalysis
+              ? [
+                  ...(allAnalyticsFilter?.analyticsYear || []),
+                  ...(allAnalyticsFilter?.year ? [allAnalyticsFilter.year] : []),
+                ]
+              : allApplyFilter?.year
+                ? [allApplyFilter.year]
+                : []
+          }
+          dateRange={(isViewAnalysis ? allAnalyticsFilter?.date_range : allApplyFilter?.date_range) || ""}
+        />
 
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (

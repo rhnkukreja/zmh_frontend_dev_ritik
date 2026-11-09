@@ -9,6 +9,7 @@ import FiltersSidebar from "./components/FiltersSidebar";
 import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
 import VotingRecordsList from "./components/VotingRecordsList";
+import InstitutionSplitNotice from "@/components/InstitutionSplitNotice";
 import ProxyContestModal from "../ProxyContest/components/ProxyContestModal";
 import ActivistIntelligenceDashboard from "../AIChatbot/ActivistDashboard"; 
 import { useAppSelector } from "@/stores/hooks";
@@ -746,6 +747,12 @@ function ProxyContestAI() {
             ))}
           </div>
         )}
+
+        <InstitutionSplitNotice
+          institutionIds={curInstIds}
+          years={curYears}
+          className="mb-0 mt-2"
+        />
 
         {/* Institution enforcement warning */}
         {warnMsg && (

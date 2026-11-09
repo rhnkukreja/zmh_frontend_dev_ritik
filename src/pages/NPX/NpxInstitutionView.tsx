@@ -16,6 +16,7 @@ import CompanySelect from "@/components/ReactSelectAsync";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import VoteCategoryTaxonomySelect from "@/components/NPX/VoteCategoryTaxonomySelect";
+import InstitutionSplitNotice, { POST_2026_INSTITUTION_IDS } from "@/components/InstitutionSplitNotice";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { MdOutlineClear } from "react-icons/md";
@@ -1516,6 +1517,12 @@ const NpxInstitutionView = () => {
         </div>
 
         {renderFilterChips()}
+
+        <InstitutionSplitNotice
+          institutionIds={filters.institution_id || []}
+          years={filters.year || []}
+          dateRange={filters.date_range || ""}
+        />
 
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">

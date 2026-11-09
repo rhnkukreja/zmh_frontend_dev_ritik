@@ -35,6 +35,7 @@ import { baseURL } from "@/constant";
 import { compensationProposalsService } from "@/services/compensationProposals";
 import { createDynamicURL } from "@/utils/helper";
 import CompanyVotingCards from "./components/CompanyVotingCards";
+import InstitutionSplitNotice from "@/components/InstitutionSplitNotice";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 
 const INDEX_OPTIONS = [
@@ -1065,6 +1066,12 @@ const ExecutiveCompensation: React.FC = () => {
             ))}
           </div>
         )}
+
+        <InstitutionSplitNotice
+          institutionNames={filters.investor_company || []}
+          years={filters.year || []}
+          dateRange={filters.date_range || ""}
+        />
 
       {/* Filters */}
       {isFilterOpen && (

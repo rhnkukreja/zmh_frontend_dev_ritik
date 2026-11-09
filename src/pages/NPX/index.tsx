@@ -40,6 +40,7 @@ import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import VoteCategoryTaxonomySelect from "@/components/NPX/VoteCategoryTaxonomySelect";
+import InstitutionSplitNotice from "@/components/InstitutionSplitNotice";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
@@ -1439,6 +1440,14 @@ const index = () => {
             </Popover>
           </div>
         </div>
+
+        <InstitutionSplitNotice
+          institutionNames={(() => {
+            const inst = allApplyFilter?.institution_name ?? dropdownValues?.institution_name;
+            return Array.isArray(inst) ? inst : inst ? [inst] : [];
+          })()}
+          years={year ? [year] : []}
+        />
 
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
