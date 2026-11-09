@@ -750,6 +750,7 @@ function ProxyContestAI() {
 
         <InstitutionSplitNotice
           institutionIds={curInstIds}
+          institutionNames={(curInstIds || []).map((id) => getInstName(id)).filter(Boolean) as string[]}
           years={curYears}
           className="mb-0 mt-2"
         />

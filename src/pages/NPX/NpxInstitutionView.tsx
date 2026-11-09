@@ -103,12 +103,6 @@ const DEFAULT_INVESTOR = "BlackRock, Inc.";
 const DEFAULT_NPX_INSTITUTION_ID = 1345;
 const DEFAULT_NPX_INSTITUTION = "BlackRock Active Investment Stewardship (BAIS)";
 const DEFAULT_NPX_INDEX = "S&P 500";
-// When an M&A proposal category is selected, the Institution dropdown turns
-// multi-select and defaults to these five institutions.
-const NPX_MA_DEFAULT_INSTITUTION_IDS = [1345, 1346, 38, 999, 1000];
-// Reverting back to single-select defaults to BIS (1346).
-const NPX_SINGLE_DEFAULT_INSTITUTION_ID = 1346;
-const NPX_SINGLE_DEFAULT_INSTITUTION_NAME = "BlackRock Investment Stewardship (BIS)";
 const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
 const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
@@ -245,34 +239,7 @@ const NpxInstitutionView = () => {
     return draft !== committed;
   }, [institutionSelection, filters.investor_company]);
 
-  // M&A proposal categories turn the Institution dropdown into multi-select —
-  // but ONLY when the selection is exclusively M&A. Mixing in any other
-  // category reverts to single-select.
-  const isMaCategorySelected = useMemo(() => {
-    const selected = draftFilters.vote_category || [];
-    return selected.length > 0 && selected.every(isMaProposalType);
-  }, [draftFilters.vote_category]);
-  const maCategoryWasSelectedRef = useRef(isMaCategorySelected);
-  useEffect(() => {
-    const wasSelected = maCategoryWasSelectedRef.current;
-    if (isMaCategorySelected === wasSelected) return;
-    maCategoryWasSelectedRef.current = isMaCategorySelected;
 
-    if (isMaCategorySelected) {
-      // Switch to multi-select with the five default institutions.
-      setInstitutionIdSelection([...NPX_MA_DEFAULT_INSTITUTION_IDS]);
-      setInstitutionSelection(
-        NPX_MA_DEFAULT_INSTITUTION_IDS.map((id) => institutionNameForId(id) || String(id))
-      );
-    } else {
-      // Back to single-select with the BIS default.
-      setInstitutionIdSelection([NPX_SINGLE_DEFAULT_INSTITUTION_ID]);
-      setInstitutionSelection([
-        institutionNameForId(NPX_SINGLE_DEFAULT_INSTITUTION_ID) || NPX_SINGLE_DEFAULT_INSTITUTION_NAME,
-      ]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMaCategorySelected]);
 
   // On a fresh mount, the staged selection (restored from the draft cache) can
   // disagree with the already-applied institution (restored from the filter
@@ -1083,14 +1050,7 @@ const NpxInstitutionView = () => {
     [institutionSelection, institutionIdSelection]
   );
 
-  const selectedInstitutionValues = useMemo(
-    () =>
-      (institutionSelection || []).map((name, i) => ({
-        value: institutionIdSelection[i] ?? institutionIdMapRef.current.get(name) ?? name,
-        label: name,
-      })),
-    [institutionSelection, institutionIdSelection]
-  );
+
 
   const selectedCompanyValues = useMemo(
     () =>
@@ -1566,10 +1526,8 @@ const NpxInstitutionView = () => {
                   <FaUniversity className="text-gray-400" /> Institution
                 </label>
                 <CompanySelect
-                  key={isMaCategorySelected ? "institution-multi" : "institution-single"}
                   isInstitution={true}
-                  isMulti={isMaCategorySelected}
-                  value={isMaCategorySelected ? selectedInstitutionValues : selectedInstitutionValue}
+                  value={selectedInstitutionValue}
                   useProposalVotingStatsDropdown={true}
                   year={draftFilters.year?.[0] || defaultYear}
                   isClearable={true}
