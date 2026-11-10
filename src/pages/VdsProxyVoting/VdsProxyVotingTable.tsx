@@ -1016,20 +1016,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                   <span className="for">
                                                     {vdsProxy[vdsHeader?.field]?.vote}
                                                   </span>
-                                                  <div
-                                                    data-tooltip-id="my-tooltip-data-html"
-                                                    data-tooltip-html={
-                                                      isObject(vdsProxy[vdsHeader?.field]) &&
-                                                      getSplitContents(
+                                                  {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={getSplitContents(
                                                         vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                      )
-                                                    }
-                                                  >
-                                                    <Lucide
-                                                      icon="Info"
-                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                    />
-                                                  </div>
+                                                      )}
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  ) : null}
                                                 </div>
                                               ) : (
                                                 <span className="for ">
@@ -1084,20 +1083,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                     <span className="for">
                                                       {vdsProxy[vdsHeader?.field]?.vote}
                                                     </span>
-                                                    <div
-                                                      data-tooltip-id="my-tooltip-data-html"
-                                                      data-tooltip-html={
-                                                        isObject(vdsProxy[vdsHeader?.field]) &&
-                                                        getSplitContents(
+                                                    {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                      <div
+                                                        data-tooltip-id="my-tooltip-data-html"
+                                                        data-tooltip-html={getSplitContents(
                                                           vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                        )
-                                                      }
-                                                    >
-                                                      <Lucide
-                                                        icon="Info"
-                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                      />
-                                                    </div>
+                                                        )}
+                                                      >
+                                                        <Lucide
+                                                          icon="Info"
+                                                          className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                        />
+                                                      </div>
+                                                    ) : null}
                                                   </div>
                                                 )}
                                             </h1>
@@ -1337,20 +1335,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                   <span className="for">
                                                     {vdsProxy[vdsHeader?.field]?.vote}
                                                   </span>
-                                                  <div
-                                                    data-tooltip-id="my-tooltip-data-html"
-                                                    data-tooltip-html={
-                                                      isObject(vdsProxy[vdsHeader?.field]) &&
-                                                      getSplitContents(
+                                                  {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={getSplitContents(
                                                         vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                      )
-                                                    }
-                                                  >
-                                                    <Lucide
-                                                      icon="Info"
-                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                    />
-                                                  </div>
+                                                      )}
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  ) : null}
                                                 </div>
                                               ) : (
                                                 <span className="for">
@@ -1405,20 +1402,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                     <span className="for">
                                                       {vdsProxy[vdsHeader?.field]?.vote}
                                                     </span>
-                                                    <div
-                                                      data-tooltip-id="my-tooltip-data-html"
-                                                      data-tooltip-html={
-                                                        isObject(vdsProxy[vdsHeader?.field]) &&
-                                                        getSplitContents(
+                                                    {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                      <div
+                                                        data-tooltip-id="my-tooltip-data-html"
+                                                        data-tooltip-html={getSplitContents(
                                                           vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                        )
-                                                      }
-                                                    >
-                                                      <Lucide
-                                                        icon="Info"
-                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                      />
-                                                    </div>
+                                                        )}
+                                                      >
+                                                        <Lucide
+                                                          icon="Info"
+                                                          className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                        />
+                                                      </div>
+                                                    ) : null}
                                                   </div>
                                                 )}
                                             </h1>
