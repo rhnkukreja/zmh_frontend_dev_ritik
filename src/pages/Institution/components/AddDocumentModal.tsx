@@ -9,10 +9,7 @@ import { toast } from "react-toastify";
 import TomSelect from "@/components/Base/TomSelect";
 import axios from "axios";
 import { baseURL } from "@/constant";
-import { AI_CHATBOT_API_BASE } from "../../AIChatbot/api";
 import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
-import { getCreatorEmail } from "@/utils/currentUser";
-import { useAppSelector } from "@/stores/hooks";
 
 // Reserved tag riding along inside the existing free-text `tags` value sent to
 // the FastAPI /api/upload endpoint -- an explicit human signal that a
@@ -135,7 +132,6 @@ const AddDocumentModal = ({
   // Read only to stamp the ingestion request with who asked for it. Resolved
   // the same way here as on the manual-upload path, so both routes record the
   // same answer for the same analyst.
-  const { user } = useAppSelector((state) => state.authentiction);
 
   const handleClose = () => {
     reset();
@@ -176,48 +172,14 @@ const AddDocumentModal = ({
       });
 
       // ==========================================
-      // 2. FASTAPI Call Start from here 
-      try {
-        const expectedUrl = `https://zmh-official-website-media-bucket.s3.amazonaws.com/ZMH_Investor_Documents/${encodeURIComponent(documentFile.name)}`;
-        
-        // Optional server-side. Omitted entirely rather than sent empty when no
-        // email resolves, so an upload by a caller we can't identify behaves
-        // exactly as it did before this field existed.
-        const requestedByEmail = getCreatorEmail(user);
-
-        const jsonPayload = {
-          institution_id: String(institutionId),
-          document_name: data.document_name,
-          document_type: data.category,
-          year: data.year,
-          month: data.month,
-          tags: data.is_case_study ? appendCaseStudyTag(data.tags) : data.tags,
-          priority: data.priority,
-          file_url: expectedUrl,
-          file_name: documentFile.name,
-          ...(requestedByEmail ? { requested_by_email: requestedByEmail } : {})
-        };
-
-        const aibackendkUrl = `${AI_CHATBOT_API_BASE}/api/upload`;
-        
-        await axios.post(aibackendkUrl, jsonPayload, {
-          headers: {
-            Authorization: `JWT ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "69420"
-          },
-        });
-        console.log("FastAPI payload sent successfully.");
-      } catch (fastApiError) {
-        // Silently catch the error, log it, and allow the code to continue
-        console.warn("FastAPI queue call failed, but main upload succeeded.", fastApiError);
-      }
-
+      // 2. SUCCESS UI
       // ==========================================
-      // 3. SUCCESS UI 
-      // ==========================================
-      toast.success("Document uploaded successfully");
-      onSuccess?.(undefined, undefined, { document_name: data.document_name, institution_id: String(institutionId) });
+      // Uploading only SAVES the document. It is sent to the AI Assistant (read, embedded in
+      // Pinecone, added to the AI's document list) only when an analyst chooses to, with the
+      // "+" (Process document) button on its row -- not every uploaded document belongs there.
+      // The tags saved above (including the case-study tag) travel with that "+" request.
+      toast.success("Document uploaded. Click + on its row to add it to the AI Assistant.");
+      onSuccess?.(undefined, undefined, undefined);
       handleClose();
 
     } catch (err: any) {
