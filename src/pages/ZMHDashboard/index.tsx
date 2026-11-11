@@ -733,7 +733,7 @@ function Main() {
             </div>
           )}
 
-          {activeTab === 'board-intel' && (
+          {activeTab === 'board-intel' && isAdmin && (
             <div id="board-intel" className="col-span-12 xl:col-span-12">
               <DashboardBoardIntel ticker={companyGlobalSearchTicker} name={companyGlobalSearchName} companyId={companyGlobalSearchId} />
             </div>

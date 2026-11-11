@@ -438,8 +438,11 @@ const InstitutionDocuments = () => {
       // before for a caller we can't identify.
       const requestedByEmail = getCreatorEmail(user);
       await axios.post(`${AI_CHATBOT_API_BASE}/api/upload`, {
+        // the document's own saved details -- since processing starts only from here, the tags
+        // (including the case-study tag set at upload) and month must come with it
         institution_id: params.id, document_name: doc.name || "", document_type: doc.document_type || "Stewardship Report",
-        year: String(doc.year || ""), month: "", tags: "", priority: doc.priority || "Medium", file_name: doc.name || "", link: doc.link || "",
+        year: String(doc.year || ""), month: doc.month || "", tags: doc.tags || "", priority: doc.priority || "Medium",
+        file_name: doc.name || "", link: doc.link || "",
         ...(requestedByEmail ? { requested_by_email: requestedByEmail } : {})
       });
       toast.success(`Processing started for: ${doc.name}`);

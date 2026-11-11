@@ -91,6 +91,7 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Company",
     subItems: [],
     beta: true,
+    adminOnly: true,
   },
   {
     key: "compensation",
