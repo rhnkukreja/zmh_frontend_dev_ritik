@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import DOMPurify from "dompurify";
 import {
@@ -161,7 +161,7 @@ type Director = {
   /** not in the proxy: joined the board after it was filed, by the 8-K Item 5.02 named here */
   joined_after_proxy?: { form: string; filing_date: string; effective_date: string; url: string; website_url?: string } | null;
   /** in the proxy, but has left the board since, as the 8-K named here says */
-  left_after_proxy?: { date: string; how?: string | null; form: string; filing_date: string; url: string } | null;
+  left_after_proxy?: { date: string; how?: string | null; form: string; filing_date: string; url: string; date_is_filing?: boolean } | null;
 };
 
 type Matrix = {
@@ -254,6 +254,14 @@ type Committee = {
   effective: string | null;
   /** a later membership the proxy states; members null = only the chair changes */
   after_change: { effective: string | null; chair: string | null; members: string[] | null } | null;
+  /** the list as the proxy printed it, kept when a later change has taken effect */
+  before_change?: { chair: string | null; members: string[] } | null;
+  /** where the effective date comes from: "the proxy" or "the annual meeting after the proxy" */
+  effective_source?: string | null;
+  /** directors added from an 8-K filed after the proxy */
+  joined_by_8k?: { name: string; effective: string | null; url: string | null }[];
+  /** members the company's website lists and no filing does yet -- shown with that source */
+  added_from_website?: { name: string; url: string; checked?: string | null; note?: string | null }[];
 };
 
 type BoardCommittees = {
@@ -648,6 +656,11 @@ function JoinedAfterProxy({ j }: { j: NonNullable<Director["joined_after_proxy"]
   );
 }
 
+/** When a director left: the date the filing prints, or -- when it prints none -- the 8-K that
+ *  reported it as done ("reported in the 8-K filed ..."), never the filing date as the day they left. */
+const leftWhen = (l: NonNullable<Director["left_after_proxy"]>) =>
+  l.date_is_filing ? `(reported in the 8-K filed ${usDate(l.filing_date)})` : usDate(l.date);
+
 /** A proxy director who has since left the board: the 8-K that said so (the reason and date are
  *  printed under the name). */
 function LeftAfterProxy({ l }: { l: NonNullable<Director["left_after_proxy"]> }) {
@@ -674,7 +687,7 @@ function NotOnWebsite({ d, result }: { d: Director; result: BoardResult }) {
     ? { href: d.left_after_proxy.url, text: `${d.left_after_proxy.form}, filed ${usDate(d.left_after_proxy.filing_date)}` }
     : event ? { href: event.source.url, text: event.source.label } : null;
   const note = d.left_after_proxy
-    ? `${d.left_after_proxy.how || "Left the board"} ${usDate(d.left_after_proxy.date)}.`
+    ? `${d.left_after_proxy.how || "Left the board"} ${leftWhen(d.left_after_proxy)}.`
     : event ? `${event.how}${event.date ? ` ${usDate(event.date)}` : ""}.`
     : "No 8-K about this director's board seat was found since the proxy.";
   return (
@@ -880,7 +893,7 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                   </span>
                   {!!(f.board_roles || []).length && <div className="text-xs text-gray-900">{(f.board_roles || []).join(", ")}</div>}
                   {d.left_after_proxy && (
-                    <div className="text-xs text-gray-600">Left the board · {d.left_after_proxy.how || "Left"} {usDate(d.left_after_proxy.date)}</div>
+                    <div className="text-xs text-gray-600">Left the board · {d.left_after_proxy.how || "Left"} {leftWhen(d.left_after_proxy)}</div>
                   )}
                   {/* the boards the director sits on now, and who there they already know */}
                   <button type="button" onClick={() => openDirector(d.name)} aria-label={`${d.name}: board network`}
@@ -991,12 +1004,44 @@ function latestMembership(c: Committee) {
   return { chair: c.chair, members: c.members, effective: c.effective, changed: false };
 }
 
+/** The committee as the proxy printed it, beside today's: who joined, who left, the chair change.
+ *  Works out the proxy's list from what the result keeps -- the list a later change replaced
+ *  (before_change), today's list before an un-applied later change, or today's list less the
+ *  directors added from 8-Ks after the proxy. */
+function committeeChanges(c: Committee, current: { chair: string | null; members: string[] }, frontEndChanged: boolean) {
+  const added8k = new Set([...(c.joined_by_8k || []), ...(c.added_from_website || [])].map((j) => j.name));
+  const proxyList = c.before_change
+    ? c.before_change
+    : frontEndChanged
+      ? { chair: c.chair, members: c.members }
+      : { chair: c.chair, members: c.members.filter((n) => !added8k.has(n)) };
+  const isIn = (n: string, list: string[]) => list.some((x) => samePerson(x, n));
+  const joined = current.members.filter((n) => !isIn(n, proxyList.members));
+  const left = proxyList.members.filter((n) => !isIn(n, current.members));
+  const chairChanged = !!(proxyList.chair || current.chair) && !(proxyList.chair && current.chair && samePerson(proxyList.chair, current.chair));
+  return { proxyList, joined, left, chairChanged, any: joined.length > 0 || left.length > 0 || chairChanged };
+}
+
+/** A change the proxy announces that has not taken effect yet: who joins, who leaves, the chair. */
+function upcomingChange(c: Committee, frontEndChanged: boolean) {
+  const ac = c.after_change;
+  if (!ac || frontEndChanged || c.before_change) return null;
+  const isIn = (n: string, list: string[]) => list.some((x) => samePerson(x, n));
+  const joining = ac.members ? ac.members.filter((n) => !isIn(n, c.members)) : [];
+  const leaving = ac.members ? c.members.filter((n) => !isIn(n, ac.members!)) : [];
+  const newChair = ac.chair && !(c.chair && samePerson(ac.chair, c.chair)) ? ac.chair : null;
+  if (!joining.length && !leaving.length && !newChair) return null;
+  return { when: ac.effective, joining, leaving, newChair };
+}
+
 /** Board committees: who chairs each, who serves, how often it met -- and the board's leadership. */
 function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
   data?: BoardCommittees; proxyUrl: string; proxyDate?: string | null; departed?: RefreshEvent[];
 }) {
   const [showDoc, setShowDoc] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   if (!data) return <p className="text-sm text-gray-700">Board committees: not read for this result yet.</p>;
   const lead = data.leadership || {};
   const leaving = new Set(data.not_nominees || []);
@@ -1033,18 +1078,90 @@ function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
                 const m = { ...latest, chair: latest.chair && !hasLeft(latest.chair) ? latest.chair : null,
                             members: latest.members.filter((n) => !hasLeft(n)) };
                 // retiring applies to today's list only: a change already in effect has replaced it
-                const named = (n: string) => `${n}${!m.changed && leaving.has(n) ? " (retiring)" : ""}`;
+                const named = (n: string) => `${n}${!m.changed && !c.before_change && leaving.has(n) ? " (retiring)" : ""}`;
                 const others = m.members.filter((n) => n !== m.chair);
+                const by8k = (n: string) => (c.joined_by_8k || []).find((j) => samePerson(j.name, n));
+                const byWebsite = (n: string) => (c.added_from_website || []).find((w) => samePerson(w.name, n));
+                const person = (n: string) => {
+                  const j = by8k(n);
+                  const w = byWebsite(n);
+                  return (
+                    <span>
+                      {named(n)}
+                      {j && (
+                        <span className="ml-1 text-[11px] text-gray-500">
+                          (added by 8-K{j.effective ? `, ${usDate(j.effective)}` : ""}
+                          {j.url && <> · <a href={j.url} target="_blank" rel="noreferrer" className="text-[#931638] hover:underline">8-K ↗</a></>})
+                        </span>
+                      )}
+                      {w && (
+                        <span className="ml-1 text-[11px] text-gray-500" title={w.note || undefined}>
+                          (per <a href={w.url} target="_blank" rel="noreferrer" className="text-[#931638] hover:underline">company website ↗</a>
+                          {w.checked ? `, checked ${usDate(w.checked)}` : ""})
+                        </span>
+                      )}
+                    </span>
+                  );
+                };
+                const changed = committeeChanges(c, { chair: m.chair, members: m.members }, m.changed);
+                const upcoming = upcomingChange(c, m.changed);
+                const inEffect = !!c.before_change || m.changed;
+                const source = inEffect
+                  ? `Effective ${m.effective ? usDate(m.effective) : ""}${c.effective_source === "the annual meeting after the proxy" ? " (the annual meeting after the proxy)" : " · per the proxy"}`
+                  : `As disclosed in the proxy${proxyDate ? ` (${usDate(proxyDate)})` : ""}`;
+                const k = `${c.name}|changed`, ku = `${c.name}|upcoming`;
+                const list = (xs: string[]) => xs.join(", ");
                 return (
-                  <tr key={c.name} className="border-t border-gray-100 align-top">
-                    <td className="p-2">
-                      <div className="font-medium">{c.name}</div>
-                      {m.effective && <div className="text-xs text-gray-600">Effective {usDate(m.effective)}</div>}
-                    </td>
-                    <td className="p-2">{m.chair ? named(m.chair) : <span className="text-gray-400">—</span>}</td>
-                    <td className="p-2">{others.length ? others.map((n) => <div key={n}>{named(n)}</div>) : <span className="text-gray-400">—</span>}</td>
-                    <td className="p-2">{c.meetings || <span className="text-gray-400">—</span>}</td>
-                  </tr>
+                  <Fragment key={c.name}>
+                    <tr className="border-t border-gray-100 align-top">
+                      <td className="p-2">
+                        <div className="font-medium">{c.name}</div>
+                        <div className="text-xs text-gray-600">{source}</div>
+                        {changed.any && (
+                          <button onClick={() => toggle(k)} className="text-xs text-[#931638] hover:underline">
+                            {open[k] ? "▾" : "▸"} Changed since the proxy
+                          </button>
+                        )}
+                        {upcoming && (
+                          <div>
+                            <button onClick={() => toggle(ku)} className="text-xs text-amber-700 hover:underline">
+                              {open[ku] ? "▾" : "▸"} Upcoming {upcoming.when ? `from ${usDate(upcoming.when)}` : "after the annual meeting"}
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-2">{m.chair ? person(m.chair) : <span className="text-gray-400">—</span>}</td>
+                      <td className="p-2">{others.length ? others.map((n) => <div key={n}>{person(n)}</div>) : <span className="text-gray-400">—</span>}</td>
+                      <td className="p-2">{c.meetings || <span className="text-gray-400">—</span>}</td>
+                    </tr>
+                    {changed.any && open[k] && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={4} className="px-4 py-2 text-xs text-gray-700 space-y-0.5">
+                          <div className="font-semibold text-gray-900 underline underline-offset-2">
+                            As disclosed in the proxy{proxyDate ? ` (${usDate(proxyDate)})` : ""}
+                          </div>
+                          <div><span className="font-semibold">Chair:</span> {changed.proxyList.chair || "—"}</div>
+                          <div><span className="font-semibold">Members:</span> {list(changed.proxyList.members) || "—"}</div>
+                          <div className="font-semibold text-gray-900 underline underline-offset-2 pt-1">What changed</div>
+                          {changed.chairChanged && <div><span className="font-semibold">Chair:</span> {changed.proxyList.chair || "—"} → {m.chair || "not named"}</div>}
+                          {!!changed.joined.length && <div><span className="font-semibold">Joined:</span> {list(changed.joined)}</div>}
+                          {!!changed.left.length && <div><span className="font-semibold">No longer on it:</span> {list(changed.left)}</div>}
+                        </td>
+                      </tr>
+                    )}
+                    {upcoming && open[ku] && (
+                      <tr className="bg-amber-50">
+                        <td colSpan={4} className="px-4 py-2 text-xs text-gray-700 space-y-0.5">
+                          <div className="font-semibold text-gray-900 underline underline-offset-2">
+                            Announced in the proxy, {upcoming.when ? `effective ${usDate(upcoming.when)}` : "after the annual meeting"}
+                          </div>
+                          {upcoming.newChair && <div><span className="font-semibold">Chair:</span> {m.chair || "—"} → {upcoming.newChair}</div>}
+                          {!!upcoming.joining.length && <div><span className="font-semibold">Joining:</span> {list(upcoming.joining)}</div>}
+                          {!!upcoming.leaving.length && <div><span className="font-semibold">Leaving:</span> {list(upcoming.leaving)}</div>}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
