@@ -1038,7 +1038,6 @@ function upcomingChange(c: Committee, frontEndChanged: boolean) {
 function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
   data?: BoardCommittees; proxyUrl: string; proxyDate?: string | null; departed?: RefreshEvent[];
 }) {
-  const [showDoc, setShowDoc] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
@@ -1051,6 +1050,14 @@ function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
   const today = new Date().toISOString().slice(0, 10);
   const left = departed.filter((d) => d.date && d.date <= today && (!proxyDate || d.date >= proxyDate));
   const hasLeft = (n: string) => left.some((d) => samePerson(d.name, n));
+  // the note above the table names only what this company's table shows
+  const anyChanged = data.committees.some((c) => {
+    const latest = latestMembership(c);
+    const now = { chair: latest.chair && !hasLeft(latest.chair) ? latest.chair : null,
+                  members: latest.members.filter((n) => !hasLeft(n)) };
+    return committeeChanges(c, now, latest.changed).any;
+  });
+  const anyUpcoming = data.committees.some((c) => !!upcomingChange(c, latestMembership(c).changed));
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -1064,6 +1071,14 @@ function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
         <div><span className="font-semibold">CEO:</span> {lead.ceo || <span className="text-gray-400">—</span>}</div>
       </div>
 
+      {!!data.committees.length && (
+        <p className="text-xs text-gray-700">
+          This is the committee structure as per the proxy statement{proxyDate ? ` (${usDate(proxyDate)})` : ""}.
+          {anyChanged && <> Where it has changed since, the committee shows its current members with the date the change took effect,
+          and <span className="font-medium">Changed since the proxy</span> opens what the proxy listed and what changed.</>}
+          {anyUpcoming && <> Changes the proxy announces for a later date are under <span className="font-medium">Upcoming</span>.</>}
+        </p>
+      )}
       {!data.committees.length ? (
         <p className="text-sm text-gray-700">No committee membership could be read from this proxy.</p>
       ) : (
@@ -1169,19 +1184,16 @@ function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
         </div>
       )}
 
+      {/* The proxy's own committee table is not shown: what we cut is ONE table, and many proxies
+          print one box per committee (Chevron: the Audit box only) -- measured on 498, about 150
+          cuts do not cover every committee (Waheed, 2026-11-11: hide unless it covers all). */}
       <div className="flex flex-wrap gap-4">
-        {data.html && (
-          <button onClick={() => setShowDoc(!showDoc)} className="text-xs text-[#931638] hover:underline">
-            {showDoc ? "Hide the proxy's committee table" : "Show the proxy's committee table"}
-          </button>
-        )}
         {!!data.disagreements.length && (
           <button onClick={() => setShowNotes(!showNotes)} className="text-xs text-[#931638] hover:underline">
             {showNotes ? "Hide" : "Show"} {data.disagreements.length} biography {data.disagreements.length === 1 ? "note" : "notes"} that differ from the lists
           </button>
         )}
       </div>
-      {showDoc && data.html && <div className="border border-gray-200 rounded-lg"><DocFrame html={data.html} title="Committee table" /></div>}
       {showNotes && (
         <ul className="text-xs text-gray-700 list-disc pl-5 space-y-0.5">
           {data.disagreements.map((d, i) => (
