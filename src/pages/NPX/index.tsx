@@ -756,15 +756,17 @@ const index = () => {
   ) => {
     // Prepare parameters for API call
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
-    // Source of truth: read latest from RHF
-    const catsFromForm = overrideCategories ?? watch('vote_category');
+    // Source of truth: read latest from RHF. `overrideCategories` is only
+    // absent (true `undefined`) when the caller didn't pass anything at all
+    // — an explicit empty array means "cleared", and must NOT fall back to
+    // `dropdownValues.vote_category`, which can still hold the stale
+    // pre-removal value here (its setState hasn't flushed into this
+    // closure yet when called synchronously from handleRemoveChip).
+    const catsFromForm = overrideCategories !== undefined ? overrideCategories : watch('vote_category');
     const normalizedCats = Array.isArray(catsFromForm)
       ? catsFromForm
       : (catsFromForm ? [catsFromForm] : []);
-    const catsFromLocal = Array.isArray(dropdownValues?.vote_category)
-      ? dropdownValues.vote_category
-      : (dropdownValues?.vote_category ? [dropdownValues.vote_category] : []);
-    const effectiveCats = normalizedCats.length > 0 ? normalizedCats : catsFromLocal;
+    const effectiveCats = normalizedCats;
     const hasCategory = effectiveCats.length > 0;
     const effectiveInstitution =
       overrideInstitution !== undefined ? overrideInstitution : dropdownValues?.institution_name;
@@ -815,12 +817,12 @@ const index = () => {
       );
       if (res.result) {
         console.log("getDependentDropdown response:", res.result);
-        // Preserve currently selected vote_category values if API response doesn't include them
-        const currentCats = Array.isArray(dropdownValues?.vote_category)
-          ? dropdownValues.vote_category
-          : dropdownValues?.vote_category
-          ? [dropdownValues.vote_category]
-          : [];
+        // Preserve currently selected vote_category values if API response
+        // doesn't include them — reuse the same `effectiveCats` resolved
+        // above for the request itself (not a fresh read of
+        // `dropdownValues`, which can be stale here) so a just-cleared
+        // category can't get reintroduced by this "preserve" step.
+        const currentCats = effectiveCats;
         const nextResult = { ...res.result } as any;
         if (currentCats.length > 0) {
           // Selected values can be either a parent_value or an exact child path
@@ -1152,9 +1154,24 @@ const index = () => {
       setValue("keyword", updatedFilters.keyword || []);
     }
 
+    // `allApplyFilter.institution_name` is intentionally omitted (undefined)
+    // whenever "All Institutions" is selected — that's the correct API-payload
+    // shape (no institution_name param sent), but it means we can't rebuild
+    // the Institution chip from `updatedFilters` alone when some OTHER chip
+    // is being removed, or the chip disappears even though the selection is
+    // unchanged. `dropdownValues.institution_name` always holds the live
+    // label (including the "All Institutions" sentinel), so use that unless
+    // the Institution chip itself is what's being removed right now.
+    const institutionLabelForChips =
+      removeKey === "institution_name"
+        ? ""
+        : (dropdownValues?.institution_name ||
+          (Array.isArray(updatedFilters.institution_name) ? updatedFilters.institution_name[0] : updatedFilters.institution_name) ||
+          "");
+
     // Create filter object for chips (exclude global_search)
     const filterObjForChips = {
-      institution_name: updatedFilters.institution_name,
+      ...(institutionLabelForChips ? { institution_name: [institutionLabelForChips] } : {}),
       fund_name: updatedFilters.fund_name,
       proposal: updatedFilters.proposal,
       vote: updatedFilters.vote,
@@ -1175,8 +1192,10 @@ const index = () => {
       ? updatedFilters.fund_name.filter(Boolean)
       : [];
 
+    // Always pass the explicit (possibly empty) array — an empty array must
+    // mean "cleared", not "fall back to whatever's currently in state".
     getDependentDropdown(
-      refreshedCategories.length > 0 ? refreshedCategories : undefined,
+      refreshedCategories,
       refreshedInstitution ? refreshedInstitution[0] : null,
       refreshedFundNames
     );
@@ -1212,6 +1231,16 @@ const index = () => {
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     const selectedInstitutionLabel = npxFilter?.institution_name?.label || "";
     const hasAllInstitutionsSelected = isSelectAllInstitution(selectedInstitutionLabel);
+
+    // Commit the staged Category pick now (Apply) — this is what the
+    // consolidated dependent-dropdown effect watches, so selecting/
+    // unselecting categories while the picker is open never fires that API;
+    // it only fires once here, if the committed value actually changed.
+    const submittedCategories = Array.isArray(npxFilter?.vote_category)
+      ? npxFilter.vote_category
+      : (npxFilter?.vote_category ? [npxFilter.vote_category] : []);
+    handleDropdownChange('vote_category', submittedCategories);
+
     const filterObj = {
       global_search: companyGlobalSearchName,
       ...(
@@ -1592,10 +1621,14 @@ const index = () => {
                         loading={getDynamicDropdownLoader}
                         placeholder="Select Vote Category"
                         onChange={(normalized) => {
+                          // Only stage the pick in the form — don't sync into
+                          // dropdownValues here, since that's what the
+                          // consolidated effect watches to fire the dependent
+                          // dropdown API. Selecting/unselecting a category (or
+                          // its children) should not call that API; it's
+                          // committed (and the dependent options refreshed)
+                          // only when Apply is clicked, in onSubmit below.
                           field.onChange(normalized);
-                          handleDropdownChange('vote_category', normalized);
-                          // Fetching is handled by the consolidated effect that watches
-                          // dropdownValues.vote_category, avoiding duplicate/racing calls.
                         }}
                       />
                     )}

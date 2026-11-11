@@ -6,6 +6,7 @@ import Tippy from "@/components/Base/Tippy";
 import StandardizedTable from "@/components/StandardizedTable";
 import Table from "@/components/Base/Table";
 import { proxyContestAIService } from "@/services/proxyContestAI";
+import { dashboardService } from "@/services/dashboard";
 
 interface CompaniesTableProps {
   data: any;
@@ -13,6 +14,7 @@ interface CompaniesTableProps {
   page: number;
   onPageChange: (p: number) => void;
   institutionIds: number[];
+  institutions?: { institution_id: number; institution_name: string }[];
   isAdminOrAnalyst?: boolean;
   onEdit?: (company: any) => void;
 }
@@ -57,7 +59,7 @@ const ActionIcon: React.FC<{
   );
 
 const CompaniesTable: React.FC<CompaniesTableProps> = ({
-  data, loading, page, onPageChange, institutionIds, isAdminOrAnalyst, onEdit,
+  data, loading, page, onPageChange, institutionIds, institutions = [], isAdminOrAnalyst, onEdit,
 }) => {
   const pageSize = 20;
   const totalPages = data ? Math.ceil(data.count / pageSize) : 1;
@@ -71,12 +73,126 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
 
   const fetchIdRef = useRef(0);
 
+  // ── Voting modal institution filter (local to the modal) ──────────────────
+  const [modalInstIds, setModalInstIds] = useState<number[]>([]);
+  const [instDDOpen, setInstDDOpen] = useState(false);
+  const [instQuery, setInstQuery] = useState("");
+  const [expandedInsts, setExpandedInsts] = useState<string[]>([]);
+
+  const instNameMap = React.useMemo(() => {
+    const m = new Map<number, string>();
+    institutions.forEach((i) => m.set(i.institution_id, i.institution_name));
+    return m;
+  }, [institutions]);
+  const instName = (id: number) => instNameMap.get(id) ?? `Institution ${id}`;
+
+  const fetchVotingData = async (company: any, ids: number[]) => {
+    setModalLoading(true);
+    const id = ++fetchIdRef.current;
+    try {
+      const result = await proxyContestAIService.getVotingData(
+        company.company_id,
+        company.year,
+        ids.length > 0 ? ids : undefined
+      );
+      if (id !== fetchIdRef.current) return;
+      setModalData(result);
+    } catch {
+      if (id === fetchIdRef.current) setModalData(null);
+    } finally {
+      if (id === fetchIdRef.current) setModalLoading(false);
+    }
+  };
+
+  const toggleModalInst = (id: number) => {
+    const next = modalInstIds.includes(id)
+      ? modalInstIds.filter((x) => x !== id)
+      : [...modalInstIds, id];
+    setModalInstIds(next);
+    if (modalCompany) fetchVotingData(modalCompany, next);
+  };
+
+  // ── 8-K document links (same condition as the Shareholder Meeting page:
+  //    resolve CIK via sec_filing URL, then fetch per-year filing links and
+  //    only show the button when links exist for the meeting year) ────────────
+  const [eightKLinks, setEightKLinks] = useState<string[]>([]);
+  const [eightKLoading, setEightKLoading] = useState(false);
+  const eightKCache = useRef<Map<string, string[]>>(new Map());
+  const eightKFetchId = useRef(0);
+
+  const extractCikFromSecUrl = (secUrl?: string) => {
+    const match = secUrl?.match(/CIK=(\d+)/i);
+    return match?.[1] ? match[1].padStart(10, "0") : null;
+  };
+
+  const fetchEightKLinks = async (company: any) => {
+    const cacheKey = `${company.company_id}_${company.year}`;
+    const cached = eightKCache.current.get(cacheKey);
+    if (cached) {
+      setEightKLinks(cached);
+      return;
+    }
+    const id = ++eightKFetchId.current;
+    setEightKLinks([]);
+    setEightKLoading(true);
+    try {
+      const res = await dashboardService.getModulesCount({
+        global_search: company.company_name,
+      });
+      const payload = res?.result;
+      const secUrl =
+        (typeof payload?.sec_filing === "string" && payload.sec_filing) ||
+        (typeof payload?.sec_filings === "string" && payload.sec_filings) ||
+        "";
+      const cik = extractCikFromSecUrl(secUrl);
+      let links: string[] = [];
+      if (cik) {
+        const resp = await fetch(
+          `https://dashboard-holders-api-4e81a2861a3c.herokuapp.com/api/get_proxy_voting_data_v2/?cik=${encodeURIComponent(cik)}`
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          const linksByYear = (Array.isArray(data?.all_meeting_data) ? data.all_meeting_data : [])
+            .reduce((result: Record<string, string[]>, item: any) => {
+              Object.entries(item || {}).forEach(([key, value]) => {
+                const urls = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+                result[key] = urls.filter((url: any) => typeof url === "string" && url.trim() !== "");
+              });
+              return result;
+            }, {});
+          links = linksByYear[`url_${company.year}`] || [];
+        }
+      }
+      eightKCache.current.set(cacheKey, links);
+      if (id === eightKFetchId.current) setEightKLinks(links);
+    } catch {
+      eightKCache.current.set(cacheKey, []);
+      if (id === eightKFetchId.current) setEightKLinks([]);
+    } finally {
+      if (id === eightKFetchId.current) setEightKLoading(false);
+    }
+  };
+
   const openModal = async (company: any, type: ModalType) => {
     setModalCompany(company);
     setModalType(type);
     setModalData(null);
     setModalOpen(true);
     setModalLoading(true);
+    setInstDDOpen(false);
+    setInstQuery("");
+    setExpandedInsts([]);
+    setEightKLinks([]);
+
+    if (type === "voting") {
+      setModalInstIds(institutionIds);
+      fetchVotingData(company, institutionIds);
+      return;
+    }
+
+    if (type === "meeting_details") {
+      fetchEightKLinks(company);
+    }
 
     const id = ++fetchIdRef.current;
     try {
@@ -85,12 +201,6 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
         result = await proxyContestAIService.getActivismTables(company.company_name, [company.year]);
       } else if (type === "meeting_details") {
         result = await proxyContestAIService.getMeetingDetails(company.company_name, company.year);
-      } else if (type === "voting") {
-        result = await proxyContestAIService.getVotingData(
-          company.company_id,
-          company.year,
-          institutionIds.length > 0 ? institutionIds : undefined
-        );
       }
       if (id !== fetchIdRef.current) return;
       setModalData(result);
@@ -105,6 +215,17 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
     setModalOpen(false);
     setModalData(null);
   };
+
+  const votingGroupKeys = React.useMemo(() => {
+    if (modalType !== "voting") return [] as string[];
+    return [
+      ...new Set(
+        ((modalData?.results) || []).map(
+          (r: any) => r.institution_name || "Unknown Institution"
+        )
+      ),
+    ] as string[];
+  }, [modalType, modalData]);
 
   const navigate = useNavigate();
 
@@ -217,7 +338,9 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
       {/* ── Unified Details Modal ──────────────────────────────────────────── */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+          <div className={`bg-white rounded-xl shadow-2xl w-full overflow-hidden flex flex-col ${
+            modalType === "voting" ? "max-w-7xl max-h-[92vh]" : "max-w-4xl max-h-[80vh]"
+          }`}>
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary to-primary/80 text-white flex-none">
               <div>
@@ -236,10 +359,125 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({
 
             {/* Body */}
             <div className="p-5 overflow-y-auto flex-1">
+              {/* Institution filter — Voting Data modal only */}
+              {modalType === "voting" && (
+                <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex-none">
+                      <Lucide icon="Building2" className="w-3.5 h-3.5" />
+                      Institutions
+                    </span>
+
+                    {/* Selected institution chips */}
+                    <div className="flex flex-wrap gap-1.5 flex-1 min-w-0 items-center">
+                      {modalInstIds.length === 0 && (
+                        <span className="text-xs text-slate-400 py-1">All institutions</span>
+                      )}
+                      {modalInstIds.map((id) => (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1 rounded-full bg-white border border-primary/30 text-primary text-xs font-medium shadow-sm"
+                        >
+                          {instName(id)}
+                          <button
+                            onClick={() => toggleModalInst(id)}
+                            className="p-0.5 rounded-full hover:bg-primary/10 transition-colors"
+                          >
+                            <Lucide icon="X" className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Institution dropdown */}
+                    {institutions.length > 0 && (
+                      <div className="relative flex-none">
+                        <button
+                          onClick={() => { setInstDDOpen((o) => !o); setInstQuery(""); }}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-white hover:border-primary/50 text-slate-600 hover:text-primary transition-colors"
+                        >
+                          <Lucide icon="Plus" className="w-3.5 h-3.5" />
+                          Add Institution
+                          <Lucide icon="ChevronDown" className={`w-3.5 h-3.5 transition-transform ${instDDOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {instDDOpen && (
+                          <>
+                          <div className="fixed inset-0 z-20" onClick={() => setInstDDOpen(false)} />
+                          <div className="absolute right-0 z-30 mt-1 w-72 bg-white border border-slate-200 rounded-lg shadow-lg">
+                            <div className="p-2 border-b border-slate-100">
+                              <div className="relative">
+                                <Lucide icon="Search" className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  placeholder="Search institutions..."
+                                  value={instQuery}
+                                  onChange={(e) => setInstQuery(e.target.value)}
+                                  className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-56 overflow-y-auto">
+                              {institutions
+                                .filter((i) => !instQuery.trim() || i.institution_name.toLowerCase().includes(instQuery.toLowerCase()))
+                                .map((i) => {
+                                  const isSel = modalInstIds.includes(i.institution_id);
+                                  return (
+                                    <button
+                                      key={i.institution_id}
+                                      onClick={() => toggleModalInst(i.institution_id)}
+                                      className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors ${
+                                        isSel ? "bg-primary/5 text-primary font-semibold" : "hover:bg-slate-50 text-slate-700"
+                                      }`}
+                                    >
+                                      <span className={`w-4 h-4 flex-none rounded border flex items-center justify-center ${
+                                        isSel ? "bg-primary border-primary" : "border-slate-300"
+                                      }`}>
+                                        {isSel && <Lucide icon="Check" className="w-2.5 h-2.5 text-white" />}
+                                      </span>
+                                      <span className="leading-tight break-words flex-1">{i.institution_name}</span>
+                                    </button>
+                                  );
+                                })}
+                              {institutions.filter((i) => !instQuery.trim() || i.institution_name.toLowerCase().includes(instQuery.toLowerCase())).length === 0 && (
+                                <div className="px-3 py-3 text-sm text-slate-400 text-center">No results found</div>
+                              )}
+                            </div>
+                          </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {modalLoading ? (
                 <ModalSkeleton type={modalType} />
               ) : (
-                <ModalContent type={modalType} data={modalData} companyName={modalCompany?.company_name || ""} />
+                <ModalContent
+                  type={modalType}
+                  data={modalData}
+                  companyName={modalCompany?.company_name || ""}
+                  eightK={{ links: eightKLinks, loading: eightKLoading }}
+                  voting={{
+                    expanded: expandedInsts,
+                    allExpanded:
+                      votingGroupKeys.length > 0 &&
+                      expandedInsts.length >= votingGroupKeys.length,
+                    onToggle: (k: string) =>
+                      setExpandedInsts((p) =>
+                        p.includes(k) ? p.filter((x) => x !== k) : [...p, k]
+                      ),
+                    onToggleAll: () =>
+                      setExpandedInsts(
+                        votingGroupKeys.length > 0 &&
+                          expandedInsts.length >= votingGroupKeys.length
+                          ? []
+                          : votingGroupKeys
+                      ),
+                  }}
+                />
               )}
             </div>
           </div>
@@ -285,8 +523,21 @@ const CheckCircle = () => (
   </div>
 );
 
-const ModalContent: React.FC<{ type: ModalType; data: any; companyName: string }> = ({
-  type, data, companyName,
+interface VotingGroupUI {
+  expanded: string[];
+  allExpanded: boolean;
+  onToggle: (key: string) => void;
+  onToggleAll: () => void;
+}
+
+const ModalContent: React.FC<{
+  type: ModalType;
+  data: any;
+  companyName: string;
+  eightK?: { links: string[]; loading: boolean };
+  voting?: VotingGroupUI;
+}> = ({
+  type, data, companyName, eightK, voting,
 }) => {
   if (!data) {
     return (
@@ -431,7 +682,30 @@ const ModalContent: React.FC<{ type: ModalType; data: any; companyName: string }
       <div className="space-y-6">
         {data?.company?.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-primary border-b border-gray-200 pb-2">Company Information</h3>
+            <div className="flex items-center justify-between gap-3 mb-3 border-b border-gray-200 pb-2">
+              <h3 className="text-lg font-semibold text-primary">Company Information</h3>
+              {eightK?.loading ? (
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-md border-2 border-red-800 text-red-800 text-sm font-bold opacity-60">
+                  <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                  8-K
+                </span>
+              ) : (
+                (eightK?.links?.length ?? 0) > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {eightK!.links.map((url, i) => (
+                      <button
+                        key={url}
+                        onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border-2 border-red-800 bg-white text-red-800 text-sm font-bold hover:bg-red-800 hover:text-white transition-colors shadow-sm"
+                      >
+                        <Lucide icon="FileText" className="w-4 h-4" />
+                        8-K{eightK!.links.length > 1 ? ` ${i + 1}` : ""}
+                      </button>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               {data.company.map((companyInfo: any, i: number) => {
                 const name = Object.keys(companyInfo)[0];
@@ -550,46 +824,98 @@ const ModalContent: React.FC<{ type: ModalType; data: any; companyName: string }
         </div>
       );
     }
+    const groupMap = new Map<string, any[]>();
+    results.forEach((r: any) => {
+      const k = r.institution_name || "Unknown Institution";
+      if (!groupMap.has(k)) groupMap.set(k, []);
+      groupMap.get(k)!.push(r);
+    });
+    const groups = [...groupMap.entries()];
+    const expanded = voting?.expanded ?? [];
+
     return (
-      <div className="overflow-x-auto">
-        <p className="text-xs text-gray-500 mb-3">{data.count} record{data.count !== 1 ? "s" : ""}</p>
-        <Table>
-          <Table.Thead>
-            <Table.Tr className="bg-primary">
-              <Table.Td className="py-2.5 font-semibold text-white text-sm w-10">No.</Table.Td>
-              <Table.Td className="py-2.5 font-semibold text-white text-sm">Proposal</Table.Td>
-              <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Mgmt Rec</Table.Td>
-              <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Vote Cast</Table.Td>
-              <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Institution Name</Table.Td>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {results.map((row: any, i: number) => (
-              <React.Fragment key={row.id || i}>
-                <Table.Tr className="hover:bg-gray-50">
-                  <Table.Td className="py-2 border-dashed text-gray-400 text-sm align-top">{i + 1}</Table.Td>
-                  <Table.Td className="py-2 border-dashed text-sm">{row.proposal}</Table.Td>
-                  <Table.Td className="py-2 border-dashed text-sm text-center">{row.mgt_rec}</Table.Td>
-                  <Table.Td className="py-2 border-dashed">
-                    <span className={`text-sm font-medium ${
-                      row.vote === "Against" || row.vote === "Withhold" ? "text-red-600" : ""
-                    }`}>{row.vote}</span>
-                  </Table.Td>
-                  <Table.Td className="py-2 border-dashed text-sm whitespace-nowrap">{row.institution_name}</Table.Td>
-                </Table.Tr>
-                {(row.voting_rationale || row.notes) && (
-                  <Table.Tr className="bg-gray-50">
-                    <Table.Td className="pb-2 pt-0 border-dashed" />
-                    <Table.Td colSpan={4} className="pb-2 pt-0 border-dashed text-xs text-gray-500 italic">
-                      <span className="font-semibold not-italic text-gray-600">Voting Rationale: </span>
-                      {row.voting_rationale || row.notes}
-                    </Table.Td>
-                  </Table.Tr>
+      <div>
+        {/* Count + Expand/Collapse All */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs text-gray-500">
+            {data.count} record{data.count !== 1 ? "s" : ""} · {groups.length} institution{groups.length !== 1 ? "s" : ""}
+          </p>
+          <button
+            onClick={voting?.onToggleAll}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors"
+          >
+            {voting?.allExpanded ? "Collapse All" : "Expand All"}
+            <Lucide
+              icon="ChevronDown"
+              className={`w-3.5 h-3.5 transition-transform ${voting?.allExpanded ? "rotate-180" : ""}`}
+            />
+          </button>
+        </div>
+
+        {/* Institution groups */}
+        <div className="space-y-2">
+          {groups.map(([name, rows]) => {
+            const isOpen = expanded.includes(name);
+            return (
+              <div key={name} className="border border-slate-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => voting?.onToggle(name)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+                >
+                  <span className="font-semibold text-sm text-slate-800 leading-snug break-words">
+                    {name}
+                  </span>
+                  <span className="flex items-center gap-2 flex-none text-xs text-slate-400 font-medium">
+                    {rows.length} proposal{rows.length !== 1 ? "s" : ""}
+                    <Lucide
+                      icon="ChevronDown"
+                      className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
+                  </span>
+                </button>
+                {isOpen && (
+                  <div className="overflow-x-auto border-t border-slate-200">
+                    <Table>
+                      <Table.Thead>
+                        <Table.Tr className="bg-primary">
+                          <Table.Td className="py-2.5 font-semibold text-white text-sm w-10">No.</Table.Td>
+                          <Table.Td className="py-2.5 font-semibold text-white text-sm">Proposal</Table.Td>
+                          <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Mgmt Rec</Table.Td>
+                          <Table.Td className="py-2.5 font-semibold text-white text-sm whitespace-nowrap">Vote Cast</Table.Td>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {rows.map((row: any, i: number) => (
+                          <React.Fragment key={row.id || i}>
+                            <Table.Tr className="hover:bg-gray-50">
+                              <Table.Td className="py-2 border-dashed text-gray-400 text-sm align-top">{i + 1}</Table.Td>
+                              <Table.Td className="py-2 border-dashed text-sm">{row.proposal}</Table.Td>
+                              <Table.Td className="py-2 border-dashed text-sm text-center">{row.mgt_rec}</Table.Td>
+                              <Table.Td className="py-2 border-dashed">
+                                <span className={`text-sm font-medium ${
+                                  row.vote === "Against" || row.vote === "Withhold" ? "text-red-600" : ""
+                                }`}>{row.vote}</span>
+                              </Table.Td>
+                            </Table.Tr>
+                            {(row.voting_rationale || row.notes) && (
+                              <Table.Tr className="bg-gray-50">
+                                <Table.Td className="pb-2 pt-0 border-dashed" />
+                                <Table.Td colSpan={3} className="pb-2 pt-0 border-dashed text-xs text-gray-500 italic">
+                                  <span className="font-semibold not-italic text-gray-600">Voting Rationale: </span>
+                                  {row.voting_rationale || row.notes}
+                                </Table.Td>
+                              </Table.Tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </div>
                 )}
-              </React.Fragment>
-            ))}
-          </Table.Tbody>
-        </Table>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

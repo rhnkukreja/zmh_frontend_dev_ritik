@@ -76,25 +76,60 @@ const VoteCategoryTaxonomySelect: React.FC<VoteCategoryTaxonomySelectProps> = ({
     setExpanded((prev) => ({ ...prev, [parentValue]: !prev[parentValue] }));
   };
 
-  const toggleValue = (value: string) => {
-    const next = new Set(selectedSet);
-    if (next.has(value)) {
-      next.delete(value);
-    } else {
-      next.add(value);
-    }
-    onChange(Array.from(next));
-  };
-
   const selectAllChildren = (item: VoteCategoryTaxonomyItem) => {
     const childValues = (item.children || []).map((child) => child.value);
     const next = new Set(selectedSet);
-    const allSelected = childValues.length > 0 && childValues.every((value) => next.has(value));
+    const allSelected =
+      next.has(item.parent_value) ||
+      (childValues.length > 0 && childValues.every((value) => next.has(value)));
 
+    // The parent is a stand-in for "all children selected" — clear it too so
+    // toggling off actually unchecks everything instead of leaving the
+    // parent (and therefore every child's visual checkmark) selected.
+    next.delete(item.parent_value);
     if (allSelected) {
       childValues.forEach((value) => next.delete(value));
     } else {
       childValues.forEach((value) => next.add(value));
+    }
+    onChange(Array.from(next));
+  };
+
+  // Clicking the parent checkbox: if nothing in this category is selected
+  // yet, select the whole parent (sends parent_value only, as before). If
+  // the parent checkbox is already showing checked — whether from
+  // parent_value itself or from individual children picked directly —
+  // clicking it clears the entire category back to nothing selected.
+  const toggleParent = (item: VoteCategoryTaxonomyItem) => {
+    const next = new Set(selectedSet);
+    const childValues = (item.children || []).map((child) => child.value);
+    const hasAnySelection = next.has(item.parent_value) || childValues.some((value) => next.has(value));
+
+    if (hasAnySelection) {
+      next.delete(item.parent_value);
+      childValues.forEach((value) => next.delete(value));
+    } else {
+      next.add(item.parent_value);
+    }
+    onChange(Array.from(next));
+  };
+
+  // Clicking a child while its parent is selected: the parent_value is a
+  // stand-in for "every child selected", so unchecking one child means
+  // dropping the parent and expanding into the remaining children
+  // individually (minus the one just unchecked) — otherwise the parent's
+  // selection kept every child looking checked no matter what was clicked.
+  const toggleChild = (item: VoteCategoryTaxonomyItem, childValue: string) => {
+    const next = new Set(selectedSet);
+    if (next.has(item.parent_value)) {
+      next.delete(item.parent_value);
+      (item.children || []).forEach((child) => {
+        if (child.value !== childValue) next.add(child.value);
+      });
+    } else if (next.has(childValue)) {
+      next.delete(childValue);
+    } else {
+      next.add(childValue);
     }
     onChange(Array.from(next));
   };
@@ -129,17 +164,26 @@ const VoteCategoryTaxonomySelect: React.FC<VoteCategoryTaxonomySelectProps> = ({
             <div className="px-3 py-2 text-sm text-slate-500">No categories available</div>
           ) : (
             taxonomy.map((item) => {
-              const isParentSelected = selectedSet.has(item.parent_value);
+              const parentValueSelected = selectedSet.has(item.parent_value);
               const isExpanded = !!expanded[item.parent_value];
               const childValues = (item.children || []).map((child) => child.value);
-              const allChildrenSelected = childValues.length > 0 && childValues.every((value) => selectedSet.has(value));
+              const anyChildSelected = childValues.some((value) => selectedSet.has(value));
+              // Parent checkbox is a UI-only indicator of "this category has
+              // some selection" — it stays checked once any child is picked
+              // individually too, even though parent_value itself is no
+              // longer what's being sent (only the remaining child values
+              // are, once a child has been excluded).
+              const isParentSelected = parentValueSelected || anyChildSelected;
+              const allChildrenSelected =
+                parentValueSelected ||
+                (childValues.length > 0 && childValues.every((value) => selectedSet.has(value)));
 
               return (
                 <div key={item.parent_value} className="mb-0.5">
                   <div className="flex items-center gap-1 rounded-md hover:bg-slate-50">
                     <button
                       type="button"
-                      onClick={() => toggleValue(item.parent_value)}
+                      onClick={() => toggleParent(item)}
                       className="flex items-center gap-2 min-w-0 flex-1 px-2 py-2 text-sm text-left"
                     >
                       <span
@@ -176,12 +220,17 @@ const VoteCategoryTaxonomySelect: React.FC<VoteCategoryTaxonomySelectProps> = ({
                         </button>
                       </div>
                       {item.children.map((child) => {
-                        const isChildSelected = selectedSet.has(child.value);
+                        // Visual only — selecting the parent doesn't add its
+                        // children's values to the selection (still only
+                        // parent_value is sent), but showing them as checked
+                        // makes it clear the parent category already covers
+                        // them, instead of looking unselected/unchecked.
+                        const isChildSelected = parentValueSelected || selectedSet.has(child.value);
                         return (
                           <button
                             key={child.value}
                             type="button"
-                            onClick={() => toggleValue(child.value)}
+                            onClick={() => toggleChild(item, child.value)}
                             className="flex items-start gap-2 w-full min-w-0 px-2 py-2 text-sm text-left rounded-md hover:bg-slate-50"
                           >
                             <span

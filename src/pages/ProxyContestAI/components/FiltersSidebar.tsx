@@ -58,7 +58,7 @@ const SearchPicker: React.FC<SearchPickerProps> = ({ label, placeholder, allItem
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-          className="w-full min-w-0 pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+          className="w-full min-w-0 pl-9 pr-8 py-2 text-sm placeholder:text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
         />
         {query && (
           <button
@@ -247,8 +247,8 @@ const FiltersSidebar: React.FC<FiltersSidebarProps> = ({
               />
             )}
 
-            {/* INSTITUTION — both tabs */}
-            {institutionItems.length > 0 && (
+            {/* INSTITUTION — Overview only (Campaign Details filters institutions inside the Voting Data modal) */}
+            {activeTab === "overview" && institutionItems.length > 0 && (
               <SearchPicker
                 label="Institution"
                 placeholder="Search institutions..."

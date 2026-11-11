@@ -11,6 +11,7 @@ import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import { ChevronLeft } from "lucide-react";
 import { baseURL } from "@/constant";
+import { dashboardService } from "@/services/dashboard";
 import axios from "axios";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import investorIcon from "../../assets/images/zmh-images/investor-icon.png";
@@ -41,6 +42,12 @@ const ProxyContestDetail = () => {
     const [proxyAdvisoryData, setProxyAdvisoryData] = useState<any[]>([]);
     const [proxyVotingData, setProxyVotingData] = useState<any>(null);
     const [resolvedYear, setResolvedYear] = useState<string>(company?.year || year || "");
+
+    // 8-K document links (same condition as the Shareholder Meeting page:
+    // resolve CIK via sec_filing URL, then fetch per-year filing links and
+    // only show the button when links exist for the meeting year)
+    const [eightKLinks, setEightKLinks] = useState<string[]>([]);
+    const [eightKLoading, setEightKLoading] = useState(false);
 
     // Modal states
     const [caseProxyModalVisible, setCaseProxyModalVisible] = useState<boolean>(false);
@@ -169,6 +176,61 @@ const ProxyContestDetail = () => {
     useEffect(() => {
         fetchAllData();
     }, [company?.company_name, resolvedYear]);
+
+    // Fetch 8-K document links for this company + meeting year
+    useEffect(() => {
+        const meetingYear = resolvedYear || company?.year;
+        if (!company?.company_name || !meetingYear) {
+            setEightKLinks([]);
+            return;
+        }
+
+        let cancelled = false;
+        const extractCik = (secUrl?: string) => {
+            const match = secUrl?.match(/CIK=(\d+)/i);
+            return match?.[1] ? match[1].padStart(10, "0") : null;
+        };
+
+        (async () => {
+            setEightKLinks([]);
+            setEightKLoading(true);
+            try {
+                const res = await dashboardService.getModulesCount({
+                    global_search: company.company_name,
+                });
+                const payload = res?.result;
+                const secUrl =
+                    (typeof payload?.sec_filing === "string" && payload.sec_filing) ||
+                    (typeof payload?.sec_filings === "string" && payload.sec_filings) ||
+                    "";
+                const cik = extractCik(secUrl);
+                if (!cik) return;
+
+                const resp = await fetch(
+                    `https://dashboard-holders-api-4e81a2861a3c.herokuapp.com/api/get_proxy_voting_data_v2/?cik=${encodeURIComponent(cik)}`
+                );
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const linksByYear = (Array.isArray(data?.all_meeting_data) ? data.all_meeting_data : [])
+                    .reduce((result: Record<string, string[]>, item: any) => {
+                        Object.entries(item || {}).forEach(([key, value]) => {
+                            const urls = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+                            result[key] = urls.filter((url: any) => typeof url === "string" && url.trim() !== "");
+                        });
+                        return result;
+                    }, {});
+                if (!cancelled) setEightKLinks(linksByYear[`url_${meetingYear}`] || []);
+            } catch {
+                if (!cancelled) setEightKLinks([]);
+            } finally {
+                if (!cancelled) setEightKLoading(false);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [company?.company_name, company?.year, resolvedYear]);
 
     if (!company) {
         return (
@@ -555,6 +617,27 @@ const ProxyContestDetail = () => {
                             <div className="box p-5">
                                 <div className="flex justify-between items-center mb-4">
                                     <h2 className="text-lg font-bold">Meeting Details</h2>
+                                    {eightKLoading ? (
+                                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-md border-2 border-red-800 text-red-800 text-sm font-bold opacity-60">
+                                            <Lucide icon="Loader" className="w-4 h-4 animate-spin" />
+                                            8-K
+                                        </span>
+                                    ) : (
+                                        eightKLinks.length > 0 && (
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                {eightKLinks.map((url, i) => (
+                                                    <button
+                                                        key={url}
+                                                        onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border-2 border-red-800 bg-white text-red-800 text-sm font-bold hover:bg-red-800 hover:text-white transition-colors shadow-sm"
+                                                    >
+                                                        <Lucide icon="FileText" className="w-4 h-4" />
+                                                        8-K{eightKLinks.length > 1 ? ` ${i + 1}` : ""}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )
+                                    )}
                                 </div>
                                 <div className="space-y-6">
                                     {/* Company Information */}
