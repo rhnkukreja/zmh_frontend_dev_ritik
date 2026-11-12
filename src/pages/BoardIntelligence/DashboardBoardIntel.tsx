@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { BoardIntelPanel, CompanyHit, searchCompanies } from "./index";
+import { BoardIntelPanel, CompanyHit, resolveCompany } from "./index";
 
 /** SEC writes share classes with a dash (BRK-B); the dashboard may hold BRK.B or BRK/B. */
 const secTicker = (ticker: string) => (ticker || "").trim().toUpperCase().replace(/[./]/g, "-");
@@ -9,7 +9,9 @@ const secTicker = (ticker: string) => (ticker || "").trim().toUpperCase().replac
  *
  *  The dashboard knows the company by ticker; Board Intel works by SEC CIK. The ticker is
  *  matched EXACTLY against SEC's ticker list -- never the first search hit, which could be a
- *  different company -- and a ticker SEC does not list is said so rather than guessed. */
+ *  different company. A ticker SEC no longer lists (renamed: BK is now BNY) is matched by the
+ *  company's name, only when exactly one SEC company has that name (the backend's
+ *  /companies/resolve); otherwise it is said so rather than guessed. */
 export default function DashboardBoardIntel({ ticker, name, companyId }: {
   ticker: string; name: string;
   /** the dashboard's company id, for the year-on-year vote support */
@@ -24,15 +26,15 @@ export default function DashboardBoardIntel({ ticker, name, companyId }: {
     const wanted = secTicker(ticker);
     if (!wanted) { setState("unmatched"); return; }
     setState("resolving");
-    searchCompanies(wanted)
-      .then((hits) => {
+    resolveCompany(wanted, name)
+      .then((match) => {
         if (cancelled) return;
-        const match = hits.find((h) => h.ticker === wanted);
-        if (match) { setCompany(match); setState("found"); } else setState("unmatched");
+        if (match) { setCompany({ cik: match.cik, ticker: match.ticker, name: match.name }); setState("found"); }
+        else setState("unmatched");
       })
       .catch(() => { if (!cancelled) setState("error"); });
     return () => { cancelled = true; };
-  }, [ticker]);
+  }, [ticker, name]);
 
   return (
     <div className="p-5 mt-1 box">

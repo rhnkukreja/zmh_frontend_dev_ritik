@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Component, Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import DOMPurify from "dompurify";
 import {
@@ -420,6 +420,16 @@ async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 export const searchCompanies = (q: string) =>
   getJson<{ results: CompanyHit[] }>(`${BASE}/companies?q=${encodeURIComponent(q)}`).then((r) => r.results);
+
+/** One company by its ticker, else -- the ticker renamed since (BK is now BNY) -- by its name.
+ *  null when SEC lists neither. */
+export const resolveCompany = (ticker: string, name: string) =>
+  getJson<CompanyHit & { matched_by: "ticker" | "name" }>(
+    `${BASE}/companies/resolve?ticker=${encodeURIComponent(ticker)}&name=${encodeURIComponent(name || "")}`,
+  ).catch((e) => {
+    if ((e as { status?: number }).status === 404) return null;
+    throw e;
+  });
 
 const startRun = (cik: string) =>
   getJson<RunStatus>(`${BASE}/runs`, { method: "POST", body: JSON.stringify({ cik }) });
@@ -1205,11 +1215,31 @@ function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
   );
 }
 
-/** Compensation peer groups: a clean list per group, and the proxy's own section beneath. */
+/** One tab's content. A render error inside it (a saved result missing a field the section reads)
+ *  shows a short note in place of that section; without this React unmounts the whole page and
+ *  the user sees a white screen. Keyed by company + tab, so another tab or company starts clean. */
+class SectionGuard extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.error("[BoardIntelligence] a section could not be shown", error);
+  }
+  render() {
+    if (this.state.failed) {
+      return <p className="text-sm text-gray-700">This section could not be shown: its saved data is incomplete. The other tabs still work.</p>;
+    }
+    return this.props.children;
+  }
+}
+
+/** Compensation peer groups: a clean list per group, and the proxy's own section beneath.
+ *  Lists a group may lack (results saved before a field existed, or fixed by hand) read as empty. */
 function PeersSection({ peers, proxyUrl }: { peers?: PeerGroups; proxyUrl: string }) {
   const [showDoc, setShowDoc] = useState(false);
   if (!peers) return <p className="text-sm text-gray-600">Compensation peers: not read for this result yet.</p>;
-  if (!peers.found) return <p className="text-sm text-gray-600">No compensation peer group was found in this proxy.</p>;
+  if (!peers.found || !peers.groups?.length) return <p className="text-sm text-gray-600">No compensation peer group was found in this proxy.</p>;
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -1218,32 +1248,35 @@ function PeersSection({ peers, proxyUrl }: { peers?: PeerGroups; proxyUrl: strin
         </p>
         <span className="ml-auto"><SourceLink href={proxyUrl}>Source: Proxy Statement (SEC)</SourceLink></span>
       </div>
-      {peers.groups.map((g) => (
+      {peers.groups.map((g) => {
+        const companies = g.companies ?? [], added = g.added ?? [], removed = g.removed ?? [];
+        return (
         <div key={g.name} className="border border-gray-200 rounded-lg overflow-hidden">
           <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
-            <h3 className="font-semibold text-gray-900">{titleCase(g.name)}</h3>
-            <Pill>{g.companies.length} companies</Pill>
+            <h3 className="font-semibold text-gray-900">{titleCase(g.name || "Peer group")}</h3>
+            <Pill>{companies.length} companies</Pill>
             {g.partial && (
-              <Pill tone="amber">The proxy says {g.stated_count} companies; {g.companies.length} are printed as text — the rest may be in an image</Pill>
+              <Pill tone="amber">The proxy says {g.stated_count} companies; {companies.length} are printed as text — the rest may be in an image</Pill>
             )}
           </div>
           {g.purpose && <p className="px-4 pt-3 text-sm text-gray-700">Used for: {g.purpose}</p>}
           <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
-            {g.companies.map((c) => (
+            {companies.map((c) => (
               <div key={c.name} className="text-sm text-gray-900 py-1 border-b border-gray-100">
                 {c.name}
                 {c.ticker && <span className="ml-2 text-xs font-mono text-gray-600">{c.exchange ? `${c.exchange}: ` : ""}{c.ticker}</span>}
               </div>
             ))}
           </div>
-          {(!!g.added.length || !!g.removed.length) && (
+          {(!!added.length || !!removed.length) && (
             <div className="px-4 pb-3 text-xs text-gray-900 space-y-1">
-              {!!g.added.length && <div><span className="font-semibold">Added this year: </span>{g.added.join("; ")}</div>}
-              {!!g.removed.length && <div><span className="font-semibold">Removed this year: </span>{g.removed.join("; ")}</div>}
+              {!!added.length && <div><span className="font-semibold">Added this year: </span>{added.join("; ")}</div>}
+              {!!removed.length && <div><span className="font-semibold">Removed this year: </span>{removed.join("; ")}</div>}
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
       {peers.html && (
         <div>
           <button onClick={() => setShowDoc(!showDoc)} className="text-xs text-[#931638] hover:underline">
@@ -1893,6 +1926,7 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
             ))}
           </div>
 
+          <SectionGuard key={`${result.company.cik}-${tab}-${meetingView}`}>
           {tab === "board" && <BoardTab key={result.company.cik} result={result} />}
           {tab === "nominees" && (
             <div className="space-y-8">
@@ -1933,6 +1967,7 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
               )}
             </div>
           )}
+          </SectionGuard>
         </>
       )}
     </div>
