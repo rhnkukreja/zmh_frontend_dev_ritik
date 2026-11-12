@@ -91,7 +91,7 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Company",
     subItems: [],
     beta: true,
-    adminOnly: true,
+    // open to every user; only its board connections stay Admin-only (BoardIntelligence/index.tsx)
   },
   {
     key: "compensation",
