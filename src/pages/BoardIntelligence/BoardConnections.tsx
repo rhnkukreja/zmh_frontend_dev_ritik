@@ -75,6 +75,7 @@ export function useBoardConnections(cik: string) {
   useEffect(() => {
     let cancelled = false;
     setState({ data: null, failed: false });
+    if (!cik) return;                     // not shown to this user: nothing to load
     loadConnections(cik).then((data) => { if (!cancelled) setState({ data, failed: false }); },
                               () => { if (!cancelled) setState({ data: null, failed: true }); });
     return () => { cancelled = true; };
