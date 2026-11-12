@@ -8,7 +8,7 @@ import {
   generateFilterChips,
   downloadFileFromAPI,
 } from "@/utils/helper";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import _ from "lodash";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -16,6 +16,7 @@ import {
   baseURL,
   proponent_type,
   proposal_type,
+  ma_proposal_type,
   meeting_type,
 } from "@/constant";
 import { AppDispatch, RootState } from "@/stores/store";
@@ -45,6 +46,7 @@ import { Tooltip } from "react-tooltip";
 import Tippy from "@/components/Base/Tippy";
 import clsx from "clsx";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
+import InstitutionSplitNotice from "@/components/InstitutionSplitNotice";
 import { peerAnalysisService } from "@/services/peerAnalysis";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
 import Pill from "@/components/Pill";
@@ -91,6 +93,14 @@ const isPageReloadOnce = (sessionKey: string) => {
 };
 
 const VDS_VIEW_MODE_KEY = "vdsEuropeanIsViewAnalysis";
+
+// M&A proposal type values are shown inside Proposal Category but sent separately via ma_proposal_type
+const isMaProposalType = (value: string) =>
+  ma_proposal_type.some((t) => t.toLowerCase() === value?.toLowerCase());
+const splitMaProposalTypes = (values: string[] = []) => ({
+  maProposalTypes: values.filter(isMaProposalType),
+  proposalTypes: values.filter((v) => !isMaProposalType(v)),
+});
 
 const index = () => {
   const dispatch: AppDispatch = useAppDispatch();
@@ -161,7 +171,9 @@ const index = () => {
   const [voteOptions, setVoteOptions] = useState<string[]>([]);
   const [yearOptions, setYearOptions] = useState<number[]>([]);
   const [availableDateRange, setAvailableDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
-  const [institutionOptions, setInstitutionOptions] = useState<string[]>([]);
+  const [institutionOptions, setInstitutionOptions] = useState<{ institution_id?: number; institution_name: string }[]>([]);
+  // Maps institution_name -> institution_id from org_institution responses
+  const institutionIdMapRef = useRef<Map<string, number>>(new Map());
   const [countryOptions, setCountryOptions] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [countryComponentKey, setCountryComponentKey] = useState<number>(0);
@@ -250,6 +262,13 @@ const index = () => {
       [index]: !prev[index],
     }));
   };
+  const toggleGroup = (groupKey: string) => {
+    setOpenGroups((prevState) => ({
+      ...prevState,
+      [groupKey]: !prevState[groupKey],
+    }));
+  };
+
   const getCompanyGroupKey = (company: any, yearIdx?: number, index?: number) => {
     return [
       company?.company_id ?? "no-id",
@@ -259,13 +278,6 @@ const index = () => {
       yearIdx ?? "no-year",
       index ?? "no-index",
     ].join("|");
-  };
-
-  const toggleGroup = (groupKey: string) => {
-    setOpenGroups((prevState) => ({
-      ...prevState,
-      [groupKey]: !prevState[groupKey],
-    }));
   };
 
   const expandAllGroups = () => {
@@ -286,10 +298,8 @@ const index = () => {
     const allExpanded = allCompanyNames.every(name => openGroups[name]);
 
     if (allExpanded) {
-      // Collapse all
       setOpenGroups({});
     } else {
-      // Expand all
       const newOpenGroups: { [key: string]: boolean } = {};
       allCompanyNames.forEach(name => {
         newOpenGroups[name] = true;
@@ -360,6 +370,47 @@ const index = () => {
     });
 
     return allInstitutionNames.length > 0 && allInstitutionNames.every(name => openInstitutionGroups[name]);
+  };
+
+  // Merge org_institution [{institution_id, institution_name}] entries into the id map
+  const mergeOrgInstitutions = (list: any[]) => {
+    (list || []).forEach((o: any) => {
+      if (o?.institution_name && o?.institution_id != null) {
+        institutionIdMapRef.current.set(o.institution_name, o.institution_id);
+      }
+    });
+  };
+
+  // Resolve institution ids aligned with the given institution names
+  const getInstitutionIds = (names: string[] = []) =>
+    names
+      .map((n) => institutionIdMapRef.current.get(n))
+      .filter((id): id is number => id != null);
+
+  // Prefer institution_id over names: send only ids when every name resolves
+  const institutionIdParams = (names: string[] = [], nameKey = "institution_name") => {
+    const ids = getInstitutionIds(names);
+    return ids.length === names.length && ids.length > 0
+      ? { institution_id: ids }
+      : { [nameKey]: names };
+  };
+
+  // Single shared dropdown request so institution ids are resolved before dependent calls
+  const orgInstitutionsPromiseRef = useRef<Promise<any> | null>(null);
+  const ensureInstitutionIdMap = () => {
+    if (!orgInstitutionsPromiseRef.current) {
+      orgInstitutionsPromiseRef.current = getVdsEuropeanDropdownValues()
+        .then((data) => {
+          const orgInstitutions = Array.isArray(data?.org_institution) && data.org_institution.length > 0
+            ? data.org_institution
+            : (data?.institution || []).map((name: string) => ({ institution_name: name }));
+          mergeOrgInstitutions(orgInstitutions);
+          setInstitutionOptions(orgInstitutions);
+          return data;
+        })
+        .catch(() => null);
+    }
+    return orgInstitutionsPromiseRef.current;
   };
 
   const hasAnyValidFilter = (filterObj: Record<string, any>): boolean => {
@@ -599,11 +650,27 @@ const index = () => {
 
         if (shouldRefetch) {
           setIsLoading(true);
+          await ensureInstitutionIdMap();
           // Always include year in payload if present in allApplyFilter
           const payload = { ...allApplyFilter };
           if (payload.year) {
             payload.year = payload.year;
           }
+          // Split M&A proposal types out of proposal_type — sent separately via ma_proposal_type
+          const { maProposalTypes, proposalTypes } = splitMaProposalTypes([
+            ...new Set([
+              ...(payload.proposal_type || []),
+              ...(payload.ma_proposal_type || []),
+            ]),
+          ]);
+          payload.proposal_type = proposalTypes;
+          payload.ma_proposal_type = maProposalTypes;
+          // Prefer institution_id; send institution_name only when ids can't be resolved
+          const institutionNames = Array.isArray(payload.institution_name)
+            ? payload.institution_name
+            : payload.institution_name ? [payload.institution_name] : [];
+          delete payload.institution_name;
+          Object.assign(payload, institutionIdParams(institutionNames));
           await dispatch(
             fetchVdsEuropeans(
               createDynamicURL(
@@ -617,8 +684,8 @@ const index = () => {
           // Only update chips for regular filters if not in analytics mode
           // Don't overwrite chips if they were just restored from localStorage
           if (!isRestoringFromLocalStorage) {
-            setFiltersLength(countValidFilters(payload));
-            setSelectedChipFilters(generateFilterChips(payload));
+            setFiltersLength(countValidFilters(allApplyFilter));
+            setSelectedChipFilters(generateFilterChips(allApplyFilter));
           }
           dispatch(setTempSearch(companyGlobalSearchName));
           setIsLoading(false);
@@ -672,9 +739,8 @@ const index = () => {
     const fetchDropdownData = async () => {
       try {
         setGetFundNameDropdownLoader(true);
-        const data = await getVdsEuropeanDropdownValues();
-        setInstitutionOptions(data.institution || []);
-        setCountryOptions(data.country || []);
+        const data = await ensureInstitutionIdMap();
+        setCountryOptions(data?.country || []);
         // Don't set vote and year here - they will be fetched with institution dependency
       } catch (error) {
         setInstitutionOptions([]);
@@ -825,13 +891,18 @@ const index = () => {
   }, [watchedDateRange, watchedYear, watchedAnalyticsYear, prevDateRange, prevYear, prevAnalyticsYear, setValue]);
 
   const getDependentDropdown = async () => {
+    await ensureInstitutionIdMap();
     const paramFilter = {
       company_name: Array.isArray(dropdownValues?.company_name)
         ? dropdownValues?.company_name
         : dropdownValues?.company_name
           ? [dropdownValues?.company_name]
           : [],
-      institution_name: dropdownValues?.institution_name,
+      ...institutionIdParams(
+        Array.isArray(dropdownValues?.institution_name)
+          ? dropdownValues?.institution_name
+          : dropdownValues?.institution_name ? [dropdownValues?.institution_name] : []
+      ),
       year:
         dropdownValues?.institution_name && dropdownValues?.company_name
           ? 2024
@@ -854,6 +925,7 @@ const index = () => {
         paramFilter
       );
       if (res.result) {
+        mergeOrgInstitutions(res.result.org_institution);
         setApiDependentDropdownOptions({ ...res.result });
       }
     } catch (error) {
@@ -888,10 +960,12 @@ const index = () => {
 
     try {
       setGetDynamicDropdownLoader(true);
+      await ensureInstitutionIdMap();
       const res = await vdsEuropeanService.getDynamicVDSEuropeanDropdownValues({
-        institution_name: institutionNames
+        ...institutionIdParams(institutionNames)
       });
       if (res.result) {
+        mergeOrgInstitutions(res.result.org_institution);
         setVoteOptions(res.result.vote || []);
         setYearOptions(res.result.year || []);
         setAvailableDateRange(parseAvailableDateRange(res.result.available_date_range));
@@ -924,9 +998,10 @@ const index = () => {
     // Set new timeout for debouncing
     const newTimeout = setTimeout(async () => {
       try {
+        await ensureInstitutionIdMap();
         // Search: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=[SELECTED_INSTITUTION_NAME]&company_name={SEARCH_TEXT}
         const res = await vdsEuropeanService.getCompanySearchDropdownValues({
-          institution_name: institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS,
+          ...institutionIdParams(institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS),
           company_name: searchTerm // Send as string for search
         });
         if (res.result) {
@@ -957,10 +1032,11 @@ const index = () => {
 
     try {
       setGetDynamicDropdownLoader(true);
+      await ensureInstitutionIdMap();
 
       // Selection: call https://api.zmhadvisors.com/get_vds_european_dropdown_values/?institution_name=["BlackRock, Inc."]&company_name=["Apple Inc."]
       const currentFilters = {
-        institution_name: institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS,
+        ...institutionIdParams(institutionNames || DEFAULT_ANALYTICS_INSTITUTIONS),
         company_name: companyNames, // Send as array for selection
       };
 
@@ -1067,6 +1143,7 @@ const index = () => {
             paramFilter
           );
         if (res.result) {
+          mergeOrgInstitutions(res.result.org_institution);
           setApiInstitutionDropdown({ ...res.result });
         }
       } catch (error) {
@@ -1099,11 +1176,13 @@ const index = () => {
   };
 
   const handleAnalyticsDownload = async () => {
+    await ensureInstitutionIdMap();
     // Construct the same analytics parameters as the regular analytics call
-    const analyticsParams: Record<string, string | string[]> = {
-      investor_company: allAnalyticsFilter?.institution_name?.length
-        ? allAnalyticsFilter.institution_name
-        : allAnalyticsFilter.company_name || [],
+    const analyticsParams: Record<string, string | string[] | number[]> = {
+      // Prefer institution_id; send investor_company names only when ids can't be resolved
+      ...(allAnalyticsFilter?.institution_name?.length
+        ? institutionIdParams(allAnalyticsFilter.institution_name, "investor_company")
+        : { investor_company: allAnalyticsFilter.company_name || [] }),
       company_name: allAnalyticsFilter?.company_name?.length > 0
         ? allAnalyticsFilter.company_name
         : [],
@@ -1117,9 +1196,12 @@ const index = () => {
         ? allAnalyticsFilter?.proponent_type
         : [],
       proposal_type: allAnalyticsFilter?.proposal_type
-        ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+        ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).proposalTypes.map((item: any) =>
           item.toLowerCase()
         )
+        : [],
+      ma_proposal_type: allAnalyticsFilter?.proposal_type
+        ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).maProposalTypes
         : [],
       index:
         allAnalyticsFilter?.index?.length > 0
@@ -1215,6 +1297,10 @@ const index = () => {
       return;
     }
 
+    const { maProposalTypes, proposalTypes: nonMaProposalTypes } = splitMaProposalTypes(
+      npxFilter?.proposal_type || []
+    );
+
     interface FilterObj {
       company_name: any;
       institution_name: any;
@@ -1225,6 +1311,8 @@ const index = () => {
       date_range?: any;
       year?: any;
       meeting_type?: any;
+      proposal_type?: any;
+      ma_proposal_type?: any;
     }
 
     const filterObj: FilterObj = {
@@ -1237,6 +1325,9 @@ const index = () => {
       country: npxFilter?.country || ["USA"],
       // Include meeting_type if present
       meeting_type: npxFilter?.meeting_type?.length > 0 ? npxFilter?.meeting_type : undefined,
+      // Split M&A proposal types out of proposal_type — sent separately via ma_proposal_type
+      proposal_type: nonMaProposalTypes.length > 0 ? nonMaProposalTypes : undefined,
+      ma_proposal_type: maProposalTypes.length > 0 ? maProposalTypes : undefined,
     };
 
     // Add only the active filter (year OR date_range, not both)
@@ -1260,6 +1351,7 @@ const index = () => {
       index: npxFilter?.index || [],
       meeting_type: npxFilter?.meeting_type || [],
       proposal_type: npxFilter?.proposal_type || [],
+      ma_proposal_type: maProposalTypes,
       proponent_type: npxFilter?.proponent_type || [],
       proposal_keyword: npxFilter?.proposal_keyword || [],
       keyword: npxFilter?.keyword || "",
@@ -1902,10 +1994,12 @@ const index = () => {
         const meetingTypeParam = searchParams.get('meeting_type');
         const hasQueryParams = institutionParam || companyParam || yearParam || meetingTypeParam;
 
+        await ensureInstitutionIdMap();
         const analyticsParams = {
-          investor_company: allAnalyticsFilter?.institution_name?.length
-            ? allAnalyticsFilter.institution_name
-            : allAnalyticsFilter.company_name || [],
+          // Prefer institution_id; send investor_company names only when ids can't be resolved
+          ...(allAnalyticsFilter?.institution_name?.length
+            ? institutionIdParams(allAnalyticsFilter.institution_name, "investor_company")
+            : { investor_company: allAnalyticsFilter.company_name || [] }),
           company_name: allAnalyticsFilter?.company_name?.length > 0
             ? allAnalyticsFilter.company_name
             : [],
@@ -1919,9 +2013,12 @@ const index = () => {
             ? allAnalyticsFilter?.proponent_type
             : [],
           proposal_type: allAnalyticsFilter?.proposal_type
-            ? allAnalyticsFilter?.proposal_type.map((item: any) =>
+            ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).proposalTypes.map((item: any) =>
               item.toLowerCase()
             )
+            : [],
+          ma_proposal_type: allAnalyticsFilter?.proposal_type
+            ? splitMaProposalTypes(allAnalyticsFilter.proposal_type).maProposalTypes
             : [],
           index:
             allAnalyticsFilter?.index?.length > 0
@@ -1973,6 +2070,7 @@ const index = () => {
       setGetDropdownLoader(true);
       const res = await peerAnalysisService.getPeerAnalysisDropdownValues();
       if (res.result) {
+        mergeOrgInstitutions((res.result as any).org_institution);
         setApiDependentDropdownOptions({ ...res.result });
       }
     } catch (error) {
@@ -2210,10 +2308,6 @@ const index = () => {
     }
   };
 
-  // Debug: Log analytics state before render
-  console.log('analytics:', analytics);
-  console.log('analyticsLoading:', analyticsLoading);
-
   return (
     <>
       {/* ── Page header card ── */}
@@ -2297,6 +2391,21 @@ const index = () => {
           </div>
         )}
 
+        <InstitutionSplitNotice
+          institutionNames={(isViewAnalysis ? allAnalyticsFilter?.institution_name : allApplyFilter?.institution_name) || []}
+          years={
+            isViewAnalysis
+              ? [
+                  ...(allAnalyticsFilter?.analyticsYear || []),
+                  ...(allAnalyticsFilter?.year ? [allAnalyticsFilter.year] : []),
+                ]
+              : allApplyFilter?.year
+                ? [allApplyFilter.year]
+                : []
+          }
+          dateRange={(isViewAnalysis ? allAnalyticsFilter?.date_range : allApplyFilter?.date_range) || ""}
+        />
+
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
@@ -2344,9 +2453,9 @@ const index = () => {
                       <div>
                         <MultiSelectDropdown
                           data={institutionOptions.map(option => ({
-                            value: option,
-                            label: option,
-                            isDisabled: field.value?.length >= 5 && !field.value.includes(option)
+                            value: option.institution_name,
+                            label: option.institution_name,
+                            isDisabled: field.value?.length >= 5 && !field.value.includes(option.institution_name)
                           }))}
                           placeholder="Select Institutions"
                           loading={getFundNameDropdownLoader}
@@ -2576,7 +2685,7 @@ const index = () => {
                         arrayKeyName="company_name"
                         // Pass current institution filter as context
                         currentFilters={{
-                          institution_name: watch("institution_name") || DEFAULT_ANALYTICS_INSTITUTIONS
+                          ...institutionIdParams(watch("institution_name") || DEFAULT_ANALYTICS_INSTITUTIONS)
                         }}
                         placeholder="Search Companies"
                         isMulti={true}
@@ -2651,11 +2760,16 @@ const index = () => {
                     control={control}
                     render={({ field }) => (
                       <MultiSelectDropdown
-                        data={proposal_type.map((item: any) => convertToTitleCase(item))}
+                        data={[...proposal_type.map((item: any) => convertToTitleCase(item)), ...ma_proposal_type]}
                         placeholder="Select Proposal Category"
                         loading={false}
                         onChange={(selectedOptions) => {
-                          const selectedValues = selectedOptions.map((option) => convertToTitleCase(option.value));
+                          const selectedValues = selectedOptions.map((option) => {
+                            const maValue = ma_proposal_type.find(
+                              (t) => t.toLowerCase() === option.value?.toLowerCase()
+                            );
+                            return maValue || convertToTitleCase(option.value);
+                          });
                           field.onChange(selectedValues);
                         }}
                         selectedOption={field.value || []}
@@ -2836,100 +2950,101 @@ const index = () => {
             <div className="divide-y divide-gray-100">
               {analytics.by_company.map((yearEntry, yearIdx) => (
                 Array.isArray(yearEntry.companies)
-                  ? yearEntry.companies.map((ele, index) => (
-                    <div
-                      key={getCompanyGroupKey(ele, yearIdx, index)}
-                      className="py-2"
-                    >
-                      <div
-                        className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200 font-medium text-base"
-                        onClick={() => toggleGroup(getCompanyGroupKey(ele, yearIdx, index))}
-                      >
-                        <span className="text-gray-800">
-                          {`${ele.meeting_date} - ${ele.company_name}`}
-                          {ele.meeting_type?.trim() && ` (${ele.meeting_type})`}
-                        </span>
+                  ? yearEntry.companies.map((ele, index) => {
+                    const groupKey = getCompanyGroupKey(ele, yearIdx, index);
+                    const isExpanded = Boolean(openGroups[groupKey]);
+                    const proposals = Array.isArray(ele.sample_proposals) ? ele.sample_proposals : [];
 
-                        <button className="text-primary hover:text-primary/80 transition-colors duration-200">
-                          {openGroups[getCompanyGroupKey(ele, yearIdx, index)] ? (
-                            <Lucide
-                              icon="ChevronUp"
-                              className="w-5 h-5"
-                            />
-                          ) : (
-                            <Lucide
-                              icon="ChevronDown"
-                              className="w-5 h-5"
-                            />
-                          )}
-                        </button>
-                      </div>
-                      {openGroups[getCompanyGroupKey(ele, yearIdx, index)] && Array.isArray(ele.sample_proposals) && (
-                        <div className="mt-2 mb-4 bg-gray-50">
-                          <table className="w-full table-fixed">
-                            <thead>
-                              <tr className="bg-primary text-white text-sm">
-                                <th className="px-2 py-2 text-center font-semibold w-[8%] max-w-[60px] whitespace-nowrap">No.</th>
-                                <th className="px-4 py-2 text-left font-semibold w-[44%]">Proposal</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Mgmt Rec</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[12%]">Vote Cast</th>
-                                <th className="px-2 py-2 text-left font-semibold w-[14%]">Institution Name</th>
-                              </tr>
-                            </thead>
-                            <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
-                              {ele.sample_proposals.map((vds, vdsIdx) => (
-                                <React.Fragment key={vds.proposal_id || vdsIdx}>
-                                  <tr
-                                    className="hover:bg-primary/10"
-                                    style={getSequentialBorderStyle(vds?.proposal_num, ele.sample_proposals, vdsIdx)}
-                                  >
-                                    <td className="px-2 py-2 align-middle text-center whitespace-nowrap w-[8%] max-w-[60px]">
-                                      {vds?.proposal_num}
-                                    </td>
-                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[44%]">
-                                      {vds?.proposal}
-                                    </td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">{convertToTitleCase(vds?.mgt_rec)}</td>
-                                    <td className="px-2 py-2 align-middle whitespace-nowrap w-[12%]">
-                                      <span className="inline-flex items-center gap-1.5">
-                                        <span className={clsx([
-                                          (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
-                                          "text-red-700 font-semibold",
-                                        ])}>
-                                          {vds?.vote}
-                                        </span>
-                                        {vds?.vote?.includes("Split") &&
-                                          vds?.split_count &&
-                                          vds.split_count !== "None" && (
-                                            <Tippy content={vds.split_count} options={{ theme: "light" }}>
-                                              <span>
-                                                <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
-                                              </span>
-                                            </Tippy>
-                                          )}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-2 align-middle break-words whitespace-normal w-[14%]">{vds?.institution_name}</td>
-                                  </tr>
-                                  {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
-                                    <tr className="bg-gray-50">
-                                      <td></td>
-                                      <td colSpan={4} className="px-4 py-2">
-                                        <div className="text-xs text-gray-600">
-                                          <span className="font-semibold text-gray-700">Voting Rationale: </span>
-                                          {vds?.notes}
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  )}
-                                </React.Fragment>
-                              ))}
-                            </tbody>
-                          </table>
+                    return (
+                      <div key={groupKey} className="py-2">
+                        <div
+                          className="flex flex-row justify-between items-center cursor-pointer px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200 font-medium text-base"
+                          onClick={() => toggleGroup(groupKey)}
+                        >
+                          <span className="text-gray-800">
+                            {`${ele.meeting_date} - ${ele.company_name}`}
+                            {ele.meeting_type?.trim() && ` (${ele.meeting_type})`}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-400 font-normal">
+                              {proposals.length} proposal{proposals.length !== 1 ? "s" : ""}
+                            </span>
+                            <button className="text-primary hover:text-primary/80 transition-colors duration-200">
+                              <Lucide icon={isExpanded ? "ChevronUp" : "ChevronDown"} className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))
+                        {isExpanded && proposals.length > 0 && (
+                          <div className="mt-2 mb-4 bg-gray-50 overflow-x-auto">
+                            <Table className="table-fixed w-full">
+                              <Table.Thead>
+                                <Table.Tr className="bg-primary text-white text-sm">
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[60px]">No.</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[40%]">Proposal</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[100px]">Mgmt Rec</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[110px]">Vote Cast</Table.Td>
+                                  <Table.Td className="px-4 py-2 font-semibold text-white text-sm w-[30%]">Institution Name</Table.Td>
+                                </Table.Tr>
+                              </Table.Thead>
+                              <Table.Tbody className="text-gray-700 text-sm divide-y divide-gray-100">
+                                {proposals.map((vds, vdsIdx) => (
+                                  <React.Fragment key={vds.proposal_id || vdsIdx}>
+                                    <Table.Tr
+                                      className="hover:bg-primary/10"
+                                      style={allAnalyticsFilter?.proposal_type?.length ? {} : getSequentialBorderStyle(vds?.proposal_num, proposals, vdsIdx)}
+                                    >
+                                      <Table.Td className="px-4 py-2 align-top text-sm text-gray-500">
+                                        {vds?.proposal_num || vdsIdx + 1}
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm break-words whitespace-normal leading-tight">
+                                        {vds?.proposal}
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm break-words whitespace-normal leading-tight">
+                                        {convertToTitleCase(vds?.mgt_rec)}
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm">
+                                        <span className="inline-flex items-center gap-1.5">
+                                          <span
+                                            className={clsx(
+                                              (vds?.vote?.includes("Against") || vds.vote?.includes("Withhold")) &&
+                                                "text-red-700 font-semibold"
+                                            )}
+                                          >
+                                            {vds?.vote}
+                                          </span>
+                                          {vds?.vote?.includes("Split") &&
+                                            vds?.split_count &&
+                                            vds.split_count !== "None" && (
+                                              <Tippy content={vds.split_count} options={{ theme: "light" }}>
+                                                <span>
+                                                  <Lucide icon="Info" className="w-4 h-4 text-blue-600 cursor-pointer" />
+                                                </span>
+                                              </Tippy>
+                                            )}
+                                        </span>
+                                      </Table.Td>
+                                      <Table.Td className="px-4 py-2 align-top text-sm break-words whitespace-normal leading-tight">
+                                        {vds?.institution_name}
+                                      </Table.Td>
+                                    </Table.Tr>
+                                    {vds?.notes && vds.notes.toLowerCase() !== "nan" && (
+                                      <Table.Tr className="bg-slate-50">
+                                        <Table.Td className="px-4 py-2" />
+                                        <Table.Td colSpan={4} className="px-4 py-2 text-sm text-slate-600 italic">
+                                          <span className="font-semibold not-italic text-slate-500">Voting Rationale: </span>
+                                          {vds?.notes}
+                                        </Table.Td>
+                                      </Table.Tr>
+                                    )}
+                                  </React.Fragment>
+                                ))}
+                              </Table.Tbody>
+                            </Table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                   : null
               ))}
             </div>
@@ -2946,7 +3061,7 @@ const index = () => {
             )}
           </div>
         )}
-        {isViewAnalysis && !analyticsLoading && analytics && typeof analytics === 'object' && (!analytics.by_institution || Object.keys(analytics.by_institution).length === 0) && (
+        {isViewAnalysis && !analyticsLoading && analyticsDataLoaded && analytics && typeof analytics === 'object' && (!analytics.by_institution || Object.keys(analytics.by_institution).length === 0) && (
           <div className="text-center text-gray-500 py-8">No analytics data available for the selected filters.</div>
         )}
         {/* TABLE SECTION (with skeleton loader, sticky headers, zebra striping, pill badges, tooltips, and empty state) */}
@@ -3050,7 +3165,7 @@ const index = () => {
                                 <Table.Tr
                                   key={vds?.id}
                                   className="[&_td]:last:border-b-0"
-                                  style={getSequentialBorderStyle(vds?.proposal_num, institutionData, index)}
+                                  style={allApplyFilter?.proposal_type?.length ? {} : getSequentialBorderStyle(vds?.proposal_num, institutionData, index)}
                                 >
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 !w-[200px] bg-gray-50 dark:bg-darkmode-800" />
                                   <Table.Td className="py-3 border-dashed dark:bg-darkmode-600 bg-gray-50 dark:bg-darkmode-800">
@@ -3145,165 +3260,117 @@ const index = () => {
 };
 
 const AnalyticsTable = ({ vdsEuropeansAnalytics, openGroups, toggleGroup, filteredDateRange }) => {
-  // Get all institutions and years
   const institutions = vdsEuropeansAnalytics.by_institution || [];
 
-  // Get all unique years across all institutions
-  const allYears = new Set();
-  institutions.forEach(inst => {
-    Object.keys(inst.years).forEach(year => allYears.add(year));
-  });
-  const years = Array.from(allYears).sort();
+  // Per-institution year columns — an institution that didn't return a year
+  // simply doesn't get that column.
+  const institutionYearKeys = institutions.map((inst: any) =>
+    Object.keys(inst?.years || {}).sort()
+  );
+
+  const getDateRangeLabel = (yearData: any) =>
+    filteredDateRange && filteredDateRange.trim() !== ""
+      ? filteredDateRange
+      : yearData?.date_range
+        ? `${yearData.date_range.start_meeting || "-"} - ${yearData.date_range.end_meeting || "-"}`
+        : "";
+
+  const summaryMetrics: Array<{ label: string; render: (y: any) => any }> = [
+    { label: "No. of unique companies", render: (y) => (y?.unique_companies ? y.unique_companies.toLocaleString() : "-") },
+    { label: "No of proposals", render: (y) => (y ? y.total_proposals.toLocaleString() : "-") },
+    { label: "No. of FOR votes", render: (y) => (y ? `${y.for_votes.toLocaleString()} (${y.for_percentage}%)` : "-") },
+    { label: "No. of SPLIT votes", render: (y) => (y ? `${y.split_votes.toLocaleString()} (${y.split_percentage}%)` : "-") },
+    { label: "No. of AGAINST/WITHHOLD votes", render: (y) => (y ? `${y.against_votes.toLocaleString()} (${y.against_percentage}%)` : "-") },
+    { label: "No. of Abstain votes", render: (y) => (y ? `${(y.abstain_votes || 0).toLocaleString()} (${y.abstain_percentage || 0}%)` : "-") },
+    { label: "Alignment with management (Votes Cast/Management Recommendation)", render: (y) => (y ? y.aligned_with_mgmt : "-") },
+    { label: "Alignment percentage", render: (y) => (y ? `${y.alignment_percentage}%` : "-") },
+  ];
+
+  // Compact fixed-width table only works when every institution has a single
+  // year column; multiple columns switch to an auto-sized scrollable table.
+  const maxColumnsPerInstitution = Math.max(
+    1,
+    ...institutionYearKeys.map((keys) => keys.length || 1)
+  );
+  const isWideLayout = maxColumnsPerInstitution > 1;
 
   return (
     <div className="mb-8">
-      <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100">
-        <table className="w-[100%] mx-auto rounded-xl overflow-hidden">
-          <thead>
-            <tr className="bg-primary text-white text-base">
-              <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>Summary</th>
-              {institutions.map((institution) => (
-                <th key={institution.institution_id} colSpan={years.length} className="px-6 py-3 pb-2 text-center font-semibold">
-                  {institution.institution_name}
+      <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          {/* table-fixed in both modes: explicit w-[130px] year cells keep all
+              columns equal — long institution names wrap instead of widening. */}
+          <table className={isWideLayout ? "table-fixed w-max min-w-full" : "min-w-full table-fixed"}>
+            <thead>
+              <tr>
+                <th
+                  rowSpan={2}
+                  className={clsx(
+                    "text-left text-sm font-semibold text-white bg-primary py-3 px-4 align-middle",
+                    isWideLayout ? "w-[160px] sticky left-0 z-10" : "w-64"
+                  )}
+                >
+                  Summary
                 </th>
-              ))}
-            </tr>
-            <tr className="bg-primary text-white text-base">
-              {institutions.map((institution) => (
-                years.map((year) => {
-                  const yearData = institution.years[year as string];
-                  const apiDateRange = yearData?.date_range;
-
-                  // Use filtered date range if available, otherwise use API date range
-                  const displayDateRange = filteredDateRange && filteredDateRange.trim() !== ""
-                    ? filteredDateRange
-                    : apiDateRange;
-
-                  return (
-                    <th key={`${institution.institution_id}-${year}`} className="px-6 py-3 pt-0 text-center font-semibold">
-                      <div className="flex flex-col">
-                        {displayDateRange && (
-                          <div className="text-xs font-semibold mt-1">
-                            {filteredDateRange && filteredDateRange.trim() !== ""
-                              ? `(${filteredDateRange})`
-                              : `(${apiDateRange.start_meeting} - ${apiDateRange.end_meeting})`
-                            }
-                          </div>
+                {institutions.map((institution: any, instIdx: number) => (
+                  <th
+                    key={institution.institution_id ?? institution.institution_name ?? instIdx}
+                    colSpan={Math.max(institutionYearKeys[instIdx]?.length || 0, 1)}
+                    className="text-center text-sm font-semibold text-white bg-primary py-3 px-2 border-l border-white/20 break-words leading-snug"
+                  >
+                    {institution.institution_name}
+                  </th>
+                ))}
+              </tr>
+              <tr>
+                {institutions.map((institution: any, instIdx: number) =>
+                  (institutionYearKeys[instIdx] || []).map((year: string) => {
+                    const dateRange = getDateRangeLabel(institution?.years?.[year]);
+                    return (
+                      <th
+                        key={`${institution.institution_id ?? instIdx}-${year}`}
+                        className={clsx(
+                          "text-center text-sm font-semibold text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight",
+                          isWideLayout && "whitespace-nowrap w-[130px]"
                         )}
-                      </div>
-                    </th>
-                  );
-                })
+                      >
+                        <div>{year}</div>
+                        {dateRange && <div className="text-[13px] font-normal opacity-80 mt-0.5">{dateRange}</div>}
+                      </th>
+                    );
+                  })
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {summaryMetrics.map((metric) => (
+                <tr key={metric.label} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td
+                    className={clsx(
+                      "py-3 px-4 text-sm font-medium text-slate-700 break-words",
+                      isWideLayout && "w-[160px] sticky left-0 z-10 bg-white"
+                    )}
+                  >
+                    {metric.label}
+                  </td>
+                  {institutions.map((institution: any, instIdx: number) =>
+                    (institutionYearKeys[instIdx] || []).map((year: string) => (
+                      <td
+                        key={`${institution.institution_id ?? instIdx}-${year}`}
+                        className={clsx(
+                          "py-3 px-2 text-sm text-slate-700 text-center whitespace-nowrap",
+                          isWideLayout && "w-[130px]"
+                        )}
+                      >
+                        {metric.render(institution?.years?.[year])}
+                      </td>
+                    ))
+                  )}
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody className="text-gray-700 text-base divide-y divide-gray-100">
-            <tr>
-              <td className="px-6 py-3 font-medium">No. of unique companies</td>
-              {institutions.map((institution) => (
-                years.map((year: string | number) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
-                      {yearData && yearData.unique_companies ? yearData.unique_companies.toLocaleString() : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">No of proposals</td>
-              {institutions.map((institution) => (
-                years.map((year: string | number) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
-                      {yearData ? yearData.total_proposals.toLocaleString() : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">No. of FOR votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
-                      {yearData ? `${yearData.for_votes.toLocaleString()} (${yearData.for_percentage}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">No. of SPLIT votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
-                      {yearData ? `${yearData.split_votes.toLocaleString()} (${yearData.split_percentage}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">No. of AGAINST/WITHHOLD votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
-                      {yearData ? `${yearData.against_votes.toLocaleString()} (${yearData.against_percentage}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">No. of Abstain votes</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}-abstain`} className="px-6 py-3 text-center">
-                      {yearData ? `${(yearData.abstain_votes || 0).toLocaleString()} (${yearData.abstain_percentage || 0}%)` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">Alignment with management (Votes Cast/Management Recommendation)</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
-                      {yearData ? yearData.aligned_with_mgmt : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-            <tr>
-              <td className="px-6 py-3 font-medium">Alignment percentage</td>
-              {institutions.map((institution) => (
-                years.map((year: any) => {
-                  const yearData = institution.years[year];
-                  return (
-                    <td key={`${institution.institution_id}-${year}`} className="px-6 py-3 text-center">
-                      {yearData ? `${yearData.alignment_percentage}%` : '-'}
-                    </td>
-                  );
-                })
-              ))}
-            </tr>
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

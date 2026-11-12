@@ -125,6 +125,7 @@ class AxiosServiceConfig {
         (error: AxiosError) => {
           let errorMessage = "";
           let isNetworkNoResponse = false;
+          const suppressErrorToast = error.config?.url?.includes("/api/activist_filed/");
 
           if (error.response) {
             // Don't show toast for 404 errors - they're normal when no data exists
@@ -159,7 +160,9 @@ class AxiosServiceConfig {
             errorMessage = error.message;
           }
 
-          APIErrors(errorMessage);
+          if (!suppressErrorToast) {
+            APIErrors(errorMessage);
+          }
 
           if (error?.response?.status === 401) {
             logout();

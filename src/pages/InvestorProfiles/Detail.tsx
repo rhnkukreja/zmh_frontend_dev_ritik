@@ -3,7 +3,7 @@ import Lucide from "@/components/Base/Lucide";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { Fragment, useEffect, useMemo, useState, useRef } from "react";
 import DOMPurify from "dompurify";
 import { decryptNotesText } from "@/utils/notesCrypto";
 
@@ -22,8 +22,6 @@ import { investersProfileService } from "@/services/investersProfile";
 import { institutionStatsService } from "@/services/institutionStats";
 import { domainNotesService } from "@/services/domainNotes";
 
-import LoadingWrapper from "@/components/LoadingWrapper";
-
 import EditableSection from "./components/EditableSections";
 import dayjs from "dayjs";
 import Tippy from "@/components/Base/Tippy";
@@ -40,11 +38,40 @@ import { InvestersProfile, KeyContact } from "@/types/investerProfiles";
 import clsx from "clsx";
 import { FormSwitch } from "@/components/Base/Form";
 import FormInput from "@/components/Base/Form/FormInput";
+import FormTextarea from "@/components/Base/Form/FormTextarea";
 import { Controller, useForm } from "react-hook-form";
 import userLinkedinImage from "../../assets/images/logo/linkedin-profile.png";
 import { ChevronLeft } from "lucide-react";
 import { setPage } from "@/stores/investersProfileSlice";
 import { shouldSuppressLocalErrorToast } from "@/utils/errorToast";
+
+const TEAM_CONTACT_DETAILS_MAX_LENGTH = 250;
+const CONTACT_LINK_PATTERN = /(https?:\/\/[^\s]+|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})/gi;
+
+const renderContactText = (text: string) =>
+  text.split("\n").map((line, lineIndex) => (
+    <Fragment key={`${line}-${lineIndex}`}>
+      {line.split(CONTACT_LINK_PATTERN).map((part, partIndex) => {
+        const isUrl = /^https?:\/\//i.test(part);
+        const isEmail = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(part);
+
+        if (!isUrl && !isEmail) return part;
+
+        return (
+          <a
+            key={`${part}-${partIndex}`}
+            href={isEmail ? `mailto:${part}` : part}
+            target={isUrl ? "_blank" : undefined}
+            rel={isUrl ? "noopener noreferrer" : undefined}
+            className="text-blue-500 hover:underline"
+          >
+            {part}
+          </a>
+        );
+      })}
+      {lineIndex < text.split("\n").length - 1 && <br />}
+    </Fragment>
+  ));
 
 // --- START OF FORMATTING HELPER FUNCTIONS ---
 const renderTextWithLinksHtml = (text: string) => {
@@ -185,13 +212,18 @@ function Main() {
   const investorProfileCompanyName = investorProfileCompanyNotes[0]?.company_name || "";
   const investorProfileNotesTabsEnabled = false;
   const hasTeamContactDetails = Boolean(singleInvesterProfile?.contact_email);
+  const teamContactDetails = singleInvesterProfile?.contact_email?.trim() || "";
   const hasKeyContacts = Boolean(singleInvesterProfile?.key_contacts?.length);
   const shouldShowContactsSidebar =
     params?.type === "investor" &&
     (isAdminOrAnalyst || (isClientUser ? hasKeyContacts : hasTeamContactDetails || hasKeyContacts));
-  const isEmailContact = singleInvesterProfile?.contact_email
-    ? /\S+@\S+\.\S+/.test(singleInvesterProfile.contact_email)
-    : true;
+  const contactDetailLines = teamContactDetails.split("\n");
+  const firstContactLine = contactDetailLines[0]?.trim() || "";
+  const remainingContactText = contactDetailLines.slice(1).join("\n").trim();
+  const isEmailContact = /^\S+@\S+\.\S+$/.test(firstContactLine);
+  const isContactUrl = /^https?:\/\/\S+$/i.test(firstContactLine);
+  const isContactEmailOverLimit =
+    contactEmailDraft.length > TEAM_CONTACT_DETAILS_MAX_LENGTH;
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -571,6 +603,11 @@ function Main() {
       return;
     }
 
+    if (contactEmailDraft.length > TEAM_CONTACT_DETAILS_MAX_LENGTH) {
+      toast.error(`Team contact details cannot exceed ${TEAM_CONTACT_DETAILS_MAX_LENGTH} characters.`);
+      return;
+    }
+
     try {
       setIsSavingContactEmail(true);
       await investersProfileService.patchInvestersProfile(profileId, params?.type!, {
@@ -882,28 +919,61 @@ function Main() {
                     <div className="mb-4 flex flex-col rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-left text-[18px] font-semibold text-black">
-                            {hasTeamContactDetails && !isEmailContact
-                              ? "Link to Contact Form"
-                              : "Team Contact Details"}
-                          </h4>
-                          {singleInvesterProfile?.contact_email ? (
-                            <a
-                              href={
-                                isEmailContact
-                                  ? `mailto:${singleInvesterProfile.contact_email}`
-                                  : singleInvesterProfile.contact_email
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-2 block break-words text-blue-500 hover:underline"
-                            >
-                              {singleInvesterProfile.contact_email}
-                            </a>
+                          {loading ? (
+                            <div className="animate-pulse space-y-3">
+                              <div className="h-5 w-44 rounded bg-slate-200" />
+                              <div className="h-3.5 w-[90%] rounded bg-slate-200" />
+                              <div className="h-3.5 w-[70%] rounded bg-slate-200" />
+                            </div>
                           ) : (
-                            <p className="mt-2 text-sm leading-6 text-slate-500">
-                              No team contact details have been added yet.
-                            </p>
+                            <>
+                              <h4 className="text-left text-[18px] font-semibold text-black">
+                                {hasTeamContactDetails && isContactUrl
+                                  ? "Link to Contact Form"
+                                  : "Team Contact Details"}
+                              </h4>
+                              {teamContactDetails ? (
+                            isEmailContact ? (
+                              <div className="mt-2">
+                                <a
+                                  href={`mailto:${firstContactLine}`}
+                                  className="block break-words text-blue-500 hover:underline"
+                                >
+                                  {firstContactLine}
+                                </a>
+                                {remainingContactText && (
+                                  <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
+                                    {renderContactText(remainingContactText)}
+                                  </p>
+                                )}
+                              </div>
+                            ) : isContactUrl ? (
+                              <div className="mt-2">
+                                <a
+                                  href={firstContactLine}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block break-words text-blue-500 hover:underline"
+                                >
+                                  {firstContactLine}
+                                </a>
+                                {remainingContactText && (
+                                  <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
+                                    {renderContactText(remainingContactText)}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">
+                                {renderContactText(teamContactDetails)}
+                              </p>
+                            )
+                          ) : (
+                                <p className="mt-2 text-sm leading-6 text-slate-500">
+                                  No team contact details have been added yet.
+                                </p>
+                              )}
+                            </>
                           )}
                         </div>
 
@@ -1023,8 +1093,18 @@ function Main() {
                     </div>
                     <div className="pb-4">
                       {loading ? (
-                        <div className="mt-[-20px]">
-                          <LoadingWrapper height={200} />
+                        <div className="animate-pulse">
+                          {Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="flex items-center border-b border-gray-200 px-4 py-3 last:border-b-0">
+                              <div className="h-12 w-12 shrink-0 rounded-full bg-slate-200" />
+                              <div className="ml-3.5 min-w-0 flex-1 space-y-2">
+                                <div className="h-3.5 w-32 rounded bg-slate-200" />
+                                <div className="h-3 w-[85%] rounded bg-slate-200" />
+                                <div className="h-3 w-[65%] rounded bg-slate-200" />
+                              </div>
+                              <div className="ml-3 h-8 w-20 shrink-0 rounded-md bg-slate-200" />
+                            </div>
+                          ))}
                         </div>
                       ) : singleInvesterProfile?.key_contacts?.length ? (
                         <>
@@ -1482,16 +1562,37 @@ function Main() {
             </Dialog.Title>
             <Dialog.Description className="bg-slate-50 px-6 py-6">
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Contact Email
-                </label>
-                <FormInput
-                  type="text"
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label
+                    htmlFor="team-contact-details"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    Team Contact Details
+                  </label>
+                  <span
+                    className={clsx(
+                      "text-xs font-medium",
+                      isContactEmailOverLimit ? "text-danger" : "text-slate-400"
+                    )}
+                  >
+                    {contactEmailDraft.length}/{TEAM_CONTACT_DETAILS_MAX_LENGTH}
+                  </span>
+                </div>
+                <FormTextarea
+                  id="team-contact-details"
                   value={contactEmailDraft}
                   onChange={(e) => setContactEmailDraft(e.target.value)}
-                  placeholder="Enter team contact email"
-                  className="h-11"
+                  placeholder="Enter team contact details"
+                  rows={4}
+                  aria-invalid={isContactEmailOverLimit}
+                  aria-describedby="team-contact-details-limit"
+                  className="min-h-28 resize-y"
                 />
+                {isContactEmailOverLimit && (
+                  <p id="team-contact-details-limit" className="mt-2 text-xs font-medium text-danger">
+                    Team contact details cannot exceed {TEAM_CONTACT_DETAILS_MAX_LENGTH} characters.
+                  </p>
+                )}
               </div>
             </Dialog.Description>
             <Dialog.Footer className="flex justify-end gap-2 border-t border-slate-200 px-6 py-4">
@@ -1508,7 +1609,7 @@ function Main() {
                 type="button"
                 variant="primary"
                 onClick={handleSaveContactEmail}
-                disabled={isSavingContactEmail}
+                disabled={isSavingContactEmail || isContactEmailOverLimit}
                 className="min-w-24 bg-theme-2 border-bg-theme-2"
               >
                 {isSavingContactEmail

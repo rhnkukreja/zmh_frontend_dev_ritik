@@ -9,6 +9,7 @@ import FiltersSidebar from "./components/FiltersSidebar";
 import OverviewSummaryTable from "./components/OverviewSummaryTable";
 import CompaniesTable from "./components/CompaniesTable";
 import VotingRecordsList from "./components/VotingRecordsList";
+import InstitutionSplitNotice from "@/components/InstitutionSplitNotice";
 import ProxyContestModal from "../ProxyContest/components/ProxyContestModal";
 import ActivistIntelligenceDashboard from "../AIChatbot/ActivistDashboard"; 
 import { useAppSelector } from "@/stores/hooks";
@@ -292,7 +293,6 @@ function ProxyContestAI() {
     try {
       const data = await proxyContestAIService.getCompanies({
         year: years.length ? years : undefined,
-        institution_id: instIds.length ? instIds : undefined,
         activist_name: activists.length ? activists : undefined,
         company_id: companyIds.length ? companyIds : undefined,
         page,
@@ -429,11 +429,6 @@ function ProxyContestAI() {
     setDtYears(next); fetchFilters(next, "detailed");
     fetchCompanies(next, dtInstIds, dtActivists, dtCompanyIds, 1, dtIss, dtGl); setCompaniesPage(1);
   };
-  const dtToggleInst = (id: number) => {
-    const next = dtInstIds.includes(id) ? dtInstIds.filter(x => x !== id) : [...dtInstIds, id];
-    setDtInstIds(next);
-    fetchCompanies(dtYears, next, dtActivists, dtCompanyIds, 1, dtIss, dtGl); setCompaniesPage(1);
-  };
   const dtToggleActivist = (n: string) => {
     const next = dtActivists.includes(n) ? dtActivists.filter(x => x !== n) : [...dtActivists, n];
     setDtActivists(next);
@@ -547,9 +542,6 @@ function ProxyContestAI() {
   ];
   const dtChips = [
     ...dtYears.map(y => ({ label: `Year: ${y}`, onRemove: () => dtToggleYear(y) })),
-    ...dtInstIds.filter(id => id != null && !isNaN(id)).flatMap(id => {
-      const n = getInstName(id); return n ? [{ label: `Institution: ${n}`, onRemove: () => dtToggleInst(id) }] : [];
-    }),
     ...dtActivists.map(n => ({ label: `Activist: ${n}`, onRemove: () => dtToggleActivist(n) })),
     ...(dtIss ? [{ label: `ISS: ${dtIss}`, onRemove: () => dtToggleIss(dtIss) }] : []),
     ...(dtGl ? [{ label: `GL: ${dtGl}`, onRemove: () => dtToggleGl(dtGl) }] : []),
@@ -579,7 +571,7 @@ function ProxyContestAI() {
   const curIss = activeTab === "overview" ? ovIss : dtIss;
   const curGl  = activeTab === "overview" ? ovGl  : dtGl;
   const curToggleYear    = activeTab === "overview" ? ovToggleYear    : dtToggleYear;
-  const curToggleInst    = activeTab === "overview" ? ovToggleInst    : dtToggleInst;
+  const curToggleInst    = activeTab === "overview" ? ovToggleInst    : () => {};
   const curToggleCompany = activeTab === "overview" ? ovToggleCompany : dtToggleCompany;
   const curToggleIss     = activeTab === "overview" ? ovToggleIss     : dtToggleIss;
   const curToggleGl      = activeTab === "overview" ? ovToggleGl      : dtToggleGl;
@@ -747,6 +739,13 @@ function ProxyContestAI() {
           </div>
         )}
 
+        <InstitutionSplitNotice
+          institutionIds={curInstIds}
+          institutionNames={(curInstIds || []).map((id) => getInstName(id)).filter(Boolean) as string[]}
+          years={curYears}
+          className="mb-0 mt-2"
+        />
+
         {/* Institution enforcement warning */}
         {warnMsg && (
           <div className="flex items-center gap-2.5 px-4 py-2.5 mt-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
@@ -835,7 +834,8 @@ function ProxyContestAI() {
                 loading={companiesLoading}
                 page={companiesPage}
                 onPageChange={handleCompaniesPageChange}
-                institutionIds={dtInstIds}
+                institutionIds={dtInstIds.length ? dtInstIds : DEFAULT_INSTITUTION_IDS}
+                institutions={filtersData?.institutions || []}
                 isAdminOrAnalyst={isAdminOrAnalyst}
                 onEdit={openEditModal}
               />

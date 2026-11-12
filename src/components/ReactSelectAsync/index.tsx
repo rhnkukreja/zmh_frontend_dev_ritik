@@ -66,6 +66,10 @@ interface CompanySelectProps {
   hideDropdownIndicator?: boolean;
   includeSelectAllOption?: boolean;
   selectAllLabel?: string;
+  // When true (institution mode only), institution search hits the
+  // N-PX Proposal Voting Stats dropdown endpoint instead of the legacy
+  // get_npx_dropdown_values endpoint, and never sends global_search.
+  useProposalVotingStatsDropdown?: boolean;
 }
 
 const fetchOptions = async (
@@ -79,7 +83,8 @@ const fetchOptions = async (
   isHideCurrentCompany?: boolean,
   currentCompany?: string,
   currentFilters?: any,
-  year?: string
+  year?: string,
+  useProposalVotingStatsDropdown?: boolean
 ): Promise<OptionType[]> => {
   // Always ensure year parameter is included
   const yearParam = year || 
@@ -89,11 +94,16 @@ const fetchOptions = async (
   
   try {
     const response = isInstitution
-      ? await dashboardService.fetchInstitutionByName(
-          inputValue,
-          companyGlobalSearchName,
-          yearParam // Always pass year parameter
-        )
+      ? useProposalVotingStatsDropdown
+        ? await dashboardService.fetchInstitutionByNameFromProposalVotingStats(
+            inputValue,
+            yearParam
+          )
+        : await dashboardService.fetchInstitutionByName(
+            inputValue,
+            companyGlobalSearchName,
+            yearParam // Always pass year parameter
+          )
       : await dashboardService.fetchCompanyByName(
           inputValue,
           exactUrl,
@@ -103,8 +113,12 @@ const fetchOptions = async (
 
     if (isInstitution) {
       const institutionOptions = response.results.map((institution: any) => ({
-        value: institution,
-        label: institution,
+        value: useProposalVotingStatsDropdown
+          ? (institution?.institution_id ?? institution?.institution_name ?? institution)
+          : institution,
+        label: useProposalVotingStatsDropdown
+          ? (institution?.institution_name ?? institution)
+          : institution,
       }));
 
       const selectAllOption: OptionType = {
@@ -112,7 +126,10 @@ const fetchOptions = async (
         label: selectAllLabel || 'Select All',
       };
 
-      return includeSelectAllOption
+      // Only offer the "Select All" shortcut alongside actual matches — showing it
+      // when a search returns zero institutions is misleading (there's nothing to
+      // select all of, and it looks like a match for a name that doesn't exist).
+      return includeSelectAllOption && institutionOptions.length > 0
         ? [selectAllOption, ...institutionOptions]
         : institutionOptions;
     } else {
@@ -182,6 +199,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   hideDropdownIndicator = false,
   includeSelectAllOption = false,
   selectAllLabel,
+  useProposalVotingStatsDropdown = false,
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([]);
@@ -216,7 +234,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
             isHideCurrentCompany,
             currentCompany,
             currentFilters,
-            yearParam // Always pass year parameter
+            yearParam, // Always pass year parameter
+            useProposalVotingStatsDropdown
           ).then((options) => {
             callback(options);
           });
@@ -234,6 +253,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
       currentCompany,
       currentFilters,
       year,
+      useProposalVotingStatsDropdown,
     ]
   );
 
@@ -268,7 +288,8 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
           isHideCurrentCompany,
           currentCompany,
           currentFilters,
-          yearParam
+          yearParam,
+          useProposalVotingStatsDropdown
         );
         setDefaultOptions(options);
       } catch (error) {
@@ -280,7 +301,7 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
     };
 
     fetchDefaultOptions();
-  }, [companyGlobalSearchName, year, showDefaultOptions, isInstitution, includeSelectAllOption, selectAllLabel, exactUrl, arrayKeyName, isHideCurrentCompany, currentCompany, currentFilters]);
+  }, [companyGlobalSearchName, year, showDefaultOptions, isInstitution, includeSelectAllOption, selectAllLabel, exactUrl, arrayKeyName, isHideCurrentCompany, currentCompany, currentFilters, useProposalVotingStatsDropdown]);
   const onChangeSelect = (newValue: MultiValue<OptionType> | OptionType | null) => {
     onChange(newValue as OptionType | OptionType[] | null);
     // Clear input value after selection
@@ -308,8 +329,9 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
 
   const handleFocus = () => {
     setIsFocused(true);
-    // Only clear input if there's no current value or it's an empty array
-    if (!value || (Array.isArray(value) && value.length === 0)) {
+    // Institution searches should always start from a clean query so the first
+    // typed character isn't swallowed by stale controlled input text.
+    if (isInstitution || !value || (Array.isArray(value) && value.length === 0)) {
       setInputValue("");
     }
   };
@@ -323,8 +345,9 @@ const CompanySelect: React.FC<CompanySelectProps> = ({
   };
 
   const handleMenuOpen = () => {
-    // Only clear input when menu opens if there's no current value or it's an empty array
-    if (!value || (Array.isArray(value) && value.length === 0)) {
+    // Institution searches should open with an empty text box so typing starts
+    // with the first letter the user presses.
+    if (isInstitution || !value || (Array.isArray(value) && value.length === 0)) {
       setInputValue("");
     }
   };

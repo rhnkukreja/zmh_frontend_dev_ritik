@@ -1,6 +1,6 @@
 import "@/assets/css/vendors/litepicker.css";
-import { createRef, useEffect, useRef } from "react";
-import { setValue, init, reInit } from "./litepicker";
+import { useEffect, useRef } from "react";
+import { init } from "./litepicker";
 import LitepickerJs from "litepicker";
 import { FormInput } from "@/components/Base/Form";
 import { ILPConfiguration } from "litepicker/dist/types/interfaces";
@@ -35,56 +35,102 @@ function Litepicker({
   onShow,
   ...computedProps
 }: LitepickerProps) {
-  // Keep the latest onShow callback in a ref so the "show" listener
-  // (bound once at init time) always calls the most recent handler
-  // instead of a stale closure from whenever init/reInit last ran.
+  const litepickerRef = useRef<LitepickerElement | null>(null);
   const onShowRef = useRef(onShow);
+  const onChangeRef = useRef(onChange);
+  const lastSyncedValueRef = useRef<string>("");
+
   useEffect(() => {
     onShowRef.current = onShow;
-  });
-
-  const props = {
-    options: options,
-    value: value,
-    onChange: onChange,
-    getRef: getRef,
-    onShow: (picker: LitepickerJs) => {
-      onShowRef.current?.(picker);
-    },
-  };
-  const initialRender = useRef(true);
-  const litepickerRef = createRef<LitepickerElement>();
-  const tempValue = useRef(props.value);
+  }, [onShow]);
 
   useEffect(() => {
-    if (litepickerRef.current) {
-      props.getRef(litepickerRef.current);
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  const optionsKey = JSON.stringify(options);
+
+  const syncPickerValue = (nextValue: string) => {
+    const element = litepickerRef.current;
+    const picker = element?.litePickerInstance as any;
+
+    if (!element || !picker) return;
+
+    if (!nextValue) {
+      if (typeof picker.clearSelection === "function") {
+        picker.clearSelection();
+      } else {
+        element.value = "";
+      }
+      return;
     }
 
-    if (initialRender.current) {
-      setValue(props);
-      if (litepickerRef.current !== null) {
-        init(litepickerRef.current, props);
+    const [startValue, endValue] = nextValue.split(" - ");
+
+    if (options.singleMode) {
+      if (typeof picker.setStartDate === "function") {
+        picker.setStartDate(startValue, true);
+      } else {
+        element.value = nextValue;
       }
-      initialRender.current = false;
+      return;
+    }
+
+    if (typeof picker.setStartDate === "function") {
+      picker.setStartDate(startValue, true);
+    }
+    if (endValue && typeof picker.setEndDate === "function") {
+      picker.setEndDate(endValue, true);
+    } else if (typeof picker.setEndDate === "function") {
+      picker.setEndDate(startValue, true);
     } else {
-      if (tempValue.current !== props.value && litepickerRef.current !== null) {
-        reInit(litepickerRef.current, props);
-      }
+      element.value = nextValue;
     }
+  };
 
-    tempValue.current = props.value;
-  }, [props.value]);
+  useEffect(() => {
+    const element = litepickerRef.current;
+    if (!element) return;
+
+    init(element, {
+      options,
+      value,
+      onChange: (e) => {
+        lastSyncedValueRef.current = e.target.value;
+        onChangeRef.current?.(e);
+      },
+      getRef,
+      onShow: (picker: LitepickerJs) => {
+        onShowRef.current?.(picker);
+      },
+    });
+
+    getRef(element);
+    syncPickerValue(value);
+    lastSyncedValueRef.current = value;
+
+    return () => {
+      element.litePickerInstance?.destroy();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optionsKey]);
+
+  useEffect(() => {
+    const element = litepickerRef.current;
+    if (!element?.litePickerInstance || value === lastSyncedValueRef.current) return;
+
+    syncPickerValue(value);
+    lastSyncedValueRef.current = value;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   return (
     <FormInput
       ref={litepickerRef}
       type="text"
-      value={props.value}
+      value={value}
       onChange={(e) => {
-        if (props.onChange) {
-          props.onChange(e);
-        }
+        onChangeRef.current?.(e);
       }}
       {...computedProps}
     />

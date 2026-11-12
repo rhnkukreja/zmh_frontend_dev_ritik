@@ -16,7 +16,7 @@ import { DomainNote } from "@/types/domainNotes";
 import DateField from "./CreateDate";
 import CategoryField from "./CreateCategory";
 import FormInput from "../Base/Form/FormInput";
-import { FormSwitch } from "@/components/Base/Form";
+import FormCheck from "@/components/Base/Form/FormCheck";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchDomainNotesDropDownValuesByCompany,
@@ -71,12 +71,20 @@ const NoteForm: React.FC<NoteFormProps> = ({
   const dispatch =
     useDispatch<typeof import("@/stores/store").store.dispatch>();
   const { notesLoading } = useAppSelector((state) => state.notes);
-  const { user } = useAppSelector((state) => state.authentiction);
+  const { user, companyGlobalSearchId, companyGlobalSearchName } = useAppSelector(
+    (state) => state.authentiction
+  );
   const isCorporateUser =
     !!user?.user_role &&
     user.user_role.toLowerCase() === "corporate";
   const corporateCompanyId = Number(user?.user_actual_company || user?.company_id);
-  const [searchTerm, setSearchTerm] = useState("");
+  const globalCompanyId = Number(companyGlobalSearchId || 0);
+  const isGlobalCompanyLocked =
+    noteModule && mode === "add" && globalCompanyId > 0 && Boolean(companyGlobalSearchName);
+  const isCompanyFieldLocked = isGlobalCompanyLocked || mode === "edit";
+  const [searchTerm, setSearchTerm] = useState(
+    isGlobalCompanyLocked ? companyGlobalSearchName : ""
+  );
   const [institutionsSearchTerm, setInstitutionsSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showInsDropdown, setInsShowDropdown] = useState(false);
@@ -121,12 +129,12 @@ const NoteForm: React.FC<NoteFormProps> = ({
   );
   useEffect(() => {
     const debounce = setTimeout(() => {
-      if (!searchTerm.trim()) return;
+      if (isCompanyFieldLocked || !searchTerm.trim()) return;
       dispatch(fetchDomainNotesDropDownValuesByCompany(searchTerm));
     }, 500);
 
     return () => clearTimeout(debounce);
-  }, [searchTerm, dispatch]);
+  }, [searchTerm, dispatch, isCompanyFieldLocked]);
   useEffect(() => {
     const debounce = setTimeout(() => {
       if (!institutionsSearchTerm.trim()) return;
@@ -166,7 +174,24 @@ const NoteForm: React.FC<NoteFormProps> = ({
   ]);
 
   useEffect(() => {
-    if (isCorporateUser && corporateCompanyId) {
+    if (!isGlobalCompanyLocked) return;
+
+    setSelectedData((prev: SelectedNoteData) => ({
+      ...prev,
+      company: globalCompanyId,
+      company_name: companyGlobalSearchName,
+    }));
+    setSearchTerm(companyGlobalSearchName);
+    setShowDropdown(false);
+  }, [
+    isGlobalCompanyLocked,
+    globalCompanyId,
+    companyGlobalSearchName,
+    setSelectedData,
+  ]);
+
+  useEffect(() => {
+    if (!isGlobalCompanyLocked && isCorporateUser && corporateCompanyId) {
       setSelectedData((prev: SelectedNoteData) => ({
         ...prev,
         company: corporateCompanyId,
@@ -175,6 +200,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
       setSearchTerm(user?.company_name || searchTerm);
     }
   }, [
+    isGlobalCompanyLocked,
     isCorporateUser,
     corporateCompanyId,
     user?.company_name,
@@ -184,21 +210,27 @@ const NoteForm: React.FC<NoteFormProps> = ({
   const getFormValues = (): Partial<DomainNote> =>
     mode === "add"
       ? {
-          attendees: "",
+          attendees_company: "",
+          attendees_institution: "",
           notes: "",
           date: today,
           category: "",
-          company:
-            isCorporateUser && corporateCompanyId
+          company: isGlobalCompanyLocked
+            ? globalCompanyId
+            : isCorporateUser && corporateCompanyId
               ? corporateCompanyId
               : data?.company_id || 0,
           institution: data?.institution_id || null,
           investor_name: data?.institution_name || "",
-          company_name: data?.company_name || "",
+          company_name: isGlobalCompanyLocked
+            ? companyGlobalSearchName
+            : data?.company_name || "",
           shared: Boolean(initialData?.shared),
+          key_notes: initialData?.shared ? initialData?.key_notes || "" : null,
         }
       : {
-          attendees: initialData?.attendees || "",
+          attendees_company: initialData?.attendees_company || "",
+          attendees_institution: initialData?.attendees_institution || "",
           notes: initialData?.notes || "",
           date: formatDate(initialData?.date),
           category: initialData?.category || "",
@@ -210,9 +242,10 @@ const NoteForm: React.FC<NoteFormProps> = ({
           investor_name: getInstitutionDisplayName(initialData, data),
           company_name: initialData?.company_name || data?.company_name || "",
           shared: Boolean(initialData?.shared),
+          key_notes: initialData?.shared ? initialData?.key_notes || "" : null,
         };
 
-  const { control, handleSubmit, reset } = useForm<DomainNote>({
+  const { control, handleSubmit, reset, watch, setValue } = useForm<DomainNote>({
     defaultValues: getFormValues(),
   });
 
@@ -225,12 +258,27 @@ const NoteForm: React.FC<NoteFormProps> = ({
     data?.company_name,
     data?.institution_id,
     data?.institution_name,
+    isGlobalCompanyLocked,
+    globalCompanyId,
+    companyGlobalSearchName,
     isCorporateUser,
     corporateCompanyId,
     reset,
   ]);
+
   const fieldsToRender =
     mode === "add" ? ["attendees", "notes", "date", "category"] : fieldsToEdit;
+  const canShareNote =
+    user?.user_type?.toLowerCase() === "admin" ||
+    (mode === "edit" && initialData?.shared === true);
+  const isShareNoteEnabled = Boolean(watch("shared"));
+
+  useEffect(() => {
+    if (!canShareNote) {
+      setValue("shared", false);
+      setValue("key_notes", null);
+    }
+  }, [canShareNote, setValue]);
   const handleSelect = (id: number, name: string, from: string) => {
     if (from === "institution") {
       setInstitutionsSearchTerm(name);
@@ -260,15 +308,22 @@ const NoteForm: React.FC<NoteFormProps> = ({
     };
   }, [setShowDropdown]);
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap gap-4">
-        {!isCorporateUser && (
-          <div className="w-full md:w-[47%]">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className={`grid grid-cols-1 gap-4 ${!isCorporateUser || isCompanyFieldLocked ? "md:grid-cols-2" : ""}`}>
+        {(!isCorporateUser || isCompanyFieldLocked) && (
+          <div className="relative w-full">
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Company
           </label>
-          {noteModule || mode === "edit" ? (
+          {isCompanyFieldLocked ? (
+            <FormInput
+              type="text"
+              value={isGlobalCompanyLocked ? companyGlobalSearchName : searchTerm}
+              disabled
+              className="w-full bg-slate-50 font-medium text-slate-700"
+            />
+          ) : noteModule ? (
             <>
               <FormInput
                 ref={inputRef}
@@ -290,7 +345,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
                 }}
               />
               {showDropdown && (
-                <ul className="dropdown absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg md:w-[44%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
+                <ul className="dropdown absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200">
                   {isLoading ? (
                     <li className="px-4 py-2 text-sm text-gray-500">
                       Loading...
@@ -322,7 +377,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
           )}
         </div>
         )}
-        <div className={`w-full ${!isCorporateUser ? "md:w-[47%]" : ""}`}>
+        <div className="relative w-full">
           <label className="block text-left font-semibold text-gray-800 mb-2">
             Institution
           </label>
@@ -348,7 +403,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
                 }}
               />
               {showInsDropdown && (
-                <ul className="dropdown absolute z-20 bg-white border border-gray-200 rounded-xl shadow-lg md:w-[44%] mt-1 max-h-60 overflow-y-auto transition-all duration-200">
+                <ul className="dropdown absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg transition-all duration-200">
                   {isInsLoading ? (
                     <li className="px-4 py-2 text-sm text-gray-500">
                       Loading...
@@ -384,43 +439,145 @@ const NoteForm: React.FC<NoteFormProps> = ({
           )}
         </div>
         </div>
-      </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap gap-4">
+        <div className="mt-3 grid grid-cols-1 gap-4 border-t border-slate-100 pt-3 md:grid-cols-2">
           {fieldsToRender.includes("category") && (
-            <div className="w-full md:w-[47%]">
-              <CategoryField
-                control={control}
-                rules={{ required: "Category is required" }}
-              />
-            </div>
+            <CategoryField
+              control={control}
+              rules={{ required: "Category is required" }}
+            />
           )}
           {fieldsToRender.includes("date") && (
-            <div className="w-full md:w-[47%]">
-              <DateField
-                control={control}
-                rules={{ required: "Date is required" }}
-              />
-            </div>
+            <DateField
+              control={control}
+              rules={{ required: "Date is required" }}
+            />
           )}
         </div>
+        {fieldsToRender.includes("attendees") && (
+          <div className="mt-3 grid grid-cols-1 gap-4 border-t border-slate-100 pt-3 md:grid-cols-2">
+            <NameField
+              control={control}
+              name="attendees_company"
+              label="Attendees (Company)"
+              placeholder="Enter company attendees"
+            />
+            <NameField
+              control={control}
+              name="attendees_institution"
+              label="Attendees (Investor)"
+              placeholder="Enter investor attendees"
+            />
+          </div>
+        )}
       </div>
-      {fieldsToRender.includes("attendees") && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <NameField
-            control={control}
-          />
-        </div>
-      )}
 
+      <div className="space-y-3">
       {fieldsToRender.includes("notes") && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/40 p-3 shadow-sm">
           <NoteField
             control={control}
+            compact
             rules={{ required: "Note Detail is required" }}
           />
         </div>
       )}
+
+      {canShareNote && fieldsToRender.includes("notes") && (
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/40 p-3 shadow-sm">
+          <Controller
+            name="shared"
+            control={control}
+            render={({ field }) => (
+              <div>
+                <div className="text-sm font-semibold text-slate-800">Share Note</div>
+                {/* <div className="mt-1 text-xs leading-5 text-slate-500">
+                  If you enable Share Note, only the Key Notes entered below will be shared with everyone. The full note details will not be shared.
+                </div> */}
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <label
+                    htmlFor="share-note-yes"
+                    className={`cursor-pointer rounded-lg border px-3 py-2 transition-all ${
+                      field.value === true
+                        ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                        : "border-slate-200 bg-slate-50/60 hover:border-primary/30 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FormCheck.Input
+                        id="share-note-yes"
+                        type="radio"
+                        checked={field.value === true}
+                        onChange={() => field.onChange(true)}
+                      />
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">Share Key Notes</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Enable sharing and make Key Notes required.
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    htmlFor="share-note-no"
+                    className={`cursor-pointer rounded-lg border px-3 py-2 transition-all ${
+                      field.value !== true
+                        ? "border-slate-300 bg-white shadow-sm ring-1 ring-slate-200"
+                        : "border-slate-200 bg-slate-50/60 hover:border-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FormCheck.Input
+                        id="share-note-no"
+                        type="radio"
+                        checked={field.value !== true}
+                        onChange={() => field.onChange(false)}
+                      />
+                      <div>
+                        <div className="text-sm font-semibold text-slate-800">Keep Private</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Do not share this note with everyone.
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+          />
+
+          {isShareNoteEnabled && (
+            <NoteField
+              control={control}
+              name="key_notes"
+              label={
+                <>
+                  Key Notes{" "}
+                  <span className="text-xs font-normal text-slate-500">
+                    (Only these Key Notes will be shared with everyone when Share Note is enabled.)
+                  </span>
+                </>
+              }
+              compact
+              rules={{
+                validate: (value) => {
+                  if (!isShareNoteEnabled) {
+                    return true;
+                  }
+
+                  const plainText = String(value || "")
+                    .replace(/<[^>]*>/g, " ")
+                    .replace(/&nbsp;/gi, " ")
+                    .trim();
+
+                  return plainText.length > 0 || "Key Notes is required when Share Note is enabled";
+                },
+              }}
+            />
+          )}
+        </div>
+      )}
+      </div>
 
       {/* <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
         <Controller
@@ -448,7 +605,7 @@ const NoteForm: React.FC<NoteFormProps> = ({
         />
       </div> */}
 
-      <div className="w-full flex justify-end border-t border-slate-200 pt-4">
+      <div className="flex w-full justify-end border-t border-slate-200 pt-2">
         <Button
           type="button"
           variant="outline-secondary"

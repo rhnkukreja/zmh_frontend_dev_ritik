@@ -565,7 +565,7 @@ function ProposalVotesList({ proposals }: {
                       key={instIdx}
                       className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
                     >
-                      <div className="text-[14px] text-slate-700 font-medium truncate pr-2">
+                      <div className="text-[14px] text-slate-700 font-medium pr-2">
                         {instVote.institution}
                       </div>
                       <Badge

@@ -39,6 +39,8 @@ import clsx from "clsx";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
+import VoteCategoryTaxonomySelect from "@/components/NPX/VoteCategoryTaxonomySelect";
+import InstitutionSplitNotice from "@/components/InstitutionSplitNotice";
 import Pill from "@/components/Pill";
 import { FaSearch, FaTimes, FaBuilding, FaUniversity, FaCalendarAlt, FaCheckCircle, FaLayerGroup, FaTags, FaUserTie, FaHandshake, FaListUl, FaGlobe } from "react-icons/fa";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
@@ -49,7 +51,6 @@ import Litepicker from "@/components/Base/Litepicker";
 import React from "react";
 
 const NPX_DETAILS_CACHE_KEY = "npxDetailsFilters";
-const NPX_DETAILS_RELOAD_SESSION_KEY = "npxDetailsReloadHandled";
 const SELECT_ALL_INSTITUTION_LABELS = ["Select All", "All Institutions"];
 
 const isSelectAllInstitution = (value?: string) =>
@@ -60,22 +61,6 @@ const isSelectAllInstitution = (value?: string) =>
 const normalizeInstitutionForApi = (value?: string | string[] | null) => {
   const institutionValue = Array.isArray(value) ? value[0] : value;
   return institutionValue && !isSelectAllInstitution(institutionValue) ? [institutionValue] : undefined;
-};
-
-const isPageReloadOnce = (sessionKey: string) => {
-  if (typeof window === "undefined") return false;
-  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
-  const isReload = navEntry?.type ? navEntry.type === "reload" : (window.performance as any)?.navigation?.type === 1;
-  try {
-    const handled = sessionStorage.getItem(sessionKey) === "true";
-    if (isReload && !handled) {
-      sessionStorage.setItem(sessionKey, "true");
-      return true;
-    }
-    return false;
-  } catch {
-    return isReload;
-  }
 };
 
 const readCachedNpxDetailsFilters = (): any | null => {
@@ -134,26 +119,26 @@ const index = () => {
   });
   const [meetingDate, setMeetingDate] = useState('');
   const [npxMeetings, setNpxMeetings] = useState<any[]>([]); // cache of NPX meetings {year, meeting_date}
+  // Tracks which companyGlobalSearchId npxMeetings actually belongs to, so a
+  // stale/previous company's meeting dates can never be matched against the
+  // newly selected company just because they happen to share the same year.
+  const npxMeetingsCompanyIdRef = useRef<string | number | null>(null);
   const isFirstLoad = useRef(true);
   const savedInstitutionRef = useRef<string>('');
   const fetchRequestId = useRef(0); // incremented on every call; guards against stale responses
   const allApplyFilterRef = useRef<any>({}); // always-fresh mirror of allApplyFilter state
   const savedFiltersRef = useRef<any>({ fund_name: [], proposal: [], vote: [], vote_category: [], keyword: [] });
 
-  // Filter/data persistence: compute reload state once, and read any cached filters
-  // on the very first render (before any effect runs). On a hard refresh, the cache
-  // is cleared so the module falls back to its normal default-institution bootstrap.
-  const isReloadRef = useRef<boolean | null>(null);
+  // Filter/data persistence: read any cached filters on the very first render
+  // (before any effect runs). Filters stay cached across page reloads and
+  // in-app navigation — they're only cleared on logout (which clears all of
+  // localStorage), so a new session/user always starts from the default
+  // single-institution bootstrap instead of a previous user's filters.
   const cachedFiltersRef = useRef<any>(null);
   const cacheInitRef = useRef(false);
   if (!cacheInitRef.current) {
     cacheInitRef.current = true;
-    isReloadRef.current = isPageReloadOnce(NPX_DETAILS_RELOAD_SESSION_KEY);
-    if (isReloadRef.current) {
-      try { localStorage.removeItem(NPX_DETAILS_CACHE_KEY); } catch { /* no-op */ }
-    } else {
-      cachedFiltersRef.current = readCachedNpxDetailsFilters();
-    }
+    cachedFiltersRef.current = readCachedNpxDetailsFilters();
   }
   const [apiDependentDropdownOptions, setApiDependentDropdownOptions] =
     useState<any>({
@@ -435,7 +420,11 @@ const index = () => {
             ...(restoredProposal.length > 0 && { proposal: restoredProposal }),
             ...(restoredVote.length > 0 && { vote: restoredVote }),
             ...(restoredKeyword.length > 0 && { keyword: restoredKeyword }),
-            ...(res.result?.meeting_date && { meeting_date: formatMeetingDate(res.result.meeting_date) }),
+            // Prefer the already-verified currentMeetingDate over this generic
+            // dropdown-values call's own meeting_date — that field reflects this
+            // endpoint's own (not always reliable) default for the company/year,
+            // which can disagree with the confirmed npxMeetings-derived date.
+            ...(currentMeetingDate && { meeting_date: formatMeetingDate(currentMeetingDate) }),
           };
           const chipsObj = {
             institution_name: [firstInstitution],
@@ -457,9 +446,12 @@ const index = () => {
             setShowFundName(false);
             setApiFundNameDropdown({ fund_name: [] });
           } else {
-            await getFundNameDependentDropdown(firstInstitution, res.result?.meeting_date ? formatMeetingDate(res.result.meeting_date) : undefined);
+            await getFundNameDependentDropdown(firstInstitution, currentMeetingDate ? formatMeetingDate(currentMeetingDate) : undefined);
           }
-          if (res.result?.meeting_date) setMeetingDate(res.result.meeting_date);
+          // Don't unconditionally overwrite meetingDate with this endpoint's own
+          // (potentially wrong) value — only use it if we don't already have a
+          // verified date for this company.
+          if (!currentMeetingDate && res.result?.meeting_date) setMeetingDate(res.result.meeting_date);
         }
       } catch (e) {
         if (requestId !== fetchRequestId.current) return;
@@ -497,9 +489,14 @@ const index = () => {
         setAllInstitutions(['__cache_restored__']);
       }
 
-      const cachedInstitution = Array.isArray(cache?.filterObj?.institution_name)
-        ? cache.filterObj.institution_name[0]
-        : undefined;
+      // Prefer the explicitly-saved institutionLabel (correctly captures "All
+      // Institutions" too), falling back to the old filterObj-derived shape for
+      // any cache entries saved before this field existed.
+      const cachedInstitution = cache?.institutionLabel
+        ? cache.institutionLabel
+        : (Array.isArray(cache?.filterObj?.institution_name)
+          ? cache.filterObj.institution_name[0]
+          : undefined);
       const cachedFundNames = Array.isArray(cache?.filterObj?.fund_name) ? cache.filterObj.fund_name : [];
       const cachedCategory = cache?.filterObj?.vote_category
         ? (Array.isArray(cache.filterObj.vote_category) ? cache.filterObj.vote_category : [cache.filterObj.vote_category])
@@ -607,7 +604,14 @@ const index = () => {
   });
 
   // Persist applied filters (and, implicitly, the data view they produce) so they survive
-  // in-app navigation away from and back to this module. Cleared on a hard page refresh.
+  // in-app navigation away from and back to this module. Cleared on logout.
+  //
+  // institutionLabel is stored separately from filterObj.institution_name: when
+  // "All Institutions" is selected, filterObj (the API-payload shape) intentionally
+  // OMITS institution_name, so on its own filterObj can't tell "All Institutions was
+  // selected" apart from "no institution was ever selected". institutionLabel always
+  // holds the literal selection (including the "All Institutions" sentinel) so the
+  // Institution chip can be restored correctly either way.
   useEffect(() => {
     if (!companyGlobalSearchName) return;
     if (!allApplyFilter || Object.keys(allApplyFilter).length === 0) return;
@@ -619,12 +623,13 @@ const index = () => {
           year,
           meetingDate,
           filterObj: allApplyFilter,
+          institutionLabel: dropdownValues?.institution_name || '',
         })
       );
     } catch {
       /* no-op */
     }
-  }, [allApplyFilter, companyGlobalSearchName, year, meetingDate]);
+  }, [allApplyFilter, companyGlobalSearchName, year, meetingDate, dropdownValues.institution_name]);
 
   useEffect(() => {
     // If year isn't set yet (awaiting meeting years API), don't proceed
@@ -642,6 +647,12 @@ const index = () => {
     // Reset values on company or year change
     setMeetingDate('');
     setAllInstitutions([]);
+    // Clear the previous company's cached meeting dates too — otherwise the
+    // meeting-date-resolving effect below can match the OLD company's
+    // meeting_date for the new company whenever both happen to share the
+    // same selected year, before the new company's own dates have loaded.
+    setNpxMeetings([]);
+    npxMeetingsCompanyIdRef.current = null;
 
     // Reset dropdown values to prevent unnecessary API calls
     setDropdownValues({
@@ -705,6 +716,7 @@ const index = () => {
         const { result } = await dashboardService.getVdsNpxMeetingDates(companyGlobalSearchId);
         const npxKey = result?.NPX_Data || result?.npx_data || [];
         setNpxMeetings(Array.isArray(npxKey) ? npxKey : []);
+        npxMeetingsCompanyIdRef.current = companyGlobalSearchId;
         const years = Array.from(new Set(
           (Array.isArray(npxKey) ? npxKey : []).map((x: any) => String(x?.year)).filter(Boolean)
         )).sort((a: string, b: string) => Number(b) - Number(a));
@@ -718,7 +730,15 @@ const index = () => {
               return params;
             });
           }
-          const match = (Array.isArray(npxKey) ? npxKey : []).find((x: any) => String(x?.year) === String(defaultYear));
+          // A company can have more than one meeting in the same year (e.g. a
+          // special meeting plus the annual meeting). Picking the first match
+          // via .find() is order-dependent on whatever the API happens to
+          // return, which could non-deterministically resolve to the wrong
+          // one. Always pick the most recent meeting_date for that year.
+          const matchesForYear = (Array.isArray(npxKey) ? npxKey : [])
+            .filter((x: any) => String(x?.year) === String(defaultYear) && x?.meeting_date)
+            .sort((a: any, b: any) => (a.meeting_date < b.meeting_date ? 1 : a.meeting_date > b.meeting_date ? -1 : 0));
+          const match = matchesForYear[0];
           if (match?.meeting_date) setMeetingDate(match.meeting_date);
         }
       } catch (e) {
@@ -736,15 +756,17 @@ const index = () => {
   ) => {
     // Prepare parameters for API call
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
-    // Source of truth: read latest from RHF
-    const catsFromForm = overrideCategories ?? watch('vote_category');
+    // Source of truth: read latest from RHF. `overrideCategories` is only
+    // absent (true `undefined`) when the caller didn't pass anything at all
+    // — an explicit empty array means "cleared", and must NOT fall back to
+    // `dropdownValues.vote_category`, which can still hold the stale
+    // pre-removal value here (its setState hasn't flushed into this
+    // closure yet when called synchronously from handleRemoveChip).
+    const catsFromForm = overrideCategories !== undefined ? overrideCategories : watch('vote_category');
     const normalizedCats = Array.isArray(catsFromForm)
       ? catsFromForm
       : (catsFromForm ? [catsFromForm] : []);
-    const catsFromLocal = Array.isArray(dropdownValues?.vote_category)
-      ? dropdownValues.vote_category
-      : (dropdownValues?.vote_category ? [dropdownValues.vote_category] : []);
-    const effectiveCats = normalizedCats.length > 0 ? normalizedCats : catsFromLocal;
+    const effectiveCats = normalizedCats;
     const hasCategory = effectiveCats.length > 0;
     const effectiveInstitution =
       overrideInstitution !== undefined ? overrideInstitution : dropdownValues?.institution_name;
@@ -795,17 +817,24 @@ const index = () => {
       );
       if (res.result) {
         console.log("getDependentDropdown response:", res.result);
-        // Preserve currently selected vote_category values if API response doesn't include them
-        const currentCats = Array.isArray(dropdownValues?.vote_category)
-          ? dropdownValues.vote_category
-          : dropdownValues?.vote_category
-          ? [dropdownValues.vote_category]
-          : [];
+        // Preserve currently selected vote_category values if API response
+        // doesn't include them — reuse the same `effectiveCats` resolved
+        // above for the request itself (not a fresh read of
+        // `dropdownValues`, which can be stale here) so a just-cleared
+        // category can't get reintroduced by this "preserve" step.
+        const currentCats = effectiveCats;
         const nextResult = { ...res.result } as any;
         if (currentCats.length > 0) {
+          // Selected values can be either a parent_value or an exact child path
+          // from vote_category_taxonomy, so validate against both the taxonomy
+          // and the flat quick list rather than just the flat list.
+          const taxonomy = Array.isArray(nextResult.vote_category_taxonomy) ? nextResult.vote_category_taxonomy : [];
           const allowed = new Set(nextResult.vote_category || []);
+          taxonomy.forEach((item: any) => {
+            if (item?.parent_value) allowed.add(item.parent_value);
+            (item?.child_paths || []).forEach((path: string) => allowed.add(path));
+          });
           const filtered = currentCats.filter((c: string) => allowed.has(c));
-          nextResult.vote_category = Array.from(allowed);
           // Update the form to the filtered list so UI doesn't show mismatched tokens
           setValue('vote_category', filtered as any);
         }
@@ -887,8 +916,21 @@ const index = () => {
   // When company or selected year changes, ensure meeting_date is set consistently and fetch institutions for that date
   useEffect(() => {
     if (!companyGlobalSearchName || !year) return;
-    // Find the meeting date for the selected year from cached meetings
-    const match = (Array.isArray(npxMeetings) ? npxMeetings : []).find((x: any) => String(x?.year) === String(year));
+    // Only trust npxMeetings for date matching once it's confirmed to belong to
+    // the CURRENT company — otherwise a previous company's meeting dates could
+    // get matched against this company just because they share the same year
+    // (npxMeetings loads separately, keyed on companyGlobalSearchId, and may
+    // not have refreshed yet). If it's stale/unconfirmed, fall back to '' and
+    // let the backend determine the default meeting_date instead of guessing.
+    const npxMeetingsFreshForCompany = npxMeetingsCompanyIdRef.current === companyGlobalSearchId;
+    // A company can have more than one meeting in the same year (e.g. a special
+    // meeting plus the annual meeting) — always pick the most recent one for
+    // that year rather than whichever happens to come first in the API response.
+    const match = npxMeetingsFreshForCompany
+      ? (Array.isArray(npxMeetings) ? npxMeetings : [])
+          .filter((x: any) => String(x?.year) === String(year) && x?.meeting_date)
+          .sort((a: any, b: any) => (a.meeting_date < b.meeting_date ? 1 : a.meeting_date > b.meeting_date ? -1 : 0))[0]
+      : undefined;
     const dateForYear = match?.meeting_date ? formatMeetingDate(match.meeting_date) : '';
 
     if (dateForYear) {
@@ -901,8 +943,8 @@ const index = () => {
       });
     }
 
-    // If we have a cached filter snapshot for this exact company/year (and this isn't a
-    // hard refresh), restore filters + data from it instead of auto-selecting a default.
+    // If we have a cached filter snapshot for this exact company/year, restore
+    // filters + data from it instead of auto-selecting a default.
     const cache = cachedFiltersRef.current;
     const cacheMatches =
       cache &&
@@ -921,6 +963,11 @@ const index = () => {
       // If not found, clear and let API determine default
       fetchAllInstitutions(savedInstitutionRef.current, '');
     }
+  // Deliberately NOT depending on npxMeetings — this must run exactly once per
+  // company/year change (it consumes cachedFiltersRef.current, which would be
+  // wrongly discarded by a second run before it ever applies). The
+  // npxMeetingsCompanyIdRef freshness check above is what keeps the resolved
+  // date correct without needing this effect to re-fire when npxMeetings loads.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyGlobalSearchName, year]);
 
@@ -942,10 +989,12 @@ const index = () => {
         ? dropdownValues.vote_category
         : (dropdownValues?.vote_category ? [dropdownValues.vote_category] : []);
       const hasCategory = cats.length > 0;
-      const hasFund = Array.isArray(dropdownValues?.fund_name) && dropdownValues.fund_name.length > 0;
 
-      if (hasCategory || hasFund) {
-        getDependentDropdown(hasCategory ? cats : undefined, null);
+      // Fund selection should never trigger this dropdown-options refresh — same
+      // as when a specific institution is selected (handled above). Only a
+      // Category change should re-fetch dependent dropdown options here.
+      if (hasCategory) {
+        getDependentDropdown(cats, null);
       }
       return;
     }
@@ -954,13 +1003,12 @@ const index = () => {
       ? dropdownValues.vote_category
       : (dropdownValues?.vote_category ? [dropdownValues.vote_category] : []);
     const hasCategory = cats.length > 0;
-    const hasFund = Array.isArray(dropdownValues?.fund_name) && dropdownValues.fund_name.length > 0;
 
-    if (hasCategory || hasFund) {
+    if (hasCategory) {
       // Explicitly pass fresh values (post-commit) to guarantee correct params every time
-      getDependentDropdown(hasCategory ? cats : undefined, null);
+      getDependentDropdown(cats, null);
     }
-  }, [dropdownValues.institution_name, dropdownValues.fund_name, dropdownValues.vote_category, allInstitutions.length]);
+  }, [dropdownValues.institution_name, dropdownValues.vote_category, allInstitutions.length]);
 
   // Fetches /npx/detail for an explicit target page using the latest applied filters.
   // Called directly by the pagination handlers below for EVERY page change (including
@@ -1001,9 +1049,14 @@ const index = () => {
     if (isCompanySelected) {
       reset();
       setShowFundName(false);
-      // Immediately refetch institutions and auto-select the first for the active meeting date
-      const md = meetingDateFromURL || meetingDate || '';
-      fetchAllInstitutions(savedInstitutionRef.current, md);
+      setMeetingDate('');
+      // Don't call fetchAllInstitutions here — the [companyGlobalSearchName, year]
+      // effects below already own fetching institutions for the newly selected
+      // company (with the correct meeting_date and the saved-filter restore).
+      // Calling it again from here raced that effect: whichever call resolved
+      // last would win, and if this one won it had no saved-filter context yet,
+      // which is what caused selected filters to disappear and fall back to the
+      // first institution on company change.
       dispatch(setIsCompanySelected(false));
     }
   }, [isCompanySelected]);
@@ -1101,9 +1154,24 @@ const index = () => {
       setValue("keyword", updatedFilters.keyword || []);
     }
 
+    // `allApplyFilter.institution_name` is intentionally omitted (undefined)
+    // whenever "All Institutions" is selected — that's the correct API-payload
+    // shape (no institution_name param sent), but it means we can't rebuild
+    // the Institution chip from `updatedFilters` alone when some OTHER chip
+    // is being removed, or the chip disappears even though the selection is
+    // unchanged. `dropdownValues.institution_name` always holds the live
+    // label (including the "All Institutions" sentinel), so use that unless
+    // the Institution chip itself is what's being removed right now.
+    const institutionLabelForChips =
+      removeKey === "institution_name"
+        ? ""
+        : (dropdownValues?.institution_name ||
+          (Array.isArray(updatedFilters.institution_name) ? updatedFilters.institution_name[0] : updatedFilters.institution_name) ||
+          "");
+
     // Create filter object for chips (exclude global_search)
     const filterObjForChips = {
-      institution_name: updatedFilters.institution_name,
+      ...(institutionLabelForChips ? { institution_name: [institutionLabelForChips] } : {}),
       fund_name: updatedFilters.fund_name,
       proposal: updatedFilters.proposal,
       vote: updatedFilters.vote,
@@ -1124,8 +1192,10 @@ const index = () => {
       ? updatedFilters.fund_name.filter(Boolean)
       : [];
 
+    // Always pass the explicit (possibly empty) array — an empty array must
+    // mean "cleared", not "fall back to whatever's currently in state".
     getDependentDropdown(
-      refreshedCategories.length > 0 ? refreshedCategories : undefined,
+      refreshedCategories,
       refreshedInstitution ? refreshedInstitution[0] : null,
       refreshedFundNames
     );
@@ -1161,6 +1231,16 @@ const index = () => {
     const currentMeetingDate = meetingDate; // Use state — always correct for the current company
     const selectedInstitutionLabel = npxFilter?.institution_name?.label || "";
     const hasAllInstitutionsSelected = isSelectAllInstitution(selectedInstitutionLabel);
+
+    // Commit the staged Category pick now (Apply) — this is what the
+    // consolidated dependent-dropdown effect watches, so selecting/
+    // unselecting categories while the picker is open never fires that API;
+    // it only fires once here, if the committed value actually changed.
+    const submittedCategories = Array.isArray(npxFilter?.vote_category)
+      ? npxFilter.vote_category
+      : (npxFilter?.vote_category ? [npxFilter.vote_category] : []);
+    handleDropdownChange('vote_category', submittedCategories);
+
     const filterObj = {
       global_search: companyGlobalSearchName,
       ...(
@@ -1390,6 +1470,14 @@ const index = () => {
           </div>
         </div>
 
+        <InstitutionSplitNotice
+          institutionNames={(() => {
+            const inst = allApplyFilter?.institution_name ?? dropdownValues?.institution_name;
+            return Array.isArray(inst) ? inst : inst ? [inst] : [];
+          })()}
+          years={year ? [year] : []}
+        />
+
         {/* Filter Card directly below heading, above pills and data */}
         {isFilterCollapse && (
           <div className="bg-white rounded-xl shadow-sm p-4 mb-4 transition-all duration-300">
@@ -1527,49 +1615,22 @@ const index = () => {
                     control={control}
                     defaultValue={[]}
                     render={({ field }) => (
-                      <TomSelect
-                        value={Array.isArray(field.value) ? field.value : (field.value ? [field.value] : [])}
-                        onChange={(value) => {
-                          // Handle both direct value and event objects from TomSelect
-                          let selectedValues;
-
-                          if (value && typeof value === 'object' && 'target' in value) {
-                            // It's an event object with target.value
-                            selectedValues = value.target.value;
-                          } else {
-                            // It's a direct value
-                            selectedValues = value;
-                          }
-
-                          const normalized = Array.isArray(selectedValues)
-                            ? selectedValues
-                            : (selectedValues ? [selectedValues] : []);
+                      <VoteCategoryTaxonomySelect
+                        taxonomy={apiDependentDropdownOptions?.vote_category_taxonomy || []}
+                        selectedValues={Array.isArray(field.value) ? field.value : (field.value ? [field.value] : [])}
+                        loading={getDynamicDropdownLoader}
+                        placeholder="Select Vote Category"
+                        onChange={(normalized) => {
+                          // Only stage the pick in the form — don't sync into
+                          // dropdownValues here, since that's what the
+                          // consolidated effect watches to fire the dependent
+                          // dropdown API. Selecting/unselecting a category (or
+                          // its children) should not call that API; it's
+                          // committed (and the dependent options refreshed)
+                          // only when Apply is clicked, in onSubmit below.
                           field.onChange(normalized);
-                          handleDropdownChange('vote_category', normalized);
-                          // Fetching is handled by the consolidated effect that watches
-                          // dropdownValues.vote_category, avoiding duplicate/racing calls.
                         }}
-                        options={{
-                          placeholder: "Select Vote Category",
-                          // Do not allow creating arbitrary values; must pick from API
-                          create: false,
-                          persist: false
-                        }}
-                        className="w-full"
-                        multiple
-                      >
-                        {getDynamicDropdownLoader ? (
-                          <option disabled>Loading...</option>
-                        ) : (
-                          [...(apiDependentDropdownOptions?.vote_category || [])]
-                            .sort((a: string, b: string) => a.localeCompare(b))
-                            .map((vote_category: any) => (
-                              <option key={vote_category} value={vote_category}>
-                                {convertToTitleCase(vote_category)}
-                              </option>
-                            ))
-                        )}
-                      </TomSelect>
+                      />
                     )}
                   />
                 </div>
@@ -1742,22 +1803,23 @@ const index = () => {
               <Table className="table-fixed">
                 <Table.Thead>
                   <Table.Tr className="bg-primary text-white text-sm">
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "20%" }}>Proposal</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Category</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Institution</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Fund</Table.Td>
-                    <Table.Td colSpan={3} className="text-center text-sm border-b border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "18%" }}>Proposal</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Category</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Institution</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Fund</Table.Td>
+                    <Table.Td colSpan={3} className="text-center text-sm border-b border-r border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Source</Table.Td>
                   </Table.Tr>
                   <Table.Tr className="bg-primary text-white text-sm">
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>Shares Voted</Table.Td>
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Vote</Table.Td>
-                    <Table.Td className="text-left px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {Array.from({ length: 8 }).map((_, i) => (
                     <Table.Tr key={i} className="animate-pulse">
-                      {Array.from({ length: 7 }).map((_, j) => (
+                      {Array.from({ length: 8 }).map((_, j) => (
                         <Table.Td key={j}><Skeleton height={24} /></Table.Td>
                       ))}
                     </Table.Tr>
@@ -1773,16 +1835,17 @@ const index = () => {
               <Table className="table-fixed">
                 <Table.Thead>
                   <Table.Tr className="bg-primary text-white text-sm">
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "20%" }}>Proposal</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Category</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Institution</Table.Td>
-                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "16%" }}>Fund</Table.Td>
-                    <Table.Td colSpan={3} className="text-center text-sm border-b border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "18%" }}>Proposal</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Category</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Institution</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-r border-white/30 dark:border-darkmode-300 px-4 py-2 font-semibold" style={{ width: "14%" }}>Fund</Table.Td>
+                    <Table.Td colSpan={3} className="text-center text-sm border-b border-r border-white/30 px-4 py-2 font-semibold">Details of Vote</Table.Td>
+                    <Table.Td rowSpan={2} className="text-left align-middle border-b border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Source</Table.Td>
                   </Table.Tr>
                   <Table.Tr className="bg-primary text-white text-sm">
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>Shares Voted</Table.Td>
                     <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "8%" }}>Vote</Table.Td>
-                    <Table.Td className="text-left px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
+                    <Table.Td className="text-left border-r border-white/30 px-4 py-2 font-semibold" style={{ width: "12%" }}>For/Against Management</Table.Td>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -1828,10 +1891,26 @@ const index = () => {
                           </Table.Td>
                           <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
                             {convertToTitleCase(
+                              noAction?.for_or_against_management_split ??
                               noAction?.mgt_rec ??
                               noAction?.for_or_against_management ??
                               noAction?.management_recommendation ??
                               noAction?.for_against_management
+                            )}
+                          </Table.Td>
+                          <Table.Td className="text-left align-top px-4 border-b dark:border-darkmode-300 py-2 border-dashed">
+                            {noAction?.index_link ? (
+                              <a
+                                href={noAction.index_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline inline-flex items-center gap-1"
+                              >
+                                <Lucide icon="ExternalLink" className="w-3.5 h-3.5" />
+                                View
+                              </a>
+                            ) : (
+                              "-"
                             )}
                           </Table.Td>
                         </Table.Tr>

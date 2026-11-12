@@ -91,7 +91,7 @@ const BASE_SECTIONS: SectionDef[] = [
     group: "Company",
     subItems: [],
     beta: true,
-    // open to every user; only its board connections stay Admin-only (BoardIntelligence/index.tsx)
+    adminOnly: true,
   },
   {
     key: "compensation",
@@ -182,8 +182,6 @@ const BASE_SECTIONS: SectionDef[] = [
     subItems: [],
     route: "/notes",
     preserveActiveSection: true,
-    countKey: "meeting_notes",
-    hideWhenEmpty: true,
   },
   {
     key: "company-activist-filings",
@@ -293,10 +291,9 @@ const DashboardSidebarNav = ({
       const userType = user?.user_type;
       return userType === "Admin";
     }
-    // Compensation is restricted to Admins/Analysts
+    // Compensation is restricted to Analysts
     if (s.key === "compensation") {
-      const userType = user?.user_type;
-      return userType === "Admin" || userType === "Analyst";
+      return user?.user_type === "Analyst";
     }
     if (s.key === "governance-profile") {
       return Boolean(modulesData?.governance_profile);

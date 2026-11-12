@@ -29,6 +29,15 @@ class DomainNotesService {
     };
   }
 
+  public async getNote(id: number): Promise<{
+    results: DomainNote;
+  }> {
+    const response = await axiosInstance.get(`/user/domain_notes/${id}/`);
+    return {
+      results: decryptNotesDeep(response.data),
+    };
+  }
+
   public async deleteNote(id: number,): Promise<{
   }> {
     const response = await axiosInstance.delete(`/user/domain_notes/${id}/`);
@@ -112,14 +121,19 @@ class DomainNotesService {
 
   public async getCompanyHierarchyNotes(
     companyName?: string,
+    tabName: "Private" | "Shared" | "Other" = "Private",
   ): Promise<{
     results: any[];
   }> {
+    if (tabName === "Other") {
+      return { results: [] };
+    }
+
     const encodedCompanyName = companyName
       ? `&company_name=${encodeURIComponent(JSON.stringify([companyName]))}`
       : "";
     const response = await axiosInstance.get(
-      `/user/get_domain_notes/?filter=company${encodedCompanyName}`
+      `/user/get_domain_notes/?filter=company${encodedCompanyName}&tab_name=${encodeURIComponent(tabName)}`
     );
     const results = decryptNotesDeep(response.data);
     return {

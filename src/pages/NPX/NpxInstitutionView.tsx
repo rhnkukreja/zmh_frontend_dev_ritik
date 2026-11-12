@@ -11,10 +11,12 @@ import { axiosInstance } from "@/services";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import { fetchNpxProposalVotingStats } from "@/stores/dashboardSlice";
 import { createDynamicURL } from "@/utils/helper";
-import { baseURL } from "@/constant";
+import { baseURL, ma_proposal_type as MA_PROPOSAL_TYPES } from "@/constant";
 import CompanySelect from "@/components/ReactSelectAsync";
 import MultiSelectDropdown from "@/components/Base/MultiSelect";
 import CreatableInputSelect from "@/components/Base/CreatableInputSelect";
+import VoteCategoryTaxonomySelect from "@/components/NPX/VoteCategoryTaxonomySelect";
+import InstitutionSplitNotice, { POST_2026_INSTITUTION_IDS } from "@/components/InstitutionSplitNotice";
 import LoadingIcon from "@/components/Base/LoadingIcon";
 import downloadIcon from "../../assets/images/zmh-images/download-icon.png";
 import { MdOutlineClear } from "react-icons/md";
@@ -25,6 +27,7 @@ import clsx from "clsx";
 
 interface FilterState {
   investor_company?: string[];
+  institution_id?: Array<string | number>;
   company_name?: string[];
   company_ids?: Array<string | number>;
   fund_name?: string[];
@@ -58,6 +61,23 @@ const uniqueStrings = (values: any[]) =>
 const sortYearsDesc = (values: any[]) =>
   uniqueStrings(values).sort((a, b) => Number(b) - Number(a));
 
+// M&A proposal types are shown inside Vote Category but sent separately via
+// ma_proposal_type on the stats API.
+const MA_PROPOSAL_TYPE_SET = new Set(MA_PROPOSAL_TYPES.map((t) => t.toLowerCase()));
+const isMaProposalType = (value: any) =>
+  MA_PROPOSAL_TYPE_SET.has(String(value || "").toLowerCase());
+
+// Splits a combined Vote Category selection into regular categories
+// (vote_category) and M&A proposal types (ma_proposal_type) for the API.
+const splitVoteCategoryParams = (values: string[] = []) => {
+  const voteCategories = values.filter((v) => !isMaProposalType(v));
+  const maProposalTypes = values.filter(isMaProposalType);
+  return {
+    ...(voteCategories.length > 0 ? { vote_category: voteCategories } : {}),
+    ...(maProposalTypes.length > 0 ? { ma_proposal_type: maProposalTypes } : {}),
+  };
+};
+
 const formatValue = (value: any) => {
   if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "number" && !Number.isInteger(value)) return value.toFixed(2);
@@ -76,32 +96,45 @@ const formatNumberWithCommas = (value: any) => {
 };
 
 const DEFAULT_INVESTOR = "BlackRock, Inc.";
+// Default institution used when there's no cache and the user hasn't picked
+// one yet — matches the default institution used elsewhere (Executive
+// Compensation, Proxy Contest AI). The dropdown endpoint is queried by ID;
+// the name is only used as a UI fallback label if the API doesn't echo one back.
+const DEFAULT_NPX_INSTITUTION_ID = 1345;
+const DEFAULT_NPX_INSTITUTION = "BlackRock Active Investment Stewardship (BAIS)";
+const DEFAULT_NPX_INDEX = "S&P 500";
 const DEFAULT_COMPANY_SEARCH_COUNTRIES = ["USA", "Canada"];
 const COMPANY_SEARCH_FILTERS = { country: DEFAULT_COMPANY_SEARCH_COUNTRIES };
-const NPX_INSTITUTION_GLOBAL_SEARCH_NAME = "Apple Inc.";
 const NPX_FILTER_CACHE_KEY = "npxProposalVotingFilters";
-const NPX_RELOAD_SESSION_KEY = "npxVotingReloadHandled";
+// Institution/Company are staged selections — they only commit into `filters`
+// (and the cache above) once the user clicks Apply, so every click doesn't
+// fire an API call. But that means an in-progress (not-yet-applied) pick was
+// never persisted, so navigating away and back before clicking Apply showed
+// the dropdown reverting to blank/default. This separate key persists the
+// staged selection itself, independent of whether it's been applied yet.
+const NPX_DRAFT_SELECTION_CACHE_KEY = "npxProposalVotingDraftSelection";
 
-const isPageReloadOnce = (sessionKey: string) => {
-  if (typeof window === "undefined") return false;
-  const navEntry = window.performance?.getEntriesByType?.("navigation")?.[0] as any;
-  const isReload = navEntry?.type ? navEntry.type === "reload" : (window.performance as any)?.navigation?.type === 1;
-  try {
-    const handled = sessionStorage.getItem(sessionKey) === "true";
-    if (isReload && !handled) {
-      sessionStorage.setItem(sessionKey, "true");
-      return true;
-    }
-    return false;
-  } catch {
-    return isReload;
-  }
+type DraftSelection = {
+  investor_company: string[];
+  institution_id: Array<string | number>;
+  company_name: string[];
+  company_ids: Array<string | number>;
 };
 
 const readCachedFilters = (): FilterState | null => {
   if (typeof window === "undefined") return null;
   try {
     const saved = localStorage.getItem(NPX_FILTER_CACHE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
+const readCachedDraftSelection = (): DraftSelection | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem(NPX_DRAFT_SELECTION_CACHE_KEY);
     return saved ? JSON.parse(saved) : null;
   } catch {
     return null;
@@ -118,22 +151,18 @@ const NpxInstitutionView = () => {
     (state) => state.dashboard
   );
 
+  // Filters stay cached (localStorage) across page reloads and in-app navigation —
+  // they're only cleared on logout, so a new session/user always starts from the
+  // default single-institution bootstrap instead of a previous user's filters.
   const [filters, setFilters] = useState<FilterState>({
     ...(() => {
-      if (isPageReloadOnce(NPX_RELOAD_SESSION_KEY)) {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(NPX_FILTER_CACHE_KEY);
-        }
-        return {
-          investor_company: [],
-          year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
-        };
-      }
-
       const cachedFilters = readCachedFilters();
       if (cachedFilters) {
         return {
           ...cachedFilters,
+          // Older caches predate the Index filter — default to S&P 500, but
+          // respect an explicitly saved (even empty) selection.
+          index: cachedFilters.index !== undefined ? cachedFilters.index : [DEFAULT_NPX_INDEX],
           year: searchParams.get("year")
             ? [searchParams.get("year") as string]
             : cachedFilters.year || [],
@@ -142,10 +171,16 @@ const NpxInstitutionView = () => {
 
       return {
         investor_company: [],
+        index: [DEFAULT_NPX_INDEX],
         year: searchParams.get("year") ? [searchParams.get("year") as string] : [],
       };
     })(),
   });
+  // Staged filter selections drive the filter controls and the dropdown API
+  // (dependent options refresh on every pick). They are committed into
+  // `filters` — which alone triggers the stats API — only when the user
+  // clicks Apply.
+  const [draftFilters, setDraftFilters] = useState<FilterState>(() => ({ ...filters }));
   const [dropdowns, setDropdowns] = useState<any>({});
   const [dropdownLoading, setDropdownLoading] = useState(false);
   const [activePage, setActivePage] = useState(1);
@@ -159,19 +194,97 @@ const NpxInstitutionView = () => {
   const [prevYearSelection, setPrevYearSelection] = useState<string[]>([]);
   const [prevDateRangeSelection, setPrevDateRangeSelection] = useState("");
   const [showInstitutionFirstMessage, setShowInstitutionFirstMessage] = useState(false);
+  // Seed the staged selections from the draft cache first (an in-progress
+  // pick that was never Applied), falling back to the already-applied filters.
+  const draftSelectionRef = useRef<DraftSelection | null>(null);
+  if (draftSelectionRef.current === null) {
+    draftSelectionRef.current = readCachedDraftSelection() || {
+      investor_company: [],
+      institution_id: [],
+      company_name: [],
+      company_ids: [],
+    };
+  }
   const [companySelection, setCompanySelection] = useState<{ company_name: string[]; company_ids: Array<string | number> }>({
-    company_name: filters.company_name || [],
-    company_ids: filters.company_ids || [],
+    company_name: draftSelectionRef.current.company_name?.length ? draftSelectionRef.current.company_name : (filters.company_name || []),
+    company_ids: draftSelectionRef.current.company_ids?.length ? draftSelectionRef.current.company_ids : (filters.company_ids || []),
   });
+  const [institutionSelection, setInstitutionSelection] = useState<string[]>(
+    draftSelectionRef.current.investor_company?.length ? draftSelectionRef.current.investor_company : (filters.investor_company || [])
+  );
+  // Staged institution ids (selected value is institution_id, not the name)
+  const [institutionIdSelection, setInstitutionIdSelection] = useState<Array<string | number>>(
+    draftSelectionRef.current.institution_id?.length ? draftSelectionRef.current.institution_id : (filters.institution_id || [])
+  );
+  // Maps institution_name -> institution_id from org_institution responses
+  const institutionIdMapRef = useRef<Map<string, string | number>>(new Map());
+  // Reverse lookup: institution_id -> institution_name (for labels when only
+  // the id is known, e.g. the M&A multi-select defaults).
+  const institutionNameForId = (id: string | number | undefined) => {
+    if (id === undefined || id === null) return undefined;
+    for (const [name, mappedId] of institutionIdMapRef.current) {
+      if (String(mappedId) === String(id)) return name;
+    }
+    return undefined;
+  };
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const hasBootstrappedInstitutionRef = useRef(false);
   const skipNextDropdownEffectRef = useRef(false);
+  const lastStatsSignatureRef = useRef<string>("");
+  const statsLoadStartedRef = useRef(false);
   const hasSelectedInstitution = Boolean(filters.investor_company && filters.investor_company.length > 0 && filters.investor_company[0]);
+  const isInstitutionSelectionPending = useMemo(() => {
+    const draft = institutionSelection?.[0] || "";
+    const committed = filters.investor_company?.[0] || "";
+    return draft !== committed;
+  }, [institutionSelection, filters.investor_company]);
+
+
+
+  // On a fresh mount, the staged selection (restored from the draft cache) can
+  // disagree with the already-applied institution (restored from the filter
+  // cache) — e.g. the user picked a different institution but navigated away
+  // or refreshed before clicking Apply. `isInstitutionSelectionPending` then
+  // starts out permanently `true`, which blocks the dropdown/stats effects
+  // below forever (nothing else ever changes those two pieces of state back
+  // into agreement), leaving the page stuck on the loading skeleton. Resolve
+  // that once on mount by letting the already-applied institution win, so the
+  // committed view always loads instead of hanging indefinitely on an
+  // unresolved stale draft.
+  const hasReconciledInitialSelectionRef = useRef(false);
+  useEffect(() => {
+    if (hasReconciledInitialSelectionRef.current) return;
+    hasReconciledInitialSelectionRef.current = true;
+
+    if (hasSelectedInstitution && isInstitutionSelectionPending) {
+      setInstitutionSelection(filters.investor_company || []);
+      setInstitutionIdSelection(filters.institution_id || []);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-    if (isPageReloadOnce(NPX_RELOAD_SESSION_KEY)) return;
     if (!hasBootstrappedInstitutionRef.current && !hasSelectedInstitution) return;
     localStorage.setItem(NPX_FILTER_CACHE_KEY, JSON.stringify(filters));
   }, [filters]);
+
+  // Persist the staged (not-necessarily-applied) selection too, so it survives
+  // navigating away before clicking Apply instead of silently reverting.
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        NPX_DRAFT_SELECTION_CACHE_KEY,
+        JSON.stringify({
+          investor_company: institutionSelection,
+          institution_id: institutionIdSelection,
+          company_name: companySelection.company_name,
+          company_ids: companySelection.company_ids,
+        })
+      );
+    } catch {
+      /* no-op */
+    }
+  }, [institutionSelection, institutionIdSelection, companySelection]);
 
   const viewData = useMemo(() => npxProposalVotingStats || {}, [npxProposalVotingStats]);
   const byInstitution = useMemo(() => viewData.by_institution || [], [viewData]);
@@ -179,23 +292,11 @@ const NpxInstitutionView = () => {
 
   const meetingDate = searchParams.get("meeting_date") || "";
 
-  const selectedInstitution = useMemo(() => byInstitution?.[0] || {}, [byInstitution]);
-  const selectedYearKey = useMemo(() => {
-    const yearKeys = selectedInstitution?.years ? sortYearsDesc(Object.keys(selectedInstitution.years)) : [];
-    const selectedYears = sortYearsDesc(filters.year || []);
-    for (const selectedYear of selectedYears) {
-      if (selectedInstitution?.years?.[selectedYear]) return selectedYear;
-    }
-    return yearKeys[0] || selectedYears[0] || "";
-  }, [filters.year, selectedInstitution]);
-
-  const selectedYearStats = useMemo(() => {
-    if (!selectedInstitution?.years) return null;
-    return selectedInstitution.years[selectedYearKey] || null;
-  }, [selectedInstitution, selectedYearKey]);
-
   const hasStatsData = Boolean(npxProposalVotingStats);
-  const isStatsLoading = dropdownLoading || (npxProposalVotingStatsLoading && !hasStatsData);
+  // Stats/summary skeleton only covers stats requests — dropdown API calls
+  // (triggered by staged filter picks) show loaders inside the filter
+  // controls themselves via `dropdownLoading`.
+  const isStatsLoading = summaryLoading || npxProposalVotingStatsLoading;
 
   const availableDateRange = useMemo(() => {
     const range = dropdowns?.available_date_range;
@@ -295,6 +396,33 @@ const NpxInstitutionView = () => {
     setOpenGroups(nextOpenGroups);
   };
 
+  // Merge org_institution [{institution_id, institution_name}] entries into the id map
+  const mergeOrgInstitutions = (list: any[]) => {
+    (list || []).forEach((o: any) => {
+      if (o?.institution_name && o?.institution_id != null) {
+        institutionIdMapRef.current.set(o.institution_name, o.institution_id);
+      }
+    });
+  };
+
+  // Resolve institution ids for the selected names — from explicit ids first,
+  // then the org_institution name->id map.
+  const resolveInstitutionIds = (names: string[] = [], ids?: Array<string | number>) =>
+    (ids && ids.length === names.length && ids.length > 0)
+      ? ids
+      : names
+        .map((n) => institutionIdMapRef.current.get(n))
+        .filter((id): id is string | number => id != null);
+
+  // Always send institution_id — mapped institutions resolve to their id,
+  // unmapped fund-name selections keep the name inside institution_id.
+  const institutionParam = (names: string[] = [], ids?: Array<string | number>) => ({
+    institution_id: names.map((n, i) =>
+      (ids && ids[i] != null) ? ids[i] : (institutionIdMapRef.current.get(n) ?? n)
+    ),
+  });
+
+
   const loadDropdowns = async (selectedInstitution?: string[], filterOverride?: FilterState) => {
     const activeFilters = filterOverride ?? filters;
     const resolvedInstitution = selectedInstitution && selectedInstitution.length > 0
@@ -311,14 +439,41 @@ const NpxInstitutionView = () => {
 
     setDropdownLoading(true);
     try {
-      const params: any = { investor_company: resolvedInstitution };
+      const params: any = { ...institutionParam(resolvedInstitution, activeFilters.institution_id) };
       if (activeFilters.company_ids && activeFilters.company_ids.length > 0) params.company_ids = activeFilters.company_ids;
       if (activeFilters.year && activeFilters.year.length > 0) params.year = activeFilters.year;
       const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
       if (normalizedDateRange.trim()) params.date_range = normalizedDateRange;
+      if (activeFilters.index && activeFilters.index.length > 0) params.index = activeFilters.index;
+      // Vote Category selections narrow the dropdown too — regular categories
+      // via vote_category, M&A options via ma_proposal_type (same split as stats).
+      Object.assign(params, splitVoteCategoryParams(activeFilters.vote_category || []));
       if (meetingDate) params.meeting_date = meetingDate;
-      const response = await dashboardService.getDynamicNPXDropdownValues(params);
+      const response = await dashboardService.getNpxProposalVotingDropdown(params);
       if (response?.result) {
+        mergeOrgInstitutions(response.result.org_institution);
+        // Refresh staged institution labels from the id->name map once
+        // org_institution lands (ids staged before names are known render as
+        // the raw id until this resolves them).
+        setInstitutionSelection((prevNames) => {
+          const nextNames = prevNames.map((name, i) =>
+            institutionNameForId(activeFilters.institution_id?.[i]) || name
+          );
+          // Return prev when nothing resolved — a new array identity would
+          // retrigger the dropdown effect and loop the request forever.
+          return nextNames.every((n, i) => n === prevNames[i]) ? prevNames : nextNames;
+        });
+        // Backfill institution_id once org_institution resolves the selected
+        // names — cached filters predate ids and the stats calls need them.
+        const selectedNames = activeFilters.investor_company || [];
+        if (selectedNames.length > 0 && !(activeFilters.institution_id || []).length) {
+          const backfilledIds = resolveInstitutionIds(selectedNames);
+          if (backfilledIds.length === selectedNames.length && backfilledIds.length > 0) {
+            setFilters((prev) => ({ ...prev, institution_id: backfilledIds }));
+            setDraftFilters((prev) => ({ ...prev, institution_id: backfilledIds }));
+            setInstitutionIdSelection(backfilledIds);
+          }
+        }
         setDropdowns(response.result);
 
         const availableYears = sortYearsDesc(response.result.year || []);
@@ -326,6 +481,10 @@ const NpxInstitutionView = () => {
         const hasDateRange = Boolean(normalizedDateRange.trim());
         if (!hasDateRange && (!activeFilters.year || activeFilters.year.length === 0) && fallbackYear) {
           setFilters((prev) => ({
+            ...prev,
+            year: [fallbackYear],
+          }));
+          setDraftFilters((prev) => ({
             ...prev,
             year: [fallbackYear],
           }));
@@ -343,6 +502,9 @@ const NpxInstitutionView = () => {
             ...prev,
             fund_name: [],
           }));
+          setDraftFilters((prev) =>
+            prev.fund_name && prev.fund_name.length > 0 ? { ...prev, fund_name: [] } : prev
+          );
         }
       }
     } catch (err) {
@@ -352,17 +514,10 @@ const NpxInstitutionView = () => {
     }
   };
 
-  const pickDefaultInstitution = (institutions: string[]) => {
-    const blackRockMatch = institutions.find((institution) => {
-      const normalized = String(institution).toLowerCase();
-      return normalized.includes("blackrock");
-    });
-
-    return blackRockMatch || institutions[0] || "";
-  };
-
   useEffect(() => {
-    if (hasSelectedInstitution || hasBootstrappedInstitutionRef.current) {
+    // Also skip if there's already a staged (not-yet-applied) institution pick
+    // restored from the draft cache — don't clobber it with the default.
+    if (hasSelectedInstitution || hasBootstrappedInstitutionRef.current || institutionSelection.length > 0) {
       return;
     }
 
@@ -375,17 +530,20 @@ const NpxInstitutionView = () => {
             ? filters.year
             : [searchParams.get("year") || new Date().getFullYear().toString()];
 
+        // Always request a specific default institution (BlackRock Active
+        // Investment Stewardship (BAIS), id 1345) by ID rather than an
+        // unscoped call — the dropdown endpoint doesn't reliably return a
+        // browsable institution list without a filter, so there's nothing to
+        // "guess" a default from otherwise.
         const params: any = {
-          global_search: NPX_INSTITUTION_GLOBAL_SEARCH_NAME,
           year: fallbackYear,
+          institution_id: [DEFAULT_NPX_INSTITUTION_ID],
+          index: [DEFAULT_NPX_INDEX],
         };
 
         if (meetingDate) params.meeting_date = meetingDate;
 
-        const response = await dashboardService.getDynamicNPXDropdownValues(params);
-        const institutions = Array.isArray(response?.result?.all_institution)
-          ? response.result.all_institution.filter(Boolean)
-          : [];
+        const response = await dashboardService.getNpxProposalVotingDropdown(params);
 
         hasBootstrappedInstitutionRef.current = true;
 
@@ -393,19 +551,13 @@ const NpxInstitutionView = () => {
           return;
         }
 
+        mergeOrgInstitutions(response.result.org_institution);
         setDropdowns(response.result);
 
         const availableYears = sortYearsDesc(response.result.year || []);
         const resolvedYear = fallbackYear.length > 0
           ? fallbackYear
           : [availableYears[0] || new Date().getFullYear().toString()];
-
-        if ((!filters.year || filters.year.length === 0) && resolvedYear.length > 0) {
-          setFilters((prev) => ({
-            ...prev,
-            year: resolvedYear,
-          }));
-        }
 
         const fundData = Array.isArray(response.result?.fund_name) ? response.result.fund_name : [];
         const isConnectedInstitution = response.result?.is_institution !== false;
@@ -416,16 +568,39 @@ const NpxInstitutionView = () => {
         });
         setShowFundName(isConnectedInstitution && fundData.length > 0);
 
-        const defaultInstitution = pickDefaultInstitution(institutions);
+        // The rest of this view (filters, dropdown/stats calls) works off the
+        // institution name, so resolve it from the API response if it echoed
+        // one back; otherwise fall back to the known label for this ID.
+        const resolvedInstitutionName =
+          response.result?.institution_name ||
+          (Array.isArray(response.result?.institution) ? response.result.institution[0] : null) ||
+          DEFAULT_NPX_INSTITUTION;
 
-        if (defaultInstitution) {
-          setFilters((prev) => ({
-            ...prev,
-            investor_company: [defaultInstitution],
-            fund_name: [],
-          }));
-          setShowInstitutionFirstMessage(false);
-        }
+        const resolvedInstitutionId =
+          response.result?.institution_id ??
+          institutionIdMapRef.current.get(resolvedInstitutionName) ??
+          DEFAULT_NPX_INSTITUTION_ID;
+
+        // The bootstrap call above already fetched the dropdown for this
+        // exact selection — skip the dropdown effect's redundant refire.
+        skipNextDropdownEffectRef.current = true;
+        setInstitutionSelection([resolvedInstitutionName]);
+        setInstitutionIdSelection([resolvedInstitutionId]);
+        setFilters((prev) => ({
+          ...prev,
+          investor_company: [resolvedInstitutionName],
+          institution_id: [resolvedInstitutionId],
+          fund_name: [],
+          ...((!prev.year || prev.year.length === 0) && resolvedYear.length > 0 ? { year: resolvedYear } : {}),
+        }));
+        setDraftFilters((prev) => ({
+          ...prev,
+          investor_company: [resolvedInstitutionName],
+          institution_id: [resolvedInstitutionId],
+          fund_name: [],
+          ...((!prev.year || prev.year.length === 0) && resolvedYear.length > 0 ? { year: resolvedYear } : {}),
+        }));
+        setShowInstitutionFirstMessage(false);
       } catch (err) {
         console.error("[NpxInstitutionView] bootstrapDefaultInstitution error:", err);
       } finally {
@@ -436,35 +611,61 @@ const NpxInstitutionView = () => {
     bootstrapDefaultInstitution();
   }, [filters.year, hasSelectedInstitution, meetingDate, searchParams]);
 
-  const loadStats = (
+  const loadStats = async (
     page = 1,
     companyOverride?: { company_name: string[]; company_ids: Array<string | number> },
     filterOverride?: FilterState
   ) => {
-    const activeFilters = filterOverride ?? filters;
+    let activeFilters = filterOverride ?? filters;
     const hasInstitutionSelection = Boolean(activeFilters.investor_company && activeFilters.investor_company.length > 0 && activeFilters.investor_company[0]);
     if (!hasInstitutionSelection) {
       return;
     }
 
-    const investor = activeFilters.investor_company?.[0] || DEFAULT_INVESTOR;
+    // Backfill institution_id from the org_institution map if the applied
+    // filters only carry names (e.g. older cached filters).
+    if (!(activeFilters.institution_id || []).length) {
+      const resolvedIds = resolveInstitutionIds(activeFilters.investor_company || []);
+      if (resolvedIds.length === (activeFilters.investor_company || []).length && resolvedIds.length > 0) {
+        activeFilters = { ...activeFilters, institution_id: resolvedIds };
+        setFilters((prev) => ({ ...prev, institution_id: resolvedIds }));
+        setInstitutionIdSelection(resolvedIds);
+      }
+    }
+
+    const investors = activeFilters.investor_company && activeFilters.investor_company.length > 0
+      ? activeFilters.investor_company
+      : [DEFAULT_INVESTOR];
     const normalizedDateRange = typeof activeFilters.date_range === "string" ? activeFilters.date_range : "";
     const hasDateRange = Boolean(normalizedDateRange.trim());
     const resolvedYear = !hasDateRange && activeFilters.year && activeFilters.year.length > 0
       ? activeFilters.year
       : [sortYearsDesc(dropdowns.year || [])[0] || searchParams.get("year") || new Date().getFullYear().toString()];
-    const { company_name: _companyNames, ...restFilters } = activeFilters;
+    const { company_name: _companyNames, investor_company: _investorCompany, institution_id: _institutionIds, vote_category: _voteCategory, ...restFilters } = activeFilters;
     const selectedCompanyIds = companyOverride?.company_ids ?? activeFilters.company_ids ?? [];
     const payload: any = {
       view: "by_institution",
       page,
       page_size: pageSize,
-      investor_company: [investor],
+      ...institutionParam(investors, activeFilters.institution_id),
       ...restFilters,
+      ...splitVoteCategoryParams(activeFilters.vote_category || []),
       ...(selectedCompanyIds.length > 0 ? { company_ids: selectedCompanyIds } : {}),
       ...(hasDateRange ? { date_range: normalizedDateRange } : { year: resolvedYear }),
     };
     if (meetingDate) payload.meeting_date = meetingDate;
+    lastStatsSignatureRef.current = JSON.stringify([
+      activeFilters.investor_company,
+      activeFilters.institution_id,
+      activeFilters.company_ids,
+      activeFilters.year,
+      activeFilters.date_range,
+      activeFilters.index,
+      activeFilters.vote_category,
+      meetingDate,
+    ]);
+    statsLoadStartedRef.current = true;
+    setSummaryLoading(true);
     dispatch(
       fetchNpxProposalVotingStats({
         view: "by_institution",
@@ -474,8 +675,13 @@ const NpxInstitutionView = () => {
     );
   };
 
+  // Dropdown API follows the STAGED selections (draft filters + staged
+  // institution/company) so dependent options refresh on every pick — but it
+  // never triggers the stats API; that only happens on Apply.
   useEffect(() => {
-    if (!hasSelectedInstitution) {
+    const stagedInstitution = institutionSelection.length > 0 ? institutionSelection : (filters.investor_company || []);
+
+    if (!stagedInstitution.length) {
       setDropdowns({});
       setShowFundName(false);
       setApiFundNameDropdown({ fund_name: [] });
@@ -490,22 +696,72 @@ const NpxInstitutionView = () => {
       return;
     }
 
-    loadDropdowns(filters.investor_company, filters);
+    const stagedCompanyIds = companySelection.company_ids?.length ? companySelection.company_ids : (filters.company_ids || []);
+    loadDropdowns(stagedInstitution, {
+      ...draftFilters,
+      investor_company: stagedInstitution,
+      institution_id: institutionIdSelection.length ? institutionIdSelection : (filters.institution_id || []),
+      company_ids: stagedCompanyIds,
+    });
+    // Year and Vote Category are intentionally excluded — picking them only
+    // stages the value; it's still sent whenever the call fires for another
+    // staged change, and in the stats call on Apply. (M&A picks still reach
+    // the dropdown indirectly through the institution selection switch.)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, filters.investor_company, filters.company_name, filters.company_ids, meetingDate, hasSelectedInstitution]);
+  }, [
+    draftFilters.date_range,
+    draftFilters.index,
+    draftFilters.fund_name,
+    draftFilters.vote,
+    draftFilters.keyword,
+    draftFilters.proposal,
+    draftFilters.country,
+    draftFilters.meeting_date,
+    institutionSelection,
+    institutionIdSelection,
+    companySelection,
+    filters.investor_company,
+    filters.institution_id,
+    filters.company_ids,
+    meetingDate,
+  ]);
 
   useEffect(() => {
+    if (isInstitutionSelectionPending) {
+      return;
+    }
     if (!hasSelectedInstitution) {
       return;
     }
     if ((!filters.year || filters.year.length === 0) && !filters.date_range) return;
+    // Skip if loadStats already ran for this exact filter set (e.g. Apply
+    // calls it manually — avoids a duplicate heavy request when committing
+    // the staged institution flips isInstitutionSelectionPending).
+    const signature = JSON.stringify([
+      filters.investor_company,
+      filters.institution_id,
+      filters.company_ids,
+      filters.year,
+      filters.date_range,
+      filters.index,
+      filters.vote_category,
+      meetingDate,
+    ]);
+    if (lastStatsSignatureRef.current === signature) return;
     loadStats(1);
     setActivePage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.year, filters.date_range, meetingDate, hasSelectedInstitution]);
+  }, [filters.year, filters.date_range, filters.index, filters.vote_category, meetingDate, hasSelectedInstitution, isInstitutionSelectionPending]);
+
+  useEffect(() => {
+    if (statsLoadStartedRef.current && !npxProposalVotingStatsLoading) {
+      setSummaryLoading(false);
+      statsLoadStartedRef.current = false;
+    }
+  }, [npxProposalVotingStatsLoading]);
 
   const handleFilterChange = (key: keyof FilterState, value: any) => {
-    setFilters((prev) => {
+    setDraftFilters((prev) => {
       const next = { ...prev, [key]: value };
 
       if (key === "year" && Array.isArray(value) && value.length > 0) {
@@ -562,11 +818,18 @@ const NpxInstitutionView = () => {
         company_ids: updatedCompanyIds,
       };
       setCompanySelection(nextCompanySelection);
-    } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword") {
+    } else if (key === "year" || key === "investor_company" || key === "fund_name" || key === "proposal" || key === "vote" || key === "vote_category" || key === "keyword" || key === "index") {
       next[key] = (next[key] as string[] | undefined)?.filter((v) => v !== value) || [];
+      if (key === "investor_company") {
+        const removeIndex = (filters.investor_company || []).findIndex((n) => n === value);
+        next.institution_id = (next.institution_id || []).filter((_, i) => i !== removeIndex);
+        setInstitutionSelection(next.investor_company || []);
+        setInstitutionIdSelection(next.institution_id);
+      }
     }
 
     setFilters(next);
+    setDraftFilters(next);
     setActivePage(1);
     skipNextDropdownEffectRef.current = true;
     await loadDropdowns(next.investor_company, next);
@@ -574,13 +837,30 @@ const NpxInstitutionView = () => {
   };
 
   const handleInstitutionChange = async (selected: any) => {
-    const institutionValue = selected?.label ? String(selected.label) : "";
+    // Works for both single-select (option | null) and multi-select (option[]).
+    let options = Array.isArray(selected) ? selected : selected ? [selected] : [];
+    // Multi-select mode caps at 5 institutions.
+    if (options.length > 5) {
+      options = options.slice(0, 5);
+      toast.info("You can select up to 5 institutions.", { autoClose: 4000 });
+    }
+    const names: string[] = [];
+    const ids: Array<string | number> = [];
+    options.forEach((opt: any) => {
+      const name = String(opt?.label || "");
+      if (!name) return;
+      // The option value carries institution_id for mapped institutions;
+      // fall back to the id map for values that are still plain names.
+      const rawId = opt?.value;
+      const resolvedId = rawId !== undefined && rawId !== name
+        ? rawId
+        : institutionIdMapRef.current.get(name);
+      names.push(name);
+      if (resolvedId !== undefined) ids.push(resolvedId);
+    });
     setShowInstitutionFirstMessage(false);
-    setFilters((prev) => ({
-      ...prev,
-      investor_company: institutionValue ? [institutionValue] : [],
-      fund_name: [],
-    }));
+    setInstitutionSelection(names);
+    setInstitutionIdSelection(ids);
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
   };
@@ -621,22 +901,29 @@ const NpxInstitutionView = () => {
       company_ids: companySelection.company_ids,
     };
     const nextFilters: FilterState = {
-      ...filters,
+      ...draftFilters,
+      investor_company: institutionSelection,
+      institution_id: institutionIdSelection,
       company_name: appliedCompanySelection.company_name,
       company_ids: appliedCompanySelection.company_ids,
     };
 
     setShowInstitutionFirstMessage(false);
     setFilters(nextFilters);
+    setDraftFilters(nextFilters);
     setActivePage(1);
     skipNextDropdownEffectRef.current = true;
-    await loadDropdowns(filters.investor_company, nextFilters);
+    await loadDropdowns(nextFilters.investor_company, nextFilters);
     loadStats(1, appliedCompanySelection, nextFilters);
   };
 
   const handleClear = () => {
     const fallbackYear = sortYearsDesc(dropdowns.year || [])[0] || new Date().getFullYear().toString();
-    setFilters({ investor_company: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "" });
+    const clearedFilters: FilterState = { investor_company: [], institution_id: [], company_name: [], company_ids: [], year: [fallbackYear], fund_name: [], date_range: "", index: [DEFAULT_NPX_INDEX] };
+    setFilters(clearedFilters);
+    setDraftFilters(clearedFilters);
+    setInstitutionSelection([]);
+    setInstitutionIdSelection([]);
     setCompanySelection({ company_name: [], company_ids: [] });
     setShowFundName(false);
     setApiFundNameDropdown({ fund_name: [] });
@@ -645,16 +932,18 @@ const NpxInstitutionView = () => {
     setShowInstitutionFirstMessage(false);
     setActivePage(1);
     localStorage.removeItem(NPX_FILTER_CACHE_KEY);
+    localStorage.removeItem(NPX_DRAFT_SELECTION_CACHE_KEY);
   };
 
   const handleDownload = () => {
     if (!hasSelectedInstitution) return;
-    const { company_name: _companyNames, ...restFilters } = filters;
+    const { company_name: _companyNames, investor_company: _investorCompany, institution_id: _institutionIds, vote_category: _voteCategory, ...restFilters } = filters;
     const params: any = {
       view: "by_institution",
       download: true,
-      investor_company: filters.investor_company,
+      ...institutionParam(filters.investor_company || [], filters.institution_id),
       ...restFilters,
+      ...splitVoteCategoryParams(filters.vote_category || []),
       ...(filters.company_ids && filters.company_ids.length > 0 ? { company_ids: filters.company_ids } : {}),
     };
     if (filters.date_range && filters.date_range.trim()) {
@@ -713,10 +1002,39 @@ const NpxInstitutionView = () => {
     [apiFundNameDropdown.fund_name, dropdowns.fund_name]
   );
   const voteOptions = useMemo(() => toOptions(uniqueStrings(dropdowns.vote || [])), [dropdowns.vote]);
-  const voteCategoryOptions = useMemo(
-    () => toOptions(uniqueStrings(dropdowns.vote_category || [])),
-    [dropdowns.vote_category]
-  );
+  // Vote Category options = API taxonomy + the M&A proposal types (shown as
+  // flat selectable rows alongside the existing categories).
+  const voteCategoryTaxonomy = useMemo(() => {
+    const taxonomy = Array.isArray(dropdowns?.vote_category_taxonomy) ? dropdowns.vote_category_taxonomy : [];
+    const maOptions = uniqueStrings(
+      (Array.isArray(dropdowns?.ma_proposal_type) && dropdowns.ma_proposal_type.length > 0)
+        ? dropdowns.ma_proposal_type
+        : MA_PROPOSAL_TYPES
+    );
+    // "Others" always renders last in the category dropdown.
+    const others: any[] = [];
+    const regular = taxonomy.filter((item: any) => {
+      if (/^others?$/i.test(String(item?.parent_value || item?.parent_category || ""))) {
+        others.push(item);
+        return false;
+      }
+      return true;
+    });
+    return [
+      ...regular,
+      ...maOptions.map((value) => ({
+        parent_category: value,
+        parent_value: value,
+        has_children: false,
+        child_count: 0,
+        child_categories: [],
+        child_paths: [],
+        children: [],
+      })),
+      ...others,
+    ];
+  }, [dropdowns?.vote_category_taxonomy, dropdowns?.ma_proposal_type]);
+  const indexOptions = useMemo(() => toOptions(uniqueStrings(dropdowns.index || [])), [dropdowns.index]);
   const keywordOptions = useMemo(
     () => toOptions(uniqueStrings(dropdowns.synonyms || dropdowns.keyword || [])),
     [dropdowns.synonyms, dropdowns.keyword]
@@ -724,11 +1042,15 @@ const NpxInstitutionView = () => {
 
   const selectedInstitutionValue = useMemo(
     () => {
-      const selected = filters.investor_company?.[0];
-      return selected ? { value: selected, label: selected } : null;
+      const selected = institutionSelection?.[0];
+      if (!selected) return null;
+      const selectedId = institutionIdSelection?.[0] ?? institutionIdMapRef.current.get(selected);
+      return { value: selectedId ?? selected, label: selected };
     },
-    [filters.investor_company]
+    [institutionSelection, institutionIdSelection]
   );
+
+
 
   const selectedCompanyValues = useMemo(
     () =>
@@ -749,6 +1071,7 @@ const NpxInstitutionView = () => {
       ...(filters.vote || []).map((value) => ({ label: "Vote", value, key: "vote" as keyof FilterState })),
       ...(filters.vote_category || []).map((value) => ({ label: "Vote Category", value, key: "vote_category" as keyof FilterState })),
       ...(filters.keyword || []).map((value) => ({ label: "Keyword", value, key: "keyword" as keyof FilterState })),
+      ...(filters.index || []).map((value) => ({ label: "Index", value, key: "index" as keyof FilterState })),
       ...(meetingDate ? [{ label: "Meeting Date", value: meetingDate, key: null }] : []),
     ];
     return chips;
@@ -782,24 +1105,49 @@ const NpxInstitutionView = () => {
   };
 
   const renderSummaryCard = () => {
-    if (!selectedInstitution) return null;
+    const institutions = Array.isArray(byInstitution) ? byInstitution : [];
 
-    const hasSummaryData = Boolean(
-      selectedYearStats &&
-      (
-        selectedYearStats.unique_companies !== undefined ||
-        selectedYearStats.total_proposals !== undefined ||
-        selectedYearStats.for_votes !== undefined ||
-        selectedYearStats.split_votes !== undefined ||
-        selectedYearStats.against_votes !== undefined ||
-        selectedYearStats.withhold_votes !== undefined ||
-        selectedYearStats.abstain_votes !== undefined ||
-        selectedYearStats.aligned_with_mgmt !== undefined ||
-        selectedYearStats.alignment_percentage !== undefined
+    // Union of all years across institutions, newest first — same shape as
+    // Institution Insights › Voting Data (one table, institutions as column
+    // groups, years nested under each). Only the applied Year selections are
+    // shown — the API can echo back extra years (e.g. prior-year comparisons)
+    // that Voting Data does not display.
+    const appliedYearSet =
+      filters.year && filters.year.length > 0 && !(filters.date_range || "").trim()
+        ? new Set(filters.year.map(String))
+        : null;
+    // Per-institution year keys — an institution that didn't return a given
+    // year simply doesn't get that column (no placeholder "-" cells).
+    const institutionYearKeys = institutions.map((inst: any) =>
+      sortYearsDesc(
+        Object.keys(inst?.years || {}).filter(
+          (yearKey) => !appliedYearSet || appliedYearSet.has(yearKey)
+        )
       )
     );
 
+    const hasSummaryData = institutions.some((inst: any) =>
+      Object.keys(inst?.years || {}).some((yearKey) => {
+        const stats = inst?.years?.[yearKey];
+        return Boolean(
+          stats &&
+          (
+            stats.unique_companies !== undefined ||
+            stats.total_proposals !== undefined ||
+            stats.for_votes !== undefined ||
+            stats.split_votes !== undefined ||
+            stats.against_votes !== undefined ||
+            stats.withhold_votes !== undefined ||
+            stats.abstain_votes !== undefined ||
+            stats.aligned_with_mgmt !== undefined ||
+            stats.alignment_percentage !== undefined
+          )
+        );
+      })
+    );
+
     if (!hasSummaryData) {
+      if (!institutions.length) return null;
       return (
         <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8">
           <div className="bg-primary text-white px-6 py-3 rounded-t-2xl">
@@ -814,68 +1162,132 @@ const NpxInstitutionView = () => {
       );
     }
 
-    const summaryRows = [
+    const summaryMetrics: Array<{
+      label: string;
+      getValue: (stats: any) => string;
+    }> = [
       {
         label: "No. of unique companies",
-        value: formatNumberWithCommas(selectedYearStats?.unique_companies),
+        getValue: (stats) => formatNumberWithCommas(stats?.unique_companies),
       },
       {
         label: "No of proposals",
-        value: formatNumberWithCommas(selectedYearStats?.total_proposals),
+        getValue: (stats) => formatNumberWithCommas(stats?.total_proposals),
       },
       {
         label: "No. of FOR votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.for_votes)} (${formatValue(selectedYearStats?.for_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.for_votes)} (${formatValue(stats?.for_percentage)}%)`,
       },
       {
         label: "No. of SPLIT votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.split_votes)} (${formatValue(selectedYearStats?.split_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.split_votes)} (${formatValue(stats?.split_percentage)}%)`,
       },
       {
         label: "No. of AGAINST votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.against_votes)} (${formatValue(selectedYearStats?.against_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.against_votes)} (${formatValue(stats?.against_percentage)}%)`,
       },
       {
         label: "No. of WITHHOLD votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.withhold_votes)} (${formatValue(selectedYearStats?.withhold_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.withhold_votes)} (${formatValue(stats?.withhold_percentage)}%)`,
       },
       {
         label: "No. of Abstain votes",
-        value: `${formatNumberWithCommas(selectedYearStats?.abstain_votes)} (${formatValue(selectedYearStats?.abstain_percentage)}%)`,
+        getValue: (stats) => `${formatNumberWithCommas(stats?.abstain_votes)} (${formatValue(stats?.abstain_percentage)}%)`,
       },
     ];
 
-    const dateRange = selectedYearStats?.date_range
-      ? `(${selectedYearStats.date_range.start_meeting || "-"} - ${selectedYearStats.date_range.end_meeting || "-"})`
-      : "";
+    const getDateRangeLabel = (stats: any) =>
+      stats?.date_range
+        ? `${stats.date_range.start_meeting || "-"} - ${stats.date_range.end_meeting || "-"}`
+        : "";
+
+    // Same layout rule as Exec. Comp. Voting Data: the compact fixed-width
+    // table only works when every institution has a single year column. Once
+    // any institution spans multiple columns, switch to an auto-sized
+    // horizontally scrollable table with min-width cells.
+    const maxColumnsPerInstitution = Math.max(
+      1,
+      ...institutionYearKeys.map((keys) => keys.length || 1)
+    );
+    const isWideLayout = maxColumnsPerInstitution > 1;
 
     return (
-      <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8">
-        <table className="w-full mx-auto rounded-xl overflow-hidden">
-          <thead>
-            <tr className="bg-primary text-white text-base">
-              <th className="px-6 py-3 text-left font-semibold rounded-tl-2xl" rowSpan={2}>
-                Summary
-              </th>
-              <th className="px-6 py-3 pb-2 text-center font-semibold rounded-tr-2xl">
-                {selectedInstitution.institution_name || "-"}
-              </th>
-            </tr>
-            <tr className="bg-primary text-white text-base">
-              <th className="px-6 py-3 pt-0 text-center font-semibold">
-                {dateRange && <div className="text-xs font-semibold mt-1">{dateRange}</div>}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="text-gray-700 text-base divide-y divide-gray-100">
-            {summaryRows.map((row) => (
-              <tr key={row.label}>
-                <td className="px-6 py-3 font-medium">{row.label}</td>
-                <td className="px-6 py-3 text-center">{row.value}</td>
+      <div className="rounded-2xl shadow-lg bg-white p-0 md:p-4 border border-gray-100 mb-8 overflow-hidden">
+        <div className="overflow-x-auto">
+          {/* table-fixed in both modes: column widths come from the explicit
+              w-[130px] year cells, so a long institution name wraps to a
+              second line instead of stretching its columns. */}
+          <table className={isWideLayout ? "table-fixed w-max min-w-full" : "min-w-full table-fixed"}>
+            <thead>
+              <tr>
+                <th
+                  rowSpan={2}
+                  className={clsx(
+                    "text-left text-sm font-semibold text-white bg-primary py-3 px-4 align-middle",
+                    isWideLayout ? "w-[160px] sticky left-0 z-10" : "w-64"
+                  )}
+                >
+                  Summary
+                </th>
+                {institutions.map((institution: any, instIdx: number) => (
+                  <th
+                    key={institution?.institution_id ?? institution?.institution_name ?? instIdx}
+                    colSpan={Math.max(institutionYearKeys[instIdx]?.length || 0, 1)}
+                    className="text-center text-sm font-semibold text-white bg-primary py-3 px-2 border-l border-white/20 break-words leading-snug"
+                  >
+                    {institution?.institution_name || "-"}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+              <tr>
+                {institutions.map((institution: any, instIdx: number) =>
+                  (institutionYearKeys[instIdx] || []).map((yearKey) => {
+                    const dateRange = getDateRangeLabel(institution?.years?.[yearKey]);
+                    return (
+                      <th
+                        key={`${institution?.institution_id ?? instIdx}-${yearKey}`}
+                        className={clsx(
+                          "text-center text-sm font-semibold text-white bg-primary/90 py-2 px-2 border-l border-white/10 leading-tight",
+                          isWideLayout && "whitespace-nowrap w-[130px]"
+                        )}
+                      >
+                        <div>{yearKey}</div>
+                        {dateRange && <div className="text-[13px] font-normal opacity-80 mt-0.5">{dateRange}</div>}
+                      </th>
+                    );
+                  })
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {summaryMetrics.map((metric) => (
+                <tr key={metric.label} className="border-t border-slate-100 hover:bg-slate-50">
+                  <td
+                    className={clsx(
+                      "py-3 px-4 text-sm font-medium text-slate-700 break-words",
+                      isWideLayout && "w-[160px] sticky left-0 z-10 bg-white"
+                    )}
+                  >
+                    {metric.label}
+                  </td>
+                  {institutions.map((institution: any, instIdx: number) =>
+                    (institutionYearKeys[instIdx] || []).map((yearKey) => (
+                      <td
+                        key={`${institution?.institution_id ?? instIdx}-${yearKey}`}
+                        className={clsx(
+                          "py-3 px-2 text-sm text-slate-700 text-center whitespace-nowrap",
+                          isWideLayout && "w-[130px]"
+                        )}
+                      >
+                        {metric.getValue(institution?.years?.[yearKey])}
+                      </td>
+                    ))
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -918,15 +1330,16 @@ const NpxInstitutionView = () => {
                     <table className="w-full table-fixed">
                       <thead>
                         <tr className="bg-primary text-white text-sm">
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[30%] border-b border-r border-white/30">Proposal</th>
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[18%] border-b border-r border-white/30">Category</th>
-                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[20%] border-b border-r border-white/30">Fund</th>
-                          <th colSpan={3} className="px-4 py-2 text-center text-sm font-semibold border-b border-white/30">Details of Vote</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[26%] border-b border-r border-white/30">Proposal</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[15%] border-b border-r border-white/30">Category</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[17%] border-b border-r border-white/30">Fund</th>
+                          <th colSpan={3} className="px-4 py-2 text-center text-sm font-semibold border-b border-r border-white/30">Details of Vote</th>
+                          <th rowSpan={2} className="px-4 py-2 text-left align-middle font-semibold w-[10%] border-b border-white/30">Source</th>
                         </tr>
                         <tr className="bg-primary text-white text-sm">
                           <th className="px-4 py-2 text-left font-semibold w-[12%] border-r border-white/30">Shares Voted</th>
                           <th className="px-4 py-2 text-left font-semibold w-[8%] border-r border-white/30">Vote</th>
-                          <th className="px-4 py-2 text-left font-semibold w-[12%]">For/Against Management</th>
+                          <th className="px-4 py-2 text-left font-semibold w-[12%] border-r border-white/30">For/Against Management</th>
                         </tr>
                       </thead>
                       <tbody className="text-gray-700 text-sm divide-y divide-gray-100">
@@ -935,26 +1348,41 @@ const NpxInstitutionView = () => {
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.proposal)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.vote_category)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.fund_name)}</td>
-                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.shares_voted)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.shares_voted_split)}</td>
                             <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">
                               <span
                                 className={clsx(
-                                  (String(proposal.vote).includes("Against") || String(proposal.vote).includes("Withhold")) &&
+                                  (String(proposal.vote_split).includes("Against") || String(proposal.vote_split).includes("Withhold")) &&
                                     "text-red-700 font-semibold"
                                 )}
                               >
-                                {String(proposal.vote).includes("Against/Withhold") ? (
+                                {String(proposal.vote_split).includes("Against/Withhold") ? (
                                   <span className="whitespace-normal leading-tight">
                                     <span>Against/</span>
                                     <br />
                                     <span>Withhold</span>
                                   </span>
                                 ) : (
-                                  formatValue(proposal.vote)
+                                  formatValue(proposal.vote_split)
                                 )}
                               </span>
                             </td>
-                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.mgt_rec)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">{formatValue(proposal.for_or_against_management_split)}</td>
+                            <td className="px-4 py-2 text-left align-top break-words whitespace-normal leading-tight">
+                              {proposal.index_link ? (
+                                <a
+                                  href={proposal.index_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline inline-flex items-center gap-1"
+                                >
+                                  <Lucide icon="ExternalLink" className="w-3.5 h-3.5" />
+                                  View
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1017,7 +1445,7 @@ const NpxInstitutionView = () => {
           <div className="flex flex-col sm:flex-row gap-x-3 gap-y-2 sm:ml-auto items-center">
             <div className="flex items-center gap-2">
               <div className="flex gap-2">
-                <Tippy content="Download Excel">
+                <Tippy content="Download Excel" options={{ theme: "light" }}>
                   <button
                     type="button"
                     className={`box p-[5px] transition-opacity duration-200 ${downloadLoading ? "cursor-wait opacity-80" : "cursor-pointer"}`}
@@ -1050,6 +1478,12 @@ const NpxInstitutionView = () => {
 
         {renderFilterChips()}
 
+        <InstitutionSplitNotice
+          institutionIds={filters.institution_id || []}
+          years={filters.year || []}
+          dateRange={filters.date_range || ""}
+        />
+
         {isFilterCollapse && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
             <div className="flex justify-between items-center mb-6">
@@ -1061,15 +1495,21 @@ const NpxInstitutionView = () => {
                   className="w-full sm:w-auto flex items-center gap-2"
                   type="button"
                 >
-                  <MdOutlineClear /> Clear All
+                  <MdOutlineClear /> Clear
                 </Button>
                 <Button
                   variant="primary"
                   onClick={handleApply}
                   className="w-full sm:w-auto flex items-center gap-2"
                   type="button"
+                  disabled={dropdownLoading}
                 >
-                  <FaSearch className="text-lg" /> Apply
+                  {dropdownLoading ? (
+                    <LoadingIcon icon="tail-spin" color="#ffffff" className="w-4 h-4" />
+                  ) : (
+                    <FaSearch className="text-lg" />
+                  )}
+                  {dropdownLoading ? "Processing..." : "Apply"}
                 </Button>
               </div>
             </div>
@@ -1088,8 +1528,8 @@ const NpxInstitutionView = () => {
                 <CompanySelect
                   isInstitution={true}
                   value={selectedInstitutionValue}
-                  companyGlobalSearchName={NPX_INSTITUTION_GLOBAL_SEARCH_NAME}
-                  year={filters.year?.[0] || defaultYear}
+                  useProposalVotingStatsDropdown={true}
+                  year={draftFilters.year?.[0] || defaultYear}
                   isClearable={true}
                   onChange={(option: any) => handleInstitutionChange(option)}
                   placeholder="Select Investor Company(s)"
@@ -1103,7 +1543,7 @@ const NpxInstitutionView = () => {
                 <MultiSelectDropdown
                   data={yearOptions}
                   loading={dropdownLoading}
-                  selectedOption={(filters.date_range ? [] : (filters.year && filters.year.length > 0 ? filters.year : [defaultYear])).filter(Boolean)}
+                  selectedOption={(draftFilters.date_range ? [] : (draftFilters.year && draftFilters.year.length > 0 ? draftFilters.year : [defaultYear])).filter(Boolean)}
                   onChange={(opts) => handleFilterChange("year", opts.map((o) => o.value))}
                   placeholder="Select Year"
                 />
@@ -1117,7 +1557,7 @@ const NpxInstitutionView = () => {
                     <Lucide icon="Calendar" className="w-4 h-4" />
                   </div>
                   <Litepicker
-                    value={filters.date_range || ""}
+                    value={draftFilters.date_range || ""}
                     onChange={(e) => {
                       const nextValue = e.target.value || "";
                       handleFilterChange("date_range", nextValue);
@@ -1154,37 +1594,49 @@ const NpxInstitutionView = () => {
                   <MultiSelectDropdown
                     data={fundOptions}
                     loading={dropdownLoading || getFundNameDropdownLoader}
-                    selectedOption={filters.fund_name || []}
+                    selectedOption={draftFilters.fund_name || []}
                     onChange={(opts) => handleFilterChange("fund_name", opts.map((o) => o.value))}
                     placeholder="Select Fund(s)"
                   />
                 </div>
               ) : null}
-              <div className="order-7">
+              <div className="order-5">
+                <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
+                  <FaLayerGroup className="text-gray-400" /> Index
+                </label>
+                <MultiSelectDropdown
+                  data={indexOptions}
+                  loading={dropdownLoading}
+                  selectedOption={draftFilters.index || []}
+                  onChange={(opts) => handleFilterChange("index", opts.map((o) => o.value))}
+                  placeholder="Select Index"
+                />
+              </div>
+              <div className="order-8">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaCheckCircle className="text-gray-400" /> Vote
                 </label>
                 <MultiSelectDropdown
                   data={voteOptions}
                   loading={dropdownLoading}
-                  selectedOption={filters.vote || []}
+                  selectedOption={draftFilters.vote || []}
                   onChange={(opts) => handleFilterChange("vote", opts.map((o) => o.value))}
                   placeholder="Select Vote(s)"
                 />
               </div>
-              <div className="order-6">
+              <div className="order-7">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaListUl className="text-gray-400" /> Vote Category
                 </label>
-                <MultiSelectDropdown
-                  data={voteCategoryOptions}
+                <VoteCategoryTaxonomySelect
+                  taxonomy={voteCategoryTaxonomy}
+                  selectedValues={draftFilters.vote_category || []}
                   loading={dropdownLoading}
-                  selectedOption={filters.vote_category || []}
-                  onChange={(opts) => handleFilterChange("vote_category", opts.map((o) => o.value))}
                   placeholder="Select Category(s)"
+                  onChange={(values) => handleFilterChange("vote_category", values)}
                 />
               </div>
-              <div className="order-5">
+              <div className="order-6">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaBuilding className="text-gray-400" /> Company
                 </label>
@@ -1198,7 +1650,7 @@ const NpxInstitutionView = () => {
                   isClearable={true}
                 />
               </div>
-              <div className="order-8">
+              <div className="order-9">
                 <label className="flex items-center gap-2 text-slate-600 font-semibold mb-1">
                   <FaTags className="text-gray-400" /> Keywords (Beta)
                   <Tippy content="Keyword search applies on proposal text" options={{ theme: "light" }}>
@@ -1209,7 +1661,7 @@ const NpxInstitutionView = () => {
                 </label>
                 <CreatableInputSelect
                   placeholder="Type and press Enter to add keywords"
-                  value={filters.keyword || []}
+                  value={draftFilters.keyword || []}
                   onChange={(vals) => handleFilterChange("keyword", vals)}
                   options={keywordOptions.map((o) => o.value)}
                   loading={dropdownLoading}

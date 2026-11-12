@@ -3,6 +3,8 @@ import { Dialog, Popover, Tab } from "@/components/Base/Headless";
 import { toast } from "react-toastify";
 import { FormCheck, FormInput, FormSwitch } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
+import Litepicker from "@/components/Base/Litepicker";
+import dayjs from "dayjs";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import _ from "lodash";
 import { AppDispatch } from "@/stores/store";
@@ -382,6 +384,7 @@ function ShareHolderProposal() {
       : false
   );
   const [filtersLength, setFiltersLength] = useState<number>(0);
+  const [filterValidationMessage, setFilterValidationMessage] = useState("");
   const [selectedChipFilters, setSelectedChipFilters] = useState<any>([]);
   const [keywordDropdownOptions, setKeywordDropdownOptions] = useState<string[]>([]);
   const [keywordLoading, setKeywordLoading] = useState(false);
@@ -396,6 +399,46 @@ function ShareHolderProposal() {
       index: [],
       sector: [],
     });
+
+  const availableDateRange = useMemo(() => {
+    const range = apiDropdownOptions?.available_date_range;
+    if (!range?.start_meeting || !range?.end_meeting) return null;
+
+    const startDate = dayjs(range.start_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+    const endDate = dayjs(range.end_meeting, ["DD MMM, YYYY", "D MMM, YYYY"], true);
+
+    if (!startDate.isValid() || !endDate.isValid()) return null;
+
+    return {
+      startDate: startDate.format("YYYY-MM-DD"),
+      endDate: endDate.format("YYYY-MM-DD"),
+    };
+  }, [apiDropdownOptions?.available_date_range]);
+
+  const datePickerBounds = useMemo(() => {
+    const fallbackStart = availableDateRange?.startDate || "2022-01-01";
+    const fallbackEnd = availableDateRange?.endDate || new Date().toISOString().split("T")[0];
+
+    return {
+      minYear: Number(fallbackStart.slice(0, 4)),
+      maxYear: Number(fallbackEnd.slice(0, 4)),
+      startDate: fallbackStart,
+      endDate: fallbackEnd,
+    };
+  }, [availableDateRange]);
+
+  // Navigate the calendar to the latest/selected year exactly when it opens,
+  // without affecting the currently selected/displayed date range value.
+  const handleDateRangePickerShow = (picker: any) => {
+    const targetYear = datePickerBounds.endDate.slice(0, 4);
+    if (!targetYear) return;
+    try {
+      picker.gotoDate(new Date(`${targetYear}-01-01`), 0);
+      picker.gotoDate(new Date(`${targetYear}-02-01`), 1);
+    } catch (err) {
+      console.error("[ShareholderProposals] Failed to navigate date picker:", err);
+    }
+  };
 
   const [monthDropdownOption, setMonthDropdownOption] = useState<any>(month);
 
@@ -547,6 +590,7 @@ function ShareHolderProposal() {
       nl_exist: filters?.nl_exist,
       index: filters?.index ?? undefined,
       anti_category: filters?.anti_category || [],
+      date_range: filters?.date_range || "",
       global_search:
         isCompanySource
           ? filters?.global_search?.map((item: string) => ({
@@ -557,6 +601,16 @@ function ShareHolderProposal() {
     },
   });
 
+  useEffect(() => {
+    const subscription = watch(() => {
+      if (filterValidationMessage) {
+        setFilterValidationMessage("");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [filterValidationMessage, watch]);
+
   const resetFormValues: any = () => {
     setValue("category", []);
     setValue("keyword", []);
@@ -564,6 +618,7 @@ function ShareHolderProposal() {
     setValue("sector", []);
     setValue("status", []);
     setValue("year", []);
+    setValue("date_range", "");
     setValue("proxy_season", []);
     setValue("proponent_name", []);
     setValue("global_search", []);
@@ -856,6 +911,13 @@ function ShareHolderProposal() {
       } = filters;
     }
 
+    // Date Range is only a valid filter on the proposal ("All Proposals")
+    // tab — don't let it count towards other tabs' filter count or show up
+    // as a chip there, even though it stays in the shared `filters` object.
+    if (tab !== "proposal") {
+      delete (restFilters as any).date_range;
+    }
+
     setFiltersLength(
       countIndividualFilters(
         isAllCompanySelected === false
@@ -898,6 +960,7 @@ function ShareHolderProposal() {
         setProposalCount(0);
         setNoActionCount(0);
         setWithdrawnCount(0);
+        setLoading(false);
         return;
       }
 
@@ -928,6 +991,11 @@ function ShareHolderProposal() {
           wFilters.index = wFilters.index_name;
           delete wFilters.index_name;
         }
+        // Date Range only applies to the proposal ("All Proposals") tab —
+        // strip it from the No Action and Withdrawn requests.
+        delete (wFilters as any).date_range;
+        const noActionFilters = { ...pnaFilters };
+        delete (noActionFilters as any).date_range;
 
         const proposalTableUrl = createDynamicURL(
           tabUrls.proposal,
@@ -942,7 +1010,7 @@ function ShareHolderProposal() {
         );
         const noActionUrl = createDynamicURL(
           tabUrls["no-action"],
-          pnaFilters,
+          noActionFilters,
           undefined,
           page
         );
@@ -1021,13 +1089,41 @@ function ShareHolderProposal() {
     withdrawnCount,
   ]);
 
-  const getAllShareholderDropdowns = async () => {
+  const getAllShareholderDropdowns = async (dateRange?: string) => {
     try {
       setGetDropdownLoader(true);
-      const res = await getCachedShareholderDropdownValues();
+      const res = await getCachedShareholderDropdownValues(
+        dateRange ? { date_range: dateRange } : undefined
+      );
       if (res.result) {
         setApiDropdownOptions({ ...res.result });
       }
+    } catch (error) {
+      return error;
+    } finally {
+      setGetDropdownLoader(false);
+    }
+  };
+
+  // On the company-scoped page, "All Proxy Years" previously stayed empty
+  // because the dropdown call above only runs for the global Market
+  // Analytics page. `/get_shareholder_dropdown_values/` is the only real
+  // dropdown-options endpoint — it's shared by Proposal and Withdrawn.
+  // `/get_shareholder_noaction_proposal/` is NOT a dropdown endpoint: it
+  // requires a numeric `company` id + `year` and returns proposals to link
+  // a No Action letter to, so it can't be used here (and 500s on `global_search`).
+  const getCompanyProxyYears = async (companyName: string) => {
+    if (!companyName) return;
+    try {
+      setGetDropdownLoader(true);
+      const res = await shareHolderProposalService.getShareHolderDropdownValues({
+        global_search: companyName,
+      });
+      const years: string[] = Array.from(
+        new Set<string>((res?.result?.year || []).map((y: any) => String(y)))
+      ).sort((a: string, b: string) => Number(b) - Number(a));
+
+      setApiDropdownOptions((prev) => ({ ...prev, year: years }));
     } catch (error) {
       return error;
     } finally {
@@ -1049,10 +1145,14 @@ function ShareHolderProposal() {
   }, [tab]);
 
   useEffect(() => {
-    if (routeReady && !isCompanySource) {
-      getAllShareholderDropdowns();
+    if (!routeReady) return;
+    if (isCompanySource) {
+      getCompanyProxyYears(companyGlobalSearchName || filters?.global_search?.[0]);
+    } else {
+      getAllShareholderDropdowns(filters.date_range);
     }
-  }, [isCompanySource, routeReady]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCompanySource, routeReady, filters.date_range, companyGlobalSearchName]);
 
   const handleNextPage = () => {
     if (page < currentTotalPages) {
@@ -1097,6 +1197,7 @@ function ShareHolderProposal() {
       return;
     }
 
+    setLoading(true);
     reset();
     resetFormValues();
     dispatch(resetFilter());
@@ -1113,6 +1214,7 @@ function ShareHolderProposal() {
     }
 
     setSearchTerms([]);
+    setLoading(true);
     reset();
     resetFormValues();
     dispatch(resetFilter());
@@ -1179,27 +1281,32 @@ function ShareHolderProposal() {
   ]);
 
   const onSubmit = async (shareHolderFilters: ShareHolderFilter) => {
+    const selectedCompanies = Array.isArray(shareHolderFilters?.global_search)
+      ? shareHolderFilters.global_search
+          .map((item: any) => item?.label ?? item?.value ?? item)
+          .filter((item: any) => typeof item === "string" && item.trim())
+      : [];
     const nextFilters = {
       ...shareHolderFilters,
       proxy_season: [],
       proponent_name: searchTerms,
       global_search: isAllCompanySelected
-        ? Array.isArray(shareHolderFilters?.global_search)
-          ? shareHolderFilters?.global_search.map((item: any) => item.label)
-          : []
+        ? selectedCompanies
         : [companyGlobalSearchName],
     };
+    const filtersToValidate = isAllCompanySelected
+      ? nextFilters
+      : { ...nextFilters, global_search: [] };
 
-    const { global_search, ...userSelectedFilters } = nextFilters as any;
-
-    if (countValidFilters(userSelectedFilters) === 0) {
-      setIsFilterCollapse(!isFilterCollapse);
+    if (countValidFilters(filtersToValidate as any) === 0) {
+      setFilterValidationMessage("Please select at least one filter.");
       return;
     }
 
+    setFilterValidationMessage("");
+    setLoading(true);
     dispatch(setAllFilters(nextFilters));
-    setIsFilterCollapse(!isFilterCollapse);
-
+    setIsFilterCollapse(false);
     dispatch(resetPage());
   };
 
@@ -1455,6 +1562,7 @@ function ShareHolderProposal() {
       }
     }
 
+    setLoading(true);
     setValue(removeKey, updatedFilters[removeKey]);
     dispatch(setAllFilters(updatedFilters));
   };
@@ -1498,7 +1606,7 @@ function ShareHolderProposal() {
     }
 
     // Convert year to proxy_season for proposal/no-action tabs, keep year for withdrawn
-    const downloadFilters = tab === "withdrawn"
+    const downloadFilters: any = tab === "withdrawn"
       ? {
         ...filters,
         ...(filters.proxy_season?.length > 0 && { year: filters.proxy_season, proxy_season: [] })
@@ -1507,6 +1615,10 @@ function ShareHolderProposal() {
         ...filters,
         ...(filters.year?.length > 0 && { proxy_season: filters.year, year: [] })
       };
+    // Date Range only applies to the proposal ("All Proposals") tab.
+    if (tab !== "proposal") {
+      delete downloadFilters.date_range;
+    }
 
     downloadFileFromAPI({
       url: createDynamicURL(`${baseURL}${tabURL}`, downloadFilters, undefined, page),
@@ -1770,7 +1882,14 @@ function ShareHolderProposal() {
                   <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 transition-all duration-300">
                     {/* Filter Content */}
                     <div className="mb-6 flex justify-between items-center">
-                      <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold text-slate-700">Filters</h3>
+                        {filterValidationMessage && (
+                          <p className="text-sm font-medium text-danger" role="alert">
+                            {filterValidationMessage}
+                          </p>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline-secondary"
@@ -1785,7 +1904,7 @@ function ShareHolderProposal() {
 
                         <Button
                           variant="primary"
-                          onClick={handleSubmit(onSubmit)}
+                          type="submit"
                           className="w-full sm:w-auto flex items-center gap-2"
                         >
                           <FaSearch className="text-lg" /> Apply
@@ -1871,9 +1990,13 @@ function ShareHolderProposal() {
                                         ? apiDropdownOptions.category.map((item: any) => item.value || item)
                                         : []
                                     );
-                                    getSubCategoryDropdown(
-                                      apiDropdownOptions.category
-                                    );
+                                    if (e.target.checked) {
+                                      getSubCategoryDropdown(
+                                        apiDropdownOptions.category
+                                      );
+                                    } else {
+                                      setValue("sub_category", []);
+                                    }
                                   }}
                                 />
                               </FormCheck>
@@ -1893,8 +2016,12 @@ function ShareHolderProposal() {
                                 const selectedValues = selectedOptions.map((option) => option.value);
                                 field.onChange(selectedValues);
                                 getSubCategoryDropdown(selectedValues);
-
-
+                                // Sub Category is only shown while a Category is
+                                // selected — clear any stale selection so it
+                                // doesn't stay applied once hidden.
+                                if (selectedValues.length === 0) {
+                                  setValue("sub_category", []);
+                                }
 
                               }}
                               selectedOption={field.value || []}
@@ -1927,75 +2054,124 @@ function ShareHolderProposal() {
                         />
                       </div>
 
-                      <div className="w-full">
-                        <div className="text-left text-slate-500 flex justify-between mb-1">
-                          <span className="flex items-center gap-2 text-slate-600 font-semibold">
-                            <FaListUl className="text-gray-400" /> Sub Category
-                          </span>
-                          {apiSubCategoryDropdown.sub_category?.length > 0 && (
-                            <div>
-                              <FormCheck className="mr-2">
-                                <FormCheck.Label>Select All</FormCheck.Label>
-                                <FormCheck.Input
-                                  className="ml-1"
-                                  id="sub_category"
-                                  checked={
-                                    apiSubCategoryDropdown.sub_category
-                                      .length === watch("sub_category")?.length
-                                  }
-                                  type="checkbox"
-                                  onChange={(e) => {
-                                    setValue(
-                                      "sub_category",
-                                      e.target.checked
-                                        ? apiSubCategoryDropdown.sub_category.map((item: any) => item.value || item)
-                                        : []
-                                    );
-                                  }}
-                                />
-                              </FormCheck>
-                            </div>
-                          )}
-                        </div>
-                        <Controller
-                          name="sub_category"
-                          control={control}
-                          defaultValue={[]}
-                          render={({ field }) => (
-                            <MultiSelectDropdown
-                              data={apiSubCategoryDropdown.sub_category}
-                              placeholder="Select Sub Category"
-                              loading={getDropdownLoader}
-                              onChange={(selectedOptions) => {
-                                const selectedValues = selectedOptions.map((option) => option.value);
-                                field.onChange(selectedValues);
-                              }
-                              }
-                              selectedOption={field.value || []}
-                            />
+                      {watch("category")?.length > 0 && (
+                        <div className="w-full">
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaListUl className="text-gray-400" /> Sub Category
+                            </span>
+                            {apiSubCategoryDropdown.sub_category?.length > 0 && (
+                              <div>
+                                <FormCheck className="mr-2">
+                                  <FormCheck.Label>Select All</FormCheck.Label>
+                                  <FormCheck.Input
+                                    className="ml-1"
+                                    id="sub_category"
+                                    checked={
+                                      apiSubCategoryDropdown.sub_category
+                                        .length === watch("sub_category")?.length
+                                    }
+                                    type="checkbox"
+                                    onChange={(e) => {
+                                      setValue(
+                                        "sub_category",
+                                        e.target.checked
+                                          ? apiSubCategoryDropdown.sub_category.map((item: any) => item.value || item)
+                                          : []
+                                      );
+                                    }}
+                                  />
+                                </FormCheck>
+                              </div>
+                            )}
+                          </div>
+                          <Controller
+                            name="sub_category"
+                            control={control}
+                            defaultValue={[]}
+                            render={({ field }) => (
+                              <MultiSelectDropdown
+                                data={apiSubCategoryDropdown.sub_category}
+                                placeholder="Select Sub Category"
+                                loading={getDropdownLoader}
+                                onChange={(selectedOptions) => {
+                                  const selectedValues = selectedOptions.map((option) => option.value);
+                                  field.onChange(selectedValues);
+                                }
+                                }
+                                selectedOption={field.value || []}
+                              />
 
-                            // <TomSelect
-                            //   value={field.value || []}
-                            //   onChange={field.onChange}
-                            //   options={{ placeholder: "Select Sub Category" }}
-                            //   className="w-full"
-                            //   multiple
-                            // >
-                            //   {getDropdownLoader ? (
-                            //     <option disabled>Loading...</option>
-                            //   ) : (
-                            //     apiSubCategoryDropdown.sub_category?.map(
-                            //       (subCat: any) => (
-                            //         <option key={subCat} value={subCat}>
-                            //           {subCat}
-                            //         </option>
-                            //       )
-                            //     )
-                            //   )}
-                            // </TomSelect>
-                          )}
-                        />
-                      </div>
+                              // <TomSelect
+                              //   value={field.value || []}
+                              //   onChange={field.onChange}
+                              //   options={{ placeholder: "Select Sub Category" }}
+                              //   className="w-full"
+                              //   multiple
+                              // >
+                              //   {getDropdownLoader ? (
+                              //     <option disabled>Loading...</option>
+                              //   ) : (
+                              //     apiSubCategoryDropdown.sub_category?.map(
+                              //       (subCat: any) => (
+                              //         <option key={subCat} value={subCat}>
+                              //           {subCat}
+                              //         </option>
+                              //       )
+                              //     )
+                              //   )}
+                              // </TomSelect>
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      {tab === "proposal" && (
+                        <div className="w-full">
+                          <div className="text-left text-slate-500 flex justify-between mb-1">
+                            <span className="flex items-center gap-2 text-slate-600 font-semibold">
+                              <FaCalendarAlt className="text-gray-400" /> Date Range
+                            </span>
+                          </div>
+                          <Controller
+                            name="date_range"
+                            control={control}
+                            defaultValue={filters.date_range || ""}
+                            render={({ field }) => (
+                              <div className="relative">
+                                <div className="absolute flex items-center justify-center w-10 h-full border rounded-l bg-slate-100 text-slate-500 dark:bg-darkmode-700 dark:border-darkmode-800 dark:text-slate-400">
+                                  <Lucide icon="Calendar" className="w-4 h-4" />
+                                </div>
+                                <Litepicker
+                                  value={field.value || ""}
+                                  onChange={(e) => field.onChange(e.target.value || "")}
+                                  onShow={handleDateRangePickerShow}
+                                  placeholder="Select Date Range"
+                                  options={{
+                                    autoApply: false,
+                                    singleMode: false,
+                                    numberOfColumns: 2,
+                                    numberOfMonths: 2,
+                                    showWeekNumbers: true,
+                                    splitView: true,
+                                    dropdowns: {
+                                      minYear: datePickerBounds.minYear,
+                                      maxYear: datePickerBounds.maxYear,
+                                      months: true,
+                                      years: true,
+                                    },
+                                    minDate: availableDateRange?.startDate,
+                                    maxDate: availableDateRange?.endDate,
+                                    startDate: datePickerBounds.startDate,
+                                    endDate: datePickerBounds.endDate,
+                                  }}
+                                  className="pl-12"
+                                />
+                              </div>
+                            )}
+                          />
+                        </div>
+                      )}
 
                       <div className="w-full">
                         <div className="text-left text-slate-500 flex justify-between mb-1">
@@ -2802,35 +2978,41 @@ function ShareHolderProposal() {
                                   as="button"
                                   onClick={() => handleShareholderTabChange(item.key)}
                                 >
-                                  <div className="flex flex-col gap-0.3">
-                                    <div className="flex items-center gap-2">
-                                      <div
-                                        className={clsx(
-                                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
-                                          selected
-                                            ? "bg-primary text-white shadow-sm"
-                                            : "bg-slate-100 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary"
-                                        )}
-                                      >
-                                        <Icon className="h-3.5 w-3.5" />
-                                      </div>
-
-                                      <div className="min-w-0 flex-1 overflow-hidden">
-                                        <p
-                                          className={clsx(
-                                            "whitespace-nowrap text-[14px] font-semibold leading-none",
-                                            selected ? "text-primary" : "text-slate-800"
-                                          )}
-                                        >
-                                          {item.label}
-                                        </p>
-                                      </div>
+                                  <div className="flex items-center gap-2">
+                                    <div
+                                      className={clsx(
+                                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+                                        selected
+                                          ? "bg-primary text-white shadow-sm"
+                                          : "bg-slate-100 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary"
+                                      )}
+                                    >
+                                      <Icon className="h-3.5 w-3.5" />
                                     </div>
 
-                                    <div className="flex justify-end">
+                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                      <p
+                                        className={clsx(
+                                          "truncate text-[14px] font-semibold leading-none",
+                                          selected ? "text-primary" : "text-slate-800"
+                                        )}
+                                      >
+                                        {item.label}
+                                      </p>
+                                    </div>
+
+                                    {loading ? (
                                       <span
                                         className={clsx(
-                                          "inline-flex min-w-[2.25rem] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                                          "inline-flex h-[18px] w-10 shrink-0 animate-pulse rounded-full",
+                                          selected ? "bg-primary/30" : "bg-slate-200"
+                                        )}
+                                        aria-label="Loading count"
+                                      />
+                                    ) : (
+                                      <span
+                                        className={clsx(
+                                          "inline-flex min-w-[2.25rem] shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
                                           selected
                                             ? "bg-primary text-white"
                                             : "bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary"
@@ -2838,7 +3020,7 @@ function ShareHolderProposal() {
                                       >
                                         {Number(item.count ?? 0).toLocaleString()}
                                       </span>
-                                    </div>
+                                    )}
                                   </div>
                                 </Tab.Button>
                               )}

@@ -106,6 +106,16 @@ class DashboardService {
         } else {
           url = `/${exactUrl}${companyName}`;
         }
+      } else if (currentFilters?.strictFilters) {
+        const params = new URLSearchParams();
+        params.append('company_name', companyName ?? "");
+        params.append('all', 'true');
+        (['index', 'country'] as const).forEach((key) => {
+          if (Array.isArray(currentFilters?.[key]) && currentFilters[key].length > 0) {
+            params.append(key, JSON.stringify(currentFilters[key]));
+          }
+        });
+        url = `/company/?${params.toString()}`;
       } else {
         // Refactored: Use proper URL construction with URLSearchParams for consistency
         const params = new URLSearchParams();
@@ -551,6 +561,17 @@ class DashboardService {
     };
   }
 
+  public async getVdsProxyFundLevel(paramFilter?: any): Promise<{
+    result: any;
+  }> {
+    const response = await axiosInstance.get(
+      createDynamicURL(`/vds_proxy_voting_fund_level/`, paramFilter)
+    );
+    return {
+      result: response.data,
+    };
+  }
+
   public async getModulesCount(paramFilter?: any): Promise<{
     result: any;
   }> {
@@ -647,6 +668,53 @@ class DashboardService {
     return {
       result,
     };
+  }
+
+  public async getNpxProposalVotingDropdown(params?: any): Promise<{ result: any }> {
+    const url = createDynamicURL(`/api/npx-proposal-voting-stats/dropdown/`, params);
+    const response = await axiosInstance.get(url);
+    const result = response.data;
+    return {
+      result,
+    };
+  }
+
+  // Institution typeahead for the N-PX Voting Data (NpxInstitutionView) page.
+  // Unlike fetchInstitutionByName, this never sends a global_search param —
+  // the new dropdown endpoint doesn't need a dummy company to scope results.
+  public async fetchInstitutionByNameFromProposalVotingStats(
+    institutionValue?: string,
+    year?: string
+  ): Promise<{ results: any[] }> {
+    if (!institutionValue) {
+      return { results: [] };
+    }
+
+    const params: any = {};
+    const yearParam = year ||
+      (window.location.search.includes('year=') ?
+        new URLSearchParams(window.location.search).get('year') : '2024');
+    params.year = yearParam;
+
+    if (institutionValue !== "a" && institutionValue.trim() !== "") {
+      params.institution_name = institutionValue;
+    }
+
+    const { result } = await this.getNpxProposalVotingDropdown(params);
+
+    // Prefer org_institution [{institution_id, institution_name}] so the
+    // select can carry ids; fall back to plain name lists when absent.
+    const isSearch = institutionValue !== "a" && institutionValue.trim() !== "";
+    const fallbackNames = (isSearch ? result?.institution : result?.all_institution) || [];
+    const results = Array.isArray(result?.org_institution) && result.org_institution.length > 0
+      ? result.org_institution
+      : fallbackNames.map((entry: any) =>
+        typeof entry === "string"
+          ? { institution_name: entry }
+          : { institution_name: entry?.institution_name ?? entry?.name, institution_id: entry?.institution_id }
+      );
+
+    return { results };
   }
 
   public async getBoardDirectorMembers(ticker: string): Promise<{
@@ -756,6 +824,27 @@ class DashboardService {
     const url = `/vds_npx_meeting_dates/?company_id=${companyId}`;
     const result = await this.fetchWithCache<any>(url);
     return { result };
+  }
+
+  public async getDirectorAgainstWithholdVotes(params: {
+    institutionId: number | string;
+    companyId: number | string;
+    year?: number | string;
+    meetingDate?: string;
+  }): Promise<{ result: any }> {
+    const query = new URLSearchParams();
+    query.append("institution_id", String(params.institutionId));
+    query.append("company_id", String(params.companyId));
+    if (params.meetingDate) {
+      query.append("meeting_date", params.meetingDate);
+    } else if (params.year) {
+      query.append("year", String(params.year));
+    }
+
+    const response = await axiosInstance.get(
+      `/api/director-against-withhold-votes/?${query.toString()}`
+    );
+    return { result: response.data };
   }
 }
 

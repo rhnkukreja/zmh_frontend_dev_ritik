@@ -1,11 +1,8 @@
 import TableWrapper from "../../components/TableWrapper";
 import Table from "@/components/Base/Table";
-import {
-  convertToTitleCase,
-  createDynamicURL,
-  downloadCSV,
-} from "@/utils/helper";
+import { convertToTitleCase, createDynamicURL } from "@/utils/helper";
 import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
@@ -32,6 +29,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 import { dashboardService } from "@/services/dashboard";
+import { axiosInstance } from "@/services";
 import { Controller, useForm } from "react-hook-form";
 import TomSelect from "@/components/Base/TomSelect";
 import { setIsCompanySelected } from "@/stores/authenticationSlice";
@@ -108,6 +106,249 @@ const clearCacheForCompany = (company: string): void => {
 interface VdsProxyVotingTableProps {
   view?: "voting-data" | "voting-rationale";
 }
+
+// Resolve the institution id for a fund-level column. The backend may expose it
+// on the header object or on each cell's institution payload — try both.
+const getInstitutionIdForHeader = (header: any, rows: any[]) => {
+  const direct =
+    header?.institution_id ??
+    header?.institutionId ??
+    header?.institution ??
+    header?.institute_id;
+  if (
+    direct !== undefined &&
+    direct !== null &&
+    direct !== "" &&
+    !isNaN(Number(direct))
+  ) {
+    return direct;
+  }
+
+  if (Array.isArray(rows)) {
+    for (const row of rows) {
+      const cell = row?.[header?.field];
+      const id = cell?.institution_id ?? cell?.institutionId;
+      if (id !== undefined && id !== null && id !== "") return id;
+    }
+  }
+  return null;
+};
+
+// Fund-level icon that opens a modal on click with the per-fund vote pivot
+// from /vds_proxy_voting_fund_level/.
+const FundLevelVotesIcon = ({
+  companyId,
+  companyName,
+  header,
+  rows,
+  meetingDate,
+}: {
+  companyId?: any;
+  companyName?: string;
+  header?: any;
+  rows?: any[];
+  meetingDate?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const openModal = async () => {
+    setOpen(true);
+    if (data || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const institutionId = getInstitutionIdForHeader(header, rows ?? []);
+      const params: any = {
+        company_id: companyId,
+        meeting_date: meetingDate,
+      };
+      if (institutionId) {
+        params.institution_id = institutionId;
+      } else {
+        params.institution_name = header?.header;
+      }
+      const { result } = await dashboardService.getVdsProxyFundLevel(params);
+      setData(result);
+    } catch (e) {
+      setError("Unable to load fund level votes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!companyId || !meetingDate) return;
+    setDownloading(true);
+    try {
+      const institutionId = getInstitutionIdForHeader(header, rows ?? []);
+      const params: any = {
+        company_id: companyId,
+        meeting_date: meetingDate,
+        download: "true",
+      };
+      if (institutionId) {
+        params.institution_id = institutionId;
+      } else {
+        params.institution_name = header?.header;
+      }
+
+      const response = await axiosInstance.get(
+        createDynamicURL(`${baseURL}/vds_proxy_voting_fund_level/`, params),
+        { responseType: "blob" }
+      );
+
+      const companySlug = String(companyName || "Company").replace(
+        /[^a-z0-9]+/gi,
+        "_"
+      );
+      const institutionSlug = String(
+        data?.institution_name || header?.header || "Institution"
+      ).replace(/[^a-z0-9]+/gi, "_");
+      const filename = `Voting_Data_${companySlug}_${institutionSlug}_Fund_Level_${meetingDate}.xlsx`;
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Error downloading fund level export:", e);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <>
+      <span
+        className="inline-flex items-center justify-center cursor-pointer hover:opacity-80 transition duration-150"
+        title="Fund Level Votes"
+        onClick={openModal}
+      >
+        <Lucide icon="Grid3x3" className="w-6 h-6 text-blue-800" />
+      </span>
+
+      <Dialog open={open} onClose={() => setOpen(false)} size="2xl">
+        <Dialog.Panel className="max-h-[90vh] flex flex-col w-[95%] lg:!w-[1400px]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-none">
+            <div>
+              <h2 className="font-bold text-slate-800 text-lg">
+                {data?.institution_name ?? "Fund Level Votes"}
+              </h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Fund Level Votes{data?.count ? ` · ${data.count} proposals` : ""}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Tippy content="Download Excel" options={{ theme: "light" }}>
+                <div
+                  className={clsx(
+                    "box p-[5px] cursor-pointer",
+                    downloading && "opacity-50 pointer-events-none"
+                  )}
+                  onClick={handleDownload}
+                >
+                  <img alt="download-icon" src={downloadIcon} />
+                </div>
+              </Tippy>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+              >
+                <Lucide icon="X" className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto px-6 py-4">
+            {loading && (
+              <div className="py-16 text-center text-sm text-slate-500">
+                Loading fund level votes...
+              </div>
+            )}
+            {!loading && error && (
+              <div className="py-16 text-center text-sm text-red-500">
+                {error}
+              </div>
+            )}
+            {!loading && !error && data && (
+              <div className="overflow-x-auto">
+                <table className="w-max min-w-full text-xs border-separate border-spacing-0">
+                  <thead className="sticky top-0 z-10">
+                    <tr>
+                      {data?.headers?.map((h: any, i: number) => (
+                        <th
+                          key={i}
+                          className={clsx(
+                            "bg-primary border-b border-primary/60 px-2.5 py-2.5 text-left align-top font-semibold text-white whitespace-normal break-words",
+                            i === 0 &&
+                              "w-[70px] min-w-[70px] max-w-[70px] sticky left-0 z-[6] rounded-tl-lg",
+                            i === 1 &&
+                              "w-[240px] min-w-[240px] max-w-[240px] sticky left-[70px] z-[6]",
+                            i > 1 && "min-w-[140px] max-w-[190px]",
+                            i === data?.headers?.length - 1 && "rounded-tr-lg"
+                          )}
+                        >
+                          {h?.field === "proposal_num" ? "#" : h?.header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data?.results?.map((row: any, rowIndex: number) => (
+                      <tr
+                        key={row?.id ?? rowIndex}
+                        className="group border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                      >
+                        {data?.headers?.map((h: any, colIndex: number) => {
+                          const value = row?.[h?.field];
+                          const isNegative =
+                            typeof value === "string" &&
+                            (value.includes("Against") ||
+                              value.includes("Withhold"));
+                          return (
+                            <td
+                              key={colIndex}
+                              className={clsx(
+                                "px-2.5 py-2 align-top whitespace-normal break-words leading-tight border-b border-slate-100",
+                                isNegative
+                                  ? "text-red-700 font-semibold"
+                                  : "text-slate-700",
+                                colIndex === 0 &&
+                                  "w-[70px] min-w-[70px] max-w-[70px] sticky left-0 bg-white z-[4] font-medium text-slate-500 group-hover:bg-slate-50",
+                                colIndex === 1 &&
+                                  "w-[240px] min-w-[240px] max-w-[240px] sticky left-[70px] bg-white z-[4] group-hover:bg-slate-50",
+                                colIndex > 1 && "min-w-[140px] max-w-[190px]",
+                              )}
+                            >
+                              {value ?? "-"}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {!loading && !error && (!data?.results || data.results.length === 0) && (
+              <div className="py-16 text-center text-sm text-slate-500">
+                No fund level votes found
+              </div>
+            )}
+          </div>
+        </Dialog.Panel>
+      </Dialog>
+    </>
+  );
+};
 
 const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
   const navigate = useNavigate();
@@ -417,70 +658,43 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
     }
   };
 
-  const convertDivTableToCSV = (tabName: string) => {
-    const table = document.querySelector(".table_2");
-    const rows = table?.querySelectorAll(".row_2");
-    const tableProposal = document.querySelector(".table_3");
+  // Downloads the VDS export Excel generated server-side by
+  // /vds_proxy_voting/?download=true instead of scraping the rendered table.
+  const handleDownload = async (tabName: "Top-20" | "All-Investor") => {
+    if (!companyGlobalSearchId || !meetingDate) return;
 
-    const rowsProposal = tableProposal?.querySelectorAll(".row_3");
-    let csvContent = "\uFEFF";
+    try {
+      const params: any = {
+        company_id: companyGlobalSearchId,
+        meeting_date: meetingDate,
+        download: "true",
+      };
+      if (tabName === "All-Investor") {
+        params.institution_name = filter?.length > 0 ? filter : "Top 10";
+      }
 
-    rows?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_2");
-      let rowData: any = [];
+      const response = await axiosInstance.get(
+        createDynamicURL(`${baseURL}/vds_proxy_voting/`, params),
+        { responseType: "blob" }
+      );
 
-      cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim();
-        if (cellText?.includes(",")) {
-          cellText = `"${cellText}"`;
-        }
+      const companySlug = String(
+        companyGlobalSearchName || companyGlobalSearchTicker || "Company"
+      ).replace(/[^a-z0-9]+/gi, "_");
+      const view = tabName === "Top-20" ? "Top_20" : "All_Investors";
+      const filename = `Voting_Data_${companySlug}_${view}_${meetingDate}.xlsx`;
 
-        const tooltip = cell.querySelector("[data-tooltip-html]");
-        const tooltipText = tooltip?.getAttribute("data-tooltip-html")?.trim();
-
-        if (tooltipText) {
-          cellText += ` (voting rationale: ${tooltipText})`;
-        }
-
-        if (cellText) {
-          cellText = `"${cellText.replace(/"/g, '""')}"`;
-        }
-
-        rowData.push(cellText);
-      });
-
-      csvContent += rowData.join(",") + "\n";
-    });
-
-    rowsProposal?.forEach((row) => {
-      const cells = row.querySelectorAll(".cell_3");
-      let rowData: any = [];
-
-      cells.forEach((cell) => {
-        let cellText = cell.textContent?.trim();
-
-        if (cellText?.includes(",")) {
-          cellText = `"${cellText}"`;
-        }
-
-        const tooltip = cell.querySelector("[data-tooltip-html]");
-        const tooltipText = tooltip?.getAttribute("data-tooltip-html")?.trim();
-
-        if (tooltipText) {
-          cellText += ` (voting rationale: ${tooltipText})`;
-        }
-
-        if (cellText) {
-          cellText = `"${cellText.replace(/"/g, '""')}"`;
-        }
-
-        rowData.push(cellText);
-      });
-
-      csvContent += rowData.join(",") + "\n";
-    });
-
-    downloadCSV(csvContent, `${tabName}-${companyGlobalSearchTicker}`);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading VDS export:", error);
+    }
   };
 
   const getSplitContents = (items: any) => {
@@ -493,6 +707,13 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
       .join(", ");
     return resultString;
   };
+
+  // The API marks each institution cell with `is_fund_level`. If any row in a
+  // column reports it, the institution's votes are fund-level, so we flag the
+  // column header with an icon.
+  const isFundLevelColumn = (rows: any[], field: string) =>
+    Array.isArray(rows) &&
+    rows.some((row) => row?.[field]?.is_fund_level === true);
 
   const [apiDropdownOptions, setApiDropdownOptions] = useState<any>([]);
 
@@ -658,22 +879,37 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                   <div className="flex justify-end items-center gap-4 mb-3 xs:mt-4 md:mt-0">
                     {activeVdsView === "voting-data" && vdsProxyDetails?.vds_report_headers?.length > 0 && (
                         <div className="flex justify-end items-center gap-4 mb-5 xs:mt-4 md:mt-0">
-                          {
-                            yearTicker !== "2025" &&
-                          <h1 className="text-md font-bold">
-                            Aggregate Ownership:{" "}
-                            {vdsProxyDetails?.total_percent_ownership}
-                          </h1>
-                          }
+                          <div className="flex flex-col items-end gap-1">
+                            {
+                              yearTicker !== "2025" &&
+                            <h1 className="text-md font-bold">
+                              Aggregate Ownership:{" "}
+                              {vdsProxyDetails?.total_percent_ownership}
+                            </h1>
+                            }
+                            {vdsProxyDetails?.vds_report_headers?.some(
+                              (h: any) =>
+                                isFundLevelColumn(
+                                  vdsProxyDetails?.vds_report,
+                                  h?.field
+                                )
+                            ) && (
+                              <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
+                                <Lucide
+                                  icon="Grid3x3"
+                                  className="w-4 h-4 text-blue-800"
+                                />
+                                Fund Level Votes
+                              </div>
+                            )}
+                          </div>
                           <Tippy
                             content="Download Excel"
                             options={{ theme: "light" }}
                           >
                             <div
                               className="box p-[5px] cursor-pointer"
-                              onClick={() =>
-                                convertDivTableToCSV("Top-20-Proxy-voting")
-                              }
+                              onClick={() => handleDownload("Top-20")}
                             >
                               <img alt="download-icon" src={downloadIcon} />
                             </div>
@@ -709,7 +945,21 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                         "min-w-[150px] max-w-[170px] ",
                                     ])}
                                   >
-                                    {vdsHeader?.header}
+                                    <span className="inline-flex items-center gap-1">
+                                      {vdsHeader?.header}
+                                      {isFundLevelColumn(
+                                        vdsProxyDetails?.vds_report,
+                                        vdsHeader?.field
+                                      ) && (
+                                        <FundLevelVotesIcon
+                                          companyId={companyGlobalSearchId}
+                                          companyName={companyGlobalSearchName}
+                                          header={vdsHeader}
+                                          rows={vdsProxyDetails?.vds_report}
+                                          meetingDate={meetingDate}
+                                        />
+                                      )}
+                                    </span>
                                   </Table.Td>
                                 )
                               )}
@@ -766,20 +1016,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                   <span className="for">
                                                     {vdsProxy[vdsHeader?.field]?.vote}
                                                   </span>
-                                                  <div
-                                                    data-tooltip-id="my-tooltip-data-html"
-                                                    data-tooltip-html={
-                                                      isObject(vdsProxy[vdsHeader?.field]) &&
-                                                      getSplitContents(
+                                                  {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={getSplitContents(
                                                         vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                      )
-                                                    }
-                                                  >
-                                                    <Lucide
-                                                      icon="Info"
-                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                    />
-                                                  </div>
+                                                      )}
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  ) : null}
                                                 </div>
                                               ) : (
                                                 <span className="for ">
@@ -834,20 +1083,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                     <span className="for">
                                                       {vdsProxy[vdsHeader?.field]?.vote}
                                                     </span>
-                                                    <div
-                                                      data-tooltip-id="my-tooltip-data-html"
-                                                      data-tooltip-html={
-                                                        isObject(vdsProxy[vdsHeader?.field]) &&
-                                                        getSplitContents(
+                                                    {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                      <div
+                                                        data-tooltip-id="my-tooltip-data-html"
+                                                        data-tooltip-html={getSplitContents(
                                                           vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                        )
-                                                      }
-                                                    >
-                                                      <Lucide
-                                                        icon="Info"
-                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                      />
-                                                    </div>
+                                                        )}
+                                                      >
+                                                        <Lucide
+                                                          icon="Info"
+                                                          className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                        />
+                                                      </div>
+                                                    ) : null}
                                                   </div>
                                                 )}
                                             </h1>
@@ -958,13 +1206,28 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                   <div className="flex justify-end items-center gap-4 mb-4 xs:mt-4 md:mt-0">
                     {activeVdsView === "voting-data" && vdsProxyAllInvestorDetails?.vds_report?.length > 0 && (
                       <div className="flex justify-end items-center gap-4 xs:mt-4 md:mt-0">
+                        {vdsProxyAllInvestorDetails?.vds_report_headers?.some(
+                          (h: any) =>
+                            isFundLevelColumn(
+                              vdsProxyAllInvestorDetails?.vds_report,
+                              h?.field
+                            )
+                        ) && (
+                          <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-600">
+                            <Lucide
+                              icon="Grid3x3"
+                              className="w-4 h-4 text-blue-800"
+                            />
+                            Fund Level Votes
+                          </div>
+                        )}
                         <Tippy
                           content="Download Excel"
                           options={{ theme: "light" }}
                         >
                           <div
                             className="box p-[5px] cursor-pointer"
-                            onClick={() => convertDivTableToCSV("All Investor")}
+                            onClick={() => handleDownload("All-Investor")}
                           >
                             <img alt="download-icon" src={downloadIcon} />
                           </div>
@@ -1001,7 +1264,21 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                         "min-w-[150px] max-w-[170px] ",
                                     ])}
                                   >
-                                    {vdsHeader?.header}
+                                    <span className="inline-flex items-center gap-1">
+                                      {vdsHeader?.header}
+                                      {isFundLevelColumn(
+                                        vdsProxyAllInvestorDetails?.vds_report,
+                                        vdsHeader?.field
+                                      ) && (
+                                        <FundLevelVotesIcon
+                                          companyId={companyGlobalSearchId}
+                                          companyName={companyGlobalSearchName}
+                                          header={vdsHeader}
+                                          rows={vdsProxyAllInvestorDetails?.vds_report}
+                                          meetingDate={meetingDate}
+                                        />
+                                      )}
+                                    </span>
                                   </Table.Td>
                                 )
                               )}
@@ -1058,20 +1335,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                   <span className="for">
                                                     {vdsProxy[vdsHeader?.field]?.vote}
                                                   </span>
-                                                  <div
-                                                    data-tooltip-id="my-tooltip-data-html"
-                                                    data-tooltip-html={
-                                                      isObject(vdsProxy[vdsHeader?.field]) &&
-                                                      getSplitContents(
+                                                  {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                    <div
+                                                      data-tooltip-id="my-tooltip-data-html"
+                                                      data-tooltip-html={getSplitContents(
                                                         vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                      )
-                                                    }
-                                                  >
-                                                    <Lucide
-                                                      icon="Info"
-                                                      className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                    />
-                                                  </div>
+                                                      )}
+                                                    >
+                                                      <Lucide
+                                                        icon="Info"
+                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                      />
+                                                    </div>
+                                                  ) : null}
                                                 </div>
                                               ) : (
                                                 <span className="for">
@@ -1126,20 +1402,19 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                                                     <span className="for">
                                                       {vdsProxy[vdsHeader?.field]?.vote}
                                                     </span>
-                                                    <div
-                                                      data-tooltip-id="my-tooltip-data-html"
-                                                      data-tooltip-html={
-                                                        isObject(vdsProxy[vdsHeader?.field]) &&
-                                                        getSplitContents(
+                                                    {getSplitContents(vdsProxy[vdsHeader?.field]?.split_vote_counts) ? (
+                                                      <div
+                                                        data-tooltip-id="my-tooltip-data-html"
+                                                        data-tooltip-html={getSplitContents(
                                                           vdsProxy[vdsHeader?.field]?.split_vote_counts
-                                                        )
-                                                      }
-                                                    >
-                                                      <Lucide
-                                                        icon="Info"
-                                                        className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
-                                                      />
-                                                    </div>
+                                                        )}
+                                                      >
+                                                        <Lucide
+                                                          icon="Info"
+                                                          className="w-4 h-4 ml-1.5 stroke-[1.3] text-blue-800"
+                                                        />
+                                                      </div>
+                                                    ) : null}
                                                   </div>
                                                 )}
                                             </h1>
@@ -1157,6 +1432,7 @@ const VdsProxyVotingTable = ({ view }: VdsProxyVotingTableProps) => {
                         </Table.Tbody>
                       </Table>
                     </div>
+
                   </TableWrapper>
                   {/* Handle both cases: empty array or undefined/null vdsProxyAllInvestorDetails */}
                   {((vdsProxyAllInvestorDetails?.vds_report?.length === 0) ||

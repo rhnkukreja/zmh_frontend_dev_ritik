@@ -9,6 +9,8 @@ export type Login = {
   // activist profile generator, which mails the requester on completion.
   email?: string;
   first_name?: string;
+  last_name?: string;
+  full_name?: string;
   saved_search?: any;
   company_id?: number;
   company_name?: string;

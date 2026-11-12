@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { useAppSelector, useAppDispatch } from "@/stores/hooks";
-import { fetchCompanyHierarchyNotes } from "@/stores/domainNotesSlice";
+import React, { useEffect, useMemo, useState } from "react";
+import { useAppSelector } from "@/stores/hooks";
 import Lucide from "@/components/Base/Lucide";
 import clsx from "clsx";
-import { CompanyHierarchyItem } from "@/types/domainNotes";
-import { domainNotesService } from "@/services/domainNotes";
 
 interface CompanyHierarchyProps {
   selectedCompany: string;
@@ -58,92 +55,53 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
   selectedInstitution,
   setSelectedInstitution,
 }) => {
-  const dispatch = useAppDispatch();
   const { companyHierarchy, loadingCompanyHierarchy } = useAppSelector(
     (state) => state.domainNotes
   );
-  const [expandedCompanies, setExpandedCompanies] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<CompanyHierarchyItem[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
 
-  const toggleCompany = (companyName: string) => {
-    setExpandedCompanies((prev) =>
-      prev.includes(companyName)
-        ? prev.filter((name) => name !== companyName)
-        : [...prev, companyName]
+  const investorRows = useMemo(
+    () =>
+      (companyHierarchy || []).flatMap((company) =>
+        Object.keys(company.sub_heading || {}).map((institutionName) => ({
+          companyName: company.main_heading,
+          institutionName,
+        }))
+      ),
+    [companyHierarchy]
+  );
+
+  const filteredInvestors = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) return investorRows;
+
+    return investorRows.filter(({ institutionName }) =>
+      institutionName.toLowerCase().includes(normalizedSearch)
     );
-  };
-
-  const handleCompanyClick = (companyName: string) => {
-    toggleCompany(companyName);
-  };
+  }, [investorRows, searchTerm]);
 
   const handleInstitutionClick = (companyName: string, institutionName: string) => {
     setSelectedCompany(companyName);
     setSelectedInstitution(institutionName);
   };
 
-  // Search functionality
   useEffect(() => {
-    const debounce = setTimeout(async () => {
-      if (searchTerm.trim().length > 0) {
-        setIsSearching(true);
-        try {
-          const response = await domainNotesService.getCompanyHierarchyNotes();
-          // Filter results based on search term
-          const filteredResults = response.results.filter((item: any) =>
-            item.main_heading.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-          setSearchResults(filteredResults);
-        } catch (error) {
-          console.error("Search error:", error);
-          setSearchResults([]);
-        } finally {
-          setIsSearching(false);
-        }
-      } else {
-        setSearchResults([]);
-        setIsSearching(false);
-      }
-    }, 500);
+    if (!investorRows.length) return;
 
-    return () => clearTimeout(debounce);
-  }, [searchTerm]);
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setSearchResults([]);
-    dispatch(fetchCompanyHierarchyNotes());
-  };
-
-  // Keep the selected company/institution pair valid when the hierarchy reloads or search resets.
-  useEffect(() => {
-    if (!companyHierarchy?.length || searchTerm.trim().length > 0) {
-      return;
-    }
-
-    const currentCompany =
-      companyHierarchy.find((item) => item.main_heading === selectedCompany) || companyHierarchy[0];
-    const companyName = currentCompany.main_heading;
-    const institutions = Object.keys(currentCompany.sub_heading || {});
-    const nextInstitution =
-      institutions.includes(selectedInstitution) ? selectedInstitution : institutions[0] || "";
-
-    if (selectedCompany !== companyName) {
-      setSelectedCompany(companyName);
-    }
-
-    if (nextInstitution !== selectedInstitution) {
-      setSelectedInstitution(nextInstitution);
-    }
-
-    setExpandedCompanies((prev) =>
-      prev.includes(companyName) ? prev : [...prev, companyName]
+    const selectedRow = investorRows.find(
+      ({ companyName, institutionName }) =>
+        companyName === selectedCompany && institutionName === selectedInstitution
     );
+    const nextRow = selectedRow || investorRows[0];
+
+    if (selectedCompany !== nextRow.companyName) {
+      setSelectedCompany(nextRow.companyName);
+    }
+    if (selectedInstitution !== nextRow.institutionName) {
+      setSelectedInstitution(nextRow.institutionName);
+    }
   }, [
-    companyHierarchy,
-    searchTerm,
+    investorRows,
     selectedCompany,
     selectedInstitution,
     setSelectedCompany,
@@ -154,10 +112,10 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
     return <HierarchySkeleton />;
   }
 
-  if (!companyHierarchy || companyHierarchy.length === 0) {
+  if (!investorRows.length) {
     return (
       <div className="flex h-full items-center justify-center bg-white px-6">
-        <span className="text-sm font-medium text-slate-500">No companies found</span>
+        <span className="text-sm font-medium text-slate-500">No institutions found</span>
       </div>
     );
   }
@@ -170,7 +128,7 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search companies..."
+            placeholder="Search institutions..."
             className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm text-slate-700 shadow-sm transition focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
           <Lucide
@@ -179,7 +137,7 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
           />
           {searchTerm && (
             <button
-              onClick={handleClearSearch}
+              onClick={() => setSearchTerm("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 transform"
             >
               <Lucide icon="X" className="h-4 w-4 text-slate-400 transition hover:text-slate-600" />
@@ -189,61 +147,32 @@ const CompanyHierarchy: React.FC<CompanyHierarchyProps> = ({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto bg-white">
-        {isSearching ? (
-          <HierarchySkeleton />
-        ) : (
+        {filteredInvestors.length > 0 ? (
           <div className="pb-3">
-            {(searchTerm ? searchResults : companyHierarchy).map((item: CompanyHierarchyItem, index: number) => {
-              const companyName = item.main_heading;
-              const isExpanded = expandedCompanies.includes(companyName);
-              const institutions = Object.keys(item.sub_heading || {});
+            {filteredInvestors.map(({ companyName, institutionName }) => {
+              const isSelected =
+                selectedCompany === companyName && selectedInstitution === institutionName;
 
               return (
-                <div key={index} className="border-b border-slate-100 last:border-b-0">
-                  <div
-                    className={clsx(
-                      "flex cursor-pointer items-center justify-between px-4 py-3.5 transition-colors hover:bg-slate-50",
-                      selectedCompany === companyName && "border-l-4 border-primary bg-rose-50/70 pl-3"
-                    )}
-                    onClick={() => handleCompanyClick(companyName)}
-                  >
-                    <div className="flex min-w-0 flex-1 items-center">
-                      <span className="text-sm font-semibold leading-5 text-slate-800">
-                        {companyName}
-                      </span>
-                    </div>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100/80">
-                      <Lucide
-                        icon={isExpanded ? "ChevronDown" : "ChevronRight"}
-                        className="h-4 w-4 text-slate-500"
-                      />
-                    </div>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="ml-6 border-l border-slate-200 bg-slate-50/50 py-2">
-                      {institutions.map((institutionName, institutionIndex) => {
-                        return (
-                          <div
-                            key={institutionIndex}
-                            className={clsx(
-                              "flex cursor-pointer items-center px-3 py-2 text-sm transition-colors hover:bg-white",
-                              selectedInstitution === institutionName && selectedCompany === companyName
-                                ? "bg-white font-medium text-primary"
-                                : "text-slate-600 hover:text-slate-900"
-                            )}
-                            onClick={() => handleInstitutionClick(companyName, institutionName)}
-                          >
-                            <Lucide icon="CornerDownRight" className="mr-2 h-4 w-4 text-slate-400" />
-                            <span className="flex-1 leading-5">{institutionName}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                <button
+                  key={`${companyName}-${institutionName}`}
+                  type="button"
+                  className={clsx(
+                    "flex w-full cursor-pointer items-center justify-between border-b border-slate-100 px-4 py-3.5 text-left transition-colors hover:bg-slate-50",
+                    isSelected && "border-l-4 border-l-primary bg-rose-50/70 pl-3"
                   )}
-                </div>
+                  onClick={() => handleInstitutionClick(companyName, institutionName)}
+                >
+                  <span className="min-w-0 flex-1 text-sm font-semibold leading-5 text-slate-800">
+                    {institutionName}
+                  </span>
+                </button>
               );
             })}
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center px-4 text-sm font-medium text-slate-500">
+            No institutions found
           </div>
         )}
       </div>
