@@ -13,7 +13,7 @@ import { dashboardService } from "@/services/dashboard";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 import { createDynamicURL } from "@/utils/helper";
-import { BoardConnectionsModal, otherBoardsNow, useBoardConnections, type ConnectionsFocus } from "./BoardConnections";
+import { BoardConnectionsModal, useBoardConnections, type ConnectionsFocus } from "./BoardConnections";
 
 const BRAND = "#931638";
 const POLL_MS = 4000;
@@ -712,8 +712,11 @@ function NotOnWebsite({ d, result }: { d: Director; result: BoardResult }) {
 /** How many entries a Board at a Glance cell shows before its "..." */
 const GLANCE_TOP = 2;
 
-/** A small window over the page, closed by its X, Escape or a click outside. */
-function SmallModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+/** A small window over the page, closed by its X, Escape or a click outside. `heading`, when given,
+ *  is shown in place of the plain title (which still names the window for screen readers). */
+function SmallModal({ title, heading, onClose, children }: {
+  title: string; heading?: React.ReactNode; onClose: () => void; children: React.ReactNode;
+}) {
   const closeButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     closeButton.current?.focus();
@@ -725,10 +728,10 @@ function SmallModal({ title, onClose, children }: { title: string; onClose: () =
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}
            className="flex max-h-[80vh] w-full max-w-md flex-col rounded-lg bg-white text-gray-900 shadow-xl">
-        <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
-          <h3 className="text-sm font-semibold">{title}</h3>
+        <div className={`flex justify-between gap-3 border-b border-gray-200 px-4 py-3 ${heading ? "items-start" : "items-center"}`}>
+          {heading || <h3 className="text-sm font-semibold">{title}</h3>}
           <button ref={closeButton} type="button" aria-label="Close" onClick={onClose}
-                  className="rounded p-0.5 text-gray-500 hover:bg-gray-100 hover:text-[#931638] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+                  className="shrink-0 rounded p-0.5 text-gray-500 hover:bg-gray-100 hover:text-[#931638] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
             <X size={16} />
           </button>
         </div>
@@ -808,26 +811,180 @@ function ExperienceCell({ d }: { d: Director }) {
   );
 }
 
+// ─── A director's shareholder support on another board (the dashboard's /voting_report_8k/) ──
+
+/** A board as a biography prints it, without its years or role: "Zoom Video Communications, Inc.
+ *  (2022 - 2026)", "Chewy, Inc. since 2019" -> the company name. Pure. */
+const boardCompany = (board: string) =>
+  board.replace(/\s*\([^)]*\)\s*$/, "").replace(/,?\s+(since|from)\s+\d{4}.*$/i, "").trim();
+
+type BoardSupportProps = {
+  /** the board as the biography prints it */
+  board: string; director: string;
+  /** the director's name as other proxies print it ("William R. McDermott" for "Bill McDermott") */
+  aliases: string[];
+};
+/** /voting_report_8k/?ticker= : a company's LATEST annual meeting (2026 where the platform holds it,
+ *  an earlier year where it does not), one row per nominee as the Shareholder Meeting page shows it. */
+type LatestMeeting = { Year?: number | string; company?: Record<string, string>[]; nominees?: YearRow[] };
+/** A director's vote at a board's latest annual meeting. */
+type BoardVote = { company: CompanyHit; year: string; meeting: string; row: YearRow };
+
+/** A read of the dashboard's API that never shows a toast: null when it fails. The table asks
+ *  unprompted which boards have a vote to show, so a failure there must stay silent (the shared
+ *  request service shows every error as a toast). */
+const quietGet = async <T,>(url: string): Promise<T | null> => {
+  try {
+    const res = await fetch(url, { headers: { Authorization: `JWT ${localStorage.getItem("token") || ""}` } });
+    return res.ok ? ((await res.json()) as T) : null;
+  } catch {
+    return null;
+  }
+};
+/** One request per key for the life of the page: two directors on one board share the answer. */
+const once = <T,>(held: Map<string, Promise<T>>, key: string, ask: () => Promise<T>) => {
+  if (!held.has(key)) held.set(key, ask());
+  return held.get(key)!;
+};
+const listedCompanies = new Map<string, Promise<CompanyHit | null>>();
+const latestMeetings = new Map<string, Promise<LatestMeeting | null>>();
+
+/** The one SEC-listed company a biography's board name means (never a guess); null when none. */
+const listedCompany = (name: string) => once(listedCompanies, name, () => resolveCompany("", name).catch(() => null));
+/** The company's latest annual meeting: the ONLY request made for a board. It is made for every
+ *  current board when the table is drawn (all at once), decides which names become links, and is
+ *  what the window shows when one is clicked -- nothing more is fetched then. */
+const latestMeetingOf = (ticker: string) => once(latestMeetings, ticker,
+  () => quietGet<LatestMeeting>(createDynamicURL(`${baseURL}/voting_report_8k/`, { ticker })));
+
+/** The one row that is this director: the nominee with their surname and a shared initial, under
+ *  any of the names they are printed by; none, or two such nominees: null (no guess). Pure. */
+const nomineeRow = (rows: YearRow[], names: string[]) => {
+  const mine = rows.filter((r) => names.some((n) => samePerson(n, String(r.Nominee ?? r.nominee ?? ""))));
+  return mine.length === 1 ? mine[0] : null;
+};
+/** A row's value under the first column whose name fits: the API names the support column "For/(For
+ *  + Against or Withhold + Abstain)" or "For/(For + Against + Abstain)" from company to company. Pure. */
+const cell = (row: YearRow, column: RegExp) => {
+  const key = Object.keys(row).find((k) => column.test(k));
+  return key === undefined ? undefined : row[key];
+};
+/** 1451125084 -> "1,451,125,084"; text is kept as it is. Pure. */
+const count = (v: YearRow[string]) => (typeof v === "number" ? v.toLocaleString("en-US") : v);
+/** 99.09 or "99.09%" -> "99.09%". Pure. */
+const percent = (v: YearRow[string]) => (typeof v === "number" ? `${v.toFixed(2)}%` : v);
+
+/** A director's vote at the latest annual meeting of the company a board name means; null while it
+ *  is looked up, and when that meeting did not vote on them (or the platform holds no meeting). */
+function useBoardVote({ board, director, aliases }: BoardSupportProps): BoardVote | null {
+  const [vote, setVote] = useState<BoardVote | null>(null);
+  const names = [director, ...aliases].join("|");
+  useEffect(() => {
+    let cancelled = false;
+    setVote(null);
+    (async (): Promise<BoardVote | null> => {
+      const company = await listedCompany(boardCompany(board));
+      const latest = company && await latestMeetingOf(company.ticker);
+      const row = nomineeRow(Array.isArray(latest?.nominees) ? latest.nominees : [], names.split("|"));
+      if (!company || !latest || !row) return null;
+      // "Annual - June 02, 2026", as the Shareholder Meeting page titles it
+      const meeting = Object.values(latest.company?.[0] || {})[0] || "";
+      return { company, year: latest.Year == null ? "" : String(latest.Year), meeting, row };
+    })().then((v) => { if (!cancelled) setVote(v); }, () => undefined);
+    return () => { cancelled = true; };
+  }, [board, names]);
+  return vote;
+}
+
+/** What the small window shows once a board is clicked: the director's vote at that board's latest
+ *  annual meeting, the same figures as the Shareholder Meeting page's "Latest" tab. */
+function BoardSupport({ director, vote }: { director: string; vote: BoardVote }) {
+  const { year, meeting, row } = vote;
+  const support = cell(row, /^For\s*\//i);
+  const counts: [string, YearRow[string]][] = [
+    ["For", cell(row, /^For$/i)], ["Against", cell(row, /^Against$/i)], ["Withheld", cell(row, /^Withh/i)],
+    ["Abstained", cell(row, /^Abstain/i)], ["Broker Non-Votes", cell(row, /broker/i)],
+  ];
+  return (
+    <>
+      {/* "Annual - June 02, 2026" -> "Annual Meeting · June 02, 2026" */}
+      <div className="text-[13px] font-medium text-gray-600">
+        {meeting ? meeting.replace(/^Annual\s*-\s*/i, "Annual Meeting - ").replace(/\s+-\s+/, " · ") : year ? `Annual Meeting · ${year}` : "Latest Annual Meeting"}
+      </div>
+      <div className="overflow-hidden rounded-lg border border-gray-200">
+        <div className="flex items-center justify-between gap-4 border-b border-gray-200 bg-gray-50 px-4 py-3">
+          <span className="text-[15px] font-semibold text-gray-900">{String(row.Nominee ?? row.nominee ?? director)}</span>
+          {support != null && support !== "" && (
+            <span className="whitespace-nowrap text-right">
+              <span className="block text-lg font-semibold leading-tight text-[#931638]">{percent(support)}</span>
+              <span className="block text-[11px] font-medium uppercase tracking-wide text-gray-500">Support</span>
+            </span>
+          )}
+        </div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-2 px-4 py-3">
+          {counts.filter(([, v]) => v != null && v !== "").map(([label, v]) => (
+            <Fragment key={label}><dt className="text-gray-600">{label}</dt><dd className="text-right font-medium tabular-nums text-gray-900">{count(v)}</dd></Fragment>
+          ))}
+        </dl>
+      </div>
+    </>
+  );
+}
+
+/** A board's name: a link to the director's shareholder support there when the board's latest
+ *  annual meeting voted on them, plain text when it did not (and while that is being looked up). */
+function BoardSupportLink(props: BoardSupportProps) {
+  const vote = useBoardVote(props);
+  const [open, setOpen] = useState(false);
+  const close = useRef(() => setOpen(false)).current;
+  if (!vote) return <>{formatBoard(props.board)}</>;
+  const printed = boardCompany(props.board);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} title={`${props.director}'s shareholder support at ${printed}`}
+              className="text-left text-[#931638] underline decoration-[#931638]/30 underline-offset-2 hover:decoration-[#931638] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+        {formatBoard(props.board)}
+      </button>
+      {open && (
+        <SmallModal title={`${props.director}: Shareholder Support at ${printed}`} onClose={close}
+                    heading={(
+                      <div>
+                        <div className="text-[17px] font-semibold leading-snug text-gray-900">{props.director}</div>
+                        <div className="mt-0.5 text-[13px] font-normal text-gray-600">
+                          Shareholder Support at <span className="font-medium text-gray-800">{printed}</span> ({vote.company.ticker})
+                        </div>
+                      </div>
+                    )}>
+          <BoardSupport director={props.director} vote={vote} />
+        </SmallModal>
+      )}
+    </>
+  );
+}
+
 /** Current public boards, then former ones; a group with nothing to show is hidden. Each shows its
- *  top two; "..." opens both in full. */
-function BoardsCell({ d }: { d: Director }) {
+ *  top two; "..." opens both in full. With `support`, a CURRENT board whose shareholder-meeting data
+ *  holds the director's vote is a link to it; former boards are never links. */
+function BoardsCell({ d, support }: { d: Director; support?: Pick<BoardSupportProps, "aliases"> }) {
   const current = d.facts?.other_public_boards || [];
   const former = d.facts?.former_public_boards || [];
   if (!current.length && !former.length) return <span className="text-gray-400">—</span>;
-  const group = (label: string, boards: string[]) => !!boards.length && (
+  const group = (label: string, boards: string[], linked: boolean) => !!boards.length && (
     <div>
       <div className="text-xs font-semibold text-gray-700">{label}</div>
-      {boards.map((b) => <div key={b}>{formatBoard(b)}</div>)}
+      {boards.map((b) => (
+        <div key={b}>{linked && support ? <BoardSupportLink board={b} director={d.name} {...support} /> : formatBoard(b)}</div>
+      ))}
     </div>
   );
   return (
     <div className="space-y-1.5">
-      {group("Current Boards", current.slice(0, GLANCE_TOP))}
-      {group("Former Boards", former.slice(0, GLANCE_TOP))}
+      {group("Current Boards", current.slice(0, GLANCE_TOP), true)}
+      {group("Former Boards", former.slice(0, GLANCE_TOP), false)}
       {(current.length > GLANCE_TOP || former.length > GLANCE_TOP) && (
         <MoreButton label={`See all of ${d.name}'s public boards`} title={`${d.name}: Public Boards`}>
-          {group("Current Boards", current)}
-          {group("Former Boards", former)}
+          {group("Current Boards", current, true)}
+          {group("Former Boards", former, false)}
         </MoreButton>
       )}
     </div>
@@ -869,6 +1026,13 @@ function BoardAtAGlance({ directors, onOpen, result }: {
   const connections = useBoardConnections(isAdmin ? thisCik : "");
   const openDirector = (name: string) => setPanel({
     focus: { kind: "person", key: connections.data?.members.find((m) => m.name === name)?.key || "", cik: thisCik }, name });
+  // for a director's shareholder support on their other boards: the other ways their name is
+  // printed (from the connections answer) -- Intuit prints "Bill McDermott", Figma's vote
+  // "William R. McDermott"
+  const supportFor = (name: string) => {
+    const key = connections.data?.members.find((m) => m.name === name)?.key;
+    return { aliases: (key ? connections.data?.people[key]?.aka : undefined) || [] };
+  };
   const notOnSite = new Set(result.website?.compare?.proxy_only || []);
   const thisYear = new Date().getFullYear();
   return (
@@ -917,9 +1081,7 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                     <button type="button" onClick={() => openDirector(d.name)} aria-label={`${d.name}: board network`}
                             className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-2 py-0.5 text-[11px] font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
                       <Network size={11} />
-                      {(otherBoardsNow(connections.data, d.name) || 0) > 0
-                        ? `${otherBoardsNow(connections.data, d.name)} other board${otherBoardsNow(connections.data, d.name)! > 1 ? "s" : ""}`
-                        : "Board network"}
+                      Board network
                       <ChevronRight size={11} className="-mr-0.5 opacity-70" />
                     </button>
                   )}
@@ -935,7 +1097,8 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                 <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : <span className="text-gray-400">—</span>}</td>
                 <td className="p-2"><ExperienceCell d={d} /></td>
                 <td className="p-2">{(f.committees || []).join("; ") || <span className="text-gray-400">—</span>}</td>
-                <td className="p-2"><BoardsCell d={d} /></td>
+                {/* each board's name opens the director's shareholder support there (Admins only, beta) */}
+                <td className="p-2"><BoardsCell d={d} support={isAdmin ? supportFor(d.name) : undefined} /></td>
               </tr>
             );
           })}
