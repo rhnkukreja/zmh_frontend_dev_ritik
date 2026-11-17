@@ -263,6 +263,8 @@ type Committee = {
   joined_by_8k?: { name: string; effective: string | null; url: string | null }[];
   /** members the company's website lists and no filing does yet -- shown with that source */
   added_from_website?: { name: string; url: string; checked?: string | null; note?: string | null }[];
+  /** proxy members the company's website no longer lists on this committee -- taken off, with that source */
+  removed_per_website?: { name: string; url: string; checked?: string | null; note?: string | null }[];
 };
 
 type BoardCommittees = {
@@ -392,6 +394,8 @@ type BoardResult = {
   voting?: VotingResults;
   /** joins / departures / slates over the period -- absent on older results */
   refreshment?: Refreshment;
+  /** the last Refresh: when, by whom, and what it changed -- absent until one is made */
+  last_refresh?: { at: string; by?: string | null; duration_seconds?: number; changes: string[]; notes?: string[] };
 };
 
 type RunStatus = {
@@ -401,6 +405,8 @@ type RunStatus = {
   stages?: { stage: string; at: number }[];
   error?: string;
   already_running?: boolean;
+  /** "refresh" for a Refresh; a full run has none */
+  kind?: "refresh";
 };
 
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -435,7 +441,39 @@ export const resolveCompany = (ticker: string, name: string) =>
 const startRun = (cik: string) =>
   getJson<RunStatus>(`${BASE}/runs`, { method: "POST", body: JSON.stringify({ cik }) });
 
+/** Bring a saved result up to date: new 8-Ks, meeting results, the proxy's nominations and the
+ *  company's website -- the proxy is not read again. Progress comes back as the run status. */
+const startRefresh = (cik: string, by?: string) =>
+  getJson<RunStatus>(`${BASE}/refresh/${cik}`, {
+    method: "POST", headers: { ...getRequestHeaders(), ...(by ? { "X-User-Name": by } : {}) },
+  });
+
 const getRunStatus = (cik: string) => getJson<RunStatus>(`${BASE}/runs/${cik}`);
+
+/** What a Refresh proposes, waiting for an analyst: nothing in it is saved until a section is approved. */
+type DraftSectionKey = "board" | "committees" | "meeting" | "website";
+type DraftSection = {
+  title: string; changes: string[]; status: "pending" | "approved" | "rejected"; by?: string | null; at?: string;
+};
+type Draft = {
+  cik: string; created_at: string; by?: string | null; notes?: string[];
+  sections: Partial<Record<DraftSectionKey, DraftSection>>;
+  result: BoardResult;
+};
+/** The sections each tab shows: the tab's review box lists them and its badge counts their changes. */
+const TAB_SECTIONS: Partial<Record<string, DraftSectionKey[]>> = {
+  board: ["board", "website"], refresh: ["board"], nominees: ["committees"], meeting: ["meeting"],
+};
+const getDraft = (cik: string) =>
+  getJson<Draft>(`${BASE}/draft/${cik}`).catch((e) => {
+    if ((e as { status?: number }).status === 404) return null;
+    throw e;
+  });
+const decideDraft = (cik: string, section: DraftSectionKey, decision: "approve" | "reject", by?: string) =>
+  getJson<Draft>(`${BASE}/draft/${cik}/decide`, {
+    method: "POST", body: JSON.stringify({ section, decision }),
+    headers: { ...getRequestHeaders(), "Content-Type": "application/json", ...(by ? { "X-User-Name": by } : {}) },
+  });
 
 const getResult = (cik: string) => getJson<BoardResult>(`${BASE}/results/${cik}`);
 
@@ -1303,7 +1341,11 @@ function CommitteesSection({ data, proxyUrl, proxyDate, departed = [] }: {
                 const changed = committeeChanges(c, { chair: m.chair, members: m.members }, m.changed);
                 const upcoming = upcomingChange(c, m.changed);
                 const inEffect = !!c.before_change || m.changed;
-                const source = inEffect
+                // a change only the company's website shows: that source and the day it was read, no date
+                const siteChecked = (c.removed_per_website || [])[0]?.checked;
+                const source = inEffect && c.effective_source === "the company website" && !m.changed
+                  ? `Per the company website${siteChecked ? `, checked ${usDate(siteChecked)}` : ""}`
+                  : inEffect
                   ? `Effective ${m.effective ? usDate(m.effective) : ""}${c.effective_source === "the annual meeting after the proxy" ? " (the annual meeting after the proxy)" : " · per the proxy"}`
                   : `As disclosed in the proxy${proxyDate ? ` (${usDate(proxyDate)})` : ""}`;
                 const k = `${c.name}|changed`, ku = `${c.name}|upcoming`;
@@ -1963,6 +2005,16 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
   const [meetingView, setMeetingView] = useState<MeetingView>("voting");
   const [loading, setLoading] = useState(true);
   const { yoy, loading: yoyLoading } = useYearOnYear(companyId);
+  // Refresh is for analysts and Admins (user_type compared case-insensitively, as elsewhere)
+  const { user } = useAppSelector((state: RootState) => state.authentiction);
+  const role = (user?.user_type || "").trim().toLowerCase();
+  const canRefresh = role === "admin" || role === "analyst";
+  const refreshedBy = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.user_name || undefined;
+  // a Refresh waiting for review; the tab drawn from its proposed data; a decision being sent
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const [preview, setPreview] = useState(false);
+  const [deciding, setDeciding] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const pollRef = useRef<number | null>(null);
   // The latest company wins: a slower reply for a company shown earlier is ignored.
   const selectionRef = useRef(0);
@@ -1984,10 +2036,55 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
           const r = await getResult(cik);
           cacheResult(cik, r);
           if (selection === selectionRef.current) setResult(r);
+          if (s.kind === "refresh") {
+            const d = await getDraft(cik).catch(() => null);
+            if (selection === selectionRef.current) { setDraft(d); setPreview(false); }
+          }
         }
         if (s.state === "failed") { stopPolling(); setError(s.error || "The run failed."); }
       } catch (e) { /* transient; keep polling */ }
     }, POLL_MS);
+  };
+
+  const refresh = async (cik: string) => {
+    if (starting) return;
+    const selection = selectionRef.current;
+    setStarting(true);
+    setError(null);
+    try {
+      const s = await startRefresh(cik, refreshedBy);
+      if (selection !== selectionRef.current) return;
+      setRun({ ...s, kind: "refresh" });
+      poll(cik);
+    } catch (e) {
+      if (selection === selectionRef.current) setError((e as Error).message);
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  /** Approve (saved to S3; the replaced result is kept as a version) or reject one section of the waiting Refresh. */
+  const decide = async (cik: string, section: DraftSectionKey, decision: "approve" | "reject") => {
+    const selection = selectionRef.current;
+    setDeciding(`${section}:${decision}`); setError(null);
+    try {
+      const d = await decideDraft(cik, section, decision, refreshedBy);
+      if (selection !== selectionRef.current) return;
+      setDraft(Object.values(d.sections).some((x) => x?.status === "pending") ? d : null);
+      setPreview(false);
+      if (decision === "approve") {
+        const r = await getResult(cik);
+        cacheResult(cik, r);
+        if (selection === selectionRef.current) setResult(r);
+      }
+    } catch (e) {
+      if (selection !== selectionRef.current) return;
+      setError((e as { status?: number }).status === 409
+        ? "The saved data changed after this refresh was made. Press Refresh again to review the latest."
+        : (e as Error).message);
+    } finally {
+      if (selection === selectionRef.current) setDeciding(null);
+    }
   };
 
   const generate = async (cik: string) => {
@@ -2007,6 +2104,15 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
     stopPolling();
     const selection = ++selectionRef.current;
     setRun(null); setError(null); setMissing(false); setTab("board"); setMeetingView("voting");
+    setDraft(null); setPreview(false);
+    if (canRefresh) {
+      getDraft(company.cik).then((d) => { if (selection === selectionRef.current) setDraft(d); }).catch(() => undefined);
+    }
+    // A run or refresh keeps going on the server when the analyst opens another company. Coming back,
+    // its progress is picked up again, and a finished refresh's review is shown (poll -> getDraft).
+    getRunStatus(company.cik).then((s) => {
+      if (selection === selectionRef.current && s.state === "running") { setRun(s); poll(company.cik); }
+    }).catch(() => undefined);
     const cached = cachedResult(company.cik);
     if (cached) { setResult(cached); setLoading(false); return; }
     setResult(null); setLoading(true);
@@ -2034,6 +2140,9 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
   }, [company.cik]);
 
   const running = run?.state === "running";
+  // the open tab's sections waiting for review; while previewed, the tab is drawn from the refresh's result
+  const tabSections = (TAB_SECTIONS[tab] || []).filter((k) => draft?.sections[k]?.status === "pending");
+  const shown: BoardResult | null = preview && draft && tabSections.length ? draft.result : result;
 
   return (
     <div className="space-y-6">
@@ -2067,9 +2176,13 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
 
       {running && (
         <div className="border border-gray-200 rounded-lg p-4 space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium"><Loader2 size={16} className="animate-spin" style={{ color: BRAND }} />{run?.stage || "Working"}…</div>
-          <p className="text-xs text-gray-600">Reading the proxy, every 8-K Item 5.02 of the last five years, and the company's website takes a few minutes.</p>
-          <ul className="text-xs text-gray-600 space-y-0.5">{(run?.stages || []).map((s, i) => <li key={i}>{s.at}s — {s.stage}</li>)}</ul>
+          <div className="flex items-center gap-2 text-sm font-medium"><Loader2 size={16} className="animate-spin" style={{ color: BRAND }} />{run?.kind === "refresh" ? "Refreshing" : ""}{run?.kind === "refresh" && run?.stage ? ": " : ""}{run?.stage || "Working"}…</div>
+          <p className="text-xs text-gray-600">
+            {run?.kind === "refresh"
+              ? "Checking the 8-Ks, the annual meetings' results and the company's website for anything new since the proxy. This takes a few minutes; the page below stays as it is until it finishes."
+              : "Reading the proxy, every 8-K Item 5.02 of the last five years, and the company's website takes a few minutes."}
+          </p>
+          {/* the steps already done, with their timings, are not shown: only the step in progress above */}
         </div>
       )}
 
@@ -2077,9 +2190,49 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
         <>
           {/* No header block: the dashboard's top bar already names the company, and the proxy,
               EDGAR and board-page links live with the sections that use them. */}
+          {/* no "Last refreshed ... by ..." line: only the Refresh button and the review of its changes */}
+          {(canRefresh || draft) && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3">
+                {canRefresh && (
+                  <button onClick={() => refresh(result.company.cik)} disabled={running || starting}
+                          title="Check new 8-Ks and the annual meetings' results. The proxy is not read again."
+                          className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border border-[#931638]/40 text-[#931638] hover:bg-[#931638]/5 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <RefreshCw size={14} className={running && run?.kind === "refresh" ? "animate-spin" : ""} /> Refresh
+                  </button>
+                )}
+              </div>
+              {draft && !running && (
+                <div className="border border-amber-300 rounded-lg p-3 bg-amber-50">
+                  <div className="text-sm font-semibold text-gray-900">
+                    Refresh of {usDate(draft.created_at.slice(0, 10))}{draft.by ? ` by ${draft.by}` : ""} found changes to review
+                  </div>
+                  <p className="text-xs text-gray-700 mt-0.5">
+                    Nothing is saved until it is approved. Open each tab with a number, check the proposed data, then approve or reject it.
+                  </p>
+                  <ul className="mt-2 text-sm space-y-1">
+                    {(Object.entries(draft.sections) as [DraftSectionKey, DraftSection][]).map(([k, sec]) => (
+                      <li key={k} className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-gray-900">{sec.title}</span>
+                        <span className="text-gray-600">· {sec.changes.length} change{sec.changes.length === 1 ? "" : "s"}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${sec.status === "pending" ? "bg-amber-100 text-amber-800" : sec.status === "approved" ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}`}>
+                          {sec.status === "pending" ? "Waiting for review" : `${sec.status === "approved" ? "Approved" : "Rejected"}${sec.by ? ` by ${sec.by}` : ""}`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {!!draft.notes?.length && <ul className="mt-2 text-xs text-gray-600 space-y-0.5">{draft.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}
+                </div>
+              )}
+              {/* no "What changed" summary after the review: the changes are seen and decided in
+                  the review above, before anything is saved */}
+            </div>
+          )}
           <div className="flex flex-wrap items-end gap-1 border-b border-gray-200">
             {([
-              ["board", `Current Board (${result.proxy.directors.length})`, Users],
+              // the directors on the board now: a director who has left keeps their row (marked
+              // "Left the board") but is not counted
+              ["board", `Current Board (${result.proxy.directors.filter((d) => !d.left_after_proxy).length})`, Users],
               ["refresh", "Board Refreshment", RefreshCw],
               ["nominees", "Board Committees", Users],
               ["matrix", "Skills Matrix", FileText],
@@ -2090,29 +2243,62 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
               // ["website", "Website comparison", Globe],
               // ["filings", `8-K 5.02 since proxy (${result.filings_502.items.length})`, FileText],
               // ["appointments", `Appointments, 5 years (${result.appointments.items.length})`, Users],
-            ] as const).map(([key, label, Icon]) => (
-              <button key={key} onClick={() => setTab(key as Tab)}
-                      className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 -mb-px ${tab === key ? "border-[#931638] text-[#931638] font-medium" : "border-transparent text-gray-700 hover:text-black"}`}>
-                <Icon size={15} />{label}
-              </button>
-            ))}
+            ] as const).map(([key, label, Icon]) => {
+              const waiting = (TAB_SECTIONS[key] || []).reduce(
+                (n, k) => n + (draft?.sections[k]?.status === "pending" ? draft.sections[k]!.changes.length : 0), 0);
+              return (
+                <button key={key} onClick={() => { setTab(key as Tab); setPreview(false); }}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm border-b-2 -mb-px ${tab === key ? "border-[#931638] text-[#931638] font-medium" : "border-transparent text-gray-700 hover:text-black"}`}>
+                  <Icon size={15} />{label}
+                  {!!waiting && <span className="rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold text-amber-800" title="Changes waiting for review">{waiting}</span>}
+                </button>
+              );
+            })}
           </div>
 
-          <SectionGuard key={`${result.company.cik}-${tab}-${meetingView}`}>
-          {tab === "board" && <BoardTab key={result.company.cik} result={result} />}
+          {tabSections.map((k) => {
+            const sec = draft!.sections[k]!;
+            return (
+              <div key={k} className="border border-amber-300 rounded-lg p-3 bg-amber-50 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-gray-900">Proposed by the refresh: {sec.title}</span>
+                  <span className="text-xs text-gray-600">{preview ? "Showing the proposed data below" : "Showing the saved data below"}</span>
+                  <div className="ml-auto flex flex-wrap gap-2">
+                    <button onClick={() => setPreview((v) => !v)}
+                            className="px-3 py-1 rounded-lg text-sm border border-gray-300 bg-white text-gray-800 hover:border-gray-500">
+                      {preview ? "Show saved" : "Preview proposed"}
+                    </button>
+                    <button onClick={() => decide(result.company.cik, k, "reject")} disabled={!!deciding}
+                            className="px-3 py-1 rounded-lg text-sm border border-gray-300 bg-white text-gray-800 hover:border-red-400 hover:text-red-700 disabled:opacity-50">
+                      {deciding === `${k}:reject` ? "Rejecting…" : "Reject"}
+                    </button>
+                    <button onClick={() => decide(result.company.cik, k, "approve")} disabled={!!deciding}
+                            className="px-3 py-1 rounded-lg text-sm text-white disabled:opacity-50" style={{ background: BRAND }}>
+                      {deciding === `${k}:approve` ? "Saving…" : "Approve"}
+                    </button>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 text-sm text-gray-800 space-y-0.5">{sec.changes.map((c, i) => <li key={i}>{c}</li>)}</ul>
+              </div>
+            );
+          })}
+
+          {shown && (
+          <SectionGuard key={`${shown.company.cik}-${tab}-${meetingView}-${preview}`}>
+          {tab === "board" && <BoardTab key={`${shown.company.cik}-${preview}`} result={shown} />}
           {tab === "nominees" && (
             <div className="space-y-8">
-              <CommitteesSection data={result.proxy.committees} proxyUrl={result.proxy.url}
-                                 proxyDate={result.proxy.filing_date} departed={result.refreshment?.departed} />
-              <ProxySectionView section={result.proxy.sections?.nominees} proxyUrl={result.proxy.url} fallbackTitle="Director nominees" />
+              <CommitteesSection data={shown.proxy.committees} proxyUrl={shown.proxy.url}
+                                 proxyDate={shown.proxy.filing_date} departed={shown.refreshment?.departed} />
+              <ProxySectionView section={shown.proxy.sections?.nominees} proxyUrl={shown.proxy.url} fallbackTitle="Director nominees" />
             </div>
           )}
-          {tab === "matrix" && <MatrixSection result={result} />}
-          {tab === "peers" && <PeersSection peers={result.proxy.peers} proxyUrl={result.proxy.url} />}
-          {tab === "refresh" && <RefreshmentSection r={result.refreshment} />}
+          {tab === "matrix" && <MatrixSection result={shown} />}
+          {tab === "peers" && <PeersSection peers={shown.proxy.peers} proxyUrl={shown.proxy.url} />}
+          {tab === "refresh" && <RefreshmentSection r={shown.refreshment} />}
           {/* hidden for now: no tab opens these (see the tab row) */}
-          {tab === "filings" && <FilingsSection result={result} />}
-          {tab === "appointments" && <AppointmentsSection result={result} />}
+          {tab === "filings" && <FilingsSection result={shown} />}
+          {tab === "appointments" && <AppointmentsSection result={shown} />}
           {tab === "meeting" && (
             <div className="space-y-6">
               <BoxedTabs<MeetingView>
@@ -2128,18 +2314,21 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
                   {yoy && <YearOnYearTable yoy={yoy} />}
                   {/* the dashboard's year-on-year data already carries the latest meeting: our own
                       8-K reading is shown only when it is not there (e.g. the standalone page) */}
-                  {!yoy && !yoyLoading && <VotingResultsSection voting={result.voting} cik={result.company.cik} />}
+                  {/* while previewing a refresh, its own meeting reading is what changed: show it */}
+                  {((!yoy && !yoyLoading) || (preview && tabSections.length > 0)) &&
+                    <VotingResultsSection voting={shown.voting} cik={shown.company.cik} />}
                 </div>
               )}
               {/* only the proxy's section on next year's stockholder proposals and director
                   nominations; the general meeting Q&A (sections.qa) is not shown */}
               {meetingView === "proposals" && (
-                <ProxySectionView section={result.proxy.sections?.proposals} proxyUrl={result.proxy.url}
+                <ProxySectionView section={shown.proxy.sections?.proposals} proxyUrl={shown.proxy.url}
                                   fallbackTitle="Stockholder proposals and director nominees for next year's annual meeting" />
               )}
             </div>
           )}
           </SectionGuard>
+          )}
         </>
       )}
     </div>

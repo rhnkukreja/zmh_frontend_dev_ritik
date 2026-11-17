@@ -135,7 +135,7 @@ const KIND = {
 
 /** "Carrier Global Corporation" -> "Carrier Global". Pure. */
 const bare = (s: string) => s.replace(/,?\s+(Inc\.?|Incorporated|Corporation|Corp\.?|Company|Co\.?|plc|Ltd\.?|LLP|L\.P\.|N\.V\.|S\.A\.)$/i, "")
-  .replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Company|Co\.?|Holdings)$/i, "").trim() || s;
+  .replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Company|Co\.?|Holdings)$/i, "").replace(/\s*&$/, "").trim() || s;
 /** The sentence for one link: "Both on Amgen's board now", "Both worked at PricewaterhouseCoopers". Pure. */
 const why = (t: Tie) => (t.kind === "now" ? `Both on ${bare(t.company)}'s board now` : `Both worked at ${bare(t.company)}`);
 /** The same, short enough to sit under a name on the map. Pure. */
@@ -163,6 +163,104 @@ const wrap = (s: string, max: number) => {
   return out.slice(0, 2);
 };
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** Up to `maxLines` lines of about `max` characters, the last one shortened when the text runs over. Pure. */
+const wrapLines = (s: string, max: number, maxLines: number) => {
+  const out: string[] = [];
+  let cur = "";
+  for (const w of s.split(" ")) {
+    if ((`${cur} ${w}`).trim().length > max && cur) { out.push(cur); cur = w; } else cur = `${cur} ${w}`.trim();
+  }
+  if (cur) out.push(cur);
+  if (out.length > maxLines) out[maxLines - 1] = `${out[maxLines - 1].slice(0, max - 1)}…`;
+  return out.slice(0, maxLines);
+};
+
+const CHAR_WIDTH = 0.6;              // a bold character's width as a share of the font size
+const LINE_HEIGHT = 1.15;
+
+/** The largest font, from `sizes`, at which a name wraps into a circle of radius `r`, each line no wider
+ *  than the circle at its height, leaving `below` pixels under the name for a second line of text. Pure. */
+function fitInCircle(name: string, r: number, sizes: number[], below = 0) {
+  for (const fs of sizes) {
+    const maxChars = Math.floor((2 * r * 0.84) / (fs * CHAR_WIDTH));
+    for (const n of [1, 2, 3]) {
+      const lines = wrapLines(name, maxChars, n);
+      if (lines.join(" ").length < name.length && n < 3) continue;
+      const block = lines.length * fs * LINE_HEIGHT;
+      const top = -(block + below) / 2;
+      const fits = lines.every((l, j) => {
+        const y = Math.max(Math.abs(top + j * fs * LINE_HEIGHT), Math.abs(top + (j + 1) * fs * LINE_HEIGHT));
+        const chord = 2 * Math.sqrt(Math.max(r * r - y * y, 0)) * 0.9;
+        return l.length * fs * CHAR_WIDTH <= chord;
+      });
+      if (fits) return { lines, fs, top };
+    }
+  }
+  const fs = sizes[sizes.length - 1];
+  const lines = wrapLines(name, Math.floor((2 * r * 0.84) / (fs * CHAR_WIDTH)), 3);
+  return { lines, fs, top: -(lines.length * fs * LINE_HEIGHT + below) / 2 };
+}
+
+/** A shared company's card in the ring: its name lines and size. Pure. */
+function cardOf(company: string) {
+  const lines = wrap(bare(company), 16);
+  return { lines, w: Math.max(96, Math.max(...lines.map((l) => l.length)) * 8.6 + 28), h: lines.length * 18 + 24 };
+}
+
+const CARD_GAP = 14;                 // space kept between two cards
+const RELAX_STEPS = 240;
+
+const LINE_CLEARANCE = 8;            // space kept between a card and another company's line
+const LINE_STEP = 5;
+
+/** Card centres inside a ring of radius `ringR` (relative to its centre): each starts at the midpoint of
+ *  its directors (`ends`) and is pushed off any card it overlaps and off the lines of the other cards,
+ *  pulled back toward that midpoint, and kept inside the ring. Deterministic: the same board always draws
+ *  the same way. Pure. */
+function placeCards(starts: { x: number; y: number }[], sizes: { w: number; h: number }[], ringR: number,
+                    ends: { x: number; y: number }[][] = []) {
+  const p = starts.map((s) => ({ ...s }));
+  for (let step = 0; step < RELAX_STEPS; step++) {
+    for (let i = 0; i < p.length; i++) {
+      for (let j = 0; j < p.length; j++) {
+        if (i === j) continue;
+        for (const e of ends[j] || []) {
+          const vx = p[j].x - e.x, vy = p[j].y - e.y, len2 = vx * vx + vy * vy || 1;
+          const t = Math.max(0, Math.min(1, ((p[i].x - e.x) * vx + (p[i].y - e.y) * vy) / len2));
+          const dx = p[i].x - (e.x + t * vx), dy = p[i].y - (e.y + t * vy);
+          if (Math.abs(dx) >= sizes[i].w / 2 + LINE_CLEARANCE || Math.abs(dy) >= sizes[i].h / 2 + LINE_CLEARANCE) continue;
+          const d = Math.hypot(dx, dy);
+          const nx = d > 0.5 ? dx / d : -vy / Math.sqrt(len2), ny = d > 0.5 ? dy / d : vx / Math.sqrt(len2);
+          p[i].x += nx * LINE_STEP; p[i].y += ny * LINE_STEP;
+        }
+      }
+    }
+    for (let i = 0; i < p.length; i++) {
+      for (let j = i + 1; j < p.length; j++) {
+        const dx = p[j].x - p[i].x, dy = p[j].y - p[i].y;
+        const ox = (sizes[i].w + sizes[j].w) / 2 + CARD_GAP - Math.abs(dx);
+        const oy = (sizes[i].h + sizes[j].h) / 2 + CARD_GAP - Math.abs(dy);
+        if (ox <= 0 || oy <= 0) continue;
+        if (ox < oy) {
+          const push = (ox / 2) * (dx >= 0 ? 1 : -1);
+          p[i].x -= push; p[j].x += push;
+        } else {
+          const push = (oy / 2) * (dy >= 0 ? 1 : -1);
+          p[i].y -= push; p[j].y += push;
+        }
+      }
+    }
+    p.forEach((q, i) => {
+      q.x += (starts[i].x - q.x) * 0.01;
+      q.y += (starts[i].y - q.y) * 0.01;
+      const limit = ringR - 34 - Math.hypot(sizes[i].w, sizes[i].h) / 2;
+      const d = Math.hypot(q.x, q.y);
+      if (d > Math.max(limit, 0)) { q.x *= Math.max(limit, 0) / d; q.y *= Math.max(limit, 0) / d; }
+    });
+  }
+  return p;
+}
 
 function Tag({ kind, children }: { kind: "grey" | "brand"; children: React.ReactNode }) {
   const s = kind === "brand" ? { color: BRAND, background: C.brandSoft } : { color: C.muted, background: "#eef0f3" };
@@ -285,7 +383,9 @@ function PersonMap({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
         const by = tops[i] + rows[i].band / 2, { list, height, more } = rows[i];
         const here = b.cik === thisCik, open = b.ours && !!b.cik;
         const others = b.members.length, knows = b.members.filter((f) => f.ties.length).length;
-        const lines = wrap(bare(b.company), 13);
+        const subLines = b.partial && knows > 0 ? 2 : 1;
+        const label = fitInCircle(bare(b.company), BR, [15, 14, 13, 12, 11], subLines * 16 + 4);
+        const nameBottom = by + label.top + label.lines.length * label.fs * LINE_HEIGHT;
         let y0 = by - height / 2;
         return (
           <g key={b.key}>
@@ -324,17 +424,18 @@ function PersonMap({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
               <title>{open ? `Open ${b.company}'s board` : `${b.company}: not in coverage, so only the directors our proxies name on it are known`}</title>
               <circle cx={BX} cy={by} r={BR} fill={here ? C.brandSoft : "#fff"} stroke={here ? BRAND : b.ours ? C.slate : C.dot} strokeWidth={2.5}
                       strokeDasharray={b.ours ? undefined : "5 4"} className={open ? "transition-[stroke-width] group-hover:[stroke-width:4.5]" : undefined} />
-              {lines.map((l, j) => (
-                <text key={j} x={BX} y={by - 9 - (lines.length - 1) * 8 + j * 17} textAnchor="middle" fontSize={15} fontWeight={700} fill={C.ink}>{l}</text>
+              {label.lines.map((l, j) => (
+                <text key={j} x={BX} y={by + label.top + (j + 1) * label.fs * LINE_HEIGHT - label.fs * 0.22}
+                      textAnchor="middle" fontSize={label.fs} fontWeight={700} fill={C.ink}>{l}</text>
               ))}
               {/* a board not in coverage: how many we do not know, so no count of "others" */}
               {b.partial ? (
                 <>
-                  {knows > 0 && <text x={BX} y={by + 19} textAnchor="middle" fontSize={12.5} fill={C.text}>knows {knows}</text>}
-                  <text x={BX} y={by + (knows > 0 ? 35 : 21)} textAnchor="middle" fontSize={11.5} fontWeight={600} fill={C.muted}>not in coverage</text>
+                  {knows > 0 && <text x={BX} y={nameBottom + 16} textAnchor="middle" fontSize={12.5} fill={C.text}>knows {knows}</text>}
+                  <text x={BX} y={nameBottom + (knows > 0 ? 32 : 16)} textAnchor="middle" fontSize={11.5} fontWeight={600} fill={C.muted}>not in coverage</text>
                 </>
               ) : (
-                <text x={BX} y={by + 19} textAnchor="middle" fontSize={12.5} fill={C.text}>
+                <text x={BX} y={nameBottom + 16} textAnchor="middle" fontSize={12.5} fill={C.text}>
                   {knows ? `knows ${knows} of ${others}` : plural(others, "other")}
                 </text>
               )}
@@ -346,9 +447,13 @@ function PersonMap({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
       {/* the director the window is about */}
       <circle cx={PX} cy={py} r={PR + 6} fill="none" stroke={BRAND} strokeOpacity={0.25} strokeWidth={2} />
       <circle cx={PX} cy={py} r={PR} fill={BRAND} />
-      {wrap(circle.name, 13).map((l, j, arr) => (
-        <text key={j} x={PX} y={py + 6 - (arr.length - 1) * 9 + j * 18} textAnchor="middle" fontSize={16} fontWeight={700} fill="#fff">{l}</text>
-      ))}
+      {(() => {
+        const label = fitInCircle(circle.name, PR, [16, 15, 14, 13, 12]);
+        return label.lines.map((l, j) => (
+          <text key={j} x={PX} y={py + label.top + (j + 1) * label.fs * LINE_HEIGHT - label.fs * 0.22}
+                textAnchor="middle" fontSize={label.fs} fontWeight={700} fill="#fff">{l}</text>
+        ));
+      })()}
     </svg>
   );
 }
@@ -512,40 +617,23 @@ function RingMap({ data, selected, paint, onPerson }: {
     };
   }, [data.members, data.shared, selected]);
 
+  const cards = useMemo(() => data.shared.map((g) => cardOf(g.company)), [data.shared]);
+
   const boxes = useMemo(() => {
     const k = data.shared.length;
-    const baseRi = Math.max(R * 0.48, (k * 145) / (2 * Math.PI));
-    
-    const ideal = data.shared.map((g, idx) => {
-      const ps = g.people.map((p) => pos.get(p.key)!).filter(Boolean);
-      const xSum = ps.reduce((s, p) => s + p.x - cx, 0);
-      const ySum = ps.reduce((s, p) => s + p.y - cy, 0);
-      
-      // Handle perfectly mirrored/centered relationships (e.g. Top to Bottom only)
-      if (Math.abs(xSum) < 0.1 && Math.abs(ySum) < 0.1) {
-        if (k === 1) return { a: 0, r: 0 }; // 1 Company: Dead center
-        if (k === 2) return { a: idx === 0 ? Math.PI : 0, r: baseRi }; // 2 Companies: Left and Right (Side-by-side)
-        return { a: (idx * 2 * Math.PI) / k, r: baseRi }; // 3+ Companies: Distribute evenly in a circle
-      }
-      return { a: Math.atan2(ySum, xSum), r: baseRi };
+    const starts = data.shared.map((g, i) => {
+      const ps = g.people.map((p) => pos.get(p.key)).filter(Boolean) as { x: number; y: number }[];
+      const x = ps.reduce((s, p) => s + p.x - cx, 0) / Math.max(ps.length, 1);
+      const y = ps.reduce((s, p) => s + p.y - cy, 0) / Math.max(ps.length, 1);
+      if (Math.hypot(x, y) > 12 || k === 1) return { x, y };
+      // directors facing each other across the ring: no side to lean to, so spread round the middle
+      const a = -Math.PI / 2 + (i * 2 * Math.PI) / k;
+      return { x: Math.cos(a) * R * 0.3, y: Math.sin(a) * R * 0.3 };
     });
-    
-    const gap = Math.min(145 / Math.max(baseRi, 1), (2 * Math.PI) / Math.max(k, 1));
-    
-    const order = ideal.map((_, i) => i).sort((i, j) => ideal[i].a - ideal[j].a);
-    const placed: number[] = [];
-    order.forEach((i, j) => placed.push(j ? Math.max(ideal[i].a, placed[j - 1] + gap) : ideal[i].a));
-    const shift = (order.reduce((s, i) => s + ideal[i].a, 0) - placed.reduce((s, a) => s + a, 0)) / Math.max(k, 1);
-    
-    const out = new Array<{ x: number; y: number }>(k);
-    order.forEach((i, j) => { 
-      const a = placed[j] + shift; 
-      const r = ideal[i].r; 
-      out[i] = { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }; 
-    });
-    
-    return out;
-  }, [data.shared, pos, cx, cy]);
+    const ends = data.shared.map((g) => g.people.map((p) => pos.get(p.key)).filter(Boolean)
+      .map((q) => ({ x: q!.x - cx, y: q!.y - cy })));
+    return placeCards(starts, cards, R, ends).map((p) => ({ x: cx + p.x, y: cy + p.y }));
+  }, [data.shared, cards, pos, cx, cy]);
 
   const linked = new Set(data.shared.flatMap((g) => g.people.map((p) => p.key)));
   const groupsOf = (key: string) => new Set(data.shared.map((g, i) => (g.people.some((p) => p.key === key) ? i : -1)).filter((i) => i >= 0));
@@ -573,7 +661,7 @@ function RingMap({ data, selected, paint, onPerson }: {
                             style={{ opacity: isVisible ? (lit(i) ? 1 : 0.1) : 0, transition: "opacity 0.66s ease" }} />;
         }))}
         {data.shared.map((g, i) => {
-          const lines = wrap(bare(g.company), 16), w = Math.max(96, Math.max(...lines.map((l) => l.length)) * 8.6 + 28), h = lines.length * 18 + 24;
+          const { lines, w, h } = cards[i];
           const color = paint(g.key);
           const isVisible = visibleLinks.has(g.key);
           return (
