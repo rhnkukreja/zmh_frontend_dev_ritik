@@ -37,7 +37,8 @@ type Kind = "now" | "worked";
 /** What two people share: a board both sit on now, or a company both were at (any years). Roles and
  *  sources are the first person's, then the second's. */
 export type Tie = { key: string; company: string; ticker: string | null; kind: Kind; roles?: string[]; sources?: Source[] };
-type Fellow = { key: string; name: string; position?: string | null; home: string | null; ties: Tie[] };
+/** `linkHidden`: they share a company with the director, but only of a kind of link switched off. */
+type Fellow = { key: string; name: string; position?: string | null; home: string | null; ties: Tie[]; linkHidden?: boolean };
 type CircleBoard = {
   key: string; company: string; ticker: string | null; cik: string | null; ours: boolean; role: string;
   /** a board whose proxy we do not hold: only the people our proxies' biographies name on it */
@@ -125,12 +126,25 @@ function assignColours(keys: string[], memory: Map<string, number>): Paint {
 }
 /** The colour as a faint background (8% strength). Pure. */
 const soft = (hex: string) => `${hex}14`;
+/** The colour darkened until it reads as text on white (contrast 4.5:1): the light colours of the set
+ *  (yellow, green, pink) are lines and dots, too pale for a name. Pure. */
+function textColour(hex: string) {
+  const lum = (c: number[]) => {
+    const [r, g, b] = c.map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  let c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  while (1.05 / (lum(c) + 0.05) < 4.5) c = c.map((v) => Math.round(v * 0.9));
+  return `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
 
 // ─── Words ──────────────────────────────────────────────────────────────────────────────────
 
 const KIND = {
-  now: { label: "Together now", long: "Sit on another board together now", dash: undefined as string | undefined },
-  worked: { label: "Past workplace", long: "Past workplace in common (years not printed)", dash: "7 5" },
+  // "now" is ANOTHER board: everyone on a board already sits on it together (measured: Schumacher, on
+  // CrowdStrike with Austin, read as not "together now" under the old label)
+  now: { label: "Also on another board now", long: "Also sit on another board together now", dash: undefined as string | undefined },
+  worked: { label: "Worked together before", long: "Worked at the same company before (years not printed)", dash: "7 5" },
 } as const;
 
 /** "Carrier Global Corporation" -> "Carrier Global". Pure. */
@@ -208,56 +222,140 @@ function cardOf(company: string) {
   return { lines, w: Math.max(96, Math.max(...lines.map((l) => l.length)) * 8.6 + 28), h: lines.length * 18 + 24 };
 }
 
-const CARD_GAP = 14;                 // space kept between two cards
-const RELAX_STEPS = 240;
+const CARD_GAP = 24;                 // space kept between two cards
+const RING_MARGIN = 34;              // a card keeps this far inside the ring, clear of the directors' circles
+const LINE_PAD = 6;                  // a line closer than this to a card runs under it
+const CROSS_COST = 400;              // a line crossing another card's line, counted as this many pixels of line
+const UNDER_COST = 600;              // a line running under a card
+const ROTATIONS = 24;                // turns of the slot pattern tried
+const MAX_EXACT = 5;                 // up to this many cards every assignment to the slots is tried; more: one by one
+const SEPARATE_STEPS = 200;          // the last passes: two cards still touching are pushed apart
 
-const LINE_CLEARANCE = 8;            // space kept between a card and another company's line
-const LINE_STEP = 5;
+type Pt = { x: number; y: number };
+type Box = { x: number; y: number; w: number; h: number };
 
-/** Card centres inside a ring of radius `ringR` (relative to its centre): each starts at the midpoint of
- *  its directors (`ends`) and is pushed off any card it overlaps and off the lines of the other cards,
- *  pulled back toward that midpoint, and kept inside the ring. Deterministic: the same board always draws
- *  the same way. Pure. */
-function placeCards(starts: { x: number; y: number }[], sizes: { w: number; h: number }[], ringR: number,
-                    ends: { x: number; y: number }[][] = []) {
-  const p = starts.map((s) => ({ ...s }));
-  for (let step = 0; step < RELAX_STEPS; step++) {
-    for (let i = 0; i < p.length; i++) {
-      for (let j = 0; j < p.length; j++) {
-        if (i === j) continue;
-        for (const e of ends[j] || []) {
-          const vx = p[j].x - e.x, vy = p[j].y - e.y, len2 = vx * vx + vy * vy || 1;
-          const t = Math.max(0, Math.min(1, ((p[i].x - e.x) * vx + (p[i].y - e.y) * vy) / len2));
-          const dx = p[i].x - (e.x + t * vx), dy = p[i].y - (e.y + t * vy);
-          if (Math.abs(dx) >= sizes[i].w / 2 + LINE_CLEARANCE || Math.abs(dy) >= sizes[i].h / 2 + LINE_CLEARANCE) continue;
-          const d = Math.hypot(dx, dy);
-          const nx = d > 0.5 ? dx / d : -vy / Math.sqrt(len2), ny = d > 0.5 ? dy / d : vx / Math.sqrt(len2);
-          p[i].x += nx * LINE_STEP; p[i].y += ny * LINE_STEP;
-        }
-      }
+/** Two segments cross (meeting at a shared end, a director, is not a crossing). Pure. */
+function segmentsCross(a: Pt, b: Pt, c: Pt, d: Pt) {
+  const same = (p: Pt, q: Pt) => Math.abs(p.x - q.x) < 0.5 && Math.abs(p.y - q.y) < 0.5;
+  if (same(a, c) || same(a, d) || same(b, c) || same(b, d)) return false;
+  const turn = (p: Pt, q: Pt, r: Pt) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  return turn(a, b, c) * turn(a, b, d) < 0 && turn(c, d, a) * turn(c, d, b) < 0;
+}
+
+/** A segment passes through a box grown by `pad` on every side (Liang-Barsky clipping). Pure. */
+function segmentHitsBox(a: Pt, b: Pt, box: Box, pad: number) {
+  const x0 = box.x - box.w / 2 - pad, x1 = box.x + box.w / 2 + pad, y0 = box.y - box.h / 2 - pad, y1 = box.y + box.h / 2 + pad;
+  const dx = b.x - a.x, dy = b.y - a.y;
+  let lo = 0, hi = 1;
+  for (const [p, q] of [[-dx, a.x - x0], [dx, x1 - a.x], [-dy, a.y - y0], [dy, y1 - a.y]] as const) {
+    if (p === 0) { if (q < 0) return false; continue; }
+    const t = q / p;
+    if (p < 0) lo = Math.max(lo, t); else hi = Math.min(hi, t);
+    if (lo > hi) return false;
+  }
+  return true;
+}
+
+/** Slots spread evenly over the inside of the ring for `k` cards: one in the middle and the rest evenly round
+ *  an inner circle of radius `r` (two cards: either side of the middle), the pattern turned by `turn`. Pure. */
+function slotsFor(k: number, r: number, turn: number): Pt[] {
+  if (k === 1) return [{ x: 0, y: 0 }];
+  const round = k <= 5 ? k : k - 1;
+  const ring = Array.from({ length: round }, (_, i) => {
+    const a = turn + (i * 2 * Math.PI) / round;
+    return { x: r * Math.cos(a), y: r * Math.sin(a) };
+  });
+  return k <= 5 ? ring : [{ x: 0, y: 0 }, ...ring];
+}
+
+/** What an arrangement costs: its lines' length, and a great deal for each line crossing another card's
+ *  line or running under another card. Pure. */
+function arrangementCost(at: Pt[], sizes: { w: number; h: number }[], ends: Pt[][]) {
+  const lines = at.flatMap((p, i) => (ends[i] || []).map((e) => ({ i, a: p, b: e })));
+  let cost = lines.reduce((s, l) => s + Math.hypot(l.b.x - l.a.x, l.b.y - l.a.y), 0);
+  for (let m = 0; m < lines.length; m++) {
+    for (let n = m + 1; n < lines.length; n++) {
+      if (lines[m].i !== lines[n].i && segmentsCross(lines[m].a, lines[m].b, lines[n].a, lines[n].b)) cost += CROSS_COST;
     }
+    at.forEach((p, k) => {
+      if (k !== lines[m].i && segmentHitsBox(lines[m].a, lines[m].b, { ...p, ...sizes[k] }, LINE_PAD)) cost += UNDER_COST;
+    });
+  }
+  return cost;
+}
+
+/** Every order of 0..n-1 (n small). Pure. */
+function orders(n: number): number[][] {
+  if (n <= 1) return [Array.from({ length: n }, (_, i) => i)];
+  return orders(n - 1).flatMap((o) => Array.from({ length: n }, (_, k) => [...o.slice(0, k), n - 1, ...o.slice(k)]));
+}
+
+/** Where each shared company's card sits inside a ring of radius `ringR` (relative to its centre). The cards
+ *  fill the ring evenly: one slot in the middle and the rest evenly round an inner circle (slotsFor), so no
+ *  part of the ring is left empty while the cards bunch in another (measured: CrowdStrike, all three cards
+ *  in its top half). The pattern is tried at ROTATIONS turns and, up to MAX_EXACT cards, with every
+ *  assignment of cards to slots; the arrangement with the shortest lines to each card's directors (`ends`)
+ *  and the fewest crossing lines and lines under cards is kept. More cards are placed one by one, each in
+ *  the cheapest free slot. Two cards still touching are then pushed apart. `starts` is unused for the
+ *  layout and kept for the caller's signature. Deterministic: the same board always draws the same way. Pure. */
+function placeCards(starts: Pt[], sizes: { w: number; h: number }[], ringR: number, ends: Pt[][] = []) {
+  const k = sizes.length;
+  if (!k) return [];
+  const limit = ringR - RING_MARGIN;
+  const halfDiag = Math.max(...sizes.map((s) => Math.hypot(s.w, s.h) / 2));
+  const widest = Math.max(...sizes.map((s) => s.w));
+  const round = k <= 5 ? k : k - 1;
+  const spacing = round > 1 ? (widest + CARD_GAP) / (2 * Math.sin(Math.PI / round)) : 0;
+  const r = Math.max(0, Math.min(limit - halfDiag, Math.max(0.65 * limit, spacing)));
+  let best: { at: Pt[]; cost: number } | null = null;
+  for (let t = 0; t < ROTATIONS; t++) {
+    const slots = slotsFor(k, r, (t * 2 * Math.PI) / ROTATIONS);
+    if (k <= MAX_EXACT) {
+      for (const o of orders(k)) {
+        const at = o.map((s) => slots[s]);
+        const cost = arrangementCost(at, sizes, ends);
+        if (!best || cost < best.cost) best = { at, cost };
+      }
+    } else {
+      // most directors first, each to the free slot that costs least with the cards already placed
+      const order = sizes.map((_, i) => i).sort((i, j) => (ends[j]?.length || 0) - (ends[i]?.length || 0) || i - j);
+      const at: Pt[] = starts.map((s) => ({ ...s }));
+      const free = new Set(slots.map((_, i) => i));
+      const done: number[] = [];
+      for (const i of order) {
+        let pick = -1, pickCost = Infinity;
+        for (const s of free) {
+          at[i] = slots[s];
+          const c = arrangementCost([...done, i].map((j) => at[j]), [...done, i].map((j) => sizes[j]), [...done, i].map((j) => ends[j] || []));
+          if (c < pickCost) { pick = s; pickCost = c; }
+        }
+        at[i] = slots[pick];
+        free.delete(pick);
+        done.push(i);
+      }
+      const cost = arrangementCost(at, sizes, ends);
+      if (!best || cost < best.cost) best = { at, cost };
+    }
+  }
+  const p = best!.at.map((q) => ({ ...q }));
+  for (let step = 0; step < SEPARATE_STEPS; step++) {
+    let moved = false;
     for (let i = 0; i < p.length; i++) {
       for (let j = i + 1; j < p.length; j++) {
         const dx = p[j].x - p[i].x, dy = p[j].y - p[i].y;
         const ox = (sizes[i].w + sizes[j].w) / 2 + CARD_GAP - Math.abs(dx);
         const oy = (sizes[i].h + sizes[j].h) / 2 + CARD_GAP - Math.abs(dy);
         if (ox <= 0 || oy <= 0) continue;
-        if (ox < oy) {
-          const push = (ox / 2) * (dx >= 0 ? 1 : -1);
-          p[i].x -= push; p[j].x += push;
-        } else {
-          const push = (oy / 2) * (dy >= 0 ? 1 : -1);
-          p[i].y -= push; p[j].y += push;
-        }
+        moved = true;
+        if (ox < oy) { const push = (ox / 2) * (dx >= 0 ? 1 : -1); p[i].x -= push; p[j].x += push; }
+        else { const push = (oy / 2) * (dy >= 0 ? 1 : -1); p[i].y -= push; p[j].y += push; }
       }
     }
     p.forEach((q, i) => {
-      q.x += (starts[i].x - q.x) * 0.01;
-      q.y += (starts[i].y - q.y) * 0.01;
-      const limit = ringR - 34 - Math.hypot(sizes[i].w, sizes[i].h) / 2;
-      const d = Math.hypot(q.x, q.y);
-      if (d > Math.max(limit, 0)) { q.x *= Math.max(limit, 0) / d; q.y *= Math.max(limit, 0) / d; }
+      const lim = Math.max(limit - Math.hypot(sizes[i].w, sizes[i].h) / 2, 0), d = Math.hypot(q.x, q.y);
+      if (d > lim) { q.x *= lim / d; q.y *= lim / d; }
     });
+    if (!moved) break;
   }
   return p;
 }
@@ -295,17 +393,12 @@ function SourceLink({ sources }: { sources: Source[] }) {
   );
 }
 
-/** One link, spelt out: what they share, each one's role there, and where we read it. */
-function TieDetail({ t, a, b, paint }: { t: Tie; a: string; b: string; paint: Paint }) {
-  const color = paint(t.key);
+/** One link, spelt out: what they share, and where we read it. In neutral grey: on a director's page the
+ *  colour belongs to the person, and the line says only now (solid) or past (dashed). */
+function TieDetail({ t }: { t: Tie }) {
   return (
-    <div className="mt-1 rounded-md border-l-[3px] px-2.5 py-1.5" style={{ background: soft(color), borderColor: color }}>
-      <div className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-900"><LineSample color={color} kind={t.kind} width={18} />{why(t)}</div>
-      {t.roles && (
-        <div className="text-[12.5px] text-gray-700">
-          {surname(a)}: {t.roles[0] || "—"} · {surname(b)}: {t.roles[1] || "—"}
-        </div>
-      )}
+    <div className="mt-1 rounded-md bg-gray-50 px-2.5 py-1.5">
+      <div className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-900"><LineSample color={C.slate} kind={t.kind} width={18} />{why(t)}</div>
       {t.sources && <SourceLink sources={t.sources} />}
     </div>
   );
@@ -326,11 +419,12 @@ function PersonMap({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
   const W = 960, PX = 112, PR = 62, BX = 410, BR = 58, FX = 606, TOP = 26;
   const rowH = (f: Fellow) => (f.ties.length ? 26 + 17 * Math.min(f.ties.length, 2) : 24);
   const rows = circle.boards.map((b) => {
-    const known = b.members.filter((f) => f.ties.length);
+    // the people they know, and those whose link is of a kind switched off (drawn in grey)
+    const known = b.members.filter((f) => f.ties.length || f.linkHidden);
     // a board not in coverage: only the people it links them to; its other members are only
     // whoever our proxies happen to name on it (Figma: 2 of its 9), so they are never listed
     const all = showAll && !b.partial;
-    const list = (all ? [...known, ...b.members.filter((f) => !f.ties.length)] : known).slice(0, all ? MAP_ALL : MAP_KNOWN);
+    const list = (all ? [...known, ...b.members.filter((f) => !f.ties.length && !f.linkHidden)] : known).slice(0, all ? MAP_ALL : MAP_KNOWN);
     const height = list.reduce((s, f) => s + rowH(f), 0);
     const more = (all ? b.members.length : known.length) - list.length;
     return { list, height, more, band: Math.max(168, height + (more > 0 ? 22 : 0) + 44) };
@@ -394,7 +488,8 @@ function PersonMap({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
             {list.map((f) => {
               const top = y0, y = top + 12;
               y0 += rowH(f);
-              const k = f.ties.length > 0, first = f.ties[0], color = k ? paint(first.key) : C.dot;
+              // the person's own colour, the same on every board: their name is what is clicked
+              const k = f.ties.length > 0, color = k ? paint(f.key) : C.dot;
               const solid = f.ties.some((t) => t.kind === "now");
               return (
                 <g key={f.key} className={f.home ? "group cursor-pointer" : undefined} onClick={f.home ? () => onPerson(f) : undefined}>
@@ -402,13 +497,13 @@ function PersonMap({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
                   <path d={curve(BX + BR, by, FX - 9, y)} fill="none" stroke={k ? color : C.line} strokeWidth={k ? 2.3 : 1.3}
                         strokeDasharray={k && !solid ? KIND.worked.dash : undefined} strokeLinecap="round" />
                   <circle cx={FX} cy={y} r={k ? 7 : 4.5} fill={color} stroke="#fff" strokeWidth={k ? 2 : 0} />
-                  <text x={FX + 14} y={y + 5} fontSize={k ? 15 : 13.5} fontWeight={k ? 700 : 400} fill={k ? C.ink : C.muted}
+                  <text x={FX + 14} y={y + 5} fontSize={k ? 15 : 13.5} fontWeight={k ? 700 : 400} fill={k ? textColour(color) : C.muted}
                         className={f.home ? "group-hover:underline" : undefined}>
                     {short(f.name, 30)}
                   </text>
                   {f.ties.slice(0, 2).map((t, j) => (
                     <g key={t.key}>
-                      <path d={`M${FX + 15} ${y + 18 + j * 17} H${FX + 31}`} stroke={paint(t.key)} strokeWidth={2.6} strokeLinecap="round"
+                      <path d={`M${FX + 15} ${y + 18 + j * 17} H${FX + 31}`} stroke={C.slate} strokeWidth={2.2} strokeLinecap="round"
                             strokeDasharray={t.kind === "worked" ? "5 3" : undefined} />
                       <text x={FX + 37} y={y + 22 + j * 17} fontSize={12.5} fill={C.text}>
                         {short(how(t), 34)}{j === 1 && f.ties.length > 2 ? `  +${f.ties.length - 2} more` : ""}
@@ -464,32 +559,52 @@ function PersonList({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
   return (
     <>
       {circle.boards.map((b) => {
-        const known = b.members.filter((f) => f.ties.length), rest = b.members.filter((f) => !f.ties.length);
+        const known = b.members.filter((f) => f.ties.length), rest = b.members.filter((f) => !f.ties.length && !f.linkHidden);
+        const hidden = b.members.filter((f) => f.linkHidden);
+        const here = b.cik === thisCik;
+        // each board one container, all alike: its name and the director's seat in a tinted header, the
+        // people there inside; this company is told apart by its tag
         return (
-          <section key={b.key} className="border-b border-gray-200 px-5 py-4">
-            <div className="flex flex-wrap items-center gap-2">
-              {b.ours && b.cik
-                ? <button type="button" onClick={() => onBoard(b.cik!)} title={`Open ${b.company}'s board`} className="text-left text-[15px] font-semibold text-gray-900 hover:text-[#931638] hover:underline">{b.company}</button>
-                : <span className="text-[15px] font-semibold text-gray-900">{b.company}</span>}
-              {b.cik === thisCik && <Tag kind="brand">this company</Tag>}
-              {b.partial && <Tag kind="grey">Not in coverage</Tag>}
-            </div>
-            <div className="text-[13px] text-gray-600">{circle.name}: {b.role}</div>
-            {b.support != null && (
-              <div className="mt-0.5 text-[13px] text-gray-700">
-                Shareholder vote: <span className="font-semibold text-gray-900">{b.support.toFixed(2)}% support</span>
-                {b.meeting_date ? ` at the ${b.meeting_date} annual meeting` : " at the last annual meeting"}
-                {b.vote_url && (
-                  <> · <a href={b.vote_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 underline decoration-gray-300 hover:text-[#931638]">8-K vote results<ExternalLink size={10} /></a></>
-                )}
+          <section key={b.key} className="mx-3 my-3 overflow-hidden rounded-xl border border-[#931638]/40 bg-white shadow-sm">
+            <div className="border-b border-[#931638]/20 bg-[#f8eef1] px-4 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {b.ours && b.cik
+                  ? <button type="button" onClick={() => onBoard(b.cik!)} title={`Open ${b.company}'s board`} className="text-left text-[15px] font-semibold text-gray-900 hover:text-[#931638] hover:underline">{b.company}</button>
+                  : <span className="text-[15px] font-semibold text-gray-900">{b.company}</span>}
+                {here && <Tag kind="brand">this company</Tag>}
+                {b.partial && <Tag kind="grey">Not in coverage</Tag>}
               </div>
-            )}
+              {b.support != null && (
+                <div className="mt-0.5 text-[13px] text-gray-700">
+                  Shareholder vote: <span className="font-semibold text-gray-900">{b.support.toFixed(2)}% support</span>
+                  {b.meeting_date ? ` at the ${b.meeting_date} annual meeting` : " at the last annual meeting"}
+                  {b.vote_url && (
+                    <> · <a href={b.vote_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 underline decoration-gray-300 hover:text-[#931638]">8-K vote results<ExternalLink size={10} /></a></>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="px-4 py-3">
             {!!known.length && (
-              <ul className="mt-2 space-y-2.5">
+              <ul className="space-y-3">
                 {known.map((f) => (
-                  <li key={f.key}>
-                    <PersonName f={f} onPerson={onPerson} strong />
-                    {f.ties.map((t) => <TieDetail key={t.key} t={t} a={circle.name} b={f.name} paint={paint} />)}
+                  // the person's own colour, the same as their line and dot in the picture
+                  <li key={f.key} className="border-l-[3px] pl-2.5" style={{ borderColor: paint(f.key) }}>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: paint(f.key) }} aria-hidden="true" />
+                      <PersonName f={f} onPerson={onPerson} strong color={textColour(paint(f.key))} />
+                    </div>
+                    {f.ties.map((t) => <TieDetail key={t.key} t={t} />)}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {/* linked only by a kind switched off: still on this board with the director, named in grey */}
+            {!!hidden.length && (
+              <ul className={`${known.length ? "mt-3" : ""} space-y-1`}>
+                {hidden.map((f) => (
+                  <li key={f.key} className="border-l-[3px] border-gray-200 pl-2.5 text-[13px] text-gray-500">
+                    <PersonName f={f} onPerson={onPerson} /> · link hidden by the filter above
                   </li>
                 ))}
               </ul>
@@ -501,15 +616,11 @@ function PersonList({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
                 {rest.map((f) => <li key={f.key}><PersonName f={f} onPerson={onPerson} /></li>)}
               </ul>
             )}
-            {!showAll && !b.partial && !!rest.length && (
-              <p className="mt-2 text-[13px] text-gray-500">
-                {known.length ? "+ " : ""}{plural(rest.length, "other member")} with no shared company
-              </p>
-            )}
             {b.partial && !known.length && (
               <p className="mt-2 text-[13px] text-gray-500">{bare(b.company)}'s own board list has not been read, so its other directors are not shown.</p>
             )}
             {!b.partial && !b.members.length && <p className="mt-2 text-[13px] text-gray-500">No one else is listed.</p>}
+            </div>
           </section>
         );
       })}
@@ -532,18 +643,20 @@ function PersonList({ circle, thisCik, showAll, paint, onPerson, onBoard }: {
   );
 }
 
-function PersonName({ f, onPerson, strong }: { f: Fellow; onPerson: (f: Fellow) => void; strong?: boolean }) {
-  const cls = strong ? "text-[14px] font-semibold text-gray-900" : "text-[13.5px] text-gray-700";
+/** A person's name, opening their page when they sit on one of our boards; `color`: the person's own. */
+function PersonName({ f, onPerson, strong, color }: { f: Fellow; onPerson: (f: Fellow) => void; strong?: boolean; color?: string }) {
+  const cls = strong ? "text-[14.5px] font-bold text-gray-900" : "text-[13.5px] text-gray-700";
+  const style = color ? { color } : undefined;
   return f.home
-    ? <button type="button" onClick={() => onPerson(f)} className={`text-left hover:text-[#931638] hover:underline ${cls}`}>{f.name}</button>
-    : <span className={cls}>{f.name}</span>;
+    ? <button type="button" onClick={() => onPerson(f)} style={style} className={`text-left hover:underline ${color ? "" : "hover:text-[#931638]"} ${cls}`}>{f.name}</button>
+    : <span style={style} className={cls}>{f.name}</span>;
 }
 
 // ─── One whole board ────────────────────────────────────────────────────────────────────────
 
 /** The directors of a board in a ring, and inside it the companies two or more of them share. Opened
  *  from a director (`selected`), that director is drawn in the brand colour; the window hands in
- *  only that director and the people they are linked to, until the whole board is asked for. */
+ *  the whole board, or -- narrowed -- only that director and the people they are linked to. */
 function RingMap({ data, selected, paint, onPerson }: {
   data: BoardConnectionsData; selected?: string; paint: Paint; onPerson: (key: string) => void;
 }) {
@@ -726,32 +839,40 @@ function RingList({ data, selected, paint, onPerson }: {
       {!data.shared.length && <p className="px-5 py-4 text-sm text-gray-700">No two directors of {data.company} share another company in our data.</p>}
       {shared.map((g) => {
         const color = paint(g.key);
+        // each shared company one container, in its own colour (the same as its card and lines in the
+        // ring): its name and how they share it in a tinted header, the directors inside
         return (
-          <section key={g.key} className="border-b border-gray-200 border-l-[4px] px-5 py-4" style={{ borderLeftColor: color }}>
-            <div className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-gray-900">
-              <LineSample color={color} kind={g.kind} />{g.company}<Tag kind="grey">{KIND[g.kind].label}</Tag>
+          <section key={g.key} className="mx-3 my-3 overflow-hidden rounded-xl border bg-white shadow-sm" style={{ borderColor: `${color}66` }}>
+            <div className="border-b px-4 py-3" style={{ background: soft(color), borderColor: `${color}33` }}>
+              <div className="flex flex-wrap items-center gap-2 text-[15px] font-semibold text-gray-900">
+                <LineSample color={color} kind={g.kind} />{g.company}<Tag kind="grey">{KIND[g.kind].label}</Tag>
+              </div>
+              <div className="text-[13px] text-gray-600">{g.kind === "now" ? `All sit on ${bare(g.company)}'s board now` : `All worked at ${bare(g.company)} at some time`}</div>
             </div>
-            <div className="text-[13px] text-gray-600">{g.kind === "now" ? `All sit on ${bare(g.company)}'s board now` : `All worked at ${bare(g.company)} at some time`}</div>
-            <ul className="mt-2 space-y-1">
-              {g.people.map((p) => (
-                <li key={p.key} className="text-[13.5px] text-gray-700">
-                  <button type="button" onClick={() => onPerson(p.key)}
-                          className={`font-semibold hover:text-[#931638] hover:underline ${p.key === selected ? "text-[#931638]" : "text-gray-900"}`}>{name.get(p.key)}</button>
-                  {p.role && <> · {p.role}</>}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-1.5"><SourceLink sources={g.people.map((p) => p.source || null)} /></div>
+            <div className="px-4 py-3">
+              <ul className="space-y-1">
+                {g.people.map((p) => (
+                  <li key={p.key} className="text-[13.5px] text-gray-700">
+                    <button type="button" onClick={() => onPerson(p.key)}
+                            className={`font-semibold hover:text-[#931638] hover:underline ${p.key === selected ? "text-[#931638]" : "text-gray-900"}`}>{name.get(p.key)}</button>
+                    {p.role && <> · {p.role}</>}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-1.5"><SourceLink sources={g.people.map((p) => p.source || null)} /></div>
+            </div>
           </section>
         );
       })}
       {!!alone.length && (
-        <section className="px-5 py-4 text-[13.5px] text-gray-700">
-          <div className="mb-1 font-semibold text-gray-700">No shared company ({alone.length})</div>
-          {alone.map((m, i) => (
-            <span key={m.key}>{i > 0 && ", "}
-              <button type="button" onClick={() => onPerson(m.key)} className="hover:text-[#931638] hover:underline">{m.name}</button></span>
-          ))}
+        <section className="mx-3 my-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-[15px] font-semibold text-gray-900">No shared company ({alone.length})</div>
+          <div className="px-4 py-3 text-[13.5px] text-gray-700">
+            {alone.map((m, i) => (
+              <span key={m.key}>{i > 0 && ", "}
+                <button type="button" onClick={() => onPerson(m.key)} className="hover:text-[#931638] hover:underline">{m.name}</button></span>
+            ))}
+          </div>
         </section>
       )}
     </>
@@ -762,9 +883,12 @@ function RingList({ data, selected, paint, onPerson }: {
 
 type Kinds = Record<Kind, boolean>;
 const keepTies = (ties: Tie[], kinds: Kinds) => ties.filter((t) => kinds[t.kind]);
+// a kind switched off hides its LINES, never the people: one linked only that way stays, drawn in grey
 const filterCircle = (c: Circle, kinds: Kinds): Circle => ({
-  ...c, boards: c.boards.map((b) => ({ ...b, members: b.members.map((f) => ({ ...f, ties: keepTies(f.ties, kinds) }))
-    .sort((x, y) => Number(!x.ties.length) - Number(!y.ties.length)) })),
+  ...c, boards: c.boards.map((b) => ({ ...b, members: b.members.map((f) => {
+    const ties = keepTies(f.ties, kinds);
+    return { ...f, ties, linkHidden: !ties.length && f.ties.length > 0 };
+  }).sort((x, y) => Number(!x.ties.length) - Number(!y.ties.length) || Number(!x.linkHidden) - Number(!y.linkHidden)) })),
 });
 const filterBoard = (d: BoardConnectionsData, kinds: Kinds): BoardConnectionsData => ({ ...d, shared: d.shared.filter((g) => kinds[g.kind]) });
 
@@ -789,11 +913,13 @@ export function BoardConnectionsModal({ start, startName, thisCik, onClose, onPr
   const [showAll, setShowAll] = useState(false);
   // which links count: sitting together now, a past workplace in common
   const [kinds, setKinds] = useState<Kinds>({ now: true, worked: true });
-  // the page (its place in the trail) on which the whole board was asked for, not only the
-  // director's own connections
-  const [wholeAt, setWholeAt] = useState<number | null>(null);
+  // the page (its place in the trail) on which a board opened from a director was narrowed to that
+  // director's own connections; a board opens whole
+  const [onlyAt, setOnlyAt] = useState<number | null>(null);
   // the colour each company was given earlier in this window, so it keeps it from page to page
   const colours = useRef(new Map<string, number>());
+  // the same for each person on a director's page
+  const personColours = useRef(new Map<string, number>());
   const { trail, at } = nav;
   const focus = trail[at];
 
@@ -824,12 +950,12 @@ export function BoardConnectionsModal({ start, startName, thisCik, onClose, onPr
   // kept the same object between renders: the ring animates when its members change, and a new
   // object on every render would restart (and cut short) that animation
   const data = useMemo(() => raw && filterBoard(raw, kinds), [raw, kinds]);
-  // every move to another page starts it as first drawn: only the director's own connections on a
-  // board, and no other members beside a director's boards (back, forward, a breadcrumb or a click)
+  // every move to another page starts it as first drawn: the whole board, and no other members beside
+  // a director's boards (back, forward, a breadcrumb or a click)
   const moveTo = (next: { trail: ConnectionsFocus[]; at: number }) => {
     if (next.at === at && next.trail === trail) return;
     setNav(next);
-    setWholeAt(null);
+    setOnlyAt(null);
     setShowAll(false);
   };
   const go = (f: ConnectionsFocus) => {
@@ -854,9 +980,9 @@ export function BoardConnectionsModal({ start, startName, thisCik, onClose, onPr
     return undefined;
   })();
 
-  // a board opened from a director shows ONLY that director and the people they are linked to, with
-  // the companies that link them -- until the whole board is asked for (on that page only)
-  const whole = wholeAt === at;
+  // a board opened from a director shows the whole board with that director highlighted; narrowed (on
+  // that page only) it shows only the director, the people they are linked to and the companies between
+  const whole = onlyAt !== at;
   const linksOf = (d: BoardConnectionsData) => (selected ? d.shared.filter((g) => g.people.some((p) => p.key === selected)) : []);
   const hasLinks = !!raw && linksOf(raw).length > 0;
   const narrowed = !!selected && !whole;
@@ -873,14 +999,12 @@ export function BoardConnectionsModal({ start, startName, thisCik, onClose, onPr
 
   const selectedName = selected ? raw?.members.find((m) => m.key === selected)?.name : undefined;
 
-  // one colour per shared company in this picture: from the whole answer, not the filtered one, so
-  // hiding a kind of link never repaints what stays
-  const paint = useMemo<Paint>(() => {
-    const keys = focus.kind === "person"
-      ? (rawCircle?.boards || []).flatMap((b) => b.members.flatMap((f) => f.ties.map((t) => t.key)))
-      : (raw?.shared || []).map((g) => g.key);
-    return assignColours(keys, colours.current);
-  }, [raw, rawCircle, focus.kind]);
+  // the colours in this picture, from the whole answer (not the filtered one), so hiding a kind of link
+  // never repaints what stays: on a director's page one per PERSON they know (the same person the same
+  // colour on every board), on a board's ring one per shared company
+  const paint = useMemo<Paint>(() => (focus.kind === "person"
+    ? assignColours((rawCircle?.boards || []).flatMap((b) => b.members.filter((f) => f.ties.length).map((f) => f.key)), personColours.current)
+    : assignColours((raw?.shared || []).map((g) => g.key), colours.current)), [raw, rawCircle, focus.kind]);
 
   // how many links of each kind there are here, for the filter buttons
   const counts: Record<Kind, number> = { now: 0, worked: 0 };
@@ -1006,7 +1130,7 @@ export function BoardConnectionsModal({ start, startName, thisCik, onClose, onPr
                         ? `${selectedName}: Showing Only Their Connections on This Board`
                         : `${selectedName}: Shares No Company With the Other Directors on This Board`}
                   </span>
-                  <button type="button" onClick={() => setWholeAt(whole ? null : at)} aria-pressed={whole}
+                  <button type="button" onClick={() => setOnlyAt(whole ? at : null)} aria-pressed={!whole}
                           className="rounded-full border border-gray-300 px-2.5 py-0.5 text-[12.5px] font-medium text-gray-700 hover:border-[#931638]/50 hover:text-[#931638]">
                     {narrowed ? "Show Other Board Members" : hasLinks ? `Show Only ${surname(selectedName)}'s Connections` : `Show Only ${surname(selectedName)}`}
                   </button>
@@ -1044,8 +1168,10 @@ export function BoardConnectionsModal({ start, startName, thisCik, onClose, onPr
           <span className="inline-flex items-center gap-1.5"><LineSample color={C.ink} kind="now" width={26} />{KIND.now.long}</span>
           <span className="inline-flex items-center gap-1.5"><LineSample color={C.ink} kind="worked" width={26} />{KIND.worked.long}</span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-flex gap-0.5" aria-hidden="true">{SERIES.slice(0, 4).map((c) => <span key={c} className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: c }} />)}</span>
-            One colour per shared company
+            <span className="inline-flex gap-0.5" aria-hidden="true">
+              {SERIES.slice(0, 4).map((c) => <span key={c} className={`inline-block h-2.5 w-2.5 ${focus.kind === "person" ? "rounded-full" : "rounded-sm"}`} style={{ background: c }} />)}
+            </span>
+            {focus.kind === "person" ? "One colour per person" : "One colour per shared company"}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke={C.dot} strokeWidth="1.8" strokeDasharray="3 2.5" /></svg>
