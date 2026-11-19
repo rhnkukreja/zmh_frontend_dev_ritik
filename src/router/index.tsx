@@ -112,6 +112,7 @@ import QAPage from "../pages/AIChatbot/QAPage";
 import ComparePage from "../pages/AIChatbot/ComparePage";
 import VotingGuidelinesPage from "../pages/AIChatbot/VotingGuidelinesPage";
 import BoardIntelligencePage from "@/pages/BoardIntelligence";
+import BoardFilingTracker from "@/pages/BoardIntelligence/FilingTracker";
 import { ChatProvider } from "../pages/AIChatbot/ChatContext";
 import NPXAnalyticsPage from "@/pages/NPXAnalytics";
 import Newsletter from "@/pages/Newsletter";
@@ -128,6 +129,7 @@ const ProtectedLayout = withAuth(Layout);
 const ProtectedAiChatbot = withAuth(() => <ChatProvider><AiChatbot /></ChatProvider>);
 // Its own page with its own shell: not part of the AI Assistant layout or sidebar.
 const ProtectedBoardIntelligence = withAuth(BoardIntelligencePage);
+const ProtectedBoardFilingTracker = withAuth(BoardFilingTracker);
 
 
 function Router() {
@@ -648,6 +650,11 @@ function Router() {
       path: "/board-intelligence",
       element: <ProtectedBoardIntelligence />,
       data: { titleName: "Board Intelligence - ZMH Analytics" },
+    },
+    {
+      path: "/board-filing-tracker",
+      element: <ProtectedBoardFilingTracker />,
+      data: { titleName: "Board Filing Tracker - ZMH Analytics" },
     },
     {
       path: "/landing-page",

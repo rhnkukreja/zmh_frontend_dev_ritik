@@ -441,13 +441,6 @@ export const resolveCompany = (ticker: string, name: string) =>
 const startRun = (cik: string) =>
   getJson<RunStatus>(`${BASE}/runs`, { method: "POST", body: JSON.stringify({ cik }) });
 
-/** Bring a saved result up to date: new 8-Ks, meeting results, the proxy's nominations and the
- *  company's website -- the proxy is not read again. Progress comes back as the run status. */
-const startRefresh = (cik: string, by?: string) =>
-  getJson<RunStatus>(`${BASE}/refresh/${cik}`, {
-    method: "POST", headers: { ...getRequestHeaders(), ...(by ? { "X-User-Name": by } : {}) },
-  });
-
 const getRunStatus = (cik: string) => getJson<RunStatus>(`${BASE}/runs/${cik}`);
 
 /** What a Refresh proposes, waiting for an analyst: nothing in it is saved until a section is approved. */
@@ -2014,7 +2007,6 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [preview, setPreview] = useState(false);
   const [deciding, setDeciding] = useState<string | null>(null);
-  const [starting, setStarting] = useState(false);
   const pollRef = useRef<number | null>(null);
   // The latest company wins: a slower reply for a company shown earlier is ignored.
   const selectionRef = useRef(0);
@@ -2044,23 +2036,6 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
         if (s.state === "failed") { stopPolling(); setError(s.error || "The run failed."); }
       } catch (e) { /* transient; keep polling */ }
     }, POLL_MS);
-  };
-
-  const refresh = async (cik: string) => {
-    if (starting) return;
-    const selection = selectionRef.current;
-    setStarting(true);
-    setError(null);
-    try {
-      const s = await startRefresh(cik, refreshedBy);
-      if (selection !== selectionRef.current) return;
-      setRun({ ...s, kind: "refresh" });
-      poll(cik);
-    } catch (e) {
-      if (selection === selectionRef.current) setError((e as Error).message);
-    } finally {
-      setStarting(false);
-    }
   };
 
   /** Approve (saved to S3; the replaced result is kept as a version) or reject one section of the waiting Refresh. */
@@ -2190,19 +2165,11 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
         <>
           {/* No header block: the dashboard's top bar already names the company, and the proxy,
               EDGAR and board-page links live with the sections that use them. */}
-          {/* no "Last refreshed ... by ..." line: only the Refresh button and the review of its changes */}
-          {(canRefresh || draft) && (
+          {/* no Refresh button: the filing tracker updates each board from its new SEC filings. A Refresh
+              made before, still waiting, is shown for review. */}
+          {draft && (
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-3">
-                {canRefresh && (
-                  <button onClick={() => refresh(result.company.cik)} disabled={running || starting}
-                          title="Check new 8-Ks and the annual meetings' results. The proxy is not read again."
-                          className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border border-[#931638]/40 text-[#931638] hover:bg-[#931638]/5 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <RefreshCw size={14} className={running && run?.kind === "refresh" ? "animate-spin" : ""} /> Refresh
-                  </button>
-                )}
-              </div>
-              {draft && !running && (
+              {!running && (
                 <div className="border border-amber-300 rounded-lg p-3 bg-amber-50">
                   <div className="text-sm font-semibold text-gray-900">
                     Refresh of {usDate(draft.created_at.slice(0, 10))}{draft.by ? ` by ${draft.by}` : ""} found changes to review
