@@ -1050,14 +1050,13 @@ function BoardAtAGlance({ directors, onOpen, result }: {
   // the board connections window: a director in the middle, or the whole board
   const [panel, setPanel] = useState<{ focus: ConnectionsFocus; name?: string } | null>(null);
   const closePanel = useRef(() => setPanel(null)).current;
-  // Board connections is in beta: Admins only. A director's shareholder support on their other boards:
-  // Admins and Analysts (it reads the directors' other names from /connections, so that is called for
-  // both; everyone else never calls it). user_type compared case-insensitively, as elsewhere.
+  // Board connections, board network and a director's shareholder support on their other boards: Admins
+  // and Analysts. Everyone else sees the rest of the page, and for them /connections is never called.
+  // user_type compared case-insensitively, as elsewhere.
   const { user } = useAppSelector((state: RootState) => state.authentiction);
   const userType = (user?.user_type || "").trim().toLowerCase();
-  const isAdmin = userType === "admin";
-  const seesSupport = isAdmin || userType === "analyst";
-  const connections = useBoardConnections(seesSupport ? thisCik : "");
+  const seesConnections = userType === "admin" || userType === "analyst";
+  const connections = useBoardConnections(seesConnections ? thisCik : "");
   const openDirector = (name: string) => setPanel({
     focus: { kind: "person", key: connections.data?.members.find((m) => m.name === name)?.key || "", cik: thisCik }, name });
   // for a director's shareholder support on their other boards: the other ways their name is
@@ -1073,7 +1072,7 @@ function BoardAtAGlance({ directors, onOpen, result }: {
     <div>
     <div className="mb-2 flex flex-wrap items-center gap-2">
       <h3 className="text-sm font-semibold text-gray-800">The Board at a Glance</h3>
-      {isAdmin && (
+      {seesConnections && (
         <button type="button" onClick={() => setPanel({ focus: { kind: "board", cik: thisCik } })}
                 className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-3 py-1 text-xs font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
           <Network size={12} /> Board connections
@@ -1110,8 +1109,8 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                   {d.left_after_proxy && (
                     <div className="text-xs text-gray-600">Left the board · {d.left_after_proxy.how || "Left"} {leftWhen(d.left_after_proxy)}</div>
                   )}
-                  {/* the boards the director sits on now, and who there they already know (Admins only, beta) */}
-                  {isAdmin && (
+                  {/* the boards the director sits on now, and who there they already know (Admins and Analysts, beta) */}
+                  {seesConnections && (
                     <button type="button" onClick={() => openDirector(d.name)} aria-label={`${d.name}: board network`}
                             className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-2 py-0.5 text-[11px] font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
                       <Network size={11} />
@@ -1131,15 +1130,15 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                 <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : <span className="text-gray-400">—</span>}</td>
                 <td className="p-2"><ExperienceCell d={d} /></td>
                 <td className="p-2">{(f.committees || []).join("; ") || <span className="text-gray-400">—</span>}</td>
-                {/* each board's name opens the director's shareholder support there (Admins only, beta) */}
-                <td className="p-2"><BoardsCell d={d} support={seesSupport ? supportFor(d.name) : undefined} /></td>
+                {/* each board's name opens the director's shareholder support there (Admins and Analysts, beta) */}
+                <td className="p-2"><BoardsCell d={d} support={seesConnections ? supportFor(d.name) : undefined} /></td>
               </tr>
             );
           })}
         </tbody>
       </table>
     </div>
-      {isAdmin && panel && (
+      {seesConnections && panel && (
         <BoardConnectionsModal start={panel.focus} startName={panel.name} thisCik={thisCik} onClose={closePanel}
                                onProfile={panel.name ? () => onOpen(panel.name!) : undefined} />
       )}
