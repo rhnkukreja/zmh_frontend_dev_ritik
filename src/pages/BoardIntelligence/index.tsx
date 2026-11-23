@@ -1050,11 +1050,14 @@ function BoardAtAGlance({ directors, onOpen, result }: {
   // the board connections window: a director in the middle, or the whole board
   const [panel, setPanel] = useState<{ focus: ConnectionsFocus; name?: string } | null>(null);
   const closePanel = useRef(() => setPanel(null)).current;
-  // Board connections is in beta: Admins only. Everyone else sees the rest of the page, and for
-  // them /connections is never called. user_type compared case-insensitively, as elsewhere.
+  // Board connections is in beta: Admins only. A director's shareholder support on their other boards:
+  // Admins and Analysts (it reads the directors' other names from /connections, so that is called for
+  // both; everyone else never calls it). user_type compared case-insensitively, as elsewhere.
   const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const isAdmin = (user?.user_type || "").trim().toLowerCase() === "admin";
-  const connections = useBoardConnections(isAdmin ? thisCik : "");
+  const userType = (user?.user_type || "").trim().toLowerCase();
+  const isAdmin = userType === "admin";
+  const seesSupport = isAdmin || userType === "analyst";
+  const connections = useBoardConnections(seesSupport ? thisCik : "");
   const openDirector = (name: string) => setPanel({
     focus: { kind: "person", key: connections.data?.members.find((m) => m.name === name)?.key || "", cik: thisCik }, name });
   // for a director's shareholder support on their other boards: the other ways their name is
@@ -1129,7 +1132,7 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                 <td className="p-2"><ExperienceCell d={d} /></td>
                 <td className="p-2">{(f.committees || []).join("; ") || <span className="text-gray-400">—</span>}</td>
                 {/* each board's name opens the director's shareholder support there (Admins only, beta) */}
-                <td className="p-2"><BoardsCell d={d} support={isAdmin ? supportFor(d.name) : undefined} /></td>
+                <td className="p-2"><BoardsCell d={d} support={seesSupport ? supportFor(d.name) : undefined} /></td>
               </tr>
             );
           })}
