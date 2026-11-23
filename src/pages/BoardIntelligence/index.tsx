@@ -905,14 +905,14 @@ const count = (v: YearRow[string]) => (typeof v === "number" ? v.toLocaleString(
 /** 99.09 or "99.09%" -> "99.09%". Pure. */
 const percent = (v: YearRow[string]) => (typeof v === "number" ? `${v.toFixed(2)}%` : v);
 
-/** A director's vote at the latest annual meeting of the company a board name means; null while it
- *  is looked up, and when that meeting did not vote on them (or the platform holds no meeting). */
-function useBoardVote({ board, director, aliases }: BoardSupportProps): BoardVote | null {
-  const [vote, setVote] = useState<BoardVote | null>(null);
+/** A director's vote at the latest annual meeting of the company a board name means: undefined while it
+ *  is looked up, null when that meeting did not vote on them (or the platform holds no meeting). */
+function useBoardVote({ board, director, aliases }: BoardSupportProps): BoardVote | null | undefined {
+  const [vote, setVote] = useState<BoardVote | null | undefined>(undefined);
   const names = [director, ...aliases].join("|");
   useEffect(() => {
     let cancelled = false;
-    setVote(null);
+    setVote(undefined);
     (async (): Promise<BoardVote | null> => {
       const company = await listedCompany(boardCompany(board));
       const latest = company && await latestMeetingOf(company.ticker);
@@ -921,7 +921,7 @@ function useBoardVote({ board, director, aliases }: BoardSupportProps): BoardVot
       // "Annual - June 02, 2026", as the Shareholder Meeting page titles it
       const meeting = Object.values(latest.company?.[0] || {})[0] || "";
       return { company, year: latest.Year == null ? "" : String(latest.Year), meeting, row };
-    })().then((v) => { if (!cancelled) setVote(v); }, () => undefined);
+    })().then((v) => { if (!cancelled) setVote(v); }, () => { if (!cancelled) setVote(null); });
     return () => { cancelled = true; };
   }, [board, names]);
   return vote;
@@ -962,13 +962,21 @@ function BoardSupport({ director, vote }: { director: string; vote: BoardVote })
   );
 }
 
-/** A board's name: a link to the director's shareholder support there when the board's latest
- *  annual meeting voted on them, plain text when it did not (and while that is being looked up). */
+/** A board's name: a link to the director's shareholder support there when the board's latest annual
+ *  meeting voted on them; otherwise plain, with "#" -- no voting shown for them there (the footnote under
+ *  the table). Plain, no "#", while it is looked up. */
 function BoardSupportLink(props: BoardSupportProps) {
   const vote = useBoardVote(props);
   const [open, setOpen] = useState(false);
   const close = useRef(() => setOpen(false)).current;
-  if (!vote) return <>{formatBoard(props.board)}</>;
+  if (vote === undefined) return <>{formatBoard(props.board)}</>;
+  if (vote === null) {
+    return (
+      <span title="Not included in the latest proxy: no voting shown for this director here">
+        {formatBoard(props.board)}<sup className="ml-0.5 text-[9px] font-bold text-gray-800">#</sup>
+      </span>
+    );
+  }
   const printed = boardCompany(props.board);
   return (
     <>
@@ -1002,7 +1010,11 @@ function BoardsCell({ d, support }: { d: Director; support?: Pick<BoardSupportPr
   if (!current.length && !former.length) return <span className="text-gray-400">—</span>;
   const group = (label: string, boards: string[], linked: boolean) => !!boards.length && (
     <div>
-      <div className="text-xs font-semibold text-gray-700">{label}</div>
+      <div className="text-xs font-semibold text-gray-700">
+        {label}
+        {/* current boards: as disclosed in the latest proxy statement (the "*" footnote under the table) */}
+        {linked && <sup className="ml-0.5 text-[9px] font-bold text-gray-800">*</sup>}
+      </div>
       {boards.map((b) => (
         <div key={b}>{linked && support ? <BoardSupportLink board={b} director={d.name} {...support} /> : formatBoard(b)}</div>
       ))}
@@ -1050,13 +1062,8 @@ function BoardAtAGlance({ directors, onOpen, result }: {
   // the board connections window: a director in the middle, or the whole board
   const [panel, setPanel] = useState<{ focus: ConnectionsFocus; name?: string } | null>(null);
   const closePanel = useRef(() => setPanel(null)).current;
-  // Board connections, board network and a director's shareholder support on their other boards: Admins
-  // and Analysts. Everyone else sees the rest of the page, and for them /connections is never called.
-  // user_type compared case-insensitively, as elsewhere.
-  const { user } = useAppSelector((state: RootState) => state.authentiction);
-  const userType = (user?.user_type || "").trim().toLowerCase();
-  const seesConnections = userType === "admin" || userType === "analyst";
-  const connections = useBoardConnections(seesConnections ? thisCik : "");
+  // board connections, board network and a director's shareholder support on their other boards: every user
+  const connections = useBoardConnections(thisCik);
   const openDirector = (name: string) => setPanel({
     focus: { kind: "person", key: connections.data?.members.find((m) => m.name === name)?.key || "", cik: thisCik }, name });
   // for a director's shareholder support on their other boards: the other ways their name is
@@ -1072,13 +1079,11 @@ function BoardAtAGlance({ directors, onOpen, result }: {
     <div>
     <div className="mb-2 flex flex-wrap items-center gap-2">
       <h3 className="text-sm font-semibold text-gray-800">The Board at a Glance</h3>
-      {seesConnections && (
-        <button type="button" onClick={() => setPanel({ focus: { kind: "board", cik: thisCik } })}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-3 py-1 text-xs font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
-          <Network size={12} /> Board connections
-          {connections.data && <span className="text-[#931638]/70">· {new Set(connections.data.shared.flatMap((g) => g.people.map((p) => p.key))).size} of {connections.data.members.length} connected</span>}
-        </button>
-      )}
+      <button type="button" onClick={() => setPanel({ focus: { kind: "board", cik: thisCik } })}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-3 py-1 text-xs font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+        <Network size={12} /> Board connections
+        {connections.data && <span className="text-[#931638]/70">· {new Set(connections.data.shared.flatMap((g) => g.people.map((p) => p.key))).size} of {connections.data.members.length} connected</span>}
+      </button>
     </div>
     <div className="border border-gray-200 rounded-lg overflow-x-auto">
       <table className="text-sm w-full min-w-[1000px] table-fixed text-gray-900">
@@ -1109,15 +1114,13 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                   {d.left_after_proxy && (
                     <div className="text-xs text-gray-600">Left the board · {d.left_after_proxy.how || "Left"} {leftWhen(d.left_after_proxy)}</div>
                   )}
-                  {/* the boards the director sits on now, and who there they already know (Admins and Analysts, beta) */}
-                  {seesConnections && (
-                    <button type="button" onClick={() => openDirector(d.name)} aria-label={`${d.name}: board network`}
-                            className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-2 py-0.5 text-[11px] font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
-                      <Network size={11} />
-                      Board network
-                      <ChevronRight size={11} className="-mr-0.5 opacity-70" />
-                    </button>
-                  )}
+                  {/* the boards the director sits on now, and who there they already know */}
+                  <button type="button" onClick={() => openDirector(d.name)} aria-label={`${d.name}: board network`}
+                          className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-[#931638]/25 bg-[#931638]/5 px-2 py-0.5 text-[11px] font-medium text-[#931638] hover:border-[#931638]/50 hover:bg-[#931638]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#931638]/40">
+                    <Network size={11} />
+                    Board network
+                    <ChevronRight size={11} className="-mr-0.5 opacity-70" />
+                  </button>
                 </td>
                 <td className="p-2 whitespace-nowrap">{f.age ?? <span className="text-gray-400">—</span>}</td>
                 <td className="p-2 whitespace-nowrap">{f.director_since_year || f.director_since || <span className="text-gray-400">—</span>}</td>
@@ -1130,15 +1133,15 @@ function BoardAtAGlance({ directors, onOpen, result }: {
                 <td className="p-2">{f.independent === true ? "Yes" : f.independent === false ? "No" : <span className="text-gray-400">—</span>}</td>
                 <td className="p-2"><ExperienceCell d={d} /></td>
                 <td className="p-2">{(f.committees || []).join("; ") || <span className="text-gray-400">—</span>}</td>
-                {/* each board's name opens the director's shareholder support there (Admins and Analysts, beta) */}
-                <td className="p-2"><BoardsCell d={d} support={seesConnections ? supportFor(d.name) : undefined} /></td>
+                {/* each board's name opens the director's shareholder support there */}
+                <td className="p-2"><BoardsCell d={d} support={supportFor(d.name)} /></td>
               </tr>
             );
           })}
         </tbody>
       </table>
     </div>
-      {seesConnections && panel && (
+      {panel && (
         <BoardConnectionsModal start={panel.focus} startName={panel.name} thisCik={thisCik} onClose={closePanel}
                                onProfile={panel.name ? () => onOpen(panel.name!) : undefined} />
       )}
@@ -1189,6 +1192,10 @@ function BoardTab({ result }: { result: BoardResult }) {
         <p className="text-sm text-gray-800">Named in the proxy without a biography: {result.proxy.named_without_biography.join(", ")}</p>
       )}
       <BoardAtAGlance directors={directors} onOpen={openAndJump} result={result} />
+      <div className="text-xs font-semibold text-gray-800 space-y-0.5">
+        <p>* As disclosed in latest proxy statement.</p>
+        <p># Not included in the latest proxy.</p>
+      </div>
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <BoxedTabs<ProfileView>
           tabs={hasWebsite ? [["proxy", "Full Profiles (Proxy)"], ["website", "Website Comparison"]] : [["proxy", "Full Profiles (Proxy)"]]}
@@ -2201,7 +2208,8 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
             {([
               // the directors on the board now: a director who has left keeps their row (marked
               // "Left the board") but is not counted
-              ["board", `Current Board (${result.proxy.directors.filter((d) => !d.left_after_proxy).length})`, Users],
+              // "*": as disclosed in the latest proxy statement (the footnote under the board table)
+              ["board", `Current Board* (${result.proxy.directors.filter((d) => !d.left_after_proxy).length})`, Users],
               ["refresh", "Board Refreshment", RefreshCw],
               ["nominees", "Board Committees", Users],
               ["matrix", "Skills Matrix", FileText],
