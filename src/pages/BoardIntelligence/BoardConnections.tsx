@@ -14,9 +14,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, ChevronRight, ExternalLink, Loader2, X } from "lucide-react";
-import { AI_CHATBOT_API_BASE, getRequestHeaders } from "@/pages/AIChatbot/api";
+import { baseURL } from "@/constant";
 
-const BASE = `${AI_CHATBOT_API_BASE}/api/board-intel`;
+// the Django API, which passes the call to FastAPI. Asked unprompted when the board table is drawn, so it
+// is a plain request with the login, not the shared service (that shows every failure as a toast).
+const BASE = `${baseURL}/api/board-intel`;
 const BRAND = "#931638";
 const C = {
   ink: "#111827", text: "#374151", muted: "#4b5563", dot: "#9aa5b1", line: "#e5e7eb",
@@ -73,7 +75,9 @@ const cache = new Map<string, Promise<BoardConnectionsData>>();
 function loadConnections(cik: string): Promise<BoardConnectionsData> {
   if (!cache.has(cik)) {
     const ask = async (tries: number): Promise<BoardConnectionsData> => {
-      const res = await fetch(`${BASE}/connections/${cik}`, { headers: getRequestHeaders() });
+      const res = await fetch(`${BASE}/connections/${cik}`, {
+        headers: { Accept: "application/json", Authorization: `JWT ${localStorage.getItem("token") || ""}` },
+      });
       if (!res.ok) throw new Error(res.statusText || `HTTP ${res.status}`);
       const body = await res.json();
       if (body.building) {

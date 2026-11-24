@@ -5,8 +5,9 @@ import {
   AlertTriangle, ChevronDown, ChevronRight, Download, ExternalLink, FileText, Info, Loader2, Network, RefreshCw, Search, Users, X,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { axiosInstance } from "@/services";
 // The FastAPI base URL lives in one place (the AI Assistant's environment switch).
-import { AI_CHATBOT_API_BASE, getRequestHeaders } from "@/pages/AIChatbot/api";
+import { AI_CHATBOT_API_BASE } from "@/pages/AIChatbot/api";
 import Button from "@/components/Base/Button";
 import { baseURL } from "@/constant";
 import { dashboardService } from "@/services/dashboard";
@@ -125,7 +126,11 @@ function BoxedTabs<T extends string>({ tabs, value, onChange }: { tabs: [T, stri
 
 // ─── Backend: /api/board-intel ─────────────────────────────────────────────────────────────
 
-const BASE = `${AI_CHATBOT_API_BASE}/api/board-intel`;
+// data and actions: the Django API, through the shared axios service (its address and the login); Django
+// passes each call to FastAPI
+const BASE = "/api/board-intel";
+// images and SEC documents: FastAPI, by URL -- an <img> or a document opened in a new tab sends no login
+const FILES = `${AI_CHATBOT_API_BASE}/api/board-intel`;
 
 export type CompanyHit = { cik: string; ticker: string; name: string };
 
@@ -409,20 +414,18 @@ type RunStatus = {
   kind?: "refresh";
 };
 
-async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: getRequestHeaders(), ...init });
-  if (!res.ok) {
-    let detail = res.statusText;
-    try {
-      detail = (await res.json()).detail || detail;
-    } catch {
-      /* not JSON */
-    }
-    const err = new Error(detail) as Error & { status?: number };
-    err.status = res.status;
+/** A GET, or a POST of `data`. A 404 (nothing there yet) keeps its status; the shared service passes every
+ *  other failure on as the API's own message, after its toast. */
+async function getJson<T>(url: string, data?: unknown): Promise<T> {
+  try {
+    const res = await (data === undefined ? axiosInstance.get<T>(url) : axiosInstance.post<T>(url, data));
+    return res.data;
+  } catch (e) {
+    const err = e as Error & { status?: number; response?: { status?: number; data?: { detail?: unknown } } };
+    err.status = err.response?.status;
+    if (typeof err.response?.data?.detail === "string") err.message = err.response.data.detail;
     throw err;
   }
-  return res.json();
 }
 
 export const searchCompanies = (q: string) =>
@@ -439,7 +442,7 @@ export const resolveCompany = (ticker: string, name: string) =>
   });
 
 const startRun = (cik: string) =>
-  getJson<RunStatus>(`${BASE}/runs`, { method: "POST", body: JSON.stringify({ cik }) });
+  getJson<RunStatus>(`${BASE}/runs`, { cik });
 
 const getRunStatus = (cik: string) => getJson<RunStatus>(`${BASE}/runs/${cik}`);
 
@@ -462,21 +465,19 @@ const getDraft = (cik: string) =>
     if ((e as { status?: number }).status === 404) return null;
     throw e;
   });
-const decideDraft = (cik: string, section: DraftSectionKey, decision: "approve" | "reject", by?: string) =>
-  getJson<Draft>(`${BASE}/draft/${cik}/decide`, {
-    method: "POST", body: JSON.stringify({ section, decision }),
-    headers: { ...getRequestHeaders(), "Content-Type": "application/json", ...(by ? { "X-User-Name": by } : {}) },
-  });
+// who decided: Django sends FastAPI the name of the logged-in user
+const decideDraft = (cik: string, section: DraftSectionKey, decision: "approve" | "reject") =>
+  getJson<Draft>(`${BASE}/draft/${cik}/decide`, { section, decision });
 
 const getResult = (cik: string) => getJson<BoardResult>(`${BASE}/results/${cik}`);
 
 /** Our stored, sanitised copy of an SEC document (8-K, press release). */
 const documentViewerUrl = (cik: string, accession: string, name: string) =>
-  `${BASE}/documents/${cik}/${accession.replace(/\D/g, "")}/${encodeURIComponent(name)}`;
+  `${FILES}/documents/${cik}/${accession.replace(/\D/g, "")}/${encodeURIComponent(name)}`;
 
-/** Image paths in stored HTML are relative to the API ("/api/board-intel/assets/..."). */
+/** Image paths in stored HTML are relative to the API ("/api/board-intel/assets/..."): served by FastAPI. */
 const absolutizeAssets = (html: string) =>
-  html.replace(/(src=["'])(\/api\/board-intel\/)/g, `$1${AI_CHATBOT_API_BASE}$2`);
+  html.replace(/(src=["'])(\/api\/board-intel\/)/g, `$1${FILES}/`);
 
 type Tab = "board" | "nominees" | "matrix" | "peers" | "refresh" | "website" | "filings" | "appointments" | "meeting";
 
@@ -2011,7 +2012,6 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
   const { user } = useAppSelector((state: RootState) => state.authentiction);
   const role = (user?.user_type || "").trim().toLowerCase();
   const canRefresh = role === "admin" || role === "analyst";
-  const refreshedBy = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || user?.user_name || undefined;
   // a Refresh waiting for review; the tab drawn from its proposed data; a decision being sent
   const [draft, setDraft] = useState<Draft | null>(null);
   const [preview, setPreview] = useState(false);
@@ -2024,16 +2024,27 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
 
   useEffect(() => () => { selectionRef.current++; stopPolling(); }, []);
 
+  /** Asks for the run's progress every POLL_MS until it is done or failed. One question at a time: a slow
+   *  answer is waited for, not overlapped by the next (two answers both saying "done" fetched the result
+   *  twice). A poller left from a company no longer shown switches itself off. */
   const poll = (cik: string) => {
     stopPolling();
     const selection = selectionRef.current;
-    pollRef.current = window.setInterval(async () => {
+    let asking = false;
+    const stop = () => {
+      window.clearInterval(id);
+      if (pollRef.current === id) pollRef.current = null;
+    };
+    const id = window.setInterval(async () => {
+      if (selection !== selectionRef.current) { stop(); return; }  // another company was shown meanwhile
+      if (asking) return;
+      asking = true;
       try {
         const s = await getRunStatus(cik);
-        if (selection !== selectionRef.current) return;  // another company was shown meanwhile
+        if (selection !== selectionRef.current) { stop(); return; }
         setRun(s);
         if (s.state === "done") {
-          stopPolling();
+          stop();
           const r = await getResult(cik);
           cacheResult(cik, r);
           if (selection === selectionRef.current) setResult(r);
@@ -2042,9 +2053,12 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
             if (selection === selectionRef.current) { setDraft(d); setPreview(false); }
           }
         }
-        if (s.state === "failed") { stopPolling(); setError(s.error || "The run failed."); }
-      } catch (e) { /* transient; keep polling */ }
+        if (s.state === "failed") { stop(); setError(s.error || "The run failed."); }
+      } catch (e) { /* transient; keep polling */ } finally {
+        asking = false;
+      }
     }, POLL_MS);
+    pollRef.current = id;
   };
 
   /** Approve (saved to S3; the replaced result is kept as a version) or reject one section of the waiting Refresh. */
@@ -2052,7 +2066,7 @@ export function BoardIntelPanel({ company, autoStart, companyId }: {
     const selection = selectionRef.current;
     setDeciding(`${section}:${decision}`); setError(null);
     try {
-      const d = await decideDraft(cik, section, decision, refreshedBy);
+      const d = await decideDraft(cik, section, decision);
       if (selection !== selectionRef.current) return;
       setDraft(Object.values(d.sections).some((x) => x?.status === "pending") ? d : null);
       setPreview(false);

@@ -10,7 +10,7 @@ import {
   AlertTriangle, CheckCircle2, Clock, ExternalLink, FileText, Inbox, MinusCircle, RefreshCw, Search, XCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { AI_CHATBOT_API_BASE, getRequestHeaders } from "@/pages/AIChatbot/api";
+import { axiosInstance } from "@/services";
 import { useAppSelector } from "@/stores/hooks";
 import { RootState } from "@/stores/store";
 
@@ -67,20 +67,9 @@ const filingParts = (kind: string) => {
   return { form, items: rest.join(" ").split(",").map((s) => s.trim()).filter(Boolean) };
 };
 
-async function getFilings(userType: string): Promise<TrackerState> {
-  const res = await fetch(`${AI_CHATBOT_API_BASE}/api/board-intel/admin/filings`, {
-    headers: { ...getRequestHeaders(), "X-User-Type": userType },
-  });
-  if (!res.ok) {
-    let detail = res.statusText;
-    try {
-      detail = (await res.json()).detail || detail;
-    } catch {
-      /* not JSON */
-    }
-    throw new Error(detail);
-  }
-  return res.json();
+/** Admins only: the Django API checks the login's role, then passes the call to FastAPI. */
+async function getFilings(): Promise<TrackerState> {
+  return (await axiosInstance.get<TrackerState>("/api/board-intel/admin/filings")).data;
 }
 
 function StatusPill({ status }: { status: string }) {
@@ -123,7 +112,7 @@ export default function FilingTracker() {
   const load = () => {
     setLoading(true);
     setError(null);
-    getFilings(userType)
+    getFilings()
       .then(setData)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
